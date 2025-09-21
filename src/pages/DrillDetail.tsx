@@ -6,6 +6,14 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Target, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { APP_NAME, STORAGE_KEYS } from "@/constants/app";
+import { getStorageItem, setStorageItem, migrateStorageKeys } from "@/utils/storageManager";
+
+interface Score {
+  name: string;
+  score: number;
+  timestamp: number;
+}
 
 const DrillDetail = () => {
   const navigate = useNavigate();
@@ -13,12 +21,21 @@ const DrillDetail = () => {
   const [totalPutts, setTotalPutts] = useState("");
   const [lastScore, setLastScore] = useState<number | null>(null);
 
-  const STORAGE_KEY = "pga18_total_putts";
-
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setLastScore(parseInt(saved));
+    // Migrate storage keys on first load
+    migrateStorageKeys();
+    
+    // Load scores and find the latest for current user
+    const scores: Score[] = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
+    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, "User");
+    
+    const userScores = scores.filter(score => score.name === displayName);
+    if (userScores.length > 0) {
+      // Get the most recent score
+      const latestScore = userScores.reduce((latest, current) => 
+        current.timestamp > latest.timestamp ? current : latest
+      );
+      setLastScore(latestScore.score);
     }
   }, []);
 
@@ -33,7 +50,18 @@ const DrillDetail = () => {
       return;
     }
 
-    localStorage.setItem(STORAGE_KEY, putts.toString());
+    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, "User");
+    const scores: Score[] = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
+    
+    const newScore: Score = {
+      name: displayName,
+      score: putts,
+      timestamp: Date.now(),
+    };
+    
+    scores.push(newScore);
+    setStorageItem(STORAGE_KEYS.PGA18_SCORES, scores);
+    
     setLastScore(putts);
     setTotalPutts("");
     
@@ -44,7 +72,13 @@ const DrillDetail = () => {
   };
 
   const handleReset = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, "User");
+    const scores: Score[] = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
+    
+    // Remove all scores for current user
+    const filteredScores = scores.filter(score => score.name !== displayName);
+    setStorageItem(STORAGE_KEYS.PGA18_SCORES, filteredScores);
+    
     setLastScore(null);
     setTotalPutts("");
     

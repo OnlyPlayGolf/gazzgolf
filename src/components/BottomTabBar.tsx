@@ -1,4 +1,4 @@
-import { Home, Target, TrendingUp, Menu } from "lucide-react";
+import { Home, Target, TrendingUp, User, Menu } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +6,7 @@ const tabs = [
   { id: 'home', label: 'Home', icon: Home, path: '/' },
   { id: 'drills', label: 'Drills', icon: Target, path: '/drills' },
   { id: 'levels', label: 'Levels', icon: TrendingUp, path: '/levels' },
+  { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
   { id: 'menu', label: 'Menu', icon: Menu, path: '/menu' },
 ];
 

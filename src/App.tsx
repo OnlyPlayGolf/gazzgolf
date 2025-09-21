@@ -9,6 +9,7 @@ import DrillsCategories from "./pages/DrillsCategories";
 import PuttingDrills from "./pages/PuttingDrills";
 import DrillDetail from "./pages/DrillDetail";
 import Levels from "./pages/Levels";
+import Profile from "./pages/Profile";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/drills/putting" element={<PuttingDrills />} />
             <Route path="/drill/pga-tour-18" element={<DrillDetail />} />
             <Route path="/levels" element={<Levels />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
