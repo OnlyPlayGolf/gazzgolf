@@ -51,6 +51,33 @@ const PuttingDrills = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Target size={24} className="text-primary" />
+                <div>
+                  <div>Aggressive Putting</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Putting • 4m, 5m, 6m cycle
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Putt from a fixed cycle of 4m, 5m, then 6m, repeating in that order. 
+                Goal is to reach 15 points as quickly as possible.
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/drill/aggressive-putting')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Open Drill
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

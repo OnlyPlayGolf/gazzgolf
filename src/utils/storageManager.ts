@@ -8,6 +8,7 @@ export const migrateStorageKeys = () => {
     { old: OLD_STORAGE_KEYS.GROUPS, new: STORAGE_KEYS.GROUPS },
     { old: OLD_STORAGE_KEYS.CURRENT_GROUP_ID, new: STORAGE_KEYS.CURRENT_GROUP_ID },
     { old: OLD_STORAGE_KEYS.PGA18_SCORES, new: STORAGE_KEYS.PGA18_SCORES },
+    { old: OLD_STORAGE_KEYS.AGGRESSIVE_PUTTING_SCORES, new: STORAGE_KEYS.AGGRESSIVE_PUTTING_SCORES },
     { old: OLD_STORAGE_KEYS.LEVELS_STATE, new: STORAGE_KEYS.LEVELS_STATE },
     // Legacy key from original implementation
     { old: "pga18_total_putts", new: STORAGE_KEYS.PGA18_SCORES },

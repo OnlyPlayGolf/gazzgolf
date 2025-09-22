@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   GROUPS: "app_groups",
   CURRENT_GROUP_ID: "app_current_group_id",
   PGA18_SCORES: "app_pga18_scores",
+  AGGRESSIVE_PUTTING_SCORES: "app_aggressive_putting_scores",
   LEVELS_STATE: "app_levels_state",
 };
 
@@ -15,5 +16,6 @@ export const OLD_STORAGE_KEYS = {
   GROUPS: "drillz_groups", 
   CURRENT_GROUP_ID: "drillz_current_group_id",
   PGA18_SCORES: "drillz_pga18_scores",
+  AGGRESSIVE_PUTTING_SCORES: "drillz_aggressive_putting_scores",
   LEVELS_STATE: "drillz_levels_state",
 };
