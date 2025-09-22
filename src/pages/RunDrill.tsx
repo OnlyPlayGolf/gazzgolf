@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { UserDrill, DrillSession, DrillRep, DrillOutcome } from '@/types/drills';
-import { PuttingBaseline, LongGameBaseline } from '@/utils/csvParser';
+import { PuttingBaseline, LongGameBaseline, LieType } from '@/utils/csvParser';
 import { parsePuttingBaseline, parseLongGameBaseline } from '@/utils/csvParser';
 import { createStrokesGainedCalculator, validateDistance } from '@/utils/strokesGained';
 import { getStorageItem, setStorageItem } from '@/utils/storageManager';
@@ -22,8 +22,9 @@ export default function RunDrill() {
   const [drill, setDrill] = useState<UserDrill | null>(null);
   const [session, setSession] = useState<DrillSession | null>(null);
   const [currentDistanceIndex, setCurrentDistanceIndex] = useState(0);
-  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const [leaveDistance, setLeaveDistance] = useState('');
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [endLie, setEndLie] = useState<LieType | 'green'>('green');
+  const [endDistance, setEndDistance] = useState('');
   const [pendingOutcome, setPendingOutcome] = useState<DrillOutcome | null>(null);
   const [puttingTable, setPuttingTable] = useState<PuttingBaseline[]>([]);
   const [longgameTable, setLonggameTable] = useState<LongGameBaseline[]>([]);
@@ -84,48 +85,59 @@ export default function RunDrill() {
 
   const handleOutcome = (outcome: DrillOutcome) => {
     if (outcome.type === 'holed') {
-      processRep(outcome.type === 'holed', 0);
+      processRep(true, 'green', 0);
     } else {
       setPendingOutcome(outcome);
-      setShowLeaveDialog(true);
+      // Set default end lie based on drill type
+      setEndLie(drill?.type === 'putting' ? 'green' : 'green');
+      setShowEndDialog(true);
     }
   };
 
-  const handleLeaveSubmit = () => {
-    const distance = parseFloat(leaveDistance);
+  const handleEndSubmit = () => {
+    const distance = parseFloat(endDistance);
     if (!distance || distance <= 0) {
-      toast.error('Please enter a valid leave distance');
+      toast.error('Please enter a valid end distance');
       return;
     }
 
-    if (drill?.type === 'putting' && !validateDistance(distance, 'putting', puttingTable)) {
-      toast.error('Leave distance is outside valid range for putting');
+    // Validate distance based on end lie
+    if (endLie === 'green' && !validateDistance(distance, 'putting', puttingTable)) {
+      toast.error('End distance is outside valid range for putting');
       return;
     }
 
-    if (distance > 100) {
-      toast.error('Leave distance seems unusually large. Please verify.');
+    if (endLie !== 'green' && !validateDistance(distance, 'longGame', undefined, longgameTable)) {
+      toast.error('End distance is outside valid range for long game');
       return;
     }
 
-    processRep(false, distance);
-    setShowLeaveDialog(false);
-    setLeaveDistance('');
+    if (distance > 200) {
+      toast.error('End distance seems unusually large. Please verify.');
+      return;
+    }
+
+    processRep(false, endLie, distance);
+    setShowEndDialog(false);
+    setEndDistance('');
     setPendingOutcome(null);
   };
 
-  const processRep = (holed: boolean, leaveDistanceFt: number) => {
+  const processRep = (holed: boolean, endLieValue: LieType | 'green', endDistanceValue: number) => {
     if (!drill || !session || !calculator) return;
 
     const currentDistance = drill.startDistances[currentDistanceIndex];
     let sg = 0;
 
     try {
-      if (drill.type === 'putting') {
-        sg = calculator.calculatePuttingSG(currentDistance, leaveDistanceFt, holed);
-      } else if (drill.type === 'longGame' && drill.lie) {
-        sg = calculator.calculateLongGameSG(currentDistance, drill.lie, leaveDistanceFt);
-      }
+      sg = calculator.calculateStrokesGained(
+        drill.type,
+        currentDistance,
+        drill.lie || 'tee', // Default to tee for putting (though not used)
+        holed,
+        endLieValue,
+        endDistanceValue
+      );
     } catch (error) {
       console.error('Error calculating strokes gained:', error);
       toast.error('Error calculating strokes gained');
@@ -136,7 +148,8 @@ export default function RunDrill() {
       id: Date.now().toString(),
       startDistance: currentDistance,
       holed,
-      leaveDistance: leaveDistanceFt,
+      endLie: endLieValue,
+      endDistance: endDistanceValue,
       strokesGained: sg,
       timestamp: Date.now()
     };
@@ -332,23 +345,39 @@ export default function RunDrill() {
         </div>
       </div>
 
-      {/* Leave Distance Dialog */}
-      <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+      {/* End Distance Dialog */}
+      <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enter Leave Distance</DialogTitle>
+            <DialogTitle>Enter End Position</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             <div>
-              <Label htmlFor="leave-distance">
-                Leave Distance (feet from hole)
+              <Label htmlFor="end-lie">End Lie</Label>
+              <select
+                id="end-lie"
+                value={endLie}
+                onChange={(e) => setEndLie(e.target.value as LieType | 'green')}
+                className="w-full mt-1 p-2 border border-border rounded-md bg-background"
+              >
+                <option value="green">Green</option>
+                <option value="tee">Tee</option>
+                <option value="fairway">Fairway</option>
+                <option value="rough">Rough</option>
+                <option value="sand">Sand</option>
+              </select>
+            </div>
+            
+            <div>
+              <Label htmlFor="end-distance">
+                End Distance ({endLie === 'green' ? 'feet' : 'yards'})
               </Label>
               <Input
-                id="leave-distance"
-                value={leaveDistance}
-                onChange={(e) => setLeaveDistance(e.target.value)}
-                placeholder="Distance in feet"
+                id="end-distance"
+                value={endDistance}
+                onChange={(e) => setEndDistance(e.target.value)}
+                placeholder={`Distance in ${endLie === 'green' ? 'feet' : 'yards'}`}
                 type="number"
                 min="0.1"
                 step="0.1"
@@ -359,14 +388,14 @@ export default function RunDrill() {
             
             <div className="flex gap-3">
               <Button
-                onClick={() => setShowLeaveDialog(false)}
+                onClick={() => setShowEndDialog(false)}
                 variant="outline"
                 className="flex-1"
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleLeaveSubmit}
+                onClick={handleEndSubmit}
                 className="flex-1"
               >
                 Submit

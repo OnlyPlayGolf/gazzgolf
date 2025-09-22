@@ -17,7 +17,8 @@ export interface DrillRep {
   id: string;
   startDistance: number;
   holed: boolean;
-  leaveDistance: number; // In feet for putting distance
+  endLie: LieType | 'green';
+  endDistance: number;
   strokesGained: number;
   timestamp: number;
 }
@@ -36,5 +37,6 @@ export interface DrillSession {
 
 export interface DrillOutcome {
   type: 'holed' | 'missed';
-  leaveDistance?: number;
+  endLie?: LieType | 'green';
+  endDistance?: number;
 }

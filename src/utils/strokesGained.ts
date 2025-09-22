@@ -2,8 +2,14 @@ import { PuttingBaseline, LongGameBaseline, LieType } from './csvParser';
 import { interpE_Putting, interpE_Long } from './interpolation';
 
 export interface StrokesGainedCalculator {
-  calculatePuttingSG: (startDistanceFt: number, leaveDistanceFt: number, holed: boolean) => number;
-  calculateLongGameSG: (startDistanceYds: number, lie: LieType, leaveDistanceFt: number) => number;
+  calculateStrokesGained: (
+    drillType: 'putting' | 'longGame',
+    startDistance: number,
+    startLie: LieType,
+    holed: boolean,
+    endLie: LieType | 'green',
+    endDistance: number
+  ) => number;
 }
 
 export const createStrokesGainedCalculator = (
@@ -11,35 +17,39 @@ export const createStrokesGainedCalculator = (
   longgameTable: LongGameBaseline[]
 ): StrokesGainedCalculator => {
   
-  const calculatePuttingSG = (
-    startDistanceFt: number,
-    leaveDistanceFt: number,
-    holed: boolean
+  const calculateStrokesGained = (
+    drillType: 'putting' | 'longGame',
+    startDistance: number,
+    startLie: LieType,
+    holed: boolean,
+    endLie: LieType | 'green',
+    endDistance: number
   ): number => {
-    const expectedStart = interpE_Putting(startDistanceFt, puttingTable);
-    const expectedLeave = holed ? 0 : interpE_Putting(leaveDistanceFt, puttingTable);
+    // Calculate E_start
+    let expectedStart: number;
+    if (drillType === 'putting') {
+      expectedStart = interpE_Putting(startDistance, puttingTable);
+    } else {
+      expectedStart = interpE_Long(startDistance, startLie, longgameTable);
+    }
     
-    // SG = E_putt(d0) - (1 + E_putt(d1))
-    const sg = expectedStart - (1 + expectedLeave);
-    return Math.round(sg * 100) / 100; // Round to 0.01
-  };
-  
-  const calculateLongGameSG = (
-    startDistanceYds: number,
-    lie: LieType,
-    leaveDistanceFt: number
-  ): number => {
-    const expectedStart = interpE_Long(startDistanceYds, lie, longgameTable);
-    const expectedLeave = interpE_Putting(leaveDistanceFt, puttingTable);
+    // Calculate E_end
+    let expectedEnd: number;
+    if (holed) {
+      expectedEnd = 0;
+    } else if (endLie === 'green') {
+      expectedEnd = interpE_Putting(endDistance, puttingTable);
+    } else {
+      expectedEnd = interpE_Long(endDistance, endLie as LieType, longgameTable);
+    }
     
-    // SG = E_long(d0, lie) - (1 + E_putt(d1))
-    const sg = expectedStart - (1 + expectedLeave);
+    // SG = E_start - (1 + E_end)
+    const sg = expectedStart - (1 + expectedEnd);
     return Math.round(sg * 100) / 100; // Round to 0.01
   };
   
   return {
-    calculatePuttingSG,
-    calculateLongGameSG
+    calculateStrokesGained
   };
 };
 

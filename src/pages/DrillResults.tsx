@@ -232,9 +232,10 @@ export default function DrillResults() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Start</TableHead>
-                      <TableHead>Holed?</TableHead>
-                      <TableHead>Leave</TableHead>
+                      <TableHead>Start Lie</TableHead>
+                      <TableHead>Start Dist</TableHead>
+                      <TableHead>End Lie</TableHead>
+                      <TableHead>End Dist</TableHead>
                       <TableHead className="text-right">SG</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -242,15 +243,18 @@ export default function DrillResults() {
                     {selectedSession.reps.map((rep, index) => (
                       <TableRow key={rep.id}>
                         <TableCell>
+                          {drill.lie || 'N/A'}
+                        </TableCell>
+                        <TableCell>
                           {rep.startDistance}{drill.unit === 'feet' ? 'ft' : 'yd'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={rep.holed ? "default" : "secondary"}>
-                            {rep.holed ? 'Yes' : 'No'}
+                          <Badge variant="outline" className="capitalize">
+                            {rep.endLie}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {rep.holed ? '—' : `${rep.leaveDistance}ft`}
+                          {rep.holed ? '—' : `${rep.endDistance}${rep.endLie === 'green' ? 'ft' : 'yd'}`}
                         </TableCell>
                         <TableCell className={`text-right font-medium ${
                           rep.strokesGained >= 0 ? 'text-green-600' : 'text-red-600'
