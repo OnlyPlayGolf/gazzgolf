@@ -8,6 +8,8 @@ export const STORAGE_KEYS = {
   PGA18_SCORES: "app_pga18_scores",
   AGGRESSIVE_PUTTING_SCORES: "app_aggressive_putting_scores",
   LEVELS_STATE: "app_levels_state",
+  USER_DRILLS: "app_user_drills",
+  DRILL_SESSIONS: "app_drill_sessions",
 };
 
 export const OLD_STORAGE_KEYS = {

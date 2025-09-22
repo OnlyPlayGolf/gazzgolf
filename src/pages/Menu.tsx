@@ -1,9 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Settings, Info, MessageSquare, ChevronRight } from "lucide-react";
+import { User, Settings, Info, MessageSquare, ChevronRight, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Menu = () => {
+  const navigate = useNavigate();
+  
   const menuItems = [
+    { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
     { id: 'profile', label: 'Profile', icon: User, available: false },
     { id: 'settings', label: 'Settings', icon: Settings, available: false },
     { id: 'about', label: 'About', icon: Info, available: false },
@@ -27,6 +31,7 @@ const Menu = () => {
                   <Button
                     variant="ghost"
                     disabled={!item.available}
+                    onClick={item.available && item.path ? () => navigate(item.path) : undefined}
                     className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
                   >
                     <div className="flex items-center justify-between w-full">

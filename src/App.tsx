@@ -14,6 +14,10 @@ import Levels from "./pages/Levels";
 import Profile from "./pages/Profile";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
+import UserDrills from "./pages/UserDrills";
+import CreateDrill from "./pages/CreateDrill";
+import RunDrill from "./pages/RunDrill";
+import DrillResults from "./pages/DrillResults";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +37,10 @@ const App = () => (
             <Route path="/levels" element={<Levels />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/menu" element={<Menu />} />
+            <Route path="/user-drills" element={<UserDrills />} />
+            <Route path="/create-drill" element={<CreateDrill />} />
+            <Route path="/run-drill/:drillId" element={<RunDrill />} />
+            <Route path="/drill-results/:drillId" element={<DrillResults />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomTabBar />
