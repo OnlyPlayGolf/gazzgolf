@@ -6,14 +6,16 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { UserDrill, DrillSession, DrillRep, DrillOutcome } from '@/types/drills';
 import { PuttingBaseline, LongGameBaseline, LieType } from '@/utils/csvParser';
 import { parsePuttingBaseline, parseLongGameBaseline } from '@/utils/csvParser';
-import { createStrokesGainedCalculator, validateDistance } from '@/utils/strokesGained';
+import { createStrokesGainedCalculator } from '@/utils/strokesGained';
 import { getStorageItem, setStorageItem } from '@/utils/storageManager';
 import { STORAGE_KEYS } from '@/constants/app';
+import { PuttingUnit, LongGameUnit, convertFromMeters, convertLongGameFromMeters, convertToMeters, convertLongGameToMeters, getValidationRange, PUTTING_RANGE_METERS, PROXIMITY_RANGE_METERS } from '@/utils/unitConversion';
 
 export default function RunDrill() {
   const { drillId } = useParams<{ drillId: string }>();
@@ -23,12 +25,15 @@ export default function RunDrill() {
   const [session, setSession] = useState<DrillSession | null>(null);
   const [currentDistanceIndex, setCurrentDistanceIndex] = useState(0);
   const [showEndDialog, setShowEndDialog] = useState(false);
+  const [showProximityDialog, setShowProximityDialog] = useState(false);
   const [endLie, setEndLie] = useState<LieType | 'green'>('green');
   const [endDistance, setEndDistance] = useState('');
+  const [proximity, setProximity] = useState('');
   const [pendingOutcome, setPendingOutcome] = useState<DrillOutcome | null>(null);
   const [puttingTable, setPuttingTable] = useState<PuttingBaseline[]>([]);
   const [longgameTable, setLonggameTable] = useState<LongGameBaseline[]>([]);
   const [calculator, setCalculator] = useState<any>(null);
+  const [displayUnit, setDisplayUnit] = useState<PuttingUnit | LongGameUnit>('feet');
 
   useEffect(() => {
     const loadDrill = () => {
@@ -44,6 +49,7 @@ export default function RunDrill() {
       }
       
       setDrill(foundDrill);
+      setDisplayUnit(foundDrill.unit);
       
       // Create new session
       const newSession: DrillSession = {
@@ -85,11 +91,14 @@ export default function RunDrill() {
 
   const handleOutcome = (outcome: DrillOutcome) => {
     if (outcome.type === 'holed') {
-      processRep(true, 'green', 0);
+      processRep(true);
+    } else if (drill?.type === 'longGame') {
+      // Long game uses proximity
+      setShowProximityDialog(true);
     } else {
+      // Putting uses end distance
       setPendingOutcome(outcome);
-      // Set default end lie based on drill type
-      setEndLie(drill?.type === 'putting' ? 'green' : 'green');
+      setEndLie('green'); // Always green for putting
       setShowEndDialog(true);
     }
   };
@@ -101,43 +110,74 @@ export default function RunDrill() {
       return;
     }
 
-    // Validate distance based on end lie
-    if (endLie === 'green' && !validateDistance(distance, 'putting', puttingTable)) {
-      toast.error('End distance is outside valid range for putting');
+    // Convert to meters for validation
+    const metersDistance = convertToMeters(distance, displayUnit as PuttingUnit);
+    
+    if (metersDistance < PUTTING_RANGE_METERS.min || metersDistance > PUTTING_RANGE_METERS.max) {
+      const range = getValidationRange(displayUnit as PuttingUnit, 'putting');
+      const unitSymbol = displayUnit === 'meters' ? 'm' : 'ft';
+      toast.error(`Please enter a distance between ${range.min.toFixed(displayUnit === 'meters' ? 2 : 1)} and ${range.max.toFixed(displayUnit === 'meters' ? 2 : 1)} ${unitSymbol}`);
       return;
     }
 
-    if (endLie !== 'green' && !validateDistance(distance, 'longGame', undefined, longgameTable)) {
-      toast.error('End distance is outside valid range for long game');
-      return;
-    }
-
-    if (distance > 200) {
-      toast.error('End distance seems unusually large. Please verify.');
-      return;
-    }
-
-    processRep(false, endLie, distance);
+    processRep(false, metersDistance);
     setShowEndDialog(false);
     setEndDistance('');
     setPendingOutcome(null);
   };
 
-  const processRep = (holed: boolean, endLieValue: LieType | 'green', endDistanceValue: number) => {
+  const handleProximitySubmit = () => {
+    const prox = parseFloat(proximity);
+    if (isNaN(prox) || prox < 0) {
+      toast.error('Please enter a valid proximity');
+      return;
+    }
+
+    // Convert to meters for validation
+    const metersProximity = displayUnit === 'yards' 
+      ? convertLongGameToMeters(prox, 'yards')
+      : prox; // Already in meters
+    
+    if (metersProximity > PROXIMITY_RANGE_METERS.max) {
+      const range = getValidationRange(displayUnit as LongGameUnit, 'proximity');
+      const unitSymbol = displayUnit === 'meters' ? 'm' : 'yd';
+      toast.error(`Enter proximity between 0 and ${range.max.toFixed(displayUnit === 'meters' ? 0 : 2)} ${unitSymbol}`);
+      return;
+    }
+
+    processRep(false, undefined, metersProximity);
+    setShowProximityDialog(false);
+    setProximity('');
+  };
+
+  const processRep = (holed: boolean, endDistanceMeters?: number, proximityMeters?: number) => {
     if (!drill || !session || !calculator) return;
 
-    const currentDistance = drill.startDistances[currentDistanceIndex];
+    const currentDistanceMeters = drill.startDistances[currentDistanceIndex];
     let sg = 0;
 
     try {
-      sg = calculator.calculateStrokesGained(
-        drill.type,
-        currentDistance,
-        drill.lie || 'tee', // Default to tee for putting (though not used)
-        holed,
-        endLieValue,
-        endDistanceValue
-      );
+      if (drill.type === 'putting') {
+        // For putting, endDistance is the leave distance in meters
+        sg = calculator.calculateStrokesGained(
+          'putting',
+          currentDistanceMeters * 3.28084, // Convert to feet for baseline
+          'tee', // Not used for putting
+          holed,
+          holed ? 'green' : 'green',
+          holed ? 0 : (endDistanceMeters! * 3.28084) // Convert to feet for baseline
+        );
+      } else {
+        // For long game, proximity is distance to hole in meters
+        sg = calculator.calculateStrokesGained(
+          'longGame',
+          currentDistanceMeters * 1.09361, // Convert to yards for baseline
+          drill.lie || 'fairway',
+          proximityMeters === 0, // Holed if proximity is 0
+          proximityMeters === 0 ? 'green' : 'green',
+          proximityMeters === 0 ? 0 : (proximityMeters! * 3.28084) // Convert to feet for putting baseline
+        );
+      }
     } catch (error) {
       console.error('Error calculating strokes gained:', error);
       toast.error('Error calculating strokes gained');
@@ -146,10 +186,11 @@ export default function RunDrill() {
 
     const rep: DrillRep = {
       id: Date.now().toString(),
-      startDistance: currentDistance,
+      startDistance: currentDistanceMeters,
       holed,
-      endLie: endLieValue,
-      endDistance: endDistanceValue,
+      endLie: drill.type === 'putting' ? 'green' : undefined,
+      endDistance: endDistanceMeters,
+      proximity: proximityMeters,
       strokesGained: sg,
       timestamp: Date.now()
     };
@@ -208,6 +249,18 @@ export default function RunDrill() {
     navigate(`/drill-results/${drill.id}`);
   };
 
+  const toggleUnit = () => {
+    if (drill?.type === 'putting') {
+      const newUnit = displayUnit === 'feet' ? 'meters' : 'feet';
+      setDisplayUnit(newUnit);
+      setStorageItem(STORAGE_KEYS.PUTTING_UNIT, newUnit);
+    } else {
+      const newUnit = displayUnit === 'yards' ? 'meters' : 'yards';
+      setDisplayUnit(newUnit);
+      setStorageItem(STORAGE_KEYS.LONGGAME_UNIT, newUnit);
+    }
+  };
+
   if (!drill || !session) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -216,8 +269,13 @@ export default function RunDrill() {
     );
   }
 
-  const currentDistance = drill.startDistances[currentDistanceIndex];
+  const currentDistanceMeters = drill.startDistances[currentDistanceIndex];
+  const currentDistance = drill.type === 'putting' 
+    ? convertFromMeters(currentDistanceMeters, displayUnit as PuttingUnit)
+    : convertLongGameFromMeters(currentDistanceMeters, displayUnit as LongGameUnit);
+  
   const progress = session.reps.length / drill.targetReps;
+  const unitSymbol = displayUnit === 'meters' ? 'm' : displayUnit === 'feet' ? 'ft' : 'yd';
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -233,6 +291,14 @@ export default function RunDrill() {
                 {drill.type === 'putting' ? 'Putting' : 'Long Game'}
               </Badge>
               {drill.lie && <Badge variant="outline">{drill.lie}</Badge>}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={toggleUnit}
+                className="text-xs"
+              >
+                Unit: {unitSymbol}
+              </Button>
             </div>
           </div>
         </div>
@@ -284,28 +350,39 @@ export default function RunDrill() {
         <Card className="p-6 text-center">
           <h2 className="text-lg font-medium mb-2">Next Distance</h2>
           <div className="text-4xl font-bold text-primary mb-4">
-            {currentDistance}{drill.unit === 'feet' ? 'ft' : 'yd'}
+            {currentDistance.toFixed(displayUnit === 'meters' ? 2 : 1)}{unitSymbol}
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={() => handleOutcome({ type: 'holed' })}
-              variant="default"
-              size="lg"
-              className="h-12"
-            >
-              Holed
-            </Button>
-            
+          {drill.type === 'putting' ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => handleOutcome({ type: 'holed' })}
+                variant="default"
+                size="lg"
+                className="h-12"
+              >
+                Holed
+              </Button>
+              
+              <Button
+                onClick={() => handleOutcome({ type: 'missed' })}
+                variant="outline"
+                size="lg"
+                className="h-12"
+              >
+                Missed
+              </Button>
+            </div>
+          ) : (
             <Button
               onClick={() => handleOutcome({ type: 'missed' })}
-              variant="outline"
+              variant="default"
               size="lg"
-              className="h-12"
+              className="h-12 w-full"
             >
-              Missed
+              Enter Proximity
             </Button>
-          </div>
+          )}
         </Card>
 
         {/* Last Rep Result */}
@@ -345,45 +422,32 @@ export default function RunDrill() {
         </div>
       </div>
 
-      {/* End Distance Dialog */}
+      {/* End Distance Dialog (Putting) */}
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Enter End Position</DialogTitle>
+            <DialogTitle>Enter End Distance</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
             <div>
-              <Label htmlFor="end-lie">End Lie</Label>
-              <select
-                id="end-lie"
-                value={endLie}
-                onChange={(e) => setEndLie(e.target.value as LieType | 'green')}
-                className="w-full mt-1 p-2 border border-border rounded-md bg-background"
-              >
-                <option value="green">Green</option>
-                <option value="tee">Tee</option>
-                <option value="fairway">Fairway</option>
-                <option value="rough">Rough</option>
-                <option value="sand">Sand</option>
-              </select>
-            </div>
-            
-            <div>
               <Label htmlFor="end-distance">
-                End Distance ({endLie === 'green' ? 'feet' : 'yards'})
+                End Distance ({unitSymbol})
               </Label>
               <Input
                 id="end-distance"
                 value={endDistance}
                 onChange={(e) => setEndDistance(e.target.value)}
-                placeholder={`Distance in ${endLie === 'green' ? 'feet' : 'yards'}`}
+                placeholder={`Distance in ${displayUnit === 'meters' ? 'meters' : 'feet'}`}
                 type="number"
-                min="0.1"
-                step="0.1"
+                min="0.01"
+                step="0.01"
                 className="mt-1"
                 autoFocus
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Valid range: {getValidationRange(displayUnit as PuttingUnit, 'putting').min.toFixed(displayUnit === 'meters' ? 2 : 1)}-{getValidationRange(displayUnit as PuttingUnit, 'putting').max.toFixed(displayUnit === 'meters' ? 2 : 1)} {unitSymbol}
+              </p>
             </div>
             
             <div className="flex gap-3">
@@ -396,6 +460,53 @@ export default function RunDrill() {
               </Button>
               <Button
                 onClick={handleEndSubmit}
+                className="flex-1"
+              >
+                Submit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Proximity Dialog (Long Game) */}
+      <Dialog open={showProximityDialog} onOpenChange={setShowProximityDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Proximity to Hole</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="proximity">
+                Proximity ({unitSymbol})
+              </Label>
+              <Input
+                id="proximity"
+                value={proximity}
+                onChange={(e) => setProximity(e.target.value)}
+                placeholder={`Distance to hole in ${displayUnit === 'meters' ? 'meters' : 'yards'}`}
+                type="number"
+                min="0"
+                step="0.1"
+                className="mt-1"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Valid range: 0-{getValidationRange(displayUnit as LongGameUnit, 'proximity').max.toFixed(displayUnit === 'meters' ? 0 : 2)} {unitSymbol}
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowProximityDialog(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleProximitySubmit}
                 className="flex-1"
               >
                 Submit

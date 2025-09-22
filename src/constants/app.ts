@@ -10,6 +10,8 @@ export const STORAGE_KEYS = {
   LEVELS_STATE: "app_levels_state",
   USER_DRILLS: "app_user_drills",
   DRILL_SESSIONS: "app_drill_sessions",
+  PUTTING_UNIT: "app_putting_unit",
+  LONGGAME_UNIT: "app_longgame_unit"
 };
 
 export const OLD_STORAGE_KEYS = {

@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { UserDrill, DrillSession } from '@/types/drills';
 import { getStorageItem } from '@/utils/storageManager';
 import { STORAGE_KEYS } from '@/constants/app';
+import { convertFromMeters, convertLongGameFromMeters, PuttingUnit, LongGameUnit } from '@/utils/unitConversion';
 
 export default function DrillResults() {
   const { drillId } = useParams<{ drillId: string }>();
@@ -232,37 +233,39 @@ export default function DrillResults() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Start Lie</TableHead>
                       <TableHead>Start Dist</TableHead>
-                      <TableHead>End Lie</TableHead>
-                      <TableHead>End Dist</TableHead>
+                      <TableHead>Result</TableHead>
                       <TableHead className="text-right">SG</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selectedSession.reps.map((rep, index) => (
-                      <TableRow key={rep.id}>
-                        <TableCell>
-                          {drill.lie || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          {rep.startDistance}{drill.unit === 'feet' ? 'ft' : 'yd'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize">
-                            {rep.endLie}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {rep.holed ? '—' : `${rep.endDistance}${rep.endLie === 'green' ? 'ft' : 'yd'}`}
-                        </TableCell>
-                        <TableCell className={`text-right font-medium ${
-                          rep.strokesGained >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {rep.strokesGained >= 0 ? '+' : ''}{rep.strokesGained.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {selectedSession.reps.map((rep, index) => {
+                      const startDisplayDistance = drill.type === 'putting' 
+                        ? convertFromMeters(rep.startDistance, drill.unit as PuttingUnit)
+                        : convertLongGameFromMeters(rep.startDistance, drill.unit as LongGameUnit);
+                      const unitSymbol = drill.unit === 'meters' ? 'm' : drill.unit === 'feet' ? 'ft' : 'yd';
+
+                      return (
+                        <TableRow key={rep.id}>
+                          <TableCell>
+                            {startDisplayDistance.toFixed(drill.unit === 'meters' ? 2 : 1)}{unitSymbol}
+                          </TableCell>
+                          <TableCell>
+                            {rep.holed ? 'Holed' : 
+                             drill.type === 'longGame' && rep.proximity !== undefined ? 
+                               `${(drill.unit === 'meters' ? rep.proximity : rep.proximity * (drill.unit === 'yards' ? 1.09361 : 3.28084)).toFixed(drill.unit === 'meters' ? 2 : 1)}${unitSymbol} to hole` :
+                               rep.endDistance ? 
+                                 `${(drill.type === 'putting' ? convertFromMeters(rep.endDistance, drill.unit as PuttingUnit) : convertLongGameFromMeters(rep.endDistance, drill.unit as LongGameUnit)).toFixed(drill.unit === 'meters' ? 2 : 1)}${unitSymbol} left` : 
+                                 'Missed'}
+                          </TableCell>
+                          <TableCell className={`text-right font-medium ${
+                            rep.strokesGained >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {rep.strokesGained >= 0 ? '+' : ''}{rep.strokesGained.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
