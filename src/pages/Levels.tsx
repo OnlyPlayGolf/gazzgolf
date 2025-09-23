@@ -1,15 +1,19 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, CheckCircle, Circle, Trophy, Target } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Target, CheckCircle, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
 
 const Levels = () => {
+  const navigate = useNavigate();
   const [levels, setLevels] = useState<Level[]>([]);
   const [stats, setStats] = useState({ completed: 0, total: 0, percentage: 0 });
+  const [activeTab, setActiveTab] = useState("play");
 
   useEffect(() => {
     const loadData = () => {
@@ -30,20 +34,23 @@ const Levels = () => {
     setStats(statsData);
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case 'beginner': return 'bg-green-100 text-green-800 border-green-200';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'advanced': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+  const currentLevel = levels.find(level => !level.completed) || levels[levels.length - 1];
+  const currentLevelNumber = currentLevel?.level || 1;
+
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'putt': return 'bg-primary text-primary-foreground';
+      case 'chip': return 'bg-secondary text-secondary-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'putt': return <Target size={16} />;
-      case 'chip': return <Trophy size={16} />;
-      default: return <Circle size={16} />;
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner': return 'bg-muted text-muted-foreground';
+      case 'intermediate': return 'bg-muted text-muted-foreground';
+      case 'advanced': return 'bg-muted text-muted-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -51,82 +58,176 @@ const Levels = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Levels</h1>
-          <p className="text-muted-foreground">Track your skill progression</p>
+        <div className="flex items-center gap-3 mb-6">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate("/levels")}
+            className="rounded-full"
+          >
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-2xl font-bold text-foreground">Beginner</h1>
         </div>
 
-        {/* Progress Overview */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="text-primary" size={20} />
-                  <span className="font-semibold">Overall Progress</span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {stats.completed} / {stats.total} completed
-                </span>
+        {/* Lead Text */}
+        <div className="mb-6">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Complete the levels honestly and be honest with yourself — only true practice builds real skill
+          </p>
+        </div>
+
+        {/* Player Dashboard */}
+        <Card className="mb-6 rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Player Name</h2>
+                <p className="text-sm text-muted-foreground">Handicap: 15 • Golf Club Name</p>
               </div>
-              <Progress value={stats.percentage} className="h-2" />
-              <div className="text-center">
-                <span className="text-2xl font-bold text-primary">{stats.percentage}%</span>
-                <p className="text-sm text-muted-foreground">Complete</p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="text-lg font-semibold text-foreground">{stats.completed} of 100 levels</p>
+              </div>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground">Current Level</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-semibold text-foreground">{currentLevelNumber}</p>
+                  <Badge className={`text-xs rounded-full ${getTypeColor(currentLevel?.type || 'putt')}`}>
+                    {currentLevel?.type || 'Putt'}
+                  </Badge>
+                </div>
+              </div>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground">Progress</p>
+                <div className="space-y-1">
+                  <p className="text-lg font-semibold text-foreground">{stats.percentage}%</p>
+                  <Progress value={stats.percentage} className="h-1" />
+                </div>
+              </div>
+              <div className="bg-muted rounded-xl p-3">
+                <p className="text-xs text-muted-foreground">Category</p>
+                <Badge className={`text-xs rounded-full ${getTypeColor(currentLevel?.type || 'putt')}`}>
+                  {currentLevel?.type || 'Putt'}
+                </Badge>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Levels Grid */}
-        <div className="space-y-3">
-          {levels.map((level) => (
-            <Card key={level.id} className={`transition-all ${level.completed ? 'bg-green-50/50 border-green-200' : ''}`}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
-                        Level {level.level}
-                      </span>
-                      <Badge variant="outline" className={getDifficultyColor(level.difficulty)}>
-                        {level.difficulty}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        {getTypeIcon(level.type)}
-                        <span className="text-xs">{level.type}</span>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="play">Play</TabsTrigger>
+            <TabsTrigger value="all-levels">All Levels (100)</TabsTrigger>
+          </TabsList>
+
+          {/* Play Tab - Current Level */}
+          <TabsContent value="play" className="mt-0">
+            {currentLevel && (
+              <Card className="rounded-2xl shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-xl font-semibold text-foreground">
+                          Level {currentLevel.level}: {currentLevel.title}
+                        </h3>
+                        <Badge className={`text-xs rounded-full ${getTypeColor(currentLevel.type)}`}>
+                          {currentLevel.type}
+                        </Badge>
                       </div>
                     </div>
-                    <h3 className="font-semibold text-foreground mb-1 truncate">
-                      {level.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                      {level.description}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>Distance: {level.distance}</span>
-                      <span>Target: {level.target}</span>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Distance</p>
+                      <p className="font-semibold text-foreground">{currentLevel.distance}</p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-center gap-2">
-                    {level.completed ? (
-                      <CheckCircle className="text-green-600" size={24} />
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleCompleteLevel(level.id)}
-                        className="text-xs"
-                      >
-                        Complete
-                      </Button>
-                    )}
+
+                  <p className="text-muted-foreground mb-4">{currentLevel.description}</p>
+
+                  <div className="flex items-center gap-2 mb-6">
+                    <Target size={16} className="text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Target: {currentLevel.target}</span>
+                    <Badge variant="outline" className={getDifficultyColor(currentLevel.difficulty)}>
+                      {currentLevel.difficulty}
+                    </Badge>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+
+                  <Button
+                    onClick={() => handleCompleteLevel(currentLevel.id)}
+                    className="w-full rounded-2xl bg-foreground text-background hover:bg-foreground/90"
+                    size="lg"
+                  >
+                    Start Level
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* All Levels Tab */}
+          <TabsContent value="all-levels" className="mt-0">
+            <div className="space-y-3">
+              {levels.map((level) => (
+                <Card 
+                  key={level.id} 
+                  className={`rounded-2xl transition-all ${
+                    level.completed ? 'bg-muted/50 opacity-75' : 'shadow-sm hover:shadow-md'
+                  }`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground">
+                            Level {level.level}: {level.title}
+                          </h4>
+                          <Badge className={`text-xs rounded-full ${getTypeColor(level.type)}`}>
+                            {level.type}
+                          </Badge>
+                          {level.completed && (
+                            <CheckCircle size={16} className="text-primary" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{level.description}</p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Target size={12} />
+                            <span>Target: {level.target}</span>
+                          </div>
+                          <Badge variant="outline" className={`${getDifficultyColor(level.difficulty)} text-xs`}>
+                            {level.difficulty}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-sm font-semibold text-foreground mb-2">{level.distance}</p>
+                        {level.completed ? (
+                          <Badge variant="outline" className="text-xs">
+                            Completed
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleCompleteLevel(level.id)}
+                            className="rounded-2xl"
+                          >
+                            Start
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
