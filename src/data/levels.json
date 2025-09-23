@@ -1,0 +1,902 @@
+[
+  {
+    "Level": 1,
+    "Title": "First Tap-In",
+    "Description": "Make 1 putt from 0.3 meters",
+    "Distance": "0.3m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 2,
+    "Title": "Short Tap-Ins",
+    "Description": "Make 1 putts from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 3,
+    "Title": "Consecutive Tap-Ins",
+    "Description": "Make 2 consecutive putts from 0.3 meters",
+    "Distance": "0.3m",
+    "Target": "2 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 4,
+    "Title": "Comfort at 0.5m",
+    "Description": "Make 2 putts from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 5,
+    "Title": "Gentle Pace 1m",
+    "Description": "Stop 1 putt within 1m of the hole from 1 meter",
+    "Distance": "1m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 6,
+    "Title": "First Chip 8m",
+    "Description": "Chip 1 ball inside 6m from 8 meter (fairway)",
+    "Distance": "8m",
+    "Target": "1 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 7,
+    "Title": "One-Meter Make",
+    "Description": "Make 1 putt from 1 meter",
+    "Distance": "1m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 8,
+    "Title": "Two Tries at 0.5m",
+    "Description": "Make 2 putts from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 9,
+    "Title": "Soft Speed 1.5m",
+    "Description": "Stop 2 putts within 1m of hole from 1.5 meters",
+    "Distance": "1.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 10,
+    "Title": "Chip Contact 8m",
+    "Description": "Chip 2 balls inside 6m from 8 meters",
+    "Distance": "8m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 11,
+    "Title": "Read a Tiny Break",
+    "Description": "Make 1 putt with right to left break from 1 meter",
+    "Distance": "1m ",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 12,
+    "Title": "Build at 1m",
+    "Description": "Make 2 putts from 1 meters",
+    "Distance": "1m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 13,
+    "Title": "Speed Feel 2m",
+    "Description": "Stop 2 putts within 1m of hole from 2 meters",
+    "Distance": "2m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 14,
+    "Title": "Chip 7m Wide Target",
+    "Description": "Chip 2 inside 5m from 8 meters (Fairway)",
+    "Distance": "8m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 15,
+    "Title": "1m Side By Side",
+    "Description": "Make 2 putts from different sides of the hole from 1 meter",
+    "Distance": "1m ",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 16,
+    "Title": "Make at 1.5m",
+    "Description": "Make 2 putts from 1.5 meters",
+    "Distance": "1.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 17,
+    "Title": "Speed 2m Safer",
+    "Description": "Stop 3 putts within 1m from 2 meters",
+    "Distance": "2m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 18,
+    "Title": "Chip 8m Large",
+    "Description": "Chip 1 inside 5m from 8 meters (Rough) ",
+    "Distance": "8m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 19,
+    "Title": "2 Consecutive one meter",
+    "Description": "Make 2 consecutive putts from 1 meters",
+    "Distance": "2m",
+    "Target": "2 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 20,
+    "Title": "Simple Break 1.5m",
+    "Description": "Make 1 putt with left to right break from 1 meter",
+    "Distance": "1m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 21,
+    "Title": "Build 2m Make",
+    "Description": "Make 1 putt from 2 meters",
+    "Distance": "2m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 22,
+    "Title": "Two Makes 2m",
+    "Description": "Make 2 putts from 2 meters",
+    "Distance": "2m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 23,
+    "Title": "Speed 2.5m Soft",
+    "Description": "Stop 2 putts within 1m from 2.5 meters",
+    "Distance": "2.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 24,
+    "Title": "Chip 10m Large",
+    "Description": "Chip 2 inside 5m from 10 meters (Fairway)",
+    "Distance": "10m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 25,
+    "Title": "Circle 1.5–2m",
+    "Description": "Make 3 putts around hole from 1 meter",
+    "Distance": "1m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 26,
+    "Title": "Consecutive Half Meters",
+    "Description": "Make 3 consecutive putts from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 27,
+    "Title": "Speed 3m Intro",
+    "Description": "Stop 2 putts within 1m from 3m",
+    "Distance": "3m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 28,
+    "Title": "Chip 12m Large",
+    "Description": "Chip 2 inside 6m from 12 meters (Fairway) ",
+    "Distance": "12m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 29,
+    "Title": "Make 2 at 2.5m",
+    "Description": "Make 2 putts from 2.5 meters",
+    "Distance": "2.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 30,
+    "Title": "Easy Break 2m",
+    "Description": "Make 1 putt with right to left break from 2 meters",
+    "Distance": "2m ",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 31,
+    "Title": "Speed Ladder Short",
+    "Description": "Stop 1 putt, 1m past the hole from each: 1.5m, 2m, 2.5m",
+    "Distance": "1.5m, 2m, 2.5m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 32,
+    "Title": "Chip 8m Medium",
+    "Description": "Chip 3 inside 5m from 8 meters (Fairway) ",
+    "Distance": "8m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 33,
+    "Title": "Short makers",
+    "Description": "Make 1 putt from 0.5m, 1m, 1.5 meter",
+    "Distance": "0.5m, 1m, 1.5m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 34,
+    "Title": "Make 3 at 2m",
+    "Description": "Make 3 putts from 2 meters",
+    "Distance": "2m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 35,
+    "Title": "Speed 3m Safer",
+    "Description": "Stop 3 putts within 1m from 3 meter",
+    "Distance": "3m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 36,
+    "Title": "Chip 10m Medium",
+    "Description": "Chip 3 inside 5m from 10m (Fairway) ",
+    "Distance": "10m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 37,
+    "Title": "Short Mix Makes",
+    "Description": "Make 1 putt from each: 1m,1.5m,2m",
+    "Distance": "1m, 1.5m, 2m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 38,
+    "Title": "Rough chip",
+    "Description": "Chip 2 inside 5m from 8 meters (Rough) ",
+    "Distance": "8m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 39,
+    "Title": "Speed 2–3m Mix",
+    "Description": "Stop 3 putts within 1m from 2m, 2.5m, 3m",
+    "Distance": "2m, 2.5m, 3m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 40,
+    "Title": "Chip 8–12m Mix",
+    "Description": "Chip 3 inside 5m from 8m, 10m, 12m (Fairway)",
+    "Distance": "10m",
+    "Target": "10 attempts",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 41,
+    "Title": "Make 2 at 3m",
+    "Description": "Make 2 putts from 3 meters",
+    "Distance": "3m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 42,
+    "Title": "Speed 3.5m Intro",
+    "Description": "Stop 2 putts within 1 m from 3.5 meters",
+    "Distance": "3.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 43,
+    "Title": "Chip 12m Medium",
+    "Description": "Chip 3 inside 5m from 12m (Fairway)",
+    "Distance": "12m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 44,
+    "Title": "Short Rough Chips",
+    "Description": "Hit 2 chip shots inside 5 m from 12 meters (Rough)",
+    "Distance": "12m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 45,
+    "Title": "Simple Break 2.5m",
+    "Description": "Make 1 putt with left to right break from 2.5 meters",
+    "Distance": "2.5m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 46,
+    "Title": "Make 3 at 2.5m",
+    "Description": "Make 3 putts from 2.5 meters",
+    "Distance": "2.5m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 47,
+    "Title": "Speed 4m Intro",
+    "Description": "Stop 2 putts within 1m from 4 meters",
+    "Distance": "4m ",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 48,
+    "Title": "Chip 15m Large",
+    "Description": "Chip 1 inside 6m from 15m (Fairway)",
+    "Distance": "15m",
+    "Target": "1 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 49,
+    "Title": "Short Circle 2m",
+    "Description": "Make 4 putts around hole at 1 meters",
+    "Distance": "1m",
+    "Target": "4 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 50,
+    "Title": "Speed 3m Repeat",
+    "Description": "Stop 4 putts within 1m from 3 meters",
+    "Distance": "3m",
+    "Target": "4 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 51,
+    "Title": "Make 1 at 3.5m",
+    "Description": "Make 1 putt from 3.5 meters",
+    "Distance": "3.5m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 52,
+    "Title": "Chip 10m Targets",
+    "Description": "Chip 3 balls to a 5m circle from 10 meters (Fairway)",
+    "Distance": "10m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 53,
+    "Title": "Start Line 3.5m",
+    "Description": "Chip 1 inside 3m from 10 meters (Rough)",
+    "Distance": "10m",
+    "Target": "1 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 54,
+    "Title": "Speed 2–4m Mix",
+    "Description": "Stop 4 putts within 1m from 2m, 3m, 3.5m, 4 meters",
+    "Distance": "2m, 3m, 3.5m, 4m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 55,
+    "Title": "Make 2 at 3.5m",
+    "Description": "Make 2 putts from 3.5m",
+    "Distance": "3.5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 56,
+    "Title": "Chip 18m Large",
+    "Description": "Chip 1 inside 6m from 18 meters (Fairway)",
+    "Distance": "18m",
+    "Target": "1 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 57,
+    "Title": "Green Read 3m",
+    "Description": "Make 1 putt from 3 meters with left to right break",
+    "Distance": "3m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 58,
+    "Title": "Speed 4m Repeat",
+    "Description": "Stop 3 putts within 1m from 4 meters",
+    "Distance": "4m ",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 59,
+    "Title": "2m Side By Side",
+    "Description": "Make 2 putts from opposite sides of the hole from 2 meters",
+    "Distance": "2m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 60,
+    "Title": "Make 3 at 3m",
+    "Description": "Make 3 putts from 3m",
+    "Distance": "3m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 61,
+    "Title": "Chip 15m Large",
+    "Description": "Chip 2 inside 6m from 15 meters (Fairway)",
+    "Distance": "15m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 62,
+    "Title": "Speed Ladder 3–5m",
+    "Description": "Stop 1 putt 1m past the hole from 3m, 4m, 5 meters",
+    "Distance": "3m, 4m, 5m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 63,
+    "Title": "Rough 15m",
+    "Description": "Chip 1 inside 5m from 15 meters (Rough) ",
+    "Distance": "15m",
+    "Target": "1 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 64,
+    "Title": "Consistent speed 3m",
+    "Description": "Stop 3 consecutive putts within 1m of the hole from 3 meters",
+    "Distance": "3m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 65,
+    "Title": "Chip 9-15m Mix",
+    "Description": "Chip 3 inside 6 meters from 9m, 12m, 15 meters (Fairway)",
+    "Distance": "9m, 12m, 15m",
+    "Target": "10 attempts",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 66,
+    "Title": "Speed 5m Intro",
+    "Description": "Stop 2 putts within 1m from 5m",
+    "Distance": "5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 67,
+    "Title": "Make 1 at 4m",
+    "Description": "Make 1 putt from 4 meters",
+    "Distance": "4m ",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 68,
+    "Title": "Start Line 5m Intro",
+    "Description": "Hit 2 consecutive chips inside 5m from 10 meters (Fairway) ",
+    "Distance": "10m",
+    "Target": "2 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 69,
+    "Title": "Chip 22m Medium",
+    "Description": "Chip 1 inside 5m from 22 meters (Fairway)",
+    "Distance": "22m",
+    "Target": "10 attempts",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 70,
+    "Title": "Speed 4–5m Mix",
+    "Description": "Stop 3 putts within 1m from 4m, 4.5m, 5 meters",
+    "Distance": "4m, 4.5m, 5m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 71,
+    "Title": "Make 3 at 3.5–4m",
+    "Description": "Make 3 putts consecutive from 1 meter",
+    "Distance": "1m ",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 72,
+    "Title": "Chip 25m Large",
+    "Description": "Chip 2 consecutive shots inside 5m from 10 meters (Rough)",
+    "Distance": "10m",
+    "Target": "2 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 73,
+    "Title": "Speed 6m Intro",
+    "Description": "Stop 2 putts within 1m from 6m",
+    "Distance": "6m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 74,
+    "Title": "Make 5 at 1m",
+    "Description": "Make 5 putts from 1 meter",
+    "Distance": "1m",
+    "Target": "5 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 75,
+    "Title": "Make 1 at 5m",
+    "Description": "Make 1 putt from 5m",
+    "Distance": "5m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 76,
+    "Title": "Chip 3 inside 3m",
+    "Description": "Chip 3 inside 4m from 10 meters (Fairway) ",
+    "Distance": "10m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 77,
+    "Title": "Speed 5–6m",
+    "Description": "Stop 3 putts within 1m from 5m, 5.5m, 6 meters",
+    "Distance": "5m, 5.5m, 6m",
+    "Target": "10 attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 78,
+    "Title": "Make 3 From 2m",
+    "Description": "Make 3 putts from 2 meters",
+    "Distance": "2m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 79,
+    "Title": "5 In a Row 0.5m",
+    "Description": "Make 5 consecutive putts from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 80,
+    "Title": "Chip 30m Medium",
+    "Description": "Chip 1 inside 6m from 30 meters (Fairway)",
+    "Distance": "30m",
+    "Target": "1 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 81,
+    "Title": "Speed 6m Repeat",
+    "Description": "Stop 3 putts within 1m past the hole from 6m",
+    "Distance": "6m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 82,
+    "Title": "Speed 5m",
+    "Description": "Stop 1 putt within 0.5m past the hole from 5 meters",
+    "Distance": "5m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 83,
+    "Title": "Chip 15m Rough Hard",
+    "Description": "Chip 2 inside 5m from 15 meters (Rough)",
+    "Distance": "15m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 84,
+    "Title": "Speed 3m Hard",
+    "Description": "Stop 3 balls within 0.5m past the hole from 3 meters",
+    "Distance": "3m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 85,
+    "Title": "Speed Ladder 5–7m",
+    "Description": "Stop 1 putt 1m past the hole from 5m,6m,7m",
+    "Distance": "5m, 6m, 7m",
+    "Target": "10 Attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 86,
+    "Title": "Make 5 at 1.5m",
+    "Description": "Make 5 putts from 1.5 meters ",
+    "Distance": "1.5m",
+    "Target": "5 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 87,
+    "Title": "Chip 25m Hard",
+    "Description": "Chip 3 inside 6m from 25 meters (Fairway)",
+    "Distance": "25m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 88,
+    "Title": "Make 1 at 6m",
+    "Description": "Make 1 putt from 6 meters",
+    "Distance": "6m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 89,
+    "Title": "Speed 7–8m Intro",
+    "Description": "Stop 2 putts within 2m from 7m and 8 meters",
+    "Distance": "7m, 8m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 90,
+    "Title": "5 around the hole 0.5m",
+    "Description": "Make 5 putts around the hole from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 91,
+    "Title": "2 Putts from 10m",
+    "Description": "Get the ball in the hole from 10 meter with maximum 2 putts",
+    "Distance": "10m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 92,
+    "Title": "5 In a Row 1m",
+    "Description": "Make 5 consecutive putts from 1 meter",
+    "Distance": "1m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 93,
+    "Title": "Speed 8–9m",
+    "Description": "Stop 2 putts within 2m from 8m and 9 meters",
+    "Distance": "8m, 9m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 94,
+    "Title": "Chip 30 m",
+    "Description": "Chip 1 inside 5 meters from 30 meters (Fairway)",
+    "Distance": "30m",
+    "Target": "1 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 95,
+    "Title": "Speed 9–10m",
+    "Description": "Stop 2 putts within 2m from 9m and 10 meters",
+    "Distance": "9m, 10m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 96,
+    "Title": "Make 1 at 7m",
+    "Description": "Make 1 putt from 7 meters",
+    "Distance": "7m",
+    "Target": "1 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 97,
+    "Title": "Make 6 at 1m",
+    "Description": "Make 6 putts from 1 meter",
+    "Distance": "1m",
+    "Target": "6 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 98,
+    "Title": "Speed Ladder 6–8m",
+    "Description": "Stop 1 putt within 1m past the hole from 6m, 7m, 8 meters",
+    "Distance": "6m, 7m, 8m",
+    "Target": "10 Attempts",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 99,
+    "Title": "Finish Strong Putts",
+    "Description": "Make 3 putts from 3 meters",
+    "Distance": "3m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Beginner"
+  },
+  {
+    "Level": 100,
+    "Title": "Beginner Finale",
+    "Description": "Chip 5 within 5m to the hole from 12 meters (Fairway)",
+    "Distance": "12m",
+    "Target": "5 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Beginner"
+  }
+]
