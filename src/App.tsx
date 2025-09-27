@@ -5,8 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
-import Home from "./pages/Home";
 import DrillsCategories from "./pages/DrillsCategories";
+import ShortGameDrills from "./pages/ShortGameDrills";
 import PuttingDrills from "./pages/PuttingDrills";
 import DrillDetail from "./pages/DrillDetail";
 import AggressivePuttingDrill from "./pages/AggressivePuttingDrill";
@@ -30,9 +30,10 @@ const App = () => (
       <BrowserRouter>
         <div className="relative">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<DrillsCategories />} />
             <Route path="/drills" element={<DrillsCategories />} />
             <Route path="/drills/putting" element={<PuttingDrills />} />
+            <Route path="/drills/shortgame" element={<ShortGameDrills />} />
             <Route path="/drill/pga-tour-18" element={<DrillDetail />} />
             <Route path="/drill/aggressive-putting" element={<AggressivePuttingDrill />} />
             <Route path="/levels" element={<LevelSelection />} />

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const categories = [
   { id: 'putting', name: 'Putting', icon: Target, enabled: true, description: 'Precision on the green' },
-  { id: 'chipping', name: 'Chipping', icon: Zap, enabled: false, description: 'Short game around the green' },
+  { id: 'shortgame', name: 'Short Game', icon: Zap, enabled: true, description: 'Chipping, pitching, and bunker shots' },
   { id: 'wedges', name: 'Wedges', icon: Hammer, enabled: false, description: 'Sand and lob shots' },
   { id: 'irons', name: 'Irons', icon: Activity, enabled: false, description: 'Mid-range accuracy' },
   { id: 'driver', name: 'Driver', icon: Car, enabled: false, description: 'Long distance power' },
