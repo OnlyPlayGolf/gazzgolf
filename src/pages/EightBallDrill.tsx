@@ -232,10 +232,8 @@ const EightBallDrill = () => {
 
           <TabsContent value="leaderboard" className="mt-4">
             <DrillLeaderboard
+              drillId="8-ball-drill"
               drillName="8-Ball Drill"
-              friendsLeaderboard={mockLeaderboard.slice(0, 3)}
-              groupLeaderboard={mockLeaderboard.slice(0, 3)}
-              groupName="Golf Buddies"
             />
           </TabsContent>
         </Tabs>

@@ -273,14 +273,10 @@ const AggressivePuttingDrill = () => {
           </Card>
 
           {/* Leaderboards */}
-          {leaderboardData && (
-            <DrillLeaderboard
-              drillName="Aggressive Putting"
-              friendsLeaderboard={leaderboardData.friends}
-              groupLeaderboard={leaderboardData.group || []}
-              groupName={leaderboardData.groupName}
-            />
-          )}
+          <DrillLeaderboard
+            drillId="aggressive-putting"
+            drillName="Aggressive Putting"
+          />
         </div>
       </div>
     </div>
