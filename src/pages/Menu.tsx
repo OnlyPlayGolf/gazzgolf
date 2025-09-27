@@ -8,7 +8,7 @@ const Menu = () => {
   
   const menuItems = [
     { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
-    { id: 'profile', label: 'Profile', icon: User, available: false },
+    { id: 'profile', label: 'Profile', icon: User, available: true, path: '/profile' },
     { id: 'settings', label: 'Settings', icon: Settings, available: false },
     { id: 'about', label: 'About', icon: Info, available: false },
   ];

@@ -4,332 +4,542 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Trophy, Settings, Crown, Star } from "lucide-react";
-import { APP_NAME, STORAGE_KEYS } from "@/constants/app";
-import { getStorageItem, setStorageItem, migrateStorageKeys } from "@/utils/storageManager";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Users, Trophy, Settings, Crown, Star, Plus, Search, UserPlus, Check, X, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-interface Score {
-  name: string;
-  score: number;
-  timestamp: number;
+interface Friend {
+  id: string;
+  display_name: string | null;
+  username: string | null;
+  status: 'accepted' | 'pending' | 'blocked';
+  is_requester: boolean;
 }
 
 interface Group {
   id: string;
   name: string;
-  members: string[];
+  owner_id: string;
+  role: 'owner' | 'admin' | 'member';
+  member_count: number;
+}
+
+interface DrillResult {
+  id: string;
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+  total_points: number;
 }
 
 const Profile = () => {
-  const [displayName, setDisplayName] = useState<string>("");
-  const [friends, setFriends] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [scores, setScores] = useState<Score[]>([]);
   const [favoriteGroupId, setFavoriteGroupId] = useState<string | null>(null);
+  const [friendRequests, setFriendRequests] = useState<Friend[]>([]);
+  
+  // Dialog states
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [friendSearch, setFriendSearch] = useState("");
+  const [groupName, setGroupName] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Migrate storage keys on first load
-    migrateStorageKeys();
-    
-    // Load data from storage
-    setDisplayName(getStorageItem(STORAGE_KEYS.DISPLAY_NAME, ""));
-    setFriends(getStorageItem(STORAGE_KEYS.FRIENDS, []));
-    setGroups(getStorageItem(STORAGE_KEYS.GROUPS, []));
-    setScores(getStorageItem(STORAGE_KEYS.PGA18_SCORES, []));
-    setFavoriteGroupId(getStorageItem(STORAGE_KEYS.CURRENT_GROUP_ID, null));
-  }, []);
-
-  const handleSetDisplayName = () => {
-    const name = prompt("Enter your display name:");
-    if (name && name.trim()) {
-      const trimmedName = name.trim();
-      setDisplayName(trimmedName);
-      setStorageItem(STORAGE_KEYS.DISPLAY_NAME, trimmedName);
-    }
-  };
-
-  const getBestScore = () => {
-    if (!displayName || scores.length === 0) return null;
-    
-    const userScores = scores.filter(score => score.name === displayName);
-    if (userScores.length === 0) return null;
-    
-    // Find lowest score, then earliest timestamp if tied
-    const bestScore = userScores.reduce((best, current) => {
-      if (current.score < best.score) return current;
-      if (current.score === best.score && current.timestamp < best.timestamp) return current;
-      return best;
-    });
-    
-    return bestScore;
-  };
-
-  const handleSetFavoriteGroup = (groupId: string | null) => {
-    setFavoriteGroupId(groupId);
-    if (groupId) {
-      setStorageItem(STORAGE_KEYS.CURRENT_GROUP_ID, groupId);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_GROUP_ID);
-    }
-  };
-
-  const getFriendsLeaderboard = () => {
-    // Mock leaderboard data - in production this would come from Supabase
-    return scores
-      .reduce((acc: Score[], score) => {
-        const existing = acc.find(s => s.name === score.name);
-        if (!existing || score.score < existing.score || 
-           (score.score === existing.score && score.timestamp < existing.timestamp)) {
-          return [...acc.filter(s => s.name !== score.name), score];
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (!session?.user) {
+          navigate('/auth');
         }
-        return acc;
-      }, [])
-      .sort((a, b) => a.score - b.score)
-      .slice(0, 10);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (!session?.user) {
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+
+    try {
+      // Load user profile
+      const { data: profileData } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      setProfile(profileData);
+
+      // Load friends - simplified for now
+      const { data: friendsData } = await (supabase as any)
+        .from('friendships')
+        .select(`
+          id,
+          requester,
+          addressee,
+          status,
+          profiles!friendships_addressee_fkey(display_name, username),
+          profiles!friendships_requester_fkey(display_name, username)
+        `)
+        .or(`requester.eq.${user.id},addressee.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      const friendsList = friendsData?.map((f: any) => ({
+        id: f.id,
+        display_name: f.requester === user.id ? f.profiles?.display_name : f.profiles?.display_name,
+        username: f.requester === user.id ? f.profiles?.username : f.profiles?.username,
+        status: f.status,
+        is_requester: f.requester === user.id
+      })) || [];
+
+      setFriends(friendsList);
+
+      // Load friend requests
+      const { data: requestsData } = await (supabase as any)
+        .from('friendships')
+        .select(`
+          id,
+          requester,
+          addressee,
+          status,
+          profiles!friendships_requester_fkey(display_name, username)
+        `)
+        .eq('addressee', user.id)
+        .eq('status', 'pending');
+
+      const requestsList = requestsData?.map((r: any) => ({
+        id: r.id,
+        display_name: r.profiles?.display_name,
+        username: r.profiles?.username,
+        status: r.status,
+        is_requester: false
+      })) || [];
+
+      setFriendRequests(requestsList);
+
+      // Load groups
+      const { data: groupsData } = await (supabase as any)
+        .from('group_members')
+        .select(`
+          groups(id, name, owner_id),
+          role
+        `)
+        .eq('user_id', user.id);
+
+      const groupsList = groupsData?.map((g: any) => ({
+        id: g.groups.id,
+        name: g.groups.name,
+        owner_id: g.groups.owner_id,
+        role: g.role,
+        member_count: 0 // We could do a separate query for this if needed
+      })) || [];
+
+      setGroups(groupsList);
+
+      // Load favorite group
+      const { data: settingsData } = await (supabase as any)
+        .from('user_settings')
+        .select('favourite_group_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (settingsData?.favourite_group_id) {
+        setFavoriteGroupId(settingsData.favourite_group_id);
+      }
+
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
   };
 
-  const getGroupLeaderboard = () => {
-    // Mock group leaderboard - same as friends for demo
-    return getFriendsLeaderboard().slice(0, 10);
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
   };
 
-  const bestScore = getBestScore();
-  const favoriteGroup = groups.find(g => g.id === favoriteGroupId);
+  const handleUpdateProfile = async (field: string, value: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('profiles')
+        .update({ [field]: value })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      setProfile((prev: any) => ({ ...prev, [field]: value }));
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendFriendRequest = async () => {
+    if (!user || !friendSearch.trim()) return;
+
+    setLoading(true);
+    try {
+      // Find user by username
+      const { data: targetUser } = await (supabase as any)
+        .from('profiles')
+        .select('id')
+        .eq('username', friendSearch.trim())
+        .single();
+
+      if (!targetUser) {
+        toast({
+          title: "User not found",
+          description: "No user found with that username.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Send friend request
+      const { error } = await (supabase as any)
+        .from('friendships')
+        .insert({
+          requester: user.id,
+          addressee: targetUser.id,
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Friend request sent",
+        description: `Friend request sent to ${friendSearch}`,
+      });
+
+      setFriendSearch("");
+      setIsAddFriendOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send friend request.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFriendRequestResponse = async (requestId: string, accept: boolean) => {
+    try {
+      if (accept) {
+        const { error } = await (supabase as any)
+          .from('friendships')
+          .update({ status: 'accepted' })
+          .eq('id', requestId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Friend request accepted",
+          description: "You are now friends!",
+        });
+      } else {
+        const { error } = await (supabase as any)
+          .from('friendships')
+          .delete()
+          .eq('id', requestId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Friend request declined",
+          description: "Friend request has been declined.",
+        });
+      }
+
+      loadUserData(); // Refresh data
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to respond to friend request.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!user || !groupName.trim()) return;
+
+    setLoading(true);
+    try {
+      // Create group
+      const { data: groupData, error: groupError } = await (supabase as any)
+        .from('groups')
+        .insert({
+          name: groupName.trim(),
+          owner_id: user.id
+        })
+        .select()
+        .single();
+
+      if (groupError) throw groupError;
+
+      // Add creator as owner
+      const { error: memberError } = await (supabase as any)
+        .from('group_members')
+        .insert({
+          group_id: groupData.id,
+          user_id: user.id,
+          role: 'owner'
+        });
+
+      if (memberError) throw memberError;
+
+      toast({
+        title: "Group created",
+        description: `Group "${groupName}" has been created successfully.`,
+      });
+
+      setGroupName("");
+      setIsCreateGroupOpen(false);
+      loadUserData(); // Refresh data
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create group.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetFavoriteGroup = async (groupId: string | null) => {
+    if (!user) return;
+
+    try {
+      const { error } = await (supabase as any)
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          favourite_group_id: groupId
+        });
+
+      if (error) throw error;
+
+      setFavoriteGroupId(groupId);
+      toast({
+        title: groupId ? "Favorite group set" : "Favorite group removed",
+        description: groupId ? "This group will appear in drill leaderboards." : "No favorite group set.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update favorite group.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!user) {
+    return null; // Will redirect to auth
+  }
 
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold text-foreground">Profile</h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSignOut}
+            className="text-destructive hover:text-destructive"
+          >
+            <LogOut size={16} className="mr-2" />
+            Sign Out
+          </Button>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="friends">Friends</TabsTrigger>
+            <TabsTrigger value="groups">Groups</TabsTrigger>
             <TabsTrigger value="leaderboards">Leaderboards</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile" className="space-y-6 mt-6">
-          {/* User Profile Header */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                    {displayName ? displayName.charAt(0).toUpperCase() : "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  {displayName ? (
-                    <div>
-                      <h2 className="text-lg font-semibold text-foreground">{displayName}</h2>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleSetDisplayName}
-                        className="text-muted-foreground hover:text-foreground p-0 h-auto"
-                      >
-                        Change name
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={handleSetDisplayName}
-                      variant="outline"
-                      className="text-sm"
-                    >
-                      Set display name
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* My Friends */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-primary flex items-center gap-2">
-                <Users size={20} />
-                My Friends
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {friends.length > 0 ? (
-                <div className="space-y-2">
-                  {friends.map((friend, index) => (
-                    <div key={index} className="flex items-center gap-3 p-2 rounded-md bg-secondary/50">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-muted text-muted-foreground text-sm">
-                          {friend.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-foreground">{friend}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">No friends added yet</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* My Groups */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-primary flex items-center gap-2">
-                <Settings size={20} />
-                My Groups
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {groups.length > 0 ? (
-                <div className="space-y-2">
-                  {groups.map((group) => (
-                    <div key={group.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-foreground">{group.name}</h4>
-                            {favoriteGroupId === group.id && (
-                              <Star size={16} className="text-yellow-500 fill-current" />
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {group.members.length} member{group.members.length !== 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSetFavoriteGroup(favoriteGroupId === group.id ? null : group.id)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        {favoriteGroupId === group.id ? 'Unfavorite' : 'Set Favorite'}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">No groups joined yet</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* My Best Scores */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-primary flex items-center gap-2">
-                <Trophy size={20} />
-                My Best Scores
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
-                  <div>
-                    <h4 className="font-medium text-foreground">PGA Tour 18 Holes</h4>
-                    <p className="text-sm text-muted-foreground">Putting • Mixed distances</p>
-                  </div>
-                  <div className="text-right">
-                    {bestScore ? (
-                      <div>
-                        <p className="font-semibold text-foreground">{bestScore.score}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(bestScore.timestamp).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No score yet</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          </TabsContent>
-          
-          <TabsContent value="leaderboards" className="space-y-6 mt-6">
-            {/* Friends Leaderboard */}
+            {/* User Profile Header */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary">
-                  <Users size={20} />
-                  Friends Leaderboard
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {friends.length > 0 ? (
-                  <div className="space-y-3">
-                    {getFriendsLeaderboard().map((score, index) => (
-                      <div key={`${score.name}_${score.timestamp}`} className="flex items-center justify-between p-3 rounded-md bg-secondary/30">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20">
-                            {index < 3 ? (
-                              index === 0 ? <Crown size={16} className="text-yellow-500" /> :
-                              <Trophy size={16} className={index === 1 ? "text-gray-400" : "text-orange-500"} />
-                            ) : (
-                              <span className="text-sm font-bold text-muted-foreground">{index + 1}</span>
-                            )}
-                          </div>
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className={index < 3 ? 'bg-primary/20 text-primary' : 'bg-muted'}>
-                              {score.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-foreground">{score.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(score.timestamp).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{score.score}</Badge>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                      {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() : 
+                       profile?.email ? profile.email.charAt(0).toUpperCase() : "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="space-y-2">
+                      <div>
+                        <Label htmlFor="display-name">Display Name</Label>
+                        <Input
+                          id="display-name"
+                          value={profile?.display_name || ""}
+                          onChange={(e) => handleUpdateProfile('display_name', e.target.value)}
+                          placeholder="Enter your display name"
+                          className="mt-1"
+                        />
                       </div>
-                    ))}
+                      <div>
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                          id="username"
+                          value={profile?.username || ""}
+                          onChange={(e) => handleUpdateProfile('username', e.target.value)}
+                          placeholder="Enter your username"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">No friends added yet</p>
-                )}
+                </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Group Leaderboard */}
-            {favoriteGroup && (
+          <TabsContent value="friends" className="space-y-6 mt-6">
+            {/* Add Friend */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-primary flex items-center gap-2">
+                    <UserPlus size={20} />
+                    Add Friends
+                  </CardTitle>
+                  <Dialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus size={16} className="mr-2" />
+                        Add Friend
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Friend</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="friend-search">Username</Label>
+                          <Input
+                            id="friend-search"
+                            value={friendSearch}
+                            onChange={(e) => setFriendSearch(e.target.value)}
+                            placeholder="Enter username"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleSendFriendRequest}
+                            disabled={loading || !friendSearch.trim()}
+                            className="flex-1"
+                          >
+                            {loading ? "Sending..." : "Send Request"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsAddFriendOpen(false);
+                              setFriendSearch("");
+                            }}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* Friend Requests */}
+            {friendRequests.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-primary">
-                    <Trophy size={20} />
-                    {favoriteGroup.name} Leaderboard
+                  <CardTitle className="text-primary flex items-center gap-2">
+                    <Users size={20} />
+                    Friend Requests
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {getGroupLeaderboard().map((score, index) => (
-                      <div key={`${score.name}_${score.timestamp}`} className="flex items-center justify-between p-3 rounded-md bg-secondary/30">
+                    {friendRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20">
-                            {index < 3 ? (
-                              index === 0 ? <Crown size={16} className="text-yellow-500" /> :
-                              <Trophy size={16} className={index === 1 ? "text-gray-400" : "text-orange-500"} />
-                            ) : (
-                              <span className="text-sm font-bold text-muted-foreground">{index + 1}</span>
-                            )}
-                          </div>
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className={index < 3 ? 'bg-primary/20 text-primary' : 'bg-muted'}>
-                              {score.name.charAt(0).toUpperCase()}
+                            <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                              {(request.display_name || request.username || "?").charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-foreground">{score.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(score.timestamp).toLocaleDateString()}
+                            <p className="font-medium text-foreground">
+                              {request.display_name || request.username || "Unknown"}
                             </p>
+                            <p className="text-sm text-muted-foreground">@{request.username}</p>
                           </div>
                         </div>
-                        <Badge variant="outline">{score.score}</Badge>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleFriendRequestResponse(request.id, true)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Check size={16} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleFriendRequestResponse(request.id, false)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X size={16} />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -337,19 +547,153 @@ const Profile = () => {
               </Card>
             )}
 
-            {!favoriteGroup && groups.length > 0 && (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <Trophy size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <h3 className="font-semibold text-foreground mb-2">No Favorite Group</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Set a favorite group in the Profile tab to see group leaderboards
-                    </p>
+            {/* My Friends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary flex items-center gap-2">
+                  <Users size={20} />
+                  My Friends ({friends.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {friends.length > 0 ? (
+                  <div className="space-y-2">
+                    {friends.map((friend) => (
+                      <div key={friend.id} className="flex items-center gap-3 p-2 rounded-md bg-secondary/50">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                            {(friend.display_name || friend.username || "?").charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {friend.display_name || friend.username || "Unknown"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">@{friend.username}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    No friends added yet. Send some friend requests to get started!
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="groups" className="space-y-6 mt-6">
+            {/* Create Group */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-primary flex items-center gap-2">
+                    <Settings size={20} />
+                    My Groups
+                  </CardTitle>
+                  <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus size={16} className="mr-2" />
+                        Create Group
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create Group</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="group-name">Group Name</Label>
+                          <Input
+                            id="group-name"
+                            value={groupName}
+                            onChange={(e) => setGroupName(e.target.value)}
+                            placeholder="Enter group name"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleCreateGroup}
+                            disabled={loading || !groupName.trim()}
+                            className="flex-1"
+                          >
+                            {loading ? "Creating..." : "Create Group"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsCreateGroupOpen(false);
+                              setGroupName("");
+                            }}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {groups.length > 0 ? (
+                  <div className="space-y-3">
+                    {groups.map((group) => (
+                      <div key={group.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium text-foreground">{group.name}</h4>
+                              {favoriteGroupId === group.id && (
+                                <Star size={16} className="text-yellow-500 fill-current" />
+                              )}
+                              <Badge variant="outline" className="text-xs">
+                                {group.role}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {group.member_count} members
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSetFavoriteGroup(favoriteGroupId === group.id ? null : group.id)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          {favoriteGroupId === group.id ? 'Unfavorite' : 'Set Favorite'}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    No groups yet. Create a group to get started!
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="leaderboards" className="space-y-6 mt-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <Trophy size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <h3 className="font-semibold text-foreground mb-2">Full Leaderboards</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Complete leaderboards are shown in individual drill pages. Visit any drill to see friends and group leaderboards!
+                  </p>
+                  <Button onClick={() => navigate('/drills')}>
+                    View Drills
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
