@@ -1,0 +1,219 @@
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Zap } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { getStorageItem, setStorageItem } from "@/utils/storageManager";
+import { STORAGE_KEYS } from "@/constants/app";
+
+interface EightBallComponentProps {
+  onTabChange: (tab: string) => void;
+}
+
+type ShotOutcome = 'holed' | '1m' | '2m' | '3m' | 'miss';
+
+interface StationAttempt {
+  stationIndex: number;
+  roundIndex: number;
+  outcome: ShotOutcome | null;
+  points: number;
+}
+
+const stations = [
+  'Chip 10m',
+  'Chip 30m', 
+  'Pitch 20m',
+  'Pitch 40m',
+  'Lob 15m',
+  'Lob 25m',
+  'Bunker 10m',
+  'Bunker 20m',
+];
+
+const outcomePoints = {
+  holed: 4,
+  '1m': 3,
+  '2m': 2, 
+  '3m': 1,
+  miss: 0,
+};
+
+const outcomeLabels = {
+  holed: 'Holed',
+  '1m': '≤1m',
+  '2m': '≤2m',
+  '3m': '≤3m',
+  miss: 'Miss',
+};
+
+const EightBallComponent = ({ onTabChange }: EightBallComponentProps) => {
+  const [attempts, setAttempts] = useState<StationAttempt[]>([]);
+  const { toast } = useToast();
+
+  // Initialize attempts array for 8 stations × 5 rounds = 40 attempts
+  const initializeAttempts = () => {
+    const newAttempts: StationAttempt[] = [];
+    for (let round = 0; round < 5; round++) {
+      for (let station = 0; station < 8; station++) {
+        newAttempts.push({
+          stationIndex: station,
+          roundIndex: round,
+          outcome: null,
+          points: 0,
+        });
+      }
+    }
+    setAttempts(newAttempts);
+    onTabChange('score');
+  };
+
+  const updateAttempt = (stationIndex: number, roundIndex: number, outcome: ShotOutcome) => {
+    setAttempts(prev => prev.map(attempt => {
+      if (attempt.stationIndex === stationIndex && attempt.roundIndex === roundIndex) {
+        return {
+          ...attempt,
+          outcome,
+          points: outcomePoints[outcome],
+        };
+      }
+      return attempt;
+    }));
+  };
+
+  const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
+  const completedAttempts = attempts.filter(a => a.outcome !== null).length;
+  const totalAttempts = 40; // 8 stations × 5 rounds
+
+  const saveScore = () => {
+    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, null) || "Anonymous";
+    
+    const scoreData = {
+      name: displayName,
+      score: totalPoints,
+      attempts: attempts.map(a => ({
+        station: stations[a.stationIndex],
+        round: a.roundIndex + 1,
+        outcome: a.outcome,
+        points: a.points,
+      })),
+      timestamp: Date.now(),
+    };
+    
+    // Save to localStorage (will be replaced with Supabase later)
+    const existingScores = getStorageItem('eightBallDrillScores', []);
+    existingScores.push(scoreData);
+    setStorageItem('eightBallDrillScores', existingScores);
+    
+    toast({
+      title: "Score Saved!",
+      description: `Your score of ${totalPoints} points has been recorded`,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Instructions Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="text-primary" size={20} />
+            Instructions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            Perform the circuit 5 times. Complete all 8 stations in each round for a total of 40 shots.
+          </p>
+          
+          <div>
+            <h4 className="font-medium mb-2">Stations (8):</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              {stations.map((station, index) => (
+                <li key={index}>• {station}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-medium mb-2">Scoring:</h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Holed: <span className="font-medium text-foreground">4 pts</span></li>
+              <li>• Within 1m: <span className="font-medium text-foreground">3 pts</span></li>
+              <li>• Within 2m: <span className="font-medium text-foreground">2 pts</span></li>
+              <li>• Within 3m: <span className="font-medium text-foreground">1 pt</span></li>
+              <li>• Miss: <span className="font-medium text-foreground">0 pts</span></li>
+            </ul>
+          </div>
+
+          {attempts.length === 0 && (
+            <Button 
+              onClick={initializeAttempts}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Start Drill
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Scoring Grid */}
+      {attempts.length > 0 && (
+        <>
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="text-lg font-bold">Total: {totalPoints} points</div>
+              <div className="text-sm text-muted-foreground">
+                {completedAttempts}/{totalAttempts} attempts completed
+              </div>
+            </div>
+            {completedAttempts === totalAttempts && (
+              <Button onClick={saveScore} className="bg-primary hover:bg-primary/90">
+                Save Score
+              </Button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {[0, 1, 2, 3, 4].map(roundIndex => (
+              <Card key={roundIndex}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Round {roundIndex + 1}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {stations.map((station, stationIndex) => {
+                      const attempt = attempts.find(a => 
+                        a.stationIndex === stationIndex && a.roundIndex === roundIndex
+                      );
+                      
+                      return (
+                        <div key={stationIndex} className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{station}</span>
+                          <div className="flex gap-1">
+                            {(Object.keys(outcomePoints) as ShotOutcome[]).map(outcome => (
+                              <Button
+                                key={outcome}
+                                variant={attempt?.outcome === outcome ? "default" : "outline"}
+                                size="sm"
+                                className="text-xs px-2 py-1 h-7"
+                                onClick={() => updateAttempt(stationIndex, roundIndex, outcome)}
+                              >
+                                {outcomeLabels[outcome]}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+export default EightBallComponent;

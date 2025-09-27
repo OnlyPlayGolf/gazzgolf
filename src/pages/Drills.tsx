@@ -96,12 +96,6 @@ const Drills = () => {
                     Start
                   </Button>
 
-                  <DrillLeaderboard
-                    drillName={drill.title}
-                    friendsLeaderboard={mockLeaderboard.slice(0, 3)}
-                    groupLeaderboard={mockLeaderboard.slice(0, 3)}
-                    groupName="Golf Buddies"
-                  />
                 </CardContent>
               </Card>
             );

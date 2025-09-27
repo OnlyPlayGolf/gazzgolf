@@ -1,119 +1,96 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft, Target, RotateCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Target, Zap } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DrillLeaderboard from "@/components/DrillLeaderboard";
-import { getLeaderboardData } from "@/utils/leaderboardService";
-import { APP_NAME, STORAGE_KEYS } from "@/constants/app";
-import { getStorageItem, setStorageItem, migrateStorageKeys } from "@/utils/storageManager";
 
-interface Score {
-  name: string;
-  score: number;
-  timestamp: number;
+// Import drill-specific components
+import PGATour18Component from "@/components/drills/PGATour18Component";
+import AggressivePuttingComponent from "@/components/drills/AggressivePuttingComponent";
+import EightBallComponent from "@/components/drills/EightBallComponent";
+
+interface Drill {
+  id: string;
+  title: string;
+  shortDescription: string;
+  longDescription: string;
+  category: string;
+  icon: any;
 }
+
+const drills: Record<string, Drill> = {
+  'pga-tour-18': {
+    id: 'pga-tour-18',
+    title: 'PGA Tour 18 Holes',
+    shortDescription: 'Practice putting from tournament-style distances across 18 holes for consistency under pressure.',
+    longDescription: 'This drill simulates the putting challenges you\'ll face on a PGA Tour course. Practice putting from varying distances across 18 holes, with each hole representing the average putting distance from that hole on tour. Focus on developing consistency under pressure and building confidence in your putting stroke.',
+    category: 'Putting',
+    icon: Target,
+  },
+  'aggressive-putting': {
+    id: 'aggressive-putting',
+    title: 'Aggressive Putting',
+    shortDescription: 'Putt from a fixed cycle of 4m, 5m, then 6m, repeating in that order to reach 15 points quickly.',
+    longDescription: 'This drill focuses on developing an aggressive putting mindset by cycling through increasing distances. Start with 4m putts, then 5m, then 6m, and repeat the cycle. Score points for holed putts and putts finishing within 1m. The goal is to reach 15 points as quickly as possible while maintaining accuracy.',
+    category: 'Putting', 
+    icon: Target,
+  },
+  '8-ball-drill': {
+    id: '8-ball-drill',
+    title: '8-Ball Drill',
+    shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',
+    longDescription: 'A comprehensive short game drill that tests your skills across 8 different stations covering chipping, pitching, lob shots, and bunker play. Complete all 8 stations in each of 5 rounds for a total of 40 shots. Score points based on proximity to the hole, with holed shots receiving maximum points.',
+    category: 'Short Game',
+    icon: Zap,
+  },
+};
 
 const DrillDetail = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [totalPutts, setTotalPutts] = useState("");
-  const [lastScore, setLastScore] = useState<number | null>(null);
-  const [leaderboardData, setLeaderboardData] = useState<any>(null);
+  const { drillId } = useParams<{ drillId: string }>();
+  const [drill, setDrill] = useState<Drill | null>(null);
+  const [currentTab, setCurrentTab] = useState('overview');
 
   useEffect(() => {
-    // Migrate storage keys on first load
-    migrateStorageKeys();
-    
-    // Load scores and find the latest for current user
-    const scores: Score[] = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
-    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, "User");
-    
-    const userScores = scores.filter(score => score.name === displayName);
-    if (userScores.length > 0) {
-      // Get the most recent score
-      const latestScore = userScores.reduce((latest, current) => 
-        current.timestamp > latest.timestamp ? current : latest
-      );
-      setLastScore(latestScore.score);
-    }
-
-    // Load leaderboard data
-    getLeaderboardData('pga18').then(setLeaderboardData);
-  }, []);
-
-  const handleSave = () => {
-    const putts = parseInt(totalPutts);
-    if (isNaN(putts) || putts < 0 || putts > 60) {
-      toast({
-        title: "Invalid input",
-        description: "Please enter a number between 0 and 60",
-        variant: "destructive",
-      });
+    if (!drillId || !drills[drillId]) {
+      navigate('/drills');
       return;
     }
+    setDrill(drills[drillId]);
+  }, [drillId, navigate]);
 
-    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, "User");
-    const scores: Score[] = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
-    
-    const newScore: Score = {
-      name: displayName,
-      score: putts,
-      timestamp: Date.now(),
-    };
-    
-    scores.push(newScore);
-    setStorageItem(STORAGE_KEYS.PGA18_SCORES, scores);
-    
-    setLastScore(putts);
-    setTotalPutts("");
-    
-    toast({
-      title: "Score saved",
-      description: `Total putts: ${putts}`,
-    });
+  const handleBackClick = () => {
+    // Always navigate to /drills, regardless of history
+    navigate('/drills', { replace: true });
   };
 
-  const handleReset = () => {
-    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, "User");
-    const scores: Score[] = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
-    
-    // Remove all scores for current user
-    const filteredScores = scores.filter(score => score.name !== displayName);
-    setStorageItem(STORAGE_KEYS.PGA18_SCORES, filteredScores);
-    
-    setLastScore(null);
-    setTotalPutts("");
-    
-    toast({
-      title: "Score reset",
-      description: "Saved score has been cleared",
-    });
-  };
+  if (!drill) {
+    return null;
+  }
 
-  const distances = [
-    { hole: 1, distance: "1.5 m" },
-    { hole: 2, distance: "12 m" },
-    { hole: 3, distance: "0.6 m" },
-    { hole: 4, distance: "4 m" },
-    { hole: 5, distance: "1.2 m" },
-    { hole: 6, distance: "16 m" },
-    { hole: 7, distance: "8 m" },
-    { hole: 8, distance: "3 m" },
-    { hole: 9, distance: "6 m" },
-    { hole: 10, distance: "9 m" },
-    { hole: 11, distance: "0.9 m" },
-    { hole: 12, distance: "7 m" },
-    { hole: 13, distance: "2.1 m" },
-    { hole: 14, distance: "3.5 m" },
-    { hole: 15, distance: "10 m" },
-    { hole: 16, distance: "1.8 m" },
-    { hole: 17, distance: "5 m" },
-    { hole: 18, distance: "2.4 m" },
+  const Icon = drill.icon;
+
+  // Mock leaderboard data
+  const mockLeaderboard = [
+    { id: '1', name: 'John D.', score: 85, timestamp: Date.now() - 86400000 },
+    { id: '2', name: 'Sarah M.', score: 92, timestamp: Date.now() - 172800000 },
+    { id: '3', name: 'Mike R.', score: 78, timestamp: Date.now() - 259200000 },
   ];
+
+  const renderDrillComponent = () => {
+    switch (drillId) {
+      case 'pga-tour-18':
+        return <PGATour18Component onTabChange={setCurrentTab} />;
+      case 'aggressive-putting':
+        return <AggressivePuttingComponent onTabChange={setCurrentTab} />;
+      case '8-ball-drill':
+        return <EightBallComponent onTabChange={setCurrentTab} />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="pb-20 min-h-screen bg-background">
@@ -122,113 +99,53 @@ const DrillDetail = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate('/drills/putting')}
+            onClick={handleBackClick}
             className="p-2"
           >
             <ArrowLeft size={20} />
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Target size={24} className="text-primary" />
-              PGA Tour 18 Holes
-            </h1>
-            <p className="text-sm text-muted-foreground">Putting • Mixed distances</p>
+            <h1 className="text-2xl font-bold text-foreground">{drill.title}</h1>
+            <p className="text-muted-foreground">{drill.category}</p>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-primary">Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-foreground leading-relaxed">
-                Hit one putt at a time from the distances specified in the test. Vary the direction of the break and whether the putt is uphill or downhill. The exercise works best if you act as if you were in a competition — read the line, go through your routine, etc.
-              </p>
-            </CardContent>
-          </Card>
+        <Tabs value={currentTab} onValueChange={setCurrentTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="score">Score</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+          </TabsList>
 
-          {/* Distances */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-primary">Distances by Hole</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2">
-                {distances.map((item) => (
-                  <div key={item.hole} className="flex justify-between items-center py-1 border-b border-border last:border-b-0">
-                    <span className="text-sm font-medium text-foreground">
-                      Hole {item.hole}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {item.distance}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="overview" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon className="text-primary" size={20} />
+                  About This Drill
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  {drill.longDescription}
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          {/* Scoring */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-primary">Scoring</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="total-putts" className="text-sm font-medium text-foreground">
-                  TOTAL PUTTS
-                </Label>
-                <Input
-                  id="total-putts"
-                  type="number"
-                  min="0"
-                  max="60"
-                  value={totalPutts}
-                  onChange={(e) => setTotalPutts(e.target.value)}
-                  placeholder="Enter total putts (0-60)"
-                  className="mt-1"
-                />
-              </div>
+          <TabsContent value="score" className="mt-4">
+            {renderDrillComponent()}
+          </TabsContent>
 
-              <Button 
-                onClick={handleSave}
-                disabled={!totalPutts}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                Save Score
-              </Button>
-
-              {lastScore !== null && (
-                <div className="flex items-center justify-between p-3 bg-golf-light/20 rounded-md">
-                  <span className="text-sm text-foreground">
-                    Last score: <span className="font-semibold">{lastScore}</span>
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleReset}
-                    className="text-muted-foreground hover:text-foreground p-1"
-                  >
-                    <RotateCcw size={16} />
-                    Reset Score
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Leaderboards */}
-          {leaderboardData && (
+          <TabsContent value="leaderboard" className="mt-4">
             <DrillLeaderboard
-              drillName="PGA Tour 18 Holes"
-              friendsLeaderboard={leaderboardData.friends}
-              groupLeaderboard={leaderboardData.group || []}
-              groupName={leaderboardData.groupName}
+              drillName={drill.title}
+              friendsLeaderboard={mockLeaderboard.slice(0, 3)}
+              groupLeaderboard={mockLeaderboard.slice(0, 3)}
+              groupName="Golf Buddies"
             />
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

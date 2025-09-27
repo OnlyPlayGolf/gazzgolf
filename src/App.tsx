@@ -7,8 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import Drills from "./pages/Drills";
 import DrillDetail from "./pages/DrillDetail";
-import EightBallDrill from "./pages/EightBallDrill";
-import AggressivePuttingDrill from "./pages/AggressivePuttingDrill";
+import Auth from "./pages/Auth";
 import LevelSelection from "./pages/LevelSelection";
 import Levels from "./pages/Levels";
 import Profile from "./pages/Profile";
@@ -31,9 +30,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Drills />} />
             <Route path="/drills" element={<Drills />} />
-            <Route path="/drills/pga-tour-18" element={<DrillDetail />} />
-            <Route path="/drills/aggressive-putting" element={<AggressivePuttingDrill />} />
-            <Route path="/drills/8-ball-drill" element={<EightBallDrill />} />
+            <Route path="/drills/:drillId" element={<DrillDetail />} />
             <Route path="/levels" element={<LevelSelection />} />
             <Route path="/levels/beginner" element={<Levels />} />
             <Route path="/profile" element={<Profile />} />
@@ -42,6 +39,7 @@ const App = () => (
             <Route path="/create-drill" element={<CreateDrill />} />
             <Route path="/run-drill/:drillId" element={<RunDrill />} />
             <Route path="/drill-results/:drillId" element={<DrillResults />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomTabBar />
