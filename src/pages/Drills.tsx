@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import DrillLeaderboard from "@/components/DrillLeaderboard";
 import { getStorageItem } from "@/utils/storageManager";
 import { STORAGE_KEYS } from "@/constants/app";
+// Import the DrillLeaderboard component
+import DrillLeaderboard from "@/components/DrillLeaderboard";
 
 const drills = [
   {

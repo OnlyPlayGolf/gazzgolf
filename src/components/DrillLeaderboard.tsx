@@ -105,3 +105,6 @@ const DrillLeaderboard = ({ drillName, friendsLeaderboard, groupLeaderboard, gro
 };
 
 export default DrillLeaderboard;
+
+// Also export as named export for compatibility
+export { DrillLeaderboard };

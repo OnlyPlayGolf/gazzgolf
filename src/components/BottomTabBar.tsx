@@ -18,7 +18,7 @@ export const BottomTabBar = () => {
       <div className="flex">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = location.pathname === tab.path;
+          const isActive = location.pathname === tab.path || (tab.path === '/drills' && location.pathname === '/');
           
           return (
             <button
