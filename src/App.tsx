@@ -5,10 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
-import DrillsCategories from "./pages/DrillsCategories";
-import ShortGameDrills from "./pages/ShortGameDrills";
-import PuttingDrills from "./pages/PuttingDrills";
+import Drills from "./pages/Drills";
 import DrillDetail from "./pages/DrillDetail";
+import EightBallDrill from "./pages/EightBallDrill";
 import AggressivePuttingDrill from "./pages/AggressivePuttingDrill";
 import LevelSelection from "./pages/LevelSelection";
 import Levels from "./pages/Levels";
@@ -30,12 +29,11 @@ const App = () => (
       <BrowserRouter>
         <div className="relative">
           <Routes>
-            <Route path="/" element={<DrillsCategories />} />
-            <Route path="/drills" element={<DrillsCategories />} />
-            <Route path="/drills/putting" element={<PuttingDrills />} />
-            <Route path="/drills/shortgame" element={<ShortGameDrills />} />
-            <Route path="/drill/pga-tour-18" element={<DrillDetail />} />
-            <Route path="/drill/aggressive-putting" element={<AggressivePuttingDrill />} />
+            <Route path="/" element={<Drills />} />
+            <Route path="/drills" element={<Drills />} />
+            <Route path="/drills/pga-tour-18" element={<DrillDetail />} />
+            <Route path="/drills/aggressive-putting" element={<AggressivePuttingDrill />} />
+            <Route path="/drills/8-ball-drill" element={<EightBallDrill />} />
             <Route path="/levels" element={<LevelSelection />} />
             <Route path="/levels/beginner" element={<Levels />} />
             <Route path="/profile" element={<Profile />} />
