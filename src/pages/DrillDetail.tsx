@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Target, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import DrillLeaderboard from "@/components/DrillLeaderboard";
+import { getLeaderboardData } from "@/utils/leaderboardService";
 import { APP_NAME, STORAGE_KEYS } from "@/constants/app";
 import { getStorageItem, setStorageItem, migrateStorageKeys } from "@/utils/storageManager";
 
@@ -20,6 +22,7 @@ const DrillDetail = () => {
   const { toast } = useToast();
   const [totalPutts, setTotalPutts] = useState("");
   const [lastScore, setLastScore] = useState<number | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<any>(null);
 
   useEffect(() => {
     // Migrate storage keys on first load
@@ -37,6 +40,9 @@ const DrillDetail = () => {
       );
       setLastScore(latestScore.score);
     }
+
+    // Load leaderboard data
+    getLeaderboardData('pga18').then(setLeaderboardData);
   }, []);
 
   const handleSave = () => {
@@ -212,6 +218,16 @@ const DrillDetail = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Leaderboards */}
+          {leaderboardData && (
+            <DrillLeaderboard
+              drillName="PGA Tour 18 Holes"
+              friendsLeaderboard={leaderboardData.friends}
+              groupLeaderboard={leaderboardData.group || []}
+              groupName={leaderboardData.groupName}
+            />
+          )}
         </div>
       </div>
     </div>

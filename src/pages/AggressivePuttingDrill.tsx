@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Target, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import DrillLeaderboard from "@/components/DrillLeaderboard";
+import { getLeaderboardData } from "@/utils/leaderboardService";
 import { STORAGE_KEYS } from "@/constants/app";
 import { migrateStorageKeys, getStorageItem, setStorageItem } from "@/utils/storageManager";
 
@@ -22,6 +24,7 @@ const AggressivePuttingDrill = () => {
   const [distanceIndex, setDistanceIndex] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [lastScore, setLastScore] = useState<Score | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<any>(null);
   
   const distances = [4, 5, 6]; // meters, cycling pattern
   const targetPoints = 15;
@@ -42,6 +45,9 @@ const AggressivePuttingDrill = () => {
       );
       setLastScore(mostRecentScore);
     }
+
+    // Load leaderboard data
+    getLeaderboardData('aggressive').then(setLeaderboardData);
   }, []);
 
   const handleOutcome = (outcome: 'holed' | 'good-pace' | 'short' | 'long-miss') => {
@@ -265,6 +271,16 @@ const AggressivePuttingDrill = () => {
               </ul>
             </CardContent>
           </Card>
+
+          {/* Leaderboards */}
+          {leaderboardData && (
+            <DrillLeaderboard
+              drillName="Aggressive Putting"
+              friendsLeaderboard={leaderboardData.friends}
+              groupLeaderboard={leaderboardData.group || []}
+              groupName={leaderboardData.groupName}
+            />
+          )}
         </div>
       </div>
     </div>
