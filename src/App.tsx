@@ -32,6 +32,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<DrillsCategories />} />
             <Route path="/categories" element={<DrillsCategories />} />
+            <Route path="/drills" element={<DrillsCategories />} />
             <Route path="/drills/:categoryId" element={<CategoryDrills />} />
             <Route path="/drills/:drillId/detail" element={<DrillDetail />} />
             <Route path="/levels" element={<LevelSelection />} />

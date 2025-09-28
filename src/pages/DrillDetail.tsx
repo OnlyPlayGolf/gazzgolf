@@ -164,15 +164,12 @@ const DrillDetail = () => {
           </Card>
 
           {/* Leaderboard Preview */}
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Leaderboard Preview</h3>
-            <LeaderboardPreview
-              drillId={drill.id}
-              onViewFullLeaderboard={() => setCurrentTab('leaderboard')}
-            />
-          </div>
+          <LeaderboardPreview
+            drillId={drill.id}
+            onViewFullLeaderboard={() => setCurrentTab('leaderboard')}
+          />
 
-          {/* Score Section */}
+          {/* Drill Component */}
           <Card>
             <CardHeader>
               <CardTitle>Start Drill</CardTitle>

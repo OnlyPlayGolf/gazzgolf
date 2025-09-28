@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { id: 'drills', label: 'Drills', icon: Target, path: '/drills' },
+  { id: 'drills', label: 'Drills', icon: Target, path: '/categories' },
   { id: 'levels', label: 'Levels', icon: TrendingUp, path: '/levels' },
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
   { id: 'menu', label: 'Menu', icon: Menu, path: '/menu' },
@@ -18,7 +18,7 @@ export const BottomTabBar = () => {
       <div className="flex">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = location.pathname === tab.path || (tab.path === '/drills' && location.pathname === '/');
+          const isActive = location.pathname === tab.path || (tab.path === '/categories' && location.pathname === '/');
           
           return (
             <button
