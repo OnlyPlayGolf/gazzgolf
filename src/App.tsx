@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
+import DrillsCategories from "./pages/DrillsCategories";
+import CategoryDrills from "./pages/CategoryDrills";
 import Drills from "./pages/Drills";
 import DrillDetail from "./pages/DrillDetail";
 import Auth from "./pages/Auth";
@@ -28,9 +30,10 @@ const App = () => (
       <BrowserRouter>
         <div className="relative">
           <Routes>
-            <Route path="/" element={<Drills />} />
-            <Route path="/drills" element={<Drills />} />
-            <Route path="/drills/:drillId" element={<DrillDetail />} />
+            <Route path="/" element={<DrillsCategories />} />
+            <Route path="/categories" element={<DrillsCategories />} />
+            <Route path="/drills/:categoryId" element={<CategoryDrills />} />
+            <Route path="/drills/:drillId/detail" element={<DrillDetail />} />
             <Route path="/levels" element={<LevelSelection />} />
             <Route path="/levels/beginner" element={<Levels />} />
             <Route path="/profile" element={<Profile />} />

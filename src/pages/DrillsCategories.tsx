@@ -1,15 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, Target, Zap, Hammer, Activity, Car } from "lucide-react";
+import { Lock, Target, Zap, Hammer, Activity, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const categories = [
   { id: 'putting', name: 'Putting', icon: Target, enabled: true, description: 'Precision on the green' },
   { id: 'shortgame', name: 'Short Game', icon: Zap, enabled: true, description: 'Chipping, pitching, and bunker shots' },
-  { id: 'wedges', name: 'Wedges', icon: Hammer, enabled: false, description: 'Sand and lob shots' },
-  { id: 'irons', name: 'Irons', icon: Activity, enabled: false, description: 'Mid-range accuracy' },
-  { id: 'driver', name: 'Driver', icon: Car, enabled: false, description: 'Long distance power' },
+  { id: 'wedges', name: 'Wedges', icon: Hammer, enabled: true, description: 'Sand and lob shots' },
+  { id: 'longgame', name: 'Long Game', icon: Activity, enabled: true, description: 'Mid to long range shots' },
+  { id: 'favourites', name: 'Favourites', icon: Star, enabled: true, description: 'Your starred drills' },
 ];
 
 const DrillsCategories = () => {

@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Target, Zap } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import DrillLeaderboard from "@/components/DrillLeaderboard";
-
-// Import drill-specific components
+import { ArrowLeft, Target, Zap, Star } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { isFavorite, addToFavorites, removeFromFavorites } from "@/utils/favoritesManager";
 import PGATour18Component from "@/components/drills/PGATour18Component";
 import AggressivePuttingComponent from "@/components/drills/AggressivePuttingComponent";
 import EightBallComponent from "@/components/drills/EightBallComponent";
+import DrillLeaderboard from "@/components/DrillLeaderboard";
+import LeaderboardPreview from "@/components/LeaderboardPreview";
 
 interface Drill {
   id: string;
@@ -52,32 +53,52 @@ const DrillDetail = () => {
   const { drillId } = useParams<{ drillId: string }>();
   const [drill, setDrill] = useState<Drill | null>(null);
   const [currentTab, setCurrentTab] = useState('overview');
+  const [drillIsFavorite, setDrillIsFavorite] = useState(false);
 
   useEffect(() => {
-    if (!drillId || !drills[drillId]) {
-      navigate('/drills');
-      return;
+    if (drillId && drills[drillId]) {
+      setDrill(drills[drillId]);
+      setDrillIsFavorite(isFavorite(drillId));
+    } else {
+      navigate('/categories');
     }
-    setDrill(drills[drillId]);
   }, [drillId, navigate]);
 
   const handleBackClick = () => {
-    // Always navigate to /drills, regardless of history
-    navigate('/drills', { replace: true });
+    // Determine which category this drill belongs to
+    if (drill) {
+      const categoryMap: { [key: string]: string } = {
+        'pga-tour-18': 'putting',
+        'aggressive-putting': 'putting',
+        '8-ball-drill': 'shortgame',
+      };
+      
+      const categoryId = categoryMap[drill.id] || 'putting';
+      navigate(`/drills/${categoryId}`);
+    } else {
+      navigate('/categories');
+    }
+  };
+
+  const toggleFavorite = () => {
+    if (!drill) return;
+    
+    if (drillIsFavorite) {
+      removeFromFavorites(drill.id);
+      setDrillIsFavorite(false);
+    } else {
+      addToFavorites({
+        id: drill.id,
+        title: drill.title,
+        category: drill.category,
+      });
+      setDrillIsFavorite(true);
+    }
   };
 
   if (!drill) {
     return null;
   }
-
-  const Icon = drill.icon;
-
-  // Mock leaderboard data
-  const mockLeaderboard = [
-    { id: '1', name: 'John D.', score: 85, timestamp: Date.now() - 86400000 },
-    { id: '2', name: 'Sarah M.', score: 92, timestamp: Date.now() - 172800000 },
-    { id: '3', name: 'Mike R.', score: 78, timestamp: Date.now() - 259200000 },
-  ];
 
   const renderDrillComponent = () => {
     switch (drillId) {
@@ -104,46 +125,77 @@ const DrillDetail = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground">{drill.title}</h1>
             <p className="text-muted-foreground">{drill.category}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleFavorite}
+            className="p-2"
+          >
+            <Star 
+              size={20} 
+              className={cn(
+                "transition-colors",
+                drillIsFavorite 
+                  ? "text-yellow-500 fill-yellow-500" 
+                  : "text-muted-foreground hover:text-yellow-500"
+              )}
+            />
+          </Button>
         </div>
 
-        <Tabs value={currentTab} onValueChange={setCurrentTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="score">Score</TabsTrigger>
-            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          {/* Overview Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <drill.icon className="text-primary" size={20} />
+                About this drill
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {drill.longDescription}
+              </p>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="overview" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon className="text-primary" size={20} />
-                  About This Drill
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  {drill.longDescription}
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="score" className="mt-4">
-            {renderDrillComponent()}
-          </TabsContent>
-
-          <TabsContent value="leaderboard" className="mt-4">
-            <DrillLeaderboard
-              drillId={drillId!}
-              drillName={drill.title}
+          {/* Leaderboard Preview */}
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Leaderboard Preview</h3>
+            <LeaderboardPreview
+              drillId={drill.id}
+              onViewFullLeaderboard={() => setCurrentTab('leaderboard')}
             />
-          </TabsContent>
-        </Tabs>
+          </div>
+
+          {/* Score Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Start Drill</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderDrillComponent()}
+            </CardContent>
+          </Card>
+
+          {/* Full Leaderboard Tab */}
+          <Tabs value={currentTab} onValueChange={setCurrentTab}>
+            <TabsList className="grid w-full grid-cols-1">
+              <TabsTrigger value="leaderboard">Full Leaderboard</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="leaderboard" className="mt-4">
+              <DrillLeaderboard
+                drillId={drill.id}
+                drillName={drill.title}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
