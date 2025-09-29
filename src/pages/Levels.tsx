@@ -5,25 +5,35 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Target, CheckCircle, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
 
 const Levels = () => {
   const navigate = useNavigate();
+  const { difficulty } = useParams<{ difficulty: string }>();
   const [levels, setLevels] = useState<Level[]>([]);
   const [stats, setStats] = useState({ completed: 0, total: 0, percentage: 0 });
   const [activeTab, setActiveTab] = useState("play");
 
   useEffect(() => {
     const loadData = () => {
-      const levelsData = getLevelsWithProgress();
-      const statsData = getCompletionStats();
-      setLevels(levelsData);
-      setStats(statsData);
+      const allLevels = getLevelsWithProgress();
+      // Filter by difficulty
+      const filteredLevels = allLevels.filter(
+        level => level.difficulty.toLowerCase() === (difficulty || 'beginner').toLowerCase()
+      );
+      
+      // Calculate stats for this difficulty only
+      const completed = filteredLevels.filter(level => level.completed).length;
+      const total = filteredLevels.length;
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+      
+      setLevels(filteredLevels);
+      setStats({ completed, total, percentage });
     };
     loadData();
-  }, []);
+  }, [difficulty]);
 
   const handleCompleteLevel = (levelId: string) => {
     completeLevelz(levelId);
@@ -67,7 +77,7 @@ const Levels = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">Beginner</h1>
+          <h1 className="text-2xl font-bold text-foreground capitalize">{difficulty || 'Beginner'}</h1>
         </div>
 
         {/* Lead Text */}
@@ -91,7 +101,7 @@ const Levels = () => {
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground">Completed</p>
-                <p className="text-lg font-semibold text-foreground">{stats.completed} of 100 levels</p>
+                <p className="text-lg font-semibold text-foreground">{stats.completed} of {stats.total} levels</p>
               </div>
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground">Current Level</p>
@@ -123,7 +133,7 @@ const Levels = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="play">Play</TabsTrigger>
-            <TabsTrigger value="all-levels">All Levels (100)</TabsTrigger>
+            <TabsTrigger value="all-levels">All Levels ({stats.total})</TabsTrigger>
           </TabsList>
 
           {/* Play Tab - Current Level */}

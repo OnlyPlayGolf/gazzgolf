@@ -21,7 +21,8 @@ const LevelSelection = () => {
       title: "Intermediate",
       subtitle: "Take your skills to the next stage.",
       icon: Trophy,
-      available: false,
+      available: true,
+      action: () => navigate("/levels/intermediate"),
     },
     {
       id: "amateur",

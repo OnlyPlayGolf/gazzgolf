@@ -36,7 +36,7 @@ const App = () => (
             <Route path="/drills/:categoryId" element={<CategoryDrills />} />
             <Route path="/drills/:drillId/detail" element={<DrillDetail />} />
             <Route path="/levels" element={<LevelSelection />} />
-            <Route path="/levels/beginner" element={<Levels />} />
+            <Route path="/levels/:difficulty" element={<Levels />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/user-drills" element={<UserDrills />} />
