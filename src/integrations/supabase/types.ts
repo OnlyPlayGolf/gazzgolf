@@ -14,16 +14,294 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      drill_results: {
+        Row: {
+          attempts_json: Json
+          created_at: string | null
+          drill_id: string
+          id: string
+          total_points: number
+          user_id: string
+        }
+        Insert: {
+          attempts_json: Json
+          created_at?: string | null
+          drill_id: string
+          id?: string
+          total_points: number
+          user_id: string
+        }
+        Update: {
+          attempts_json?: Json
+          created_at?: string | null
+          drill_id?: string
+          id?: string
+          total_points?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drill_results_drill_id_fkey"
+            columns: ["drill_id"]
+            isOneToOne: false
+            referencedRelation: "drills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drill_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drills: {
+        Row: {
+          created_at: string | null
+          id: string
+          long_desc: string | null
+          scoring_scheme: Json | null
+          short_desc: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          long_desc?: string | null
+          scoring_scheme?: Json | null
+          short_desc?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          long_desc?: string | null
+          scoring_scheme?: Json | null
+          short_desc?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          addressee: string | null
+          created_at: string | null
+          id: string
+          requester: string | null
+          status: Database["public"]["Enums"]["friend_status"]
+          user_a: string | null
+          user_b: string | null
+        }
+        Insert: {
+          addressee?: string | null
+          created_at?: string | null
+          id?: string
+          requester?: string | null
+          status?: Database["public"]["Enums"]["friend_status"]
+          user_a?: string | null
+          user_b?: string | null
+        }
+        Update: {
+          addressee?: string | null
+          created_at?: string | null
+          id?: string
+          requester?: string | null
+          status?: Database["public"]["Enums"]["friend_status"]
+          user_a?: string | null
+          user_b?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_addressee_fkey"
+            columns: ["addressee"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_requester_fkey"
+            columns: ["requester"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          created_at: string | null
+          group_id: string
+          role: Database["public"]["Enums"]["group_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_id: string
+          role?: Database["public"]["Enums"]["group_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string
+          role?: Database["public"]["Enums"]["group_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          favourite_group_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          favourite_group_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          favourite_group_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_favourite_group_id_fkey"
+            columns: ["favourite_group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      friends_pairs: {
+        Row: {
+          a: string | null
+          b: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      ensure_friendship: {
+        Args: { u1: string; u2: string }
+        Returns: undefined
+      }
+      ensure_friendship_by_pair: {
+        Args: { ts?: string; u1: string; u2: string }
+        Returns: undefined
+      }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_owner_or_admin: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      top3_favourite_group_for_drill: {
+        Args: { p_drill: string }
+        Returns: {
+          best_score: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
+      top3_friends_for_drill: {
+        Args: { p_drill: string }
+        Returns: {
+          best_score: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      friend_status: "pending" | "accepted" | "blocked"
+      group_role: "member" | "admin" | "owner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +428,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      friend_status: ["pending", "accepted", "blocked"],
+      group_role: ["member", "admin", "owner"],
+    },
   },
 } as const
