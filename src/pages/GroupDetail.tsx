@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Crown, Shield, Search } from "lucide-react";
+import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Label } from "@/components/ui/label";
 
 interface Member {
   user_id: string;
@@ -42,6 +43,12 @@ const GroupDetail = () => {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'admin' | 'member' | null>(null);
+  
+  // Invite management state
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [currentInvite, setCurrentInvite] = useState<any>(null);
+  const [inviteExpiry, setInviteExpiry] = useState("");
+  const [inviteMaxUses, setInviteMaxUses] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -246,6 +253,168 @@ const GroupDetail = () => {
     }
   };
 
+  // Invite management functions
+  const generateInviteCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < 12; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  const loadCurrentInvite = async () => {
+    if (!groupId) return;
+
+    const { data } = await supabase
+      .from('group_invites')
+      .select('*')
+      .eq('group_id', groupId)
+      .eq('revoked', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    setCurrentInvite(data);
+  };
+
+  const handleCreateInvite = async () => {
+    if (!groupId || !user) return;
+
+    setLoading(true);
+    try {
+      const code = generateInviteCode();
+      const inviteData: any = {
+        group_id: groupId,
+        code,
+        created_by: user.id,
+      };
+
+      if (inviteExpiry) {
+        inviteData.expires_at = new Date(inviteExpiry).toISOString();
+      }
+
+      if (inviteMaxUses && parseInt(inviteMaxUses) > 0) {
+        inviteData.max_uses = parseInt(inviteMaxUses);
+      }
+
+      const { data, error } = await supabase
+        .from('group_invites')
+        .insert(inviteData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCurrentInvite(data);
+      toast({
+        title: "Invite created",
+        description: "Share the link to invite members",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create invite",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyInviteLink = () => {
+    if (!currentInvite) return;
+    
+    const inviteUrl = `${window.location.origin}/invite/${currentInvite.code}`;
+    navigator.clipboard.writeText(inviteUrl);
+    
+    toast({
+      title: "Link copied",
+      description: "Invite link copied to clipboard",
+    });
+  };
+
+  const handleRegenerateInvite = async () => {
+    if (!groupId || !user) return;
+
+    setLoading(true);
+    try {
+      // Revoke old invite
+      if (currentInvite) {
+        await supabase
+          .from('group_invites')
+          .update({ revoked: true })
+          .eq('id', currentInvite.id);
+      }
+
+      // Create new invite
+      const code = generateInviteCode();
+      const inviteData: any = {
+        group_id: groupId,
+        code,
+        created_by: user.id,
+      };
+
+      if (inviteExpiry) {
+        inviteData.expires_at = new Date(inviteExpiry).toISOString();
+      }
+
+      if (inviteMaxUses && parseInt(inviteMaxUses) > 0) {
+        inviteData.max_uses = parseInt(inviteMaxUses);
+      }
+
+      const { data, error } = await supabase
+        .from('group_invites')
+        .insert(inviteData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCurrentInvite(data);
+      toast({
+        title: "Invite regenerated",
+        description: "Old invite link is now invalid",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to regenerate invite",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRevokeInvite = async () => {
+    if (!currentInvite) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('group_invites')
+        .update({ revoked: true })
+        .eq('id', currentInvite.id);
+
+      if (error) throw error;
+
+      setCurrentInvite(null);
+      toast({
+        title: "Invite revoked",
+        description: "This invite link can no longer be used",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to revoke invite",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const canAddMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   const getRoleIcon = (role: string) => {
@@ -280,18 +449,34 @@ const GroupDetail = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Members ({members.length})</CardTitle>
-              {canAddMembers && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    loadFriendsForAdding();
-                    setIsAddMembersOpen(true);
-                  }}
-                >
-                  <UserPlus size={16} className="mr-2" />
-                  Add Members
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {canAddMembers && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        loadCurrentInvite();
+                        setIsInviteOpen(true);
+                      }}
+                    >
+                      <Link2 size={16} className="mr-2" />
+                      Invite Link
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        loadFriendsForAdding();
+                        loadCurrentInvite();
+                        setIsAddMembersOpen(true);
+                      }}
+                    >
+                      <UserPlus size={16} className="mr-2" />
+                      Add Members
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -329,9 +514,10 @@ const GroupDetail = () => {
           </DialogHeader>
 
           <Tabs defaultValue="friends" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="friends">Friends</TabsTrigger>
               <TabsTrigger value="search">Search</TabsTrigger>
+              <TabsTrigger value="invite">Invite Link</TabsTrigger>
             </TabsList>
 
             <TabsContent value="friends" className="space-y-4">
@@ -407,6 +593,35 @@ const GroupDetail = () => {
                 )}
               </div>
             </TabsContent>
+
+            <TabsContent value="invite" className="space-y-4">
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Share this link to invite people to the group
+                </p>
+                {currentInvite ? (
+                  <>
+                    <div className="flex gap-2">
+                      <Input
+                        value={`${window.location.origin}/invite/${currentInvite.code}`}
+                        readOnly
+                        className="text-sm"
+                      />
+                      <Button size="sm" onClick={handleCopyInviteLink}>
+                        <Copy size={16} />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Uses: {currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}
+                    </p>
+                  </>
+                ) : (
+                  <Button onClick={handleCreateInvite} disabled={loading}>
+                    {loading ? "Creating..." : "Create Invite Link"}
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
           </Tabs>
 
           <div className="flex justify-end gap-2 mt-4">
@@ -420,6 +635,105 @@ const GroupDetail = () => {
               Add {selectedUsers.size > 0 && `(${selectedUsers.size})`}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Management Dialog */}
+      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite Link</DialogTitle>
+          </DialogHeader>
+
+          {currentInvite ? (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm text-muted-foreground">Current Invite Link</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    value={`${window.location.origin}/invite/${currentInvite.code}`}
+                    readOnly
+                    className="flex-1 text-sm"
+                  />
+                  <Button size="sm" onClick={handleCopyInviteLink}>
+                    <Copy size={16} />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Uses:</span>
+                  <span>{currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}</span>
+                </div>
+                {currentInvite.expires_at && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Expires:</span>
+                    <span>{new Date(currentInvite.expires_at).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleRegenerateInvite}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  <RefreshCw size={16} className="mr-2" />
+                  Regenerate
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleRevokeInvite}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  <Trash2 size={16} className="mr-2" />
+                  Revoke
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Create a shareable invite link for this group.
+              </p>
+
+              <div>
+                <Label htmlFor="expiry">Expiration (optional)</Label>
+                <Input
+                  id="expiry"
+                  type="datetime-local"
+                  value={inviteExpiry}
+                  onChange={(e) => setInviteExpiry(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="max-uses">Max Uses (optional)</Label>
+                <Input
+                  id="max-uses"
+                  type="number"
+                  min="1"
+                  placeholder="Unlimited"
+                  value={inviteMaxUses}
+                  onChange={(e) => setInviteMaxUses(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <Button
+                onClick={handleCreateInvite}
+                disabled={loading}
+                className="w-full"
+              >
+                {loading ? "Creating..." : "Create Invite Link"}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

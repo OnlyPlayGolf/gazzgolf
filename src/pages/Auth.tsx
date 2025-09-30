@@ -37,9 +37,16 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect authenticated users to drills page
+        // Redirect authenticated users
         if (session?.user) {
-          navigate('/drills');
+          // Check for pending invite code
+          const pendingInviteCode = localStorage.getItem('pending_invite_code');
+          if (pendingInviteCode) {
+            localStorage.removeItem('pending_invite_code');
+            navigate(`/invite/${pendingInviteCode}`);
+          } else {
+            navigate('/drills');
+          }
         }
       }
     );
@@ -49,9 +56,15 @@ const Auth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // If already authenticated, redirect to drills
+      // If already authenticated, redirect
       if (session?.user) {
-        navigate('/drills');
+        const pendingInviteCode = localStorage.getItem('pending_invite_code');
+        if (pendingInviteCode) {
+          localStorage.removeItem('pending_invite_code');
+          navigate(`/invite/${pendingInviteCode}`);
+        } else {
+          navigate('/drills');
+        }
       }
     });
 

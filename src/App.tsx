@@ -20,6 +20,7 @@ import CreateDrill from "./pages/CreateDrill";
 import RunDrill from "./pages/RunDrill";
 import DrillResults from "./pages/DrillResults";
 import GroupDetail from "./pages/GroupDetail";
+import AcceptInvite from "./pages/AcceptInvite";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/run-drill/:drillId" element={<RunDrill />} />
             <Route path="/drill-results/:drillId" element={<DrillResults />} />
             <Route path="/group/:groupId" element={<GroupDetail />} />
+            <Route path="/invite/:code" element={<AcceptInvite />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
