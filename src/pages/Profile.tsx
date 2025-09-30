@@ -849,7 +849,11 @@ const Profile = () => {
                 {groups.length > 0 ? (
                   <div className="space-y-3">
                     {groups.map((group) => (
-                      <div key={group.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
+                      <div 
+                        key={group.id} 
+                        className="flex items-center justify-between p-3 rounded-md bg-secondary/50 hover:bg-secondary cursor-pointer transition-colors"
+                        onClick={() => navigate(`/group/${group.id}`)}
+                      >
                         <div className="flex items-center gap-3">
                           <div>
                             <div className="flex items-center gap-2">
@@ -869,7 +873,10 @@ const Profile = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleSetFavoriteGroup(favoriteGroupId === group.id ? null : group.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSetFavoriteGroup(favoriteGroupId === group.id ? null : group.id);
+                          }}
                           className="text-muted-foreground hover:text-foreground"
                         >
                           {favoriteGroupId === group.id ? 'Unfavorite' : 'Set Favorite'}
