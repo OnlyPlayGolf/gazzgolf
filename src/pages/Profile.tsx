@@ -393,11 +393,27 @@ const Profile = () => {
   };
 
   const handleCreateGroup = async () => {
-    if (!user || !groupName.trim()) return;
+    if (!groupName.trim()) {
+      toast({
+        title: "Validation error",
+        description: "Please enter a group name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to create a group",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
     try {
-      // Create group
+      // Step 1: Create the group
       const { data: groupData, error: groupError } = await (supabase as any)
         .from('groups')
         .insert({
@@ -407,9 +423,31 @@ const Profile = () => {
         .select()
         .single();
 
-      if (groupError) throw groupError;
+      if (groupError) {
+        console.error('Error creating group:', groupError);
+        
+        // Show specific error messages based on error code
+        let errorMessage = "Failed to create group";
+        
+        if (groupError.code === '23505') {
+          errorMessage = "A group with this name already exists";
+        } else if (groupError.code === '23502') {
+          errorMessage = "Missing required field: group name";
+        } else if (groupError.message?.includes('RLS') || groupError.message?.includes('policy')) {
+          errorMessage = "Permission denied: You don't have permission to create a group (RLS)";
+        } else if (groupError.message) {
+          errorMessage = `Database error: ${groupError.message}`;
+        }
+        
+        toast({
+          title: "Failed to create group",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Add creator as owner
+      // Step 2: Add creator as owner in group_members
       const { error: memberError } = await (supabase as any)
         .from('group_members')
         .insert({
@@ -418,20 +456,53 @@ const Profile = () => {
           role: 'owner'
         });
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('Error adding owner to group:', memberError);
+        
+        let errorMessage = "Failed to add you as group owner";
+        
+        if (memberError.message?.includes('RLS') || memberError.message?.includes('policy')) {
+          errorMessage = "Permission denied: Failed to add owner (RLS)";
+        } else if (memberError.message) {
+          errorMessage = `Failed to add owner: ${memberError.message}`;
+        }
+        
+        toast({
+          title: "Group creation incomplete",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        // Try to clean up the orphaned group
+        await (supabase as any).from('groups').delete().eq('id', groupData.id);
+        return;
+      }
 
+      // Success!
       toast({
-        title: "Group created",
-        description: `Group "${groupName}" has been created successfully.`,
+        title: "Group created successfully!",
+        description: `Group "${groupName}" has been created. You're the owner.`,
       });
 
       setGroupName("");
       setIsCreateGroupOpen(false);
-      loadUserData(); // Refresh data
-    } catch (error) {
+      
+      // Refetch groups to show the new group immediately
+      await loadUserData();
+    } catch (error: any) {
+      console.error('Error in handleCreateGroup:', error);
+      
+      let errorMessage = "Failed to create group";
+      
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+        errorMessage = "No internet connection. Please check your network.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create group.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
