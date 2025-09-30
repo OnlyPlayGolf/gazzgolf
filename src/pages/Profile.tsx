@@ -46,7 +46,8 @@ const Profile = () => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [favoriteGroupId, setFavoriteGroupId] = useState<string | null>(null);
-  const [friendRequests, setFriendRequests] = useState<Friend[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<Friend[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<Friend[]>([]);
   
   // Dialog states
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
@@ -85,6 +86,31 @@ const Profile = () => {
     }
   }, [user]);
 
+  // Realtime subscription for friendships changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('friendships-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendships'
+        },
+        () => {
+          // Refetch data when friendships change
+          loadUserData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const loadUserData = async () => {
     if (!user) return;
 
@@ -98,52 +124,95 @@ const Profile = () => {
       
       setProfile(profileData);
 
-      // Load friends - simplified for now
-      const { data: friendsData } = await (supabase as any)
-        .from('friendships')
-        .select(`
-          id,
-          requester,
-          addressee,
-          status,
-          profiles!friendships_addressee_fkey(display_name, username),
-          profiles!friendships_requester_fkey(display_name, username)
-        `)
-        .or(`requester.eq.${user.id},addressee.eq.${user.id}`)
-        .eq('status', 'accepted');
+      // Load friends from canonical friends_pairs view
+      const { data: friendsPairsData } = await (supabase as any)
+        .from('friends_pairs')
+        .select('a, b')
+        .or(`a.eq.${user.id},b.eq.${user.id}`);
 
-      const friendsList = friendsData?.map((f: any) => ({
-        id: f.id,
-        display_name: f.requester === user.id ? f.profiles?.display_name : f.profiles?.display_name,
-        username: f.requester === user.id ? f.profiles?.username : f.profiles?.username,
-        status: f.status,
-        is_requester: f.requester === user.id
-      })) || [];
+      // Get the friend IDs (the other user in each pair)
+      const friendIds = friendsPairsData?.map((pair: any) => 
+        pair.a === user.id ? pair.b : pair.a
+      ) || [];
+
+      // Fetch friend profiles
+      let friendsList: Friend[] = [];
+      if (friendIds.length > 0) {
+        const { data: profilesData } = await (supabase as any)
+          .from('profiles')
+          .select('id, display_name, username')
+          .in('id', friendIds);
+
+        friendsList = profilesData?.map((p: any) => ({
+          id: p.id,
+          display_name: p.display_name,
+          username: p.username,
+          status: 'accepted' as const,
+          is_requester: false
+        })) || [];
+      }
 
       setFriends(friendsList);
 
-      // Load friend requests
-      const { data: requestsData } = await (supabase as any)
+      // Load incoming friend requests
+      const { data: incomingData } = await (supabase as any)
         .from('friendships')
-        .select(`
-          id,
-          requester,
-          addressee,
-          status,
-          profiles!friendships_requester_fkey(display_name, username)
-        `)
+        .select('id, requester, addressee, status')
         .eq('addressee', user.id)
         .eq('status', 'pending');
 
-      const requestsList = requestsData?.map((r: any) => ({
-        id: r.id,
-        display_name: r.profiles?.display_name,
-        username: r.profiles?.username,
-        status: r.status,
-        is_requester: false
-      })) || [];
+      // Fetch requester profiles for incoming
+      let incomingList: Friend[] = [];
+      if (incomingData && incomingData.length > 0) {
+        const requesterIds = incomingData.map((r: any) => r.requester);
+        const { data: profilesData } = await (supabase as any)
+          .from('profiles')
+          .select('id, display_name, username')
+          .in('id', requesterIds);
 
-      setFriendRequests(requestsList);
+        incomingList = incomingData.map((r: any) => {
+          const profile = profilesData?.find((p: any) => p.id === r.requester);
+          return {
+            id: r.id,
+            display_name: profile?.display_name || null,
+            username: profile?.username || null,
+            status: r.status,
+            is_requester: false
+          };
+        });
+      }
+
+      setIncomingRequests(incomingList);
+
+      // Load outgoing friend requests
+      const { data: outgoingData } = await (supabase as any)
+        .from('friendships')
+        .select('id, requester, addressee, status')
+        .eq('requester', user.id)
+        .eq('status', 'pending');
+
+      // Fetch addressee profiles for outgoing
+      let outgoingList: Friend[] = [];
+      if (outgoingData && outgoingData.length > 0) {
+        const addresseeIds = outgoingData.map((r: any) => r.addressee);
+        const { data: profilesData } = await (supabase as any)
+          .from('profiles')
+          .select('id, display_name, username')
+          .in('id', addresseeIds);
+
+        outgoingList = outgoingData.map((r: any) => {
+          const profile = profilesData?.find((p: any) => p.id === r.addressee);
+          return {
+            id: r.id,
+            display_name: profile?.display_name || null,
+            username: profile?.username || null,
+            status: r.status,
+            is_requester: true
+          };
+        });
+      }
+
+      setOutgoingRequests(outgoingList);
 
       // Load groups
       const { data: groupsData } = await (supabase as any)
@@ -261,14 +330,37 @@ const Profile = () => {
   };
 
   const handleFriendRequestResponse = async (requestId: string, accept: boolean) => {
+    if (!user) return;
+
     try {
       if (accept) {
-        const { error } = await (supabase as any)
+        // Get the friendship details
+        const { data: friendship } = await (supabase as any)
+          .from('friendships')
+          .select('requester, addressee')
+          .eq('id', requestId)
+          .single();
+
+        if (!friendship) {
+          throw new Error('Friend request not found');
+        }
+
+        // Update status to accepted
+        const { error: updateError } = await (supabase as any)
           .from('friendships')
           .update({ status: 'accepted' })
           .eq('id', requestId);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
+
+        // Ensure canonical pair exists in friendships using the database function
+        const { error: ensureError } = await (supabase as any)
+          .rpc('ensure_friendship', {
+            u1: friendship.requester,
+            u2: friendship.addressee
+          });
+
+        if (ensureError) throw ensureError;
 
         toast({
           title: "Friend request accepted",
@@ -288,8 +380,10 @@ const Profile = () => {
         });
       }
 
-      loadUserData(); // Refresh data
+      // Refetch data from network
+      await loadUserData();
     } catch (error) {
+      console.error('Error responding to friend request:', error);
       toast({
         title: "Error",
         description: "Failed to respond to friend request.",
@@ -497,18 +591,18 @@ const Profile = () => {
               </CardHeader>
             </Card>
 
-            {/* Friend Requests */}
-            {friendRequests.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-primary flex items-center gap-2">
-                    <Users size={20} />
-                    Friend Requests
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+            {/* Incoming Friend Requests */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary flex items-center gap-2">
+                  <UserPlus size={20} />
+                  Incoming Requests
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {incomingRequests.length > 0 ? (
                   <div className="space-y-3">
-                    {friendRequests.map((request) => (
+                    {incomingRequests.map((request) => (
                       <div key={request.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
@@ -543,9 +637,51 @@ const Profile = () => {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    No pending requests.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Outgoing Friend Requests */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary flex items-center gap-2">
+                  <Search size={20} />
+                  Outgoing Requests
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {outgoingRequests.length > 0 ? (
+                  <div className="space-y-3">
+                    {outgoingRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                              {(request.display_name || request.username || "?").charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {request.display_name || request.username || "Unknown"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">@{request.username}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">Pending</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-8">
+                    No outgoing requests.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
             {/* My Friends */}
             <Card>
@@ -576,7 +712,7 @@ const Profile = () => {
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-sm text-center py-8">
-                    No friends added yet. Send some friend requests to get started!
+                    No friends yet.
                   </p>
                 )}
               </CardContent>
