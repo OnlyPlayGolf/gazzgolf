@@ -8,6 +8,7 @@ import { STORAGE_KEYS } from "@/constants/app";
 
 interface EightBallComponentProps {
   onTabChange: (tab: string) => void;
+  onScoreSaved?: () => void;
 }
 
 type ShotOutcome = 'holed' | '1m' | '2m' | '3m' | 'miss';

@@ -1,0 +1,81 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Trophy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface PersonalBestBarProps {
+  drillTitle: string;
+  refreshTrigger?: number;
+}
+
+const PersonalBestBar = ({ drillTitle, refreshTrigger }: PersonalBestBarProps) => {
+  const [personalBest, setPersonalBest] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPersonalBest();
+  }, [drillTitle, refreshTrigger]);
+
+  const loadPersonalBest = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      // Get drill UUID from title
+      const { data: drillData } = await supabase
+        .from('drills')
+        .select('id')
+        .eq('title', drillTitle)
+        .single();
+
+      if (!drillData) {
+        setLoading(false);
+        return;
+      }
+
+      // Get personal best
+      const { data: results } = await supabase
+        .from('drill_results')
+        .select('total_points')
+        .eq('drill_id', drillData.id)
+        .eq('user_id', user.id)
+        .order('total_points', { ascending: false })
+        .limit(1);
+
+      if (results && results.length > 0) {
+        setPersonalBest(results[0].total_points);
+      }
+    } catch (error) {
+      console.error('Error loading personal best:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || personalBest === null) {
+    return null;
+  }
+
+  return (
+    <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/20">
+              <Trophy className="text-primary" size={20} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Your Personal Best</p>
+              <p className="text-2xl font-bold text-foreground">{personalBest} points</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default PersonalBestBar;

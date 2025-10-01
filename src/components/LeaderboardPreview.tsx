@@ -19,10 +19,12 @@ interface PersonalStats {
 
 interface LeaderboardPreviewProps {
   drillId: string;
+  drillTitle: string;
   onViewFullLeaderboard: () => void;
+  refreshTrigger?: number;
 }
 
-const LeaderboardPreview = ({ drillId, onViewFullLeaderboard }: LeaderboardPreviewProps) => {
+const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refreshTrigger }: LeaderboardPreviewProps) => {
   const [friendsLeaderboard, setFriendsLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [groupLeaderboard, setGroupLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [groupName, setGroupName] = useState<string>('');
@@ -31,7 +33,7 @@ const LeaderboardPreview = ({ drillId, onViewFullLeaderboard }: LeaderboardPrevi
 
   useEffect(() => {
     loadLeaderboards();
-  }, [drillId]);
+  }, [drillTitle, refreshTrigger]);
 
   const loadLeaderboards = async () => {
     try {
@@ -41,11 +43,23 @@ const LeaderboardPreview = ({ drillId, onViewFullLeaderboard }: LeaderboardPrevi
         return;
       }
 
+      // Get drill UUID from title
+      const { data: drillData } = await (supabase as any)
+        .from('drills')
+        .select('id')
+        .eq('title', drillTitle)
+        .single();
+
+      if (!drillData) {
+        setLoading(false);
+        return;
+      }
+
       // Load personal stats
       const { data: userResults } = await (supabase as any)
         .from('drill_results')
         .select('total_points')
-        .eq('drill_id', drillId)
+        .eq('drill_id', drillData.id)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -58,8 +72,8 @@ const LeaderboardPreview = ({ drillId, onViewFullLeaderboard }: LeaderboardPrevi
       }
 
       // Load friends leaderboard
-      const { data: friendsData } = await (supabase as any).rpc('top3_friends_for_drill', {
-        p_drill: drillId,
+      const { data: friendsData } = await (supabase as any).rpc('top3_friends_for_drill_by_title', {
+        p_drill_title: drillTitle,
       });
 
       if (friendsData) {
@@ -67,8 +81,8 @@ const LeaderboardPreview = ({ drillId, onViewFullLeaderboard }: LeaderboardPrevi
       }
 
       // Load group leaderboard
-      const { data: groupData } = await (supabase as any).rpc('top3_favourite_group_for_drill', {
-        p_drill: drillId,
+      const { data: groupData } = await (supabase as any).rpc('top3_favourite_group_for_drill_by_title', {
+        p_drill_title: drillTitle,
       });
 
       if (groupData) {

@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from "@/constants/app";
 
 interface PGATour18ComponentProps {
   onTabChange: (tab: string) => void;
+  onScoreSaved?: () => void;
 }
 
 interface Score {

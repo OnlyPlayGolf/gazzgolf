@@ -11,6 +11,7 @@ import AggressivePuttingComponent from "@/components/drills/AggressivePuttingCom
 import EightBallComponent from "@/components/drills/EightBallComponent";
 import DrillLeaderboard from "@/components/DrillLeaderboard";
 import LeaderboardPreview from "@/components/LeaderboardPreview";
+import PersonalBestBar from "@/components/PersonalBestBar";
 
 interface Drill {
   id: string;
@@ -54,6 +55,7 @@ const DrillDetail = () => {
   const [drill, setDrill] = useState<Drill | null>(null);
   const [currentTab, setCurrentTab] = useState('overview');
   const [drillIsFavorite, setDrillIsFavorite] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (drillId && drills[drillId]) {
@@ -100,14 +102,18 @@ const DrillDetail = () => {
     return null;
   }
 
+  const handleScoreSaved = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   const renderDrillComponent = () => {
     switch (drillId) {
       case 'pga-tour-18':
-        return <PGATour18Component onTabChange={setCurrentTab} />;
+        return <PGATour18Component onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
       case 'aggressive-putting':
-        return <AggressivePuttingComponent onTabChange={setCurrentTab} />;
+        return <AggressivePuttingComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
       case '8-ball-drill':
-        return <EightBallComponent onTabChange={setCurrentTab} />;
+        return <EightBallComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
       default:
         return null;
     }
@@ -163,10 +169,15 @@ const DrillDetail = () => {
             </CardContent>
           </Card>
 
+          {/* Personal Best Bar */}
+          <PersonalBestBar drillTitle={drill.title} refreshTrigger={refreshTrigger} />
+
           {/* Leaderboard Preview */}
           <LeaderboardPreview
             drillId={drill.id}
+            drillTitle={drill.title}
             onViewFullLeaderboard={() => setCurrentTab('leaderboard')}
+            refreshTrigger={refreshTrigger}
           />
 
           {/* Drill Component */}
@@ -189,6 +200,7 @@ const DrillDetail = () => {
               <DrillLeaderboard
                 drillId={drill.id}
                 drillName={drill.title}
+                refreshTrigger={refreshTrigger}
               />
             </TabsContent>
           </Tabs>

@@ -320,6 +320,16 @@ export type Database = {
         Args: { ts?: string; u1: string; u2: string }
         Returns: undefined
       }
+      global_leaderboard_for_drill: {
+        Args: { p_drill_title: string }
+        Returns: {
+          best_score: number
+          display_name: string
+          rank: number
+          user_id: string
+          username: string
+        }[]
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
@@ -337,8 +347,26 @@ export type Database = {
           username: string
         }[]
       }
+      top3_favourite_group_for_drill_by_title: {
+        Args: { p_drill_title: string }
+        Returns: {
+          best_score: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
       top3_friends_for_drill: {
         Args: { p_drill: string }
+        Returns: {
+          best_score: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
+      top3_friends_for_drill_by_title: {
+        Args: { p_drill_title: string }
         Returns: {
           best_score: number
           display_name: string

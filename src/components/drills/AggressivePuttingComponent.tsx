@@ -8,6 +8,7 @@ import { STORAGE_KEYS } from "@/constants/app";
 
 interface AggressivePuttingComponentProps {
   onTabChange: (tab: string) => void;
+  onScoreSaved?: () => void;
 }
 
 interface Attempt {
