@@ -320,6 +320,28 @@ export type Database = {
         Args: { ts?: string; u1: string; u2: string }
         Returns: undefined
       }
+      favourite_group_leaderboard_for_drill_by_title: {
+        Args: { p_drill_title: string }
+        Returns: {
+          best_score: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
+      friends_leaderboard_for_drill_by_title: {
+        Args: { p_drill_title: string }
+        Returns: {
+          best_score: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
+      get_or_create_drill_by_title: {
+        Args: { p_title: string }
+        Returns: string
+      }
       global_leaderboard_for_drill: {
         Args: { p_drill_title: string }
         Returns: {
