@@ -138,128 +138,38 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Global Leaderboard */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <Trophy size={18} />
-            Global Leaderboard
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {globalLeaderboard.length > 0 ? (
-            <div className="space-y-2">
-              {globalLeaderboard.map((entry) => (
-                <div 
-                  key={entry.user_id} 
-                  className={cn(
-                    "flex items-center justify-between p-3 rounded-md",
-                    entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-full font-bold",
-                      entry.rank === 1 ? "bg-yellow-500/20 text-yellow-500" :
-                      entry.rank === 2 ? "bg-gray-400/20 text-gray-400" :
-                      entry.rank === 3 ? "bg-orange-500/20 text-orange-500" :
-                      "bg-primary/20 text-primary"
-                    )}>
-                      #{entry.rank}
-                    </div>
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary/20 text-primary">
-                        {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className={cn(
-                      "font-medium",
-                      entry.user_id === user?.id && "font-bold text-primary"
-                    )}>
-                      {entry.display_name || entry.username || "Unknown"}
-                      {entry.user_id === user?.id && " (You)"}
-                    </span>
-                  </div>
-                  <Badge variant="outline" className={cn(
-                    entry.user_id === user?.id && "border-primary text-primary"
-                  )}>
-                    {entry.best_score}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              No one has played this drill yet. Be the first!
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Friends Leaderboard */}
-      {user && friendsLeaderboard.length > 0 && (
+      {user && (
         <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <Users size={18} />
-            Friends Top 3
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {friendsLeaderboard.length > 0 ? (
-            <div className="space-y-3">
-              {friendsLeaderboard.slice(0, 3).map((entry, index) => (
-                <div key={entry.user_id} className="flex items-center justify-between p-3 rounded-md bg-secondary/30">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20">
-                      {index === 0 ? (
-                        <Crown size={16} className="text-yellow-500" />
-                      ) : (
-                        <Trophy size={16} className={index === 1 ? "text-gray-400" : "text-orange-500"} />
-                      )}
-                    </div>
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary/20 text-primary">
-                        {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium text-foreground">
-                      {entry.display_name || entry.username || "Unknown"}
-                    </span>
-                  </div>
-                  <Badge variant="outline">{entry.best_score}</Badge>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              No friends have played this drill yet. Add some friends to compete!
-            </p>
-          )}
-        </CardContent>
-        </Card>
-      )}
-
-      {/* Group Leaderboard */}
-      {user && groupName && groupLeaderboard.length > 0 && (
-        <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-primary">
-              <Trophy size={20} />
-              {groupName} Top 3
+              <Users size={18} />
+              Friends Leaderboard
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {groupLeaderboard.length > 0 ? (
+            {friendsLeaderboard.length > 0 ? (
               <div className="space-y-3">
-                {groupLeaderboard.slice(0, 3).map((entry, index) => (
-                  <div key={entry.user_id} className="flex items-center justify-between p-3 rounded-md bg-secondary/30">
+                {friendsLeaderboard.map((entry, index) => (
+                  <div 
+                    key={entry.user_id} 
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-md",
+                      entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
+                    )}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20">
+                      <div className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-full font-bold",
+                        index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                        index === 1 ? "bg-gray-400/20 text-gray-400" :
+                        index === 2 ? "bg-orange-500/20 text-orange-500" :
+                        "bg-primary/20 text-primary"
+                      )}>
                         {index === 0 ? (
                           <Crown size={16} className="text-yellow-500" />
                         ) : (
-                          <Trophy size={16} className={index === 1 ? "text-gray-400" : "text-orange-500"} />
+                          `#${index + 1}`
                         )}
                       </div>
                       <Avatar className="h-8 w-8">
@@ -267,11 +177,83 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                           {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium text-foreground">
+                      <span className={cn(
+                        "font-medium",
+                        entry.user_id === user?.id && "font-bold text-primary"
+                      )}>
                         {entry.display_name || entry.username || "Unknown"}
+                        {entry.user_id === user?.id && " (You)"}
                       </span>
                     </div>
-                    <Badge variant="outline">{entry.best_score}</Badge>
+                    <Badge variant="outline" className={cn(
+                      entry.user_id === user?.id && "border-primary text-primary"
+                    )}>
+                      {entry.best_score}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No friends have played this drill yet. Add some friends to compete!
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Group Leaderboard */}
+      {user && groupName && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Trophy size={18} />
+              {groupName} Leaderboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {groupLeaderboard.length > 0 ? (
+              <div className="space-y-3">
+                {groupLeaderboard.map((entry, index) => (
+                  <div 
+                    key={entry.user_id} 
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-md",
+                      entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-full font-bold",
+                        index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                        index === 1 ? "bg-gray-400/20 text-gray-400" :
+                        index === 2 ? "bg-orange-500/20 text-orange-500" :
+                        "bg-primary/20 text-primary"
+                      )}>
+                        {index === 0 ? (
+                          <Crown size={16} className="text-yellow-500" />
+                        ) : (
+                          `#${index + 1}`
+                        )}
+                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary/20 text-primary">
+                          {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className={cn(
+                        "font-medium",
+                        entry.user_id === user?.id && "font-bold text-primary"
+                      )}>
+                        {entry.display_name || entry.username || "Unknown"}
+                        {entry.user_id === user?.id && " (You)"}
+                      </span>
+                    </div>
+                    <Badge variant="outline" className={cn(
+                      entry.user_id === user?.id && "border-primary text-primary"
+                    )}>
+                      {entry.best_score}
+                    </Badge>
                   </div>
                 ))}
               </div>

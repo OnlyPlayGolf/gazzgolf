@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getStorageItem, setStorageItem } from "@/utils/storageManager";
-import { STORAGE_KEYS } from "@/constants/app";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AggressivePuttingComponentProps {
   onTabChange: (tab: string) => void;
@@ -20,11 +19,18 @@ interface Attempt {
 
 const distances = [4, 5, 6]; // meters
 
-const AggressivePuttingComponent = ({ onTabChange }: AggressivePuttingComponentProps) => {
+const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePuttingComponentProps) => {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [currentDistance, setCurrentDistance] = useState(0);
   const [isActive, setIsActive] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id || null);
+    });
+  }, []);
 
   const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
   const currentDistanceValue = distances[currentDistance % distances.length];
@@ -57,26 +63,74 @@ const AggressivePuttingComponent = ({ onTabChange }: AggressivePuttingComponentP
     }
   };
 
-  const handleSaveScore = (finalScore: number) => {
-    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, null) || "Anonymous";
-    
-    const newScore = {
-      name: displayName,
-      score: finalScore,
-      attempts: attempts.length + 1, // Include the final attempt
-      timestamp: Date.now(),
-    };
+  const handleSaveScore = async (finalScore: number) => {
+    if (!userId) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your score.",
+        variant: "destructive",
+      });
+      setIsActive(false);
+      return;
+    }
 
-    const existingScores = getStorageItem(STORAGE_KEYS.AGGRESSIVE_PUTTING_SCORES, []);
-    existingScores.push(newScore);
-    setStorageItem(STORAGE_KEYS.AGGRESSIVE_PUTTING_SCORES, existingScores);
-    
-    setIsActive(false);
-    
-    toast({
-      title: "Drill Completed!",
-      description: `You reached 15 points in ${attempts.length + 1} attempts`,
-    });
+    try {
+      // Get drill UUID from title
+      const { data: drillData, error: drillError } = await supabase
+        .from('drills')
+        .select('id')
+        .eq('title', 'Aggressive Putting')
+        .single();
+
+      if (drillError || !drillData) {
+        console.error('Drill not found:', drillError);
+        toast({
+          title: "Error",
+          description: "Could not save score.",
+          variant: "destructive",
+        });
+        setIsActive(false);
+        return;
+      }
+
+      // Save drill result to Supabase
+      const { error: saveError } = await (supabase as any)
+        .from('drill_results')
+        .insert({
+          drill_id: drillData.id,
+          user_id: userId,
+          total_points: finalScore,
+          attempts_json: attempts
+        });
+
+      if (saveError) {
+        console.error('Error saving score:', saveError);
+        toast({
+          title: "Error saving score",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        setIsActive(false);
+        return;
+      }
+
+      setIsActive(false);
+      
+      toast({
+        title: "Drill Completed!",
+        description: `You reached 15 points in ${attempts.length + 1} attempts`,
+      });
+
+      onScoreSaved?.();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+      setIsActive(false);
+    }
   };
 
   const resetDrill = () => {

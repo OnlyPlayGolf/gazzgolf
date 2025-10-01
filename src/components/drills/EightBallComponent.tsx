@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getStorageItem, setStorageItem } from "@/utils/storageManager";
-import { STORAGE_KEYS } from "@/constants/app";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EightBallComponentProps {
   onTabChange: (tab: string) => void;
@@ -47,9 +46,16 @@ const outcomeLabels = {
   miss: 'Miss',
 };
 
-const EightBallComponent = ({ onTabChange }: EightBallComponentProps) => {
+const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentProps) => {
   const [attempts, setAttempts] = useState<StationAttempt[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id || null);
+    });
+  }, []);
 
   // Initialize attempts array for 8 stations × 5 rounds = 40 attempts
   const initializeAttempts = () => {
@@ -85,30 +91,73 @@ const EightBallComponent = ({ onTabChange }: EightBallComponentProps) => {
   const completedAttempts = attempts.filter(a => a.outcome !== null).length;
   const totalAttempts = 40; // 8 stations × 5 rounds
 
-  const saveScore = () => {
-    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, null) || "Anonymous";
-    
-    const scoreData = {
-      name: displayName,
-      score: totalPoints,
-      attempts: attempts.map(a => ({
-        station: stations[a.stationIndex],
-        round: a.roundIndex + 1,
-        outcome: a.outcome,
-        points: a.points,
-      })),
-      timestamp: Date.now(),
-    };
-    
-    // Save to localStorage (will be replaced with Supabase later)
-    const existingScores = getStorageItem('eightBallDrillScores', []);
-    existingScores.push(scoreData);
-    setStorageItem('eightBallDrillScores', existingScores);
-    
-    toast({
-      title: "Score Saved!",
-      description: `Your score of ${totalPoints} points has been recorded`,
-    });
+  const saveScore = async () => {
+    if (!userId) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your score.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get drill UUID from title
+      const { data: drillData, error: drillError } = await supabase
+        .from('drills')
+        .select('id')
+        .eq('title', '8-Ball')
+        .single();
+
+      if (drillError || !drillData) {
+        console.error('Drill not found:', drillError);
+        toast({
+          title: "Error",
+          description: "Could not save score.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save drill result to Supabase
+      const { error: saveError } = await (supabase as any)
+        .from('drill_results')
+        .insert({
+          drill_id: drillData.id,
+          user_id: userId,
+          total_points: totalPoints,
+          attempts_json: attempts.map(a => ({
+            station: stations[a.stationIndex],
+            round: a.roundIndex + 1,
+            outcome: a.outcome,
+            points: a.points,
+          }))
+        });
+
+      if (saveError) {
+        console.error('Error saving score:', saveError);
+        toast({
+          title: "Error saving score",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Score Saved!",
+        description: `Your score of ${totalPoints} points has been recorded`,
+      });
+
+      onScoreSaved?.();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

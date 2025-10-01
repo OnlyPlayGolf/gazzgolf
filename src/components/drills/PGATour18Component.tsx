@@ -5,18 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getStorageItem, setStorageItem } from "@/utils/storageManager";
-import { STORAGE_KEYS } from "@/constants/app";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PGATour18ComponentProps {
   onTabChange: (tab: string) => void;
   onScoreSaved?: () => void;
-}
-
-interface Score {
-  name: string;
-  score: number;
-  timestamp: number;
 }
 
 const distances = [
@@ -40,20 +33,18 @@ const distances = [
   { hole: 18, distance: "3.9m" },
 ];
 
-const PGATour18Component = ({ onTabChange }: PGATour18ComponentProps) => {
+const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentProps) => {
   const [totalPutts, setTotalPutts] = useState<string>("");
-  const [lastScore, setLastScore] = useState<Score | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load last score
-    const scores = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
-    if (scores.length > 0) {
-      setLastScore(scores[scores.length - 1]);
-    }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id || null);
+    });
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const putts = parseInt(totalPutts);
     if (isNaN(putts) || putts < 18 || putts > 100) {
       toast({
@@ -64,41 +55,71 @@ const PGATour18Component = ({ onTabChange }: PGATour18ComponentProps) => {
       return;
     }
 
-    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, null) || "Anonymous";
-    
-    const newScore = {
-      name: displayName,
-      score: putts,
-      timestamp: Date.now(),
-    };
+    if (!userId) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your score.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const existingScores = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
-    existingScores.push(newScore);
-    setStorageItem(STORAGE_KEYS.PGA18_SCORES, existingScores);
-    
-    setLastScore(newScore);
-    setTotalPutts("");
-    
-    toast({
-      title: "Score Saved",
-      description: `Your score of ${putts} putts has been recorded`,
-    });
+    try {
+      // Get drill UUID from title
+      const { data: drillData, error: drillError } = await supabase
+        .from('drills')
+        .select('id')
+        .eq('title', 'PGA Tour 18')
+        .single();
+
+      if (drillError || !drillData) {
+        console.error('Drill not found:', drillError);
+        toast({
+          title: "Error",
+          description: "Could not save score.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save drill result to Supabase
+      const { error: saveError } = await (supabase as any)
+        .from('drill_results')
+        .insert({
+          drill_id: drillData.id,
+          user_id: userId,
+          total_points: putts,
+          attempts_json: [{ totalPutts: putts }]
+        });
+
+      if (saveError) {
+        console.error('Error saving score:', saveError);
+        toast({
+          title: "Error saving score",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setTotalPutts("");
+      
+      toast({
+        title: "Score Saved",
+        description: `Your score of ${putts} putts has been recorded`,
+      });
+
+      onScoreSaved?.();
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleReset = () => {
-    const displayName = getStorageItem(STORAGE_KEYS.DISPLAY_NAME, null) || "Anonymous";
-    const existingScores = getStorageItem(STORAGE_KEYS.PGA18_SCORES, []);
-    const filteredScores = existingScores.filter((score: Score) => score.name !== displayName);
-    
-    setStorageItem(STORAGE_KEYS.PGA18_SCORES, filteredScores);
-    setLastScore(null);
-    setTotalPutts("");
-    
-    toast({
-      title: "Score Reset",
-      description: "Your scores have been cleared",
-    });
-  };
 
   const handleStartDrill = () => {
     onTabChange('score');
@@ -150,16 +171,6 @@ const PGATour18Component = ({ onTabChange }: PGATour18ComponentProps) => {
           <CardTitle>Record Your Score</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {lastScore && (
-            <div className="p-3 bg-muted/50 rounded-md">
-              <div className="text-sm text-muted-foreground">Last Score</div>
-              <div className="font-medium">{lastScore.score} putts</div>
-              <div className="text-xs text-muted-foreground">
-                {new Date(lastScore.timestamp).toLocaleDateString()}
-              </div>
-            </div>
-          )}
-          
           <div className="space-y-2">
             <Label htmlFor="total-putts">Total Putts (18 holes)</Label>
             <Input
@@ -173,24 +184,13 @@ const PGATour18Component = ({ onTabChange }: PGATour18ComponentProps) => {
             />
           </div>
           
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleSave}
-              disabled={!totalPutts}
-              className="flex-1 bg-primary hover:bg-primary/90"
-            >
-              Save Score
-            </Button>
-            {lastScore && (
-              <Button 
-                onClick={handleReset}
-                variant="outline"
-                className="flex-1"
-              >
-                Reset Score
-              </Button>
-            )}
-          </div>
+          <Button 
+            onClick={handleSave}
+            disabled={!totalPutts}
+            className="w-full bg-primary hover:bg-primary/90"
+          >
+            Save Score
+          </Button>
         </CardContent>
       </Card>
     </div>
