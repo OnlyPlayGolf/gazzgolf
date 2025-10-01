@@ -90,17 +90,6 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
         return;
       }
 
-      if (drillError || !drillData) {
-        console.error('Drill not found:', drillError);
-        toast({
-          title: "Error",
-          description: "Could not save score.",
-          variant: "destructive",
-        });
-        setIsActive(false);
-        return;
-      }
-
       const { error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({

@@ -116,16 +116,6 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
         return;
       }
 
-      if (drillError || !drillData) {
-        console.error('Drill not found:', drillError);
-        toast({
-          title: "Error",
-          description: "Could not save score.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       // Save drill result to Supabase
       const { error: saveError } = await (supabase as any)
         .from('drill_results')

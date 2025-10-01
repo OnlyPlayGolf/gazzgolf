@@ -33,11 +33,6 @@ const PersonalBestBar = ({ drillTitle, refreshTrigger }: PersonalBestBarProps) =
         return;
       }
 
-      if (!drillData) {
-        setLoading(false);
-        return;
-      }
-
       // Get personal best
       const { data: results } = await supabase
         .from('drill_results')
