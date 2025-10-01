@@ -65,12 +65,19 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
     }
 
     try {
-      // Get drill UUID from title
-      const { data: drillData, error: drillError } = await supabase
-        .from('drills')
-        .select('id')
-        .eq('title', 'PGA Tour 18')
-        .single();
+      // Ensure drill exists and get its UUID by title
+      const { data: drillId, error: drillError } = await (supabase as any)
+        .rpc('get_or_create_drill_by_title', { p_title: 'PGA Tour 18 Holes' });
+
+      if (drillError || !drillId) {
+        console.error('Drill not found or could not create:', drillError);
+        toast({
+          title: "Error",
+          description: "Could not save score.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (drillError || !drillData) {
         console.error('Drill not found:', drillError);
@@ -86,7 +93,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       const { error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
-          drill_id: drillData.id,
+          drill_id: drillId,
           user_id: userId,
           total_points: putts,
           attempts_json: [{ totalPutts: putts }]

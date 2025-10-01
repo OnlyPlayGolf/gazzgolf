@@ -43,14 +43,11 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
         return;
       }
 
-      // Get drill UUID from title
-      const { data: drillData } = await (supabase as any)
-        .from('drills')
-        .select('id')
-        .eq('title', drillTitle)
-        .single();
+      // Ensure drill exists and get its UUID by title
+      const { data: drillId } = await (supabase as any)
+        .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
 
-      if (!drillData) {
+      if (!drillId) {
         setLoading(false);
         return;
       }
@@ -59,7 +56,7 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
       const { data: userResults } = await (supabase as any)
         .from('drill_results')
         .select('total_points')
-        .eq('drill_id', drillData.id)
+        .eq('drill_id', drillId)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -72,7 +69,7 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
       }
 
       // Load friends leaderboard
-      const { data: friendsData } = await (supabase as any).rpc('top3_friends_for_drill_by_title', {
+      const { data: friendsData } = await (supabase as any).rpc('friends_leaderboard_for_drill_by_title', {
         p_drill_title: drillTitle,
       });
 
@@ -81,7 +78,7 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
       }
 
       // Load group leaderboard
-      const { data: groupData } = await (supabase as any).rpc('top3_favourite_group_for_drill_by_title', {
+      const { data: groupData } = await (supabase as any).rpc('favourite_group_leaderboard_for_drill_by_title', {
         p_drill_title: drillTitle,
       });
 
@@ -105,6 +102,25 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
 
         if (groupInfo?.name) {
           setGroupName(groupInfo.name);
+        }
+
+        // Fallback: ensure user appears if alone
+        const best = personalStats.personalBest;
+        if ((!friendsData || friendsData.length === 0) && best !== null) {
+          const { data: me } = await (supabase as any)
+            .from('profiles')
+            .select('display_name, username')
+            .eq('id', user.id)
+            .maybeSingle();
+          setFriendsLeaderboard([{ user_id: user.id, display_name: me?.display_name, username: me?.username, best_score: best }]);
+        }
+        if ((!groupData || groupData.length === 0) && best !== null) {
+          const { data: me2 } = await (supabase as any)
+            .from('profiles')
+            .select('display_name, username')
+            .eq('id', user.id)
+            .maybeSingle();
+          setGroupLeaderboard([{ user_id: user.id, display_name: me2?.display_name, username: me2?.username, best_score: best }]);
         }
       }
     } catch (error) {

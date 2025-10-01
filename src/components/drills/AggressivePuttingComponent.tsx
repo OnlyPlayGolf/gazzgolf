@@ -75,12 +75,20 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     }
 
     try {
-      // Get drill UUID from title
-      const { data: drillData, error: drillError } = await supabase
-        .from('drills')
-        .select('id')
-        .eq('title', 'Aggressive Putting')
-        .single();
+      // Ensure drill exists and get its UUID by title
+      const { data: drillId, error: drillError } = await (supabase as any)
+        .rpc('get_or_create_drill_by_title', { p_title: 'Aggressive Putting' });
+
+      if (drillError || !drillId) {
+        console.error('Drill not found or could not create:', drillError);
+        toast({
+          title: "Error",
+          description: "Could not save score.",
+          variant: "destructive",
+        });
+        setIsActive(false);
+        return;
+      }
 
       if (drillError || !drillData) {
         console.error('Drill not found:', drillError);
@@ -93,11 +101,10 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
         return;
       }
 
-      // Save drill result to Supabase
       const { error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
-          drill_id: drillData.id,
+          drill_id: drillId,
           user_id: userId,
           total_points: finalScore,
           attempts_json: attempts

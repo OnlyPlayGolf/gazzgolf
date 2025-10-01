@@ -24,12 +24,14 @@ const PersonalBestBar = ({ drillTitle, refreshTrigger }: PersonalBestBarProps) =
         return;
       }
 
-      // Get drill UUID from title
-      const { data: drillData } = await supabase
-        .from('drills')
-        .select('id')
-        .eq('title', drillTitle)
-        .single();
+      // Ensure drill exists and get its UUID by title
+      const { data: drillId } = await (supabase as any)
+        .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
+
+      if (!drillId) {
+        setLoading(false);
+        return;
+      }
 
       if (!drillData) {
         setLoading(false);
@@ -40,7 +42,7 @@ const PersonalBestBar = ({ drillTitle, refreshTrigger }: PersonalBestBarProps) =
       const { data: results } = await supabase
         .from('drill_results')
         .select('total_points')
-        .eq('drill_id', drillData.id)
+        .eq('drill_id', drillId)
         .eq('user_id', user.id)
         .order('total_points', { ascending: false })
         .limit(1);

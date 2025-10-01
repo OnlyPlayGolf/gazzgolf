@@ -60,7 +60,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
 
       // Load friends leaderboard
       const { data: friendsData, error: friendsError } = await (supabase as any)
-        .rpc('top3_friends_for_drill_by_title', { p_drill_title: drillName });
+        .rpc('friends_leaderboard_for_drill_by_title', { p_drill_title: drillName });
 
       if (friendsError) {
         console.error('Error loading friends leaderboard:', friendsError);
@@ -70,7 +70,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
 
       // Load favorite group leaderboard
       const { data: groupData, error: groupError } = await (supabase as any)
-        .rpc('top3_favourite_group_for_drill_by_title', { p_drill_title: drillName });
+        .rpc('favourite_group_leaderboard_for_drill_by_title', { p_drill_title: drillName });
 
       if (groupError) {
         console.error('Error loading group leaderboard:', groupError);
@@ -94,6 +94,38 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
 
         if (groupInfo?.name) {
           setGroupName(groupInfo.name);
+        }
+      }
+
+      // Fallback: include current user if alone
+      const { data: drillUuid } = await (supabase as any)
+        .rpc('get_or_create_drill_by_title', { p_title: drillName });
+      if (drillUuid) {
+        const { data: myBest } = await (supabase as any)
+          .from('drill_results')
+          .select('total_points')
+          .eq('drill_id', drillUuid)
+          .eq('user_id', userId)
+          .order('total_points', { ascending: false })
+          .limit(1);
+        const best = myBest && myBest.length > 0 ? myBest[0].total_points : null;
+        if (best !== null) {
+          if (!friendsData || friendsData.length === 0) {
+            const { data: me } = await (supabase as any)
+              .from('profiles')
+              .select('display_name, username')
+              .eq('id', userId)
+              .maybeSingle();
+            setFriendsLeaderboard([{ user_id: userId, display_name: me?.display_name, username: me?.username, best_score: best }]);
+          }
+          if (!groupData || groupData.length === 0) {
+            const { data: me2 } = await (supabase as any)
+              .from('profiles')
+              .select('display_name, username')
+              .eq('id', userId)
+              .maybeSingle();
+            setGroupLeaderboard([{ user_id: userId, display_name: me2?.display_name, username: me2?.username, best_score: best }]);
+          }
         }
       }
 
