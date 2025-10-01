@@ -33,13 +33,15 @@ const PersonalBestBar = ({ drillTitle, refreshTrigger }: PersonalBestBarProps) =
         return;
       }
 
-      // Get personal best
+      // Get personal best (direction depends on drill)
+      const bestAscending = drillTitle === 'PGA Tour 18 Holes';
       const { data: results } = await supabase
         .from('drill_results')
-        .select('total_points')
+        .select('total_points, created_at')
         .eq('drill_id', drillId)
         .eq('user_id', user.id)
-        .order('total_points', { ascending: false })
+        .order('total_points', { ascending: bestAscending })
+        .order('created_at', { ascending: true })
         .limit(1);
 
       if (results && results.length > 0) {
@@ -66,7 +68,7 @@ const PersonalBestBar = ({ drillTitle, refreshTrigger }: PersonalBestBarProps) =
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Your Personal Best</p>
-              <p className="text-2xl font-bold text-foreground">{personalBest} points</p>
+              <p className="text-2xl font-bold text-foreground">{personalBest} {drillTitle === 'PGA Tour 18 Holes' ? 'putts' : 'points'}</p>
             </div>
           </div>
         </div>
