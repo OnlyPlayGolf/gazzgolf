@@ -1798,5 +1798,905 @@
     "Target": "2 out of 10",
     "Type": "Bunker/Putt",
     "Difficulty": "Intermediate"
+  },
+  {
+    "Level": 1,
+    "Title": "Amateur Putting 2m",
+    "Description": "Make 3 putts in a row from 2 meter distance",
+    "Distance": "2m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 2,
+    "Title": "Amateur Putting 3m",
+    "Description": "Make 5 putts with 10 attempts from 3 meters",
+    "Distance": "3m",
+    "Target": "5 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 3,
+    "Title": "Lag Putting 10m",
+    "Description": "Hit 2 putts inside 2 meters of the hole from 10 meters",
+    "Distance": "10m",
+    "Target": "2 out of 6",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 4,
+    "Title": "Speed Control 4m",
+    "Description": "Get 3 putts to go in the hole or stop 0.5m past the hole from 4 meters",
+    "Distance": "4m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 5,
+    "Title": "7m distance control",
+    "Description": "From 7 meters get 2 balls inside 1.5 meters with 10 attempts",
+    "Distance": "7m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 6,
+    "Title": "Chip 10m Rough",
+    "Description": "Hit 10 chip shots from 8m in the rough and get at least 2 shots to stop within 2 meters of the hole",
+    "Distance": "8m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 7,
+    "Title": "Good 0.5m Putting",
+    "Description": "Make 10 out of 10 putts from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "10 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 8,
+    "Title": "0.5m Putting",
+    "Description": "Make 5 consecutive putts around the hole from 0.5 meters",
+    "Distance": "0.5m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 9,
+    "Title": "Up and Down Rough",
+    "Description": "Make 1 up and down from 15 meters away in the rough",
+    "Distance": "15m",
+    "Target": "1 out of 8",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 10,
+    "Title": "Rough 10m",
+    "Description": "Chip 3 balls in a row inside 4 meters of the hole",
+    "Distance": "10m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 11,
+    "Title": "1m putts",
+    "Description": "Make 6 putts from 1 meter with 10 attempts",
+    "Distance": "1m",
+    "Target": "6 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 12,
+    "Title": "Amateur Bunker 12m",
+    "Description": "Hit 10 bunker shots from 15m and get at least 2 shots to finish on the green within 5 meters of the hole",
+    "Distance": "12m",
+    "Target": "2 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 13,
+    "Title": "Good Bunker Shot",
+    "Description": "Hit 1 bunker shot onto the green within 3 meters (Any distance)",
+    "Distance": "Optional",
+    "Target": "1 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 14,
+    "Title": "Speed Ladder 6-8m",
+    "Description": "Hit the ball in the hole or 1m past the hole from 6m, 7m, 8 meters",
+    "Distance": "6m, 7m, 8m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 15,
+    "Title": "Pressure Putt 1m",
+    "Description": "Make 1 putt from 1 meter with 2 attempts",
+    "Distance": "1m",
+    "Target": "1 out of 2",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 16,
+    "Title": "Amateur Chip 10m",
+    "Description": "Hit 10 chip shots from 10m and get at least 2 shots to stop within 2 meters of the hole (Fairway)",
+    "Distance": "10m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 17,
+    "Title": "Amateur Pitch 20m",
+    "Description": "Hit 10 pitch shots from 20m and get at least 2 shots to stop within 5 meters of the hole (Fairway)",
+    "Distance": "20m",
+    "Target": "2 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 18,
+    "Title": "Amateur Pitch 25m",
+    "Description": "Hit 10 pitch shots from 25m and get at least 2 shots to stop within 5 meters of the hole (Rough)",
+    "Distance": "25m",
+    "Target": "4 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 19,
+    "Title": "Amateur Approach 40m",
+    "Description": "Pick a target 40m away. Hit 1 ball left of the target, make sure it carrys past 40 meters and finishes no more than 20 meters left of the target",
+    "Distance": "40m",
+    "Target": "1 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 20,
+    "Title": "Amateur Approach 50m",
+    "Description": "Pick a target 50m away. Hit 1 ball right of the target, make sure it carrys past 40 meters and finishes no more than 20 meters right of the target",
+    "Distance": "50m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 21,
+    "Title": "Lag Putting 12m",
+    "Description": "Hit 3 putts inside 2 meters of the hole from 12 meters",
+    "Distance": "12m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 22,
+    "Title": "Up and Down Rougher",
+    "Description": "Make 2 up and downs from 15m away in the Rough (10 attempts)",
+    "Distance": "15m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 23,
+    "Title": "Distance Control Putt 5m",
+    "Description": "Get 2 balls to stop within 0.5m past the hole from 5 meters",
+    "Distance": "5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 24,
+    "Title": "Amateur Wedge 60m Left",
+    "Description": "Pick a target 60m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target.",
+    "Distance": "60m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 25,
+    "Title": "Amateur Wedge 60m",
+    "Description": "Pick a target 60m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target",
+    "Distance": "60m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 26,
+    "Title": "Zone Carry Drill 80m",
+    "Description": "Hit 3 out of 10 balls that clearly carry the 80m sign. (With a club that goes around 80 meters)",
+    "Distance": "80m",
+    "Target": "3 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 27,
+    "Title": "Direction Control 100-120m",
+    "Description": "Hit 3 out of 10 shots that land between the 100m and 120m markers",
+    "Distance": "90-110m",
+    "Target": "3 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 28,
+    "Title": "Chip Challenge 9 iron",
+    "Description": "Use a 9 iron and chip 3 within 5 meters of the hole from 15 meters (Fairway)",
+    "Distance": "15m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 29,
+    "Title": "Chip Height Fairway",
+    "Description": "Hit one high and one low chip inside 5 meters of the hole from 15m (Fairway)",
+    "Distance": "15m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 30,
+    "Title": "Chip Height Rough",
+    "Description": "Hit one high and one low chip inside 5 meters of the hole from 15m (Rough)",
+    "Distance": "15m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 31,
+    "Title": "Lag Putting 8-10m",
+    "Description": "Hit the ball inside a 1m circle of the hole from 8m, 9m, 10 meters",
+    "Distance": "8m, 9m, 10m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 32,
+    "Title": "10 Putts 0.5m",
+    "Description": "Make 10 putts around the hole in a row from 0.5 meter",
+    "Distance": "0.5m",
+    "Target": "10 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 33,
+    "Title": "Amateur Bunker Escape 3m",
+    "Description": "Hit 1 bunker shot onto the green within 5 meters (Any distance)",
+    "Distance": "Optional",
+    "Target": "1 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 34,
+    "Title": "Pitch Control 40m",
+    "Description": "Stop 3 pitches within 5m of the hole from 40m (Rough)",
+    "Distance": "40m",
+    "Target": "3 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 35,
+    "Title": "Distance Control Putt",
+    "Description": "Get 3 balls to stop within 0.5m past the hole from 5 meters",
+    "Distance": "5m",
+    "Target": "3 out of 8",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 36,
+    "Title": "Wedge 70m Left",
+    "Description": "Pick a target 70m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target.",
+    "Distance": "70m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 37,
+    "Title": "Amateur 70m Right",
+    "Description": "Pick a target 70m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target",
+    "Distance": "70m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 38,
+    "Title": "Control Pitching Wedge 80m",
+    "Description": "With your Pitching Wedge, hit 3 out of 10 shots that land between 80-100 meters",
+    "Distance": "80m",
+    "Target": "5 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 39,
+    "Title": "Strike Quality 80m",
+    "Description": "Hit 3 consecutive clean shots that reach the 80m marker",
+    "Distance": "80m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 40,
+    "Title": "10m Two Putts",
+    "Description": "Putt from 10 meters and finish in no more than 2 strokes, do it twice",
+    "Distance": "10m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 41,
+    "Title": "Bunker Up and Downs",
+    "Description": "Make 2 up and downs from the bunker (Any distance)",
+    "Distance": "Optional",
+    "Target": "2 out of 10",
+    "Type": "Bunker/Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 42,
+    "Title": "Next Lag Putting 8-10m",
+    "Description": "Hit the ball inside a 2m circle of the hole in a row from 8m, 9m, 10 meters",
+    "Distance": "8m, 9m, 10m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 43,
+    "Title": "Distance Control Putt 6m",
+    "Description": "Get 2 balls to stop within 0.5m past the hole from 6 meters",
+    "Distance": "6m",
+    "Target": "2 out of 8",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 44,
+    "Title": "Zone Carry Drill 100m",
+    "Description": "Hit 3 out of 10 balls that clearly carry the 100m sign. (With a club that goes around 100 meters)",
+    "Distance": "100m",
+    "Target": "3 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 45,
+    "Title": "Clutch Bunker Escape",
+    "Description": "Hit 1 bunker shot onto the green within 3 meters (Any distance)",
+    "Distance": "Optional",
+    "Target": "1 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 46,
+    "Title": "High and Low Chip Rough",
+    "Description": "Hit one high and one low chip shot in a row inside 5 meters of the hole from 15m (Rough)",
+    "Distance": "15m",
+    "Target": "2 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 47,
+    "Title": "High and Low Chip Fairway",
+    "Description": "Hit one high and one low chip shot in a row inside 5 meters of the hole from 15m (Fairway)",
+    "Distance": "15m",
+    "Target": "2 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 48,
+    "Title": "Speed Ladder Putting",
+    "Description": "Hit the ball in the hole or 0.5m past the hole from 4m, 4.5m, 5m in a row",
+    "Distance": "4m, 4.5m, 5m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 49,
+    "Title": "Wedge Approach 80m",
+    "Description": "Pick a target 80m away. Hit a ball left of the target, and make sure it finishes no more than 15 meters left of the target.",
+    "Distance": "80m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 50,
+    "Title": "Approach 80m Right",
+    "Description": "Pick a target 80m away. Hit a ball right of the target, and make sure it finishes no more than 15 meters right of the target",
+    "Distance": "80m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 51,
+    "Title": "Good Approach 80m Left",
+    "Description": "Pick a target 80m away. Hit 2 balls in a row left of the target but no more than 15 yards left of the target",
+    "Distance": "80m",
+    "Target": "2 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 52,
+    "Title": "Good Approach 80m Right",
+    "Description": "Pick a target 80m away. Hit 2 balls in a row right of the target but no more than 15 yards right of the target",
+    "Distance": "80m",
+    "Target": "2 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 53,
+    "Title": "5m Maker",
+    "Description": "Make 2 Putts from 5 meters with 10 attempts",
+    "Distance": "5m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 54,
+    "Title": "Chip Challenge 35m",
+    "Description": "Stop 1 pitch within 5m of the hole from 35 meters (Rough)",
+    "Distance": "35m",
+    "Target": "1 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 55,
+    "Title": "Speed Ladder Putting 4-6m",
+    "Description": "Hit the ball in the hole or 0.5m past the hole from 4m, 5m, 6m in a row",
+    "Distance": "4m, 5m, 6m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 56,
+    "Title": "Amateur Putting 10m",
+    "Description": "Hit 3 putts in the hole or 1m past the hole from 10 meters",
+    "Distance": "10m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 57,
+    "Title": "Speed putt 12m",
+    "Description": "Hit 4 putts in the hole or 2m past the hole from 12 meters",
+    "Distance": "12m",
+    "Target": "4 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 58,
+    "Title": "Strike Quality 80m Again",
+    "Description": "Hit 5 consecutive clean shots that reach the 80m marker",
+    "Distance": "80m",
+    "Target": "5 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 59,
+    "Title": "Control Putt 6m",
+    "Description": "Get 3 balls to stop within 0.5m past the hole from 6 meters",
+    "Distance": "6m",
+    "Target": "3 out of 8",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 60,
+    "Title": "Amateur Bunker 20m",
+    "Description": "Hit 10 bunker shots from 20m and get at least 1 shots to finish on the green within 5 meters of the hole",
+    "Distance": "20m",
+    "Target": "1 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 61,
+    "Title": "Chip 15m 9i",
+    "Description": "Use a 9 iron and chip 3 in a row within 5 meters of the hole from 15 meters (Fairway)",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 62,
+    "Title": "Good Wedge 50m Left",
+    "Description": "Pick a target 50m away. Hit 3 balls in a row left of the target but no more than 10 yards left of the target.",
+    "Distance": "50m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 63,
+    "Title": "Good Wedge 50m",
+    "Description": "Pick a target 50m away. Hit 3 balls in a row right of the target but no more than 10 yards right of the target",
+    "Distance": "50m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 64,
+    "Title": "Strike Quality 100m",
+    "Description": "Hit 3 consecutive clean shots that reach the 100m marker. (With a club that goes around 100 meters)",
+    "Distance": "100m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 65,
+    "Title": "Chip Control",
+    "Description": "Hit 3 chip shots within 4m of the hole from 15 meters (Rough)",
+    "Distance": "15m",
+    "Target": "3 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 66,
+    "Title": "Intermediate Putting 2.5m",
+    "Description": "Make 3 putts in a row from 2.5 meters",
+    "Distance": "2.5m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 67,
+    "Title": "Intermediate Putting 1m",
+    "Description": "Make 7 putts in a row from 1m",
+    "Distance": "1m",
+    "Target": "7 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 68,
+    "Title": "Intermediate Putting 1.5m",
+    "Description": "Make 4 putts in a row from 1.5m",
+    "Distance": "1.5m",
+    "Target": "4 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 69,
+    "Title": "Good Approach 100m",
+    "Description": "Pick a target 100m away. Hit 2 balls in a row right of the target but no more than 20 yards right of the target",
+    "Distance": "100m",
+    "Target": "2 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 70,
+    "Title": "Low Trajectory Challenge",
+    "Description": "Hit 3 low shots to the 100m target",
+    "Distance": "1000m",
+    "Target": "3 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 71,
+    "Title": "Wedge 90m Right",
+    "Description": "Pick a target 90m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target",
+    "Distance": "90m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 72,
+    "Title": "Wedge 90m Left",
+    "Description": "Pick a target 90m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target",
+    "Distance": "90m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 73,
+    "Title": "Approach 100m",
+    "Description": "Pick a target 100m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target",
+    "Distance": "100m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 74,
+    "Title": "Distance Control Putt 8m",
+    "Description": "Get 2 balls to stop within 0.5m past the hole from 8 meters",
+    "Distance": "8m",
+    "Target": "2 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 75,
+    "Title": "Up and Down Rough",
+    "Description": "Make 2 up and downs from 25m away in the Rough (8 attempts)",
+    "Distance": "25m",
+    "Target": "2 out of 8",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 76,
+    "Title": "Up and Down Fairway",
+    "Description": "Make 2 up and downs from 30m away in the Fairway (8 attempts)",
+    "Distance": "30m",
+    "Target": "2 out of 8",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 77,
+    "Title": "Amateur Pitch 25m",
+    "Description": "Hit 10 pitch shots from 25m and get at least 3 shots to stop within 3 meters of the hole (Fairway)",
+    "Distance": "25m",
+    "Target": "3 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 78,
+    "Title": "Amateur Pitch 30m",
+    "Description": "Hit 10 pitch shots from 30m and get at least 3 shots to stop within 3 meters of the hole (Rough)",
+    "Distance": "30m",
+    "Target": "3 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 79,
+    "Title": "Amateur Pitch 35m",
+    "Description": "Hit 10 pitch shots from 35m and get at least 3 shots to stop within 3 meters of the hole (Fairway)",
+    "Distance": "35m",
+    "Target": "3 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 80,
+    "Title": "Strike Quality 120m",
+    "Description": "Hit 5 consecutive clean shots that reach the 120m marker",
+    "Distance": "120m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 81,
+    "Title": "Approach 110m Left",
+    "Description": "Pick a target 110m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target",
+    "Distance": "110m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 82,
+    "Title": "Consistent Approach",
+    "Description": "Pick a target 100m away. Hit 3 balls in a row left of the target but no more than 20 yards left of the target",
+    "Distance": "100m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 83,
+    "Title": "Long Bunker Escape",
+    "Description": "Hit a bunker shot from 20m within 5 meters of the hole",
+    "Distance": "20m",
+    "Target": "1 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 84,
+    "Title": "Amateur Bunker 15m",
+    "Description": "Hit 10 bunker shots from 15m and get at least 2 shots to finish on the green within 4 meters of the hole",
+    "Distance": "15m",
+    "Target": "2 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 85,
+    "Title": "Amateur Pitch 40m",
+    "Description": "Hit 10 pitch shots from 40m and get at least 3 shots to stop within 4 meters of the hole (Rough)",
+    "Distance": "40m",
+    "Target": "3 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 86,
+    "Title": "Amateur Pitch 40m",
+    "Description": "Hit 10 pitch shots from 40m and get at least 2 shots to stop within 3 meters of the hole (Fairway)",
+    "Distance": "40m",
+    "Target": "2 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 87,
+    "Title": "Up and Down Fairway",
+    "Description": "Make 2 up and downs from 20m away in the Fairway (10 attempts)",
+    "Distance": "20m",
+    "Target": "2 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 88,
+    "Title": "Longer Bunker Escape",
+    "Description": "Hit a bunker shot from 25m within 5 meters of the hole",
+    "Distance": "25m",
+    "Target": "1 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 89,
+    "Title": "Distance Control Putt 8m",
+    "Description": "Get 3 balls to stop within 0.5m past the hole from 8 meters",
+    "Distance": "8m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 90,
+    "Title": "Amateur Approach 100m",
+    "Description": "Pick a target 100m away. Hit a ball left of the target, and make sure it finishes no more than 15 meters left of the target",
+    "Distance": "100m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 91,
+    "Title": "Amateur Approach 110m",
+    "Description": "Pick a target 110m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target",
+    "Distance": "110m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 92,
+    "Title": "Amateur Approach 120m",
+    "Description": "Pick a target 120m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target",
+    "Distance": "120m",
+    "Target": "1 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 93,
+    "Title": "Pitch Control 25m",
+    "Description": "Hit 10 pitches from 25m and stop 3 inside 3m (fairway)",
+    "Distance": "25m",
+    "Target": "3 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 94,
+    "Title": "Lag Putting 15m",
+    "Description": "Hit 3 putts inside 2 meters of the hole from 15 meters",
+    "Distance": "15m",
+    "Target": "3 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 95,
+    "Title": "2m Around The Hole",
+    "Description": "Make 4 putts around the hole from 2 meters",
+    "Distance": "2m",
+    "Target": "4 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 96,
+    "Title": "Chip 15m Fairway",
+    "Description": "Hit 10 chip shots from 15m and get at least 3 shots to stop within 2 meters of the hole (Fairway)",
+    "Distance": "15m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 97,
+    "Title": "Chip 15m Rough",
+    "Description": "Hit 10 chip shots from 15m and get at least 3 shots to stop within 3 meters of the hole (Rough)",
+    "Distance": "15m",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 98,
+    "Title": "Trajectory Challenge 100m",
+    "Description": "Hit 3 high shots and 3 low shots to the 100m target",
+    "Distance": "100m",
+    "Target": "6 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 99,
+    "Title": "Putt Test 1m",
+    "Description": "Make 10 putts around the hole in a row from 1 meter",
+    "Distance": "1m",
+    "Target": "10 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Amateur"
+  },
+  {
+    "Level": 100,
+    "Title": "Strike Quality 150m",
+    "Description": "Hit 3 consecutive clean shots that land past the 150 meter target",
+    "Distance": "150m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Amateur"
   }
 ]

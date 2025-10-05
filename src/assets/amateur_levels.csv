@@ -1,0 +1,101 @@
+﻿Level;Title;Description;Distance;Target;Type;Difficulty
+1;Amateur Putting 2m;Make 3 putts in a row from 2 meter distance;2m;3 consecutive ;Putt;Amateur
+2;Amateur Putting 3m;Make 5 putts with 10 attempts from 3 meters;3m;5 out of 10 ;Putt;Amateur
+3;Lag Putting 10m;Hit 2 putts inside 2 meters of the hole from 10 meters;10m;2 out of 6;Putt;Amateur
+4;Speed Control 4m;Get 3 putts to go in the hole or stop 0.5m past the hole from 4 meters;4m;3 out of 10 ;Putt;Amateur
+5;7m distance control;From 7 meters get 2 balls inside 1.5 meters with 10 attempts;7m;2 out of 10 ;Putt;Amateur
+6;Chip 10m Rough;Hit 10 chip shots from 8m in the rough and get at least 2 shots to stop within 2 meters of the hole;8m;2 out of 10 ;Chip;Amateur
+7;Good 0.5m Putting;Make 10 out of 10 putts from 0.5 meters;0.5m;10 out of 10;Putt;Amateur
+8;0.5m Putting;Make 5 consecutive putts around the hole from 0.5 meters;0.5m;5 consecutive;Putt;Amateur
+9;Up and Down Rough;Make 1 up and down from 15 meters away in the rough;15m;1 out of 8;Chip;Amateur
+10;Rough 10m;Chip 3 balls in a row inside 4 meters of the hole;10m;3 consecutive ;Chip;Amateur
+11;1m putts ;Make 6 putts from 1 meter with 10 attempts;1m;6 out of 10 ;Putt;Amateur
+12;Amateur Bunker 12m;Hit 10 bunker shots from 15m and get at least 2 shots to finish on the green within 5 meters of the hole;12m;2 out of 10 ;Bunker;Amateur
+13;Good Bunker Shot;Hit 1 bunker shot onto the green within 3 meters (Any distance);Optional;1 out of 10;Bunker;Amateur
+14;Speed Ladder 6-8m;Hit the ball in the hole or 1m past the hole from 6m, 7m, 8 meters;6m, 7m, 8m;3 consecutive ;Putt;Amateur
+15;Pressure Putt 1m;Make 1 putt from 1 meter with 2 attempts;1m ;1 out of 2;Putt;Amateur
+16;Amateur Chip 10m;Hit 10 chip shots from 10m and get at least 2 shots to stop within 2 meters of the hole (Fairway);10m;2 out of 10 ;Chip;Amateur
+17;Amateur Pitch 20m;Hit 10 pitch shots from 20m and get at least 2 shots to stop within 5 meters of the hole (Fairway);20m;2 out of 10 ;Pitch;Amateur
+18;Amateur Pitch 25m;Hit 10 pitch shots from 25m and get at least 2 shots to stop within 5 meters of the hole (Rough);25m;4 out of 10 ;Pitch;Amateur
+19;Amateur Approach 40m;Pick a target 40m away. Hit 1 ball left of the target, make sure it carrys past 40 meters and finishes no more than 20 meters left of the target;40m;1 out of 10;Pitch;Amateur
+20;Amateur Approach 50m;Pick a target 50m away. Hit 1 ball right of the target, make sure it carrys past 40 meters and finishes no more than 20 meters right of the target;50m;1 out of 10;Wedge;Amateur
+21;Lag Putting 12m;Hit 3 putts inside 2 meters of the hole from 12 meters;12m;3 out of 10;Putt;Amateur
+22;Up and Down Rougher;Make 2 up and downs from 15m away in the Rough (10 attempts);15m;2 out of 10;Chip;Amateur
+23;Distance Control Putt 5m;Get 2 balls to stop within 0.5m past the hole from 5 meters;5m;2 out of 10;Putt;Amateur
+24;Amateur Wedge 60m Left;Pick a target 60m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target.;60m;1 out of 10;Wedge;Amateur
+25;Amateur Wedge 60m;Pick a target 60m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target;60m;1 out of 10;Wedge;Amateur
+26;Zone Carry Drill 80m;Hit 3 out of 10 balls that clearly carry the 80m sign. (With a club that goes around 80 meters);80m;3 out of 10;Wedge;Amateur
+27;Direction Control 100-120m;Hit 3 out of 10 shots that land between the 100m and 120m markers;90-110m;3 out of 10;Wedge;Amateur
+28;Chip Challenge 9 iron;Use a 9 iron and chip 3 within 5 meters of the hole from 15 meters (Fairway);15m;3 out of 10;Chip;Amateur
+29;Chip Height Fairway;Hit one high and one low chip inside 5 meters of the hole from 15m (Fairway);15m;2 out of 10;Chip;Amateur
+30;Chip Height Rough;Hit one high and one low chip inside 5 meters of the hole from 15m (Rough);15m;2 out of 10;Chip;Amateur
+31;Lag Putting 8-10m;Hit the ball inside a 1m circle of the hole from 8m, 9m, 10 meters;8m, 9m, 10m ;3 out of 10;Putt;Amateur
+32;10 Putts 0.5m ;Make 10 putts around the hole in a row from 0.5 meter;0.5m;10 consecutive;Putt;Amateur
+33;Amateur Bunker Escape 3m;Hit 1 bunker shot onto the green within 5 meters (Any distance);Optional;1 out of 5;Bunker;Amateur
+34;Pitch Control 40m;Stop 3 pitches within 5m of the hole from 40m (Rough);40m;3 out of 10;Pitch;Amateur
+35;Distance Control Putt ;Get 3 balls to stop within 0.5m past the hole from 5 meters;5m;3 out of 8;Putt;Amateur
+36;Wedge 70m Left;Pick a target 70m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target.;70m;1 out of 10;Wedge;Amateur
+37;Amateur 70m Right;Pick a target 70m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target;70m;1 out of 10;Wedge;Amateur
+38;Control Pitching Wedge 80m;With your Pitching Wedge, hit 3 out of 10 shots that land between 80-100 meters;80m;5 out of 10;Approach;Amateur
+39;Strike Quality 80m;Hit 3 consecutive clean shots that reach the 80m marker;80m;3 consecutive;Approach;Amateur
+40;10m Two Putts;Putt from 10 meters and finish in no more than 2 strokes, do it twice;10m;2 out of 10;Putt;Amateur
+41;Bunker Up and Downs;Make 2 up and downs from the bunker (Any distance) ;Optional;2 out of 10;Bunker/Putt;Amateur
+42;Next Lag Putting 8-10m;Hit the ball inside a 2m circle of the hole in a row from 8m, 9m, 10 meters;8m, 9m, 10m ;3 consecutive;Putt;Amateur
+43;Distance Control Putt 6m;Get 2 balls to stop within 0.5m past the hole from 6 meters;6m;2 out of 8;Putt;Amateur
+44;Zone Carry Drill 100m;Hit 3 out of 10 balls that clearly carry the 100m sign. (With a club that goes around 100 meters);100m;3 out of 10;Approach;Amateur
+45;Clutch Bunker Escape;Hit 1 bunker shot onto the green within 3 meters (Any distance);Optional;1 out of 5;Bunker;Amateur
+46;High and Low Chip Rough;Hit one high and one low chip shot in a row inside 5 meters of the hole from 15m (Rough);15m;2 consecutive;Chip;Amateur
+47;High and Low Chip Fairway;Hit one high and one low chip shot in a row inside 5 meters of the hole from 15m (Fairway);15m;2 consecutive;Chip;Amateur
+48;Speed Ladder Putting;Hit the ball in the hole or 0.5m past the hole from 4m, 4.5m, 5m in a row;4m, 4.5m, 5m;3 consecutive;Putt;Amateur
+49;Wedge Approach 80m;Pick a target 80m away. Hit a ball left of the target, and make sure it finishes no more than 15 meters left of the target.;80m;1 out of 10;Wedge;Amateur
+50;Approach 80m Right;Pick a target 80m away. Hit a ball right of the target, and make sure it finishes no more than 15 meters right of the target;80m;1 out of 10;Wedge;Amateur
+51;Good Approach 80m Left;Pick a target 80m away. Hit 2 balls in a row left of the target but no more than 15 yards left of the target;80m;2 consecutive;Approach;Amateur
+52;Good Approach 80m Right;Pick a target 80m away. Hit 2 balls in a row right of the target but no more than 15 yards right of the target;80m;2 consecutive;Approach;Amateur
+53;5m Maker;Make 2 Putts from 5 meters with 10 attempts;5m;2 out of 10;Putt;Amateur
+54;Chip Challenge 35m;Stop 1 pitch within 5m of the hole from 35 meters (Rough);35m;1 out of 10;Pitch;Amateur
+55;Speed Ladder Putting 4-6m;Hit the ball in the hole or 0.5m past the hole from 4m, 5m, 6m in a row;4m, 5m, 6m;3 consecutive;Putt;Amateur
+56;Amateur Putting 10m;Hit 3 putts in the hole or 1m past the hole from 10 meters;10m;3 out of 10;Putt;Amateur
+57;Speed putt 12m;Hit 4 putts in the hole or 2m past the hole from 12 meters;12m;4 out of 10;Putt;Amateur
+58;Strike Quality 80m Again;Hit 5 consecutive clean shots that reach the 80m marker;80m;5 consecutive;Approach;Amateur
+59;Control Putt 6m;Get 3 balls to stop within 0.5m past the hole from 6 meters;6m;3 out of 8;Putt;Amateur
+60;Amateur Bunker 20m;Hit 10 bunker shots from 20m and get at least 1 shots to finish on the green within 5 meters of the hole;20m;1 out of 10;Bunker;Amateur
+61;Chip 15m 9i;Use a 9 iron and chip 3 in a row within 5 meters of the hole from 15 meters (Fairway);15m;3 consecutive;Chip;Amateur
+62;Good Wedge 50m Left;Pick a target 50m away. Hit 3 balls in a row left of the target but no more than 10 yards left of the target. ;50m;3 consecutive;Approach;Amateur
+63;Good Wedge 50m;Pick a target 50m away. Hit 3 balls in a row right of the target but no more than 10 yards right of the target;50m;3 consecutive;Approach;Amateur
+64;Strike Quality 100m;Hit 3 consecutive clean shots that reach the 100m marker. (With a club that goes around 100 meters);100m;3 consecutive;Approach;Amateur
+65;Chip Control;Hit 3 chip shots within 4m of the hole from 15 meters (Rough);15m;3 out of 10;Pitch;Amateur
+66;Intermediate Putting 2.5m;Make 3 putts in a row from 2.5 meters;2.5m;3 consecutive;Putt;Amateur
+67;Intermediate Putting 1m;Make 7 putts in a row from 1m;1m;7 consecutive;Putt;Amateur
+68;Intermediate Putting 1.5m;Make 4 putts in a row from 1.5m;1.5m;4 consecutive;Putt;Amateur
+69;Good Approach 100m;Pick a target 100m away. Hit 2 balls in a row right of the target but no more than 20 yards right of the target;100m;2 consecutive;Approach;Amateur
+70;Low Trajectory Challenge ;Hit 3 low shots to the 100m target;1000m;3 out of 10;Approach;Amateur
+71;Wedge 90m Right;Pick a target 90m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target;90m;1 out of 10;Wedge;Amateur
+72;Wedge 90m Left;Pick a target 90m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target;90m;1 out of 10;Wedge;Amateur
+73;Approach 100m;Pick a target 100m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target;100m;1 out of 10;Wedge;Amateur
+74;Distance Control Putt 8m;Get 2 balls to stop within 0.5m past the hole from 8 meters;8m;2 out of 10;Putt;Amateur
+75;Up and Down Rough;Make 2 up and downs from 25m away in the Rough (8 attempts);25m;2 out of 8;Chip;Amateur
+76;Up and Down Fairway;Make 2 up and downs from 30m away in the Fairway (8 attempts);30m;2 out of 8;Chip;Amateur
+77;Amateur Pitch 25m;Hit 10 pitch shots from 25m and get at least 3 shots to stop within 3 meters of the hole (Fairway);25m;3 out of 10;Pitch;Amateur
+78;Amateur Pitch 30m;Hit 10 pitch shots from 30m and get at least 3 shots to stop within 3 meters of the hole (Rough);30m;3 out of 10;Pitch;Amateur
+79;Amateur Pitch 35m;Hit 10 pitch shots from 35m and get at least 3 shots to stop within 3 meters of the hole (Fairway);35m;3 out of 10;Pitch;Amateur
+80;Strike Quality 120m;Hit 5 consecutive clean shots that reach the 120m marker;120m;3 consecutive;Approach;Amateur
+81;Approach 110m Left;Pick a target 110m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target;110m;1 out of 10;Wedge;Amateur
+82;Consistent Approach;Pick a target 100m away. Hit 3 balls in a row left of the target but no more than 20 yards left of the target;100m;3 consecutive;Approach;Amateur
+83;Long Bunker Escape;Hit a bunker shot from 20m within 5 meters of the hole;20m;1 out of 5;Bunker;Amateur
+84;Amateur Bunker 15m;Hit 10 bunker shots from 15m and get at least 2 shots to finish on the green within 4 meters of the hole;15m;2 out of 10;Bunker;Amateur
+85;Amateur Pitch 40m;Hit 10 pitch shots from 40m and get at least 3 shots to stop within 4 meters of the hole (Rough);40m;3 out of 10;Pitch;Amateur
+86;Amateur Pitch 40m;Hit 10 pitch shots from 40m and get at least 2 shots to stop within 3 meters of the hole (Fairway);40m;2 out of 10;Pitch;Amateur
+87;Up and Down Fairway;Make 2 up and downs from 20m away in the Fairway (10 attempts);20m;2 out of 10;Chip;Amateur
+88;Longer Bunker Escape;Hit a bunker shot from 25m within 5 meters of the hole;25m;1 out of 5;Bunker;Amateur
+89;Distance Control Putt 8m;Get 3 balls to stop within 0.5m past the hole from 8 meters;8m;3 out of 10;Putt;Amateur
+90;Amateur Approach 100m;Pick a target 100m away. Hit a ball left of the target, and make sure it finishes no more than 15 meters left of the target;100m;1 out of 10;Wedge;Amateur
+91;Amateur Approach 110m;Pick a target 110m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target;110m;1 out of 10;Wedge;Amateur
+92;Amateur Approach 120m;Pick a target 120m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target;120m;1 out of 10;Wedge;Amateur
+93;Pitch Control 25m;Hit 10 pitches from 25m and stop 3 inside 3m (fairway);25m;3 out of 10;Pitch;Amateur
+94;Lag Putting 15m;Hit 3 putts inside 2 meters of the hole from 15 meters;15m;3 out of 10;Putt;Amateur
+95;2m Around The Hole;Make 4 putts around the hole from 2 meters;2m;4 consecutive;Putt;Amateur
+96;Chip 15m Fairway;Hit 10 chip shots from 15m and get at least 3 shots to stop within 2 meters of the hole (Fairway);15m;3 out of 10;Chip;Amateur
+97;Chip 15m Rough;Hit 10 chip shots from 15m and get at least 3 shots to stop within 3 meters of the hole (Rough);15m;3 out of 10;Chip;Amateur
+98;Trajectory Challenge 100m;Hit 3 high shots and 3 low shots to the 100m target;100m;6 out of 10 ;Approach;Amateur
+99;Putt Test 1m;Make 10 putts around the hole in a row from 1 meter;1m ;10 consecutive;Putt;Amateur
+100;Strike Quality 150m;Hit 3 consecutive clean shots that land past the 150 meter target;150m;3 consecutive;Approach;Amateur

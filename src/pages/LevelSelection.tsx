@@ -29,7 +29,8 @@ const LevelSelection = () => {
       title: "Amateur", 
       subtitle: "Build confidence and consistency.",
       icon: Star,
-      available: false,
+      available: true,
+      action: () => navigate("/levels/amateur"),
     },
     {
       id: "professional",
