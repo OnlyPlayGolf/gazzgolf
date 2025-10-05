@@ -598,6 +598,36 @@ const Profile = () => {
                           className="mt-1"
                         />
                       </div>
+                      <div>
+                        <Label htmlFor="country">Country</Label>
+                        <Input
+                          id="country"
+                          value={profile?.country || ""}
+                          onChange={(e) => handleUpdateProfile('country', e.target.value)}
+                          placeholder="Enter your country"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="handicap">Handicap</Label>
+                        <Input
+                          id="handicap"
+                          value={profile?.handicap || ""}
+                          onChange={(e) => handleUpdateProfile('handicap', e.target.value)}
+                          placeholder="e.g. +10 to 54"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="home-club">Home Club</Label>
+                        <Input
+                          id="home-club"
+                          value={profile?.home_club || ""}
+                          onChange={(e) => handleUpdateProfile('home_club', e.target.value)}
+                          placeholder="Enter your golf club"
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
+import { supabase } from "@/integrations/supabase/client";
 
 const Levels = () => {
   const navigate = useNavigate();
@@ -15,9 +16,10 @@ const Levels = () => {
   const [levels, setLevels] = useState<Level[]>([]);
   const [stats, setStats] = useState({ completed: 0, total: 0, percentage: 0 });
   const [activeTab, setActiveTab] = useState("play");
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
       const allLevels = getLevelsWithProgress();
       // Filter by difficulty
       const filteredLevels = allLevels.filter(
@@ -31,6 +33,17 @@ const Levels = () => {
       
       setLevels(filteredLevels);
       setStats({ completed, total, percentage });
+
+      // Load user profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('display_name, username, country, handicap, home_club')
+          .eq('id', user.id)
+          .single();
+        setProfile(profileData);
+      }
     };
     loadData();
   }, [difficulty]);
@@ -92,8 +105,14 @@ const Levels = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Player Name</h2>
-                <p className="text-sm text-muted-foreground">Handicap: 15 • Golf Club Name</p>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {profile?.display_name || profile?.username || 'Player Name'}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {profile?.handicap ? `Handicap: ${profile.handicap}` : 'Handicap: Not set'}
+                  {profile?.home_club && ` • ${profile.home_club}`}
+                  {profile?.country && ` • ${profile.country}`}
+                </p>
               </div>
             </div>
 
