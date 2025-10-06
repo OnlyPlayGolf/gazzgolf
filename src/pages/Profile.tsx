@@ -289,7 +289,51 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !event.target.files || event.target.files.length === 0) return;
+
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user.id}/avatar.${fileExt}`;
+
+    setUploadingAvatar(true);
+    try {
+      // Delete old avatar if exists
+      if (profile?.avatar_url) {
+        const oldPath = profile.avatar_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('avatars').remove([oldPath]);
+      }
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      await handleUpdateProfile('avatar_url', data.publicUrl);
+
+      toast({
+        title: "Avatar updated",
+        description: "Your profile picture has been updated.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload avatar.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const handleSearchFriends = async () => {
     if (!user || !friendSearch.trim()) return;
@@ -630,12 +674,29 @@ const Profile = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                      {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() : 
-                       profile?.email ? profile.email.charAt(0).toUpperCase() : "?"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-16 w-16">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Profile" className="object-cover" />
+                      ) : (
+                        <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                          {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() : 
+                           profile?.email ? profile.email.charAt(0).toUpperCase() : "?"}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 p-1 bg-primary rounded-full cursor-pointer hover:bg-primary/90">
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={uploadingAvatar}
+                        className="hidden"
+                      />
+                      <Settings size={12} className="text-primary-foreground" />
+                    </label>
+                  </div>
                   <div className="flex-1">
                     <div className="space-y-2">
                       <div>
@@ -875,7 +936,29 @@ const Profile = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleFriendRequestResponse(request.id, false)}
+                          onClick={async () => {
+                            try {
+                              const { error } = await (supabase as any)
+                                .from('friendships')
+                                .delete()
+                                .eq('id', request.id);
+
+                              if (error) throw error;
+
+                              toast({
+                                title: "Request cancelled",
+                                description: "Friend request cancelled.",
+                              });
+
+                              await loadUserData();
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to cancel request.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
                           className="text-destructive hover:text-destructive"
                         >
                           <X size={16} className="mr-1" />
