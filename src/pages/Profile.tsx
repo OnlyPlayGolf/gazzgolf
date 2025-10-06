@@ -214,7 +214,7 @@ const Profile = () => {
 
       setOutgoingRequests(outgoingList);
 
-      // Load groups
+      // Load groups with member counts
       const { data: groupsData } = await (supabase as any)
         .from('group_members')
         .select(`
@@ -223,13 +223,23 @@ const Profile = () => {
         `)
         .eq('user_id', user.id);
 
-      const groupsList = groupsData?.map((g: any) => ({
-        id: g.groups.id,
-        name: g.groups.name,
-        owner_id: g.groups.owner_id,
-        role: g.role,
-        member_count: 0 // We could do a separate query for this if needed
-      })) || [];
+      // Get member counts for each group
+      const groupsList = await Promise.all(
+        (groupsData || []).map(async (g: any) => {
+          const { count } = await (supabase as any)
+            .from('group_members')
+            .select('*', { count: 'exact', head: true })
+            .eq('group_id', g.groups.id);
+
+          return {
+            id: g.groups.id,
+            name: g.groups.name,
+            owner_id: g.groups.owner_id,
+            role: g.role,
+            member_count: count || 0
+          };
+        })
+      );
 
       setGroups(groupsList);
 
@@ -279,22 +289,72 @@ const Profile = () => {
     }
   };
 
-  const handleSendFriendRequest = async () => {
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  const handleSearchFriends = async () => {
     if (!user || !friendSearch.trim()) return;
 
     setLoading(true);
     try {
-      // Find user by username
-      const { data: targetUser } = await (supabase as any)
+      // Search by username or display_name
+      const { data: users } = await (supabase as any)
         .from('profiles')
-        .select('id')
-        .eq('username', friendSearch.trim())
-        .single();
+        .select('id, username, display_name, country')
+        .or(`username.ilike.%${friendSearch.trim()}%,display_name.ilike.%${friendSearch.trim()}%`)
+        .neq('id', user.id)
+        .limit(10);
 
-      if (!targetUser) {
+      if (!users || users.length === 0) {
         toast({
-          title: "User not found",
-          description: "No user found with that username.",
+          title: "No users found",
+          description: "No users match your search.",
+        });
+        setSearchResults([]);
+        return;
+      }
+
+      // Get group memberships for each user
+      const usersWithGroups = await Promise.all(
+        users.map(async (u: any) => {
+          const { data: groupData } = await (supabase as any)
+            .from('group_members')
+            .select('groups(name)')
+            .eq('user_id', u.id);
+
+          return {
+            ...u,
+            groups: groupData?.map((g: any) => g.groups.name) || []
+          };
+        })
+      );
+
+      setSearchResults(usersWithGroups);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to search users.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendFriendRequest = async (targetUserId: string, targetUsername: string) => {
+    if (!user) return;
+
+    try {
+      // Check if friendship already exists
+      const { data: existing } = await (supabase as any)
+        .from('friendships')
+        .select('id, status')
+        .or(`and(requester.eq.${user.id},addressee.eq.${targetUserId}),and(requester.eq.${targetUserId},addressee.eq.${user.id})`)
+        .maybeSingle();
+
+      if (existing) {
+        toast({
+          title: "Request already exists",
+          description: existing.status === 'accepted' ? "You are already friends." : "Friend request already sent.",
           variant: "destructive",
         });
         return;
@@ -305,7 +365,7 @@ const Profile = () => {
         .from('friendships')
         .insert({
           requester: user.id,
-          addressee: targetUser.id,
+          addressee: targetUserId,
           status: 'pending'
         });
 
@@ -313,19 +373,19 @@ const Profile = () => {
 
       toast({
         title: "Friend request sent",
-        description: `Friend request sent to ${friendSearch}`,
+        description: `Friend request sent to ${targetUsername}`,
       });
 
+      setSearchResults([]);
       setFriendSearch("");
       setIsAddFriendOpen(false);
+      await loadUserData();
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to send friend request.",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -657,34 +717,74 @@ const Profile = () => {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="friend-search">Username</Label>
-                          <Input
-                            id="friend-search"
-                            value={friendSearch}
-                            onChange={(e) => setFriendSearch(e.target.value)}
-                            placeholder="Enter username"
-                            className="mt-1"
-                          />
+                          <Label htmlFor="friend-search">Search by name or username</Label>
+                          <div className="flex gap-2 mt-1">
+                            <Input
+                              id="friend-search"
+                              value={friendSearch}
+                              onChange={(e) => setFriendSearch(e.target.value)}
+                              placeholder="Enter name or username"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSearchFriends();
+                              }}
+                            />
+                            <Button
+                              onClick={handleSearchFriends}
+                              disabled={loading || !friendSearch.trim()}
+                            >
+                              <Search size={16} />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={handleSendFriendRequest}
-                            disabled={loading || !friendSearch.trim()}
-                            className="flex-1"
-                          >
-                            {loading ? "Sending..." : "Send Request"}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setIsAddFriendOpen(false);
-                              setFriendSearch("");
-                            }}
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
+                        
+                        {searchResults.length > 0 && (
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {searchResults.map((result) => (
+                              <div key={result.id} className="flex items-center justify-between p-3 rounded-md bg-secondary/50">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                                        {(result.display_name || result.username || "?").charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                      <p className="font-medium text-foreground">
+                                        {result.display_name || result.username}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">@{result.username}</p>
+                                    </div>
+                                  </div>
+                                  <div className="mt-2 text-xs text-muted-foreground">
+                                    {result.country && <p>📍 {result.country}</p>}
+                                    {result.groups.length > 0 && (
+                                      <p>👥 Member of: {result.groups.join(', ')}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSendFriendRequest(result.id, result.username)}
+                                >
+                                  <UserPlus size={16} className="mr-1" />
+                                  Add
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setIsAddFriendOpen(false);
+                            setFriendSearch("");
+                            setSearchResults([]);
+                          }}
+                          className="w-full"
+                        >
+                          Close
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -772,7 +872,15 @@ const Profile = () => {
                             <p className="text-sm text-muted-foreground">@{request.username}</p>
                           </div>
                         </div>
-                        <Badge variant="outline" className="text-xs">Pending</Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleFriendRequestResponse(request.id, false)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <X size={16} className="mr-1" />
+                          Cancel
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -796,18 +904,52 @@ const Profile = () => {
                 {friends.length > 0 ? (
                   <div className="space-y-2">
                     {friends.map((friend) => (
-                      <div key={friend.id} className="flex items-center gap-3 p-2 rounded-md bg-secondary/50">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-muted text-muted-foreground text-sm">
-                            {(friend.display_name || friend.username || "?").charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {friend.display_name || friend.username || "Unknown"}
-                          </p>
-                          <p className="text-sm text-muted-foreground">@{friend.username}</p>
+                      <div key={friend.id} className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                              {(friend.display_name || friend.username || "?").charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {friend.display_name || friend.username || "Unknown"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">@{friend.username}</p>
+                          </div>
                         </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            try {
+                              // Delete from friends_pairs (will cascade delete friendship)
+                              const { error } = await (supabase as any)
+                                .from('friendships')
+                                .delete()
+                                .or(`and(requester.eq.${user?.id},addressee.eq.${friend.id}),and(requester.eq.${friend.id},addressee.eq.${user?.id})`)
+                                .eq('status', 'accepted');
+
+                              if (error) throw error;
+
+                              toast({
+                                title: "Friend removed",
+                                description: "You are no longer friends.",
+                              });
+
+                              await loadUserData();
+                            } catch (error) {
+                              toast({
+                                title: "Error",
+                                description: "Failed to remove friend.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <X size={16} />
+                        </Button>
                       </div>
                     ))}
                   </div>
