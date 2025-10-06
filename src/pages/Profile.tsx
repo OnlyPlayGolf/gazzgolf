@@ -55,6 +55,8 @@ const Profile = () => {
   const [friendSearch, setFriendSearch] = useState("");
   const [groupName, setGroupName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -332,8 +334,6 @@ const Profile = () => {
     }
   };
 
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const handleSearchFriends = async () => {
     if (!user || !friendSearch.trim()) return;
@@ -694,7 +694,7 @@ const Profile = () => {
                         disabled={uploadingAvatar}
                         className="hidden"
                       />
-                      <Settings size={12} className="text-primary-foreground" />
+                      <Plus size={12} className="text-primary-foreground" />
                     </label>
                   </div>
                   <div className="flex-1">
@@ -1010,8 +1010,7 @@ const Profile = () => {
                               const { error } = await (supabase as any)
                                 .from('friendships')
                                 .delete()
-                                .or(`and(requester.eq.${user?.id},addressee.eq.${friend.id}),and(requester.eq.${friend.id},addressee.eq.${user?.id})`)
-                                .eq('status', 'accepted');
+                                .or(`and(requester.eq.${user?.id},addressee.eq.${friend.id}),and(requester.eq.${friend.id},addressee.eq.${user?.id}),and(user_a.eq.${user?.id},user_b.eq.${friend.id}),and(user_a.eq.${friend.id},user_b.eq.${user?.id})`);
 
                               if (error) throw error;
 
