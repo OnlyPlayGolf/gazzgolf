@@ -28,6 +28,13 @@ const allDrills = [
     category: 'shortgame',
     icon: Zap,
   },
+  {
+    id: 'wedges-distance-control',
+    title: 'Wedges 40–80 m — Distance Control',
+    shortDescription: 'Hit specified distances in carry with precise distance control. Score points for accuracy.',
+    category: 'wedges',
+    icon: Hammer,
+  },
 ];
 
 const categoryNames = {

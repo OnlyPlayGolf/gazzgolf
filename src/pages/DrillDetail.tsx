@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Target, Zap, Star } from "lucide-react";
+import { ArrowLeft, Target, Zap, Star, Hammer } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { isFavorite, addToFavorites, removeFromFavorites } from "@/utils/favoritesManager";
 import PGATour18Component from "@/components/drills/PGATour18Component";
 import AggressivePuttingComponent from "@/components/drills/AggressivePuttingComponent";
 import EightBallComponent from "@/components/drills/EightBallComponent";
+import WedgesDistanceControlComponent from "@/components/drills/WedgesDistanceControlComponent";
 import DrillLeaderboard from "@/components/DrillLeaderboard";
 import LeaderboardPreview from "@/components/LeaderboardPreview";
 import PersonalBestBar from "@/components/PersonalBestBar";
@@ -47,6 +48,14 @@ const drills: Record<string, Drill> = {
     category: 'Short Game',
     icon: Zap,
   },
+  'wedges-distance-control': {
+    id: 'wedges-distance-control',
+    title: 'Wedges 40–80 m — Distance Control',
+    shortDescription: 'Hit specified distances in carry with precise distance control. Score points for accuracy.',
+    longDescription: 'This drill focuses on developing precise distance control with your wedges from 40-80 meters. Hit 18 shots at specified distances from the fairway, with some shots having constraints (not short/not long). Score points based on how close you finish to the target distance. Perfect for improving your scoring game from prime scoring distances.',
+    category: 'Wedges',
+    icon: Hammer,
+  },
 };
 
 const DrillDetail = () => {
@@ -73,6 +82,7 @@ const DrillDetail = () => {
         'pga-tour-18': 'putting',
         'aggressive-putting': 'putting',
         '8-ball-drill': 'shortgame',
+        'wedges-distance-control': 'wedges',
       };
       
       const categoryId = categoryMap[drill.id] || 'putting';
@@ -114,6 +124,8 @@ const DrillDetail = () => {
         return <AggressivePuttingComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
       case '8-ball-drill':
         return <EightBallComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
+      case 'wedges-distance-control':
+        return <WedgesDistanceControlComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
       default:
         return null;
     }
