@@ -37,6 +37,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   const [totalPutts, setTotalPutts] = useState<string>("");
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
+  const [completedHoles, setCompletedHoles] = useState<number[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,6 +125,14 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
     onTabChange('score');
   };
 
+  const toggleHoleCompletion = (holeNumber: number) => {
+    setCompletedHoles(prev => 
+      prev.includes(holeNumber)
+        ? prev.filter(h => h !== holeNumber)
+        : [...prev, holeNumber]
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Instructions Card */}
@@ -157,7 +166,15 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
             <CardContent>
               <div className="space-y-3">
                 {distances.map((item) => (
-                  <div key={item.hole} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                  <div 
+                    key={item.hole} 
+                    onClick={() => toggleHoleCompletion(item.hole)}
+                    className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition-colors ${
+                      completedHoles.includes(item.hole)
+                        ? 'bg-green-500/20 border-2 border-green-500'
+                        : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                  >
                     <span className="font-medium">Hole {item.hole}</span>
                     <span className="text-muted-foreground">{item.distance}</span>
                   </div>
