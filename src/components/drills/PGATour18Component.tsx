@@ -13,29 +13,30 @@ interface PGATour18ComponentProps {
 }
 
 const distances = [
-  { hole: 1, distance: "2.5m" },
-  { hole: 2, distance: "4.1m" },
-  { hole: 3, distance: "3.2m" },
-  { hole: 4, distance: "5.8m" },
-  { hole: 5, distance: "2.1m" },
-  { hole: 6, distance: "3.7m" },
-  { hole: 7, distance: "4.5m" },
-  { hole: 8, distance: "2.9m" },
-  { hole: 9, distance: "6.2m" },
-  { hole: 10, distance: "3.4m" },
-  { hole: 11, distance: "4.8m" },
-  { hole: 12, distance: "2.3m" },
-  { hole: 13, distance: "5.1m" },
-  { hole: 14, distance: "3.8m" },
-  { hole: 15, distance: "4.2m" },
-  { hole: 16, distance: "2.7m" },
-  { hole: 17, distance: "5.5m" },
-  { hole: 18, distance: "3.9m" },
+  { hole: 1, distance: "1.5m (5ft)" },
+  { hole: 2, distance: "12m" },
+  { hole: 3, distance: "0.6m (2ft)" },
+  { hole: 4, distance: "4m" },
+  { hole: 5, distance: "1.2m (4ft)" },
+  { hole: 6, distance: "16m" },
+  { hole: 7, distance: "8m" },
+  { hole: 8, distance: "3m" },
+  { hole: 9, distance: "6m" },
+  { hole: 10, distance: "9m" },
+  { hole: 11, distance: "0.9m (3ft)" },
+  { hole: 12, distance: "7m" },
+  { hole: 13, distance: "2.1m (7ft)" },
+  { hole: 14, distance: "3.5m" },
+  { hole: 15, distance: "10m" },
+  { hole: 16, distance: "1.8m (6ft)" },
+  { hole: 17, distance: "5m" },
+  { hole: 18, distance: "2.4m (8ft)" },
 ];
 
 const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentProps) => {
   const [totalPutts, setTotalPutts] = useState<string>("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [drillStarted, setDrillStarted] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -119,6 +120,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
 
 
   const handleStartDrill = () => {
+    setDrillStarted(true);
     onTabChange('score');
   };
 
@@ -145,51 +147,55 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
         </CardContent>
       </Card>
 
-      {/* Distances Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Hole Distances</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            {distances.map((item) => (
-              <div key={item.hole} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                <span className="font-medium">Hole {item.hole}</span>
-                <span className="text-muted-foreground">{item.distance}</span>
+      {drillStarted && (
+        <>
+          {/* Distances Grid */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Hole Distances</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {distances.map((item) => (
+                  <div key={item.hole} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                    <span className="font-medium">Hole {item.hole}</span>
+                    <span className="text-muted-foreground">{item.distance}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Scoring Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Record Your Score</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="total-putts">Total Putts (18 holes)</Label>
-            <Input
-              id="total-putts"
-              type="number"
-              min="18"
-              max="100"
-              value={totalPutts}
-              onChange={(e) => setTotalPutts(e.target.value)}
-              placeholder="Enter total putts"
-            />
-          </div>
-          
-          <Button 
-            onClick={handleSave}
-            disabled={!totalPutts}
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            Save Score
-          </Button>
-        </CardContent>
-      </Card>
+          {/* Scoring Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Record Your Score</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="total-putts">Total Putts (18 holes)</Label>
+                <Input
+                  id="total-putts"
+                  type="number"
+                  min="18"
+                  max="100"
+                  value={totalPutts}
+                  onChange={(e) => setTotalPutts(e.target.value)}
+                  placeholder="Enter total putts"
+                />
+              </div>
+              
+              <Button 
+                onClick={handleSave}
+                disabled={!totalPutts}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                Save Score
+              </Button>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };
