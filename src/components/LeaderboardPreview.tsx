@@ -9,6 +9,7 @@ interface LeaderboardEntry {
   user_id: string;
   display_name: string | null;
   username: string | null;
+  avatar_url: string | null;
   best_score: number;
 }
 
@@ -109,18 +110,18 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
         if ((!friendsData || friendsData.length === 0) && best !== null) {
           const { data: me } = await (supabase as any)
             .from('profiles')
-            .select('display_name, username')
+            .select('display_name, username, avatar_url')
             .eq('id', user.id)
             .maybeSingle();
-          setFriendsLeaderboard([{ user_id: user.id, display_name: me?.display_name, username: me?.username, best_score: best }]);
+          setFriendsLeaderboard([{ user_id: user.id, display_name: me?.display_name, username: me?.username, avatar_url: me?.avatar_url, best_score: best }]);
         }
         if ((!groupData || groupData.length === 0) && best !== null) {
           const { data: me2 } = await (supabase as any)
             .from('profiles')
-            .select('display_name, username')
+            .select('display_name, username, avatar_url')
             .eq('id', user.id)
             .maybeSingle();
-          setGroupLeaderboard([{ user_id: user.id, display_name: me2?.display_name, username: me2?.username, best_score: best }]);
+          setGroupLeaderboard([{ user_id: user.id, display_name: me2?.display_name, username: me2?.username, avatar_url: me2?.avatar_url, best_score: best }]);
         }
       }
     } catch (error) {
@@ -188,6 +189,7 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
                       {index + 1}
                     </div>
                     <Avatar className="w-6 h-6">
+                      {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
                       <AvatarFallback className="text-xs">
                         {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -222,6 +224,7 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
                       {index + 1}
                     </div>
                     <Avatar className="w-6 h-6">
+                      {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
                       <AvatarFallback className="text-xs">
                         {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>

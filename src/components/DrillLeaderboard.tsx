@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Users, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ interface LeaderboardEntry {
   user_id: string;
   display_name: string | null;
   username: string | null;
+  avatar_url: string | null;
   best_score: number;
   rank?: number;
 }
@@ -113,18 +114,18 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
           if (!friendsData || friendsData.length === 0) {
             const { data: me } = await (supabase as any)
               .from('profiles')
-              .select('display_name, username')
+              .select('display_name, username, avatar_url')
               .eq('id', userId)
               .maybeSingle();
-            setFriendsLeaderboard([{ user_id: userId, display_name: me?.display_name, username: me?.username, best_score: best }]);
+            setFriendsLeaderboard([{ user_id: userId, display_name: me?.display_name, username: me?.username, avatar_url: me?.avatar_url, best_score: best }]);
           }
           if (!groupData || groupData.length === 0) {
             const { data: me2 } = await (supabase as any)
               .from('profiles')
-              .select('display_name, username')
+              .select('display_name, username, avatar_url')
               .eq('id', userId)
               .maybeSingle();
-            setGroupLeaderboard([{ user_id: userId, display_name: me2?.display_name, username: me2?.username, best_score: best }]);
+            setGroupLeaderboard([{ user_id: userId, display_name: me2?.display_name, username: me2?.username, avatar_url: me2?.avatar_url, best_score: best }]);
           }
         }
       }
@@ -205,6 +206,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                         )}
                       </div>
                       <Avatar className="h-8 w-8">
+                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
                         <AvatarFallback className="bg-primary/20 text-primary">
                           {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
                         </AvatarFallback>
@@ -269,6 +271,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                         )}
                       </div>
                       <Avatar className="h-8 w-8">
+                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
                         <AvatarFallback className="bg-primary/20 text-primary">
                           {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
                         </AvatarFallback>

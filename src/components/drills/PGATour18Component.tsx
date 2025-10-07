@@ -155,7 +155,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
               <CardTitle>Hole Distances</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
                 {distances.map((item) => (
                   <div key={item.hole} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
                     <span className="font-medium">Hole {item.hole}</span>

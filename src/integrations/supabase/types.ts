@@ -332,6 +332,7 @@ export type Database = {
       favourite_group_leaderboard_for_drill_by_title: {
         Args: { p_drill_title: string }
         Returns: {
+          avatar_url: string
           best_score: number
           display_name: string
           user_id: string
@@ -341,6 +342,7 @@ export type Database = {
       friends_leaderboard_for_drill_by_title: {
         Args: { p_drill_title: string }
         Returns: {
+          avatar_url: string
           best_score: number
           display_name: string
           user_id: string
