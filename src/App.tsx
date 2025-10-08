@@ -21,6 +21,10 @@ import RunDrill from "./pages/RunDrill";
 import DrillResults from "./pages/DrillResults";
 import GroupDetail from "./pages/GroupDetail";
 import AcceptInvite from "./pages/AcceptInvite";
+import Rounds from "./pages/Rounds";
+import RoundSetup from "./pages/RoundSetup";
+import HoleTracker from "./pages/HoleTracker";
+import RoundSummary from "./pages/RoundSummary";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +51,10 @@ const App = () => (
             <Route path="/drill-results/:drillId" element={<DrillResults />} />
             <Route path="/group/:groupId" element={<GroupDetail />} />
             <Route path="/invite/:code" element={<AcceptInvite />} />
+            <Route path="/rounds" element={<Rounds />} />
+            <Route path="/rounds/setup" element={<RoundSetup />} />
+            <Route path="/rounds/:roundId/track" element={<HoleTracker />} />
+            <Route path="/rounds/:roundId/summary" element={<RoundSummary />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -237,6 +237,87 @@ export type Database = {
           },
         ]
       }
+      holes: {
+        Row: {
+          approach_bucket: Database["public"]["Enums"]["approach_bucket"] | null
+          approach_result: Database["public"]["Enums"]["approach_result"] | null
+          created_at: string | null
+          first_putt_band: Database["public"]["Enums"]["first_putt_band"] | null
+          hole_number: number
+          id: string
+          par: number
+          penalties: number | null
+          putts: number | null
+          recovery: boolean | null
+          round_id: string
+          sand_save: boolean | null
+          score: number
+          tee_result: Database["public"]["Enums"]["tee_result"] | null
+          up_and_down: boolean | null
+        }
+        Insert: {
+          approach_bucket?:
+            | Database["public"]["Enums"]["approach_bucket"]
+            | null
+          approach_result?:
+            | Database["public"]["Enums"]["approach_result"]
+            | null
+          created_at?: string | null
+          first_putt_band?:
+            | Database["public"]["Enums"]["first_putt_band"]
+            | null
+          hole_number: number
+          id?: string
+          par: number
+          penalties?: number | null
+          putts?: number | null
+          recovery?: boolean | null
+          round_id: string
+          sand_save?: boolean | null
+          score: number
+          tee_result?: Database["public"]["Enums"]["tee_result"] | null
+          up_and_down?: boolean | null
+        }
+        Update: {
+          approach_bucket?:
+            | Database["public"]["Enums"]["approach_bucket"]
+            | null
+          approach_result?:
+            | Database["public"]["Enums"]["approach_result"]
+            | null
+          created_at?: string | null
+          first_putt_band?:
+            | Database["public"]["Enums"]["first_putt_band"]
+            | null
+          hole_number?: number
+          id?: string
+          par?: number
+          penalties?: number | null
+          putts?: number | null
+          recovery?: boolean | null
+          round_id?: string
+          sand_save?: boolean | null
+          score?: number
+          tee_result?: Database["public"]["Enums"]["tee_result"] | null
+          up_and_down?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "round_summaries"
+            referencedColumns: ["round_id"]
+          },
+          {
+            foreignKeyName: "holes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -270,6 +351,36 @@ export type Database = {
           home_club?: string | null
           id?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      rounds: {
+        Row: {
+          course_name: string
+          created_at: string | null
+          date_played: string
+          holes_played: number
+          id: string
+          tee_set: string | null
+          user_id: string
+        }
+        Insert: {
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          tee_set?: string | null
+          user_id: string
+        }
+        Update: {
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          tee_set?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -312,6 +423,27 @@ export type Database = {
         Row: {
           a: string | null
           b: string | null
+        }
+        Relationships: []
+      }
+      round_summaries: {
+        Row: {
+          course_name: string | null
+          date_played: string | null
+          fir_percentage: number | null
+          gir_percentage: number | null
+          holes_played: number | null
+          round_id: string | null
+          sand_saves: number | null
+          score_vs_par: number | null
+          tee_set: string | null
+          three_putts: number | null
+          total_par: number | null
+          total_penalties: number | null
+          total_putts: number | null
+          total_score: number | null
+          updown_percentage: number | null
+          user_id: string | null
         }
         Relationships: []
       }
@@ -409,8 +541,12 @@ export type Database = {
       }
     }
     Enums: {
+      approach_bucket: "200+" | "120-200" | "40-120" | "<40"
+      approach_result: "GIR" | "MissL" | "MissR" | "Short" | "Long" | "Penalty"
+      first_putt_band: "0-2" | "2-7" | "7+"
       friend_status: "pending" | "accepted" | "blocked"
       group_role: "member" | "admin" | "owner"
+      tee_result: "FIR" | "MissL" | "MissR" | "Short" | "Long" | "Penalty"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -538,8 +674,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      approach_bucket: ["200+", "120-200", "40-120", "<40"],
+      approach_result: ["GIR", "MissL", "MissR", "Short", "Long", "Penalty"],
+      first_putt_band: ["0-2", "2-7", "7+"],
       friend_status: ["pending", "accepted", "blocked"],
       group_role: ["member", "admin", "owner"],
+      tee_result: ["FIR", "MissL", "MissR", "Short", "Long", "Penalty"],
     },
   },
 } as const
