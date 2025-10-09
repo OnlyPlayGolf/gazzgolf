@@ -61,6 +61,7 @@ export type Database = {
           created_at: string | null
           id: string
           long_desc: string | null
+          lower_is_better: boolean | null
           scoring_scheme: Json | null
           short_desc: string | null
           title: string
@@ -69,6 +70,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           long_desc?: string | null
+          lower_is_better?: boolean | null
           scoring_scheme?: Json | null
           short_desc?: string | null
           title: string
@@ -77,6 +79,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           long_desc?: string | null
+          lower_is_better?: boolean | null
           scoring_scheme?: Json | null
           short_desc?: string | null
           title?: string
