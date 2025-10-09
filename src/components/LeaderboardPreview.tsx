@@ -53,6 +53,15 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
         return;
       }
 
+      // Get drill info to check if lower is better
+      const { data: drillInfo } = await (supabase as any)
+        .from('drills')
+        .select('lower_is_better')
+        .eq('id', drillId)
+        .single();
+
+      const lowerIsBetter = drillInfo?.lower_is_better || false;
+
       // Load personal stats
       const { data: userResults } = await (supabase as any)
         .from('drill_results')
@@ -61,10 +70,12 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      let userBestScore = null;
       if (userResults && userResults.length > 0) {
         const scores = userResults.map((r: any) => r.total_points);
+        userBestScore = lowerIsBetter ? Math.min(...scores) : Math.max(...scores);
         setPersonalStats({
-          personalBest: Math.max(...scores),
+          personalBest: userBestScore,
           lastScore: scores[0],
         });
       }
@@ -74,18 +85,66 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
         p_drill_title: drillTitle,
       });
 
-      if (friendsData) {
-        setFriendsLeaderboard(friendsData);
+      // Get current user's profile
+      const { data: currentUserProfile } = await (supabase as any)
+        .from('profiles')
+        .select('display_name, username, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      // Combine friends with current user if user has a score
+      let combinedLeaderboard = [...(friendsData || [])];
+      if (userBestScore !== null && currentUserProfile) {
+        combinedLeaderboard.push({
+          user_id: user.id,
+          display_name: currentUserProfile.display_name,
+          username: currentUserProfile.username,
+          avatar_url: currentUserProfile.avatar_url,
+          best_score: userBestScore
+        });
       }
+
+      // Sort combined leaderboard
+      combinedLeaderboard.sort((a, b) => {
+        if (lowerIsBetter) {
+          return a.best_score - b.best_score; // Ascending for lower is better
+        } else {
+          return b.best_score - a.best_score; // Descending for higher is better
+        }
+      });
+
+      setFriendsLeaderboard(combinedLeaderboard);
 
       // Load group leaderboard
       const { data: groupData } = await (supabase as any).rpc('favourite_group_leaderboard_for_drill_by_title', {
         p_drill_title: drillTitle,
       });
 
-      if (groupData) {
-        setGroupLeaderboard(groupData);
+      // Combine group with current user if user has a score
+      let combinedGroupLeaderboard = [...(groupData || [])];
+      if (userBestScore !== null && currentUserProfile) {
+        // Check if user is not already in the group leaderboard
+        if (!combinedGroupLeaderboard.some(entry => entry.user_id === user.id)) {
+          combinedGroupLeaderboard.push({
+            user_id: user.id,
+            display_name: currentUserProfile.display_name,
+            username: currentUserProfile.username,
+            avatar_url: currentUserProfile.avatar_url,
+            best_score: userBestScore
+          });
+        }
       }
+
+      // Sort combined group leaderboard
+      combinedGroupLeaderboard.sort((a, b) => {
+        if (lowerIsBetter) {
+          return a.best_score - b.best_score;
+        } else {
+          return b.best_score - a.best_score;
+        }
+      });
+
+      setGroupLeaderboard(combinedGroupLeaderboard);
 
       // Get group name
       const { data: settingsData } = await (supabase as any)
@@ -103,25 +162,6 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
 
         if (groupInfo?.name) {
           setGroupName(groupInfo.name);
-        }
-
-        // Fallback: ensure user appears if alone
-        const best = personalStats.personalBest;
-        if ((!friendsData || friendsData.length === 0) && best !== null) {
-          const { data: me } = await (supabase as any)
-            .from('profiles')
-            .select('display_name, username, avatar_url')
-            .eq('id', user.id)
-            .maybeSingle();
-          setFriendsLeaderboard([{ user_id: user.id, display_name: me?.display_name, username: me?.username, avatar_url: me?.avatar_url, best_score: best }]);
-        }
-        if ((!groupData || groupData.length === 0) && best !== null) {
-          const { data: me2 } = await (supabase as any)
-            .from('profiles')
-            .select('display_name, username, avatar_url')
-            .eq('id', user.id)
-            .maybeSingle();
-          setGroupLeaderboard([{ user_id: user.id, display_name: me2?.display_name, username: me2?.username, avatar_url: me2?.avatar_url, best_score: best }]);
         }
       }
     } catch (error) {
