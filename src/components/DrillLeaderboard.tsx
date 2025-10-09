@@ -44,6 +44,24 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
   const loadLeaderboards = async (userId?: string) => {
     setLoading(true);
     try {
+      // Get drill UUID and info
+      const { data: drillUuid } = await (supabase as any)
+        .rpc('get_or_create_drill_by_title', { p_title: drillName });
+
+      if (!drillUuid) {
+        setLoading(false);
+        return;
+      }
+
+      // Get drill info to check if lower is better
+      const { data: drillInfo } = await (supabase as any)
+        .from('drills')
+        .select('lower_is_better')
+        .eq('id', drillUuid)
+        .single();
+
+      const lowerIsBetter = drillInfo?.lower_is_better || false;
+
       // Load global leaderboard
       const { data: globalData, error: globalError } = await (supabase as any)
         .rpc('global_leaderboard_for_drill', { p_drill_title: drillName });
@@ -59,15 +77,60 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
         return;
       }
 
+      // Get current user's best score
+      const { data: userResults } = await (supabase as any)
+        .from('drill_results')
+        .select('total_points')
+        .eq('drill_id', drillUuid)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      let userBestScore = null;
+      if (userResults && userResults.length > 0) {
+        const scores = userResults.map((r: any) => r.total_points);
+        userBestScore = lowerIsBetter ? Math.min(...scores) : Math.max(...scores);
+      }
+
+      // Get current user's profile
+      const { data: currentUserProfile } = await (supabase as any)
+        .from('profiles')
+        .select('display_name, username, avatar_url')
+        .eq('id', userId)
+        .single();
+
       // Load friends leaderboard
       const { data: friendsData, error: friendsError } = await (supabase as any)
         .rpc('friends_leaderboard_for_drill_by_title', { p_drill_title: drillName });
 
       if (friendsError) {
         console.error('Error loading friends leaderboard:', friendsError);
-      } else {
-        setFriendsLeaderboard(friendsData || []);
       }
+
+      // Combine friends with current user if user has a score
+      let combinedFriendsLeaderboard = [...(friendsData || [])];
+      if (userBestScore !== null && currentUserProfile) {
+        // Check if user is not already in the friends leaderboard
+        if (!combinedFriendsLeaderboard.some(entry => entry.user_id === userId)) {
+          combinedFriendsLeaderboard.push({
+            user_id: userId,
+            display_name: currentUserProfile.display_name,
+            username: currentUserProfile.username,
+            avatar_url: currentUserProfile.avatar_url,
+            best_score: userBestScore
+          });
+        }
+      }
+
+      // Sort combined friends leaderboard
+      combinedFriendsLeaderboard.sort((a, b) => {
+        if (lowerIsBetter) {
+          return a.best_score - b.best_score;
+        } else {
+          return b.best_score - a.best_score;
+        }
+      });
+
+      setFriendsLeaderboard(combinedFriendsLeaderboard);
 
       // Load favorite group leaderboard
       const { data: groupData, error: groupError } = await (supabase as any)
@@ -75,9 +138,33 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
 
       if (groupError) {
         console.error('Error loading group leaderboard:', groupError);
-      } else {
-        setGroupLeaderboard(groupData || []);
       }
+
+      // Combine group with current user if user has a score
+      let combinedGroupLeaderboard = [...(groupData || [])];
+      if (userBestScore !== null && currentUserProfile) {
+        // Check if user is not already in the group leaderboard
+        if (!combinedGroupLeaderboard.some(entry => entry.user_id === userId)) {
+          combinedGroupLeaderboard.push({
+            user_id: userId,
+            display_name: currentUserProfile.display_name,
+            username: currentUserProfile.username,
+            avatar_url: currentUserProfile.avatar_url,
+            best_score: userBestScore
+          });
+        }
+      }
+
+      // Sort combined group leaderboard
+      combinedGroupLeaderboard.sort((a, b) => {
+        if (lowerIsBetter) {
+          return a.best_score - b.best_score;
+        } else {
+          return b.best_score - a.best_score;
+        }
+      });
+
+      setGroupLeaderboard(combinedGroupLeaderboard);
 
       // Get group name
       const { data: settingsData } = await (supabase as any)
@@ -95,38 +182,6 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
 
         if (groupInfo?.name) {
           setGroupName(groupInfo.name);
-        }
-      }
-
-      // Fallback: include current user if alone
-      const { data: drillUuid } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: drillName });
-      if (drillUuid) {
-        const { data: myBest } = await (supabase as any)
-          .from('drill_results')
-          .select('total_points')
-          .eq('drill_id', drillUuid)
-          .eq('user_id', userId)
-          .order('total_points', { ascending: false })
-          .limit(1);
-        const best = myBest && myBest.length > 0 ? myBest[0].total_points : null;
-        if (best !== null) {
-          if (!friendsData || friendsData.length === 0) {
-            const { data: me } = await (supabase as any)
-              .from('profiles')
-              .select('display_name, username, avatar_url')
-              .eq('id', userId)
-              .maybeSingle();
-            setFriendsLeaderboard([{ user_id: userId, display_name: me?.display_name, username: me?.username, avatar_url: me?.avatar_url, best_score: best }]);
-          }
-          if (!groupData || groupData.length === 0) {
-            const { data: me2 } = await (supabase as any)
-              .from('profiles')
-              .select('display_name, username, avatar_url')
-              .eq('id', userId)
-              .maybeSingle();
-            setGroupLeaderboard([{ user_id: userId, display_name: me2?.display_name, username: me2?.username, avatar_url: me2?.avatar_url, best_score: best }]);
-          }
         }
       }
 
@@ -237,7 +292,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
       )}
 
       {/* Group Leaderboard */}
-      {user && groupName && (
+      {user && groupLeaderboard.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-primary">
