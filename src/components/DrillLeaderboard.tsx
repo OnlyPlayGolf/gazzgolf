@@ -132,58 +132,73 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
 
       setFriendsLeaderboard(combinedFriendsLeaderboard);
 
-      // Load favorite group leaderboard
-      const { data: groupData, error: groupError } = await (supabase as any)
-        .rpc('favourite_group_leaderboard_for_drill_by_title', { p_drill_title: drillName });
-
-      if (groupError) {
-        console.error('Error loading group leaderboard:', groupError);
-      }
-
-      // Combine group with current user if user has a score
-      let combinedGroupLeaderboard = [...(groupData || [])];
-      if (userBestScore !== null && currentUserProfile) {
-        // Check if user is not already in the group leaderboard
-        if (!combinedGroupLeaderboard.some(entry => entry.user_id === userId)) {
-          combinedGroupLeaderboard.push({
-            user_id: userId,
-            display_name: currentUserProfile.display_name,
-            username: currentUserProfile.username,
-            avatar_url: currentUserProfile.avatar_url,
-            best_score: userBestScore
-          });
-        }
-      }
-
-      // Sort combined group leaderboard
-      combinedGroupLeaderboard.sort((a, b) => {
-        if (lowerIsBetter) {
-          return a.best_score - b.best_score;
-        } else {
-          return b.best_score - a.best_score;
-        }
-      });
-
-      setGroupLeaderboard(combinedGroupLeaderboard);
-
-      // Get group name
+      // Ensure favourite group is set; if not, pick first membership and persist
       const { data: settingsData } = await (supabase as any)
         .from('user_settings')
         .select('favourite_group_id')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (settingsData?.favourite_group_id) {
+      let favGroupId = settingsData?.favourite_group_id as string | null | undefined;
+
+      if (!favGroupId) {
+        const { data: myGroups } = await (supabase as any)
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', userId);
+
+        if (myGroups && myGroups.length > 0) {
+          favGroupId = myGroups[0].group_id;
+          await (supabase as any)
+            .from('user_settings')
+            .upsert({ user_id: userId, favourite_group_id: favGroupId }, { onConflict: 'user_id' });
+        }
+      }
+
+      // If we have a favourite group id, resolve name and load leaderboard
+      if (favGroupId) {
         const { data: groupInfo } = await (supabase as any)
           .from('groups')
           .select('name')
-          .eq('id', settingsData.favourite_group_id)
+          .eq('id', favGroupId)
           .single();
+        if (groupInfo?.name) setGroupName(groupInfo.name);
 
-        if (groupInfo?.name) {
-          setGroupName(groupInfo.name);
+        const { data: groupData, error: groupError } = await (supabase as any)
+          .rpc('favourite_group_leaderboard_for_drill_by_title', { p_drill_title: drillName });
+
+        if (groupError) {
+          console.error('Error loading group leaderboard:', groupError);
         }
+
+        let combinedGroupLeaderboard = [...(groupData || [])];
+        if (userBestScore !== null && currentUserProfile) {
+          if (!combinedGroupLeaderboard.some(entry => entry.user_id === userId)) {
+            combinedGroupLeaderboard.push({
+              user_id: userId,
+              display_name: currentUserProfile.display_name,
+              username: currentUserProfile.username,
+              avatar_url: currentUserProfile.avatar_url,
+              best_score: userBestScore
+            });
+          }
+        }
+
+        combinedGroupLeaderboard.sort((a, b) => {
+          if (lowerIsBetter) {
+            return a.best_score - b.best_score;
+          } else {
+            return b.best_score - a.best_score;
+          }
+        });
+
+        setGroupLeaderboard(combinedGroupLeaderboard);
+      } else {
+        // No group membership; clear state
+        setGroupLeaderboard([]);
+        setGroupName("");
       }
+
 
     } catch (error) {
       console.error('Error loading leaderboards:', error);
