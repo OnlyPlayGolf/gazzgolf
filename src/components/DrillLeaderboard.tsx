@@ -138,23 +138,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
         .eq('user_id', userId)
         .maybeSingle();
 
-      let favGroupIds = settingsData?.favourite_group_ids as string[] | null | undefined;
-
-      // If no favorites set, auto-select up to 3 groups
-      if (!favGroupIds || favGroupIds.length === 0) {
-        const { data: myGroups } = await (supabase as any)
-          .from('group_members')
-          .select('group_id')
-          .eq('user_id', userId)
-          .limit(3);
-
-        if (myGroups && myGroups.length > 0) {
-          favGroupIds = myGroups.map((g: any) => g.group_id);
-          await (supabase as any)
-            .from('user_settings')
-            .upsert({ user_id: userId, favourite_group_ids: favGroupIds }, { onConflict: 'user_id' });
-        }
-      }
+      const favGroupIds = settingsData?.favourite_group_ids as string[] | null | undefined;
 
       // Load leaderboards for all favorite groups
       const groupLeaderboardsData = [];

@@ -45,7 +45,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [favoriteGroupId, setFavoriteGroupId] = useState<string | null>(null);
+  const [favoriteGroupIds, setFavoriteGroupIds] = useState<string[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<Friend[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<Friend[]>([]);
   
@@ -245,15 +245,15 @@ const Profile = () => {
 
       setGroups(groupsList);
 
-      // Load favorite group
+      // Load favorite groups
       const { data: settingsData } = await (supabase as any)
         .from('user_settings')
-        .select('favourite_group_id')
+        .select('favourite_group_ids')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (settingsData?.favourite_group_id) {
-        setFavoriteGroupId(settingsData.favourite_group_id);
+      if (settingsData?.favourite_group_ids) {
+        setFavoriteGroupIds(settingsData.favourite_group_ids);
       }
 
     } catch (error) {
@@ -614,28 +614,48 @@ const Profile = () => {
     }
   };
 
-  const handleSetFavoriteGroup = async (groupId: string | null) => {
+  const handleToggleFavoriteGroup = async (groupId: string) => {
     if (!user) return;
 
     try {
+      let newFavorites: string[];
+      
+      if (favoriteGroupIds.includes(groupId)) {
+        // Remove from favorites
+        newFavorites = favoriteGroupIds.filter(id => id !== groupId);
+      } else {
+        // Add to favorites (max 3)
+        if (favoriteGroupIds.length >= 3) {
+          toast({
+            title: "Maximum favorites reached",
+            description: "You can only favorite up to 3 groups. Remove one to add another.",
+            variant: "destructive",
+          });
+          return;
+        }
+        newFavorites = [...favoriteGroupIds, groupId];
+      }
+
       const { error } = await (supabase as any)
         .from('user_settings')
         .upsert({
           user_id: user.id,
-          favourite_group_id: groupId
-        });
+          favourite_group_ids: newFavorites
+        }, { onConflict: 'user_id' });
 
       if (error) throw error;
 
-      setFavoriteGroupId(groupId);
+      setFavoriteGroupIds(newFavorites);
       toast({
-        title: groupId ? "Favorite group set" : "Favorite group removed",
-        description: groupId ? "This group will appear in drill leaderboards." : "No favorite group set.",
+        title: newFavorites.includes(groupId) ? "Group favorited" : "Group unfavorited",
+        description: newFavorites.includes(groupId) 
+          ? "This group will appear in drill leaderboards." 
+          : "This group has been removed from favorites.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to update favorite group.",
+        description: "Failed to update favorite groups.",
         variant: "destructive",
       });
     }
@@ -1112,7 +1132,7 @@ const Profile = () => {
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium text-foreground">{group.name}</h4>
-                              {favoriteGroupId === group.id && (
+                              {favoriteGroupIds.includes(group.id) && (
                                 <Star size={16} className="text-yellow-500 fill-current" />
                               )}
                               <Badge variant="outline" className="text-xs">
@@ -1129,11 +1149,21 @@ const Profile = () => {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleSetFavoriteGroup(favoriteGroupId === group.id ? null : group.id);
+                            handleToggleFavoriteGroup(group.id);
                           }}
                           className="text-muted-foreground hover:text-foreground"
                         >
-                          {favoriteGroupId === group.id ? 'Unfavorite' : 'Set Favorite'}
+                          {favoriteGroupIds.includes(group.id) ? (
+                            <>
+                              <Star size={16} className="mr-1 fill-current text-yellow-500" />
+                              Unfavorite
+                            </>
+                          ) : (
+                            <>
+                              <Star size={16} className="mr-1" />
+                              Favorite ({favoriteGroupIds.length}/3)
+                            </>
+                          )}
                         </Button>
                       </div>
                     ))}
