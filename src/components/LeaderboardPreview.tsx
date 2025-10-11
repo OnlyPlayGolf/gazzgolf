@@ -27,8 +27,7 @@ interface LeaderboardPreviewProps {
 
 const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refreshTrigger }: LeaderboardPreviewProps) => {
   const [friendsLeaderboard, setFriendsLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [groupLeaderboard, setGroupLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [groupName, setGroupName] = useState<string>('');
+  const [groupLeaderboards, setGroupLeaderboards] = useState<Array<{ groupId: string; groupName: string; leaderboard: LeaderboardEntry[] }>>([]);
   const [personalStats, setPersonalStats] = useState<PersonalStats>({ personalBest: null, lastScore: null });
   const [loading, setLoading] = useState(true);
 
@@ -115,70 +114,123 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
 
       setFriendsLeaderboard(combinedLeaderboard);
 
-      // Ensure favourite group is set; if missing, pick first membership and persist
+      // Get user's favorite groups (max 3)
       const { data: settingsData } = await (supabase as any)
         .from('user_settings')
-        .select('favourite_group_id')
+        .select('favourite_group_ids')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      let favGroupId = settingsData?.favourite_group_id as string | null | undefined;
+      let favGroupIds = settingsData?.favourite_group_ids as string[] | null | undefined;
 
-      if (!favGroupId) {
+      // If no favorites set, auto-select up to 3 groups
+      if (!favGroupIds || favGroupIds.length === 0) {
         const { data: myGroups } = await (supabase as any)
           .from('group_members')
           .select('group_id')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .limit(3);
 
         if (myGroups && myGroups.length > 0) {
-          favGroupId = myGroups[0].group_id;
+          favGroupIds = myGroups.map((g: any) => g.group_id);
           await (supabase as any)
             .from('user_settings')
-            .upsert({ user_id: user.id, favourite_group_id: favGroupId }, { onConflict: 'user_id' });
+            .upsert({ user_id: user.id, favourite_group_ids: favGroupIds }, { onConflict: 'user_id' });
         }
       }
 
-      if (favGroupId) {
-        const { data: groupInfo } = await (supabase as any)
-          .from('groups')
-          .select('name')
-          .eq('id', favGroupId)
-          .single();
-        if (groupInfo?.name) setGroupName(groupInfo.name);
+      // Load top 3 leaderboards for all favorite groups
+      const groupLeaderboardsData = [];
+      if (favGroupIds && favGroupIds.length > 0) {
+        for (const groupId of favGroupIds) {
+          // Get group info
+          const { data: groupInfo } = await (supabase as any)
+            .from('groups')
+            .select('name')
+            .eq('id', groupId)
+            .single();
 
-        // Load group leaderboard
-        const { data: groupData } = await (supabase as any).rpc('favourite_group_leaderboard_for_drill_by_title', {
-          p_drill_title: drillTitle,
-        });
+          if (!groupInfo) continue;
 
-        // Combine group with current user if user has a score
-        let combinedGroupLeaderboard = [...(groupData || [])];
-        if (userBestScore !== null && currentUserProfile) {
-          if (!combinedGroupLeaderboard.some(entry => entry.user_id === user.id)) {
-            combinedGroupLeaderboard.push({
-              user_id: user.id,
-              display_name: currentUserProfile.display_name,
-              username: currentUserProfile.username,
-              avatar_url: currentUserProfile.avatar_url,
-              best_score: userBestScore
+          // Get all members of this group
+          const { data: groupMembers } = await (supabase as any)
+            .from('group_members')
+            .select('user_id')
+            .eq('group_id', groupId);
+
+          if (!groupMembers || groupMembers.length === 0) continue;
+
+          const memberIds = groupMembers.map((m: any) => m.user_id);
+
+          // Get best scores for all group members for this drill
+          const { data: memberScores } = await (supabase as any)
+            .from('drill_results')
+            .select('user_id, total_points')
+            .eq('drill_id', drillId)
+            .in('user_id', memberIds);
+
+          // Calculate best score for each member
+          const memberBestScores = new Map<string, number>();
+          if (memberScores) {
+            memberScores.forEach((score: any) => {
+              const currentBest = memberBestScores.get(score.user_id);
+              if (currentBest === undefined) {
+                memberBestScores.set(score.user_id, score.total_points);
+              } else {
+                memberBestScores.set(
+                  score.user_id,
+                  lowerIsBetter 
+                    ? Math.min(currentBest, score.total_points)
+                    : Math.max(currentBest, score.total_points)
+                );
+              }
             });
           }
-        }
 
-        // Sort combined group leaderboard
-        combinedGroupLeaderboard.sort((a, b) => {
-          if (lowerIsBetter) {
-            return a.best_score - b.best_score;
-          } else {
-            return b.best_score - a.best_score;
+          // Add current user if they have a score
+          if (userBestScore !== null && memberIds.includes(user.id)) {
+            memberBestScores.set(user.id, userBestScore);
           }
-        });
 
-        setGroupLeaderboard(combinedGroupLeaderboard);
-      } else {
-        setGroupLeaderboard([]);
-        setGroupName('');
+          // Get profiles for all members with scores
+          const memberIdsWithScores = Array.from(memberBestScores.keys());
+          if (memberIdsWithScores.length === 0) continue;
+
+          const { data: profiles } = await (supabase as any)
+            .from('profiles')
+            .select('id, display_name, username, avatar_url')
+            .in('id', memberIdsWithScores);
+
+          // Build leaderboard
+          let groupLeaderboard: LeaderboardEntry[] = [];
+          if (profiles) {
+            groupLeaderboard = profiles.map((profile: any) => ({
+              user_id: profile.id,
+              display_name: profile.display_name,
+              username: profile.username,
+              avatar_url: profile.avatar_url,
+              best_score: memberBestScores.get(profile.id)!
+            }));
+          }
+
+          // Sort leaderboard
+          groupLeaderboard.sort((a, b) => {
+            if (lowerIsBetter) {
+              return a.best_score - b.best_score;
+            } else {
+              return b.best_score - a.best_score;
+            }
+          });
+
+          groupLeaderboardsData.push({
+            groupId,
+            groupName: groupInfo.name,
+            leaderboard: groupLeaderboard.slice(0, 3) // Top 3 only for preview
+          });
+        }
       }
+
+      setGroupLeaderboards(groupLeaderboardsData);
     } catch (error) {
       console.error('Error loading leaderboards:', error);
     } finally {
@@ -261,18 +313,18 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
         </Card>
       )}
 
-      {/* Group Leaderboard */}
-      {groupLeaderboard.length > 0 && (
-        <Card>
+      {/* Group Leaderboards */}
+      {groupLeaderboards.map(({ groupId, groupName, leaderboard }) => (
+        <Card key={groupId}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="text-primary" size={16} />
-              Top 3 {groupName || 'Group'}
+              Top 3 {groupName}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {groupLeaderboard.slice(0, 3).map((entry, index) => (
+              {leaderboard.map((entry, index) => (
                 <div key={entry.user_id} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
@@ -294,7 +346,7 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
             </div>
           </CardContent>
         </Card>
-      )}
+      ))}
 
       {/* See Full Leaderboard Button */}
       <Button 

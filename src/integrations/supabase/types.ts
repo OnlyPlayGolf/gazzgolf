@@ -389,28 +389,21 @@ export type Database = {
       }
       user_settings: {
         Row: {
-          favourite_group_id: string | null
+          favourite_group_ids: string[] | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          favourite_group_id?: string | null
+          favourite_group_ids?: string[] | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          favourite_group_id?: string | null
+          favourite_group_ids?: string[] | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "user_settings_favourite_group_id_fkey"
-            columns: ["favourite_group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "user_settings_user_id_fkey"
             columns: ["user_id"]
