@@ -2698,5 +2698,905 @@
     "Target": "3 consecutive",
     "Type": "Approach",
     "Difficulty": "Amateur"
+  },
+  {
+    "Level": 1,
+    "Title": "Putting 3m",
+    "Description": "Make 5 putts from 3 meters with 10 attempts",
+    "Distance": "3m",
+    "Target": "5 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 2,
+    "Title": "Speed 2m",
+    "Description": "Hit 3 putts in the hole or 0.3m past it from 2 meters",
+    "Distance": "2m",
+    "Target": "3 out of 5",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 3,
+    "Title": "First Driver Test",
+    "Description": "Pick a 40 meter wide target and hit 4 out of 10 drivers inside the target",
+    "Distance": "230m+",
+    "Target": "4 out of 10",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 4,
+    "Title": "150m Approach Right",
+    "Description": "Pick a target 150m away. Hit 3 balls  right of the target but no more than 20 yards right of the target",
+    "Distance": "150m",
+    "Target": "5 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 5,
+    "Title": "Easy Chip Shots",
+    "Description": "Hit 3 chip shots inside 2 meters of the hole from 15 meters in the fairway",
+    "Distance": "15m",
+    "Target": "3 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 6,
+    "Title": "Short Bunker Escape",
+    "Description": "Hit 5 bunker shots inside 3 meters from 15 meters",
+    "Distance": "15m",
+    "Target": "5 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 7,
+    "Title": "Chip Shots Rough",
+    "Description": "Hit 3 chip shots inside 2 meters of the hole from 15 meters in the rough",
+    "Distance": "15m",
+    "Target": "3 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 8,
+    "Title": "Long Bunker Escape",
+    "Description": "Hit 5 bunker shots inside 4 meters from 25 meters",
+    "Distance": "25m",
+    "Target": "5 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 9,
+    "Title": "150m Approach Left",
+    "Description": "Pick a target 150m away. Hit 3 balls left of the target but no more than 20 yards left of the target",
+    "Distance": "150m",
+    "Target": "5 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 10,
+    "Title": "60m Wedge",
+    "Description": "From 60 meters carry 3 shots indside 3 meters with 5 attempts",
+    "Distance": "60m",
+    "Target": "3 out of 5",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 11,
+    "Title": "Fade Iron",
+    "Description": "Pick a target 20 meters wide and hit 5 fade shots inside the target with a 7 iron",
+    "Distance": "130m+",
+    "Target": "5 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 12,
+    "Title": "Draw Iron",
+    "Description": "Pick a target 20 meters wide and hit 5 draw shots inside the target with a 7 iron",
+    "Distance": "130m+",
+    "Target": "5 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 13,
+    "Title": "Low, Medium, High Rough",
+    "Description": "Hit 3 chip shots in a row with low, medium, and high trajectory from the same spot inside 3m of the hole, 15 meter away in the rough",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 14,
+    "Title": "Short Side Chip Shot",
+    "Description": "Hit 5 flop shots over a bunker that stop inside 3 meters of the hole",
+    "Distance": "10-20m",
+    "Target": "5 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 15,
+    "Title": "80m Wedge",
+    "Description": "From 80 meters stop 3 carry indside 4 meters with 5 attempts",
+    "Distance": "80m",
+    "Target": "3 out of 5",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 16,
+    "Title": "Credit Card Putts",
+    "Description": "From a 1.5m straight putt, put two tees 0.5m infront of the ball with the with of a credit card. Make 5 putts in a row without touching the tees.",
+    "Distance": "1.5m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 17,
+    "Title": "Pressure Speed 2m",
+    "Description": "Hit 3 putts in a row in the hole or 0.3 cm past it from 2 meters",
+    "Distance": "2m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 18,
+    "Title": "Clutch 3m",
+    "Description": "Make 3 out of 4 putts from 3 meters",
+    "Distance": "3m",
+    "Target": "3 out of 4",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 19,
+    "Title": "Second Driver Test",
+    "Description": "Pick a 30 meter wide target and hit 5 out of 10 drivers inside the target",
+    "Distance": "230m+",
+    "Target": "5 out of 10",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 20,
+    "Title": "Fade Driver",
+    "Description": "Pick a target 40 meters wide and hit 5 fade shots inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "5 out of 10",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 21,
+    "Title": "Draw Driver",
+    "Description": "Pick a target 40 meters wide and hit 5 draw shots inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "5 out of 10",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 22,
+    "Title": "2-Putts 10m",
+    "Description": "Make 5 out of 10 two-putts from 10 meters (Hole out the putt before putting again from 10m)",
+    "Distance": "10m",
+    "Target": "5 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 23,
+    "Title": "Speed 3m",
+    "Description": "Hit 3 putts in the hole or 0.3m past it from 3 meters",
+    "Distance": "3m",
+    "Target": "3 out of 4",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 24,
+    "Title": "Chip 9 iron",
+    "Description": "Use a 9 iron and chip 3 in a row within 3 meters of the hole from 15 meters (Fairway)",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 25,
+    "Title": "Rough Chip Shots",
+    "Description": "Hit 3 chip shots inside 1 meters of the hole from 12 meters in the rough",
+    "Distance": "12m",
+    "Target": "3 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 26,
+    "Title": "Short Bunker Shots",
+    "Description": "Hit 3 bunker shots inside 2 meters from 15 meters with 5 attempts",
+    "Distance": "15m",
+    "Target": "3 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 27,
+    "Title": "Long Bunker Shots",
+    "Description": "Hit 3 bunker shots inside 3 meters from 25 meters with 5 attempts",
+    "Distance": "25m",
+    "Target": "3 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 28,
+    "Title": "Closer Chip Shots",
+    "Description": "Hit 3 chip shots inside 1 meters of the hole from 15 meters in the Fairway",
+    "Distance": "15m",
+    "Target": "3 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 29,
+    "Title": "Pro Speed 2m",
+    "Description": "Hit 5 putts in a row in the hole or 0.3m past it from 2 meters",
+    "Distance": "2m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 30,
+    "Title": "Around The Hole 1m",
+    "Description": "Make 10 putts in a row around the hole from 1 meter",
+    "Distance": "1m",
+    "Target": "10 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 31,
+    "Title": "100m Wedge",
+    "Description": "From 100 meters stop 3 carry indside 5 meters with 5 attempts",
+    "Distance": "100m",
+    "Target": "3 out of 5",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 32,
+    "Title": "Good Fade Irons",
+    "Description": "Pick a target 20 meters wide and hit 3 fade shots in a row inside the target with a 7 iron",
+    "Distance": "130m+",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 33,
+    "Title": "Good Draw Iron",
+    "Description": "Pick a target 20 meters wide and hit 3 draw shots in a row inside the target with a 7 iron",
+    "Distance": "130m+",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 34,
+    "Title": "Iron Skill",
+    "Description": "Pick one club and carry inside 5 meters of  the target distance at 120m, 130m, and 140 meters",
+    "Distance": "120-140m",
+    "Target": "3 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 35,
+    "Title": "8m Putting Test",
+    "Description": "Hit 9 different putts from 8 meters and hole out every putt wih a total of 18 putts or less",
+    "Distance": "8m",
+    "Target": "18 or less",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 36,
+    "Title": "Pro Speed 3m",
+    "Description": "Hit 5 putts in a row in the hole or 0.3m past it from 3 meters",
+    "Distance": "3m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 37,
+    "Title": "Skilled Bunker Escape",
+    "Description": "Hit 3 bunker shots inside 3 meters from 15 meters with 10 attempts while using a 48,50 or 52 degree wedge",
+    "Distance": "15m",
+    "Target": "3 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 38,
+    "Title": "Flop Shots",
+    "Description": "Hit 3 flop shots over a bunker that stop inside 3 meters of the hole",
+    "Distance": "10-20m",
+    "Target": "3 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 39,
+    "Title": "Consistent Rough Chips",
+    "Description": "Hit 3 chip shots in a row  inside 2 meters of the hole from 15 meters in the rough",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 40,
+    "Title": "Wedge Ladder Start",
+    "Description": "Carry a wedge shot within 10 meters (+/- 5m) of the target distance at 60m, 65m, 70m, 75m and 80 meters",
+    "Distance": "60-80m",
+    "Target": "5 out of 12",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 41,
+    "Title": "Approach Feel",
+    "Description": "Carry a shot within 10 meters (+/- 5m) of the hole from 120 meters with 3 different clubs",
+    "Distance": "120m",
+    "Target": "3 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 42,
+    "Title": "Pressure 60m Wedge",
+    "Description": "Hit 3 wedge shots in a row that carry inside 3 meters of the hole from 60 meters",
+    "Distance": "60m",
+    "Target": "3 consecutive",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 43,
+    "Title": "Third Driver Test",
+    "Description": "Pick a 30 meter wide target and hit 6 out of 10 drivers inside the target",
+    "Distance": "230m+",
+    "Target": "6 out of 10",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 44,
+    "Title": "Good Fade Driver",
+    "Description": "Pick a target 40 meters wide and hit 3 fade shots inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "3 out of 5",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 45,
+    "Title": "Good Draw Driver",
+    "Description": "Pick a target 40 meters wide and hit 3 draw shots inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "3 out of 5",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 46,
+    "Title": "Fairway Chips",
+    "Description": "Hit 3 chip shots in a row  inside 1 meters of the hole from 15 meters in the Fairway",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 47,
+    "Title": "Good Bunker Escape",
+    "Description": "Hit 3 bunker shots in a row inside 1.5 meters from 15 meters",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 48,
+    "Title": "Low, Medium, High Chip",
+    "Description": "Hit 3 chip shots in a row with low, medium, and high trajectory from the same spot inside 1m of the hole, 15 meter away in the fairway",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 49,
+    "Title": "Next Chip 9i",
+    "Description": "Use a 9 iron and chip 4 in a row within 2 meters of the hole from 15 meters (Fairway)",
+    "Distance": "15m",
+    "Target": "4 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 50,
+    "Title": "9 Windows Iron",
+    "Description": "3 different curves (fade, straight and draw), 3 different heights, (High, medium and low), hit all 9 window shots in a row with an iron that lands within a 20 meter  wide target",
+    "Distance": "150+",
+    "Target": "9 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 51,
+    "Title": "10m Putting Test",
+    "Description": "Hit 9 different putts from 10 meters and hole out every putt wih a total of 18 putts or less",
+    "Distance": "10m",
+    "Target": "18 or less",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 52,
+    "Title": "Pro Credit Card Putts",
+    "Description": "From a 1.5m straight putt, put two tees 0.5m infront of the ball with the with of a credit card. Make 10 putts in a row without touching the tees.",
+    "Distance": "1.5m",
+    "Target": "10 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 53,
+    "Title": "Pro Speed 5m",
+    "Description": "Hit 3 putts in a row in the hole or 0.3 cm past it from 5 meters",
+    "Distance": "5m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 54,
+    "Title": "Lag putts 8m",
+    "Description": "Hit 3 putts inside a 0.5m circle around the hole from 8 meters",
+    "Distance": "8m",
+    "Target": "3 out of 5",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 55,
+    "Title": "Left Consistency",
+    "Description": "Land 5 shots within 10 meters left of the target without without missing right or no more than 10 meters left from 120 meters",
+    "Distance": "120m",
+    "Target": "5 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 56,
+    "Title": "Fourth Driver Test",
+    "Description": "Pick a 30 meter wide target and hit 3 out of 4 drivers inside the target",
+    "Distance": "230m+",
+    "Target": "3 out of 4",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 57,
+    "Title": "Right Consistency",
+    "Description": "Land 5 shots within 10 meters right of the target without without missing left or no more than 10 meters right from 120 meters",
+    "Distance": "120m",
+    "Target": "5 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 58,
+    "Title": "Consistent Sand Trap",
+    "Description": "Hit 3 bunker shots in a row inside 3 meters from 25 meters",
+    "Distance": "25m",
+    "Target": "3 consecutive",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 59,
+    "Title": "Up and Down in a row",
+    "Description": "Chip shots over 15 meters from fairway, get 3 up and downs in a row",
+    "Distance": "15m+",
+    "Target": "3 consecutive",
+    "Type": "Chip/Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 60,
+    "Title": "Pressure 80m Wedge",
+    "Description": "Hit 3 wedge shots in a row that carry inside 4 meters of the hole from 80 meters",
+    "Distance": "80m",
+    "Target": "3 consecutive",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 61,
+    "Title": "Controlled Trajectory Test",
+    "Description": "Pick a 10 meter wide target and hit 6 shots with a 7 iron, 2 low, 2 mid, and 2 high trajectories , all finishing within the target.",
+    "Distance": "130m+",
+    "Target": "5 out of 6",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 62,
+    "Title": "Par Save Challenge",
+    "Description": "Drop 5 balls around the green between 10–20 meters (fairway and rough). Try to get each chip inside 2 meters and then hole the putt",
+    "Distance": "10-20m",
+    "Target": "4 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 63,
+    "Title": "Creative Chip Shot",
+    "Description": "Hit 3 chip shots inside 1 meters of the hole from 15 meters in the fairway with 3 different clubs",
+    "Distance": "15m",
+    "Target": "3 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 64,
+    "Title": "Pressure Flop Shot",
+    "Description": "Hit 3 flop shots in a row over a bunker that stop inside 3 meters of the hole",
+    "Distance": "10-20m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 65,
+    "Title": "Chip in Rough",
+    "Description": "Make one chip shot in the hole from the hole",
+    "Distance": "10m+",
+    "Target": "1 succesfull",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 66,
+    "Title": "Bunker Up and Down",
+    "Description": "Get 3 up and downs from the bunker from any distance",
+    "Distance": "Optional",
+    "Target": "3 out of 5",
+    "Type": "Bunker/Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 67,
+    "Title": "Bunker Shots 3 Clubs",
+    "Description": "Hit 3 bunker shots inside 2 meters of the hole from 15 meters  with 3 different clubs",
+    "Distance": "15m",
+    "Target": "3 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 68,
+    "Title": "Wedge Ladder",
+    "Description": "Carry a wedge shot within 6 meters (+/- 3m) of the target distance at 60m, 65m, 70m, 75m and 80 meters",
+    "Distance": "60-80m",
+    "Target": "5 out of 12",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 69,
+    "Title": "Great Fade Irons",
+    "Description": "Pick a target 20 meters wide and hit 5 fade shots in a row inside the target with a 7 iron",
+    "Distance": "130m+",
+    "Target": "5 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 70,
+    "Title": "Great Draw Iron",
+    "Description": "Pick a target 20 meters wide and hit 5 draw shots in a row inside the target with a 7 iron",
+    "Distance": "130m+",
+    "Target": "5 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 71,
+    "Title": "Pressure 100m Wedge",
+    "Description": "Hit 3 wedge shots in a row that carry inside 5 meters of the hole from 100 meters",
+    "Distance": "100m",
+    "Target": "3 consecutive",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 72,
+    "Title": "Pressure Lag Putts 8m",
+    "Description": "Hit 3 putts in a row inside a 0.5m circle of the hole from 8 meters",
+    "Distance": "8m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 73,
+    "Title": "Pressure 3m",
+    "Description": "Make 3 putts in a row  from 3 meters",
+    "Distance": "3m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 74,
+    "Title": "Long Bunker Up and Down",
+    "Description": "Get 3 up and downs from the bunker from over 25 meters",
+    "Distance": "25m+",
+    "Target": "3 out of 5",
+    "Type": "Bunker/Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 75,
+    "Title": "Play 9 holes",
+    "Description": "Play 9 holes from back tee and shot under par",
+    "Distance": "9 Holes",
+    "Target": "Under Par",
+    "Type": "Play",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 76,
+    "Title": "Up and Down Rough",
+    "Description": "Get 7 up and downs from the rough with 9 attempts",
+    "Distance": "Optional",
+    "Target": "7 out of 9",
+    "Type": "Chip/Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 77,
+    "Title": "Great Flop Shots",
+    "Description": "Hit 3 flop over a bunker that stop inside 1.5 meters of the hole",
+    "Distance": "10-20m",
+    "Target": "3 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 78,
+    "Title": "Drive 3 In a Row",
+    "Description": "Pick a 30 meter wide target and hit 3 drivers in a row inside the target",
+    "Distance": "230m+",
+    "Target": "3 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 79,
+    "Title": "Clutch Bunker Escape",
+    "Description": "Hit 5 bunker shots inside 1 meter from any distance",
+    "Distance": "Optional",
+    "Target": "5 out of 10",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 80,
+    "Title": "Pro 3m Putting",
+    "Description": "Make 5 putts around the hole from 3 meters with 10 attempts",
+    "Distance": "3m",
+    "Target": "5 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 81,
+    "Title": "Lag Putt 12m",
+    "Description": "Stop 6 putts inside 1m of the from 12 meters",
+    "Distance": "12m",
+    "Target": "6 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 82,
+    "Title": "12m Putting Test",
+    "Description": "Hit 9 different putts from 12 meters and hole out every putt wih a total of 18 putts or less",
+    "Distance": "12m",
+    "Target": "18 or less",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 83,
+    "Title": "Pro Iron Skill",
+    "Description": "Pick one club and hit inside 5 meters of 120m, 130m, and 140 meters in a row",
+    "Distance": "120-140m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 84,
+    "Title": "Fairway Finder",
+    "Description": "3 different curves (fade, straight and draw), 3 different height, (High, medium and low), hit all 9 window shots in a row that lands within a 30 meter wide target",
+    "Distance": "200m+",
+    "Target": "9 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 85,
+    "Title": "Great Fade Driver",
+    "Description": "Pick a target 40 meters wide and hit 3 fade shots in a row inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "3 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 86,
+    "Title": "Great Draw Driver",
+    "Description": "Pick a target 40 meters wide and hit 3 draw shots in a row inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "3 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 87,
+    "Title": "Fade and Draw Drive",
+    "Description": "Hit one draw and one fade inside a 20 meter wide target in a row with the driver",
+    "Distance": "230m+",
+    "Target": "2 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 88,
+    "Title": "Pressure Lag Putts 12m",
+    "Description": "Hit 3 putts in a row inside a 1m circle of the hole from 12 meters",
+    "Distance": "12m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 89,
+    "Title": "Pro Bunker Escape",
+    "Description": "Hit 3 bunker shots in a row inside 1 meter from any distance",
+    "Distance": "Optional",
+    "Target": "3 consecutive",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 90,
+    "Title": "Pro Flop Shots",
+    "Description": "Hit 5 flop over a bunker that stop inside 1.5 meters of the hole",
+    "Distance": "10-20m",
+    "Target": "5 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 91,
+    "Title": "Final Chip 9i",
+    "Description": "Use a 9 iron and chip 5 in a row within 1 meters of the hole from 15 meters (Fairway)",
+    "Distance": "15m",
+    "Target": "5 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 92,
+    "Title": "Bunker Escape 3 Clubs",
+    "Description": "Hit 3 bunker shots in a row inside 2 meters of the hole from 15 meters  with 3 different clubs",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Bunker",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 93,
+    "Title": "Wedge Shots 3 Clubs 60m",
+    "Description": "Use 2 different wedges and hit 2 shots that carry within 3 meters of the hole from 60 meters with both wedges",
+    "Distance": "60m",
+    "Target": "4 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 94,
+    "Title": "Wedge Shots 3 Clubs 80m",
+    "Description": "Use 2 different wedges and hit 2 shots that carry within 3 meters of the hole from 80 meters with both wedges",
+    "Distance": "80m",
+    "Target": "4 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 95,
+    "Title": "Pressure 3m Circle",
+    "Description": "Make 3 putts in a row  from 3 meters  in a circle around the hole",
+    "Distance": "3m",
+    "Target": "3 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 96,
+    "Title": "Pro Speed Putting",
+    "Description": "Stop a putt 0.3m past the hole from 2m, 3m and 5m, stopt it inside a 0.5m circle from 8m and inside a 1m circle from 12 meters",
+    "Distance": "2m, 3m, 5m, 8m, 12m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 97,
+    "Title": "Drive 5 In a Row",
+    "Description": "Pick a 30 meter wide target and hit 5 drivers in a row inside the target",
+    "Distance": "230m+",
+    "Target": "5 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 98,
+    "Title": "3 Clubs Chip",
+    "Description": "Hit 3 chip shots in a row inside 1 meters of the hole from 15 meters in the Fairway with 3 different clubs",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Chip",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 99,
+    "Title": "Final Short Putt Test",
+    "Description": "Hit a putt from 4, 5, 6, 7, and 8 feet at 4 different holes and make at least 15 putts",
+    "Distance": "4, 5, 6, 7, and 8 feet",
+    "Target": "15 out of 20",
+    "Type": "Putt",
+    "Difficulty": "Professional"
+  },
+  {
+    "Level": 100,
+    "Title": "Final Play Level",
+    "Description": "Play 18 holes from back tees and shot under par",
+    "Distance": "18 Holes",
+    "Target": "Under Par",
+    "Type": "Play",
+    "Difficulty": "Professional"
   }
 ]

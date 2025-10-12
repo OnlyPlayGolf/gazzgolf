@@ -37,7 +37,8 @@ const LevelSelection = () => {
       title: "Professional",
       subtitle: "Compete like a pro.",
       icon: Crown,
-      available: false,
+      available: true,
+      action: () => navigate("/levels/professional"),
     },
     {
       id: "tour",
