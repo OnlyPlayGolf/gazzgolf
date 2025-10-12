@@ -438,7 +438,7 @@ const GroupDetail = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate('/profile?tab=groups')}
           >
             <ArrowLeft size={20} />
           </Button>
