@@ -1316,47 +1316,51 @@ const Profile = () => {
                   </h3>
                   {friendsLevelLeaderboard.length > 0 ? (
                     <div className="space-y-2">
-                      {friendsLevelLeaderboard.map((entry, index) => (
-                        <div 
-                          key={entry.user_id} 
-                          className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="w-8 text-center">
-                              {index + 1}
-                            </Badge>
-                            <Avatar className="h-8 w-8">
-                              {entry.avatar_url ? (
-                                <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                              ) : (
-                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                  {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-foreground text-sm">
-                                {entry.display_name || entry.username || 'Unknown'}
-                              </p>
-                              {entry.current_level && (
-                                <p className="text-xs text-muted-foreground">
-                                  Current: {entry.current_level}
+                      {friendsLevelLeaderboard.map((entry, index) => {
+                        const isCurrentUser = entry.user_id === user?.id;
+                        return (
+                          <div 
+                            key={entry.user_id} 
+                            className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="w-8 text-center">
+                                {index + 1}
+                              </Badge>
+                              <Avatar className="h-8 w-8">
+                                {entry.avatar_url ? (
+                                  <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                                ) : (
+                                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                    {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-foreground text-sm">
+                                  {entry.display_name || entry.username || 'Unknown'}
+                                  {isCurrentUser && ' (You)'}
                                 </p>
-                              )}
+                                {entry.current_level && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Current: {entry.current_level}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-foreground">
+                                {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
+                              </p>
+                              <p className="text-xs text-muted-foreground">completed</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">
-                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
-                            </p>
-                            <p className="text-xs text-muted-foreground">completed</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-sm text-center py-4">
-                      No friends have completed levels yet
+                      Complete levels to see your progress!
                     </p>
                   )}
                 </div>
@@ -1369,49 +1373,53 @@ const Profile = () => {
                   </h3>
                   {groupsLevelLeaderboard.length > 0 ? (
                     <div className="space-y-2">
-                      {groupsLevelLeaderboard.map((entry, index) => (
-                        <div 
-                          key={entry.user_id} 
-                          className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="w-8 text-center">
-                              {index + 1}
-                            </Badge>
-                            <Avatar className="h-8 w-8">
-                              {entry.avatar_url ? (
-                                <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                              ) : (
-                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                  {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-foreground text-sm">
-                                {entry.display_name || entry.username || 'Unknown'}
-                              </p>
-                              {entry.current_level && (
-                                <p className="text-xs text-muted-foreground">
-                                  Current: {entry.current_level}
+                      {groupsLevelLeaderboard.map((entry, index) => {
+                        const isCurrentUser = entry.user_id === user?.id;
+                        return (
+                          <div 
+                            key={entry.user_id} 
+                            className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="w-8 text-center">
+                                {index + 1}
+                              </Badge>
+                              <Avatar className="h-8 w-8">
+                                {entry.avatar_url ? (
+                                  <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                                ) : (
+                                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                    {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-foreground text-sm">
+                                  {entry.display_name || entry.username || 'Unknown'}
+                                  {isCurrentUser && ' (You)'}
                                 </p>
-                              )}
+                                {entry.current_level && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Current: {entry.current_level}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-foreground">
+                                {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
+                              </p>
+                              <p className="text-xs text-muted-foreground">completed</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">
-                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
-                            </p>
-                            <p className="text-xs text-muted-foreground">completed</p>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-sm text-center py-4">
                       {favoriteGroupIds.length === 0 
                         ? 'Add favorite groups to see leaderboards' 
-                        : 'No group members have completed levels yet'}
+                        : 'Complete levels to see your progress!'}
                     </p>
                   )}
                 </div>
