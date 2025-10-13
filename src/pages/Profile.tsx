@@ -37,6 +37,16 @@ interface DrillResult {
   total_points: number;
 }
 
+interface LevelLeaderboardEntry {
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  completed_levels: number;
+  current_level: string | null;
+  current_difficulty: string | null;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -50,6 +60,8 @@ const Profile = () => {
   const [favoriteGroupIds, setFavoriteGroupIds] = useState<string[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<Friend[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<Friend[]>([]);
+  const [friendsLevelLeaderboard, setFriendsLevelLeaderboard] = useState<LevelLeaderboardEntry[]>([]);
+  const [groupsLevelLeaderboard, setGroupsLevelLeaderboard] = useState<LevelLeaderboardEntry[]>([]);
   
   // Dialog states
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
@@ -87,6 +99,7 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       loadUserData();
+      loadLevelLeaderboards();
     }
   }, [user]);
 
@@ -260,6 +273,34 @@ const Profile = () => {
 
     } catch (error) {
       console.error('Error loading user data:', error);
+    }
+  };
+
+  const loadLevelLeaderboards = async () => {
+    if (!user) return;
+
+    try {
+      // Load friends level leaderboard
+      const { data: friendsData, error: friendsError } = await supabase
+        .rpc('friends_level_leaderboard');
+      
+      if (friendsError) {
+        console.error('Error loading friends level leaderboard:', friendsError);
+      } else {
+        setFriendsLevelLeaderboard(friendsData || []);
+      }
+
+      // Load groups level leaderboard
+      const { data: groupsData, error: groupsError } = await supabase
+        .rpc('favourite_groups_level_leaderboard');
+      
+      if (groupsError) {
+        console.error('Error loading groups level leaderboard:', groupsError);
+      } else {
+        setGroupsLevelLeaderboard(groupsData || []);
+      }
+    } catch (error) {
+      console.error('Error loading level leaderboards:', error);
     }
   };
 
@@ -1180,13 +1221,137 @@ const Profile = () => {
           </TabsContent>
           
           <TabsContent value="leaderboards" className="space-y-6 mt-6">
+            {/* Level Leaderboards */}
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8">
-                  <Trophy size={48} className="mx-auto text-muted-foreground mb-4" />
-                  <h3 className="font-semibold text-foreground mb-2">Full Leaderboards</h3>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy size={20} />
+                  Level Progress Leaderboards
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Friends Level Leaderboard */}
+                <div>
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Users size={16} />
+                    Friends
+                  </h3>
+                  {friendsLevelLeaderboard.length > 0 ? (
+                    <div className="space-y-2">
+                      {friendsLevelLeaderboard.map((entry, index) => (
+                        <div 
+                          key={entry.user_id} 
+                          className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="w-8 text-center">
+                              {index + 1}
+                            </Badge>
+                            <Avatar className="h-8 w-8">
+                              {entry.avatar_url ? (
+                                <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                              ) : (
+                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                  {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-foreground text-sm">
+                                {entry.display_name || entry.username || 'Unknown'}
+                              </p>
+                              {entry.current_level && (
+                                <p className="text-xs text-muted-foreground">
+                                  Current: {entry.current_level}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-foreground">
+                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
+                            </p>
+                            <p className="text-xs text-muted-foreground">completed</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm text-center py-4">
+                      No friends have completed levels yet
+                    </p>
+                  )}
+                </div>
+
+                {/* Groups Level Leaderboard */}
+                <div>
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Star size={16} />
+                    Favorite Groups
+                  </h3>
+                  {groupsLevelLeaderboard.length > 0 ? (
+                    <div className="space-y-2">
+                      {groupsLevelLeaderboard.map((entry, index) => (
+                        <div 
+                          key={entry.user_id} 
+                          className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="w-8 text-center">
+                              {index + 1}
+                            </Badge>
+                            <Avatar className="h-8 w-8">
+                              {entry.avatar_url ? (
+                                <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                              ) : (
+                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                  {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-foreground text-sm">
+                                {entry.display_name || entry.username || 'Unknown'}
+                              </p>
+                              {entry.current_level && (
+                                <p className="text-xs text-muted-foreground">
+                                  Current: {entry.current_level}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-foreground">
+                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
+                            </p>
+                            <p className="text-xs text-muted-foreground">completed</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm text-center py-4">
+                      {favoriteGroupIds.length === 0 
+                        ? 'Add favorite groups to see leaderboards' 
+                        : 'No group members have completed levels yet'}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Drill Leaderboards Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy size={20} />
+                  Drill Leaderboards
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-4">
                   <p className="text-muted-foreground mb-4">
-                    Complete leaderboards are shown in individual drill pages. Visit any drill to see friends and group leaderboards!
+                    Drill leaderboards are shown on individual drill pages. Visit any drill to see friends and group rankings!
                   </p>
                   <Button onClick={() => navigate('/drills')}>
                     View Drills

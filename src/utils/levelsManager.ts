@@ -2,6 +2,7 @@ import { Level, LevelProgress } from '@/types/levels';
 import { STORAGE_KEYS } from '@/constants/app';
 import { getStorageItem, setStorageItem } from '@/utils/storageManager';
 import levelsData from '@/data/levels.json';
+import { supabase } from '@/integrations/supabase/client';
 
 // Generate safe ID from title
 export const generateLevelId = (title: string): string => {
@@ -37,8 +38,8 @@ export const saveLevelProgress = (progress: Record<string, LevelProgress>) => {
   setStorageItem(STORAGE_KEYS.LEVELS_STATE, progress);
 };
 
-// Mark level as completed
-export const completeLevelz = (levelId: string, attempts: number = 1) => {
+// Mark level as completed and sync to database
+export const completeLevelz = async (levelId: string, attempts: number = 1) => {
   const progress = getLevelProgress();
   progress[levelId] = {
     levelId,
@@ -47,6 +48,27 @@ export const completeLevelz = (levelId: string, attempts: number = 1) => {
     attempts,
   };
   saveLevelProgress(progress);
+
+  // Sync to database
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from('level_progress')
+        .upsert({
+          user_id: user.id,
+          level_id: levelId,
+          completed: true,
+          completed_at: new Date().toISOString(),
+          attempts,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,level_id'
+        });
+    }
+  } catch (error) {
+    console.error('Error syncing level progress to database:', error);
+  }
 };
 
 // Get levels with progress

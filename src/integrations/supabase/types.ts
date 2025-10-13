@@ -321,6 +321,39 @@ export type Database = {
           },
         ]
       }
+      level_progress: {
+        Row: {
+          attempts: number | null
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          level_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          level_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number | null
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          level_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -467,11 +500,35 @@ export type Database = {
           username: string
         }[]
       }
+      favourite_groups_level_leaderboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          completed_levels: number
+          current_difficulty: string
+          current_level: string
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
       friends_leaderboard_for_drill_by_title: {
         Args: { p_drill_title: string }
         Returns: {
           avatar_url: string
           best_score: number
+          display_name: string
+          user_id: string
+          username: string
+        }[]
+      }
+      friends_level_leaderboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          completed_levels: number
+          current_difficulty: string
+          current_level: string
           display_name: string
           user_id: string
           username: string
