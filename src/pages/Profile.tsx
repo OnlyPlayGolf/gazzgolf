@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Trophy, Settings, Crown, Star, Plus, Search, UserPlus, Check, X, LogOut } from "lucide-react";
+import { Users, Trophy, Settings, Crown, Star, Plus, Search, UserPlus, Check, X, LogOut, Target } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +48,21 @@ interface LevelLeaderboardEntry {
   current_difficulty: string | null;
 }
 
+interface Drill {
+  id: string;
+  title: string;
+  short_desc: string | null;
+  lower_is_better: boolean;
+}
+
+interface DrillLeaderboardEntry {
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  best_score: number;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -62,6 +78,11 @@ const Profile = () => {
   const [outgoingRequests, setOutgoingRequests] = useState<Friend[]>([]);
   const [friendsLevelLeaderboard, setFriendsLevelLeaderboard] = useState<LevelLeaderboardEntry[]>([]);
   const [groupsLevelLeaderboard, setGroupsLevelLeaderboard] = useState<LevelLeaderboardEntry[]>([]);
+  const [drills, setDrills] = useState<Drill[]>([]);
+  const [selectedDrill, setSelectedDrill] = useState<string>("");
+  const [drillLeaderboardType, setDrillLeaderboardType] = useState<'friends' | 'groups'>('friends');
+  const [friendsDrillLeaderboard, setFriendsDrillLeaderboard] = useState<DrillLeaderboardEntry[]>([]);
+  const [groupsDrillLeaderboard, setGroupsDrillLeaderboard] = useState<DrillLeaderboardEntry[]>([]);
   
   // Dialog states
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
@@ -100,8 +121,15 @@ const Profile = () => {
     if (user) {
       loadUserData();
       loadLevelLeaderboards();
+      loadDrills();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (selectedDrill && user) {
+      loadDrillLeaderboards();
+    }
+  }, [selectedDrill, drillLeaderboardType, user]);
 
   // Realtime subscription for friendships changes
   useEffect(() => {
@@ -301,6 +329,56 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error loading level leaderboards:', error);
+    }
+  };
+
+  const loadDrills = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('drills')
+        .select('id, title, short_desc, lower_is_better')
+        .order('title');
+
+      if (error) {
+        console.error('Error loading drills:', error);
+      } else {
+        setDrills(data || []);
+        if (data && data.length > 0) {
+          setSelectedDrill(data[0].title);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading drills:', error);
+    }
+  };
+
+  const loadDrillLeaderboards = async () => {
+    if (!selectedDrill || !user) return;
+
+    try {
+      // Load friends drill leaderboard
+      const { data: friendsData, error: friendsError } = await supabase
+        .rpc('friends_leaderboard_for_drill_by_title', { p_drill_title: selectedDrill });
+
+      if (friendsError) {
+        console.error('Error loading friends drill leaderboard:', friendsError);
+        setFriendsDrillLeaderboard([]);
+      } else {
+        setFriendsDrillLeaderboard(friendsData || []);
+      }
+
+      // Load groups drill leaderboard
+      const { data: groupsData, error: groupsError } = await supabase
+        .rpc('favourite_group_leaderboard_for_drill_by_title', { p_drill_title: selectedDrill });
+
+      if (groupsError) {
+        console.error('Error loading groups drill leaderboard:', groupsError);
+        setGroupsDrillLeaderboard([]);
+      } else {
+        setGroupsDrillLeaderboard(groupsData || []);
+      }
+    } catch (error) {
+      console.error('Error loading drill leaderboards:', error);
     }
   };
 
@@ -1340,23 +1418,135 @@ const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Drill Leaderboards Info */}
+            {/* Drill Leaderboards */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Trophy size={20} />
+                  <Target size={20} />
                   Drill Leaderboards
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground mb-4">
-                    Drill leaderboards are shown on individual drill pages. Visit any drill to see friends and group rankings!
-                  </p>
-                  <Button onClick={() => navigate('/drills')}>
-                    View Drills
-                  </Button>
+              <CardContent className="space-y-4">
+                {/* Drill Selector */}
+                <div className="space-y-2">
+                  <Label>Select Drill</Label>
+                  <Select value={selectedDrill} onValueChange={setSelectedDrill}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a drill..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {drills.map((drill) => (
+                        <SelectItem key={drill.id} value={drill.title}>
+                          {drill.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {/* Leaderboard Type Tabs */}
+                {selectedDrill && (
+                  <Tabs value={drillLeaderboardType} onValueChange={(v) => setDrillLeaderboardType(v as 'friends' | 'groups')}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="friends">
+                        <Users size={16} className="mr-2" />
+                        Friends
+                      </TabsTrigger>
+                      <TabsTrigger value="groups">
+                        <Star size={16} className="mr-2" />
+                        Groups
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="friends" className="mt-4">
+                      {friendsDrillLeaderboard.length > 0 ? (
+                        <div className="space-y-2">
+                          {friendsDrillLeaderboard.map((entry, index) => (
+                            <div 
+                              key={entry.user_id} 
+                              className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Badge variant="outline" className="w-8 text-center">
+                                  {index + 1}
+                                </Badge>
+                                <Avatar className="h-8 w-8">
+                                  {entry.avatar_url ? (
+                                    <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                                  ) : (
+                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                      {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium text-foreground text-sm">
+                                    {entry.display_name || entry.username || 'Unknown'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-foreground">
+                                  {entry.best_score}
+                                </p>
+                                <p className="text-xs text-muted-foreground">points</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-4">
+                          No friends have completed this drill yet
+                        </p>
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="groups" className="mt-4">
+                      {groupsDrillLeaderboard.length > 0 ? (
+                        <div className="space-y-2">
+                          {groupsDrillLeaderboard.map((entry, index) => (
+                            <div 
+                              key={entry.user_id} 
+                              className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Badge variant="outline" className="w-8 text-center">
+                                  {index + 1}
+                                </Badge>
+                                <Avatar className="h-8 w-8">
+                                  {entry.avatar_url ? (
+                                    <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                                  ) : (
+                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                      {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium text-foreground text-sm">
+                                    {entry.display_name || entry.username || 'Unknown'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold text-foreground">
+                                  {entry.best_score}
+                                </p>
+                                <p className="text-xs text-muted-foreground">points</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-4">
+                          {favoriteGroupIds.length === 0 
+                            ? 'Add favorite groups to see leaderboards' 
+                            : 'No group members have completed this drill yet'}
+                        </p>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
