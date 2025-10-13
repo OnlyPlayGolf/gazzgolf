@@ -1427,7 +1427,7 @@ const Profile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Drill Selector */}
+                 {/* Drill Selector */}
                 <div className="space-y-2">
                   <Label>Select Drill</Label>
                   <Select value={selectedDrill} onValueChange={setSelectedDrill}>
@@ -1435,7 +1435,7 @@ const Profile = () => {
                       <SelectValue placeholder="Choose a drill..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {drills.map((drill) => (
+                      {Array.from(new Map(drills.map(drill => [drill.title, drill])).values()).map((drill) => (
                         <SelectItem key={drill.id} value={drill.title}>
                           {drill.title}
                         </SelectItem>
@@ -1461,42 +1461,46 @@ const Profile = () => {
                     <TabsContent value="friends" className="mt-4">
                       {friendsDrillLeaderboard.length > 0 ? (
                         <div className="space-y-2">
-                          {friendsDrillLeaderboard.map((entry, index) => (
-                            <div 
-                              key={entry.user_id} 
-                              className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="w-8 text-center">
-                                  {index + 1}
-                                </Badge>
-                                <Avatar className="h-8 w-8">
-                                  {entry.avatar_url ? (
-                                    <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                                  ) : (
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                      {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
-                                <div>
-                                  <p className="font-medium text-foreground text-sm">
-                                    {entry.display_name || entry.username || 'Unknown'}
+                          {friendsDrillLeaderboard.map((entry, index) => {
+                            const isCurrentUser = entry.user_id === user?.id;
+                            return (
+                              <div 
+                                key={entry.user_id} 
+                                className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="outline" className="w-8 text-center">
+                                    {index + 1}
+                                  </Badge>
+                                  <Avatar className="h-8 w-8">
+                                    {entry.avatar_url ? (
+                                      <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                                    ) : (
+                                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                        {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                      </AvatarFallback>
+                                    )}
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium text-foreground text-sm">
+                                      {entry.display_name || entry.username || 'Unknown'}
+                                      {isCurrentUser && ' (You)'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-foreground">
+                                    {entry.best_score}
                                   </p>
+                                  <p className="text-xs text-muted-foreground">points</p>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-foreground">
-                                  {entry.best_score}
-                                </p>
-                                <p className="text-xs text-muted-foreground">points</p>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-muted-foreground text-sm text-center py-4">
-                          No friends have completed this drill yet
+                          Complete this drill to see your score!
                         </p>
                       )}
                     </TabsContent>
@@ -1504,44 +1508,48 @@ const Profile = () => {
                     <TabsContent value="groups" className="mt-4">
                       {groupsDrillLeaderboard.length > 0 ? (
                         <div className="space-y-2">
-                          {groupsDrillLeaderboard.map((entry, index) => (
-                            <div 
-                              key={entry.user_id} 
-                              className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="w-8 text-center">
-                                  {index + 1}
-                                </Badge>
-                                <Avatar className="h-8 w-8">
-                                  {entry.avatar_url ? (
-                                    <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                                  ) : (
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                      {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
-                                <div>
-                                  <p className="font-medium text-foreground text-sm">
-                                    {entry.display_name || entry.username || 'Unknown'}
+                          {groupsDrillLeaderboard.map((entry, index) => {
+                            const isCurrentUser = entry.user_id === user?.id;
+                            return (
+                              <div 
+                                key={entry.user_id} 
+                                className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="outline" className="w-8 text-center">
+                                    {index + 1}
+                                  </Badge>
+                                  <Avatar className="h-8 w-8">
+                                    {entry.avatar_url ? (
+                                      <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
+                                    ) : (
+                                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                        {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
+                                      </AvatarFallback>
+                                    )}
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium text-foreground text-sm">
+                                      {entry.display_name || entry.username || 'Unknown'}
+                                      {isCurrentUser && ' (You)'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-foreground">
+                                    {entry.best_score}
                                   </p>
+                                  <p className="text-xs text-muted-foreground">points</p>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-foreground">
-                                  {entry.best_score}
-                                </p>
-                                <p className="text-xs text-muted-foreground">points</p>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-muted-foreground text-sm text-center py-4">
                           {favoriteGroupIds.length === 0 
                             ? 'Add favorite groups to see leaderboards' 
-                            : 'No group members have completed this drill yet'}
+                            : 'Complete this drill to see your score!'}
                         </p>
                       )}
                     </TabsContent>
