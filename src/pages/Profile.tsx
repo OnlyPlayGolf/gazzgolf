@@ -13,6 +13,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { syncLocalLevelsToDB } from "@/utils/levelsManager";
 
 interface Friend {
   id: string;
@@ -307,7 +308,10 @@ const Profile = () => {
   const loadLevelLeaderboards = async () => {
     if (!user) return;
 
-    try {
+  try {
+      // Ensure local progress is synced to DB so the leaderboard reflects it
+      await syncLocalLevelsToDB();
+
       // Load friends level leaderboard
       const { data: friendsData, error: friendsError } = await supabase
         .rpc('friends_level_leaderboard');

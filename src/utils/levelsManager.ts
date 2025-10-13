@@ -49,25 +49,88 @@ export const completeLevelz = async (levelId: string, attempts: number = 1) => {
   };
   saveLevelProgress(progress);
 
-  // Sync to database
+  // Sync to database with manual upsert (no unique index required)
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+    if (!user) return;
+
+    const { data: existing } = await supabase
+      .from('level_progress')
+      .select('id, attempts, completed')
+      .eq('user_id', user.id)
+      .eq('level_id', levelId)
+      .maybeSingle();
+
+    if (existing) {
       await supabase
         .from('level_progress')
-        .upsert({
+        .update({
+          completed: true,
+          completed_at: new Date().toISOString(),
+          attempts: attempts ?? existing.attempts ?? 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', (existing as any).id);
+    } else {
+      await supabase
+        .from('level_progress')
+        .insert({
           user_id: user.id,
           level_id: levelId,
           completed: true,
           completed_at: new Date().toISOString(),
-          attempts,
+          attempts: attempts ?? 1,
           updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,level_id'
         });
     }
   } catch (error) {
     console.error('Error syncing level progress to database:', error);
+  }
+};
+
+// One-time sync of local storage progress to Supabase
+export const syncLocalLevelsToDB = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const progress = getLevelProgress();
+    const entries = Object.values(progress);
+
+    for (const entry of entries) {
+      if (!entry?.levelId) continue;
+      const { data: existing } = await supabase
+        .from('level_progress')
+        .select('id, attempts, completed')
+        .eq('user_id', user.id)
+        .eq('level_id', entry.levelId)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('level_progress')
+          .update({
+            completed: true,
+            completed_at: new Date().toISOString(),
+            attempts: entry.attempts ?? existing.attempts ?? 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', (existing as any).id);
+      } else {
+        await supabase
+          .from('level_progress')
+          .insert({
+            user_id: user.id,
+            level_id: entry.levelId,
+            completed: true,
+            completed_at: new Date().toISOString(),
+            attempts: entry.attempts ?? 1,
+            updated_at: new Date().toISOString(),
+          });
+      }
+    }
+  } catch (e) {
+    console.error('Error during level progress sync:', e);
   }
 };
 
