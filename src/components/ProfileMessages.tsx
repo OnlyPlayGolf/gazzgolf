@@ -337,20 +337,31 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
 
       if (error) throw error;
 
+      if (!data || data.length === 0) {
+        setMessages([]);
+        return;
+      }
+
       const senderIds = [...new Set(data.map((msg: any) => msg.sender_id))];
-      const { data: profiles } = await supabase
+      
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, display_name, username')
         .in('id', senderIds);
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+      }
 
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
       const formattedMessages = data.map((msg: any) => {
         const profile = profilesMap.get(msg.sender_id);
+        const senderName = profile?.display_name || profile?.username || 'Unknown User';
         return {
           id: msg.id,
           sender_id: msg.sender_id,
-          sender_name: profile?.display_name || profile?.username || 'Unknown',
+          sender_name: senderName,
           content: msg.content,
           created_at: msg.created_at,
           is_read: msg.is_read
