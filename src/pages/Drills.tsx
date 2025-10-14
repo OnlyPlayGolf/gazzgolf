@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, Zap } from "lucide-react";
+import { Target, Zap, UserPlus, MessageCircle, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getStorageItem } from "@/utils/storageManager";
 import { STORAGE_KEYS } from "@/constants/app";
@@ -58,8 +58,23 @@ const Drills = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Drills</h1>
-          <p className="text-muted-foreground">Choose a drill to start practicing</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Drills</h1>
+              <p className="text-muted-foreground">Choose a drill to start practicing</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <UserPlus size={18} />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <MessageCircle size={18} />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <Bell size={18} />
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-6">

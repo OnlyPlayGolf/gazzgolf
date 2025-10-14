@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Target, CheckCircle, Trophy } from "lucide-react";
+import { ArrowLeft, Target, CheckCircle, Trophy, UserPlus, MessageCircle, Bell } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
@@ -81,16 +81,29 @@ const Levels = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate("/levels")}
-            className="rounded-full"
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-2xl font-bold text-foreground capitalize">{difficulty || 'Beginner'}</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/levels")}
+              className="rounded-full"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-2xl font-bold text-foreground capitalize">{difficulty || 'Beginner'}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+              <UserPlus size={18} />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+              <MessageCircle size={18} />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+              <Bell size={18} />
+            </Button>
+          </div>
         </div>
 
         {/* Lead Text */}
