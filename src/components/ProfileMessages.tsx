@@ -212,113 +212,22 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
     if (!user) return;
 
     try {
-      // Get friend conversations
-      const { data: friendConvs } = await supabase
-        .from('conversation_participants')
-        .select(`
-          conversation_id,
-          conversations!inner(id, type, updated_at)
-        `)
-        .eq('user_id', user.id);
+      const { data, error } = await (supabase as any).rpc('conversations_overview');
+      if (error) throw error;
 
-      const friendConversations = await Promise.all(
-        (friendConvs || []).map(async (conv: any) => {
-          const { data: participants } = await supabase
-            .from('conversation_participants')
-            .select('user_id')
-            .eq('conversation_id', conv.conversation_id)
-            .neq('user_id', user.id);
+      const mapped: Conversation[] = (data || []).map((row: any) => ({
+        id: row.id,
+        type: row.type === 'group' ? 'group' : 'friend',
+        name: row.name || 'Unknown',
+        group_id: row.group_id || undefined,
+        other_user_id: row.other_user_id || undefined,
+        last_message: row.last_message || undefined,
+        last_message_time: row.last_message_time || undefined,
+        updated_at: row.updated_at,
+        unread_count: 0,
+      }));
 
-          const otherUserId = participants?.[0]?.user_id;
-          let otherUserProfile = null;
-          
-          if (otherUserId) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('display_name, username')
-              .eq('id', otherUserId)
-              .single();
-            otherUserProfile = profile;
-          }
-
-          const otherUser = {
-            user_id: otherUserId,
-            profiles: otherUserProfile
-          };
-          
-          const { data: lastMsg } = await supabase
-            .from('messages')
-            .select('content, created_at')
-            .eq('conversation_id', conv.conversation_id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          return {
-            id: conv.conversation_id,
-            type: 'friend' as const,
-            name: otherUser?.profiles?.display_name || otherUser?.profiles?.username || 'Unknown',
-            other_user_id: otherUser?.user_id,
-            last_message: lastMsg?.content,
-            last_message_time: lastMsg?.created_at,
-            updated_at: conv.conversations.updated_at,
-            unread_count: 0
-          };
-        })
-      );
-
-      // Get group conversations
-      const { data: groupConvs } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          type,
-          updated_at,
-          groups!inner(id, name)
-        `)
-        .eq('type', 'group')
-        .not('group_id', 'is', null);
-
-      const groupConversations = await Promise.all(
-        (groupConvs || []).map(async (conv: any) => {
-          const { data: membership } = await supabase
-            .from('group_members')
-            .select('user_id')
-            .eq('group_id', conv.groups.id)
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (!membership) return null;
-
-          const { data: lastMsg } = await supabase
-            .from('messages')
-            .select('content, created_at')
-            .eq('conversation_id', conv.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          return {
-            id: conv.id,
-            type: 'group' as const,
-            name: conv.groups.name,
-            group_id: conv.groups.id,
-            last_message: lastMsg?.content,
-            last_message_time: lastMsg?.created_at,
-            updated_at: conv.updated_at,
-            unread_count: 0
-          };
-        })
-      );
-
-      const allConversations = [
-        ...friendConversations,
-        ...groupConversations.filter(c => c !== null)
-      ].sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-
-      setConversations(allConversations);
+      setConversations(mapped);
     } catch (error) {
       console.error('Error loading conversations:', error);
     }

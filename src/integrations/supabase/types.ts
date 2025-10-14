@@ -611,6 +611,19 @@ export type Database = {
         Args: { invite_code: string }
         Returns: Json
       }
+      conversations_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          group_id: string
+          id: string
+          last_message: string
+          last_message_time: string
+          name: string
+          other_user_id: string
+          type: string
+          updated_at: string
+        }[]
+      }
       ensure_friend_conversation: {
         Args: { friend_id: string }
         Returns: string
