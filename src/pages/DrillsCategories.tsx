@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, Target, Zap, Hammer, Activity, Star } from "lucide-react";
+import { Lock, Target, Zap, Hammer, Activity, Star, UserPlus, MessageCircle, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +19,23 @@ const DrillsCategories = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Practice Drills</h1>
-          <p className="text-muted-foreground">Choose your skill area to practice</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Practice Drills</h1>
+              <p className="text-muted-foreground">Choose your skill area to practice</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <UserPlus size={18} />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <MessageCircle size={18} />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <Bell size={18} />
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4">
