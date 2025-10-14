@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Trophy, Settings, Crown, Star, Plus, Search, UserPlus, Check, X, LogOut, Target } from "lucide-react";
+import { Users, Trophy, Settings, Crown, Star, Plus, Search, UserPlus, Check, X, LogOut, Target, MessageCircle } from "lucide-react";
+import { ProfileMessages } from "@/components/ProfileMessages";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -807,10 +808,14 @@ const Profile = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="friends">Friends</TabsTrigger>
             <TabsTrigger value="groups">Groups</TabsTrigger>
+            <TabsTrigger value="messages">
+              <MessageCircle size={16} className="mr-1" />
+              Messages
+            </TabsTrigger>
             <TabsTrigger value="leaderboards">Leaderboards</TabsTrigger>
           </TabsList>
           
@@ -1569,6 +1574,10 @@ const Profile = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="messages" className="mt-6">
+            <ProfileMessages />
           </TabsContent>
         </Tabs>
       </div>
