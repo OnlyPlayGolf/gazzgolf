@@ -3,12 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Target, CheckCircle, Trophy, UserPlus, MessageCircle, Bell } from "lucide-react";
+import { ArrowLeft, Target, CheckCircle, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
 import { supabase } from "@/integrations/supabase/client";
+import { AddFriendDialog } from "@/components/AddFriendDialog";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { MessagesSheet } from "@/components/MessagesSheet";
 
 const Levels = () => {
   const navigate = useNavigate();
@@ -94,15 +97,9 @@ const Levels = () => {
             <h1 className="text-2xl font-bold text-foreground capitalize">{difficulty || 'Beginner'}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-              <UserPlus size={18} />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-              <MessageCircle size={18} />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-              <Bell size={18} />
-            </Button>
+            <AddFriendDialog />
+            <MessagesSheet />
+            <NotificationsSheet />
           </div>
         </div>
 

@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, Zap, UserPlus, MessageCircle, Bell } from "lucide-react";
+import { Target, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getStorageItem } from "@/utils/storageManager";
 import { STORAGE_KEYS } from "@/constants/app";
-// Import the DrillLeaderboard component
-import DrillLeaderboard from "@/components/DrillLeaderboard";
+import { AddFriendDialog } from "@/components/AddFriendDialog";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { MessagesSheet } from "@/components/MessagesSheet";
 
 const drills = [
   {
@@ -64,15 +65,9 @@ const Drills = () => {
               <p className="text-muted-foreground">Choose a drill to start practicing</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <UserPlus size={18} />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <MessageCircle size={18} />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <Bell size={18} />
-              </Button>
+              <AddFriendDialog />
+              <MessagesSheet />
+              <NotificationsSheet />
             </div>
           </div>
         </div>

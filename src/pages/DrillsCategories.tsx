@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, Target, Zap, Hammer, Activity, Star, UserPlus, MessageCircle, Bell } from "lucide-react";
+import { Lock, Target, Zap, Hammer, Activity, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { AddFriendDialog } from "@/components/AddFriendDialog";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { MessagesSheet } from "@/components/MessagesSheet";
 
 const categories = [
   { id: 'putting', name: 'Putting', icon: Target, enabled: true, description: 'Precision on the green' },
@@ -25,15 +28,9 @@ const DrillsCategories = () => {
               <p className="text-muted-foreground">Choose your skill area to practice</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <UserPlus size={18} />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <MessageCircle size={18} />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-                <Bell size={18} />
-              </Button>
+              <AddFriendDialog />
+              <MessagesSheet />
+              <NotificationsSheet />
             </div>
           </div>
         </div>
