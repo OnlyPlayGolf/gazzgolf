@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Send, ArrowLeft, Users } from "lucide-react";
+import { Search, Send, ArrowLeft, Users, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
@@ -65,7 +66,13 @@ export const ProfileMessages = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // New message dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [friends, setFriends] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [createSearch, setCreateSearch] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -128,6 +135,76 @@ export const ProfileMessages = () => {
     }
 
     setFilteredConversations(filtered);
+  };
+
+  // Load friends and groups when opening the New Message dialog
+  useEffect(() => {
+    if (createOpen) {
+      loadFriendsAndGroups();
+    }
+  }, [createOpen]);
+
+  const loadFriendsAndGroups = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Friends
+    const { data: friendsPairs } = await supabase
+      .from('friends_pairs')
+      .select('a, b')
+      .or(`a.eq.${user.id},b.eq.${user.id}`);
+
+    const friendIds = (friendsPairs || []).map((pair: any) =>
+      pair.a === user.id ? pair.b : pair.a
+    );
+
+    if (friendIds.length > 0) {
+      const { data: friendProfiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, username')
+        .in('id', friendIds);
+      setFriends(friendProfiles || []);
+    } else {
+      setFriends([]);
+    }
+
+    // Groups
+    const { data: myGroups } = await supabase
+      .from('group_members')
+      .select('groups!inner(id, name)')
+      .eq('user_id', user.id);
+
+    setGroups((myGroups || []).map((g: any) => ({ id: g.groups.id, name: g.groups.name })));
+  };
+
+  const handleStartFriendChat = async (friendId: string) => {
+    try {
+      const { data, error } = await (supabase as any).rpc('ensure_friend_conversation', { friend_id: friendId });
+      if (error) throw error;
+      const convId = data as string;
+      setCreateOpen(false);
+      await loadConversations();
+      const conv = conversations.find(c => c.id === convId);
+      if (conv) setSelectedConversation(conv);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error', description: 'Could not start conversation.', variant: 'destructive' });
+    }
+  };
+
+  const handleStartGroupChat = async (groupId: string) => {
+    try {
+      const { data, error } = await (supabase as any).rpc('ensure_group_conversation', { p_group_id: groupId });
+      if (error) throw error;
+      const convId = data as string;
+      setCreateOpen(false);
+      await loadConversations();
+      const conv = conversations.find(c => c.id === convId);
+      if (conv) setSelectedConversation(conv);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error', description: 'Could not start group conversation.', variant: 'destructive' });
+    }
   };
 
   const loadConversations = async () => {
@@ -390,6 +467,70 @@ export const ProfileMessages = () => {
         >
           Friends
         </Button>
+      </div>
+
+      <div className="flex justify-end">
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="secondary" className="gap-1">
+              <Plus size={16} /> New Message
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Start a new conversation</DialogTitle>
+              <DialogDescription>Choose a friend or group to start chatting.</DialogDescription>
+            </DialogHeader>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              <Input
+                placeholder="Search friends or groups"
+                value={createSearch}
+                onChange={(e) => setCreateSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              <div>
+                <h4 className="text-sm font-medium mb-2">Friends</h4>
+                {friends.filter(f => {
+                  const q = createSearch.toLowerCase();
+                  const name = (f.display_name || f.username || '').toLowerCase();
+                  return !q || name.includes(q);
+                }).map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => handleStartFriendChat(f.id)}
+                    className="w-full text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    {(f.display_name || f.username) || 'Unknown user'}
+                  </button>
+                ))}
+                {friends.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No friends found.</p>
+                )}
+              </div>
+              <div>
+                <h4 className="text-sm font-medium mb-2">Groups</h4>
+                {groups.filter(g => {
+                  const q = createSearch.toLowerCase();
+                  return !q || g.name.toLowerCase().includes(q);
+                }).map(g => (
+                  <button
+                    key={g.id}
+                    onClick={() => handleStartGroupChat(g.id)}
+                    className="w-full text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    {g.name}
+                  </button>
+                ))}
+                {groups.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No groups found.</p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="space-y-2">
