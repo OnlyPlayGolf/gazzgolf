@@ -611,6 +611,10 @@ export type Database = {
         Args: { invite_code: string }
         Returns: Json
       }
+      ensure_friend_conversation: {
+        Args: { friend_id: string }
+        Returns: string
+      }
       ensure_friendship: {
         Args: { u1: string; u2: string }
         Returns: undefined
@@ -618,6 +622,10 @@ export type Database = {
       ensure_friendship_by_pair: {
         Args: { ts?: string; u1: string; u2: string }
         Returns: undefined
+      }
+      ensure_group_conversation: {
+        Args: { p_group_id: string }
+        Returns: string
       }
       favourite_group_leaderboard_for_drill_by_title: {
         Args: { p_drill_title: string }
