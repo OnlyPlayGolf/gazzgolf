@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Target, CheckCircle } from "lucide-react";
+import { Target, CheckCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
@@ -93,9 +93,19 @@ const Levels = () => {
       <div className="p-4">
         {/* Header styled like Drills page */}
         <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/levels")}
+              className="rounded-full"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-2xl font-bold text-foreground">{capitalize(difficulty)} Levels</h1>
+          </div>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">{capitalize(difficulty)} Levels</h1>
               <p className="text-muted-foreground">Choose a level to start practicing</p>
             </div>
             <div className="flex items-center gap-2">
