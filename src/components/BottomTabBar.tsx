@@ -18,7 +18,10 @@ export const BottomTabBar = () => {
       <div className="flex">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = location.pathname === tab.path || (tab.path === '/categories' && location.pathname === '/');
+          const isActive =
+            location.pathname === tab.path ||
+            (tab.path === '/categories' && location.pathname === '/') ||
+            (tab.path === '/levels' && location.pathname.startsWith('/levels'));
           
           return (
             <button

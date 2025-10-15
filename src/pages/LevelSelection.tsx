@@ -63,7 +63,13 @@ const LevelSelection = () => {
             const IconComponent = tier.icon;
             
             return (
-              <Card key={tier.id} className="border-golf-light hover:border-primary transition-all duration-200">
+              <Card
+                key={tier.id}
+                onClick={tier.action}
+                role="button"
+                tabIndex={0}
+                className="cursor-pointer border-golf-light hover:border-primary transition-all duration-200 hover-scale"
+              >
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-3 text-foreground">
                     <IconComponent size={24} className="text-primary" />
@@ -80,7 +86,7 @@ const LevelSelection = () => {
                   </p>
                   
                   <Button 
-                    onClick={tier.action}
+                    onClick={(e) => { e.stopPropagation(); tier.action(); }}
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     View Levels
