@@ -1,8 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Target, Lock, Trophy, Star, Crown } from "lucide-react";
+import { Target, Trophy, Star, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AddFriendDialog } from "@/components/AddFriendDialog";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { MessagesSheet } from "@/components/MessagesSheet";
 
 const LevelSelection = () => {
   const navigate = useNavigate();
@@ -13,7 +15,6 @@ const LevelSelection = () => {
       title: "Beginner",
       subtitle: "Start your journey here.",
       icon: Target,
-      available: true,
       action: () => navigate("/levels/beginner"),
     },
     {
@@ -21,7 +22,6 @@ const LevelSelection = () => {
       title: "Intermediate",
       subtitle: "Take your skills to the next stage.",
       icon: Trophy,
-      available: true,
       action: () => navigate("/levels/intermediate"),
     },
     {
@@ -29,7 +29,6 @@ const LevelSelection = () => {
       title: "Amateur", 
       subtitle: "Build confidence and consistency.",
       icon: Star,
-      available: true,
       action: () => navigate("/levels/amateur"),
     },
     {
@@ -37,67 +36,55 @@ const LevelSelection = () => {
       title: "Professional",
       subtitle: "Compete like a pro.",
       icon: Crown,
-      available: true,
       action: () => navigate("/levels/professional"),
-    },
-    {
-      id: "tour",
-      title: "Tour",
-      subtitle: "Play at the highest level.", 
-      icon: Crown,
-      available: false,
     },
   ];
 
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Choose Your Level</h1>
+        <div className="mb-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Choose Your Level</h1>
+              <p className="text-muted-foreground">Select your stage and start leveling up.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <AddFriendDialog />
+              <MessagesSheet />
+              <NotificationsSheet />
+            </div>
+          </div>
         </div>
 
         {/* Tier Cards */}
-        <div className="space-y-4 max-w-md mx-auto">
+        <div className="space-y-6 max-w-md mx-auto">
           {tiers.map((tier) => {
             const IconComponent = tier.icon;
             
             return (
-              <Card key={tier.id} className="rounded-2xl shadow-lg border-border">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`p-3 rounded-full ${tier.available ? 'bg-primary/10' : 'bg-muted'}`}>
-                      <IconComponent 
-                        size={24} 
-                        className={tier.available ? 'text-primary' : 'text-muted-foreground'} 
-                      />
-                    </div>
+              <Card key={tier.id} className="border-golf-light hover:border-primary transition-all duration-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-3 text-foreground">
+                    <IconComponent size={24} className="text-primary" />
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-foreground">
-                        {tier.title}
-                      </h3>
-                      <p className="text-muted-foreground">{tier.subtitle}</p>
+                      <div className="flex items-center justify-between">
+                        <span>{tier.title}</span>
+                      </div>
                     </div>
-                  </div>
-
-                  {tier.available ? (
-                    <Button
-                      onClick={tier.action}
-                      className="w-full rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground"
-                      size="lg"
-                    >
-                      View Levels
-                    </Button>
-                  ) : (
-                    <Button
-                      disabled
-                      className="w-full rounded-2xl bg-muted text-muted-foreground"
-                      size="lg"
-                    >
-                      <Lock size={16} className="mr-2" />
-                      Coming Soon
-                    </Button>
-                  )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    {tier.subtitle}
+                  </p>
+                  
+                  <Button 
+                    onClick={tier.action}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    View Levels
+                  </Button>
                 </CardContent>
               </Card>
             );
