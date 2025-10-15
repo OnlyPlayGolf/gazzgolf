@@ -84,30 +84,18 @@ const Levels = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate("/levels")}
-              className="rounded-full"
-            >
-              <ArrowLeft size={20} />
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground capitalize">{difficulty || 'Beginner'}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <AddFriendDialog />
-            <MessagesSheet />
-            <NotificationsSheet />
-          </div>
-        </div>
-
-        {/* Lead Text */}
         <div className="mb-6">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Complete the levels honestly and be honest with yourself — only true practice builds real skill
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Levels</h1>
+              <p className="text-muted-foreground">Select your stage and start leveling up</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <AddFriendDialog />
+              <MessagesSheet />
+              <NotificationsSheet />
+            </div>
+          </div>
         </div>
 
         {/* Player Dashboard */}
