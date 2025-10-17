@@ -204,134 +204,58 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
     if (!user) return;
 
     try {
-      // Get friend conversations
-      const { data: friendConvs } = await supabase
-        .from('conversation_participants')
-        .select(`
-          conversation_id,
-          conversations!inner(id, type, updated_at)
-        `)
-        .eq('user_id', user.id)
-        .eq('conversations.type', 'friend');
+      const { data: overview, error } = await supabase.rpc('conversations_overview');
+      if (error) throw error;
 
-      const friendConversations = await Promise.all(
-        (friendConvs || []).map(async (conv: any) => {
-          // Get other participant
-          const { data: participants } = await supabase
-            .from('conversation_participants')
-            .select('user_id')
-            .eq('conversation_id', conv.conversation_id)
-            .neq('user_id', user.id);
+      const baseConversations: Conversation[] = (overview || []).map((c: any) => ({
+        id: c.id,
+        type: (c.type as 'friend' | 'group'),
+        name: c.name || 'Unknown',
+        group_id: c.group_id || undefined,
+        other_user_id: c.other_user_id || undefined,
+        last_message: c.last_message || undefined,
+        last_message_time: c.last_message_time || undefined,
+        updated_at: c.updated_at,
+        unread_count: 0,
+      }));
 
-          const otherUserId = participants?.[0]?.user_id;
-          let otherUserProfile = null;
-          
-          if (otherUserId) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('display_name, username, email')
-              .eq('id', otherUserId)
-              .single();
-            otherUserProfile = profile;
+      // Compute unread counts per conversation (messages not sent by me and is_read=false)
+      const withUnread = await Promise.all(
+        baseConversations.map(async (conv) => {
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('is_read', false)
+            .neq('sender_id', user.id);
+          return { ...conv, unread_count: count || 0 } as Conversation;
+        })
+      );
+
+      // Improve names that came as 'Unknown' by falling back to email prefix
+      const unknowns = withUnread.filter(c => c.name === 'Unknown' && c.other_user_id);
+      if (unknowns.length > 0) {
+        const ids = unknowns.map(u => u.other_user_id!)
+          .filter((v, i, a) => a.indexOf(v) === i);
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, display_name, username, email')
+          .in('id', ids);
+        const pMap = new Map((profs || []).map(p => [p.id, p]));
+        withUnread.forEach((c) => {
+          if (c.name === 'Unknown' && c.other_user_id) {
+            const p = pMap.get(c.other_user_id);
+            if (p) {
+              c.name = p.display_name || p.username || (p.email ? String(p.email).split('@')[0] : 'Unknown');
+            }
           }
+        });
+      }
 
-          const otherUser = {
-            user_id: otherUserId,
-            profiles: otherUserProfile
-          };
-          
-          // Get last message
-          const { data: lastMsg } = await supabase
-            .from('messages')
-            .select('content, created_at')
-            .eq('conversation_id', conv.conversation_id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+      // Sort by updated_at desc, like before
+      withUnread.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
 
-          // Get unread count for this conversation
-          const { count: unreadCount } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.conversation_id)
-            .eq('is_read', false)
-            .neq('sender_id', user.id);
-
-          return {
-            id: conv.conversation_id,
-            type: 'friend' as const,
-            name: otherUserProfile?.display_name || otherUserProfile?.username || (otherUserProfile?.email ? otherUserProfile.email.split('@')[0] : 'Unknown'),
-            other_user_id: otherUser?.user_id,
-            last_message: lastMsg?.content,
-            last_message_time: lastMsg?.created_at,
-            updated_at: conv.conversations.updated_at,
-            unread_count: unreadCount || 0
-          };
-        })
-      );
-
-      // Get group conversations
-      const { data: groupConvs } = await supabase
-        .from('conversations')
-        .select(`
-          id,
-          type,
-          updated_at,
-          groups!inner(id, name)
-        `)
-        .eq('type', 'group')
-        .not('group_id', 'is', null);
-
-      const groupConversations = await Promise.all(
-        (groupConvs || []).map(async (conv: any) => {
-          // Check if user is member
-          const { data: membership } = await supabase
-            .from('group_members')
-            .select('user_id')
-            .eq('group_id', conv.groups.id)
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (!membership) return null;
-
-          // Get last message
-          const { data: lastMsg } = await supabase
-            .from('messages')
-            .select('content, created_at')
-            .eq('conversation_id', conv.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          // Get unread count for this conversation
-          const { count: unreadCount } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id)
-            .eq('is_read', false)
-            .neq('sender_id', user.id);
-
-          return {
-            id: conv.id,
-            type: 'group' as const,
-            name: conv.groups.name,
-            group_id: conv.groups.id,
-            last_message: lastMsg?.content,
-            last_message_time: lastMsg?.created_at,
-            updated_at: conv.updated_at,
-            unread_count: unreadCount || 0
-          };
-        })
-      );
-
-      const allConversations = [
-        ...friendConversations,
-        ...groupConversations.filter(c => c !== null)
-      ].sort((a, b) => 
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-
-      setConversations(allConversations);
+      setConversations(withUnread);
     } catch (error) {
       console.error('Error loading conversations:', error);
     }
