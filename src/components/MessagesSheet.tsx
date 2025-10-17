@@ -74,12 +74,40 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (open) {
       loadConversations();
     }
+  }, [open]);
+
+  // Subscribe to real-time message updates for unread count
+  useEffect(() => {
+    const channel = supabase
+      .channel('all-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        () => {
+          loadUnreadCount();
+          if (open) {
+            loadConversations();
+          }
+        }
+      )
+      .subscribe();
+
+    loadUnreadCount();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -110,6 +138,48 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const loadUnreadCount = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+      // Get all conversations the user is part of
+      const { data: participantConvs } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', user.id);
+
+      const { data: groupConvs } = await supabase
+        .from('group_members')
+        .select('group_id, groups!inner(conversations(id))')
+        .eq('user_id', user.id);
+
+      const conversationIds = [
+        ...(participantConvs || []).map(c => c.conversation_id),
+        ...(groupConvs || []).flatMap(gc => 
+          (gc.groups as any)?.conversations?.map((c: any) => c.id) || []
+        )
+      ];
+
+      if (conversationIds.length === 0) {
+        setTotalUnreadCount(0);
+        return;
+      }
+
+      // Count unread messages in these conversations
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .in('conversation_id', conversationIds)
+        .eq('is_read', false)
+        .neq('sender_id', user.id);
+
+      setTotalUnreadCount(count || 0);
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
 
   const loadConversations = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -160,6 +230,14 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
             .limit(1)
             .maybeSingle();
 
+          // Get unread count for this conversation
+          const { count: unreadCount } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.conversation_id)
+            .eq('is_read', false)
+            .neq('sender_id', user.id);
+
           return {
             id: conv.conversation_id,
             type: 'friend' as const,
@@ -168,7 +246,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
             last_message: lastMsg?.content,
             last_message_time: lastMsg?.created_at,
             updated_at: conv.conversations.updated_at,
-            unread_count: 0
+            unread_count: unreadCount || 0
           };
         })
       );
@@ -206,6 +284,14 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
             .limit(1)
             .maybeSingle();
 
+          // Get unread count for this conversation
+          const { count: unreadCount } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('is_read', false)
+            .neq('sender_id', user.id);
+
           return {
             id: conv.id,
             type: 'group' as const,
@@ -214,7 +300,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
             last_message: lastMsg?.content,
             last_message_time: lastMsg?.created_at,
             updated_at: conv.updated_at,
-            unread_count: 0
+            unread_count: unreadCount || 0
           };
         })
       );
@@ -359,8 +445,16 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         {trigger || (
-          <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+          <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative">
             <MessageCircle size={18} />
+            {totalUnreadCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+              >
+                {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+              </Badge>
+            )}
           </Button>
         )}
       </SheetTrigger>
