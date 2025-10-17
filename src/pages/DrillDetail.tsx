@@ -61,7 +61,7 @@ const DrillDetail = () => {
   const navigate = useNavigate();
   const { drillId } = useParams<{ drillId: string }>();
   const [drill, setDrill] = useState<Drill | null>(null);
-  const [currentTab, setCurrentTab] = useState('overview');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [drillIsFavorite, setDrillIsFavorite] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -118,13 +118,13 @@ const DrillDetail = () => {
   const renderDrillComponent = () => {
     switch (drillId) {
       case 'pga-tour-18':
-        return <PGATour18Component onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
+        return <PGATour18Component onScoreSaved={handleScoreSaved} />;
       case 'aggressive-putting':
-        return <AggressivePuttingComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
+        return <AggressivePuttingComponent onScoreSaved={handleScoreSaved} />;
       case '8-ball-drill':
-        return <EightBallComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
+        return <EightBallComponent onScoreSaved={handleScoreSaved} />;
       case 'wedges-distance-control':
-        return <WedgesDistanceControlComponent onTabChange={setCurrentTab} onScoreSaved={handleScoreSaved} />;
+        return <WedgesDistanceControlComponent onScoreSaved={handleScoreSaved} />;
       default:
         return null;
     }
@@ -193,20 +193,26 @@ const DrillDetail = () => {
             </CardContent>
           </Card>
 
-          {/* Full Leaderboard Tab */}
-          <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <TabsList className="grid w-full grid-cols-1">
-              <TabsTrigger value="leaderboard">Full Leaderboard</TabsTrigger>
-            </TabsList>
+          {/* Full Leaderboard Toggle */}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setShowLeaderboard(!showLeaderboard)}
+          >
+            {showLeaderboard ? 'Hide' : 'Show'} Full Leaderboard
+          </Button>
 
-            <TabsContent value="leaderboard" className="mt-4">
-              <DrillLeaderboard
-                drillId={drill.id}
-                drillName={drill.title}
-                refreshTrigger={refreshTrigger}
-              />
-            </TabsContent>
-          </Tabs>
+          {showLeaderboard && (
+            <Card>
+              <CardContent className="pt-6">
+                <DrillLeaderboard
+                  drillId={drill.id}
+                  drillName={drill.title}
+                  refreshTrigger={refreshTrigger}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

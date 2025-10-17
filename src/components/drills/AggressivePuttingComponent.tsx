@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AggressivePuttingComponentProps {
-  onTabChange: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
   onScoreSaved?: () => void;
 }
 
@@ -39,7 +39,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     setIsActive(true);
     setAttempts([]);
     setCurrentDistance(0);
-    onTabChange('score');
+    onTabChange?.('score');
   };
 
   const addAttempt = (holed: boolean, withinOne: boolean = false) => {

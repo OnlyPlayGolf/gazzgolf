@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EightBallComponentProps {
-  onTabChange: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
   onScoreSaved?: () => void;
 }
 
@@ -71,7 +71,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
       }
     }
     setAttempts(newAttempts);
-    onTabChange('score');
+    onTabChange?.('score');
   };
 
   const updateAttempt = (stationIndex: number, roundIndex: number, outcome: ShotOutcome) => {

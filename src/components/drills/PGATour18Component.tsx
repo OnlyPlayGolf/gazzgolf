@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PGATour18ComponentProps {
-  onTabChange: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
   onScoreSaved?: () => void;
 }
 
@@ -122,7 +122,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
 
   const handleStartDrill = () => {
     setDrillStarted(true);
-    onTabChange('score');
+    onTabChange?.('score');
   };
 
   const toggleHoleCompletion = (holeNumber: number) => {

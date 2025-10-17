@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface WedgesDistanceControlComponentProps {
-  onTabChange: (tab: string) => void;
+  onTabChange?: (tab: string) => void;
   onScoreSaved?: () => void;
 }
 
@@ -81,7 +81,7 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
     setAttempts(newAttempts);
     setDrillStarted(true);
     setCompletedShots([]);
-    onTabChange('score');
+    onTabChange?.('score');
   };
 
   const updateAttempt = (shotIndex: number, outcome: ShotOutcome) => {
@@ -156,7 +156,7 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
         onScoreSaved();
       }
 
-      onTabChange('leaderboard');
+      onTabChange?.('leaderboard');
     } catch (error: any) {
       toast({
         title: "Error saving score",
