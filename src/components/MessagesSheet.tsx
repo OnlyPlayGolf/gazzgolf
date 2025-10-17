@@ -337,6 +337,23 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
     }
   };
 
+  const markConversationAsRead = async (conversationId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+      // Mark all messages in this conversation (not sent by me) as read
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .eq('is_read', false)
+        .neq('sender_id', user.id);
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   const loadMessages = async (conversationId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
