@@ -11,7 +11,6 @@ import AggressivePuttingComponent from "@/components/drills/AggressivePuttingCom
 import EightBallComponent from "@/components/drills/EightBallComponent";
 import WedgesDistanceControlComponent from "@/components/drills/WedgesDistanceControlComponent";
 import DrillLeaderboard from "@/components/DrillLeaderboard";
-import LeaderboardPreview from "@/components/LeaderboardPreview";
 import PersonalBestBar from "@/components/PersonalBestBar";
 
 interface Drill {
@@ -183,14 +182,6 @@ const DrillDetail = () => {
 
           {/* Personal Best Bar */}
           <PersonalBestBar drillTitle={drill.title} refreshTrigger={refreshTrigger} />
-
-          {/* Leaderboard Preview */}
-          <LeaderboardPreview
-            drillId={drill.id}
-            drillTitle={drill.title}
-            onViewFullLeaderboard={() => setCurrentTab('leaderboard')}
-            refreshTrigger={refreshTrigger}
-          />
 
           {/* Drill Component */}
           <Card>
