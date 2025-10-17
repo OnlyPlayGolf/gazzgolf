@@ -9,6 +9,7 @@ import { isFavorite, addToFavorites, removeFromFavorites } from "@/utils/favorit
 import PGATour18Component from "@/components/drills/PGATour18Component";
 import AggressivePuttingComponent from "@/components/drills/AggressivePuttingComponent";
 import UpDownPuttingComponent from "@/components/drills/UpDownPuttingComponent";
+import ShortPuttingTestComponent from "@/components/drills/ShortPuttingTestComponent";
 import EightBallComponent from "@/components/drills/EightBallComponent";
 import WedgesDistanceControlComponent from "@/components/drills/WedgesDistanceControlComponent";
 import Wedges2LapsComponent from "@/components/drills/Wedges2LapsComponent";
@@ -46,6 +47,14 @@ const drills: Record<string, Drill> = {
     title: 'Up & Down Putting Drill',
     shortDescription: 'Practice distance control on uphill and downhill putts from 6m, 8m, and 10m.',
     longDescription: 'A comprehensive drill to master distance control and speed consistency on both uphill and downhill putts. Hit 3 putts from each marker at 6m, 8m, and 10m on both uphill and downhill slopes for a total of 18 putts. Score like golf: holed putts are birdies (-1), inside 3 feet is par (0), and outside is a bogey (+1). Tour average is +0.64.',
+    category: 'Putting',
+    icon: Target,
+  },
+  'short-putting-test': {
+    id: 'short-putting-test',
+    title: 'Short Putting Test',
+    shortDescription: 'Make consecutive putts from 4 tees around the hole. One miss ends the test.',
+    longDescription: 'Test your short putting accuracy with this pressure-packed drill. Place 4 tees around the hole at 12, 3, 6, and 9 o\'clock positions, each starting 4 feet away. Every time you make a putt, move that tee back 1 foot and rotate to the next position. One miss ends the test. Your score is the number of consecutive putts made.',
     category: 'Putting',
     icon: Target,
   },
@@ -99,6 +108,7 @@ const DrillDetail = () => {
         'pga-tour-18': 'putting',
         'aggressive-putting': 'putting',
         'up-down-putting': 'putting',
+        'short-putting-test': 'putting',
         '8-ball-drill': 'shortgame',
         'wedges-distance-control': 'wedges',
         'wedges-2-laps': 'wedges',
@@ -143,6 +153,8 @@ const DrillDetail = () => {
         return <AggressivePuttingComponent onScoreSaved={handleScoreSaved} />;
       case 'up-down-putting':
         return <UpDownPuttingComponent onScoreSaved={handleScoreSaved} />;
+      case 'short-putting-test':
+        return <ShortPuttingTestComponent onScoreSaved={handleScoreSaved} />;
       case '8-ball-drill':
         return <EightBallComponent onScoreSaved={handleScoreSaved} />;
       case 'wedges-distance-control':

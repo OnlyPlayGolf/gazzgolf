@@ -29,6 +29,13 @@ const allDrills = [
     icon: Target,
   },
   {
+    id: 'short-putting-test',
+    title: 'Short Putting Test',
+    shortDescription: 'Make consecutive putts from 4 tees around the hole. One miss ends the test.',
+    category: 'putting',
+    icon: Target,
+  },
+  {
     id: '8-ball-drill',
     title: '8-Ball Drill',
     shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',
