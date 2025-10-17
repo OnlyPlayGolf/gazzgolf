@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { isFavorite, addToFavorites, removeFromFavorites } from "@/utils/favoritesManager";
 import PGATour18Component from "@/components/drills/PGATour18Component";
 import AggressivePuttingComponent from "@/components/drills/AggressivePuttingComponent";
+import UpDownPuttingComponent from "@/components/drills/UpDownPuttingComponent";
 import EightBallComponent from "@/components/drills/EightBallComponent";
 import WedgesDistanceControlComponent from "@/components/drills/WedgesDistanceControlComponent";
 import Wedges2LapsComponent from "@/components/drills/Wedges2LapsComponent";
@@ -38,6 +39,14 @@ const drills: Record<string, Drill> = {
     shortDescription: 'Putt from a fixed cycle of 4m, 5m, then 6m, repeating in that order to reach 15 points quickly.',
     longDescription: 'This drill focuses on developing an aggressive putting mindset by cycling through increasing distances. Start with 4m putts, then 5m, then 6m, and repeat the cycle. Score points for holed putts and putts finishing within 1m. The goal is to reach 15 points as quickly as possible while maintaining accuracy.',
     category: 'Putting', 
+    icon: Target,
+  },
+  'up-down-putting': {
+    id: 'up-down-putting',
+    title: 'Up & Down Putting Drill',
+    shortDescription: 'Practice distance control on uphill and downhill putts from 6m, 8m, and 10m.',
+    longDescription: 'A comprehensive drill to master distance control and speed consistency on both uphill and downhill putts. Hit 3 putts from each marker at 6m, 8m, and 10m on both uphill and downhill slopes for a total of 18 putts. Score like golf: holed putts are birdies (-1), inside 3 feet is par (0), and outside is a bogey (+1). Tour average is +0.64.',
+    category: 'Putting',
     icon: Target,
   },
   '8-ball-drill': {
@@ -89,6 +98,7 @@ const DrillDetail = () => {
       const categoryMap: { [key: string]: string } = {
         'pga-tour-18': 'putting',
         'aggressive-putting': 'putting',
+        'up-down-putting': 'putting',
         '8-ball-drill': 'shortgame',
         'wedges-distance-control': 'wedges',
         'wedges-2-laps': 'wedges',
@@ -131,6 +141,8 @@ const DrillDetail = () => {
         return <PGATour18Component onScoreSaved={handleScoreSaved} />;
       case 'aggressive-putting':
         return <AggressivePuttingComponent onScoreSaved={handleScoreSaved} />;
+      case 'up-down-putting':
+        return <UpDownPuttingComponent onScoreSaved={handleScoreSaved} />;
       case '8-ball-drill':
         return <EightBallComponent onScoreSaved={handleScoreSaved} />;
       case 'wedges-distance-control':

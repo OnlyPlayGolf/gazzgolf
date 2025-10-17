@@ -22,6 +22,13 @@ const allDrills = [
     icon: Target,
   },
   {
+    id: 'up-down-putting',
+    title: 'Up & Down Putting Drill',
+    shortDescription: 'Practice distance control on uphill and downhill putts from 6m, 8m, and 10m.',
+    category: 'putting',
+    icon: Target,
+  },
+  {
     id: '8-ball-drill',
     title: '8-Ball Drill',
     shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',
