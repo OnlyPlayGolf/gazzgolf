@@ -10,6 +10,7 @@ import PGATour18Component from "@/components/drills/PGATour18Component";
 import AggressivePuttingComponent from "@/components/drills/AggressivePuttingComponent";
 import EightBallComponent from "@/components/drills/EightBallComponent";
 import WedgesDistanceControlComponent from "@/components/drills/WedgesDistanceControlComponent";
+import Wedges2LapsComponent from "@/components/drills/Wedges2LapsComponent";
 import DrillLeaderboard from "@/components/DrillLeaderboard";
 import PersonalBestBar from "@/components/PersonalBestBar";
 
@@ -55,6 +56,14 @@ const drills: Record<string, Drill> = {
     category: 'Wedges',
     icon: Hammer,
   },
+  'wedges-2-laps': {
+    id: 'wedges-2-laps',
+    title: 'Wedges 40–80 m — 2 Laps',
+    shortDescription: 'Hit the specified distances. One shot per length, 2 laps.',
+    longDescription: 'A simpler wedge distance drill with 2 laps of 9 different distances from 40-80 meters. Focus on hitting precise distances from the fairway. Score points based on accuracy: 3 points for within 2m, 2 points for within 3m, 1 point for within 4m, 0 points for more than 4m off, and -1 point for missed greens.',
+    category: 'Wedges',
+    icon: Hammer,
+  },
 };
 
 const DrillDetail = () => {
@@ -82,6 +91,7 @@ const DrillDetail = () => {
         'aggressive-putting': 'putting',
         '8-ball-drill': 'shortgame',
         'wedges-distance-control': 'wedges',
+        'wedges-2-laps': 'wedges',
       };
       
       const categoryId = categoryMap[drill.id] || 'putting';
@@ -125,6 +135,8 @@ const DrillDetail = () => {
         return <EightBallComponent onScoreSaved={handleScoreSaved} />;
       case 'wedges-distance-control':
         return <WedgesDistanceControlComponent onScoreSaved={handleScoreSaved} />;
+      case 'wedges-2-laps':
+        return <Wedges2LapsComponent onScoreSaved={handleScoreSaved} />;
       default:
         return null;
     }

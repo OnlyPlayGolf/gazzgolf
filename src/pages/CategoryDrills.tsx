@@ -35,6 +35,13 @@ const allDrills = [
     category: 'wedges',
     icon: Hammer,
   },
+  {
+    id: 'wedges-2-laps',
+    title: 'Wedges 40–80 m — 2 Laps',
+    shortDescription: 'Hit the specified distances. One shot per length, 2 laps.',
+    category: 'wedges',
+    icon: Hammer,
+  },
 ];
 
 const categoryNames = {

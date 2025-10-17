@@ -5,40 +5,28 @@ import { Hammer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-interface WedgesDistanceControlComponentProps {
+interface Wedges2LapsComponentProps {
   onTabChange?: (tab: string) => void;
   onScoreSaved?: () => void;
 }
 
-type ShotOutcome = '2m' | '3m' | '4m' | 'long' | 'wrong';
+type ShotOutcome = '2m' | '3m' | '4m' | 'long' | 'missed';
 
 interface Shot {
   shotIndex: number;
   distance: string;
-  constraint: 'SHORT' | 'LONG' | null;
+  lap: number;
   outcome: ShotOutcome | null;
   points: number;
 }
 
+const distances = ['40m', '45m', '50m', '55m', '60m', '65m', '70m', '75m', '80m'];
+
 const shots = [
-  { distance: '40m', constraint: 'SHORT' as const },
-  { distance: '75m', constraint: null },
-  { distance: '60m', constraint: 'LONG' as const },
-  { distance: '50m', constraint: 'SHORT' as const },
-  { distance: '80m', constraint: null },
-  { distance: '55m', constraint: 'LONG' as const },
-  { distance: '65m', constraint: 'SHORT' as const },
-  { distance: '45m', constraint: null },
-  { distance: '70m', constraint: 'LONG' as const },
-  { distance: '40m', constraint: 'LONG' as const },
-  { distance: '75m', constraint: 'SHORT' as const },
-  { distance: '60m', constraint: null },
-  { distance: '50m', constraint: 'LONG' as const },
-  { distance: '80m', constraint: 'SHORT' as const },
-  { distance: '55m', constraint: null },
-  { distance: '65m', constraint: 'LONG' as const },
-  { distance: '45m', constraint: 'SHORT' as const },
-  { distance: '70m', constraint: null },
+  // Lap 1
+  ...distances.map((distance, index) => ({ distance, lap: 1 })),
+  // Lap 2
+  ...distances.map((distance, index) => ({ distance, lap: 2 })),
 ];
 
 const outcomePoints: Record<ShotOutcome, number> = {
@@ -46,7 +34,7 @@ const outcomePoints: Record<ShotOutcome, number> = {
   '3m': 2,
   '4m': 1,
   'long': 0,
-  'wrong': -1,
+  'missed': -1,
 };
 
 const outcomeLabels: Record<ShotOutcome, string> = {
@@ -54,10 +42,10 @@ const outcomeLabels: Record<ShotOutcome, string> = {
   '3m': '<3m',
   '4m': '<4m',
   'long': '>4m',
-  'wrong': 'Wrong/Miss',
+  'missed': 'Missed',
 };
 
-const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDistanceControlComponentProps) => {
+const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponentProps) => {
   const [attempts, setAttempts] = useState<Shot[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
@@ -74,7 +62,7 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
     const newAttempts: Shot[] = shots.map((shot, index) => ({
       shotIndex: index,
       distance: shot.distance,
-      constraint: shot.constraint,
+      lap: shot.lap,
       outcome: null,
       points: 0,
     }));
@@ -129,7 +117,7 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
     }
 
     try {
-      const drillTitle = 'Wedges 40–80 m — Distance Control';
+      const drillTitle = 'Wedges 40–80 m — 2 Laps';
       
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
@@ -178,18 +166,21 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
             <div>
               <h3 className="font-semibold text-lg mb-2">Description</h3>
               <p className="text-muted-foreground">
-                Hit the specified distances in carry. When it says "Not short" or "Not long", the ball must not finish more than 2 meters shorter/longer than the stated distance.
+                Hit the specified distances. One shot per length, 2 laps.
+              </p>
+              <p className="text-muted-foreground mt-2 font-medium">
+                Distances: 40, 45, 50, 55, 60, 65, 70, 75, 80 meters
               </p>
             </div>
 
             <div>
               <h3 className="font-semibold text-lg mb-2">Scoring</h3>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Within 2 meters → 3 points</li>
-                <li>• Within 3 meters → 2 points</li>
-                <li>• Within 4 meters → 1 point</li>
-                <li>• Longer than 4 meters → 0 points</li>
-                <li>• Missed or wrong distance → −1 point</li>
+                <li>• Within 2m of target → 3 points</li>
+                <li>• Within 3m → 2 points</li>
+                <li>• Within 4m → 1 point</li>
+                <li>• More than 4m off → 0 points</li>
+                <li>• Missed green → −1 point</li>
               </ul>
             </div>
           </div>
@@ -209,32 +200,51 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
               <CardTitle>Shot Distances</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {shots.map((shot, index) => (
-                  <div 
-                    key={index}
-                    onClick={() => toggleShotCompletion(index)}
-                    className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition-colors ${
-                      completedShots.includes(index)
-                        ? 'bg-green-500/20 border-2 border-green-500'
-                        : 'bg-muted/50 hover:bg-muted'
-                    }`}
-                  >
-                    <span className="font-medium">Shot {index + 1}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">{shot.distance} from Fairway</span>
-                      {shot.constraint && (
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          shot.constraint === 'SHORT' 
-                            ? 'bg-orange-500/20 text-orange-500' 
-                            : 'bg-blue-500/20 text-blue-500'
-                        }`}>
-                          Not {shot.constraint}
-                        </span>
-                      )}
-                    </div>
+              <div className="space-y-4">
+                {/* Lap 1 */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Lap 1</h4>
+                  <div className="space-y-2">
+                    {shots.slice(0, 9).map((shot, index) => (
+                      <div 
+                        key={index}
+                        onClick={() => toggleShotCompletion(index)}
+                        className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition-colors ${
+                          completedShots.includes(index)
+                            ? 'bg-green-500/20 border-2 border-green-500'
+                            : 'bg-muted/50 hover:bg-muted'
+                        }`}
+                      >
+                        <span className="font-medium">Shot {index + 1}</span>
+                        <span className="text-muted-foreground">{shot.distance}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* Lap 2 */}
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Lap 2</h4>
+                  <div className="space-y-2">
+                    {shots.slice(9, 18).map((shot, index) => {
+                      const actualIndex = index + 9;
+                      return (
+                        <div 
+                          key={actualIndex}
+                          onClick={() => toggleShotCompletion(actualIndex)}
+                          className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition-colors ${
+                            completedShots.includes(actualIndex)
+                              ? 'bg-green-500/20 border-2 border-green-500'
+                              : 'bg-muted/50 hover:bg-muted'
+                          }`}
+                        >
+                          <span className="font-medium">Shot {actualIndex + 1}</span>
+                          <span className="text-muted-foreground">{shot.distance}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -251,11 +261,9 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
                     <div className="flex justify-between items-center">
                       <span className="font-medium">
                         Shot {attempt.shotIndex + 1} - {attempt.distance}
-                        {attempt.constraint && (
-                          <span className="text-xs ml-2 text-muted-foreground">
-                            (Not {attempt.constraint})
-                          </span>
-                        )}
+                        <span className="text-xs ml-2 text-muted-foreground">
+                          (Lap {attempt.lap})
+                        </span>
                       </span>
                       {attempt.outcome && (
                         <span className={`text-sm ${
@@ -324,4 +332,4 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
   );
 };
 
-export default WedgesDistanceControlComponent;
+export default Wedges2LapsComponent;
