@@ -112,7 +112,12 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
 
   useEffect(() => {
     if (selectedConversation) {
-      loadMessages(selectedConversation.id);
+      const loadAndMark = async () => {
+        await loadMessages(selectedConversation.id);
+        await markConversationAsRead(selectedConversation.id);
+        await loadUnreadCount();
+      };
+      loadAndMark();
       const channel = supabase
         .channel(`messages-${selectedConversation.id}`)
         .on(
@@ -123,8 +128,10 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
             table: 'messages',
             filter: `conversation_id=eq.${selectedConversation.id}`
           },
-          () => {
-            loadMessages(selectedConversation.id);
+          async () => {
+            await loadMessages(selectedConversation.id);
+            await markConversationAsRead(selectedConversation.id);
+            await loadUnreadCount();
           }
         )
         .subscribe();
@@ -144,30 +151,40 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
     if (!user) return;
 
     try {
-      // Get all conversations the user is part of
+      // Friend conversations where I'm an explicit participant
       const { data: participantConvs } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
         .eq('user_id', user.id);
 
-      const { data: groupConvs } = await supabase
+      const friendConversationIds = (participantConvs || []).map((c: any) => c.conversation_id);
+
+      // Group conversations for groups I'm a member of
+      const { data: myGroups } = await supabase
         .from('group_members')
-        .select('group_id, groups!inner(conversations(id))')
+        .select('group_id')
         .eq('user_id', user.id);
 
-      const conversationIds = [
-        ...(participantConvs || []).map(c => c.conversation_id),
-        ...(groupConvs || []).flatMap(gc => 
-          (gc.groups as any)?.conversations?.map((c: any) => c.id) || []
-        )
-      ];
+      const groupIds = (myGroups || []).map((g: any) => g.group_id);
+
+      let groupConversationIds: string[] = [];
+      if (groupIds.length > 0) {
+        const { data: groupConversations } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('type', 'group')
+          .in('group_id', groupIds);
+        groupConversationIds = (groupConversations || []).map((c: any) => c.id);
+      }
+
+      const conversationIds = [...friendConversationIds, ...groupConversationIds];
 
       if (conversationIds.length === 0) {
         setTotalUnreadCount(0);
         return;
       }
 
-      // Count unread messages in these conversations
+      // Count unread messages not sent by me
       const { count } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
@@ -181,6 +198,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
     }
   };
 
+
   const loadConversations = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -193,7 +211,8 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
           conversation_id,
           conversations!inner(id, type, updated_at)
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('conversations.type', 'friend');
 
       const friendConversations = await Promise.all(
         (friendConvs || []).map(async (conv: any) => {
@@ -210,7 +229,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
           if (otherUserId) {
             const { data: profile } = await supabase
               .from('profiles')
-              .select('display_name, username')
+              .select('display_name, username, email')
               .eq('id', otherUserId)
               .single();
             otherUserProfile = profile;
@@ -241,7 +260,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
           return {
             id: conv.conversation_id,
             type: 'friend' as const,
-            name: otherUser?.profiles?.display_name || otherUser?.profiles?.username || 'Unknown',
+            name: otherUserProfile?.display_name || otherUserProfile?.username || (otherUserProfile?.email ? otherUserProfile.email.split('@')[0] : 'Unknown'),
             other_user_id: otherUser?.user_id,
             last_message: lastMsg?.content,
             last_message_time: lastMsg?.created_at,
