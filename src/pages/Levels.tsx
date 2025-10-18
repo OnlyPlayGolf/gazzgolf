@@ -223,7 +223,8 @@ const Levels = () => {
               {levels.map((level) => (
                 <Card
                   key={level.id}
-                  className={`rounded-2xl transition-all ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm hover:shadow-md"}`}
+                  className={`rounded-2xl transition-all cursor-pointer ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm hover:shadow-md"}`}
+                  onClick={() => handleCompleteLevel(level.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -246,12 +247,8 @@ const Levels = () => {
                       </div>
                       <div className="text-right ml-4">
                         <p className="text-sm font-semibold text-foreground mb-2">{level.distance}</p>
-                        {level.completed ? (
+                        {level.completed && (
                           <Badge variant="outline" className="text-xs">Completed</Badge>
-                        ) : (
-                          <Button size="sm" onClick={() => handleCompleteLevel(level.id)} className="rounded-2xl">
-                            Start
-                          </Button>
                         )}
                       </div>
                     </div>

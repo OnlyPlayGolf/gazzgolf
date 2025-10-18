@@ -48,6 +48,7 @@ const DrillsCategories = () => {
                     ? "border-golf-light hover:border-primary cursor-pointer" 
                     : "border-border bg-muted/30"
                 )}
+                onClick={() => category.enabled && navigate(`/drills/${category.id}`)}
               >
                 <CardHeader className="pb-3">
                   <CardTitle className={cn(
@@ -66,21 +67,14 @@ const DrillsCategories = () => {
                 </CardHeader>
                 <CardContent>
                   <p className={cn(
-                    "text-sm mb-4",
+                    "text-sm",
                     category.enabled ? "text-muted-foreground" : "text-locked"
                   )}>
                     {category.description}
                   </p>
                   
-                  {category.enabled ? (
-                    <Button 
-                      onClick={() => navigate(`/drills/${category.id}`)}
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                    >
-                      View Drills
-                    </Button>
-                  ) : (
-                    <div className="flex items-center justify-between">
+                  {!category.enabled && (
+                    <div className="flex items-center justify-between mt-4">
                       <Button disabled variant="secondary" className="bg-muted text-locked">
                         Coming Soon
                       </Button>
