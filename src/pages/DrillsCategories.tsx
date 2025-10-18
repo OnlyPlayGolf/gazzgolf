@@ -67,14 +67,24 @@ const DrillsCategories = () => {
                 </CardHeader>
                 <CardContent>
                   <p className={cn(
-                    "text-sm",
+                    "text-sm mb-4",
                     category.enabled ? "text-muted-foreground" : "text-locked"
                   )}>
                     {category.description}
                   </p>
                   
-                  {!category.enabled && (
-                    <div className="flex items-center justify-between mt-4">
+                  {category.enabled ? (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/drills/${category.id}`);
+                      }}
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      View Drills
+                    </Button>
+                  ) : (
+                    <div className="flex items-center justify-between">
                       <Button disabled variant="secondary" className="bg-muted text-locked">
                         Coming Soon
                       </Button>
