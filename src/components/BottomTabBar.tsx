@@ -1,8 +1,9 @@
-import { Target, TrendingUp, User, Menu } from "lucide-react";
+import { Home, Target, TrendingUp, User, Menu } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const tabs = [
+  { id: 'home', label: 'Home', icon: Home, path: '/' },
   { id: 'drills', label: 'Drills', icon: Target, path: '/categories' },
   { id: 'levels', label: 'Levels', icon: TrendingUp, path: '/levels' },
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
@@ -20,7 +21,6 @@ export const BottomTabBar = () => {
           const Icon = tab.icon;
           const isActive =
             location.pathname === tab.path ||
-            (tab.path === '/categories' && location.pathname === '/') ||
             (tab.path === '/levels' && location.pathname.startsWith('/levels'));
           
           return (
@@ -28,16 +28,16 @@ export const BottomTabBar = () => {
               key={tab.id}
               onClick={() => navigate(tab.path)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center py-3 px-2 min-h-[60px] text-xs font-medium transition-colors",
+                "flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] text-[10px] font-medium transition-colors",
                 isActive 
                   ? "text-primary bg-golf-light/20" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Icon 
-                size={24} 
+                size={20} 
                 className={cn(
-                  "mb-1",
+                  "mb-0.5",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )} 
               />

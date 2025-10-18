@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
+import Index from "./pages/Index";
 import DrillsCategories from "./pages/DrillsCategories";
 import CategoryDrills from "./pages/CategoryDrills";
 import Drills from "./pages/Drills";
@@ -37,7 +38,7 @@ const App = () => (
       <BrowserRouter>
         <div className="relative">
           <Routes>
-            <Route path="/" element={<DrillsCategories />} />
+            <Route path="/" element={<Index />} />
             <Route path="/categories" element={<DrillsCategories />} />
             <Route path="/drills" element={<DrillsCategories />} />
             <Route path="/drills/:categoryId" element={<CategoryDrills />} />
