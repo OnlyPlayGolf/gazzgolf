@@ -142,7 +142,11 @@ const CategoryDrills = () => {
               const drillIsFavorite = isFavorite(drill.id);
               
               return (
-                <Card key={drill.id} className="border-golf-light hover:border-primary transition-all duration-200">
+                <Card 
+                  key={drill.id} 
+                  className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer"
+                  onClick={() => navigate(`/drills/${drill.id}/detail`)}
+                >
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-3 text-foreground">
                       <Icon size={24} className="text-primary" />
@@ -178,7 +182,10 @@ const CategoryDrills = () => {
                     </p>
                     
                     <Button 
-                      onClick={() => navigate(`/drills/${drill.id}/detail`)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/drills/${drill.id}/detail`);
+                      }}
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
                       Start
