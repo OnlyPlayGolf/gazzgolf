@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Settings, Info, MessageSquare, ChevronRight, Zap, TrendingUp } from "lucide-react";
+import { User, Users, Settings, Info, MessageSquare, ChevronRight, Zap, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Menu = () => {
@@ -9,6 +9,7 @@ const Menu = () => {
   const menuItems = [
     { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
     { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
+    { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },
     { id: 'profile', label: 'Profile', icon: User, available: true, path: '/profile' },
     { id: 'settings', label: 'Settings', icon: Settings, available: false },
     { id: 'about', label: 'About', icon: Info, available: false },

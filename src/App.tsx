@@ -14,6 +14,7 @@ import LevelSelection from "./pages/LevelSelection";
 import Levels from "./pages/Levels";
 import Profile from "./pages/Profile";
 import Menu from "./pages/Menu";
+import Friends from "./pages/Friends";
 import NotFound from "./pages/NotFound";
 import UserDrills from "./pages/UserDrills";
 import CreateDrill from "./pages/CreateDrill";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/levels/:difficulty" element={<Levels />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/menu" element={<Menu />} />
+            <Route path="/friends" element={<Friends />} />
             <Route path="/user-drills" element={<UserDrills />} />
             <Route path="/create-drill" element={<CreateDrill />} />
             <Route path="/run-drill/:drillId" element={<RunDrill />} />
