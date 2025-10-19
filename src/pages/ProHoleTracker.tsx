@@ -60,6 +60,13 @@ const ProHoleTracker = () => {
       setSgCalculator(calculator);
     } catch (error) {
       console.error('Error loading baseline data:', error);
+      toast({
+        title: "Error loading baseline data",
+        description: "Using default calculations",
+        variant: "destructive",
+      });
+      // Set loading to false even on error so the page can be used
+      setLoading(false);
     }
   };
 
@@ -73,13 +80,14 @@ const ProHoleTracker = () => {
 
       if (roundError) throw roundError;
       setRound(roundData);
-      setLoading(false);
     } catch (error: any) {
       toast({
         title: "Error loading round",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
