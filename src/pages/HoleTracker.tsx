@@ -265,14 +265,14 @@ const HoleTracker = () => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Approach Distance</div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {(["<40", "40-120", "120-200", "200+"] as const).map((d) => (
+                <div className="grid grid-cols-3 gap-2">
+                  {(["<40m", "40-80m", "80-120m", "120-160", "160-200", "200+"] as const).map((d) => (
                     <ChipButton
                       key={d}
                       active={hole.approach_bucket === d}
                       onClick={() => updateCurrentHole({ approach_bucket: d as ApproachBucket })}
                     >
-                      {d}m
+                      {d}
                     </ChipButton>
                   ))}
                 </div>

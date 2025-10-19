@@ -744,7 +744,13 @@ export type Database = {
       }
     }
     Enums: {
-      approach_bucket: "200+" | "120-200" | "40-120" | "<40"
+      approach_bucket:
+        | "<40m"
+        | "40-80m"
+        | "80-120m"
+        | "120-160"
+        | "160-200"
+        | "200+"
       approach_result: "GIR" | "MissL" | "MissR" | "Short" | "Long" | "Penalty"
       first_putt_band: "0-2" | "2-7" | "7+"
       friend_status: "pending" | "accepted" | "blocked"
@@ -877,7 +883,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      approach_bucket: ["200+", "120-200", "40-120", "<40"],
+      approach_bucket: [
+        "<40m",
+        "40-80m",
+        "80-120m",
+        "120-160",
+        "160-200",
+        "200+",
+      ],
       approach_result: ["GIR", "MissL", "MissR", "Short", "Long", "Penalty"],
       first_putt_band: ["0-2", "2-7", "7+"],
       friend_status: ["pending", "accepted", "blocked"],
