@@ -308,6 +308,7 @@ export type Database = {
           id: string
           par: number
           penalties: number | null
+          pro_shot_data: Json | null
           putts: number | null
           recovery: boolean | null
           round_id: string
@@ -329,6 +330,7 @@ export type Database = {
           id?: string
           par: number
           penalties?: number | null
+          pro_shot_data?: Json | null
           putts?: number | null
           recovery?: boolean | null
           round_id: string
@@ -350,6 +352,7 @@ export type Database = {
           id?: string
           par?: number
           penalties?: number | null
+          pro_shot_data?: Json | null
           putts?: number | null
           recovery?: boolean | null
           round_id?: string

@@ -168,9 +168,8 @@ const ProHoleTracker = () => {
     }
 
     const totalScore = data.shots.length;
-    const totalSG = data.shots.reduce((sum, shot) => sum + shot.strokesGained, 0);
 
-    // Save to database (simplified - store in holes table)
+    // Save to database with detailed shot data
     try {
       const { error } = await supabase.from("holes").upsert([
         {
@@ -179,7 +178,7 @@ const ProHoleTracker = () => {
           par: data.par,
           score: totalScore,
           putts: data.shots.filter(s => s.type === 'putt').length,
-          // Store strokes gained data as JSON in a text field (would need schema update)
+          pro_shot_data: JSON.parse(JSON.stringify(data.shots)), // Store all shot details as JSON
         },
       ], { onConflict: "round_id,hole_number" });
 
