@@ -301,7 +301,7 @@ export type Database = {
       holes: {
         Row: {
           approach_bucket: Database["public"]["Enums"]["approach_bucket"] | null
-          approach_result: Database["public"]["Enums"]["approach_result"] | null
+          approach_results: string[] | null
           created_at: string | null
           first_putt_band: Database["public"]["Enums"]["first_putt_band"] | null
           hole_number: number
@@ -320,9 +320,7 @@ export type Database = {
           approach_bucket?:
             | Database["public"]["Enums"]["approach_bucket"]
             | null
-          approach_result?:
-            | Database["public"]["Enums"]["approach_result"]
-            | null
+          approach_results?: string[] | null
           created_at?: string | null
           first_putt_band?:
             | Database["public"]["Enums"]["first_putt_band"]
@@ -343,9 +341,7 @@ export type Database = {
           approach_bucket?:
             | Database["public"]["Enums"]["approach_bucket"]
             | null
-          approach_result?:
-            | Database["public"]["Enums"]["approach_result"]
-            | null
+          approach_results?: string[] | null
           created_at?: string | null
           first_putt_band?:
             | Database["public"]["Enums"]["first_putt_band"]

@@ -19,7 +19,7 @@ interface HoleData {
   score: number;
   tee_result?: TeeResult;
   approach_bucket?: ApproachBucket;
-  approach_result?: ApproachResult;
+  approach_results: string[];
   up_and_down: boolean;
   sand_save: boolean;
   putts?: number;
@@ -66,7 +66,7 @@ const HoleTracker = () => {
             score: hole.score,
             tee_result: hole.tee_result || undefined,
             approach_bucket: hole.approach_bucket || undefined,
-            approach_result: hole.approach_result || undefined,
+            approach_results: hole.approach_results || [],
             up_and_down: hole.up_and_down || false,
             sand_save: hole.sand_save || false,
             putts: hole.putts || undefined,
@@ -92,6 +92,7 @@ const HoleTracker = () => {
     return holeData[currentHole] || {
       par: 4,
       score: 0,
+      approach_results: [],
       up_and_down: false,
       sand_save: false,
       penalties: 0,
@@ -128,7 +129,7 @@ const HoleTracker = () => {
             score: data.score,
             tee_result: data.tee_result || null,
             approach_bucket: data.approach_bucket || null,
-            approach_result: data.approach_result || null,
+            approach_results: data.approach_results || [],
             up_and_down: data.up_and_down,
             sand_save: data.sand_save,
             putts: data.putts || null,
@@ -170,7 +171,7 @@ const HoleTracker = () => {
   if (loading) return <div className="p-4">Loading...</div>;
 
   const hole = getCurrentHoleData();
-  const needsGIR = hole.approach_result !== "GIR";
+  const needsGIR = !hole.approach_results.includes("GIR");
 
   return (
     <div className="pb-20 min-h-screen bg-background">
@@ -280,15 +281,23 @@ const HoleTracker = () => {
               <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Result</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {(["GIR", "Short", "Long", "MissL", "MissR", "Penalty"] as const).map((r) => (
-                    <ChipButton
-                      key={r}
-                      active={hole.approach_result === r}
-                      onClick={() => updateCurrentHole({ approach_result: r as ApproachResult })}
-                    >
-                      {r === "GIR" ? "Green" : r}
-                    </ChipButton>
-                  ))}
+                  {(["GIR", "Short", "Long", "MissL", "MissR", "Penalty"] as const).map((r) => {
+                    const isActive = hole.approach_results.includes(r);
+                    return (
+                      <ChipButton
+                        key={r}
+                        active={isActive}
+                        onClick={() => {
+                          const newResults = isActive
+                            ? hole.approach_results.filter(result => result !== r)
+                            : [...hole.approach_results, r];
+                          updateCurrentHole({ approach_results: newResults });
+                        }}
+                      >
+                        {r === "GIR" ? "Green" : r}
+                      </ChipButton>
+                    );
+                  })}
                 </div>
               </div>
             </div>
