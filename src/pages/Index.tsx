@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap } from "lucide-react";
+import { getLevelsWithProgress } from "@/utils/levelsManager";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Index = () => {
   });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -38,10 +40,23 @@ const Index = () => {
   useEffect(() => {
     if (user) {
       loadUserData();
+      loadCurrentLevel();
     } else {
       setLoading(false);
     }
   }, [user]);
+
+  const loadCurrentLevel = () => {
+    const levels = getLevelsWithProgress();
+    // Find the first incomplete level
+    const nextLevel = levels.find(level => !level.completed);
+    if (nextLevel) {
+      setCurrentLevelId(nextLevel.id);
+    } else if (levels.length > 0) {
+      // If all levels are completed, go to the last level
+      setCurrentLevelId(levels[levels.length - 1].id);
+    }
+  };
 
   const loadUserData = async () => {
     if (!user) return;
@@ -277,7 +292,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate('/levels')}
+              onClick={() => navigate(currentLevelId ? `/levels/${currentLevelId}` : '/levels')}
             >
               <span className="flex items-center gap-2">
                 <TrendingUp size={16} />
