@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type TeeResult = Database["public"]["Enums"]["tee_result"];
 type ApproachBucket = Database["public"]["Enums"]["approach_bucket"];
@@ -160,7 +161,7 @@ const HoleTracker = () => {
       variant={active ? "default" : "outline"}
       size={size}
       onClick={onClick}
-      className="min-w-[80px]"
+      className="min-w-[60px] sm:min-w-[80px] whitespace-nowrap"
     >
       {children}
     </Button>
@@ -195,8 +196,8 @@ const HoleTracker = () => {
         {/* Par & Score - Compact */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-3">
+            <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Par</div>
                 <div className="flex gap-2">
                   {[3, 4, 5].map((p) => (
@@ -211,23 +212,26 @@ const HoleTracker = () => {
                   ))}
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Score</div>
-                <div className="flex gap-2">
-                  {[...Array(Math.min(5, hole.par + 2))].map((_, i) => {
-                    const s = hole.par - 1 + i;
-                    return (
-                      <ChipButton
-                        key={s}
-                        active={hole.score === s}
-                        onClick={() => updateCurrentHole({ score: s })}
-                        size="lg"
-                      >
-                        {s}
-                      </ChipButton>
-                    );
-                  })}
-                </div>
+                <ScrollArea className="w-full">
+                  <div className="flex gap-2 pb-2">
+                    {[...Array(Math.min(5, hole.par + 2))].map((_, i) => {
+                      const s = hole.par - 1 + i;
+                      return (
+                        <ChipButton
+                          key={s}
+                          active={hole.score === s}
+                          onClick={() => updateCurrentHole({ score: s })}
+                          size="lg"
+                        >
+                          {s}
+                        </ChipButton>
+                      );
+                    })}
+                  </div>
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
               </div>
             </div>
           </CardContent>
@@ -239,7 +243,7 @@ const HoleTracker = () => {
             <CardContent className="pt-6">
               <div className="space-y-3">
                 <div className="text-sm font-medium text-muted-foreground">Tee Shot</div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {(["FIR", "MissL", "MissR", "Short", "Long", "Penalty"] as const).map((t) => (
                     <ChipButton
                       key={t}
@@ -259,9 +263,9 @@ const HoleTracker = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Approach Distance</div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {(["<40", "40-120", "120-200", "200+"] as const).map((d) => (
                     <ChipButton
                       key={d}
@@ -273,9 +277,9 @@ const HoleTracker = () => {
                   ))}
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="text-sm font-medium text-muted-foreground">Result</div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {(["GIR", "Short", "Long", "MissL", "MissR", "Penalty"] as const).map((r) => (
                     <ChipButton
                       key={r}
@@ -380,21 +384,22 @@ const HoleTracker = () => {
       </div>
 
       {/* Fixed Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4">
-        <div className="flex gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 sm:p-4">
+        <div className="flex gap-2 sm:gap-3 max-w-screen-lg mx-auto">
           <Button
             variant="outline"
             onClick={() => setCurrentHole(Math.max(1, currentHole - 1))}
             disabled={currentHole === 1}
             size="lg"
-            className="flex-1"
+            className="flex-1 min-w-0"
           >
             <ChevronLeft size={20} />
           </Button>
-          <Button onClick={saveHole} size="lg" className="flex-[2]">
+          <Button onClick={saveHole} size="lg" className="flex-[2] min-w-0">
             {currentHole < round?.holes_played ? (
               <>
-                Next Hole
+                <span className="hidden sm:inline">Next Hole</span>
+                <span className="sm:hidden">Next</span>
                 <ChevronRight size={20} className="ml-2" />
               </>
             ) : (
