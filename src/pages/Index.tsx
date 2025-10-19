@@ -292,7 +292,15 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate(currentLevelId ? `/levels/${currentLevelId}` : '/levels')}
+              onClick={() => {
+                if (currentLevelId) {
+                  const levels = getLevelsWithProgress();
+                  const lvl = levels.find(l => l.id === currentLevelId);
+                  navigate(lvl ? `/levels/${lvl.difficulty.toLowerCase()}` : '/levels');
+                } else {
+                  navigate('/levels');
+                }
+              }}
             >
               <span className="flex items-center gap-2">
                 <TrendingUp size={16} />
