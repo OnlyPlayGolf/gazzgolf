@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, CheckCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,12 +23,6 @@ const Levels = () => {
   const [activeTab, setActiveTab] = useState("play");
   const [profile, setProfile] = useState<any>(null);
 
-  // Read optional navigation state (to highlight a level and pick initial tab)
-  const location = useLocation();
-  const locState = (location.state || {}) as { highlightLevelId?: string; initialTab?: string };
-  const highlightLevelId = locState.highlightLevelId;
-  const initialTab = locState.initialTab;
-
   useEffect(() => {
     const loadData = async () => {
       const allLevels = getLevelsWithProgress();
@@ -43,8 +37,6 @@ const Levels = () => {
       setLevels(filteredLevels);
       setStats({ completed, total, percentage });
 
-      if (initialTab) setActiveTab(initialTab);
-
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -58,7 +50,7 @@ const Levels = () => {
       }
     };
     loadData();
-  }, [difficulty, initialTab]);
+  }, [difficulty]);
 
   const handleCompleteLevel = (levelId: string) => {
     completeLevelz(levelId);
@@ -71,16 +63,6 @@ const Levels = () => {
     setLevels(levelsData);
     setStats({ completed, total, percentage });
   };
-
-  // If navigated with a highlighted level, scroll to it when showing All Levels
-  useEffect(() => {
-    if (activeTab === 'all-levels' && highlightLevelId) {
-      const el = document.getElementById(`level-card-${highlightLevelId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [activeTab, levels, highlightLevelId]);
 
   const currentLevel = levels.find((level) => !level.completed) || levels[levels.length - 1];
   const currentLevelNumber = currentLevel?.level || 1;
@@ -241,8 +223,7 @@ const Levels = () => {
               {levels.map((level) => (
                 <Card
                   key={level.id}
-                  id={`level-card-${level.id}`}
-                  className={`rounded-2xl transition-all cursor-pointer ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm hover:shadow-md"} ${highlightLevelId === level.id ? "ring-2 ring-primary" : ""}`}
+                  className={`rounded-2xl transition-all cursor-pointer ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm hover:shadow-md"}`}
                   onClick={() => handleCompleteLevel(level.id)}
                 >
                   <CardContent className="p-4">

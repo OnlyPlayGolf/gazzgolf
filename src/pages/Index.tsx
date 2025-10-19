@@ -300,7 +300,7 @@ const Index = () => {
                   const levels = getLevelsWithProgress();
                   const lvl = levels.find(l => l.id === currentLevelId);
                   if (lvl) {
-                    navigate(`/levels/${lvl.difficulty.toLowerCase()}` , { state: { highlightLevelId: currentLevelId, initialTab: 'all-levels' } });
+                    navigate(`/levels/${lvl.difficulty.toLowerCase()}`);
                   } else {
                     navigate('/levels');
                   }
