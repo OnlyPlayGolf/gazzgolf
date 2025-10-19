@@ -1,23 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, ArrowLeft, Users } from "lucide-react";
+import { MessageCircle, Send, ArrowLeft, Users, Search, Plus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
-const MessageBubble = ({ message }: { message: Message }) => {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id || null);
-    });
-  }, []);
-
+const MessageBubble = ({ message, currentUserId }: { message: Message; currentUserId: string | null }) => {
   const isOwnMessage = message.sender_id === currentUserId;
 
   return (
@@ -66,22 +59,50 @@ interface MessagesSheetProps {
   trigger?: React.ReactNode;
 }
 
+type FilterType = 'all' | 'groups' | 'friends';
+
 export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // New message dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [friends, setFriends] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [createSearch, setCreateSearch] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
 
   useEffect(() => {
     if (open) {
       loadConversations();
     }
   }, [open]);
+
+  useEffect(() => {
+    filterConversations();
+  }, [conversations, searchQuery, filter]);
+
+  useEffect(() => {
+    if (createOpen) {
+      loadFriendsAndGroups();
+    }
+  }, [createOpen]);
 
   // Subscribe to real-time message updates for unread count
   useEffect(() => {
@@ -145,6 +166,85 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const filterConversations = () => {
+    let filtered = conversations;
+
+    if (filter === 'friends') {
+      filtered = filtered.filter(c => c.type === 'friend');
+    } else if (filter === 'groups') {
+      filtered = filtered.filter(c => c.type === 'group');
+    }
+
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredConversations(filtered);
+  };
+
+  const loadFriendsAndGroups = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: friendsPairs } = await supabase
+      .from('friends_pairs')
+      .select('a, b')
+      .or(`a.eq.${user.id},b.eq.${user.id}`);
+
+    const friendIds = (friendsPairs || []).map((pair: any) =>
+      pair.a === user.id ? pair.b : pair.a
+    );
+
+    if (friendIds.length > 0) {
+      const { data: friendProfiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, username')
+        .in('id', friendIds);
+      setFriends(friendProfiles || []);
+    } else {
+      setFriends([]);
+    }
+
+    const { data: myGroups } = await supabase
+      .from('group_members')
+      .select('groups!inner(id, name)')
+      .eq('user_id', user.id);
+
+    setGroups((myGroups || []).map((g: any) => ({ id: g.groups.id, name: g.groups.name })));
+  };
+
+  const handleStartFriendChat = async (friendId: string) => {
+    try {
+      const { data, error } = await (supabase as any).rpc('ensure_friend_conversation', { friend_id: friendId });
+      if (error) throw error;
+      const convId = data as string;
+      setCreateOpen(false);
+      await loadConversations();
+      const conv = conversations.find(c => c.id === convId);
+      if (conv) setSelectedConversation(conv);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error', description: 'Could not start conversation.', variant: 'destructive' });
+    }
+  };
+
+  const handleStartGroupChat = async (groupId: string) => {
+    try {
+      const { data, error } = await (supabase as any).rpc('ensure_group_conversation', { p_group_id: groupId });
+      if (error) throw error;
+      const convId = data as string;
+      setCreateOpen(false);
+      await loadConversations();
+      const conv = conversations.find(c => c.id === convId);
+      if (conv) setSelectedConversation(conv);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Error', description: 'Could not start group conversation.', variant: 'destructive' });
+    }
+  };
 
   const loadUnreadCount = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -419,90 +519,192 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         )}
       </SheetTrigger>
       <SheetContent className="w-full sm:max-w-md p-0">
-        <SheetHeader className="p-6 pb-4">
-          <div className="flex items-center gap-2">
-            {selectedConversation && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSelectedConversation(null)}
-              >
-                <ArrowLeft size={18} />
-              </Button>
-            )}
-            <SheetTitle>
-              {selectedConversation ? selectedConversation.name : 'Messages'}
-            </SheetTitle>
-          </div>
-        </SheetHeader>
-
         {!selectedConversation ? (
-          <div className="px-6 pb-6 space-y-2 max-h-[calc(100vh-8rem)] overflow-y-auto">
-            {conversations.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No conversations yet</p>
-            ) : (
-              conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  onClick={() => setSelectedConversation(conv)}
-                  className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <Avatar>
-                      <AvatarFallback>
-                        {conv.type === 'group' ? <Users size={18} /> : conv.name[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium truncate">{conv.name}</h4>
-                        {conv.last_message_time && (
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true })}
-                          </span>
-                        )}
-                      </div>
-                      {conv.last_message && (
-                        <p className="text-sm text-muted-foreground truncate mt-1">
-                          {conv.last_message}
-                        </p>
-                      )}
-                    </div>
-                    {conv.unread_count > 0 && (
-                      <Badge variant="destructive" className="ml-auto">
-                        {conv.unread_count}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col h-[calc(100vh-8rem)]">
-            <div className="flex-1 overflow-y-auto px-6 space-y-4">
-              {messages.map((msg) => {
-                return (
-                  <MessageBubble key={msg.id} message={msg} />
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-            <div className="p-4 border-t">
-              <div className="flex gap-2">
+          <>
+            <SheetHeader className="p-6 pb-4 border-b">
+              <SheetTitle className="text-2xl text-center">Messages</SheetTitle>
+            </SheetHeader>
+            
+            <div className="p-6 space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
                 <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  disabled={loading}
+                  placeholder="Search for friends and groups"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
-                <Button onClick={sendMessage} disabled={loading || !newMessage.trim()}>
-                  <Send size={18} />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant={filter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setFilter('all')}
+                  className="flex-1"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filter === 'groups' ? 'default' : 'outline'}
+                  onClick={() => setFilter('groups')}
+                  className="flex-1"
+                >
+                  Groups
+                </Button>
+                <Button
+                  variant={filter === 'friends' ? 'default' : 'outline'}
+                  onClick={() => setFilter('friends')}
+                  className="flex-1"
+                >
+                  Friends
                 </Button>
               </div>
+
+              <div className="flex justify-end">
+                <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="secondary" className="gap-1">
+                      <Plus size={16} /> New Message
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Start a new conversation</DialogTitle>
+                      <DialogDescription>Choose a friend or group to start chatting.</DialogDescription>
+                    </DialogHeader>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                      <Input
+                        placeholder="Search friends or groups"
+                        value={createSearch}
+                        onChange={(e) => setCreateSearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Friends</h4>
+                        {friends.filter(f => {
+                          const q = createSearch.toLowerCase();
+                          const name = (f.display_name || f.username || '').toLowerCase();
+                          return !q || name.includes(q);
+                        }).map(f => (
+                          <button
+                            key={f.id}
+                            onClick={() => handleStartFriendChat(f.id)}
+                            className="w-full text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors mb-2"
+                          >
+                            {(f.display_name || f.username) || 'Unknown user'}
+                          </button>
+                        ))}
+                        {friends.length === 0 && (
+                          <p className="text-sm text-muted-foreground">No friends found.</p>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Groups</h4>
+                        {groups.filter(g => {
+                          const q = createSearch.toLowerCase();
+                          return !q || g.name.toLowerCase().includes(q);
+                        }).map(g => (
+                          <button
+                            key={g.id}
+                            onClick={() => handleStartGroupChat(g.id)}
+                            className="w-full text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors mb-2"
+                          >
+                            {g.name}
+                          </button>
+                        ))}
+                        {groups.length === 0 && (
+                          <p className="text-sm text-muted-foreground">No groups found.</p>
+                        )}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="space-y-2 max-h-[calc(100vh-24rem)] overflow-y-auto">
+                {filteredConversations.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                  </p>
+                ) : (
+                  filteredConversations.map((conv) => (
+                    <div
+                      key={conv.id}
+                      onClick={() => setSelectedConversation(conv)}
+                      className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <Avatar>
+                          <AvatarFallback>
+                            {conv.type === 'group' ? <Users size={18} /> : conv.name[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium truncate">
+                              {conv.name}
+                              {conv.type === 'group' && <span className="text-muted-foreground text-sm ml-2">(group)</span>}
+                            </h4>
+                            {conv.last_message_time && (
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true })}
+                              </span>
+                            )}
+                          </div>
+                          {conv.last_message && (
+                            <p className="text-sm text-muted-foreground truncate mt-1">
+                              {conv.last_message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          </>
+        ) : (
+          <>
+            <SheetHeader className="p-6 pb-4 border-b">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedConversation(null)}
+                >
+                  <ArrowLeft size={18} />
+                </Button>
+                <SheetTitle className="text-xl">{selectedConversation.name}</SheetTitle>
+              </div>
+            </SheetHeader>
+
+            <div className="flex flex-col h-[calc(100vh-8rem)]">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                {messages.map((msg) => (
+                  <MessageBubble key={msg.id} message={msg} currentUserId={currentUserId} />
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+              <div className="p-4 border-t">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    disabled={loading}
+                  />
+                  <Button onClick={sendMessage} disabled={loading || !newMessage.trim()}>
+                    <Send size={18} />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </SheetContent>
     </Sheet>
