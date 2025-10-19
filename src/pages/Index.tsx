@@ -48,12 +48,15 @@ const Index = () => {
 
   const loadCurrentLevel = () => {
     const levels = getLevelsWithProgress();
-    // Find the last completed level
-    const completedLevels = levels.filter(level => level.completed);
+    // Pick the most recently completed level (by completedAt)
+    const completedLevels = levels
+      .filter(l => l.completed && typeof l.completedAt === 'number')
+      .sort((a, b) => (b.completedAt as number) - (a.completedAt as number));
+
     if (completedLevels.length > 0) {
-      setCurrentLevelId(completedLevels[completedLevels.length - 1].id);
+      setCurrentLevelId(completedLevels[0].id);
     } else if (levels.length > 0) {
-      // If no levels completed, go to the first level
+      // If none completed yet, use the very first level
       setCurrentLevelId(levels[0].id);
     }
   };
@@ -296,7 +299,11 @@ const Index = () => {
                 if (currentLevelId) {
                   const levels = getLevelsWithProgress();
                   const lvl = levels.find(l => l.id === currentLevelId);
-                  navigate(lvl ? `/levels/${lvl.difficulty.toLowerCase()}` : '/levels');
+                  if (lvl) {
+                    navigate(`/levels/${lvl.difficulty.toLowerCase()}` , { state: { highlightLevelId: currentLevelId, initialTab: 'all-levels' } });
+                  } else {
+                    navigate('/levels');
+                  }
                 } else {
                   navigate('/levels');
                 }
