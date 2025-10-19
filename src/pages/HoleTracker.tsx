@@ -217,8 +217,8 @@ const HoleTracker = () => {
                 <div className="text-sm font-medium text-muted-foreground">Score</div>
                 <ScrollArea className="w-full">
                   <div className="flex gap-2 pb-2">
-                    {[...Array(Math.min(5, hole.par + 2))].map((_, i) => {
-                      const s = hole.par - 1 + i;
+                    {[...Array(Math.min(6, hole.par + 3))].map((_, i) => {
+                      const s = hole.par - 2 + i;
                       return (
                         <ChipButton
                           key={s}
