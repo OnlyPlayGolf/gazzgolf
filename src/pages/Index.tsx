@@ -295,6 +295,17 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
+              onClick={() => navigate('/categories')}
+            >
+              <span className="flex items-center gap-2">
+                <Trophy size={16} />
+                View Leaderboards
+              </span>
+              <ChevronRight size={16} />
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-between" 
               onClick={() => {
                 if (currentLevelId) {
                   const levels = getLevelsWithProgress();
