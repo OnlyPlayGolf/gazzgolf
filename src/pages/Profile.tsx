@@ -92,6 +92,8 @@ const Profile = () => {
   const [groupImage, setGroupImage] = useState<File | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -132,6 +134,38 @@ const Profile = () => {
       loadDrillLeaderboards();
     }
   }, [selectedDrill, drillLeaderboardType, user]);
+
+  // Search users when search term changes
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (!searchTerm.trim() || !user) {
+        setSearchResults([]);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, display_name, username')
+          .neq('id', user.id) // Exclude current user
+          .or(`display_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
+          .limit(20);
+
+        if (error) {
+          console.error('Error searching users:', error);
+          setSearchResults([]);
+        } else {
+          setSearchResults(data || []);
+        }
+      } catch (error) {
+        console.error('Error in searchUsers:', error);
+        setSearchResults([]);
+      }
+    };
+
+    const timeoutId = setTimeout(searchUsers, 300); // Debounce search
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, user]);
 
   // Realtime subscription for friendships changes
   useEffect(() => {
@@ -823,37 +857,56 @@ const Profile = () => {
                         </div>
 
                         {/* Add Members */}
-                        {friends.length > 0 && (
-                          <div>
-                            <Label className="text-foreground">
-                              Add Members ({selectedMembers.length} selected)
-                            </Label>
-                            <div className="mt-1.5 border border-border rounded-lg max-h-[200px] overflow-y-auto">
-                              {friends.map((friend) => (
-                                <label
-                                  key={friend.id}
-                                  className="flex items-center gap-3 p-3 hover:bg-secondary/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedMembers.includes(friend.id)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedMembers([...selectedMembers, friend.id]);
-                                      } else {
-                                        setSelectedMembers(selectedMembers.filter(id => id !== friend.id));
-                                      }
-                                    }}
-                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                                  />
-                                  <span className="text-sm text-foreground">
-                                    {friend.display_name || friend.username || 'Unknown'}
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
+                        <div>
+                          <Label className="text-foreground">
+                            Add Members ({selectedMembers.length} selected)
+                          </Label>
+                          <div className="mt-1.5 space-y-2">
+                            <Input
+                              placeholder="Search by name or username..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="w-full"
+                            />
+                            {searchTerm && (
+                              <div className="border border-border rounded-lg max-h-[200px] overflow-y-auto">
+                                {searchResults.length > 0 ? (
+                                  searchResults.map((user) => (
+                                    <label
+                                      key={user.id}
+                                      className="flex items-center gap-3 p-3 hover:bg-secondary/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedMembers.includes(user.id)}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setSelectedMembers([...selectedMembers, user.id]);
+                                          } else {
+                                            setSelectedMembers(selectedMembers.filter(id => id !== user.id));
+                                          }
+                                        }}
+                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                      />
+                                      <div className="flex-1">
+                                        <p className="text-sm text-foreground font-medium">
+                                          {user.display_name || user.username || 'Unknown'}
+                                        </p>
+                                        {user.display_name && user.username && (
+                                          <p className="text-xs text-muted-foreground">@{user.username}</p>
+                                        )}
+                                      </div>
+                                    </label>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-muted-foreground p-3 text-center">
+                                    No users found
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
 
                         {/* Action Buttons */}
                         <div className="flex flex-col gap-2 pt-2">
@@ -874,6 +927,8 @@ const Profile = () => {
                               setGroupType("Player");
                               setGroupImage(null);
                               setSelectedMembers([]);
+                              setSearchTerm("");
+                              setSearchResults([]);
                             }}
                             className="w-full"
                           >
