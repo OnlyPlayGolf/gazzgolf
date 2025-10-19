@@ -588,9 +588,13 @@ export type Database = {
         Row: {
           course_name: string | null
           date_played: string | null
+          fairways_hit: number | null
           fir_percentage: number | null
           gir_percentage: number | null
+          greens_hit: number | null
           holes_played: number | null
+          missed_greens: number | null
+          par4_and_5_count: number | null
           round_id: string | null
           sand_saves: number | null
           score_vs_par: number | null
@@ -600,6 +604,7 @@ export type Database = {
           total_penalties: number | null
           total_putts: number | null
           total_score: number | null
+          up_and_downs: number | null
           updown_percentage: number | null
           user_id: string | null
         }
@@ -755,7 +760,7 @@ export type Database = {
       first_putt_band: "0-2" | "2-7" | "7+"
       friend_status: "pending" | "accepted" | "blocked"
       group_role: "member" | "admin" | "owner"
-      tee_result: "FIR" | "MissL" | "MissR" | "Short" | "Long" | "Penalty"
+      tee_result: "FIR" | "MissL" | "MissR" | "Water" | "OOB"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -895,7 +900,7 @@ export const Constants = {
       first_putt_band: ["0-2", "2-7", "7+"],
       friend_status: ["pending", "accepted", "blocked"],
       group_role: ["member", "admin", "owner"],
-      tee_result: ["FIR", "MissL", "MissR", "Short", "Long", "Penalty"],
+      tee_result: ["FIR", "MissL", "MissR", "Water", "OOB"],
     },
   },
 } as const

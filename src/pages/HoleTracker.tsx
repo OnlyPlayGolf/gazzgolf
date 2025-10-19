@@ -244,13 +244,13 @@ const HoleTracker = () => {
               <div className="space-y-3">
                 <div className="text-sm font-medium text-muted-foreground">Tee Shot</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {(["FIR", "MissL", "MissR", "Penalty"] as const).map((t) => (
+                  {(["FIR", "MissL", "MissR", "Water", "OOB"] as const).map((t) => (
                     <ChipButton
                       key={t}
                       active={hole.tee_result === t}
                       onClick={() => updateCurrentHole({ tee_result: t as TeeResult })}
                     >
-                      {t === "FIR" ? "Fairway" : t}
+                      {t === "FIR" ? "Fairway" : t === "OOB" ? "Out of Bounds" : t}
                     </ChipButton>
                   ))}
                 </div>
