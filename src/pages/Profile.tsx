@@ -90,6 +90,8 @@ const Profile = () => {
   const [groupDescription, setGroupDescription] = useState("");
   const [groupType, setGroupType] = useState<"Player" | "Coach">("Player");
   const [groupImage, setGroupImage] = useState<File | null>(null);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -208,6 +210,31 @@ const Profile = () => {
       if (settingsData?.favourite_group_ids) {
         setFavoriteGroupIds(settingsData.favourite_group_ids);
       }
+
+      // Load friends for member selection
+      const { data: friendshipsData } = await (supabase as any)
+        .from('friendships')
+        .select(`
+          *,
+          requester_profile:profiles!friendships_requester_fkey(id, display_name, username),
+          addressee_profile:profiles!friendships_addressee_fkey(id, display_name, username)
+        `)
+        .or(`requester.eq.${user.id},addressee.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      const acceptedFriends = (friendshipsData || []).map((f: any) => {
+        const isRequester = f.requester === user.id;
+        const friendProfile = isRequester ? f.addressee_profile : f.requester_profile;
+        return {
+          id: friendProfile.id,
+          display_name: friendProfile.display_name,
+          username: friendProfile.username,
+          status: 'accepted' as const,
+          is_requester: isRequester
+        };
+      });
+
+      setFriends(acceptedFriends);
 
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -455,6 +482,28 @@ const Profile = () => {
         return;
       }
 
+      // Step 3: Add selected members to the group
+      if (selectedMembers.length > 0) {
+        const memberInserts = selectedMembers.map(memberId => ({
+          group_id: groupData.id,
+          user_id: memberId,
+          role: 'member'
+        }));
+
+        const { error: membersError } = await (supabase as any)
+          .from('group_members')
+          .insert(memberInserts);
+
+        if (membersError) {
+          console.error('Error adding members:', membersError);
+          toast({
+            title: "Members not added",
+            description: "Group created but some members couldn't be added.",
+            variant: "destructive",
+          });
+        }
+      }
+
       // Success!
       toast({
         title: "Group created successfully!",
@@ -465,6 +514,7 @@ const Profile = () => {
       setGroupDescription("");
       setGroupType("Player");
       setGroupImage(null);
+      setSelectedMembers([]);
       setIsCreateGroupOpen(false);
       
       // Refetch groups to show the new group immediately
@@ -772,6 +822,39 @@ const Profile = () => {
                           </div>
                         </div>
 
+                        {/* Add Members */}
+                        {friends.length > 0 && (
+                          <div>
+                            <Label className="text-foreground">
+                              Add Members ({selectedMembers.length} selected)
+                            </Label>
+                            <div className="mt-1.5 border border-border rounded-lg max-h-[200px] overflow-y-auto">
+                              {friends.map((friend) => (
+                                <label
+                                  key={friend.id}
+                                  className="flex items-center gap-3 p-3 hover:bg-secondary/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedMembers.includes(friend.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedMembers([...selectedMembers, friend.id]);
+                                      } else {
+                                        setSelectedMembers(selectedMembers.filter(id => id !== friend.id));
+                                      }
+                                    }}
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                  />
+                                  <span className="text-sm text-foreground">
+                                    {friend.display_name || friend.username || 'Unknown'}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Action Buttons */}
                         <div className="flex flex-col gap-2 pt-2">
                           <Button
@@ -790,6 +873,7 @@ const Profile = () => {
                               setGroupDescription("");
                               setGroupType("Player");
                               setGroupImage(null);
+                              setSelectedMembers([]);
                             }}
                             className="w-full"
                           >
