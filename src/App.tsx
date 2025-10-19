@@ -27,6 +27,9 @@ import Rounds from "./pages/Rounds";
 import RoundSetup from "./pages/RoundSetup";
 import HoleTracker from "./pages/HoleTracker";
 import RoundSummary from "./pages/RoundSummary";
+import ProRoundSetup from "./pages/ProRoundSetup";
+import ProHoleTracker from "./pages/ProHoleTracker";
+import ProRoundSummary from "./pages/ProRoundSummary";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +61,9 @@ const App = () => (
             <Route path="/rounds/setup" element={<RoundSetup />} />
             <Route path="/rounds/:roundId/track" element={<HoleTracker />} />
             <Route path="/rounds/:roundId/summary" element={<RoundSummary />} />
+            <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
+            <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
+            <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -82,15 +82,23 @@ const Rounds = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Round Tracker</h1>
-            <p className="text-muted-foreground">Log and review your rounds</p>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Round Tracker</h1>
+              <p className="text-muted-foreground">Log and review your rounds</p>
+            </div>
           </div>
-          <Button onClick={() => navigate("/rounds/setup")} size="lg">
-            <Plus className="mr-2" size={20} />
-            New Round
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button onClick={() => navigate("/rounds/setup")} size="lg" variant="outline">
+              <Plus className="mr-2" size={20} />
+              New Round
+            </Button>
+            <Button onClick={() => navigate("/rounds/pro-setup")} size="lg" className="border-primary">
+              <Plus className="mr-2" size={20} />
+              Pro Round
+            </Button>
+          </div>
         </div>
 
         {loading ? (

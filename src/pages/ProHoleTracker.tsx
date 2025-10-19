@@ -1,0 +1,417 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, ChevronRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { parsePuttingBaseline, parseLongGameBaseline, type LieType } from "@/utils/csvParser";
+import { createStrokesGainedCalculator } from "@/utils/strokesGained";
+
+interface Shot {
+  type: 'tee' | 'approach' | 'putt';
+  startDistance: number;
+  startLie: LieType;
+  holed: boolean;
+  endDistance?: number;
+  endLie?: LieType | 'green';
+  strokesGained: number;
+}
+
+interface ProHoleData {
+  par: number;
+  shots: Shot[];
+}
+
+const ProHoleTracker = () => {
+  const { roundId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [round, setRound] = useState<any>(null);
+  const [currentHole, setCurrentHole] = useState(1);
+  const [holeData, setHoleData] = useState<Record<number, ProHoleData>>({});
+  const [loading, setLoading] = useState(true);
+  const [sgCalculator, setSgCalculator] = useState<any>(null);
+  
+  // Current shot inputs
+  const [par, setPar] = useState(4);
+  const [shotType, setShotType] = useState<'tee' | 'approach' | 'putt'>('tee');
+  const [startDistance, setStartDistance] = useState("");
+  const [startLie, setStartLie] = useState<LieType>('tee');
+  const [holed, setHoled] = useState(false);
+  const [endDistance, setEndDistance] = useState("");
+  const [endLie, setEndLie] = useState<LieType | 'green'>('fairway');
+
+  useEffect(() => {
+    loadBaselineData();
+    fetchRound();
+  }, [roundId]);
+
+  const loadBaselineData = async () => {
+    try {
+      const [puttingTable, longgameTable] = await Promise.all([
+        parsePuttingBaseline('/src/assets/putt_baseline.csv'),
+        parseLongGameBaseline('/src/assets/shot_baseline.csv'),
+      ]);
+      const calculator = createStrokesGainedCalculator(puttingTable, longgameTable);
+      setSgCalculator(calculator);
+    } catch (error) {
+      console.error('Error loading baseline data:', error);
+    }
+  };
+
+  const fetchRound = async () => {
+    try {
+      const { data: roundData, error: roundError } = await supabase
+        .from("rounds")
+        .select("*")
+        .eq("id", roundId)
+        .single();
+
+      if (roundError) throw roundError;
+      setRound(roundData);
+      setLoading(false);
+    } catch (error: any) {
+      toast({
+        title: "Error loading round",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getCurrentHoleData = (): ProHoleData => {
+    return holeData[currentHole] || { par, shots: [] };
+  };
+
+  const addShot = () => {
+    if (!sgCalculator) {
+      toast({ title: "Baseline data not loaded", variant: "destructive" });
+      return;
+    }
+
+    const start = parseFloat(startDistance);
+    const end = holed ? 0 : parseFloat(endDistance);
+
+    if (isNaN(start) || (!holed && isNaN(end))) {
+      toast({ title: "Invalid distances", variant: "destructive" });
+      return;
+    }
+
+    const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+    const sg = sgCalculator.calculateStrokesGained(
+      drillType,
+      start,
+      startLie,
+      holed,
+      holed ? 'green' : endLie,
+      end
+    );
+
+    const newShot: Shot = {
+      type: shotType,
+      startDistance: start,
+      startLie,
+      holed,
+      endDistance: holed ? undefined : end,
+      endLie: holed ? undefined : endLie,
+      strokesGained: sg,
+    };
+
+    const currentData = getCurrentHoleData();
+    setHoleData({
+      ...holeData,
+      [currentHole]: {
+        par,
+        shots: [...currentData.shots, newShot],
+      },
+    });
+
+    // Reset inputs
+    setStartDistance("");
+    setEndDistance("");
+    setHoled(false);
+    
+    // Auto-set next shot type
+    if (holed) {
+      // Hole complete, don't change
+    } else if (endLie === 'green') {
+      setShotType('putt');
+    } else {
+      setShotType('approach');
+    }
+  };
+
+  const finishHole = async () => {
+    const data = getCurrentHoleData();
+    
+    if (data.shots.length === 0) {
+      toast({ title: "Add at least one shot", variant: "destructive" });
+      return;
+    }
+
+    const lastShot = data.shots[data.shots.length - 1];
+    if (!lastShot.holed) {
+      toast({ title: "Last shot must be holed", variant: "destructive" });
+      return;
+    }
+
+    const totalScore = data.shots.length;
+    const totalSG = data.shots.reduce((sum, shot) => sum + shot.strokesGained, 0);
+
+    // Save to database (simplified - store in holes table)
+    try {
+      const { error } = await supabase.from("holes").upsert([
+        {
+          round_id: roundId!,
+          hole_number: currentHole,
+          par: data.par,
+          score: totalScore,
+          putts: data.shots.filter(s => s.type === 'putt').length,
+          // Store strokes gained data as JSON in a text field (would need schema update)
+        },
+      ], { onConflict: "round_id,hole_number" });
+
+      if (error) throw error;
+
+      if (currentHole < round.holes_played) {
+        setCurrentHole(currentHole + 1);
+        setPar(4);
+        setShotType('tee');
+        setStartLie('tee');
+      } else {
+        navigate(`/rounds/${roundId}/pro-summary`);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error saving hole",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteLastShot = () => {
+    const currentData = getCurrentHoleData();
+    if (currentData.shots.length === 0) return;
+
+    setHoleData({
+      ...holeData,
+      [currentHole]: {
+        ...currentData,
+        shots: currentData.shots.slice(0, -1),
+      },
+    });
+  };
+
+  if (loading) return <div className="p-4">Loading...</div>;
+
+  const currentData = getCurrentHoleData();
+  const totalSG = currentData.shots.reduce((sum, shot) => sum + shot.strokesGained, 0);
+
+  return (
+    <div className="pb-20 min-h-screen bg-background">
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/rounds")}>
+              <ArrowLeft className="mr-2" size={18} />
+              Exit
+            </Button>
+            <Badge variant="outline" className="text-lg px-3 py-1">
+              Hole {currentHole} of {round?.holes_played}
+            </Badge>
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-bold">{round?.course_name}</h1>
+            <p className="text-sm text-muted-foreground">
+              Par {par} • {currentData.shots.length} shots • SG: {totalSG.toFixed(2)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* Par Selection */}
+        <Card>
+          <CardContent className="pt-6">
+            <Label>Par</Label>
+            <div className="flex gap-2 mt-2">
+              {[3, 4, 5].map((p) => (
+                <Button
+                  key={p}
+                  variant={par === p ? "default" : "outline"}
+                  onClick={() => setPar(p)}
+                  size="lg"
+                  className="flex-1"
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Shot Entry */}
+        <Card className="border-primary">
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <Label>Shot Type</Label>
+              <div className="flex gap-2 mt-2">
+                {(['tee', 'approach', 'putt'] as const).map((type) => (
+                  <Button
+                    key={type}
+                    variant={shotType === type ? "default" : "outline"}
+                    onClick={() => setShotType(type)}
+                    className="flex-1"
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label>Start Distance (m)</Label>
+              <Input
+                type="number"
+                value={startDistance}
+                onChange={(e) => setStartDistance(e.target.value)}
+                placeholder="Enter distance in meters"
+                className="mt-2"
+              />
+            </div>
+
+            {shotType !== 'putt' && (
+              <div>
+                <Label>Start Lie</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {(['tee', 'fairway', 'rough', 'sand'] as const).map((lie) => (
+                    <Button
+                      key={lie}
+                      variant={startLie === lie ? "default" : "outline"}
+                      onClick={() => setStartLie(lie)}
+                    >
+                      {lie.charAt(0).toUpperCase() + lie.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label>Result</Label>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  variant={holed ? "default" : "outline"}
+                  onClick={() => setHoled(true)}
+                  className="flex-1"
+                >
+                  Holed
+                </Button>
+                <Button
+                  variant={!holed ? "default" : "outline"}
+                  onClick={() => setHoled(false)}
+                  className="flex-1"
+                >
+                  Missed
+                </Button>
+              </div>
+            </div>
+
+            {!holed && (
+              <>
+                <div>
+                  <Label>End Distance (m)</Label>
+                  <Input
+                    type="number"
+                    value={endDistance}
+                    onChange={(e) => setEndDistance(e.target.value)}
+                    placeholder="Distance to hole"
+                    className="mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label>End Lie</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
+                      <Button
+                        key={lie}
+                        variant={endLie === lie ? "default" : "outline"}
+                        onClick={() => setEndLie(lie)}
+                        size="sm"
+                      >
+                        {lie.charAt(0).toUpperCase() + lie.slice(1)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <Button onClick={addShot} className="w-full" size="lg">
+              Add Shot
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Shots List */}
+        {currentData.shots.length > 0 && (
+          <Card>
+            <CardContent className="pt-6 space-y-2">
+              <div className="flex justify-between items-center mb-2">
+                <Label>Shots ({currentData.shots.length})</Label>
+                <Button variant="ghost" size="sm" onClick={deleteLastShot}>
+                  Delete Last
+                </Button>
+              </div>
+              {currentData.shots.map((shot, idx) => (
+                <div key={idx} className="p-3 border rounded-lg text-sm">
+                  <div className="flex justify-between">
+                    <span className="font-medium">
+                      {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
+                    </span>
+                    <span className={shot.strokesGained >= 0 ? "text-green-500" : "text-red-500"}>
+                      {shot.strokesGained >= 0 ? "+" : ""}{shot.strokesGained.toFixed(2)} SG
+                    </span>
+                  </div>
+                  {!shot.holed && (
+                    <div className="text-muted-foreground text-xs mt-1">
+                      → {shot.endDistance}m ({shot.endLie})
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div className="pt-2 border-t">
+                <div className="flex justify-between font-bold">
+                  <span>Total</span>
+                  <span className={totalSG >= 0 ? "text-green-500" : "text-red-500"}>
+                    {totalSG >= 0 ? "+" : ""}{totalSG.toFixed(2)} SG
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4">
+        <Button onClick={finishHole} size="lg" className="w-full">
+          {currentHole < round?.holes_played ? (
+            <>
+              Finish Hole <ChevronRight size={20} className="ml-2" />
+            </>
+          ) : (
+            "Complete Round"
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default ProHoleTracker;
