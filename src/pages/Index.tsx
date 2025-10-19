@@ -48,13 +48,13 @@ const Index = () => {
 
   const loadCurrentLevel = () => {
     const levels = getLevelsWithProgress();
-    // Find the first incomplete level
-    const nextLevel = levels.find(level => !level.completed);
-    if (nextLevel) {
-      setCurrentLevelId(nextLevel.id);
+    // Find the last completed level
+    const completedLevels = levels.filter(level => level.completed);
+    if (completedLevels.length > 0) {
+      setCurrentLevelId(completedLevels[completedLevels.length - 1].id);
     } else if (levels.length > 0) {
-      // If all levels are completed, go to the last level
-      setCurrentLevelId(levels[levels.length - 1].id);
+      // If no levels completed, go to the first level
+      setCurrentLevelId(levels[0].id);
     }
   };
 
