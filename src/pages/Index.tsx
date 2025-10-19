@@ -308,7 +308,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate('/categories')}
+              onClick={() => navigate('/drills/favourites')}
             >
               <span className="flex items-center gap-2">
                 <Trophy size={16} />
