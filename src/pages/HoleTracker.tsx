@@ -313,13 +313,19 @@ const HoleTracker = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <ChipButton
                     active={hole.up_and_down}
-                    onClick={() => updateCurrentHole({ up_and_down: !hole.up_and_down })}
+                    onClick={() => updateCurrentHole({ 
+                      up_and_down: !hole.up_and_down,
+                      sand_save: false // Deselect sand save when selecting up and down
+                    })}
                   >
                     Up & Down
                   </ChipButton>
                   <ChipButton
                     active={hole.sand_save}
-                    onClick={() => updateCurrentHole({ sand_save: !hole.sand_save })}
+                    onClick={() => updateCurrentHole({ 
+                      sand_save: !hole.sand_save,
+                      up_and_down: false // Deselect up and down when selecting sand save
+                    })}
                   >
                     Sand Save
                   </ChipButton>
