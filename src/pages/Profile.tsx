@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Users, Trophy, Settings, Crown, Star, Plus, LogOut, Target, MessageCircle } from "lucide-react";
 import { ProfileMessages } from "@/components/ProfileMessages";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -86,6 +87,9 @@ const Profile = () => {
   // Dialog states
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
+  const [groupDescription, setGroupDescription] = useState("");
+  const [groupType, setGroupType] = useState<"Player" | "Coach">("Player");
+  const [groupImage, setGroupImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -458,6 +462,9 @@ const Profile = () => {
       });
 
       setGroupName("");
+      setGroupDescription("");
+      setGroupType("Player");
+      setGroupImage(null);
       setIsCreateGroupOpen(false);
       
       // Refetch groups to show the new group immediately
@@ -664,36 +671,127 @@ const Profile = () => {
                         Create Group
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Create Group</DialogTitle>
+                        <DialogTitle className="text-xl font-semibold text-center">Create New Group</DialogTitle>
+                        <DialogDescription className="text-center text-muted-foreground">
+                          Create a group to compete and connect with your golf friends.
+                        </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
+                      <div className="space-y-4 py-4">
+                        {/* Group Type Toggle */}
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={groupType === "Player" ? "default" : "outline"}
+                            className="flex-1"
+                            onClick={() => setGroupType("Player")}
+                          >
+                            Player
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={groupType === "Coach" ? "default" : "outline"}
+                            className="flex-1"
+                            onClick={() => setGroupType("Coach")}
+                          >
+                            Coach
+                          </Button>
+                        </div>
+
+                        {/* Group Name */}
                         <div>
-                          <Label htmlFor="group-name">Group Name</Label>
+                          <Label htmlFor="group-name" className="text-foreground">
+                            Group Name <span className="text-destructive">*</span>
+                          </Label>
                           <Input
                             id="group-name"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
                             placeholder="Enter group name"
-                            className="mt-1"
+                            className="mt-1.5"
                           />
                         </div>
-                        <div className="flex gap-2">
+
+                        {/* Description */}
+                        <div>
+                          <Label htmlFor="group-description" className="text-foreground">
+                            Description
+                          </Label>
+                          <Textarea
+                            id="group-description"
+                            value={groupDescription}
+                            onChange={(e) => setGroupDescription(e.target.value)}
+                            placeholder="Optional group description"
+                            className="mt-1.5 min-h-[100px] resize-none"
+                          />
+                        </div>
+
+                        {/* Group Image Upload */}
+                        <div>
+                          <Label className="text-foreground">Group Image</Label>
+                          <div 
+                            className="mt-1.5 border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                            onClick={() => document.getElementById('group-image-input')?.click()}
+                          >
+                            <input
+                              id="group-image-input"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setGroupImage(file);
+                              }}
+                            />
+                            {groupImage ? (
+                              <div className="text-center">
+                                <p className="text-sm text-foreground font-medium">{groupImage.name}</p>
+                                <p className="text-xs text-muted-foreground mt-1">Click to change</p>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                  <svg
+                                    className="w-6 h-6 text-muted-foreground"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                    />
+                                  </svg>
+                                </div>
+                                <p className="text-sm text-muted-foreground">Upload group image</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-2 pt-2">
                           <Button
                             onClick={handleCreateGroup}
                             disabled={loading || !groupName.trim()}
-                            className="flex-1"
+                            className="w-full bg-foreground text-background hover:bg-foreground/90"
                           >
                             {loading ? "Creating..." : "Create Group"}
                           </Button>
                           <Button
-                            variant="outline"
+                            type="button"
+                            variant="ghost"
                             onClick={() => {
                               setIsCreateGroupOpen(false);
                               setGroupName("");
+                              setGroupDescription("");
+                              setGroupType("Player");
+                              setGroupImage(null);
                             }}
-                            className="flex-1"
+                            className="w-full"
                           >
                             Cancel
                           </Button>
