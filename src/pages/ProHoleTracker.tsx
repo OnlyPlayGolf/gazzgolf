@@ -285,23 +285,6 @@ const ProHoleTracker = () => {
               />
             </div>
 
-            {shotType !== 'putt' && (
-              <div>
-                <Label>Start Lie</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {(['tee', 'fairway', 'rough', 'sand'] as const).map((lie) => (
-                    <Button
-                      key={lie}
-                      variant={startLie === lie ? "default" : "outline"}
-                      onClick={() => setStartLie(lie)}
-                    >
-                      {lie.charAt(0).toUpperCase() + lie.slice(1)}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div>
               <Label>Result</Label>
               <div className="flex gap-2 mt-2">
