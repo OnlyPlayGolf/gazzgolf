@@ -228,7 +228,7 @@ const ProHoleTracker = () => {
           <div className="text-center">
             <h1 className="text-xl font-bold">{round?.course_name}</h1>
             <p className="text-sm text-muted-foreground">
-              Par {par} • {currentData.shots.length} shots • SG: {totalSG.toFixed(2)}
+              Par {par} • {currentData.shots.length} shots
             </p>
           </div>
         </div>
@@ -374,9 +374,7 @@ const ProHoleTracker = () => {
                   <div className="flex justify-between">
                     <span className="font-medium">
                       {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
-                    </span>
-                    <span className={shot.strokesGained >= 0 ? "text-green-500" : "text-red-500"}>
-                      {shot.strokesGained >= 0 ? "+" : ""}{shot.strokesGained.toFixed(2)} SG
+                      {shot.holed && " • Holed"}
                     </span>
                   </div>
                   {!shot.holed && (
@@ -386,14 +384,6 @@ const ProHoleTracker = () => {
                   )}
                 </div>
               ))}
-              <div className="pt-2 border-t">
-                <div className="flex justify-between font-bold">
-                  <span>Total</span>
-                  <span className={totalSG >= 0 ? "text-green-500" : "text-red-500"}>
-                    {totalSG >= 0 ? "+" : ""}{totalSG.toFixed(2)} SG
-                  </span>
-                </div>
-              </div>
             </CardContent>
           </Card>
         )}
