@@ -258,21 +258,23 @@ const ProHoleTracker = () => {
         {/* Shot Entry */}
         <Card className="border-primary">
           <CardContent className="pt-6 space-y-4">
-            <div>
-              <Label>Shot Type</Label>
-              <div className="flex gap-2 mt-2">
-                {(['tee', 'approach', 'putt'] as const).map((type) => (
-                  <Button
-                    key={type}
-                    variant={shotType === type ? "default" : "outline"}
-                    onClick={() => setShotType(type)}
-                    className="flex-1"
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Button>
-                ))}
+            {currentData.shots.length > 0 && (
+              <div>
+                <Label>Shot Type</Label>
+                <div className="flex gap-2 mt-2">
+                  {(['tee', 'approach', 'putt'] as const).map((type) => (
+                    <Button
+                      key={type}
+                      variant={shotType === type ? "default" : "outline"}
+                      onClick={() => setShotType(type)}
+                      className="flex-1"
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <Label>Start Distance (m)</Label>
