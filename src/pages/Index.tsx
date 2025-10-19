@@ -8,6 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap, Star } from "lucide-react";
 import { getLevelsWithProgress } from "@/utils/levelsManager";
+import { AddFriendDialog } from "@/components/AddFriendDialog";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { MessagesSheet } from "@/components/MessagesSheet";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -196,6 +199,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="p-4 space-y-6">
+        {/* Header with Actions */}
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-foreground">Home</h1>
+          <div className="flex items-center gap-2">
+            <AddFriendDialog />
+            <MessagesSheet />
+            <NotificationsSheet />
+          </div>
+        </div>
+
         {/* Profile Header */}
         <Card>
           <CardContent className="pt-6">
