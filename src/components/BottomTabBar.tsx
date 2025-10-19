@@ -14,6 +14,10 @@ export const BottomTabBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Hide the tab bar on immersive round flows (tracking, summary, setup)
+  const hideTabBar = location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds';
+  if (hideTabBar) return null;
+
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
       <div className="flex">

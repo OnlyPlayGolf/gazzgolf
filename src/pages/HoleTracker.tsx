@@ -384,7 +384,7 @@ const HoleTracker = () => {
       </div>
 
       {/* Fixed Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 sm:p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 sm:p-4 z-[60]">
         <div className="flex gap-2 sm:gap-3 max-w-screen-lg mx-auto">
           <Button
             variant="outline"
