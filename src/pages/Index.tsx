@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap } from "lucide-react";
+import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap, Star } from "lucide-react";
 import { getLevelsWithProgress } from "@/utils/levelsManager";
 
 const Index = () => {
@@ -284,11 +284,11 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate('/categories')}
+              onClick={() => navigate('/drills/favourites')}
             >
               <span className="flex items-center gap-2">
-                <Target size={16} />
-                Practice Drills
+                <Star size={16} />
+                Favourite Drills
               </span>
               <ChevronRight size={16} />
             </Button>
