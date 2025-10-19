@@ -109,10 +109,10 @@ const HoleTracker = () => {
   const saveHole = async () => {
     const data = getCurrentHoleData();
     
-    if (!data.score || !data.putts) {
+    if (data.score <= 0 || data.putts === undefined) {
       toast({
         title: "Incomplete data",
-        description: "Please enter score and putts",
+        description: "Please enter score and putts (putts can be 0)",
         variant: "destructive",
       });
       return;
