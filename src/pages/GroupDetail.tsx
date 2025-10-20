@@ -65,6 +65,10 @@ const GroupDetail = () => {
   const [drillLeaderboard, setDrillLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   
+  // Dialog states
+  const [viewMembersOpen, setViewMembersOpen] = useState(false);
+  const [addMembersDialogOpen, setAddMembersDialogOpen] = useState(false);
+  
   // Invite management state
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [currentInvite, setCurrentInvite] = useState<any>(null);
@@ -371,7 +375,7 @@ const GroupDetail = () => {
       });
 
       setSelectedUsers(new Set());
-      setIsAddMembersOpen(false);
+      setAddMembersDialogOpen(false);
       await loadMembers();
     } catch (error: any) {
       toast({
@@ -575,181 +579,296 @@ const GroupDetail = () => {
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-            <p className="text-sm text-muted-foreground">{members.length} members</p>
+            <button 
+              onClick={() => setViewMembersOpen(true)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            >
+              {members.length} {members.length === 1 ? 'member' : 'members'}
+            </button>
           </div>
+          {canAddMembers && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                loadFriendsForAdding();
+                loadCurrentInvite();
+                setAddMembersDialogOpen(true);
+              }}
+            >
+              <UserPlus size={16} className="mr-2" />
+              Add
+            </Button>
+          )}
         </div>
 
-        <Tabs defaultValue="members" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-          </TabsList>
+        {/* Drill Selector */}
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="text-sm">Select Drill</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <select
+              className="w-full p-2 rounded-md border border-border bg-background text-foreground"
+              value={selectedDrill || ''}
+              onChange={(e) => {
+                const drill = drills.find(d => d.title === e.target.value);
+                if (drill) {
+                  setSelectedDrill(drill.title);
+                  loadDrillLeaderboard(drill.title, drill.lower_is_better);
+                }
+              }}
+            >
+              {drills.map((drill) => (
+                <option key={drill.id} value={drill.title}>
+                  {drill.title}
+                </option>
+              ))}
+            </select>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="members" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Group Members</CardTitle>
-                  {canAddMembers && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          loadCurrentInvite();
-                          setIsInviteOpen(true);
-                        }}
-                      >
-                        <Link2 size={16} className="mr-2" />
-                        Invite Link
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          loadFriendsForAdding();
-                          loadCurrentInvite();
-                          setIsAddMembersOpen(true);
-                        }}
-                      >
-                        <UserPlus size={16} className="mr-2" />
-                        Add Members
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {members.map((member) => (
-                  <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+        {/* Leaderboard */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Trophy size={18} />
+              {selectedDrill} Leaderboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingLeaderboard ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading leaderboard...</p>
+              </div>
+            ) : drillLeaderboard.length > 0 ? (
+              <div className="space-y-3">
+                {drillLeaderboard.map((entry, index) => (
+                  <div 
+                    key={entry.user_id} 
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-md",
+                      entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
+                    )}
+                  >
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        {member.avatar_url ? (
-                          <img src={member.avatar_url} alt={member.display_name || member.username || 'User'} className="object-cover" />
+                      <div className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-full font-bold",
+                        index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                        index === 1 ? "bg-gray-400/20 text-gray-400" :
+                        index === 2 ? "bg-orange-500/20 text-orange-500" :
+                        "bg-primary/20 text-primary"
+                      )}>
+                        {index === 0 ? (
+                          <Crown size={16} className="text-yellow-500" />
                         ) : (
-                          <AvatarFallback className="text-lg">
-                            {(member.display_name || member.username || 'U')[0].toUpperCase()}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div>
-                        <div className="font-medium text-foreground flex items-center gap-2">
-                          {member.display_name || member.username || 'Unknown'}
-                          {getRoleIcon(member.role)}
-                        </div>
-                        {member.username && member.display_name && (
-                          <div className="text-sm text-muted-foreground">@{member.username}</div>
+                          `#${index + 1}`
                         )}
                       </div>
+                      <Avatar className="h-8 w-8">
+                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
+                        <AvatarFallback className="bg-primary/20 text-primary">
+                          {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className={cn(
+                        "font-medium",
+                        entry.user_id === user?.id && "font-bold text-primary"
+                      )}>
+                        {entry.display_name || entry.username || "Unknown"}
+                        {entry.user_id === user?.id && " (You)"}
+                      </span>
                     </div>
-                    <Badge variant={member.role === 'owner' ? 'default' : 'secondary'} className="capitalize">
-                      {member.role === 'owner' ? 'admin' : member.role}
+                    <Badge variant="outline" className={cn(
+                      entry.user_id === user?.id && "border-primary text-primary"
+                    )}>
+                      {entry.best_score}
                     </Badge>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="leaderboard" className="space-y-4">
-            <div className="space-y-4">
-              {/* Drill Selector */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Select Drill</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <select
-                    className="w-full p-2 rounded-md border border-border bg-background text-foreground"
-                    value={selectedDrill || ''}
-                    onChange={(e) => {
-                      const drill = drills.find(d => d.title === e.target.value);
-                      if (drill) {
-                        setSelectedDrill(drill.title);
-                        loadDrillLeaderboard(drill.title, drill.lower_is_better);
-                      }
-                    }}
-                  >
-                    {drills.map((drill) => (
-                      <option key={drill.id} value={drill.title}>
-                        {drill.title}
-                      </option>
-                    ))}
-                  </select>
-                </CardContent>
-              </Card>
-
-              {/* Leaderboard */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-primary">
-                    <Trophy size={18} />
-                    {selectedDrill} Leaderboard
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loadingLeaderboard ? (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Loading leaderboard...</p>
-                    </div>
-                  ) : drillLeaderboard.length > 0 ? (
-                    <div className="space-y-3">
-                      {drillLeaderboard.map((entry, index) => (
-                        <div 
-                          key={entry.user_id} 
-                          className={cn(
-                            "flex items-center justify-between p-3 rounded-md",
-                            entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "flex items-center justify-center w-8 h-8 rounded-full font-bold",
-                              index === 0 ? "bg-yellow-500/20 text-yellow-500" :
-                              index === 1 ? "bg-gray-400/20 text-gray-400" :
-                              index === 2 ? "bg-orange-500/20 text-orange-500" :
-                              "bg-primary/20 text-primary"
-                            )}>
-                              {index === 0 ? (
-                                <Crown size={16} className="text-yellow-500" />
-                              ) : (
-                                `#${index + 1}`
-                              )}
-                            </div>
-                            <Avatar className="h-8 w-8">
-                              {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
-                              <AvatarFallback className="bg-primary/20 text-primary">
-                                {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className={cn(
-                              "font-medium",
-                              entry.user_id === user?.id && "font-bold text-primary"
-                            )}>
-                              {entry.display_name || entry.username || "Unknown"}
-                              {entry.user_id === user?.id && " (You)"}
-                            </span>
-                          </div>
-                          <Badge variant="outline" className={cn(
-                            entry.user_id === user?.id && "border-primary text-primary"
-                          )}>
-                            {entry.best_score}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-8">
-                      No members have played this drill yet.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No members have played this drill yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <Dialog open={isAddMembersOpen} onOpenChange={setIsAddMembersOpen}>
+      {/* View Members Dialog */}
+      <Dialog open={viewMembersOpen} onOpenChange={setViewMembersOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Group Members</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {members.map((member) => (
+              <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    {member.avatar_url ? (
+                      <img src={member.avatar_url} alt={member.display_name || member.username || 'User'} className="object-cover" />
+                    ) : (
+                      <AvatarFallback className="text-lg">
+                        {(member.display_name || member.username || 'U')[0].toUpperCase()}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div>
+                    <div className="font-medium text-foreground flex items-center gap-2">
+                      {member.display_name || member.username || 'Unknown'}
+                      {getRoleIcon(member.role)}
+                    </div>
+                    {member.username && member.display_name && (
+                      <div className="text-sm text-muted-foreground">@{member.username}</div>
+                    )}
+                  </div>
+                </div>
+                <Badge variant={member.role === 'owner' ? 'default' : 'secondary'} className="capitalize">
+                  {member.role === 'owner' ? 'admin' : member.role}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Members Dialog */}
+      <Dialog open={addMembersDialogOpen} onOpenChange={setAddMembersDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Members</DialogTitle>
+          </DialogHeader>
+
+          <Tabs defaultValue="friends" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="friends">Friends</TabsTrigger>
+              <TabsTrigger value="search">Search</TabsTrigger>
+              <TabsTrigger value="invite">Invite Link</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="friends" className="space-y-4">
+              {friends.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No friends available to add
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {friends.map((friend) => (
+                    <div key={friend.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
+                      <Checkbox
+                        checked={selectedUsers.has(friend.id)}
+                        onCheckedChange={() => handleToggleUser(friend.id)}
+                      />
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {(friend.display_name || friend.username || 'U')[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">
+                          {friend.display_name || friend.username || 'Unknown'}
+                        </div>
+                        {friend.username && friend.display_name && (
+                          <div className="text-xs text-muted-foreground">@{friend.username}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="search" className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by username..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchUsers(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {searchQuery && searchResults.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    No users found
+                  </div>
+                ) : (
+                  searchResults.map((user) => (
+                    <div key={user.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
+                      <Checkbox
+                        checked={selectedUsers.has(user.id)}
+                        onCheckedChange={() => handleToggleUser(user.id)}
+                      />
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {(user.display_name || user.username || 'U')[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">
+                          {user.display_name || user.username || 'Unknown'}
+                        </div>
+                        {user.username && user.display_name && (
+                          <div className="text-xs text-muted-foreground">@{user.username}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="invite" className="space-y-4">
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Share this link to invite people to the group
+                </p>
+                {currentInvite ? (
+                  <>
+                    <div className="flex gap-2">
+                      <Input
+                        value={`${window.location.origin}/invite/${currentInvite.code}`}
+                        readOnly
+                        className="text-sm"
+                      />
+                      <Button size="sm" onClick={handleCopyInviteLink}>
+                        <Copy size={16} />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Uses: {currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}
+                    </p>
+                  </>
+                ) : (
+                  <Button onClick={handleCreateInvite} disabled={loading}>
+                    {loading ? "Creating..." : "Create Invite Link"}
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setAddMembersDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddMembers}
+              disabled={selectedUsers.size === 0 || loading}
+            >
+              Add {selectedUsers.size > 0 && `(${selectedUsers.size})`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Link Management Dialog */}
+      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add Members</DialogTitle>
