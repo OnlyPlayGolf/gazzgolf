@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Settings, Star, Plus } from "lucide-react";
+import { Settings, Star, Plus, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -402,6 +402,53 @@ const Profile = () => {
     }
   };
 
+  const handleMessageGroup = async (groupId: string) => {
+    try {
+      // Check if a conversation already exists for this group
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('type', 'group')
+        .eq('group_id', groupId)
+        .maybeSingle();
+
+      if (existingConv) {
+        // Navigate to messages page (the ProfileMessages component will handle loading the conversation)
+        navigate('/messages');
+      } else {
+        // Create a new group conversation
+        const { data: newConv, error } = await supabase
+          .from('conversations')
+          .insert({
+            type: 'group',
+            group_id: groupId
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating group conversation:', error);
+          toast({
+            title: "Error",
+            description: "Failed to create group conversation.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Navigate to messages page
+        navigate('/messages');
+      }
+    } catch (error) {
+      console.error('Error handling group message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open group messages.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!user) {
     return null; // Will redirect to auth
   }
@@ -620,10 +667,12 @@ const Profile = () => {
                     {groups.map((group) => (
                       <div 
                         key={group.id} 
-                        className="flex items-center justify-between p-3 rounded-md bg-secondary/50 hover:bg-secondary cursor-pointer transition-colors"
-                        onClick={() => navigate(`/group/${group.id}`)}
+                        className="flex items-center justify-between p-3 rounded-md bg-secondary/50 hover:bg-secondary transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div 
+                          className="flex items-center gap-3 flex-1 cursor-pointer"
+                          onClick={() => navigate(`/group/${group.id}`)}
+                        >
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="font-medium text-foreground">{group.name}</h4>
@@ -639,27 +688,39 @@ const Profile = () => {
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleFavoriteGroup(group.id);
-                          }}
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          {favoriteGroupIds.includes(group.id) ? (
-                            <>
-                              <Star size={16} className="mr-1 fill-current text-yellow-500" />
-                              Unfavorite
-                            </>
-                          ) : (
-                            <>
-                              <Star size={16} className="mr-1" />
-                              Favorite ({favoriteGroupIds.length}/3)
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMessageGroup(group.id);
+                            }}
+                          >
+                            <MessageCircle size={16} className="text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleFavoriteGroup(group.id);
+                            }}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            {favoriteGroupIds.includes(group.id) ? (
+                              <>
+                                <Star size={16} className="mr-1 fill-current text-yellow-500" />
+                                Unfavorite
+                              </>
+                            ) : (
+                              <>
+                                <Star size={16} className="mr-1" />
+                                Favorite ({favoriteGroupIds.length}/3)
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
