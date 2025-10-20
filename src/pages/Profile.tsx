@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Settings, Star, Plus, MessageCircle } from "lucide-react";
+import { Star, Plus, MessageCircle, Crown, UserPlus, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,8 @@ interface Group {
   owner_id: string;
   role: 'owner' | 'admin' | 'member';
   member_count: number;
+  created_at?: string;
+  description?: string;
 }
 
 const Profile = () => {
@@ -147,7 +149,7 @@ const Profile = () => {
       const { data: groupsData } = await (supabase as any)
         .from('group_members')
         .select(`
-          groups(id, name, owner_id),
+          groups(id, name, owner_id, created_at),
           role
         `)
         .eq('user_id', user.id);
@@ -165,7 +167,8 @@ const Profile = () => {
             name: g.groups.name,
             owner_id: g.groups.owner_id,
             role: g.role,
-            member_count: count || 0
+            member_count: count || 0,
+            created_at: g.groups.created_at
           };
         })
       );
@@ -433,6 +436,46 @@ const Profile = () => {
     }
   };
 
+  const handleLeaveGroup = async (groupId: string, groupName: string) => {
+    if (!user) return;
+
+    const confirmed = window.confirm(`Are you sure you want to leave "${groupName}"?`);
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Left group",
+        description: `You have left ${groupName}`,
+      });
+
+      loadUserData();
+    } catch (error) {
+      console.error('Error leaving group:', error);
+      toast({
+        title: "Error",
+        description: "Failed to leave group.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getGroupInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (!user) {
     return null; // Will redirect to auth
   }
@@ -440,8 +483,8 @@ const Profile = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-foreground">Groups</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-foreground">My Groups</h1>
           <div className="flex items-center gap-2">
             <AddFriendDialog />
             <MessagesSheet />
@@ -449,22 +492,27 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
-            {/* Create Group */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-primary flex items-center gap-2">
-                    <Settings size={20} />
-                    My Groups
-                  </CardTitle>
-                  <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm">
-                        <Plus size={16} className="mr-2" />
-                        Create Group
-                      </Button>
-                    </DialogTrigger>
+        <p className="text-muted-foreground text-sm mb-6">
+          Connect and compete with your golf friends
+        </p>
+
+        {/* Action buttons */}
+        <div className="flex gap-3 mb-6">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => navigate('/accept-invite')}
+          >
+            <UserPlus size={16} className="mr-2" />
+            Check Invitations
+          </Button>
+          <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex-1">
+                <Plus size={16} className="mr-2" />
+                Create Group
+              </Button>
+            </DialogTrigger>
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle className="text-xl font-semibold text-center">Create New Group</DialogTitle>
@@ -648,78 +696,108 @@ const Profile = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {groups.length > 0 ? (
-                  <div className="space-y-3">
-                    {groups.map((group) => (
-                      <div 
-                        key={group.id} 
-                        className="flex items-center justify-between p-3 rounded-md bg-secondary/50 hover:bg-secondary transition-colors"
-                      >
-                        <div 
-                          className="flex items-center gap-3 flex-1 cursor-pointer"
-                          onClick={() => navigate(`/group/${group.id}`)}
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium text-foreground">{group.name}</h4>
-                              {favoriteGroupIds.includes(group.id) && (
-                                <Star size={16} className="text-yellow-500 fill-current" />
-                              )}
-                              <Badge variant="outline" className="text-xs">
-                                {group.role}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {group.member_count} members
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMessageGroup(group.id);
-                            }}
-                          >
-                            <MessageCircle size={16} className="text-primary" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleFavoriteGroup(group.id);
-                            }}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            {favoriteGroupIds.includes(group.id) ? (
-                              <>
-                                <Star size={16} className="mr-1 fill-current text-yellow-500" />
-                                Unfavorite
-                              </>
-                            ) : (
-                              <>
-                                <Star size={16} className="mr-1" />
-                                Favorite ({favoriteGroupIds.length}/3)
-                              </>
-                            )}
-                          </Button>
-                        </div>
+        </div>
+
+        {/* Groups List */}
+        <div className="space-y-4">
+          {groups.length > 0 ? (
+            groups.map((group) => (
+              <Card key={group.id} className="border-border">
+                <CardContent className="p-4">
+                  <div className="flex gap-4">
+                    {/* Group Avatar */}
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-lg font-bold text-foreground">
+                          {getGroupInitials(group.name)}
+                        </span>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Group Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground">{group.name}</h3>
+                          {(group.role === 'owner' || group.role === 'admin') && (
+                            <Crown size={16} className="text-yellow-500 fill-current" />
+                          )}
+                        </div>
+                        {(group.role === 'owner' || group.role === 'admin') && (
+                          <Badge variant="secondary" className="text-xs">
+                            {group.role}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
+                      </p>
+
+                      {group.description && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {group.description}
+                        </p>
+                      )}
+
+                      {group.created_at && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                          <Calendar size={12} />
+                          <span>Created {new Date(group.created_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => navigate(`/profile?tab=leaderboards`)}
+                        >
+                          View Leaderboard
+                        </Button>
+                        {group.role !== 'owner' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLeaveGroup(group.id, group.name)}
+                          >
+                            Leave
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleFavoriteGroup(group.id)}
+                        >
+                          <Star 
+                            size={16} 
+                            className={favoriteGroupIds.includes(group.id) ? "fill-current text-yellow-500" : ""} 
+                          />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleMessageGroup(group.id)}
+                        >
+                          <MessageCircle size={16} />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-8">
-                    No groups yet. Create a group to get started!
-                  </p>
-                )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card className="border-border">
+              <CardContent className="p-8">
+                <p className="text-muted-foreground text-sm text-center">
+                  No groups yet. Create a group to get started!
+                </p>
               </CardContent>
             </Card>
+          )}
         </div>
       </div>
     </div>
