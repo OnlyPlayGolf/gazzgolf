@@ -140,7 +140,7 @@ const ProfileSettings = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-foreground">Profile Settings</h1>
+          <h1 className="text-xl font-bold text-foreground">Personal Information</h1>
           <Button
             variant="outline"
             size="sm"

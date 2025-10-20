@@ -7,7 +7,7 @@ const Menu = () => {
   const navigate = useNavigate();
   
   const menuItems = [
-    { id: 'profile', label: 'Profile Settings', icon: User, available: true, path: '/profile-settings' },
+    { id: 'profile', label: 'Personal Information', icon: User, available: true, path: '/profile-settings' },
     { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/messages' },
     { id: 'leaderboards', label: 'Leaderboards', icon: Trophy, available: true, path: '/leaderboards' },
     { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
