@@ -739,11 +739,12 @@ const Profile = () => {
                       )}
 
                       {/* Action Buttons */}
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="default"
                           size="sm"
                           onClick={() => navigate(`/group/${group.id}`)}
+                          className="flex-shrink-0"
                         >
                           View Leaderboard
                         </Button>
@@ -752,36 +753,42 @@ const Profile = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleLeaveGroup(group.id, group.name)}
+                            className="flex-shrink-0"
                           >
                             Leave
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleFavoriteGroup(group.id)}
-                        >
-                          <Star 
-                            size={16} 
-                            className={favoriteGroupIds.includes(group.id) ? "fill-current text-yellow-500" : ""} 
-                          />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/group/${group.id}?view=members`)}
-                          title="View members"
-                        >
-                          <Users size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleMessageGroup(group.id)}
-                          title="Message group"
-                        >
-                          <MessageCircle size={16} />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleFavoriteGroup(group.id)}
+                            className="flex-shrink-0"
+                          >
+                            <Star 
+                              size={16} 
+                              className={favoriteGroupIds.includes(group.id) ? "fill-current text-yellow-500" : ""} 
+                            />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/group/${group.id}?view=members`)}
+                            title="View members"
+                            className="flex-shrink-0"
+                          >
+                            <Users size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMessageGroup(group.id)}
+                            title="Message group"
+                            className="flex-shrink-0"
+                          >
+                            <MessageCircle size={16} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
