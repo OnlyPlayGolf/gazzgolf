@@ -404,41 +404,22 @@ const Profile = () => {
 
   const handleMessageGroup = async (groupId: string) => {
     try {
-      // Check if a conversation already exists for this group
-      const { data: existingConv } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('type', 'group')
-        .eq('group_id', groupId)
-        .maybeSingle();
+      // Use the database function to ensure the conversation exists
+      const { data: conversationId, error } = await supabase
+        .rpc('ensure_group_conversation', { p_group_id: groupId });
 
-      if (existingConv) {
-        // Navigate to messages page (the ProfileMessages component will handle loading the conversation)
-        navigate('/messages');
-      } else {
-        // Create a new group conversation
-        const { data: newConv, error } = await supabase
-          .from('conversations')
-          .insert({
-            type: 'group',
-            group_id: groupId
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating group conversation:', error);
-          toast({
-            title: "Error",
-            description: "Failed to create group conversation.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Navigate to messages page
-        navigate('/messages');
+      if (error) {
+        console.error('Error getting group conversation:', error);
+        toast({
+          title: "Error",
+          description: "Failed to open group conversation.",
+          variant: "destructive",
+        });
+        return;
       }
+
+      // Navigate to messages page with the conversation ID
+      navigate(`/messages?conversation=${conversationId}`);
     } catch (error) {
       console.error('Error handling group message:', error);
       toast({

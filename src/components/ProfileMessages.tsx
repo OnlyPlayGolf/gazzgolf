@@ -7,6 +7,7 @@ import { Search, Send, ArrowLeft, Users, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 
 const MessageBubble = ({ message, currentUserId }: { message: Message; currentUserId: string | null }) => {
   const isOwnMessage = message.sender_id === currentUserId;
@@ -57,6 +58,7 @@ type FilterType = 'all' | 'groups' | 'friends';
 
 export const ProfileMessages = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -83,6 +85,17 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     loadConversations();
   }, []);
+
+  // Auto-select conversation from URL parameter
+  useEffect(() => {
+    const conversationId = searchParams.get('conversation');
+    if (conversationId && conversations.length > 0) {
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (conversation) {
+        setSelectedConversation(conversation);
+      }
+    }
+  }, [searchParams, conversations]);
 
   useEffect(() => {
     if (selectedConversation) {
