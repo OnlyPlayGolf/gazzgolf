@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Star, Plus, MessageCircle, Crown, UserPlus, Calendar } from "lucide-react";
+import { Star, Plus, MessageCircle, Crown, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +29,6 @@ interface Group {
   owner_id: string;
   role: 'owner' | 'admin' | 'member';
   member_count: number;
-  created_at?: string;
   description?: string;
 }
 
@@ -149,7 +148,7 @@ const Profile = () => {
       const { data: groupsData } = await (supabase as any)
         .from('group_members')
         .select(`
-          groups(id, name, owner_id, created_at),
+          groups(id, name, owner_id),
           role
         `)
         .eq('user_id', user.id);
@@ -167,8 +166,7 @@ const Profile = () => {
             name: g.groups.name,
             owner_id: g.groups.owner_id,
             role: g.role,
-            member_count: count || 0,
-            created_at: g.groups.created_at
+            member_count: count || 0
           };
         })
       );
@@ -725,26 +723,19 @@ const Profile = () => {
                         </div>
                         {(group.role === 'owner' || group.role === 'admin') && (
                           <Badge variant="secondary" className="text-xs">
-                            {group.role}
+                            admin
                           </Badge>
                         )}
                       </div>
 
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <p className="text-sm text-muted-foreground mb-3">
                         {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
                       </p>
 
                       {group.description && (
-                        <p className="text-sm text-muted-foreground mb-2">
+                        <p className="text-sm text-muted-foreground mb-3">
                           {group.description}
                         </p>
-                      )}
-
-                      {group.created_at && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-                          <Calendar size={12} />
-                          <span>Created {new Date(group.created_at).toLocaleDateString()}</span>
-                        </div>
                       )}
 
                       {/* Action Buttons */}
@@ -753,7 +744,7 @@ const Profile = () => {
                           variant="default"
                           size="sm"
                           className="flex-1"
-                          onClick={() => navigate(`/profile?tab=leaderboards`)}
+                          onClick={() => navigate(`/group/${group.id}`)}
                         >
                           View Leaderboard
                         </Button>
