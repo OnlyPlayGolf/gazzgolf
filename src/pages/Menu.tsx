@@ -1,15 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Users, Settings, Info, MessageSquare, ChevronRight, Zap, TrendingUp } from "lucide-react";
+import { User, Users, Settings, Info, MessageSquare, ChevronRight, Zap, TrendingUp, Trophy, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Menu = () => {
   const navigate = useNavigate();
   
   const menuItems = [
-    { id: 'profile', label: 'Profile', icon: User, available: true, path: '/profile' },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/profile' },
-    { id: 'leaderboards', label: 'Leaderboards', icon: TrendingUp, available: true, path: '/profile' },
+    { id: 'profile', label: 'Profile Settings', icon: User, available: true, path: '/profile-settings' },
+    { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/messages' },
+    { id: 'leaderboards', label: 'Leaderboards', icon: Trophy, available: true, path: '/leaderboards' },
     { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
     { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
     { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },
@@ -74,7 +74,7 @@ const Menu = () => {
               >
                 <a href="mailto:feedback@golftraining.app" className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-3">
-                    <MessageSquare size={20} className="text-primary" />
+                    <Mail size={20} className="text-primary" />
                     <div>
                       <div className="font-medium text-foreground">Feedback</div>
                       <div className="text-xs text-muted-foreground">Send us your thoughts</div>
