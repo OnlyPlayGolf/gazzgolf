@@ -7,10 +7,12 @@ const Menu = () => {
   const navigate = useNavigate();
   
   const menuItems = [
+    { id: 'profile', label: 'Profile', icon: User, available: true, path: '/profile' },
+    { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/profile' },
+    { id: 'leaderboards', label: 'Leaderboards', icon: TrendingUp, available: true, path: '/profile' },
     { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
     { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
     { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },
-    { id: 'profile', label: 'Profile', icon: User, available: true, path: '/profile' },
     { id: 'settings', label: 'Settings', icon: Settings, available: false },
     { id: 'about', label: 'About', icon: Info, available: false },
   ];
