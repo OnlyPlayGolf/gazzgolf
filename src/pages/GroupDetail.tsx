@@ -438,73 +438,95 @@ const GroupDetail = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/profile?tab=groups')}
+            onClick={() => navigate('/profile')}
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-xl font-bold text-foreground">{group.name}</h1>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
+            <p className="text-sm text-muted-foreground">{members.length} members</p>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Members ({members.length})</CardTitle>
-              <div className="flex gap-2">
-                {canAddMembers && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        loadCurrentInvite();
-                        setIsInviteOpen(true);
-                      }}
-                    >
-                      <Link2 size={16} className="mr-2" />
-                      Invite Link
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        loadFriendsForAdding();
-                        loadCurrentInvite();
-                        setIsAddMembersOpen(true);
-                      }}
-                    >
-                      <UserPlus size={16} className="mr-2" />
-                      Add Members
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {members.map((member) => (
-              <div key={member.user_id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>
-                      {(member.display_name || member.username || 'U')[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-foreground flex items-center gap-2">
-                      {member.display_name || member.username || 'Unknown'}
-                      {getRoleIcon(member.role)}
+        <Tabs defaultValue="members" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="members" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Group Members</CardTitle>
+                  {canAddMembers && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          loadCurrentInvite();
+                          setIsInviteOpen(true);
+                        }}
+                      >
+                        <Link2 size={16} className="mr-2" />
+                        Invite Link
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          loadFriendsForAdding();
+                          loadCurrentInvite();
+                          setIsAddMembersOpen(true);
+                        }}
+                      >
+                        <UserPlus size={16} className="mr-2" />
+                        Add Members
+                      </Button>
                     </div>
-                    {member.username && member.display_name && (
-                      <div className="text-sm text-muted-foreground">@{member.username}</div>
-                    )}
-                  </div>
+                  )}
                 </div>
-                <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
-                  {member.role}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {members.map((member) => (
+                  <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        {member.avatar_url ? (
+                          <img src={member.avatar_url} alt={member.display_name || member.username || 'User'} className="object-cover" />
+                        ) : (
+                          <AvatarFallback className="text-lg">
+                            {(member.display_name || member.username || 'U')[0].toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-foreground flex items-center gap-2">
+                          {member.display_name || member.username || 'Unknown'}
+                          {getRoleIcon(member.role)}
+                        </div>
+                        {member.username && member.display_name && (
+                          <div className="text-sm text-muted-foreground">@{member.username}</div>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant={member.role === 'owner' ? 'default' : 'secondary'} className="capitalize">
+                      {member.role === 'owner' ? 'admin' : member.role}
+                    </Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="leaderboard" className="space-y-4">
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">Group leaderboard coming soon</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={isAddMembersOpen} onOpenChange={setIsAddMembersOpen}>
