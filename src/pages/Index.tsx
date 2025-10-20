@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap, Star } from "lucide-react";
+import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap, Star, Menu as MenuIcon, User as UserIcon, MessageSquare, Settings, Info, Mail } from "lucide-react";
 import { getLevelsWithProgress } from "@/utils/levelsManager";
-import { AddFriendDialog } from "@/components/AddFriendDialog";
-import { NotificationsSheet } from "@/components/NotificationsSheet";
-import { MessagesSheet } from "@/components/MessagesSheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -25,6 +26,18 @@ const Index = () => {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const menuItems = [
+    { id: 'profile', label: 'Personal Information', icon: UserIcon, available: true, path: '/profile-settings' },
+    { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/messages' },
+    { id: 'leaderboards', label: 'Leaderboards', icon: Trophy, available: true, path: '/leaderboards' },
+    { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
+    { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
+    { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },
+    { id: 'settings', label: 'Settings', icon: Settings, available: false },
+    { id: 'about', label: 'About', icon: Info, available: false },
+  ];
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -199,14 +212,81 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="p-4 space-y-6">
-        {/* Header with Actions */}
+        {/* Header with Menu */}
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-foreground">Home</h1>
-          <div className="flex items-center gap-2">
-            <AddFriendDialog />
-            <MessagesSheet />
-            <NotificationsSheet />
-          </div>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MenuIcon size={24} className="text-foreground" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <div className="space-y-4 mt-8">
+                {menuItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card key={item.id} className="border-border">
+                      <CardContent className="p-0">
+                        <Button
+                          variant="ghost"
+                          disabled={!item.available}
+                          onClick={item.available && item.path ? () => { 
+                            navigate(item.path); 
+                            setMenuOpen(false);
+                          } : undefined}
+                          className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-3">
+                              <Icon 
+                                size={20} 
+                                className={item.available ? "text-primary" : "text-muted-foreground"} 
+                              />
+                              <div>
+                                <div className={`font-medium ${item.available ? "text-foreground" : "text-muted-foreground"}`}>
+                                  {item.label}
+                                </div>
+                                {!item.available && (
+                                  <div className="text-xs text-muted-foreground">Coming soon</div>
+                                )}
+                              </div>
+                            </div>
+                            <ChevronRight 
+                              size={16} 
+                              className={item.available ? "text-muted-foreground" : "text-muted-foreground"} 
+                            />
+                          </div>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                {/* Feedback Link */}
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      asChild
+                      className="w-full h-auto p-4 justify-start text-left"
+                    >
+                      <a href="mailto:feedback@golftraining.app" className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <Mail size={20} className="text-primary" />
+                          <div>
+                            <div className="font-medium text-foreground">Feedback</div>
+                            <div className="text-xs text-muted-foreground">Send us your thoughts</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Profile Header */}
