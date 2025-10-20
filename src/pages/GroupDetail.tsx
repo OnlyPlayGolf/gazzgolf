@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,12 +46,12 @@ interface LeaderboardEntry {
 const GroupDetail = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   const [user, setUser] = useState<any>(null);
   const [group, setGroup] = useState<any>(null);
   const [members, setMembers] = useState<Member[]>([]);
-  const [isAddMembersOpen, setIsAddMembersOpen] = useState(false);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchResults, setSearchResults] = useState<Friend[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,11 +75,16 @@ const GroupDetail = () => {
   const [inviteExpiry, setInviteExpiry] = useState("");
   const [inviteMaxUses, setInviteMaxUses] = useState("");
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-    });
-  }, []);
+useEffect(() => {
+  supabase.auth.getUser().then(({ data: { user } }) => {
+    setUser(user);
+
+    // Open members view if requested via URL
+    if (searchParams.get('view') === 'members') {
+      setViewMembersOpen(true);
+    }
+  });
+}, [searchParams]);
 
   useEffect(() => {
     if (groupId && user) {
@@ -986,7 +991,7 @@ const GroupDetail = () => {
           </Tabs>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setIsAddMembersOpen(false)}>
+            <Button variant="outline" onClick={() => setAddMembersDialogOpen(false)}>
               Cancel
             </Button>
             <Button

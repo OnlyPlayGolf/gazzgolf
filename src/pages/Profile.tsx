@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Star, Plus, MessageCircle, Crown, UserPlus } from "lucide-react";
+import { Star, Plus, MessageCircle, Crown, UserPlus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -743,7 +743,6 @@ const Profile = () => {
                         <Button
                           variant="default"
                           size="sm"
-                          className="flex-1"
                           onClick={() => navigate(`/group/${group.id}`)}
                         >
                           View Leaderboard
@@ -770,7 +769,16 @@ const Profile = () => {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => navigate(`/group/${group.id}?view=members`)}
+                          title="View members"
+                        >
+                          <Users size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleMessageGroup(group.id)}
+                          title="Message group"
                         >
                           <MessageCircle size={16} />
                         </Button>
