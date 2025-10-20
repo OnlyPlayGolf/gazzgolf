@@ -2,16 +2,17 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface Member {
   user_id: string;
@@ -26,6 +27,20 @@ interface Friend {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
+}
+
+interface Drill {
+  id: string;
+  title: string;
+  lower_is_better: boolean;
+}
+
+interface LeaderboardEntry {
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  best_score: number;
 }
 
 const GroupDetail = () => {
@@ -44,6 +59,12 @@ const GroupDetail = () => {
   const [loading, setLoading] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'admin' | 'member' | null>(null);
   
+  // Leaderboard state
+  const [drills, setDrills] = useState<Drill[]>([]);
+  const [selectedDrill, setSelectedDrill] = useState<string | null>(null);
+  const [drillLeaderboard, setDrillLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  
   // Invite management state
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [currentInvite, setCurrentInvite] = useState<any>(null);
@@ -59,6 +80,7 @@ const GroupDetail = () => {
   useEffect(() => {
     if (groupId && user) {
       loadGroupData();
+      loadDrills();
     }
   }, [groupId, user]);
 
@@ -132,6 +154,115 @@ const GroupDetail = () => {
     // Set current user's role
     const myMembership = membersList.find(m => m.user_id === user.id);
     setCurrentUserRole(myMembership?.role || null);
+  };
+
+  const loadDrills = async () => {
+    const { data } = await supabase
+      .from('drills')
+      .select('id, title, lower_is_better')
+      .order('title');
+
+    if (data && data.length > 0) {
+      setDrills(data);
+      setSelectedDrill(data[0].title);
+      loadDrillLeaderboard(data[0].title, data[0].lower_is_better);
+    }
+  };
+
+  const loadDrillLeaderboard = async (drillTitle: string, lowerIsBetter: boolean) => {
+    if (!groupId) return;
+
+    setLoadingLeaderboard(true);
+    try {
+      // Get drill ID
+      const { data: drillData } = await supabase
+        .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
+
+      if (!drillData) {
+        setDrillLeaderboard([]);
+        setLoadingLeaderboard(false);
+        return;
+      }
+
+      // Get all group members
+      const { data: groupMembers } = await supabase
+        .from('group_members')
+        .select('user_id')
+        .eq('group_id', groupId);
+
+      if (!groupMembers || groupMembers.length === 0) {
+        setDrillLeaderboard([]);
+        setLoadingLeaderboard(false);
+        return;
+      }
+
+      const memberIds = groupMembers.map(m => m.user_id);
+
+      // Get best scores for all group members
+      const { data: memberScores } = await supabase
+        .from('drill_results')
+        .select('user_id, total_points')
+        .eq('drill_id', drillData)
+        .in('user_id', memberIds);
+
+      // Calculate best score for each member
+      const memberBestScores = new Map<string, number>();
+      if (memberScores) {
+        memberScores.forEach((score: any) => {
+          const currentBest = memberBestScores.get(score.user_id);
+          if (currentBest === undefined) {
+            memberBestScores.set(score.user_id, score.total_points);
+          } else {
+            memberBestScores.set(
+              score.user_id,
+              lowerIsBetter 
+                ? Math.min(currentBest, score.total_points)
+                : Math.max(currentBest, score.total_points)
+            );
+          }
+        });
+      }
+
+      // Get profiles for members with scores
+      const memberIdsWithScores = Array.from(memberBestScores.keys());
+      if (memberIdsWithScores.length === 0) {
+        setDrillLeaderboard([]);
+        setLoadingLeaderboard(false);
+        return;
+      }
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url')
+        .in('id', memberIdsWithScores);
+
+      // Build and sort leaderboard
+      let leaderboard: LeaderboardEntry[] = [];
+      if (profiles) {
+        leaderboard = profiles.map((profile: any) => ({
+          user_id: profile.id,
+          display_name: profile.display_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url,
+          best_score: memberBestScores.get(profile.id)!
+        }));
+
+        leaderboard.sort((a, b) => {
+          if (lowerIsBetter) {
+            return a.best_score - b.best_score;
+          } else {
+            return b.best_score - a.best_score;
+          }
+        });
+      }
+
+      setDrillLeaderboard(leaderboard);
+    } catch (error) {
+      console.error('Error loading drill leaderboard:', error);
+      setDrillLeaderboard([]);
+    } finally {
+      setLoadingLeaderboard(false);
+    }
   };
 
   const loadFriendsForAdding = async () => {
@@ -520,11 +651,100 @@ const GroupDetail = () => {
           </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-4">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">Group leaderboard coming soon</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              {/* Drill Selector */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Select Drill</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <select
+                    className="w-full p-2 rounded-md border border-border bg-background text-foreground"
+                    value={selectedDrill || ''}
+                    onChange={(e) => {
+                      const drill = drills.find(d => d.title === e.target.value);
+                      if (drill) {
+                        setSelectedDrill(drill.title);
+                        loadDrillLeaderboard(drill.title, drill.lower_is_better);
+                      }
+                    }}
+                  >
+                    {drills.map((drill) => (
+                      <option key={drill.id} value={drill.title}>
+                        {drill.title}
+                      </option>
+                    ))}
+                  </select>
+                </CardContent>
+              </Card>
+
+              {/* Leaderboard */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-primary">
+                    <Trophy size={18} />
+                    {selectedDrill} Leaderboard
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loadingLeaderboard ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Loading leaderboard...</p>
+                    </div>
+                  ) : drillLeaderboard.length > 0 ? (
+                    <div className="space-y-3">
+                      {drillLeaderboard.map((entry, index) => (
+                        <div 
+                          key={entry.user_id} 
+                          className={cn(
+                            "flex items-center justify-between p-3 rounded-md",
+                            entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "flex items-center justify-center w-8 h-8 rounded-full font-bold",
+                              index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                              index === 1 ? "bg-gray-400/20 text-gray-400" :
+                              index === 2 ? "bg-orange-500/20 text-orange-500" :
+                              "bg-primary/20 text-primary"
+                            )}>
+                              {index === 0 ? (
+                                <Crown size={16} className="text-yellow-500" />
+                              ) : (
+                                `#${index + 1}`
+                              )}
+                            </div>
+                            <Avatar className="h-8 w-8">
+                              {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
+                              <AvatarFallback className="bg-primary/20 text-primary">
+                                {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className={cn(
+                              "font-medium",
+                              entry.user_id === user?.id && "font-bold text-primary"
+                            )}>
+                              {entry.display_name || entry.username || "Unknown"}
+                              {entry.user_id === user?.id && " (You)"}
+                            </span>
+                          </div>
+                          <Badge variant="outline" className={cn(
+                            entry.user_id === user?.id && "border-primary text-primary"
+                          )}>
+                            {entry.best_score}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      No members have played this drill yet.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
