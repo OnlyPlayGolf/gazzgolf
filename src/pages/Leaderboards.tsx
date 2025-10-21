@@ -9,7 +9,7 @@ import { Users, Trophy, Star, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { syncLocalLevelsToDB } from "@/utils/levelsManager";
+
 
 interface LevelLeaderboardEntry {
   user_id: string;
@@ -106,7 +106,7 @@ const Leaderboards = () => {
     if (!user) return;
 
     try {
-      await syncLocalLevelsToDB();
+      // Disabled auto-sync from local storage to DB to avoid false positives
 
       const { data: friendsData, error: friendsError } = await supabase
         .rpc('friends_level_leaderboard');
