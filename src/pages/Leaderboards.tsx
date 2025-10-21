@@ -17,8 +17,8 @@ interface LevelLeaderboardEntry {
   username: string | null;
   avatar_url: string | null;
   completed_levels: number;
-  current_level: string | null;
-  current_difficulty: string | null;
+  highest_level: number | null;
+  category: string;
 }
 
 interface Drill {
@@ -230,9 +230,9 @@ const Leaderboards = () => {
                                 {entry.display_name || entry.username || 'Unknown'}
                                 {isCurrentUser && ' (You)'}
                               </p>
-                              {entry.current_level && (
+                              {entry.highest_level && (
                                 <p className="text-xs text-muted-foreground">
-                                  Current: {entry.current_level}
+                                  Level {entry.highest_level} • {entry.category}
                                 </p>
                               )}
                             </div>
@@ -287,9 +287,9 @@ const Leaderboards = () => {
                                 {entry.display_name || entry.username || 'Unknown'}
                                 {isCurrentUser && ' (You)'}
                               </p>
-                              {entry.current_level && (
+                              {entry.highest_level && (
                                 <p className="text-xs text-muted-foreground">
-                                  Current: {entry.current_level}
+                                  Level {entry.highest_level} • {entry.category}
                                 </p>
                               )}
                             </div>

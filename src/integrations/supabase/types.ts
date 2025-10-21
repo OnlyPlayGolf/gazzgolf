@@ -386,6 +386,7 @@ export type Database = {
           created_at: string
           id: string
           level_id: string
+          level_number: number | null
           updated_at: string
           user_id: string
         }
@@ -396,6 +397,7 @@ export type Database = {
           created_at?: string
           id?: string
           level_id: string
+          level_number?: number | null
           updated_at?: string
           user_id: string
         }
@@ -406,6 +408,7 @@ export type Database = {
           created_at?: string
           id?: string
           level_id?: string
+          level_number?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -658,10 +661,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           avatar_url: string
+          category: string
           completed_levels: number
-          current_difficulty: string
-          current_level: string
           display_name: string
+          highest_level: number
           user_id: string
           username: string
         }[]
@@ -680,10 +683,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           avatar_url: string
+          category: string
           completed_levels: number
-          current_difficulty: string
-          current_level: string
           display_name: string
+          highest_level: number
           user_id: string
           username: string
         }[]

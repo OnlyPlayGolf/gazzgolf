@@ -64,6 +64,11 @@ export const completeLevelz = async (levelId: string, attempts: number = 1) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Get the level number from the loaded levels
+    const levels = loadLevels();
+    const level = levels.find(l => l.id === levelId);
+    const levelNumber = level?.level ?? null;
+
     const { data: existing } = await supabase
       .from('level_progress')
       .select('id, attempts, completed')
@@ -78,6 +83,7 @@ export const completeLevelz = async (levelId: string, attempts: number = 1) => {
           completed: true,
           completed_at: new Date().toISOString(),
           attempts: attempts ?? existing.attempts ?? 1,
+          level_number: levelNumber,
           updated_at: new Date().toISOString(),
         })
         .eq('id', (existing as any).id);
@@ -90,6 +96,7 @@ export const completeLevelz = async (levelId: string, attempts: number = 1) => {
           completed: true,
           completed_at: new Date().toISOString(),
           attempts: attempts ?? 1,
+          level_number: levelNumber,
           updated_at: new Date().toISOString(),
         });
     }
@@ -106,9 +113,15 @@ export const syncLocalLevelsToDB = async () => {
 
     const progress = getLevelProgress();
     const entries = Object.values(progress);
+    const levels = loadLevels();
 
     for (const entry of entries) {
       if (!entry?.levelId) continue;
+      
+      // Get the level number from the loaded levels
+      const level = levels.find(l => l.id === entry.levelId);
+      const levelNumber = level?.level ?? null;
+      
       const { data: existing } = await supabase
         .from('level_progress')
         .select('id, attempts, completed')
@@ -123,6 +136,7 @@ export const syncLocalLevelsToDB = async () => {
             completed: true,
             completed_at: new Date().toISOString(),
             attempts: entry.attempts ?? existing.attempts ?? 1,
+            level_number: levelNumber,
             updated_at: new Date().toISOString(),
           })
           .eq('id', (existing as any).id);
@@ -135,6 +149,7 @@ export const syncLocalLevelsToDB = async () => {
             completed: true,
             completed_at: new Date().toISOString(),
             attempts: entry.attempts ?? 1,
+            level_number: levelNumber,
             updated_at: new Date().toISOString(),
           });
       }
