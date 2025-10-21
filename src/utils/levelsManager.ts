@@ -14,18 +14,28 @@ export const generateLevelId = (title: string): string => {
     .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
 };
 
-// Load and process levels data
+// Load and process levels data with sequential numbering
 export const loadLevels = (): Level[] => {
-  return levelsData.map((levelData: any) => ({
-    id: generateLevelId(levelData.Title),
-    level: levelData.Level,
-    title: levelData.Title,
-    description: levelData.Description,
-    distance: levelData.Distance,
-    target: levelData.Target,
-    type: levelData.Type,
-    difficulty: levelData.Difficulty,
-  }));
+  return levelsData.map((levelData: any) => {
+    // Apply offset based on difficulty for sequential numbering
+    const offsets: Record<string, number> = {
+      'Beginner': 0,      // 1-100
+      'Intermediate': 100, // 101-200
+      'Amateur': 200,     // 201-300
+      'Professional': 300 // 301-400
+    };
+    
+    return {
+      id: generateLevelId(levelData.Title),
+      level: levelData.Level + (offsets[levelData.Difficulty] || 0),
+      title: levelData.Title,
+      description: levelData.Description,
+      distance: levelData.Distance,
+      target: levelData.Target,
+      type: levelData.Type,
+      difficulty: levelData.Difficulty,
+    };
+  });
 };
 
 // Get level progress from storage

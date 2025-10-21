@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Updated Levels</title>
+    <script type="module">
+        // Fetch and transform levels
+        fetch('/src/data/levels.json')
+            .then(r => r.json())
+            .then(data => {
+                const updated = data.map(level => {
+                    const offsets = {
+                        'Beginner': 0,
+                        'Intermediate': 100,
+                        'Amateur': 200,
+                        'Professional': 300
+                    };
+                    
+                    return {
+                        ...level,
+                        Level: level.Level + (offsets[level.Difficulty] || 0)
+                    };
+                });
+                
+                // Download the file
+                const blob = new Blob([JSON.stringify(updated, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'levels.json';
+                a.click();
+                
+                document.getElementById('status').textContent = 'Download started! Replace src/data/levels.json with the downloaded file.';
+            });
+    </script>
+</head>
+<body>
+    <h1>Generating Updated Levels...</h1>
+    <p id="status">Processing...</p>
+</body>
+</html>
