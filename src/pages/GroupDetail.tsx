@@ -43,6 +43,16 @@ interface LeaderboardEntry {
   best_score: number;
 }
 
+interface GroupLevelLeaderboardEntry {
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  completed_levels: number;
+  highest_level: number | null;
+  category: string;
+}
+
 const GroupDetail = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
@@ -64,6 +74,8 @@ const GroupDetail = () => {
   const [selectedDrill, setSelectedDrill] = useState<string | null>(null);
   const [drillLeaderboard, setDrillLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  const [groupLevelsLeaderboard, setGroupLevelsLeaderboard] = useState<GroupLevelLeaderboardEntry[]>([]);
+  const [loadingGroupLevels, setLoadingGroupLevels] = useState(false);
   
   // Dialog states
   const [viewMembersOpen, setViewMembersOpen] = useState(false);
@@ -90,6 +102,7 @@ useEffect(() => {
     if (groupId && user) {
       loadGroupData();
       loadDrills();
+      loadGroupLevelsLeaderboard();
     }
   }, [groupId, user]);
 
@@ -271,6 +284,26 @@ useEffect(() => {
       setDrillLeaderboard([]);
     } finally {
       setLoadingLeaderboard(false);
+    }
+  };
+
+  const loadGroupLevelsLeaderboard = async () => {
+    if (!groupId || !user) return;
+    setLoadingGroupLevels(true);
+    try {
+      const { data, error } = await supabase
+        .rpc('group_level_leaderboard', { p_group_id: groupId });
+      if (error) {
+        console.error('Error loading group levels leaderboard:', error);
+        setGroupLevelsLeaderboard([]);
+      } else {
+        setGroupLevelsLeaderboard(data || []);
+      }
+    } catch (e) {
+      console.error('Error loading group levels leaderboard:', e);
+      setGroupLevelsLeaderboard([]);
+    } finally {
+      setLoadingGroupLevels(false);
     }
   };
 
@@ -630,6 +663,81 @@ useEffect(() => {
                 </option>
               ))}
             </select>
+          </CardContent>
+        </Card>
+
+        {/* Level Progress Leaderboard */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Trophy size={18} />
+              Level Progress Leaderboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingGroupLevels ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading leaderboard...</p>
+              </div>
+            ) : groupLevelsLeaderboard.length > 0 ? (
+              <div className="space-y-3">
+                {groupLevelsLeaderboard.map((entry, index) => (
+                  <div 
+                    key={entry.user_id} 
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-md",
+                      entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-full font-bold",
+                        index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                        index === 1 ? "bg-gray-400/20 text-gray-400" :
+                        index === 2 ? "bg-orange-500/20 text-orange-500" :
+                        "bg-primary/20 text-primary"
+                      )}>
+                        {index === 0 ? (
+                          <Crown size={16} className="text-yellow-500" />
+                        ) : (
+                          `#${index + 1}`
+                        )}
+                      </div>
+                      <Avatar className="h-8 w-8">
+                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
+                        <AvatarFallback className="bg-primary/20 text-primary">
+                          {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <span className={cn(
+                          "font-medium",
+                          entry.user_id === user?.id && "font-bold text-primary"
+                        )}>
+                          {entry.display_name || entry.username || "Unknown"}
+                          {entry.user_id === user?.id && " (You)"}
+                        </span>
+                        {entry.highest_level && (
+                          <p className="text-xs text-muted-foreground">
+                            Level {entry.highest_level} • {entry.category}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
+                      </p>
+                      <p className="text-xs text-muted-foreground">completed</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No completed levels in this group yet.
+              </p>
+            )}
           </CardContent>
         </Card>
 

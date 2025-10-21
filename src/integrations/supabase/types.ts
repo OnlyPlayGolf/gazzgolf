@@ -705,6 +705,18 @@ export type Database = {
           username: string
         }[]
       }
+      group_level_leaderboard: {
+        Args: { p_group_id: string }
+        Returns: {
+          avatar_url: string
+          category: string
+          completed_levels: number
+          display_name: string
+          highest_level: number
+          user_id: string
+          username: string
+        }[]
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
