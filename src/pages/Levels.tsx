@@ -106,7 +106,7 @@ const Levels = () => {
           </div>
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-muted-foreground">Choose a level to start practicing</p>
+              <p className="text-muted-foreground">Complete the levels honestly and be honest with yourself — only true practice builds real skill</p>
             </div>
             <div className="flex items-center gap-2">
               <AddFriendDialog />
