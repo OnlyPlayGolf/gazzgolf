@@ -215,8 +215,7 @@ const Index = () => {
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
         {/* Header with Menu */}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold text-foreground">Home</h1>
+        <div className="flex items-start mb-2">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
