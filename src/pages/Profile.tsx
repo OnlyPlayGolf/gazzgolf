@@ -11,9 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { AddFriendDialog } from "@/components/AddFriendDialog";
-import { NotificationsSheet } from "@/components/NotificationsSheet";
-import { MessagesSheet } from "@/components/MessagesSheet";
+import { TopNavBar } from "@/components/TopNavBar";
 
 interface Friend {
   id: string;
@@ -480,14 +478,10 @@ const Profile = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-foreground">My Groups</h1>
-          <div className="flex items-center gap-2">
-            <AddFriendDialog />
-            <MessagesSheet />
-            <NotificationsSheet />
-          </div>
         </div>
 
         <p className="text-muted-foreground text-sm mb-6">

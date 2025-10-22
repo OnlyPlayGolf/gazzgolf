@@ -3,9 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Lock, Target, Zap, Hammer, Activity, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { AddFriendDialog } from "@/components/AddFriendDialog";
-import { NotificationsSheet } from "@/components/NotificationsSheet";
-import { MessagesSheet } from "@/components/MessagesSheet";
+import { TopNavBar } from "@/components/TopNavBar";
 
 const categories = [
   { id: 'putting', name: 'Putting', icon: Target, enabled: true, description: 'Precision on the green' },
@@ -20,19 +18,11 @@ const DrillsCategories = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         <div className="mb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">Practice Drills</h1>
-              <p className="text-muted-foreground">Choose your skill area to practice</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <AddFriendDialog />
-              <MessagesSheet />
-              <NotificationsSheet />
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Practice Drills</h1>
+          <p className="text-muted-foreground">Choose your skill area to practice</p>
         </div>
 
         <div className="grid gap-4">

@@ -9,9 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
 import { supabase } from "@/integrations/supabase/client";
-import { AddFriendDialog } from "@/components/AddFriendDialog";
-import { NotificationsSheet } from "@/components/NotificationsSheet";
-import { MessagesSheet } from "@/components/MessagesSheet";
+import { TopNavBar } from "@/components/TopNavBar";
 
 const capitalize = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 
@@ -90,7 +88,8 @@ const Levels = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         {/* Header styled like Drills page */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
@@ -107,11 +106,6 @@ const Levels = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-muted-foreground">Complete the levels honestly and be honest with yourself — only true practice builds real skill</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <AddFriendDialog />
-              <MessagesSheet />
-              <NotificationsSheet />
             </div>
           </div>
         </div>

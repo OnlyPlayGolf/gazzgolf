@@ -12,6 +12,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { TopNavBar } from "@/components/TopNavBar";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -211,7 +212,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="p-4 space-y-6">
+      <TopNavBar />
+      <div className="p-4 space-y-6 pt-20">
         {/* Header with Menu */}
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-foreground">Home</h1>
