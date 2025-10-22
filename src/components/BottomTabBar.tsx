@@ -7,7 +7,7 @@ const tabs = [
   { id: 'drills', label: 'Drills', icon: Target, path: '/categories' },
   { id: 'play', label: 'Play', icon: Play, path: '/rounds-play' },
   { id: 'levels', label: 'Levels', icon: TrendingUp, path: '/levels' },
-  { id: 'profile', label: 'Profile', icon: Users, path: '/profile' },
+  { id: 'groups', label: 'Groups', icon: Users, path: '/profile' },
 ];
 
 export const BottomTabBar = () => {

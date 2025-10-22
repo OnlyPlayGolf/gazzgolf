@@ -611,7 +611,7 @@ useEffect(() => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/groups')}
+            onClick={() => navigate('/profile')}
           >
             <ArrowLeft size={20} />
           </Button>

@@ -36,7 +36,6 @@ const Index = () => {
     { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
     { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
     { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },
-    { id: 'groups', label: 'Groups', icon: Users, available: true, path: '/groups' },
     { id: 'settings', label: 'Settings', icon: Settings, available: false },
     { id: 'about', label: 'About', icon: Info, available: false },
   ];
@@ -391,7 +390,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate('/leaderboards')}
+              onClick={() => navigate('/profile?tab=leaderboards')}
             >
               <span className="flex items-center gap-2">
                 <Trophy size={16} />
