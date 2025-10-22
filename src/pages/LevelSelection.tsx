@@ -2,9 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target, Trophy, Star, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { AddFriendDialog } from "@/components/AddFriendDialog";
-import { NotificationsSheet } from "@/components/NotificationsSheet";
-import { MessagesSheet } from "@/components/MessagesSheet";
+import { TopNavBar } from "@/components/TopNavBar";
 
 const LevelSelection = () => {
   const navigate = useNavigate();
@@ -42,18 +40,12 @@ const LevelSelection = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         <div className="mb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">Choose Your Level</h1>
-              <p className="text-muted-foreground">Select your stage and start leveling up.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <AddFriendDialog />
-              <MessagesSheet />
-              <NotificationsSheet />
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Choose Your Level</h1>
+            <p className="text-muted-foreground">Select your stage and start leveling up.</p>
           </div>
         </div>
 
