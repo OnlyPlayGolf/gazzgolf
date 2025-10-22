@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { UserPlus, Bell, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AddFriendDialog } from "./AddFriendDialog";
 import { NotificationsSheet } from "./NotificationsSheet";
@@ -81,9 +83,27 @@ export const TopNavBar = () => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <AddFriendDialog />
-          <NotificationsSheet />
-          <MessagesSheet />
+          <AddFriendDialog 
+            trigger={
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-white hover:bg-white/20">
+                <UserPlus size={18} />
+              </Button>
+            }
+          />
+          <NotificationsSheet 
+            trigger={
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
+                <Bell size={18} />
+              </Button>
+            }
+          />
+          <MessagesSheet 
+            trigger={
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
+                <MessageCircle size={18} />
+              </Button>
+            }
+          />
         </div>
       </div>
     </div>
