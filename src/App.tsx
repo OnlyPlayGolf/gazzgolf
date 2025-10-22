@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import LevelSelection from "./pages/LevelSelection";
 import Levels from "./pages/Levels";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import ProfileSettings from "./pages/ProfileSettings";
 import Messages from "./pages/Messages";
 import Leaderboards from "./pages/Leaderboards";
@@ -52,7 +53,8 @@ const App = () => (
             <Route path="/drills/:drillId/detail" element={<DrillDetail />} />
             <Route path="/levels" element={<LevelSelection />} />
             <Route path="/levels/:difficulty" element={<Levels />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={<UserProfile />} />
+            <Route path="/groups" element={<Profile />} />
             <Route path="/profile-settings" element={<ProfileSettings />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
