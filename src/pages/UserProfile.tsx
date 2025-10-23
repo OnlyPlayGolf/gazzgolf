@@ -246,7 +246,7 @@ export default function UserProfile() {
         {/* Friends and QR code */}
         <div className="flex items-center justify-center gap-6 mb-6">
           <button
-            onClick={() => navigate('/friends')}
+            onClick={() => navigate('/friends', { state: { from: 'profile' } })}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity px-4 h-12 border-2 border-border rounded-full min-w-[200px]"
           >
             <div className="flex -space-x-2 p-1">
@@ -293,7 +293,7 @@ export default function UserProfile() {
             <Button
               variant="link"
               className="text-primary"
-              onClick={() => navigate('/rounds')}
+              onClick={() => navigate('/rounds', { state: { from: 'profile' } })}
             >
               View all
             </Button>
