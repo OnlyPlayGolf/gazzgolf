@@ -16,10 +16,6 @@ export const TopNavBar = () => {
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Bottom bar pages that should show profile picture instead of back arrow
-  const bottomBarPages = ['/', '/categories', '/rounds-play', '/levels', '/groups'];
-  const showBackArrow = !bottomBarPages.includes(location.pathname);
-
   useEffect(() => {
     loadProfile();
   }, []);
@@ -64,33 +60,15 @@ export const TopNavBar = () => {
       )}
     >
       <div className="bg-[hsl(120,50%,20%)] px-4 py-3 flex items-center justify-between">
-        {/* Left: Profile Picture or Back Arrow */}
-        {showBackArrow ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="flex-shrink-0 text-white hover:bg-white/20"
-          >
-            <ArrowLeft size={24} />
-          </Button>
-        ) : (
-          <button
-            onClick={() => navigate('/profile')}
-            className="flex-shrink-0"
-          >
-            <Avatar className="h-10 w-10 border-2 border-white/20 hover:border-white/40 transition-colors">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile" className="object-cover" />
-              ) : (
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() :
-                   profile?.username ? profile.username.charAt(0).toUpperCase() : "?"}
-                </AvatarFallback>
-              )}
-            </Avatar>
-          </button>
-        )}
+        {/* Left: Back Arrow */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
+          className="flex-shrink-0 text-white hover:bg-white/20"
+        >
+          <ArrowLeft size={24} />
+        </Button>
 
         {/* Center: Title */}
         <h1 className="text-white font-bold text-xl flex-1 text-center">

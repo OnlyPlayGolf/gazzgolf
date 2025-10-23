@@ -163,24 +163,27 @@ export default function UserProfile() {
     : 'HCP Not Set';
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header with gradient background */}
-      <div className="relative h-48 bg-gradient-to-br from-[hsl(120,50%,30%)] to-[hsl(120,50%,20%)]">
-        <div className="absolute top-4 right-4">
+    <div className="min-h-screen bg-background pb-20 pt-16">
+      {/* Header section */}
+      <div className="relative px-4 py-6">
+        <div className="absolute top-6 right-4">
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20"
+            className="text-foreground hover:bg-accent"
             onClick={() => navigate('/profile-settings')}
           >
             <Settings size={20} />
           </Button>
         </div>
 
-        {/* Profile photo */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
+        {/* Profile label and photo */}
+        <div className="flex flex-col items-center">
+          <div className="text-left w-full mb-2">
+            <h2 className="text-lg font-semibold text-muted-foreground">Profile</h2>
+          </div>
           <div className="relative">
-            <Avatar className="h-32 w-32 border-4 border-background">
+            <Avatar className="h-32 w-32 border-4 border-border">
               <AvatarImage src={profile.avatar_url || undefined} />
               <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
                 {displayName.charAt(0).toUpperCase()}
@@ -200,7 +203,7 @@ export default function UserProfile() {
       </div>
 
       {/* Profile info */}
-      <div className="mt-20 px-4">
+      <div className="px-4">
         <div className="text-center mb-4">
           <h1 className="text-2xl font-bold text-foreground mb-2">{displayName}</h1>
           <p className="text-sm text-muted-foreground">
