@@ -247,12 +247,12 @@ export default function UserProfile() {
         <div className="flex items-center justify-center gap-6 mb-6">
           <button
             onClick={() => navigate('/friends')}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity p-3 border-2 border-border rounded-lg"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity px-4 h-12 border-2 border-border rounded-full min-w-[200px]"
           >
             <div className="flex -space-x-2 border-2 border-border rounded-full p-1">
               {friends.length > 0 ? (
                 friends.slice(0, 3).map((friend, index) => (
-                  <Avatar key={friend.id} className="h-8 w-8 border-2 border-background">
+                  <Avatar key={friend.id} className="h-6 w-6 border-2 border-background">
                     <AvatarImage src={friend.avatar_url || undefined} />
                     <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                       {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
@@ -261,9 +261,9 @@ export default function UserProfile() {
                 ))
               ) : (
                 <>
-                  <div className="h-8 w-8 rounded-full bg-primary/20 border-2 border-background" />
-                  <div className="h-8 w-8 rounded-full bg-primary/40 border-2 border-background" />
-                  <div className="h-8 w-8 rounded-full bg-primary/60 border-2 border-background" />
+                  <div className="h-6 w-6 rounded-full bg-primary/20 border-2 border-background" />
+                  <div className="h-6 w-6 rounded-full bg-primary/40 border-2 border-background" />
+                  <div className="h-6 w-6 rounded-full bg-primary/60 border-2 border-background" />
                 </>
               )}
             </div>
