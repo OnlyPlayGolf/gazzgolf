@@ -60,22 +60,33 @@ export const TopNavBar = () => {
       )}
     >
       <div className="bg-[hsl(120,50%,20%)] px-4 py-3 flex items-center justify-between">
-        {/* Left: Profile Picture */}
-        <button
-          onClick={() => navigate('/profile')}
-          className="flex-shrink-0"
-        >
-          <Avatar className="h-10 w-10 border-2 border-white/20 hover:border-white/40 transition-colors">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Profile" className="object-cover" />
-            ) : (
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() :
-                 profile?.username ? profile.username.charAt(0).toUpperCase() : "?"}
-              </AvatarFallback>
-            )}
-          </Avatar>
-        </button>
+        {/* Left: Profile Picture or Back Arrow */}
+        {location.state?.from === 'profile' ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/profile')}
+            className="flex-shrink-0 text-white hover:bg-white/20"
+          >
+            <ArrowLeft size={24} />
+          </Button>
+        ) : (
+          <button
+            onClick={() => navigate('/profile')}
+            className="flex-shrink-0"
+          >
+            <Avatar className="h-10 w-10 border-2 border-white/20 hover:border-white/40 transition-colors">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile" className="object-cover" />
+              ) : (
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() :
+                   profile?.username ? profile.username.charAt(0).toUpperCase() : "?"}
+                </AvatarFallback>
+              )}
+            </Avatar>
+          </button>
+        )}
 
         {/* Center: Title */}
         <h1 className="text-white font-bold text-xl flex-1 text-center">
