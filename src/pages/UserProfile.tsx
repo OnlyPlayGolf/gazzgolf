@@ -249,7 +249,7 @@ export default function UserProfile() {
             onClick={() => navigate('/friends')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity px-4 h-12 border-2 border-border rounded-full min-w-[200px]"
           >
-            <div className="flex -space-x-2 border-2 border-border rounded-full p-1">
+            <div className="flex -space-x-2 p-1">
               {friends.length > 0 ? (
                 friends.slice(0, 3).map((friend, index) => (
                   <Avatar key={friend.id} className="h-6 w-6 border-2 border-background">
