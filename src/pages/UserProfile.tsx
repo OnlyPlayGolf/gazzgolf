@@ -24,11 +24,19 @@ interface RecentRound {
   score: number;
 }
 
+interface Friend {
+  id: string;
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+}
+
 export default function UserProfile() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [roundsCount, setRoundsCount] = useState(0);
   const [recentRounds, setRecentRounds] = useState<RecentRound[]>([]);
   const [averageScore, setAverageScore] = useState<number | null>(null);
@@ -53,14 +61,36 @@ export default function UserProfile() {
 
     setProfile(profileData);
 
-    // Load friends count
-    const { count: friendsCount } = await supabase
+    // Load friends with profiles
+    const { data: friendshipsData } = await supabase
+      .from('friendships')
+      .select('requester, addressee')
+      .or(`requester.eq.${user.id},addressee.eq.${user.id}`)
+      .eq('status', 'accepted')
+      .limit(3);
+
+    if (friendshipsData && friendshipsData.length > 0) {
+      const friendIds = friendshipsData.map(f => 
+        f.requester === user.id ? f.addressee : f.requester
+      );
+
+      const { data: friendsProfiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url')
+        .in('id', friendIds);
+
+      setFriends(friendsProfiles || []);
+      setFriendsCount(friendshipsData.length);
+    }
+
+    // Also get total friends count
+    const { count: totalFriendsCount } = await supabase
       .from('friendships')
       .select('*', { count: 'exact', head: true })
       .or(`requester.eq.${user.id},addressee.eq.${user.id}`)
       .eq('status', 'accepted');
 
-    setFriendsCount(friendsCount || 0);
+    setFriendsCount(totalFriendsCount || 0);
 
     // Load rounds count
     const { count: roundsCount } = await supabase
@@ -217,12 +247,25 @@ export default function UserProfile() {
         <div className="flex items-center justify-center gap-6 mb-6">
           <button
             onClick={() => navigate('/friends')}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity p-3 border-2 border-border rounded-lg"
           >
-            <div className="flex -space-x-2">
-              <div className="h-8 w-8 rounded-full bg-primary/20 border-2 border-background" />
-              <div className="h-8 w-8 rounded-full bg-primary/40 border-2 border-background" />
-              <div className="h-8 w-8 rounded-full bg-primary/60 border-2 border-background" />
+            <div className="flex -space-x-2 border-2 border-border rounded-full p-1">
+              {friends.length > 0 ? (
+                friends.slice(0, 3).map((friend, index) => (
+                  <Avatar key={friend.id} className="h-8 w-8 border-2 border-background">
+                    <AvatarImage src={friend.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                      {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                ))
+              ) : (
+                <>
+                  <div className="h-8 w-8 rounded-full bg-primary/20 border-2 border-background" />
+                  <div className="h-8 w-8 rounded-full bg-primary/40 border-2 border-background" />
+                  <div className="h-8 w-8 rounded-full bg-primary/60 border-2 border-background" />
+                </>
+              )}
             </div>
             <span className="text-lg font-semibold text-foreground">{friendsCount}</span>
             <span className="text-sm text-muted-foreground">Friends</span>
