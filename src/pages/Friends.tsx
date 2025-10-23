@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, UserPlus, Search, MessageCircle, UserCircle2 } from "lucide-react";
+import { Users, UserPlus, Search, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,8 +16,6 @@ interface Friend {
   id: string;
   display_name: string | null;
   username: string | null;
-  handicap: string | null;
-  home_club: string | null;
   status: 'accepted' | 'pending' | 'blocked';
   is_requester: boolean;
 }
@@ -100,7 +98,7 @@ const Friends = () => {
           const friendId = friendship.requester === user.id ? friendship.addressee : friendship.requester;
           const { data: friendProfile } = await supabase
             .from('profiles')
-            .select('display_name, username, handicap, home_club')
+            .select('display_name, username')
             .eq('id', friendId)
             .single();
 
@@ -109,8 +107,6 @@ const Friends = () => {
               id: friendId,
               display_name: friendProfile.display_name,
               username: friendProfile.username,
-              handicap: friendProfile.handicap,
-              home_club: friendProfile.home_club,
               status: 'accepted',
               is_requester: friendship.requester === user.id
             });
@@ -119,7 +115,7 @@ const Friends = () => {
           if (friendship.addressee === user.id) {
             const { data: requesterProfile } = await supabase
               .from('profiles')
-              .select('display_name, username, handicap, home_club')
+              .select('display_name, username')
               .eq('id', friendship.requester)
               .single();
 
@@ -128,8 +124,6 @@ const Friends = () => {
                 id: friendship.requester,
                 display_name: requesterProfile.display_name,
                 username: requesterProfile.username,
-                handicap: requesterProfile.handicap,
-                home_club: requesterProfile.home_club,
                 status: 'pending',
                 is_requester: false
               });
@@ -137,7 +131,7 @@ const Friends = () => {
           } else {
             const { data: addresseeProfile } = await supabase
               .from('profiles')
-              .select('display_name, username, handicap, home_club')
+              .select('display_name, username')
               .eq('id', friendship.addressee)
               .single();
 
@@ -146,8 +140,6 @@ const Friends = () => {
                 id: friendship.addressee,
                 display_name: addresseeProfile.display_name,
                 username: addresseeProfile.username,
-                handicap: addresseeProfile.handicap,
-                home_club: addresseeProfile.home_club,
                 status: 'pending',
                 is_requester: true
               });
@@ -269,194 +261,207 @@ const Friends = () => {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-full max-w-md mx-4 p-6 bg-card border rounded-lg">
-          <p className="text-center text-muted-foreground mb-4">Please sign in to view friends</p>
-          <Button onClick={() => navigate('/auth')} className="w-full">
-            Sign In
-          </Button>
-        </div>
+        <Card className="w-full max-w-md mx-4">
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground mb-4">Please sign in to view friends</p>
+            <Button onClick={() => navigate('/auth')} className="w-full">
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const getInitials = (name: string | null, username: string | null) => {
-    const displayName = name || username || '?';
-    return displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4 space-y-8">
-        {/* Add Friend Button */}
-        <Dialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full">
-              <UserPlus size={16} className="mr-2" />
-              Add Friend
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Friend</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="friend-search">Search by username or name</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="friend-search"
-                    value={friendSearch}
-                    onChange={(e) => setFriendSearch(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearchFriends()}
-                    placeholder="Enter username or name"
-                  />
-                  <Button onClick={handleSearchFriends} disabled={loading}>
-                    <Search size={16} />
+      <div className="p-4">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Friends</h1>
+          <p className="text-muted-foreground">Manage your friends and requests</p>
+        </div>
+
+        <div className="space-y-6">
+          {/* Add Friend Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus size={20} className="text-primary" />
+                Add Friends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Dialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full">
+                    <UserPlus size={16} className="mr-2" />
+                    Add Friend
                   </Button>
-                </div>
-              </div>
-              
-              {searchResults.length > 0 && (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {searchResults.map((result) => (
-                    <div key={result.id} className="flex items-center justify-between p-3 border rounded-lg">
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Friend</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="friend-search">Search by username or name</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Input
+                          id="friend-search"
+                          value={friendSearch}
+                          onChange={(e) => setFriendSearch(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSearchFriends()}
+                          placeholder="Enter username or name"
+                        />
+                        <Button onClick={handleSearchFriends} disabled={loading}>
+                          <Search size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {searchResults.length > 0 && (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {searchResults.map((result) => (
+                          <div key={result.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Avatar>
+                                <AvatarFallback>
+                                  {(result.display_name || result.username || '?')[0].toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{result.display_name || result.username}</p>
+                                {result.display_name && <p className="text-sm text-muted-foreground">@{result.username}</p>}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSendFriendRequest(result.id)}
+                            >
+                              <UserPlus size={16} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+
+          {/* Incoming Requests */}
+          {incomingRequests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Friend Requests
+                  <Badge variant="secondary">{incomingRequests.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {incomingRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <Avatar>
                           <AvatarFallback>
-                            {getInitials(result.display_name, result.username)}
+                            {(request.display_name || request.username || '?')[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{result.display_name || result.username}</p>
-                          {result.display_name && <p className="text-sm text-muted-foreground">@{result.username}</p>}
+                          <p className="font-medium">{request.display_name || request.username}</p>
+                          {request.display_name && <p className="text-sm text-muted-foreground">@{request.username}</p>}
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSendFriendRequest(result.id)}
-                      >
-                        <UserPlus size={16} />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleFriendRequestResponse(request.id, true)}
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          <Check size={16} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleFriendRequestResponse(request.id, false)}
+                        >
+                          <X size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Outgoing Requests */}
+          {outgoingRequests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Pending Requests
+                  <Badge variant="secondary">{outgoingRequests.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {outgoingRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback>
+                            {(request.display_name || request.username || '?')[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{request.display_name || request.username}</p>
+                          {request.display_name && <p className="text-sm text-muted-foreground">@{request.username}</p>}
+                        </div>
+                      </div>
+                      <Badge variant="outline">Pending</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Friends List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users size={20} className="text-primary" />
+                My Friends
+                {friends.length > 0 && <Badge variant="secondary">{friends.length}</Badge>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {friends.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No friends yet. Add some friends to get started!</p>
+              ) : (
+                <div className="space-y-3">
+                  {friends.map((friend) => (
+                    <div key={friend.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback>
+                            {(friend.display_name || friend.username || '?')[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{friend.display_name || friend.username}</p>
+                          {friend.display_name && <p className="text-sm text-muted-foreground">@{friend.username}</p>}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Friend Requests Section */}
-        {incomingRequests.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Users size={24} />
-              <h2 className="text-2xl font-bold">Friend Requests ({incomingRequests.length})</h2>
-            </div>
-            <div className="space-y-3">
-              {incomingRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-card border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarFallback className="text-xl font-semibold">
-                        {getInitials(request.display_name, request.username)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-lg font-semibold">{request.display_name || request.username}</p>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span>HCP: {request.handicap || '+2.3'}</span>
-                        <span className="flex items-center gap-1">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                          </svg>
-                          {request.home_club || 'Djursholms GK'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleFriendRequestResponse(request.id, true)}
-                      className="bg-green-700 hover:bg-green-800 text-white"
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleFriendRequestResponse(request.id, false)}
-                    >
-                      Decline
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* My Friends Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Users size={24} />
-            <h2 className="text-2xl font-bold">My Friends ({friends.length})</h2>
-          </div>
-          
-          {friends.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No friends yet. Add some friends to get started!</p>
-          ) : (
-            <div className="bg-card border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[250px]">
-                      <div className="flex items-center gap-1">
-                        Name <span className="text-xs">↑</span>
-                      </div>
-                    </TableHead>
-                    <TableHead>Handicap</TableHead>
-                    <TableHead>Golf Club</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {friends.map((friend) => (
-                    <TableRow key={friend.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarFallback className="text-base font-semibold">
-                              {getInitials(friend.display_name, friend.username)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{friend.display_name || friend.username}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{friend.handicap || '-'}</TableCell>
-                      <TableCell className="text-muted-foreground">{friend.home_club || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="rounded-full">Level 1</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon">
-                            <MessageCircle size={20} />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => navigate(`/user/${friend.id}`)}
-                          >
-                            <UserCircle2 size={20} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
