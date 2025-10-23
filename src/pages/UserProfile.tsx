@@ -171,7 +171,7 @@ export default function UserProfile() {
             variant="ghost"
             size="icon"
             className="text-foreground hover:bg-accent"
-            onClick={() => navigate('/profile-settings', { state: { from: 'profile' } })}
+            onClick={() => navigate('/profile-settings')}
           >
             <Settings size={20} />
           </Button>
@@ -216,7 +216,7 @@ export default function UserProfile() {
         {/* Friends and QR code */}
         <div className="flex items-center justify-center gap-6 mb-6">
           <button
-            onClick={() => navigate('/friends', { state: { from: 'profile' } })}
+            onClick={() => navigate('/friends')}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <div className="flex -space-x-2">
@@ -250,7 +250,7 @@ export default function UserProfile() {
             <Button
               variant="link"
               className="text-primary"
-              onClick={() => navigate('/rounds', { state: { from: 'profile' } })}
+              onClick={() => navigate('/rounds')}
             >
               View all
             </Button>
@@ -289,7 +289,7 @@ export default function UserProfile() {
                 <Button
                   variant="link"
                   className="text-primary mt-2"
-                  onClick={() => navigate('/rounds', { state: { from: 'profile' } })}
+                  onClick={() => navigate('/rounds')}
                 >
                   Start your first round
                 </Button>
@@ -339,7 +339,7 @@ export default function UserProfile() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/levels', { state: { from: 'profile' } })}
+            onClick={() => navigate('/levels')}
           >
             <Target size={24} />
             <span>Levels</span>
@@ -347,7 +347,7 @@ export default function UserProfile() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/drills', { state: { from: 'profile' } })}
+            onClick={() => navigate('/drills')}
           >
             <TrendingUp size={24} />
             <span>Drills</span>
@@ -355,7 +355,7 @@ export default function UserProfile() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/groups', { state: { from: 'profile' } })}
+            onClick={() => navigate('/groups')}
           >
             <Users size={24} />
             <span>Groups</span>
@@ -363,7 +363,7 @@ export default function UserProfile() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/leaderboards', { state: { from: 'profile' } })}
+            onClick={() => navigate('/leaderboards')}
           >
             <BarChart3 size={24} />
             <span>Leaderboards</span>
