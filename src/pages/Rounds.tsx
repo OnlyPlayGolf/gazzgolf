@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Calendar, MapPin, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { TopNavBar } from "@/components/TopNavBar";
 
 interface Round {
   id: string;
@@ -81,7 +82,8 @@ const Rounds = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>

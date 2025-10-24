@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TopNavBar } from "@/components/TopNavBar";
 
 const RoundSetup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const fromPage = (location.state as any)?.from;
   const [courseName, setCourseName] = useState("");
   const [teeSet, setTeeSet] = useState("");
   const [holesPlayed, setHolesPlayed] = useState<9 | 18>(18);
@@ -70,10 +73,11 @@ const RoundSetup = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         <Button
           variant="ghost"
-          onClick={() => navigate("/rounds")}
+          onClick={() => navigate(fromPage === 'home' ? '/' : '/rounds')}
           className="mb-4"
         >
           <ArrowLeft className="mr-2" size={20} />

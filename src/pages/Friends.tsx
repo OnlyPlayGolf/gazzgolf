@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { TopNavBar } from "@/components/TopNavBar";
 
 interface Friend {
   id: string;
@@ -275,7 +276,8 @@ const Friends = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-2">Friends</h1>
           <p className="text-muted-foreground">Manage your friends and requests</p>
