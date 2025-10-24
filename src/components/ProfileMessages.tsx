@@ -84,6 +84,26 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadConversations();
+
+    // Subscribe to all message changes to update conversation list in real-time
+    const channel = supabase
+      .channel('all-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        () => {
+          loadConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Auto-select conversation from URL parameter
@@ -146,6 +166,13 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+
+    // Sort by most recent message
+    filtered = filtered.sort((a, b) => {
+      const timeA = a.last_message_time || a.updated_at;
+      const timeB = b.last_message_time || b.updated_at;
+      return new Date(timeB).getTime() - new Date(timeA).getTime();
+    });
 
     setFilteredConversations(filtered);
   };
@@ -316,6 +343,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
 
       setNewMessage("");
       await loadMessages(selectedConversation.id);
+      await loadConversations();
     } catch (error) {
       toast({
         title: "Error",

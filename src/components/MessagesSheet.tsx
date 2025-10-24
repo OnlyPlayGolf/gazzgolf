@@ -182,6 +182,13 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
       );
     }
 
+    // Sort by most recent message
+    filtered = filtered.sort((a, b) => {
+      const timeA = a.last_message_time || a.updated_at;
+      const timeB = b.last_message_time || b.updated_at;
+      return new Date(timeB).getTime() - new Date(timeA).getTime();
+    });
+
     setFilteredConversations(filtered);
   };
 
@@ -352,8 +359,12 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         });
       }
 
-      // Sort by updated_at desc, like before
-      withUnread.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      // Sort by most recent message
+      withUnread.sort((a, b) => {
+        const timeA = a.last_message_time || a.updated_at;
+        const timeB = b.last_message_time || b.updated_at;
+        return new Date(timeB).getTime() - new Date(timeA).getTime();
+      });
 
       setConversations(withUnread);
     } catch (error) {
@@ -438,6 +449,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
 
       setNewMessage("");
       await loadMessages(selectedConversation.id);
+      await loadConversations();
     } catch (error) {
       toast({
         title: "Error",
