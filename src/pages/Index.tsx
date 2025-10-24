@@ -233,7 +233,7 @@ const Index = () => {
                           variant="ghost"
                           disabled={!item.available}
                           onClick={item.available && item.path ? () => { 
-                            navigate(item.path); 
+                            navigate(item.path, { state: { from: 'home' } }); 
                             setMenuOpen(false);
                           } : undefined}
                           className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
@@ -322,7 +322,7 @@ const Index = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/rounds')}>
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/rounds', { state: { from: 'home' } })}>
             <CardContent className="p-4 text-center">
               <Calendar className="mx-auto mb-2 text-primary" size={24} />
               <p className="text-2xl font-bold text-foreground">{stats.totalRounds}</p>
@@ -330,7 +330,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/categories')}>
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/categories', { state: { from: 'home' } })}>
             <CardContent className="p-4 text-center">
               <Target className="mx-auto mb-2 text-primary" size={24} />
               <p className="text-2xl font-bold text-foreground">{stats.totalDrills}</p>
@@ -338,7 +338,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/friends')}>
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/friends', { state: { from: 'home' } })}>
             <CardContent className="p-4 text-center">
               <Users className="mx-auto mb-2 text-primary" size={24} />
               <p className="text-2xl font-bold text-foreground">{stats.friendsCount}</p>
@@ -346,7 +346,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/levels')}>
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/levels', { state: { from: 'home' } })}>
             <CardContent className="p-4 text-center">
               <Trophy className="mx-auto mb-2 text-primary" size={24} />
               <p className="text-2xl font-bold text-foreground">{stats.completedLevels}</p>
@@ -367,7 +367,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate('/rounds/setup')}
+              onClick={() => navigate('/rounds/setup', { state: { from: 'home' } })}
             >
               <span className="flex items-center gap-2">
                 <Calendar size={16} />
@@ -378,7 +378,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate('/drills/favourites')}
+              onClick={() => navigate('/drills/favourites', { state: { from: 'home' } })}
             >
               <span className="flex items-center gap-2">
                 <Star size={16} />
@@ -389,7 +389,7 @@ const Index = () => {
             <Button 
               variant="outline" 
               className="w-full justify-between" 
-              onClick={() => navigate('/profile?tab=leaderboards')}
+              onClick={() => navigate('/profile?tab=leaderboards', { state: { from: 'home' } })}
             >
               <span className="flex items-center gap-2">
                 <Trophy size={16} />
@@ -405,12 +405,12 @@ const Index = () => {
                   const levels = getLevelsWithProgress();
                   const lvl = levels.find(l => l.id === currentLevelId);
                   if (lvl) {
-                    navigate(`/levels/${lvl.difficulty.toLowerCase()}`);
+                    navigate(`/levels/${lvl.difficulty.toLowerCase()}`, { state: { from: 'home' } });
                   } else {
-                    navigate('/levels');
+                    navigate('/levels', { state: { from: 'home' } });
                   }
                 } else {
-                  navigate('/levels');
+                  navigate('/levels', { state: { from: 'home' } });
                 }
               }}
             >
@@ -432,7 +432,7 @@ const Index = () => {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => navigate('/rounds')}
+                  onClick={() => navigate('/rounds', { state: { from: 'home' } })}
                 >
                   View All
                   <ChevronRight size={16} className="ml-1" />

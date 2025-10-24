@@ -52,7 +52,10 @@ export const TopNavBar = () => {
     setProfile(profileData);
   };
 
-  const showBack = (location.state as any)?.from === 'profile' && location.pathname !== '/profile';
+  const fromPage = (location.state as any)?.from;
+  const showBack = fromPage && (location.pathname !== '/profile' && location.pathname !== '/');
+  const backPath = fromPage === 'profile' ? '/profile' : '/';
+  
   return (
     <div
       className={cn(
@@ -64,9 +67,9 @@ export const TopNavBar = () => {
         {/* Left: Back or Profile */}
         {showBack ? (
           <button
-            onClick={() => navigate('/profile')}
+            onClick={() => navigate(backPath)}
             className="flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white/20"
-            aria-label="Back to Profile"
+            aria-label={fromPage === 'profile' ? "Back to Profile" : "Back to Home"}
           >
             <ArrowLeft size={20} />
           </button>
