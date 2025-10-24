@@ -27,18 +27,8 @@ const Index = () => {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const menuItems = [
-    { id: 'profile', label: 'Personal Information', icon: UserIcon, available: true, path: '/profile-settings' },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/messages' },
-    { id: 'leaderboards', label: 'Leaderboards', icon: Trophy, available: true, path: '/leaderboards' },
-    { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
-    { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
-    { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },
-    { id: 'settings', label: 'Settings', icon: Settings, available: false },
-    { id: 'about', label: 'About', icon: Info, available: false },
-  ];
+  const [friendsCount, setFriendsCount] = useState(0);
+  const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -92,6 +82,33 @@ const Index = () => {
         .single();
       
       setProfile(profileData);
+
+      // Load friends count and avatars
+      const { data: friendsData } = await supabase
+        .from('friendships')
+        .select('user_a, user_b, requester, addressee')
+        .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      if (friendsData && friendsData.length > 0) {
+        setFriendsCount(friendsData.length);
+        
+        // Get friend user IDs
+        const friendIds = friendsData.map(f => 
+          f.user_a === user.id ? f.user_b : f.user_a
+        ).slice(0, 3); // Only get first 3 for avatars
+
+        // Load friend profiles
+        const { data: friendProfiles } = await supabase
+          .from('profiles')
+          .select('id, avatar_url, display_name, username')
+          .in('id', friendIds);
+
+        setFriendsAvatars(friendProfiles || []);
+      } else {
+        setFriendsCount(0);
+        setFriendsAvatars([]);
+      }
 
       // Get start and end of current month
       const now = new Date();
@@ -236,82 +253,6 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
-        {/* Header with Menu */}
-        <div className="flex items-start mb-2">
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MenuIcon size={24} className="text-foreground" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <div className="space-y-4 mt-8">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Card key={item.id} className="border-border">
-                      <CardContent className="p-0">
-                        <Button
-                          variant="ghost"
-                          disabled={!item.available}
-                          onClick={item.available && item.path ? () => { 
-                            navigate(item.path, { state: { from: 'home' } }); 
-                            setMenuOpen(false);
-                          } : undefined}
-                          className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-3">
-                              <Icon 
-                                size={20} 
-                                className={item.available ? "text-primary" : "text-muted-foreground"} 
-                              />
-                              <div>
-                                <div className={`font-medium ${item.available ? "text-foreground" : "text-muted-foreground"}`}>
-                                  {item.label}
-                                </div>
-                                {!item.available && (
-                                  <div className="text-xs text-muted-foreground">Coming soon</div>
-                                )}
-                              </div>
-                            </div>
-                            <ChevronRight 
-                              size={16} 
-                              className={item.available ? "text-muted-foreground" : "text-muted-foreground"} 
-                            />
-                          </div>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-
-                {/* Feedback Link */}
-                <Card className="border-border">
-                  <CardContent className="p-0">
-                    <Button
-                      variant="ghost"
-                      asChild
-                      className="w-full h-auto p-4 justify-start text-left"
-                    >
-                      <a href="mailto:feedback@golftraining.app" className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <Mail size={20} className="text-primary" />
-                          <div>
-                            <div className="font-medium text-foreground">Feedback</div>
-                            <div className="text-xs text-muted-foreground">Send us your thoughts</div>
-                          </div>
-                        </div>
-                        <ChevronRight size={16} className="text-muted-foreground" />
-                      </a>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-
         {/* Profile Header */}
         <Card>
           <CardContent className="pt-6">
@@ -338,6 +279,46 @@ const Index = () => {
                   <p className="text-sm text-muted-foreground">{profile.home_club}</p>
                 )}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Friends Section */}
+        <Card 
+          className="cursor-pointer hover:border-primary transition-colors" 
+          onClick={() => navigate('/friends', { state: { from: 'home' } })}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex -space-x-2">
+                  {friendsAvatars.length > 0 ? (
+                    friendsAvatars.map((friend, index) => (
+                      <Avatar key={friend.id} className="h-12 w-12 border-2 border-background">
+                        {friend.avatar_url ? (
+                          <img src={friend.avatar_url} alt={friend.display_name || friend.username} className="object-cover" />
+                        ) : (
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {friend.display_name ? friend.display_name.charAt(0).toUpperCase() : 
+                             friend.username ? friend.username.charAt(0).toUpperCase() : "?"}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    ))
+                  ) : (
+                    <Avatar className="h-12 w-12 border-2 border-background">
+                      <AvatarFallback className="bg-muted text-muted-foreground">
+                        <Users size={20} />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{friendsCount}</p>
+                  <p className="text-sm text-muted-foreground">Friends</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
