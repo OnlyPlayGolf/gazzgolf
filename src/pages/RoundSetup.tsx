@@ -75,15 +75,6 @@ const RoundSetup = () => {
     <div className="pb-20 min-h-screen bg-background">
       <TopNavBar />
       <div className="p-4 pt-20">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(fromPage === 'home' ? '/' : '/rounds')}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2" size={20} />
-          Back
-        </Button>
-
         <Card>
           <CardHeader>
             <CardTitle>Start New Round</CardTitle>
