@@ -72,6 +72,77 @@ export type Database = {
           },
         ]
       }
+      course_holes: {
+        Row: {
+          blue_distance: number | null
+          course_id: string
+          created_at: string
+          hole_number: number
+          id: string
+          orange_distance: number | null
+          par: number
+          red_distance: number | null
+          stroke_index: number
+          white_distance: number | null
+          yellow_distance: number | null
+        }
+        Insert: {
+          blue_distance?: number | null
+          course_id: string
+          created_at?: string
+          hole_number: number
+          id?: string
+          orange_distance?: number | null
+          par: number
+          red_distance?: number | null
+          stroke_index: number
+          white_distance?: number | null
+          yellow_distance?: number | null
+        }
+        Update: {
+          blue_distance?: number | null
+          course_id?: string
+          created_at?: string
+          hole_number?: number
+          id?: string
+          orange_distance?: number | null
+          par?: number
+          red_distance?: number | null
+          stroke_index?: number
+          white_distance?: number | null
+          yellow_distance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_holes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courses: {
+        Row: {
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       drill_results: {
         Row: {
           attempts_json: Json
@@ -614,12 +685,9 @@ export type Database = {
       }
     }
     Functions: {
-      accept_group_invite: {
-        Args: { invite_code: string }
-        Returns: Json
-      }
+      accept_group_invite: { Args: { invite_code: string }; Returns: Json }
       conversations_overview: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           group_id: string
           id: string
@@ -658,7 +726,7 @@ export type Database = {
         }[]
       }
       favourite_groups_level_leaderboard: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string
           category: string
@@ -680,7 +748,7 @@ export type Database = {
         }[]
       }
       friends_level_leaderboard: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string
           category: string
