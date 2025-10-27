@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Calendar, MapPin, Users, ChevronRight, Check, Plus, X } from "lucide-react";
+import { Search, Calendar, MapPin, Users, ChevronRight, Plus } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,21 +42,21 @@ export default function RoundsPlay() {
   const [teeColor, setTeeColor] = useState("");
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<string[]>([]);
-  const [friends, setFriends] = useState<any[]>([]);
-  const [selectedPlayers, setSelectedPlayers] = useState<Array<{
-    userId: string;
-    teeColor: string;
-    displayName: string;
-    username: string;
-    avatarUrl?: string;
-  }>>([]);
-  const [playersDialogOpen, setPlayersDialogOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [selectedPlayersCount, setSelectedPlayersCount] = useState(0);
 
   useEffect(() => {
     fetchCourses();
-    fetchFriends();
-    fetchCurrentUser();
+    
+    // Check for saved players on mount
+    const savedPlayers = sessionStorage.getItem('roundPlayers');
+    const savedTee = sessionStorage.getItem('userTeeColor');
+    if (savedPlayers) {
+      const players = JSON.parse(savedPlayers);
+      setSelectedPlayersCount(players.length);
+    }
+    if (savedTee) {
+      setTeeColor(savedTee);
+    }
   }, []);
 
   useEffect(() => {
@@ -122,54 +120,6 @@ export default function RoundsPlay() {
     }
   };
 
-  const fetchCurrentUser = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      setCurrentUser(data);
-    } catch (error: any) {
-      console.error("Error fetching current user:", error);
-    }
-  };
-
-  const fetchFriends = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('friendships')
-        .select(`
-          user_a,
-          user_b,
-          profiles!friendships_user_a_fkey(id, username, display_name, avatar_url),
-          profiles!friendships_user_b_fkey(id, username, display_name, avatar_url)
-        `)
-        .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
-        .eq('status', 'accepted');
-
-      if (error) throw error;
-
-      const friendsList = data?.map((friendship: any) => {
-        const friend = friendship.user_a === user.id 
-          ? friendship.profiles[1]
-          : friendship.profiles[0];
-        return friend;
-      }) || [];
-
-      setFriends(friendsList);
-    } catch (error: any) {
-      console.error("Error fetching friends:", error);
-    }
-  };
 
   const handleCourseSelect = (course: Course) => {
     setSelectedCourse(course);
@@ -230,21 +180,28 @@ export default function RoundsPlay() {
 
       if (error) throw error;
 
+      // Get saved players from sessionStorage
+      const savedPlayers = sessionStorage.getItem('roundPlayers');
+      const savedTee = sessionStorage.getItem('userTeeColor');
+      
       // Add current user as first player with their tee
       const playersToAdd = [{
         round_id: round.id,
         user_id: user.id,
-        tee_color: teeColor
+        tee_color: savedTee || teeColor
       }];
 
       // Add selected friends with their tees
-      selectedPlayers.forEach(player => {
-        playersToAdd.push({
-          round_id: round.id,
-          user_id: player.userId,
-          tee_color: player.teeColor
+      if (savedPlayers) {
+        const players = JSON.parse(savedPlayers);
+        players.forEach((player: any) => {
+          playersToAdd.push({
+            round_id: round.id,
+            user_id: player.userId,
+            tee_color: player.teeColor
+          });
         });
-      });
+      }
 
       const { error: playersError } = await supabase
         .from('round_players')
@@ -254,6 +211,10 @@ export default function RoundsPlay() {
         console.error("Error adding players:", playersError);
         // Continue anyway since the round was created
       }
+
+      // Clear sessionStorage
+      sessionStorage.removeItem('roundPlayers');
+      sessionStorage.removeItem('userTeeColor');
 
       toast({
         title: "Round started!",
@@ -272,27 +233,17 @@ export default function RoundsPlay() {
     }
   };
 
-  const addPlayer = (friend: any) => {
-    const isAlreadyAdded = selectedPlayers.some(p => p.userId === friend.id);
-    if (isAlreadyAdded) return;
-
-    setSelectedPlayers(prev => [...prev, {
-      userId: friend.id,
-      teeColor: availableTees[0] || "White",
-      displayName: friend.display_name || friend.username,
-      username: friend.username,
-      avatarUrl: friend.avatar_url
-    }]);
-  };
-
-  const removePlayer = (userId: string) => {
-    setSelectedPlayers(prev => prev.filter(p => p.userId !== userId));
-  };
-
-  const updatePlayerTee = (userId: string, newTee: string) => {
-    setSelectedPlayers(prev => prev.map(p => 
-      p.userId === userId ? { ...p, teeColor: newTee } : p
-    ));
+  const openPlayersPage = () => {
+    if (!selectedCourse) {
+      toast({
+        title: "Select a course first",
+        description: "Please select a course before adding players",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    navigate(`/rounds/manage-players?tees=${availableTees.join(',')}`);
   };
 
   return (
@@ -470,153 +421,19 @@ export default function RoundsPlay() {
               {/* Player Management */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Players</Label>
-                <Dialog open={playersDialogOpen} onOpenChange={setPlayersDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start gap-2">
-                      <Plus className="w-4 h-4" />
-                      Add Players
-                      {selectedPlayers.length > 0 && (
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          +{selectedPlayers.length} player{selectedPlayers.length !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Manage Players</DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                      {/* Current User */}
-                      {currentUser && (
-                        <div className="p-4 rounded-lg bg-primary/5 border-2 border-primary">
-                          <p className="text-sm font-medium text-muted-foreground mb-3">You</p>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-12 h-12">
-                              <AvatarImage src={currentUser.avatar_url} />
-                              <AvatarFallback>
-                                {(currentUser.display_name || currentUser.username || 'U').charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <p className="font-semibold">
-                                {currentUser.display_name || currentUser.username}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Playing HCP: {currentUser.handicap || '+0'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-3">
-                            <Label className="text-xs">Tee Box</Label>
-                            <Select value={teeColor} onValueChange={setTeeColor}>
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {availableTees.map((tee) => (
-                                  <SelectItem key={tee} value={tee}>{tee}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Selected Players */}
-                      {selectedPlayers.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-muted-foreground">Added Players</p>
-                          {selectedPlayers.map((player) => (
-                            <div key={player.userId} className="p-4 rounded-lg border">
-                              <div className="flex items-start gap-3">
-                                <Avatar className="w-12 h-12">
-                                  <AvatarImage src={player.avatarUrl} />
-                                  <AvatarFallback>
-                                    {player.displayName.charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="font-semibold">{player.displayName}</p>
-                                      <p className="text-sm text-muted-foreground">@{player.username}</p>
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => removePlayer(player.userId)}
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs">Tee Box</Label>
-                                    <Select
-                                      value={player.teeColor}
-                                      onValueChange={(value) => updatePlayerTee(player.userId, value)}
-                                    >
-                                      <SelectTrigger className="mt-1">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {availableTees.map((tee) => (
-                                          <SelectItem key={tee} value={tee}>{tee}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Available Friends */}
-                      {friends.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium text-muted-foreground">Add Friends</p>
-                          <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {friends.filter(f => !selectedPlayers.some(p => p.userId === f.id)).map((friend) => (
-                              <button
-                                key={friend.id}
-                                onClick={() => addPlayer(friend)}
-                                className="w-full p-3 rounded-lg border hover:bg-accent transition-colors flex items-center gap-3"
-                              >
-                                <Avatar className="w-10 h-10">
-                                  <AvatarImage src={friend.avatar_url} />
-                                  <AvatarFallback>
-                                    {(friend.display_name || friend.username).charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 text-left">
-                                  <p className="font-medium">{friend.display_name || friend.username}</p>
-                                  <p className="text-sm text-muted-foreground">@{friend.username}</p>
-                                </div>
-                                <Plus className="w-5 h-5 text-primary" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {friends.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          No friends available. Add friends to play together!
-                        </p>
-                      )}
-
-                      <Button 
-                        onClick={() => setPlayersDialogOpen(false)} 
-                        className="w-full"
-                      >
-                        Save & Close
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={openPlayersPage}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Players
+                  {selectedPlayersCount > 0 && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      +{selectedPlayersCount} player{selectedPlayersCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </Button>
               </div>
 
               <div className="pt-4">
