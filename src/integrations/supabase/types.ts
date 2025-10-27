@@ -595,20 +595,29 @@ export type Database = {
       round_players: {
         Row: {
           created_at: string
+          handicap: number | null
           id: string
           round_id: string
+          starting_hole: number | null
+          tee_color: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          handicap?: number | null
           id?: string
           round_id: string
+          starting_hole?: number | null
+          tee_color?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
+          handicap?: number | null
           id?: string
           round_id?: string
+          starting_hole?: number | null
+          tee_color?: string | null
           user_id?: string
         }
         Relationships: [
