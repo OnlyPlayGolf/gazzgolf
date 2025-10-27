@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Calendar, MapPin, Users, ChevronRight } from "lucide-react";
+import { Search, Calendar, MapPin, Users, ChevronRight, Check } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,9 +42,12 @@ export default function RoundsPlay() {
   const [teeColor, setTeeColor] = useState("");
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<string[]>([]);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCourses();
+    fetchFriends();
   }, []);
 
   useEffect(() => {
@@ -108,6 +111,37 @@ export default function RoundsPlay() {
     }
   };
 
+  const fetchFriends = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('friendships')
+        .select(`
+          user_a,
+          user_b,
+          profiles!friendships_user_a_fkey(id, username, display_name, avatar_url),
+          profiles!friendships_user_b_fkey(id, username, display_name, avatar_url)
+        `)
+        .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
+        .eq('status', 'accepted');
+
+      if (error) throw error;
+
+      const friendsList = data?.map((friendship: any) => {
+        const friend = friendship.user_a === user.id 
+          ? friendship.profiles[1]
+          : friendship.profiles[0];
+        return friend;
+      }) || [];
+
+      setFriends(friendsList);
+    } catch (error: any) {
+      console.error("Error fetching friends:", error);
+    }
+  };
+
   const handleCourseSelect = (course: Course) => {
     setSelectedCourse(course);
     setSearchQuery("");
@@ -167,6 +201,22 @@ export default function RoundsPlay() {
 
       if (error) throw error;
 
+      // Add current user and selected friends as round players
+      const playersToAdd = [user.id, ...selectedPlayers];
+      const { error: playersError } = await supabase
+        .from('round_players')
+        .insert(
+          playersToAdd.map(playerId => ({
+            round_id: round.id,
+            user_id: playerId
+          }))
+        );
+
+      if (playersError) {
+        console.error("Error adding players:", playersError);
+        // Continue anyway since the round was created
+      }
+
       toast({
         title: "Round started!",
         description: `Good luck at ${selectedCourse.name}`,
@@ -182,6 +232,14 @@ export default function RoundsPlay() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const togglePlayerSelection = (userId: string) => {
+    setSelectedPlayers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
   };
 
   return (
@@ -353,6 +411,44 @@ export default function RoundsPlay() {
                 <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
                   <div className="font-semibold">Stroke Play</div>
                   <div className="text-sm text-muted-foreground">Standard scoring format</div>
+                </div>
+              </div>
+
+              {/* Player Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Add Players (Optional)</Label>
+                <div className="space-y-2">
+                  {friends.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No friends available. Add friends to play together!</p>
+                  ) : (
+                    friends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        onClick={() => togglePlayerSelection(friend.id)}
+                        className="flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">
+                              {friend.display_name || friend.username}
+                            </p>
+                          </div>
+                        </div>
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          selectedPlayers.includes(friend.id) 
+                            ? 'bg-primary border-primary' 
+                            : 'border-input'
+                        }`}>
+                          {selectedPlayers.includes(friend.id) && (
+                            <Check className="w-3 h-3 text-primary-foreground" />
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 

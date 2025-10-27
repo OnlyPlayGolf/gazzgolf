@@ -592,6 +592,42 @@ export type Database = {
         }
         Relationships: []
       }
+      round_players: {
+        Row: {
+          created_at: string
+          id: string
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          round_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_players_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "round_summaries"
+            referencedColumns: ["round_id"]
+          },
+          {
+            foreignKeyName: "round_players_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rounds: {
         Row: {
           course_name: string
