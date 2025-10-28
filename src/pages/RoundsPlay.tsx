@@ -172,6 +172,7 @@ export default function RoundsPlay() {
             course_name: selectedCourse.name,
             tee_set: teeColor,
             holes_played: getHolesPlayed(selectedHoles),
+            origin: 'play',
             date_played: datePlayer,
           },
         ])

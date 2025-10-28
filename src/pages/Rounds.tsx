@@ -40,28 +40,18 @@ const Rounds = () => {
         .from("rounds")
         .select("*")
         .eq("user_id", user.id)
+        .or('origin.is.null,origin.eq.tracker')
         .order("date_played", { ascending: false });
 
       if (roundsError) throw roundsError;
 
-      // Filter out rounds that have players (those are from the play function)
       const roundsWithScores = await Promise.all(
         (roundsData || []).map(async (round) => {
-          const { count } = await supabase
-            .from("round_players")
-            .select("*", { count: 'exact', head: true })
-            .eq("round_id", round.id);
-
-          // Only include rounds WITHOUT players (manual tracker rounds)
-          if (count && count > 0) {
-            return null;
-          }
-
           const { data: summaryData } = await supabase
             .from("round_summaries")
             .select("total_score, total_par")
             .eq("round_id", round.id)
-            .single();
+            .maybeSingle();
 
           return {
             ...round,
@@ -71,7 +61,7 @@ const Rounds = () => {
         })
       );
 
-      setRounds(roundsWithScores.filter(r => r !== null) as Round[]);
+      setRounds(roundsWithScores);
     } catch (error: any) {
       toast({
         title: "Error loading rounds",
@@ -97,7 +87,7 @@ const Rounds = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">Round Tracker</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-2">Round Stats</h1>
               <p className="text-muted-foreground">Log and review your rounds</p>
             </div>
           </div>

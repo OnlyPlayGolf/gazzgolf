@@ -10,7 +10,7 @@ const Menu = () => {
     { id: 'profile', label: 'Personal Information', icon: User, available: true, path: '/profile-settings' },
     { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/messages' },
     { id: 'leaderboards', label: 'Leaderboards', icon: Trophy, available: true, path: '/leaderboards' },
-    { id: 'rounds', label: 'Round Tracker', icon: TrendingUp, available: true, path: '/rounds' },
+    { id: 'rounds', label: 'Round Stats', icon: TrendingUp, available: true, path: '/rounds' },
     { id: 'played-rounds', label: 'Played Rounds', icon: Users, available: true, path: '/played-rounds' },
     { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
     { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },

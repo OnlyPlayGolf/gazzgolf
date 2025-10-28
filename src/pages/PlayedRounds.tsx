@@ -37,33 +37,28 @@ const PlayedRounds = () => {
         return;
       }
 
-      // Fetch all rounds first
+      // Fetch rounds created with the Play flow
       const { data: roundsData, error: roundsError } = await supabase
         .from("rounds")
         .select("*")
         .eq("user_id", user.id)
+        .eq("origin", "play")
         .order("date_played", { ascending: false });
 
       if (roundsError) throw roundsError;
 
-      // Filter for rounds that have players (from play function)
       const roundsWithScores = await Promise.all(
         (roundsData || []).map(async (round) => {
-          const { count: playerCount } = await supabase
-            .from("round_players")
-            .select("*", { count: 'exact', head: true })
-            .eq("round_id", round.id);
-
-          // Only include rounds WITH players (play function rounds)
-          if (!playerCount || playerCount === 0) {
-            return null;
-          }
-
           const { data: summaryData } = await supabase
             .from("round_summaries")
             .select("total_score, total_par")
             .eq("round_id", round.id)
-            .single();
+            .maybeSingle();
+
+          const { count: playerCount } = await supabase
+            .from("round_players")
+            .select("*", { count: 'exact', head: true })
+            .eq("round_id", round.id);
 
           return {
             id: round.id,
@@ -73,12 +68,12 @@ const PlayedRounds = () => {
             holes_played: round.holes_played,
             total_score: summaryData?.total_score,
             total_par: summaryData?.total_par,
-            player_count: playerCount,
+            player_count: playerCount || 0,
           };
         })
       );
 
-      setRounds(roundsWithScores.filter(r => r !== null) as Round[]);
+      setRounds(roundsWithScores as Round[]);
     } catch (error: any) {
       toast({
         title: "Error loading rounds",

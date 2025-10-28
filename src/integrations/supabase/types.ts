@@ -644,6 +644,7 @@ export type Database = {
           date_played: string
           holes_played: number
           id: string
+          origin: string | null
           tee_set: string | null
           user_id: string
         }
@@ -653,6 +654,7 @@ export type Database = {
           date_played?: string
           holes_played?: number
           id?: string
+          origin?: string | null
           tee_set?: string | null
           user_id: string
         }
@@ -662,6 +664,7 @@ export type Database = {
           date_played?: string
           holes_played?: number
           id?: string
+          origin?: string | null
           tee_set?: string | null
           user_id?: string
         }
