@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 interface Round {
   id: string;
@@ -51,7 +51,6 @@ export default function RoundTracker() {
   const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
-  const [currentPlayerId, setCurrentPlayerId] = useState<string>("");
 
   useEffect(() => {
     if (roundId) {
@@ -94,7 +93,6 @@ export default function RoundTracker() {
         }));
         
         setPlayers(playersWithProfiles);
-        setCurrentPlayerId(playersWithProfiles[0].id);
       }
 
       // Fetch course holes
@@ -154,16 +152,19 @@ export default function RoundTracker() {
   };
 
   const currentHole = courseHoles[currentHoleIndex];
-  const playerScores = scores.get(currentPlayerId) || new Map();
-  const currentScore = playerScores.get(currentHole?.hole_number) || 0;
 
-  const updateScore = async (newScore: number) => {
-    if (!currentHole || newScore < 0 || !currentPlayerId) return;
+  const getPlayerScore = (playerId: string) => {
+    const playerScores = scores.get(playerId) || new Map();
+    return playerScores.get(currentHole?.hole_number) || currentHole?.par || 0;
+  };
+
+  const updateScore = async (playerId: string, newScore: number) => {
+    if (!currentHole || newScore < 0) return;
 
     const updatedScores = new Map(scores);
-    const playerScores = updatedScores.get(currentPlayerId) || new Map();
+    const playerScores = updatedScores.get(playerId) || new Map();
     playerScores.set(currentHole.hole_number, newScore);
-    updatedScores.set(currentPlayerId, playerScores);
+    updatedScores.set(playerId, playerScores);
     setScores(updatedScores);
 
     try {
@@ -171,7 +172,7 @@ export default function RoundTracker() {
         .from("holes")
         .upsert({
           round_id: roundId,
-          player_id: currentPlayerId,
+          player_id: playerId,
           hole_number: currentHole.hole_number,
           par: currentHole.par,
           score: newScore,
@@ -283,64 +284,51 @@ export default function RoundTracker() {
       </div>
 
       {/* Score Entry */}
-      <div className="max-w-2xl mx-auto p-4">
-        <Tabs value={currentPlayerId} onValueChange={setCurrentPlayerId}>
-          <TabsList className="w-full">
-            {players.map((player) => (
-              <TabsTrigger key={player.id} value={player.id} className="flex-1">
-                {getPlayerName(player)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {players.map((player) => (
-            <TabsContent key={player.id} value={player.id}>
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <div className="text-2xl font-bold mb-1">{getPlayerName(player)}</div>
-                    <div className="text-muted-foreground">Tee: {player.tee_color || round.tee_set}</div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
-                      <div className="text-xs text-muted-foreground">To Par</div>
-                    </div>
-                    <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary text-primary-foreground">
-                      <div className="text-3xl font-bold">{currentScore || 0}</div>
-                    </div>
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        {players.map((player) => {
+          const playerScore = getPlayerScore(player.id);
+          return (
+            <Card key={player.id} className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-xl font-bold mb-1">{getPlayerName(player)}</div>
+                  <div className="text-sm text-muted-foreground">
+                    Tee: {player.tee_color || round.tee_set}
                   </div>
                 </div>
-
-                <div className="flex items-center justify-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-14 w-14 rounded-full"
-                    onClick={() => updateScore(Math.max(0, currentScore - 1))}
-                    disabled={currentScore === 0}
-                  >
-                    <Minus size={24} />
-                  </Button>
-                  
-                  <div className="text-center min-w-[100px]">
-                    <div className="text-4xl font-bold mb-1">{currentScore || "-"}</div>
-                    <div className="text-sm text-muted-foreground">Strokes</div>
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-14 w-14 rounded-full"
-                    onClick={() => updateScore(currentScore + 1)}
-                  >
-                    <Plus size={24} />
-                  </Button>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
+                  <div className="text-xs text-muted-foreground">To Par</div>
                 </div>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
+              </div>
+
+              <div className="flex items-center justify-center gap-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 rounded-full"
+                  onClick={() => updateScore(player.id, Math.max(1, playerScore - 1))}
+                >
+                  <Minus size={20} />
+                </Button>
+                
+                <div className="text-center min-w-[80px]">
+                  <div className="text-3xl font-bold mb-1">{playerScore}</div>
+                  <div className="text-sm text-muted-foreground">Strokes</div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 rounded-full"
+                  onClick={() => updateScore(player.id, playerScore + 1)}
+                >
+                  <Plus size={20} />
+                </Button>
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Hole Navigation */}
