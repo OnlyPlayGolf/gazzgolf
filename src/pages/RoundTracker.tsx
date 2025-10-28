@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
@@ -226,6 +226,10 @@ export default function RoundTracker() {
     return player.profiles?.display_name || player.profiles?.username || "Player";
   };
 
+  const handleFinishRound = () => {
+    navigate(`/rounds/${roundId}/summary`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -333,30 +337,43 @@ export default function RoundTracker() {
 
       {/* Hole Navigation */}
       <div className="fixed bottom-16 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-4">
-        <div className="max-w-2xl mx-auto px-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateHole("prev")}
-            disabled={currentHoleIndex === 0}
-          >
-            <ChevronLeft size={24} />
-          </Button>
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center justify-between mb-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("prev")}
+              disabled={currentHoleIndex === 0}
+            >
+              <ChevronLeft size={24} />
+            </Button>
 
-          <div className="text-center">
-            <div className="text-sm text-muted-foreground">PAR {currentHole.par}</div>
-            <div className="text-2xl font-bold">Hole {currentHole.hole_number}</div>
-            <div className="text-sm text-muted-foreground">HCP {currentHole.stroke_index}</div>
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">PAR {currentHole.par}</div>
+              <div className="text-2xl font-bold">Hole {currentHole.hole_number}</div>
+              <div className="text-sm text-muted-foreground">HCP {currentHole.stroke_index}</div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("next")}
+              disabled={currentHoleIndex === courseHoles.length - 1}
+            >
+              <ChevronRight size={24} />
+            </Button>
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateHole("next")}
-            disabled={currentHoleIndex === courseHoles.length - 1}
-          >
-            <ChevronRight size={24} />
-          </Button>
+          
+          {currentHoleIndex === courseHoles.length - 1 && (
+            <Button
+              onClick={handleFinishRound}
+              className="w-full"
+              size="lg"
+            >
+              <Check size={20} className="mr-2" />
+              Finish Round
+            </Button>
+          )}
         </div>
       </div>
 
