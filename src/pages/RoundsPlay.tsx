@@ -57,6 +57,25 @@ export default function RoundsPlay() {
     if (savedTee) {
       setTeeColor(savedTee);
     }
+
+    // Restore game setup state
+    const savedCourse = sessionStorage.getItem('selectedCourse');
+    const savedHoles = sessionStorage.getItem('selectedHoles');
+    const savedRoundName = sessionStorage.getItem('roundName');
+    const savedDate = sessionStorage.getItem('datePlayer');
+    
+    if (savedCourse) {
+      setSelectedCourse(JSON.parse(savedCourse));
+    }
+    if (savedHoles) {
+      setSelectedHoles(savedHoles as HoleCount);
+    }
+    if (savedRoundName) {
+      setRoundName(savedRoundName);
+    }
+    if (savedDate) {
+      setDatePlayed(savedDate);
+    }
   }, []);
 
   useEffect(() => {
@@ -216,6 +235,10 @@ export default function RoundsPlay() {
       // Clear sessionStorage
       sessionStorage.removeItem('roundPlayers');
       sessionStorage.removeItem('userTeeColor');
+      sessionStorage.removeItem('selectedCourse');
+      sessionStorage.removeItem('selectedHoles');
+      sessionStorage.removeItem('roundName');
+      sessionStorage.removeItem('datePlayer');
 
       toast({
         title: "Round started!",
@@ -243,6 +266,12 @@ export default function RoundsPlay() {
       });
       return;
     }
+    
+    // Save game setup state before navigating
+    sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+    sessionStorage.setItem('selectedHoles', selectedHoles);
+    sessionStorage.setItem('roundName', roundName);
+    sessionStorage.setItem('datePlayer', datePlayer);
     
     navigate(`/rounds/manage-players?tees=${availableTees.join(',')}`);
   };
