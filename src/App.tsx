@@ -29,6 +29,7 @@ import GroupDetail from "./pages/GroupDetail";
 import AcceptInvite from "./pages/AcceptInvite";
 import Rounds from "./pages/Rounds";
 import RoundsPlay from "./pages/RoundsPlay";
+import PlayedRounds from "./pages/PlayedRounds";
 import RoundSetup from "./pages/RoundSetup";
 import HoleTracker from "./pages/HoleTracker";
 import RoundTracker from "./pages/RoundTracker";
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/invite/:code" element={<AcceptInvite />} />
             <Route path="/rounds" element={<Rounds />} />
             <Route path="/rounds-play" element={<RoundsPlay />} />
+            <Route path="/played-rounds" element={<PlayedRounds />} />
             <Route path="/rounds/manage-players" element={<ManagePlayers />} />
             <Route path="/rounds/setup" element={<RoundSetup />} />
             <Route path="/rounds/:roundId/track" element={<RoundTracker />} />
