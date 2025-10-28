@@ -379,6 +379,7 @@ export type Database = {
           id: string
           par: number
           penalties: number | null
+          player_id: string | null
           pro_shot_data: Json | null
           putts: number | null
           recovery: boolean | null
@@ -401,6 +402,7 @@ export type Database = {
           id?: string
           par: number
           penalties?: number | null
+          player_id?: string | null
           pro_shot_data?: Json | null
           putts?: number | null
           recovery?: boolean | null
@@ -423,6 +425,7 @@ export type Database = {
           id?: string
           par?: number
           penalties?: number | null
+          player_id?: string | null
           pro_shot_data?: Json | null
           putts?: number | null
           recovery?: boolean | null
@@ -433,6 +436,13 @@ export type Database = {
           up_and_down?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "holes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "round_players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "holes_round_id_fkey"
             columns: ["round_id"]

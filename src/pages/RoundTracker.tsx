@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Round {
   id: string;
@@ -29,6 +30,16 @@ interface HoleScore {
   stroke_index: number;
 }
 
+interface RoundPlayer {
+  id: string;
+  user_id: string;
+  tee_color: string | null;
+  profiles: {
+    display_name: string | null;
+    username: string | null;
+  } | null;
+}
+
 export default function RoundTracker() {
   const { roundId } = useParams();
   const navigate = useNavigate();
@@ -37,8 +48,10 @@ export default function RoundTracker() {
   const [round, setRound] = useState<Round | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
-  const [scores, setScores] = useState<Map<number, number>>(new Map());
+  const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [players, setPlayers] = useState<RoundPlayer[]>([]);
+  const [currentPlayerId, setCurrentPlayerId] = useState<string>("");
 
   useEffect(() => {
     if (roundId) {
@@ -57,6 +70,32 @@ export default function RoundTracker() {
 
       if (roundError) throw roundError;
       setRound(roundData);
+
+      // Fetch players in the round
+      const { data: playersData, error: playersError } = await supabase
+        .from("round_players")
+        .select("id, user_id, tee_color")
+        .eq("round_id", roundId);
+
+      if (playersError) throw playersError;
+      
+      // Fetch profile data for each player
+      if (playersData && playersData.length > 0) {
+        const userIds = playersData.map(p => p.user_id);
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name, username")
+          .in("id", userIds);
+        
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        const playersWithProfiles = playersData.map(player => ({
+          ...player,
+          profiles: profilesMap.get(player.user_id) || null
+        }));
+        
+        setPlayers(playersWithProfiles);
+        setCurrentPlayerId(playersWithProfiles[0].id);
+      }
 
       // Fetch course holes
       const { data: courseData, error: courseError } = await supabase
@@ -83,16 +122,21 @@ export default function RoundTracker() {
       
       setCourseHoles(filteredHoles);
 
-      // Fetch existing hole scores
+      // Fetch existing hole scores for all players
       const { data: existingHoles, error: existingError } = await supabase
         .from("holes")
-        .select("hole_number, score")
+        .select("hole_number, score, player_id")
         .eq("round_id", roundId);
 
       if (!existingError && existingHoles) {
-        const scoresMap = new Map();
+        const scoresMap = new Map<string, Map<number, number>>();
         existingHoles.forEach((hole) => {
-          scoresMap.set(hole.hole_number, hole.score);
+          if (hole.player_id) {
+            if (!scoresMap.has(hole.player_id)) {
+              scoresMap.set(hole.player_id, new Map());
+            }
+            scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
+          }
         });
         setScores(scoresMap);
       }
@@ -110,13 +154,16 @@ export default function RoundTracker() {
   };
 
   const currentHole = courseHoles[currentHoleIndex];
-  const currentScore = scores.get(currentHole?.hole_number) || 0;
+  const playerScores = scores.get(currentPlayerId) || new Map();
+  const currentScore = playerScores.get(currentHole?.hole_number) || 0;
 
   const updateScore = async (newScore: number) => {
-    if (!currentHole || newScore < 0) return;
+    if (!currentHole || newScore < 0 || !currentPlayerId) return;
 
     const updatedScores = new Map(scores);
-    updatedScores.set(currentHole.hole_number, newScore);
+    const playerScores = updatedScores.get(currentPlayerId) || new Map();
+    playerScores.set(currentHole.hole_number, newScore);
+    updatedScores.set(currentPlayerId, playerScores);
     setScores(updatedScores);
 
     try {
@@ -124,9 +171,12 @@ export default function RoundTracker() {
         .from("holes")
         .upsert({
           round_id: roundId,
+          player_id: currentPlayerId,
           hole_number: currentHole.hole_number,
           par: currentHole.par,
           score: newScore,
+        }, {
+          onConflict: 'round_id,player_id,hole_number'
         });
 
       if (error) throw error;
@@ -148,12 +198,13 @@ export default function RoundTracker() {
     }
   };
 
-  const calculateScoreToPar = () => {
+  const calculateScoreToPar = (playerId: string) => {
     let totalScore = 0;
     let totalPar = 0;
+    const playerScores = scores.get(playerId) || new Map();
     
     courseHoles.forEach((hole) => {
-      const score = scores.get(hole.hole_number) || 0;
+      const score = playerScores.get(hole.hole_number) || 0;
       if (score > 0) {
         totalScore += score;
         totalPar += hole.par;
@@ -163,11 +214,15 @@ export default function RoundTracker() {
     return totalScore - totalPar;
   };
 
-  const getScoreDisplay = () => {
-    const diff = calculateScoreToPar();
+  const getScoreDisplay = (playerId: string) => {
+    const diff = calculateScoreToPar(playerId);
     if (diff === 0) return "E";
     if (diff > 0) return `+${diff}`;
     return diff.toString();
+  };
+
+  const getPlayerName = (player: RoundPlayer) => {
+    return player.profiles?.display_name || player.profiles?.username || "Player";
   };
 
   if (loading) {
@@ -229,49 +284,63 @@ export default function RoundTracker() {
 
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="text-2xl font-bold mb-1">Your Score</div>
-              <div className="text-muted-foreground">Tee: {round.tee_set}</div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-muted-foreground">{getScoreDisplay()}</div>
-                <div className="text-xs text-muted-foreground">To Par</div>
-              </div>
-              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary text-primary-foreground">
-                <div className="text-3xl font-bold">{currentScore || 0}</div>
-              </div>
-            </div>
-          </div>
+        <Tabs value={currentPlayerId} onValueChange={setCurrentPlayerId}>
+          <TabsList className="w-full">
+            {players.map((player) => (
+              <TabsTrigger key={player.id} value={player.id} className="flex-1">
+                {getPlayerName(player)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-14 w-14 rounded-full"
-              onClick={() => updateScore(Math.max(0, currentScore - 1))}
-              disabled={currentScore === 0}
-            >
-              <Minus size={24} />
-            </Button>
-            
-            <div className="text-center min-w-[100px]">
-              <div className="text-4xl font-bold mb-1">{currentScore || "-"}</div>
-              <div className="text-sm text-muted-foreground">Strokes</div>
-            </div>
+          {players.map((player) => (
+            <TabsContent key={player.id} value={player.id}>
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <div className="text-2xl font-bold mb-1">{getPlayerName(player)}</div>
+                    <div className="text-muted-foreground">Tee: {player.tee_color || round.tee_set}</div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
+                      <div className="text-xs text-muted-foreground">To Par</div>
+                    </div>
+                    <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary text-primary-foreground">
+                      <div className="text-3xl font-bold">{currentScore || 0}</div>
+                    </div>
+                  </div>
+                </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-14 w-14 rounded-full"
-              onClick={() => updateScore(currentScore + 1)}
-            >
-              <Plus size={24} />
-            </Button>
-          </div>
-        </Card>
+                <div className="flex items-center justify-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-14 w-14 rounded-full"
+                    onClick={() => updateScore(Math.max(0, currentScore - 1))}
+                    disabled={currentScore === 0}
+                  >
+                    <Minus size={24} />
+                  </Button>
+                  
+                  <div className="text-center min-w-[100px]">
+                    <div className="text-4xl font-bold mb-1">{currentScore || "-"}</div>
+                    <div className="text-sm text-muted-foreground">Strokes</div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-14 w-14 rounded-full"
+                    onClick={() => updateScore(currentScore + 1)}
+                  >
+                    <Plus size={24} />
+                  </Button>
+                </div>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
 
       {/* Hole Navigation */}
