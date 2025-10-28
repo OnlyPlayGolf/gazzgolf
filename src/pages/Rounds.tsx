@@ -44,9 +44,19 @@ const Rounds = () => {
 
       if (roundsError) throw roundsError;
 
-      // Fetch summaries for each round
+      // Filter out rounds that have players (those are from the play function)
       const roundsWithScores = await Promise.all(
         (roundsData || []).map(async (round) => {
+          const { count } = await supabase
+            .from("round_players")
+            .select("*", { count: 'exact', head: true })
+            .eq("round_id", round.id);
+
+          // Only include rounds WITHOUT players (manual tracker rounds)
+          if (count && count > 0) {
+            return null;
+          }
+
           const { data: summaryData } = await supabase
             .from("round_summaries")
             .select("total_score, total_par")
@@ -61,7 +71,7 @@ const Rounds = () => {
         })
       );
 
-      setRounds(roundsWithScores);
+      setRounds(roundsWithScores.filter(r => r !== null) as Round[]);
     } catch (error: any) {
       toast({
         title: "Error loading rounds",

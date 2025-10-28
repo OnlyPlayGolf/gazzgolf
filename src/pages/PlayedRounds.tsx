@@ -37,31 +37,33 @@ const PlayedRounds = () => {
         return;
       }
 
-      // Fetch rounds that have entries in round_players (meaning they were created via play function)
+      // Fetch all rounds first
       const { data: roundsData, error: roundsError } = await supabase
         .from("rounds")
-        .select(`
-          *,
-          round_players!inner(count)
-        `)
+        .select("*")
         .eq("user_id", user.id)
         .order("date_played", { ascending: false });
 
       if (roundsError) throw roundsError;
 
-      // Fetch summaries and player count for each round
+      // Filter for rounds that have players (from play function)
       const roundsWithScores = await Promise.all(
         (roundsData || []).map(async (round) => {
+          const { count: playerCount } = await supabase
+            .from("round_players")
+            .select("*", { count: 'exact', head: true })
+            .eq("round_id", round.id);
+
+          // Only include rounds WITH players (play function rounds)
+          if (!playerCount || playerCount === 0) {
+            return null;
+          }
+
           const { data: summaryData } = await supabase
             .from("round_summaries")
             .select("total_score, total_par")
             .eq("round_id", round.id)
             .single();
-
-          const { count: playerCount } = await supabase
-            .from("round_players")
-            .select("*", { count: 'exact', head: true })
-            .eq("round_id", round.id);
 
           return {
             id: round.id,
@@ -71,12 +73,12 @@ const PlayedRounds = () => {
             holes_played: round.holes_played,
             total_score: summaryData?.total_score,
             total_par: summaryData?.total_par,
-            player_count: playerCount || 0,
+            player_count: playerCount,
           };
         })
       );
 
-      setRounds(roundsWithScores);
+      setRounds(roundsWithScores.filter(r => r !== null) as Round[]);
     } catch (error: any) {
       toast({
         title: "Error loading rounds",
