@@ -14,6 +14,7 @@ interface Round {
   tee_set: string;
   holes_played: number;
   date_played: string;
+  origin?: string | null;
 }
 
 interface CourseHole {
@@ -227,7 +228,12 @@ export default function RoundTracker() {
   };
 
   const handleFinishRound = () => {
-    navigate(`/rounds/${roundId}/summary`);
+    // Navigate based on round origin
+    if (round?.origin === 'play') {
+      navigate('/played-rounds');
+    } else {
+      navigate('/rounds');
+    }
   };
 
   if (loading) {
