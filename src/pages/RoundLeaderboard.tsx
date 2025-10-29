@@ -61,6 +61,28 @@ export default function RoundLeaderboard() {
       if (roundError) throw roundError;
       setRound(roundData);
 
+      // Fetch course information
+      const { data: courseData, error: courseError } = await supabase
+        .from("courses")
+        .select("id")
+        .eq("name", roundData.course_name)
+        .single();
+
+      if (courseError) {
+        console.error("Course not found:", courseError);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch course holes
+      const { data: courseHolesData, error: courseHolesError } = await supabase
+        .from("course_holes")
+        .select("*")
+        .eq("course_id", courseData.id)
+        .order("hole_number");
+
+      if (courseHolesError) throw courseHolesError;
+
       // Fetch players and their scores
       const { data: playersData, error: playersError } = await supabase
         .from("round_players")
@@ -77,7 +99,7 @@ export default function RoundLeaderboard() {
 
       if (playersError) throw playersError;
 
-      // Fetch all holes for this round
+      // Fetch all scores for this round
       const { data: holesData, error: holesError } = await supabase
         .from("holes")
         .select("*")
@@ -86,23 +108,30 @@ export default function RoundLeaderboard() {
 
       if (holesError) throw holesError;
 
-      // Group holes by player and calculate scores
+      // Build player scores with course hole data
       const playerScores: PlayerScore[] = playersData.map((player: any) => {
-        const playerHoles = holesData.filter((h: any) => h.player_id === player.user_id);
-        const totalScore = playerHoles.reduce((sum, h: any) => sum + (h.score || 0), 0);
-        const totalPar = playerHoles.reduce((sum, h: any) => sum + (h.par || 0), 0);
-        const holesPlayed = playerHoles.filter((h: any) => h.score !== null).length;
+        const playerHoles = courseHolesData.map((courseHole: any) => {
+          const scoreData = holesData.find(
+            (h: any) => h.hole_number === courseHole.hole_number && h.player_id === player.user_id
+          );
+          
+          return {
+            hole_number: courseHole.hole_number,
+            score: scoreData?.score || null,
+            par: courseHole.par,
+            stroke_index: courseHole.stroke_index,
+          };
+        });
+
+        const totalScore = playerHoles.reduce((sum, h) => sum + (h.score || 0), 0);
+        const totalPar = playerHoles.reduce((sum, h) => sum + h.par, 0);
+        const holesPlayed = playerHoles.filter((h) => h.score !== null).length;
 
         return {
           player_id: player.user_id,
           player_name: player.profiles?.display_name || player.profiles?.username || "Unknown",
           handicap: player.handicap || 0,
-          holes: playerHoles.map((h: any) => ({
-            hole_number: h.hole_number,
-            score: h.score,
-            par: h.par,
-            stroke_index: h.stroke_index || 0,
-          })),
+          holes: playerHoles,
           total_score: totalScore,
           total_par: totalPar,
           score_to_par: totalScore - totalPar,
