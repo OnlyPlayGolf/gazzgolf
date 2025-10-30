@@ -23,6 +23,7 @@ const Index = () => {
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
   const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
+  const [friendsActivity, setFriendsActivity] = useState<any[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -102,6 +103,48 @@ const Index = () => {
       } else {
         setFriendsCount(0);
         setFriendsAvatars([]);
+      }
+
+      // Load friends' recent activity
+      if (friendsData && friendsData.length > 0) {
+        const friendIds = friendsData.map(f => 
+          f.user_a === user.id ? f.user_b : f.user_a
+        );
+
+        // Get friends' recent rounds
+        const { data: friendRounds } = await supabase
+          .from('rounds')
+          .select('id, user_id, course_name, date_played, created_at')
+          .in('user_id', friendIds)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (friendRounds) {
+          // Get friend profiles and round summaries
+          const activityWithDetails = await Promise.all(
+            friendRounds.map(async (round) => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('display_name, username, avatar_url')
+                .eq('id', round.user_id)
+                .single();
+
+              const { data: summary } = await supabase
+                .from('round_summaries')
+                .select('total_score, total_par')
+                .eq('round_id', round.id)
+                .maybeSingle();
+
+              return {
+                ...round,
+                profile,
+                summary
+              };
+            })
+          );
+
+          setFriendsActivity(activityWithDetails);
+        }
       }
 
       // Load recent activity (rounds)
@@ -259,6 +302,58 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Friends Activity Feed */}
+        {friendsActivity.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground">Friends Activity</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {friendsActivity.map((activity) => {
+                const friendName = activity.profile?.display_name || activity.profile?.username || 'A friend';
+                const scoreDiff = activity.summary?.total_score && activity.summary?.total_par 
+                  ? activity.summary.total_score - activity.summary.total_par 
+                  : null;
+                const scoreDisplay = scoreDiff === null 
+                  ? '' 
+                  : scoreDiff === 0 
+                  ? ' (E)' 
+                  : scoreDiff > 0 
+                  ? ` (+${scoreDiff})` 
+                  : ` (${scoreDiff})`;
+
+                return (
+                  <div
+                    key={activity.id}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/rounds/${activity.id}/summary`)}
+                  >
+                    <Avatar className="h-10 w-10 border border-border">
+                      {activity.profile?.avatar_url ? (
+                        <img src={activity.profile.avatar_url} alt={friendName} className="object-cover" />
+                      ) : (
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {friendName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground">
+                        <span className="font-semibold">{friendName}</span> completed a round
+                        {scoreDisplay && <span className="text-primary font-semibold">{scoreDisplay}</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.course_name} • {new Date(activity.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         <Card>
