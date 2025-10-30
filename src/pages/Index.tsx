@@ -18,12 +18,6 @@ const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState({
-    monthlyRounds: 0,
-    monthlyDrills: 0,
-    monthlyLevels: 0,
-    scoringAverage: 0
-  });
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
@@ -109,63 +103,6 @@ const Index = () => {
         setFriendsCount(0);
         setFriendsAvatars([]);
       }
-
-      // Get start and end of current month
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-
-      // Load monthly stats
-      const [roundsCount, drillsCount, levelsCount, roundsData] = await Promise.all([
-        // Rounds this month
-        supabase
-          .from('rounds')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('date_played', monthStart)
-          .lte('date_played', monthEnd),
-        
-        // Drills completed this month
-        supabase
-          .from('drill_results')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('created_at', monthStart)
-          .lte('created_at', monthEnd + 'T23:59:59'),
-        
-        // Completed levels this month
-        supabase
-          .from('level_progress')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('completed', true)
-          .gte('completed_at', monthStart)
-          .lte('completed_at', monthEnd + 'T23:59:59'),
-
-        // Get round summaries for scoring average
-        supabase
-          .from('round_summaries')
-          .select('total_score, total_par')
-          .eq('user_id', user.id)
-          .gte('date_played', monthStart)
-          .lte('date_played', monthEnd)
-      ]);
-
-      // Calculate scoring average
-      let scoringAvg = 0;
-      if (roundsData.data && roundsData.data.length > 0) {
-        const totalScoreVsPar = roundsData.data.reduce((sum, round) => {
-          return sum + ((round.total_score || 0) - (round.total_par || 0));
-        }, 0);
-        scoringAvg = totalScoreVsPar / roundsData.data.length;
-      }
-
-      setStats({
-        monthlyRounds: roundsCount.count || 0,
-        monthlyDrills: drillsCount.count || 0,
-        monthlyLevels: levelsCount.count || 0,
-        scoringAverage: scoringAvg
-      });
 
       // Load recent activity (rounds)
       const { data: recentRounds } = await supabase
@@ -322,45 +259,6 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Monthly Stats Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/rounds', { state: { from: 'home' } })}>
-            <CardContent className="p-4 text-center">
-              <Calendar className="mx-auto mb-2 text-primary" size={24} />
-              <p className="text-2xl font-bold text-foreground">{stats.monthlyRounds}</p>
-              <p className="text-xs text-muted-foreground">Rounds This Month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/categories', { state: { from: 'home' } })}>
-            <CardContent className="p-4 text-center">
-              <Target className="mx-auto mb-2 text-primary" size={24} />
-              <p className="text-2xl font-bold text-foreground">{stats.monthlyDrills}</p>
-              <p className="text-xs text-muted-foreground">Drills This Month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/levels', { state: { from: 'home' } })}>
-            <CardContent className="p-4 text-center">
-              <Trophy className="mx-auto mb-2 text-primary" size={24} />
-              <p className="text-2xl font-bold text-foreground">{stats.monthlyLevels}</p>
-              <p className="text-xs text-muted-foreground">Levels This Month</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4 text-center">
-              <TrendingUp className="mx-auto mb-2 text-primary" size={24} />
-              <p className="text-2xl font-bold text-foreground">
-                {stats.scoringAverage > 0 ? `+${stats.scoringAverage.toFixed(1)}` : 
-                 stats.scoringAverage < 0 ? stats.scoringAverage.toFixed(1) : 
-                 stats.scoringAverage === 0 && stats.monthlyRounds > 0 ? 'E' : '-'}
-              </p>
-              <p className="text-xs text-muted-foreground">Scoring Average</p>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Quick Actions */}
         <Card>
