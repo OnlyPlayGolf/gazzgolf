@@ -278,7 +278,7 @@ export default function RoundTracker() {
         description: "The round has been deleted successfully.",
       });
 
-      navigate("/rounds");
+      navigate("/");
     } catch (error: any) {
       console.error("Error deleting round:", error);
       toast({
@@ -450,7 +450,7 @@ export default function RoundTracker() {
             <AlertDialogAction
               onClick={() => {
                 setShowExitDialog(false);
-                navigate("/rounds");
+                navigate("/");
               }}
               className="w-full"
             >
