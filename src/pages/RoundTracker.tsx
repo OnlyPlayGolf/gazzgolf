@@ -6,6 +6,16 @@ import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 interface Round {
@@ -52,6 +62,7 @@ export default function RoundTracker() {
   const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
+  const [showExitDialog, setShowExitDialog] = useState(false);
 
   useEffect(() => {
     if (roundId) {
@@ -236,6 +247,48 @@ export default function RoundTracker() {
     }
   };
 
+  const handleDeleteRound = async () => {
+    try {
+      // Delete all holes for this round
+      const { error: holesError } = await supabase
+        .from("holes")
+        .delete()
+        .eq("round_id", roundId);
+
+      if (holesError) throw holesError;
+
+      // Delete all round players
+      const { error: playersError } = await supabase
+        .from("round_players")
+        .delete()
+        .eq("round_id", roundId);
+
+      if (playersError) throw playersError;
+
+      // Delete the round
+      const { error: roundError } = await supabase
+        .from("rounds")
+        .delete()
+        .eq("id", roundId);
+
+      if (roundError) throw roundError;
+
+      toast({
+        title: "Round deleted",
+        description: "The round has been deleted successfully.",
+      });
+
+      navigate("/rounds");
+    } catch (error: any) {
+      console.error("Error deleting round:", error);
+      toast({
+        title: "Error deleting round",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -261,7 +314,7 @@ export default function RoundTracker() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/rounds")}
+              onClick={() => setShowExitDialog(true)}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -384,6 +437,38 @@ export default function RoundTracker() {
       </div>
 
       <RoundBottomTabBar roundId={roundId!} />
+
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exit Round</AlertDialogTitle>
+            <AlertDialogDescription>
+              What would you like to do with this round?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                navigate("/rounds");
+              }}
+              className="w-full"
+            >
+              Save and Exit
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                handleDeleteRound();
+              }}
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Round
+            </AlertDialogAction>
+            <AlertDialogCancel className="w-full mt-0">Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
