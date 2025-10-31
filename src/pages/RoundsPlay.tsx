@@ -411,15 +411,13 @@ export default function RoundsPlay() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="date" className="flex items-center gap-1">
-                    <Calendar size={14} />
-                    Date
-                  </Label>
+                  <Label htmlFor="date">Date</Label>
                   <Input
                     id="date"
                     type="date"
                     value={datePlayer}
                     onChange={(e) => setDatePlayed(e.target.value)}
+                    className="cursor-pointer"
                   />
                 </div>
               </div>
