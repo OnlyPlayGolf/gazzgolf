@@ -312,12 +312,12 @@ export default function RoundLeaderboard() {
                                 key={hole.hole_number} 
                                 className="text-center font-bold text-xs px-1 py-1.5"
                               >
-                                {score || 0}
+                                {score && score > 0 ? score : ''}
                               </TableCell>
                             );
                           })}
                           <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                            {frontTotals.totalScore || 0}
+                            {frontTotals.totalScore > 0 ? frontTotals.totalScore : ''}
                           </TableCell>
                         </TableRow>
                         <TableRow>
@@ -326,12 +326,12 @@ export default function RoundLeaderboard() {
                             const score = player.scores.get(hole.hole_number);
                             return (
                               <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                {score || 0}
+                                {score && score > 0 ? score : ''}
                               </TableCell>
                             );
                           })}
                           <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                            {frontTotals.totalScore || 0}
+                            {frontTotals.totalScore > 0 ? frontTotals.totalScore : ''}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -383,12 +383,12 @@ export default function RoundLeaderboard() {
                                   key={hole.hole_number} 
                                   className="text-center font-bold text-xs px-1 py-1.5"
                                 >
-                                  {score || 0}
+                                  {score && score > 0 ? score : ''}
                                 </TableCell>
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                              {backTotals.totalScore || 0}
+                              {backTotals.totalScore > 0 ? backTotals.totalScore : ''}
                             </TableCell>
                           </TableRow>
                           <TableRow>
@@ -397,12 +397,12 @@ export default function RoundLeaderboard() {
                               const score = player.scores.get(hole.hole_number);
                               return (
                                 <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                  {score || 0}
+                                  {score && score > 0 ? score : ''}
                                 </TableCell>
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                              {backTotals.totalScore || 0}
+                              {backTotals.totalScore > 0 ? backTotals.totalScore : ''}
                             </TableCell>
                           </TableRow>
                         </TableBody>
