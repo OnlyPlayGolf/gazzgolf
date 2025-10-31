@@ -214,18 +214,7 @@ export default function RoundLeaderboard() {
             <Card key={player.id} className="overflow-hidden">
               {/* Header */}
               <div className="bg-primary text-primary-foreground p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
-                    className="text-primary-foreground hover:bg-primary-foreground/20 -ml-2"
-                  >
-                    <ChevronDown 
-                      size={24} 
-                      className={`transition-transform ${isExpanded ? '' : '-rotate-90'}`}
-                    />
-                  </Button>
+                <div className="flex items-center justify-center mb-2">
                   <div className="flex-1 text-center">
                     <h2 className="text-lg font-bold">
                       Game {new Date(round.date_played).toLocaleDateString('en-US', { 
@@ -236,7 +225,6 @@ export default function RoundLeaderboard() {
                     </h2>
                     <p className="text-sm opacity-90">{round.course_name}</p>
                   </div>
-                  <div className="w-10" />
                 </div>
 
                 <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
@@ -244,10 +232,17 @@ export default function RoundLeaderboard() {
                 </div>
               </div>
 
-              {/* Player Info Bar */}
-              <div className="bg-card border-b border-border p-4">
+              {/* Player Info Bar - Clickable */}
+              <div 
+                className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    <ChevronDown 
+                      size={20} 
+                      className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+                    />
                     <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
                       {overallTotals.holesCompleted || "-"}
                     </div>
@@ -278,64 +273,64 @@ export default function RoundLeaderboard() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-primary/5">
-                          <TableHead className="text-center font-bold w-20">Hole</TableHead>
+                          <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
                           {frontNine.map(hole => (
-                            <TableHead key={hole.hole_number} className="text-center font-bold min-w-[40px]">
+                            <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
                               {hole.hole_number}
                             </TableHead>
                           ))}
-                          <TableHead className="text-center font-bold bg-primary/10 min-w-[50px]">Out</TableHead>
+                          <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         <TableRow>
-                          <TableCell className="font-medium text-muted-foreground">Handicap</TableCell>
+                          <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
                           {frontNine.map(hole => (
-                            <TableCell key={hole.hole_number} className="text-center">
+                            <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
                               {hole.stroke_index}
                             </TableCell>
                           ))}
-                          <TableCell className="text-center bg-muted"></TableCell>
+                          <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium text-muted-foreground">Par</TableCell>
+                          <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                           {frontNine.map(hole => (
-                            <TableCell key={hole.hole_number} className="text-center font-semibold">
+                            <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
                               {hole.par}
                             </TableCell>
                           ))}
-                          <TableCell className="text-center font-bold bg-muted">
+                          <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
                             {frontNine.reduce((sum, h) => sum + h.par, 0)}
                           </TableCell>
                         </TableRow>
                         <TableRow className="font-bold">
-                          <TableCell className="font-bold">Score</TableCell>
+                          <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                           {frontNine.map(hole => {
                             const score = player.scores.get(hole.hole_number);
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
-                                className="text-center font-bold"
+                                className="text-center font-bold text-xs px-1 py-1.5"
                               >
                                 {score || 0}
                               </TableCell>
                             );
                           })}
-                          <TableCell className="text-center font-bold bg-muted">
+                          <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
                             {frontTotals.totalScore || 0}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell className="font-medium text-muted-foreground">Net</TableCell>
+                          <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Net</TableCell>
                           {frontNine.map(hole => {
                             const score = player.scores.get(hole.hole_number);
                             return (
-                              <TableCell key={hole.hole_number} className="text-center">
+                              <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
                                 {score || 0}
                               </TableCell>
                             );
                           })}
-                          <TableCell className="text-center font-bold bg-muted">
+                          <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
                             {frontTotals.totalScore || 0}
                           </TableCell>
                         </TableRow>
@@ -349,64 +344,64 @@ export default function RoundLeaderboard() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-primary/5">
-                            <TableHead className="text-center font-bold w-20">Hole</TableHead>
+                            <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
                             {backNine.map(hole => (
-                              <TableHead key={hole.hole_number} className="text-center font-bold min-w-[40px]">
+                              <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
                                 {hole.hole_number}
                               </TableHead>
                             ))}
-                            <TableHead className="text-center font-bold bg-primary/10 min-w-[50px]">In</TableHead>
+                            <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           <TableRow>
-                            <TableCell className="font-medium text-muted-foreground">Handicap</TableCell>
+                            <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
                             {backNine.map(hole => (
-                              <TableCell key={hole.hole_number} className="text-center">
+                              <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
                                 {hole.stroke_index}
                               </TableCell>
                             ))}
-                            <TableCell className="text-center bg-muted"></TableCell>
+                            <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell className="font-medium text-muted-foreground">Par</TableCell>
+                            <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                             {backNine.map(hole => (
-                              <TableCell key={hole.hole_number} className="text-center font-semibold">
+                              <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
                                 {hole.par}
                               </TableCell>
                             ))}
-                            <TableCell className="text-center font-bold bg-muted">
+                            <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
                               {backNine.reduce((sum, h) => sum + h.par, 0)}
                             </TableCell>
                           </TableRow>
                           <TableRow className="font-bold">
-                            <TableCell className="font-bold">Score</TableCell>
+                            <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                             {backNine.map(hole => {
                               const score = player.scores.get(hole.hole_number);
                               return (
                                 <TableCell 
                                   key={hole.hole_number} 
-                                  className="text-center font-bold"
+                                  className="text-center font-bold text-xs px-1 py-1.5"
                                 >
                                   {score || 0}
                                 </TableCell>
                               );
                             })}
-                            <TableCell className="text-center font-bold bg-muted">
+                            <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
                               {backTotals.totalScore || 0}
                             </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell className="font-medium text-muted-foreground">Net</TableCell>
+                            <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Net</TableCell>
                             {backNine.map(hole => {
                               const score = player.scores.get(hole.hole_number);
                               return (
-                                <TableCell key={hole.hole_number} className="text-center">
+                                <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
                                   {score || 0}
                                 </TableCell>
                               );
                             })}
-                            <TableCell className="text-center font-bold bg-muted">
+                            <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
                               {backTotals.totalScore || 0}
                             </TableCell>
                           </TableRow>
