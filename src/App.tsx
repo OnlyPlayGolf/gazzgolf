@@ -40,6 +40,7 @@ import ProRoundSummary from "./pages/ProRoundSummary";
 import ManagePlayers from "./pages/ManagePlayers";
 import RoundLeaderboard from "./pages/RoundLeaderboard";
 import Practice from "./pages/Practice";
+import AggressivePuttingDrill from "./pages/AggressivePuttingDrill";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
             <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
             <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
             <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
+            <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
