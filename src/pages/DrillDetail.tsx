@@ -92,6 +92,14 @@ const DrillDetail = () => {
   const [drillIsFavorite, setDrillIsFavorite] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Redirect aggressive-putting to new tabbed structure
+  useEffect(() => {
+    if (drillId === 'aggressive-putting') {
+      navigate('/drill/aggressive-putting/score', { replace: true });
+      return;
+    }
+  }, [drillId, navigate]);
+
   useEffect(() => {
     if (drillId && drills[drillId]) {
       setDrill(drills[drillId]);
