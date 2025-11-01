@@ -92,10 +92,18 @@ const DrillDetail = () => {
   const [drillIsFavorite, setDrillIsFavorite] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Redirect aggressive-putting to new tabbed structure
+  // Redirect drills to new game mode structure
   useEffect(() => {
-    if (drillId === 'aggressive-putting') {
-      navigate('/drill/aggressive-putting/score', { replace: true });
+    const drillRedirects: Record<string, string> = {
+      'aggressive-putting': '/drill/aggressive-putting/score',
+      'pga-tour-18': '/drill/pga-tour-18/score',
+      'up-down-putting': '/drill/up-down-putting/score',
+      'short-putting-test': '/drill/short-putting-test/score',
+      '8-ball-drill': '/drill/8-ball-drill/score',
+    };
+    
+    if (drillId && drillRedirects[drillId]) {
+      navigate(drillRedirects[drillId], { replace: true });
       return;
     }
   }, [drillId, navigate]);

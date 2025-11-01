@@ -137,15 +137,31 @@ const CategoryDrills = () => {
           <div className="space-y-4">
             {drills.map((drill) => {
               if (!drill) return null;
-              
               const Icon = drill.icon;
               const drillIsFavorite = isFavorite(drill.id);
+              
+              // Drills with new game mode structure
+              const gameModeDrills = [
+                'aggressive-putting',
+                'pga-tour-18',
+                'up-down-putting',
+                'short-putting-test',
+                '8-ball-drill'
+              ];
+              
+              const handleDrillClick = () => {
+                if (gameModeDrills.includes(drill.id)) {
+                  navigate(`/drill/${drill.id}/score`);
+                } else {
+                  navigate(`/drills/${drill.id}/detail`);
+                }
+              };
               
               return (
                 <Card 
                   key={drill.id} 
                   className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer"
-                  onClick={() => navigate(`/drills/${drill.id}/detail`)}
+                  onClick={handleDrillClick}
                 >
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-3 text-foreground">
@@ -184,7 +200,7 @@ const CategoryDrills = () => {
                     <Button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/drills/${drill.id}/detail`);
+                        handleDrillClick();
                       }}
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     >

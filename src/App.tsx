@@ -41,6 +41,10 @@ import ManagePlayers from "./pages/ManagePlayers";
 import RoundLeaderboard from "./pages/RoundLeaderboard";
 import Practice from "./pages/Practice";
 import AggressivePuttingDrill from "./pages/AggressivePuttingDrill";
+import PGATour18Drill from "./pages/PGATour18Drill";
+import UpDownPuttingDrill from "./pages/UpDownPuttingDrill";
+import ShortPuttingDrill from "./pages/ShortPuttingDrill";
+import EightBallDrill from "./pages/EightBallDrill";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +89,10 @@ const App = () => (
             <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
             <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
+            <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
+            <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />
+            <Route path="/drill/short-putting-test/*" element={<ShortPuttingDrill />} />
+            <Route path="/drill/8-ball-drill/*" element={<EightBallDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

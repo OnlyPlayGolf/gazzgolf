@@ -44,7 +44,7 @@ const PuttingDrills = () => {
               </p>
               
               <Button 
-                onClick={() => navigate('/drill/pga-tour-18')}
+                onClick={() => navigate('/drill/pga-tour-18/score')}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Open Drill
@@ -71,7 +71,7 @@ const PuttingDrills = () => {
               </p>
               
               <Button 
-                onClick={() => navigate('/drill/aggressive-putting')}
+                onClick={() => navigate('/drill/aggressive-putting/score')}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Open Drill

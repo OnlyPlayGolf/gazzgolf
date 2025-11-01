@@ -4,13 +4,13 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate, Routes, Route, Navigate } from "react-router-dom";
 import { DrillBottomTabBar } from "@/components/DrillBottomTabBar";
 import { migrateStorageKeys } from "@/utils/storageManager";
-import EightBallScore from "./EightBallScore";
-import EightBallLeaderboard from "./EightBallLeaderboard";
-import EightBallFeed from "./EightBallFeed";
-import EightBallMessages from "./EightBallMessages";
-import EightBallInfo from "./EightBallInfo";
+import ShortPuttingScore from "./ShortPuttingScore";
+import ShortPuttingLeaderboard from "./ShortPuttingLeaderboard";
+import ShortPuttingFeed from "./ShortPuttingFeed";
+import ShortPuttingMessages from "./ShortPuttingMessages";
+import ShortPuttingInfo from "./ShortPuttingInfo";
 
-const EightBallDrill = () => {
+const ShortPuttingDrill = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,14 +25,14 @@ const EightBallDrill = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/drills/shortgame')}
+              onClick={() => navigate('/drills/putting')}
               className="rounded-full"
             >
               <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">8-Ball Drill</h1>
-              <p className="text-sm text-muted-foreground">Complete short game practice</p>
+              <h1 className="text-xl font-bold">Short Putting Test</h1>
+              <p className="text-sm text-muted-foreground">Pressure-packed accuracy drill</p>
             </div>
             <div className="w-10" />
           </div>
@@ -42,15 +42,15 @@ const EightBallDrill = () => {
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div>
               <div className="text-lg font-bold">PRACTICE DRILL</div>
-              <div className="text-sm opacity-90">SHORT GAME</div>
+              <div className="text-sm opacity-90">PUTTING</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">8</div>
-              <div className="text-xs opacity-90">Stations</div>
+              <div className="text-2xl font-bold">4</div>
+              <div className="text-xs opacity-90">Tee Positions</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">5</div>
-              <div className="text-xs opacity-90">Rounds</div>
+              <div className="text-2xl font-bold">4ft+</div>
+              <div className="text-xs opacity-90">Starting</div>
             </div>
           </div>
         </div>
@@ -59,17 +59,17 @@ const EightBallDrill = () => {
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
-          <Route path="score" element={<EightBallScore />} />
-          <Route path="leaderboard" element={<EightBallLeaderboard />} />
-          <Route path="feed" element={<EightBallFeed />} />
-          <Route path="messages" element={<EightBallMessages />} />
-          <Route path="info" element={<EightBallInfo />} />
+          <Route path="score" element={<ShortPuttingScore />} />
+          <Route path="leaderboard" element={<ShortPuttingLeaderboard />} />
+          <Route path="feed" element={<ShortPuttingFeed />} />
+          <Route path="messages" element={<ShortPuttingMessages />} />
+          <Route path="info" element={<ShortPuttingInfo />} />
         </Routes>
       </div>
       
-      <DrillBottomTabBar drillSlug="8-ball-drill" />
+      <DrillBottomTabBar drillSlug="short-putting-test" />
     </div>
   );
 };
 
-export default EightBallDrill;
+export default ShortPuttingDrill;
