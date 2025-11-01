@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Pencil, List, BookOpen } from "lucide-react";
+import { Pencil, List, Newspaper, MessageSquare, BookOpen } from "lucide-react";
 
 interface DrillBottomTabBarProps {
   drillSlug: string;
@@ -10,9 +10,11 @@ export function DrillBottomTabBar({ drillSlug }: DrillBottomTabBarProps) {
   const location = useLocation();
   
   const tabs = [
-    { id: "score", label: "Enter score", icon: Pencil, path: `/drills/${drillSlug}/score` },
-    { id: "leaderboard", label: "Leaderboard", icon: List, path: `/drills/${drillSlug}/leaderboard` },
-    { id: "info", label: "Practice info", icon: BookOpen, path: `/drills/${drillSlug}/info` },
+    { id: "score", label: "Enter score", icon: Pencil, path: `/drill/${drillSlug}/score` },
+    { id: "leaderboard", label: "Leaderboard", icon: List, path: `/drill/${drillSlug}/leaderboard` },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/drill/${drillSlug}/feed` },
+    { id: "messages", label: "Messages", icon: MessageSquare, path: `/drill/${drillSlug}/messages` },
+    { id: "info", label: "Practice info", icon: BookOpen, path: `/drill/${drillSlug}/info` },
   ];
 
   return (
@@ -26,7 +28,7 @@ export function DrillBottomTabBar({ drillSlug }: DrillBottomTabBarProps) {
             <button
               key={tab.id}
               onClick={() => navigate(tab.path)}
-              className={`flex flex-col items-center gap-1 py-3 px-4 flex-1 transition-colors ${
+              className={`flex flex-col items-center gap-1 py-3 px-2 flex-1 transition-colors ${
                 isActive 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"

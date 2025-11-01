@@ -6,6 +6,8 @@ import { DrillBottomTabBar } from "@/components/DrillBottomTabBar";
 import { migrateStorageKeys } from "@/utils/storageManager";
 import AggressivePuttingScore from "./AggressivePuttingScore";
 import AggressivePuttingLeaderboard from "./AggressivePuttingLeaderboard";
+import AggressivePuttingFeed from "./AggressivePuttingFeed";
+import AggressivePuttingMessages from "./AggressivePuttingMessages";
 import AggressivePuttingInfo from "./AggressivePuttingInfo";
 
 const AggressivePuttingDrill = () => {
@@ -39,6 +41,8 @@ const AggressivePuttingDrill = () => {
             <Route index element={<Navigate to="score" replace />} />
             <Route path="score" element={<AggressivePuttingScore />} />
             <Route path="leaderboard" element={<AggressivePuttingLeaderboard />} />
+            <Route path="feed" element={<AggressivePuttingFeed />} />
+            <Route path="messages" element={<AggressivePuttingMessages />} />
             <Route path="info" element={<AggressivePuttingInfo />} />
           </Routes>
         </div>
