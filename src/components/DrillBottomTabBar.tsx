@@ -11,10 +11,10 @@ export function DrillBottomTabBar({ drillSlug }: DrillBottomTabBarProps) {
   
   const tabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/drill/${drillSlug}/score` },
-    { id: "leaderboard", label: "Leaderboard", icon: List, path: `/drill/${drillSlug}/leaderboard` },
+    { id: "info", label: "Drill guide", icon: BookOpen, path: `/drill/${drillSlug}/info` },
     { id: "feed", label: "Game feed", icon: Newspaper, path: `/drill/${drillSlug}/feed` },
+    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/drill/${drillSlug}/leaderboard` },
     { id: "messages", label: "Messages", icon: MessageSquare, path: `/drill/${drillSlug}/messages` },
-    { id: "info", label: "Practice info", icon: BookOpen, path: `/drill/${drillSlug}/info` },
   ];
 
   return (
