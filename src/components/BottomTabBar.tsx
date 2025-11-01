@@ -1,13 +1,13 @@
-import { Home, Target, TrendingUp, Users, Play } from "lucide-react";
+import { Home, Target, Users, Play, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { id: 'home', label: 'Home', icon: Home, path: '/' },
-  { id: 'drills', label: 'Drills', icon: Target, path: '/categories' },
+  { id: 'practice', label: 'Practice', icon: Target, path: '/practice' },
   { id: 'play', label: 'Play', icon: Play, path: '/rounds-play' },
-  { id: 'levels', label: 'Levels', icon: TrendingUp, path: '/levels' },
   { id: 'groups', label: 'Groups', icon: Users, path: '/groups' },
+  { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
 ];
 
 export const BottomTabBar = () => {
@@ -25,7 +25,7 @@ export const BottomTabBar = () => {
           const Icon = tab.icon;
           const isActive =
             location.pathname === tab.path ||
-            (tab.path === '/levels' && location.pathname.startsWith('/levels'));
+            (tab.path === '/practice' && (location.pathname.startsWith('/drills') || location.pathname.startsWith('/levels') || location.pathname === '/categories'));
           
           // Special styling for Play tab
           if (tab.id === 'play') {

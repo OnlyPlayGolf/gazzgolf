@@ -39,6 +39,7 @@ import ProHoleTracker from "./pages/ProHoleTracker";
 import ProRoundSummary from "./pages/ProRoundSummary";
 import ManagePlayers from "./pages/ManagePlayers";
 import RoundLeaderboard from "./pages/RoundLeaderboard";
+import Practice from "./pages/Practice";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
         <div className="relative">
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/practice" element={<Practice />} />
             <Route path="/categories" element={<DrillsCategories />} />
             <Route path="/drills" element={<DrillsCategories />} />
             <Route path="/drills/:categoryId" element={<CategoryDrills />} />
