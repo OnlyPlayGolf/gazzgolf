@@ -71,8 +71,8 @@ export const TopNavBar = () => {
   const showBack = fromPage && (location.pathname !== '/profile' && location.pathname !== '/');
   const backPath = fromPage === 'profile' ? '/profile' : '/';
   
-  // Check if we're on the home page
-  const isHomePage = location.pathname === '/';
+  // Check if we're on the home page or profile page (both show hamburger menu)
+  const showHamburgerMenu = location.pathname === '/' || location.pathname === '/profile';
   
   return (
     <div
@@ -91,7 +91,7 @@ export const TopNavBar = () => {
           >
             <ArrowLeft size={20} />
           </button>
-        ) : isHomePage ? (
+        ) : showHamburgerMenu ? (
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <button

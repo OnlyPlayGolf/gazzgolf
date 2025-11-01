@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, QrCode, Settings, Users, Target, TrendingUp, BarChart3 } from "lucide-react";
+import { Camera, QrCode, Users, Target, TrendingUp, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TopNavBar } from "@/components/TopNavBar";
 
 interface Profile {
   id: string;
@@ -193,25 +194,11 @@ export default function UserProfile() {
     : 'HCP Not Set';
 
   return (
-    <div className="min-h-screen bg-background pb-20 pt-16">
-      {/* Header section */}
-      <div className="relative px-4 py-6">
-        <div className="absolute top-6 right-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-foreground hover:bg-accent"
-            onClick={() => navigate('/profile-settings')}
-          >
-            <Settings size={20} />
-          </Button>
-        </div>
-
-        {/* Profile label and photo */}
+    <div className="min-h-screen bg-background pb-20">
+      <TopNavBar />
+      <div className="relative px-4 py-6 pt-20">
+        {/* Profile photo */}
         <div className="flex flex-col items-center">
-          <div className="text-left w-full mb-2">
-            <h2 className="text-lg font-semibold text-muted-foreground">Profile</h2>
-          </div>
           <div className="relative">
             <Avatar className="h-32 w-32 border-4 border-border">
               <AvatarImage src={profile.avatar_url || undefined} />
