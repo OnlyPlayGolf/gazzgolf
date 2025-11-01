@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,11 +21,15 @@ const categories = [
 
 const Practice = () => {
   const [activeTab, setActiveTab] = useState("drills");
+  const [allLevels, setAllLevels] = useState<Level[]>([]);
   const navigate = useNavigate();
 
-  // Get levels data for Levels tab
-  const allLevels = getLevelsWithProgress();
-  const difficulties = ['beginner', 'intermediate', 'advanced'];
+  useEffect(() => {
+    const levels = getLevelsWithProgress();
+    setAllLevels(levels);
+  }, []);
+
+  const difficulties = ['beginner', 'intermediate', 'advanced', 'expert'];
 
   const getTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
