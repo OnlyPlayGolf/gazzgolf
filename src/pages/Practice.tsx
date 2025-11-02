@@ -1,11 +1,10 @@
-import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TopNavBar } from "@/components/TopNavBar";
-import DrillsCategories from "./DrillsCategories";
-import LevelSelection from "./LevelSelection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Target, Trophy } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Practice = () => {
-  const [activeTab, setActiveTab] = useState("drills");
+  const navigate = useNavigate();
 
   return (
     <div className="pb-20 min-h-screen bg-background">
@@ -16,20 +15,55 @@ const Practice = () => {
           <p className="text-muted-foreground">Improve your game with drills and levels</p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="drills">Drills</TabsTrigger>
-            <TabsTrigger value="levels">Levels</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="drills" className="mt-0">
-            <DrillsCategories />
-          </TabsContent>
-          
-          <TabsContent value="levels" className="mt-0">
-            <LevelSelection />
-          </TabsContent>
-        </Tabs>
+        <div className="grid grid-cols-1 gap-4">
+          <Card 
+            className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
+            onClick={() => navigate('/categories')}
+          >
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Target size={32} className="text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl">Drills</div>
+                  <div className="text-sm font-normal text-muted-foreground mt-1">
+                    Practice specific skills
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Choose from putting, short game, wedges, and more
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
+            onClick={() => navigate('/levels')}
+          >
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Trophy size={32} className="text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl">Levels</div>
+                  <div className="text-sm font-normal text-muted-foreground mt-1">
+                    Track your skill progression
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                See where you stand across all aspects of the game
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
