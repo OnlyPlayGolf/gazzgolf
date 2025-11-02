@@ -37,23 +37,6 @@ const ShortPuttingDrill = () => {
             <div className="w-10" />
           </div>
         </div>
-
-        <div className="bg-primary text-primary-foreground py-4 px-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div>
-              <div className="text-lg font-bold">PRACTICE DRILL</div>
-              <div className="text-sm opacity-90">PUTTING</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">4</div>
-              <div className="text-xs opacity-90">Tee Positions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">4ft+</div>
-              <div className="text-xs opacity-90">Starting</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">

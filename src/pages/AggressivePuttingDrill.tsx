@@ -39,24 +39,6 @@ const AggressivePuttingDrill = () => {
             <div className="w-10" />
           </div>
         </div>
-
-        {/* Drill Info Banner */}
-        <div className="bg-primary text-primary-foreground py-4 px-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div>
-              <div className="text-lg font-bold">PRACTICE DRILL</div>
-              <div className="text-sm opacity-90">PUTTING</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">15</div>
-              <div className="text-xs opacity-90">Target Points</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">4-6m</div>
-              <div className="text-xs opacity-90">Distance</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Content */}
