@@ -26,16 +26,16 @@ const Practice = () => {
                   <Target size={32} className="text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl">Drills</div>
+                  <div className="text-2xl">Point System Drills</div>
                   <div className="text-sm font-normal text-muted-foreground mt-1">
-                    Practice specific skills
+                    Compete with friends and climb the leaderboards
                   </div>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Choose from putting, short game, wedges, and more
+                Compete with friends and climb the leaderboards
               </p>
             </CardContent>
           </Card>
