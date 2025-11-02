@@ -8,30 +8,30 @@ import { getFavorites, addToFavorites, removeFromFavorites, isFavorite, Favorite
 
 const allDrills = [
   {
-    id: 'pga-tour-18',
-    title: 'PGA Tour 18 Holes',
-    shortDescription: 'Practice putting from tournament-style distances across 18 holes for consistency under pressure.',
-    category: 'putting',
-    icon: Target,
-  },
-  {
     id: 'aggressive-putting',
     title: 'Aggressive Putting',
-    shortDescription: 'Putt from a fixed cycle of 4m, 5m, then 6m, repeating in that order to reach 15 points quickly.',
+    shortDescription: 'The Aggressive Putting drill helps you commit with confidence inside six meters. We\'re training speed and confidence - no hesitant strokes.',
     category: 'putting', 
     icon: Target,
   },
   {
-    id: 'up-down-putting',
-    title: 'Up & Down Putting Drill',
-    shortDescription: 'Practice distance control on uphill and downhill putts from 6m, 8m, and 10m.',
+    id: 'pga-tour-18',
+    title: 'PGA Tour 18 Holes',
+    shortDescription: '18 putts that represent an average putting round on the PGA Tour. A great drill to use for overall putting practice, compete with friends, test yourself against tour standards or dial in your speed control.',
     category: 'putting',
     icon: Target,
   },
   {
     id: 'short-putting-test',
     title: 'Short Putting Test',
-    shortDescription: 'Make consecutive putts from 4 tees around the hole. One miss ends the test.',
+    shortDescription: 'Short putts under pressure.',
+    category: 'putting',
+    icon: Target,
+  },
+  {
+    id: 'up-down-putting',
+    title: 'Up & Down Putting Drill',
+    shortDescription: 'A speed control test that challenges you on both uphill and downhill putts. Learn how elevation changes affect your pace and break.',
     category: 'putting',
     icon: Target,
   },
