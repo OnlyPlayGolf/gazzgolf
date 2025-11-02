@@ -192,40 +192,6 @@ export default function AggressivePuttingScore() {
         </Card>
       )}
 
-      {/* Controls */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-foreground">Controls</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button 
-            onClick={handleReset}
-            variant="outline"
-            className="w-full"
-          >
-            New Drill
-          </Button>
-          
-          {lastScore && (
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div>
-                <div className="text-sm font-medium text-foreground">Last Score</div>
-                <div className="text-sm text-muted-foreground">
-                  {lastScore.score} putts • {new Date(lastScore.timestamp).toLocaleDateString()}
-                </div>
-              </div>
-              <Button 
-                onClick={handleResetScores}
-                variant="ghost"
-                size="sm"
-                className="text-red-600 hover:text-red-700"
-              >
-                Reset Scores
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

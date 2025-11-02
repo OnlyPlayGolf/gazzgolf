@@ -30,6 +30,32 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
+                  <div>Aggressive Putting</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Putting • 4m, 5m, 6m cycle
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                The Aggressive Putting drill helps you commit with confidence inside six meters. We're training speed and confidence - no hesitant strokes.
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/drill/aggressive-putting/score')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Open Drill
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Target size={24} className="text-primary" />
+                <div>
                   <div>PGA Tour 18 Holes</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • Mixed distances
@@ -39,8 +65,7 @@ const PuttingDrills = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Practice putting from tournament-style distances across 18 holes. 
-                Perfect for developing consistency under pressure.
+                18 putts that represent an average putting round on the PGA Tour. A great drill to use for overall putting practice, compete with friends, test yourself against tour standards or dial in your speed control.
               </p>
               
               <Button 
@@ -57,21 +82,46 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Aggressive Putting</div>
+                  <div>Short Putting Test</div>
                   <div className="text-sm font-normal text-muted-foreground">
-                    Putting • 4m, 5m, 6m cycle
+                    Putting • Under pressure
                   </div>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Putt from a fixed cycle of 4m, 5m, then 6m, repeating in that order. 
-                Goal is to reach 15 points as quickly as possible.
+                Short putts under pressure.
               </p>
               
               <Button 
-                onClick={() => navigate('/drill/aggressive-putting/score')}
+                onClick={() => navigate('/drill/short-putting-test/score')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Open Drill
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Target size={24} className="text-primary" />
+                <div>
+                  <div>Up & Down Putting</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Putting • Uphill & downhill
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                A speed control test that challenges you on both uphill and downhill putts. Learn how elevation changes affect your pace and break.
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/drill/up-down-putting/score')}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Open Drill
