@@ -26,7 +26,7 @@ const Practice = () => {
                   <Target size={32} className="text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl">Point System Drills</div>
+                  <div className="text-2xl">Drills</div>
                   <div className="text-sm font-normal text-muted-foreground mt-1">
                     Compete with friends and climb the leaderboards
                   </div>
