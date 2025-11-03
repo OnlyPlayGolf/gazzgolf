@@ -12,7 +12,7 @@ const Practice = () => {
       <div className="p-4 pt-20">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-2">Practice</h1>
-          <p className="text-muted-foreground">Improve your game with drills and levels</p>
+          <p className="text-muted-foreground">Improve your game with competitive practice</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4">
