@@ -21,7 +21,6 @@ export const TopNavBar = () => {
 
   const menuItems = [
     { id: 'profile', label: 'Personal Information', icon: UserIcon, available: true, path: '/profile-settings' },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/messages' },
     { id: 'leaderboards', label: 'Leaderboards', icon: Trophy, available: true, path: '/leaderboards' },
     { id: 'rounds', label: 'Round Stats', icon: TrendingUp, available: true, path: '/rounds' },
     { id: 'played-rounds', label: 'Played Rounds', icon: Users, available: true, path: '/played-rounds' },
