@@ -26,7 +26,7 @@ const Practice = () => {
                   <Target size={32} className="text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl">Drills</div>
+                  <div className="text-2xl">Performance Drills</div>
                   <div className="text-sm font-normal text-muted-foreground mt-1">
                     Game-like practice
                   </div>
@@ -36,6 +36,30 @@ const Practice = () => {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Compete with friends and climb the leaderboards
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
+            onClick={() => navigate('/challenge-drills')}
+          >
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Target size={32} className="text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl">Challenge Drills</div>
+                  <div className="text-sm font-normal text-muted-foreground mt-1">
+                    Test your skills
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Take on structured challenges and track your progress
               </p>
             </CardContent>
           </Card>

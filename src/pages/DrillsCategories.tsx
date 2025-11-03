@@ -21,7 +21,7 @@ const DrillsCategories = () => {
       <TopNavBar />
       <div className="p-4 pt-20">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Practice Drills</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Performance Drills</h1>
           <p className="text-muted-foreground">Choose your skill area to practice</p>
         </div>
 
