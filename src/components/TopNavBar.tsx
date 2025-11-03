@@ -101,7 +101,7 @@ export const TopNavBar = () => {
                 <Menu size={20} />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
               <div className="space-y-4 mt-8">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
