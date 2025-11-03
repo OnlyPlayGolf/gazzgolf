@@ -187,12 +187,12 @@ export const TopNavBar = () => {
         )}
 
         {/* Center: Title */}
-        <h1 className="text-white font-bold text-xl flex-1 text-center">
+        <h1 className="text-white font-bold text-xl absolute left-1/2 -translate-x-1/2">
           Gazz Golf
         </h1>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0 ml-auto">
           <AddFriendDialog 
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-white hover:bg-white/20">
