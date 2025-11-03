@@ -69,7 +69,7 @@ export const TopNavBar = () => {
 
   const fromPage = (location.state as any)?.from;
   const showBack = fromPage && (location.pathname !== '/profile' && location.pathname !== '/');
-  const backPath = fromPage === 'profile' ? '/profile' : '/';
+  const backPath = fromPage === 'profile' ? '/profile' : fromPage === 'practice' ? '/practice' : '/';
   
   // Check if we're on the home page or profile page (both show hamburger menu)
   const showHamburgerMenu = location.pathname === '/' || location.pathname === '/profile';

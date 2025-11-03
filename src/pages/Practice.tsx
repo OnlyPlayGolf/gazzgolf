@@ -18,7 +18,7 @@ const Practice = () => {
         <div className="grid grid-cols-1 gap-4">
           <Card 
             className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
-            onClick={() => navigate('/categories')}
+            onClick={() => navigate('/categories', { state: { from: 'practice' } })}
           >
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-foreground">
@@ -42,7 +42,7 @@ const Practice = () => {
 
           <Card 
             className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
-            onClick={() => navigate('/levels')}
+            onClick={() => navigate('/levels', { state: { from: 'practice' } })}
           >
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-foreground">
