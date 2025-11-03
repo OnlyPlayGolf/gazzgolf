@@ -18,6 +18,30 @@ const Practice = () => {
         <div className="grid grid-cols-1 gap-4">
           <Card 
             className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
+            onClick={() => navigate('/levels', { state: { from: 'practice' } })}
+          >
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Trophy size={32} className="text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl">Levels</div>
+                  <div className="text-sm font-normal text-muted-foreground mt-1">
+                    Track your skill progression
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                See where you stand across all aspects of the game
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
             onClick={() => navigate('/categories', { state: { from: 'practice' } })}
           >
             <CardHeader className="pb-4">
@@ -60,30 +84,6 @@ const Practice = () => {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Take on structured challenges and track your progress
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
-            onClick={() => navigate('/levels', { state: { from: 'practice' } })}
-          >
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-3 text-foreground">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Trophy size={32} className="text-primary" />
-                </div>
-                <div>
-                  <div className="text-2xl">Levels</div>
-                  <div className="text-sm font-normal text-muted-foreground mt-1">
-                    Track your skill progression
-                  </div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                See where you stand across all aspects of the game
               </p>
             </CardContent>
           </Card>
