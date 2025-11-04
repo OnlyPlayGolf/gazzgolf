@@ -95,6 +95,13 @@ useEffect(() => {
     if (searchParams.get('view') === 'members') {
       setViewMembersOpen(true);
     }
+    
+    // Open add members dialog if requested via URL
+    if (searchParams.get('view') === 'add') {
+      setAddMembersDialogOpen(true);
+      loadFriendsForAdding();
+      loadCurrentInvite();
+    }
   });
 }, [searchParams]);
 

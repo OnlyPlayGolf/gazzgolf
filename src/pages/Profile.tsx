@@ -773,6 +773,17 @@ const Profile = () => {
                           >
                             <Users size={16} />
                           </Button>
+                          {(group.role === 'owner' || group.role === 'admin') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/group/${group.id}?view=add`)}
+                              title="Add members"
+                              className="flex-shrink-0"
+                            >
+                              <UserPlus size={16} />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
