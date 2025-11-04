@@ -597,6 +597,9 @@ useEffect(() => {
 
   const canAddMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
 
+  // Hide background leaderboards when any modal is open
+  const isOverlayOpen = viewMembersOpen || addMembersDialogOpen || isInviteOpen;
+
   const getRoleIcon = (role: string) => {
     if (role === 'owner') return <Crown size={16} className="text-yellow-500" />;
     if (role === 'admin') return <Shield size={16} className="text-blue-500" />;
@@ -648,7 +651,7 @@ useEffect(() => {
         </div>
 
         {/* Drill Selector */}
-        <Card className="mb-4">
+        <Card className={cn("mb-4", isOverlayOpen && "hidden")}>
           <CardHeader>
             <CardTitle className="text-sm">Select Drill</CardTitle>
           </CardHeader>
@@ -674,7 +677,7 @@ useEffect(() => {
         </Card>
 
         {/* Level Progress Leaderboard */}
-        <Card>
+        <Card className={cn(isOverlayOpen && "hidden")}>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-primary">
               <Trophy size={18} />
@@ -749,7 +752,7 @@ useEffect(() => {
         </Card>
 
         {/* Leaderboard */}
-        <Card>
+        <Card className={cn(isOverlayOpen && "hidden")}>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-primary">
               <Trophy size={18} />
@@ -818,7 +821,7 @@ useEffect(() => {
 
       {/* View Members Dialog */}
       <Dialog open={viewMembersOpen} onOpenChange={setViewMembersOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Group Members</DialogTitle>
           </DialogHeader>
@@ -857,7 +860,7 @@ useEffect(() => {
 
       {/* Add Members Dialog */}
       <Dialog open={addMembersDialogOpen} onOpenChange={setAddMembersDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Add Members</DialogTitle>
           </DialogHeader>
@@ -989,7 +992,7 @@ useEffect(() => {
 
       {/* Invite Link Management Dialog */}
       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Add Members</DialogTitle>
           </DialogHeader>
@@ -1121,7 +1124,7 @@ useEffect(() => {
 
       {/* Invite Management Dialog */}
       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Invite Link</DialogTitle>
           </DialogHeader>
