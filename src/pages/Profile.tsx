@@ -696,15 +696,15 @@ const Profile = () => {
             groups.map((group) => (
               <Card 
                 key={group.id} 
-                className="border-border cursor-pointer hover:border-primary/50 transition-colors"
+                className="border-border cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
                 onClick={() => navigate(`/group/${group.id}`)}
               >
                 <CardContent className="p-4">
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 items-center">
                     {/* Group Avatar */}
                     <div className="flex-shrink-0">
-                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-lg font-bold text-foreground">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/10">
+                        <span className="text-xl font-bold text-primary">
                           {getGroupInitials(group.name)}
                         </span>
                       </div>
@@ -712,101 +712,44 @@ const Profile = () => {
 
                     {/* Group Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{group.name}</h3>
-                          {(group.role === 'owner' || group.role === 'admin') && (
-                            <Crown size={16} className="text-yellow-500 fill-current" />
-                          )}
-                        </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-foreground text-lg">{group.name}</h3>
                         {(group.role === 'owner' || group.role === 'admin') && (
-                          <Badge variant="secondary" className="text-xs">
-                            admin
-                          </Badge>
+                          <Crown size={16} className="text-yellow-500 fill-current" />
                         )}
                       </div>
-
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
-                      </p>
+                      
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {group.role}
+                        </Badge>
+                      </div>
 
                       {group.description && (
-                        <p className="text-sm text-muted-foreground mb-3">
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                           {group.description}
                         </p>
                       )}
-
-                      {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                        {group.role !== 'owner' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLeaveGroup(group.id, group.name);
-                            }}
-                            className="flex-shrink-0"
-                          >
-                            Leave
-                          </Button>
-                        )}
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleFavoriteGroup(group.id);
-                            }}
-                            className="flex-shrink-0"
-                          >
-                            <Star 
-                              size={16} 
-                              className={favoriteGroupIds.includes(group.id) ? "fill-current text-yellow-500" : ""} 
-                            />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/group/${group.id}?view=members`);
-                            }}
-                            title="View members"
-                            className="flex-shrink-0"
-                          >
-                            <Users size={16} />
-                          </Button>
-                          {(group.role === 'owner' || group.role === 'admin') && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/group/${group.id}?view=add`);
-                              }}
-                              title="Add members"
-                              className="flex-shrink-0"
-                            >
-                              <UserPlus size={16} />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMessageGroup(group.id);
-                            }}
-                            title="Message group"
-                            className="flex-shrink-0"
-                          >
-                            <MessageCircle size={16} />
-                          </Button>
-                        </div>
-                      </div>
                     </div>
+
+                    {/* Favorite Star */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavoriteGroup(group.id);
+                      }}
+                      className="flex-shrink-0"
+                    >
+                      <Star 
+                        size={20} 
+                        className={favoriteGroupIds.includes(group.id) ? "fill-current text-yellow-500" : "text-muted-foreground"} 
+                      />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

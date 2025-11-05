@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy } from "lucide-react";
+import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
@@ -600,6 +600,40 @@ useEffect(() => {
     }
   };
 
+  const handleLeaveGroup = async () => {
+    if (!groupId || !user || currentUserRole === 'owner') return;
+
+    if (!confirm(`Are you sure you want to leave ${group.name}?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Left group",
+        description: `You've left ${group.name}`,
+      });
+
+      navigate('/profile');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to leave group",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const canAddMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   const getRoleIcon = (role: string) => {
@@ -700,6 +734,28 @@ useEffect(() => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Leave Group Section - Only for non-owners */}
+            {currentUserRole !== 'owner' && (
+              <Card className="border-destructive/50">
+                <CardHeader>
+                  <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Once you leave this group, you'll need to be re-invited to join again.
+                  </p>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleLeaveGroup}
+                    disabled={loading}
+                  >
+                    <LogOut size={16} className="mr-2" />
+                    Leave Group
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Invite Tab */}
