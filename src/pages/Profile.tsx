@@ -694,7 +694,11 @@ const Profile = () => {
         <div className="space-y-4">
           {groups.length > 0 ? (
             groups.map((group) => (
-              <Card key={group.id} className="border-border">
+              <Card 
+                key={group.id} 
+                className="border-border cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => navigate(`/group/${group.id}`)}
+              >
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     {/* Group Avatar */}
@@ -733,20 +737,15 @@ const Profile = () => {
                       )}
 
                       {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => navigate(`/group/${group.id}`)}
-                          className="flex-shrink-0"
-                        >
-                          View Leaderboard
-                        </Button>
+                      <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                         {group.role !== 'owner' && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleLeaveGroup(group.id, group.name)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLeaveGroup(group.id, group.name);
+                            }}
                             className="flex-shrink-0"
                           >
                             Leave
@@ -756,7 +755,10 @@ const Profile = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleToggleFavoriteGroup(group.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleFavoriteGroup(group.id);
+                            }}
                             className="flex-shrink-0"
                           >
                             <Star 
@@ -767,7 +769,10 @@ const Profile = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/group/${group.id}?view=members`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/group/${group.id}?view=members`);
+                            }}
                             title="View members"
                             className="flex-shrink-0"
                           >
@@ -777,7 +782,10 @@ const Profile = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/group/${group.id}?view=add`)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/group/${group.id}?view=add`);
+                              }}
                               title="Add members"
                               className="flex-shrink-0"
                             >
@@ -787,7 +795,10 @@ const Profile = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleMessageGroup(group.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMessageGroup(group.id);
+                            }}
                             title="Message group"
                             className="flex-shrink-0"
                           >
