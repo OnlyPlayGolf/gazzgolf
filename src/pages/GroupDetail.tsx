@@ -77,28 +77,33 @@ const GroupDetail = () => {
   const [groupLevelsLeaderboard, setGroupLevelsLeaderboard] = useState<GroupLevelLeaderboardEntry[]>([]);
   const [loadingGroupLevels, setLoadingGroupLevels] = useState(false);
   
-  // Dialog states
-  const [viewMembersOpen, setViewMembersOpen] = useState(false);
-  const [addMembersDialogOpen, setAddMembersDialogOpen] = useState(false);
-  
   // Invite management state
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [currentInvite, setCurrentInvite] = useState<any>(null);
   const [inviteExpiry, setInviteExpiry] = useState("");
   const [inviteMaxUses, setInviteMaxUses] = useState("");
+  
+  // Active tab state
+  const [activeTab, setActiveTab] = useState("manage");
+
+  // Load invite when switching to invite tab
+  useEffect(() => {
+    if (activeTab === 'invite') {
+      loadCurrentInvite();
+    }
+  }, [activeTab]);
 
 useEffect(() => {
   supabase.auth.getUser().then(({ data: { user } }) => {
     setUser(user);
 
-    // Open members view if requested via URL
+    // Open specific tab if requested via URL
     if (searchParams.get('view') === 'members') {
-      setViewMembersOpen(true);
+      setActiveTab('manage');
     }
     
-    // Open add members dialog if requested via URL
+    // Open invite tab if requested via URL
     if (searchParams.get('view') === 'add') {
-      setAddMembersDialogOpen(true);
+      setActiveTab('invite');
       loadFriendsForAdding();
       loadCurrentInvite();
     }
@@ -420,7 +425,7 @@ useEffect(() => {
       });
 
       setSelectedUsers(new Set());
-      setAddMembersDialogOpen(false);
+      setActiveTab('manage');
       await loadMembers();
     } catch (error: any) {
       toast({
@@ -597,9 +602,6 @@ useEffect(() => {
 
   const canAddMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
 
-  // Hide background leaderboards when any modal is open
-  const isOverlayOpen = viewMembersOpen || addMembersDialogOpen || isInviteOpen;
-
   const getRoleIcon = (role: string) => {
     if (role === 'owner') return <Crown size={16} className="text-yellow-500" />;
     if (role === 'admin') return <Shield size={16} className="text-blue-500" />;
@@ -627,599 +629,202 @@ useEffect(() => {
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-            <button 
-              onClick={() => setViewMembersOpen(true)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-            >
+            <p className="text-sm text-muted-foreground">
               {members.length} {members.length === 1 ? 'member' : 'members'}
-            </button>
+            </p>
           </div>
-          {canAddMembers && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                loadFriendsForAdding();
-                loadCurrentInvite();
-                setAddMembersDialogOpen(true);
-              }}
-            >
-              <UserPlus size={16} className="mr-2" />
-              Add
-            </Button>
-          )}
         </div>
 
-        {/* Drill Selector */}
-        <Card className={cn("mb-4", isOverlayOpen && "hidden")}>
-          <CardHeader>
-            <CardTitle className="text-sm">Select Drill</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <select
-              className="w-full p-2 rounded-md border border-border bg-background text-foreground"
-              value={selectedDrill || ''}
-              onChange={(e) => {
-                const drill = drills.find(d => d.title === e.target.value);
-                if (drill) {
-                  setSelectedDrill(drill.title);
-                  loadDrillLeaderboard(drill.title, drill.lower_is_better);
-                }
-              }}
-            >
-              {drills.map((drill) => (
-                <option key={drill.id} value={drill.title}>
-                  {drill.title}
-                </option>
-              ))}
-            </select>
-          </CardContent>
-        </Card>
+        {/* Main Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="manage">Manage</TabsTrigger>
+            <TabsTrigger value="invite">Invite</TabsTrigger>
+            <TabsTrigger value="message">Message</TabsTrigger>
+          </TabsList>
 
-        {/* Level Progress Leaderboard */}
-        <Card className={cn(isOverlayOpen && "hidden")}>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <Trophy size={18} />
-              Level Progress Leaderboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingGroupLevels ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Loading leaderboard...</p>
-              </div>
-            ) : groupLevelsLeaderboard.length > 0 ? (
-              <div className="space-y-3">
-                {groupLevelsLeaderboard.map((entry, index) => (
-                  <div 
-                    key={entry.user_id} 
-                    className={cn(
-                      "flex items-center justify-between p-3 rounded-md",
-                      entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-full font-bold",
-                        index === 0 ? "bg-yellow-500/20 text-yellow-500" :
-                        index === 1 ? "bg-gray-400/20 text-gray-400" :
-                        index === 2 ? "bg-orange-500/20 text-orange-500" :
-                        "bg-primary/20 text-primary"
-                      )}>
-                        {index === 0 ? (
-                          <Crown size={16} className="text-yellow-500" />
-                        ) : (
-                          `#${index + 1}`
-                        )}
+          {/* Manage Tab */}
+          <TabsContent value="manage" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Members</span>
+                  {canAddMembers && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        loadFriendsForAdding();
+                        setActiveTab("invite");
+                      }}
+                    >
+                      <UserPlus size={16} className="mr-2" />
+                      Add
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {members.map((member) => (
+                    <div
+                      key={member.user_id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-secondary/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={member.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {(member.display_name || member.username || 'U').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {member.display_name || member.username || 'Unknown'}
+                          </div>
+                          {member.username && (
+                            <div className="text-sm text-muted-foreground">
+                              @{member.username}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <Avatar className="h-8 w-8">
-                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
-                        <AvatarFallback className="bg-primary/20 text-primary">
-                          {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <span className={cn(
-                          "font-medium",
-                          entry.user_id === user?.id && "font-bold text-primary"
-                        )}>
-                          {entry.display_name || entry.username || "Unknown"}
-                          {entry.user_id === user?.id && " (You)"}
-                        </span>
-                        {entry.highest_level && (
-                          <p className="text-xs text-muted-foreground">
-                            Level {entry.highest_level} • {entry.category}
-                          </p>
-                        )}
+                      <div className="flex items-center gap-2">
+                        {getRoleIcon(member.role)}
+                        <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
+                          {member.role}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground">
-                        {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
-                      </p>
-                      <p className="text-xs text-muted-foreground">completed</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                No completed levels in this group yet.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Leaderboard */}
-        <Card className={cn(isOverlayOpen && "hidden")}>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <Trophy size={18} />
-              {selectedDrill} Leaderboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingLeaderboard ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Loading leaderboard...</p>
-              </div>
-            ) : drillLeaderboard.length > 0 ? (
-              <div className="space-y-3">
-                {drillLeaderboard.map((entry, index) => (
-                  <div 
-                    key={entry.user_id} 
-                    className={cn(
-                      "flex items-center justify-between p-3 rounded-md",
-                      entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "flex items-center justify-center w-8 h-8 rounded-full font-bold",
-                        index === 0 ? "bg-yellow-500/20 text-yellow-500" :
-                        index === 1 ? "bg-gray-400/20 text-gray-400" :
-                        index === 2 ? "bg-orange-500/20 text-orange-500" :
-                        "bg-primary/20 text-primary"
-                      )}>
-                        {index === 0 ? (
-                          <Crown size={16} className="text-yellow-500" />
-                        ) : (
-                          `#${index + 1}`
-                        )}
+          {/* Invite Tab */}
+          <TabsContent value="invite" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Invite Members</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {canAddMembers ? (
+                  <>
+                    {currentInvite ? (
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm text-muted-foreground">Current Invite Link</Label>
+                          <div className="flex gap-2 mt-2">
+                            <Input
+                              value={`${window.location.origin}/invite/${currentInvite.code}`}
+                              readOnly
+                              className="flex-1 text-sm"
+                            />
+                            <Button size="sm" onClick={handleCopyInviteLink}>
+                              <Copy size={16} />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Uses:</span>
+                            <span>{currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}</span>
+                          </div>
+                          {currentInvite.expires_at && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Expires:</span>
+                              <span>{new Date(currentInvite.expires_at).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={handleRegenerateInvite}
+                            disabled={loading}
+                            className="flex-1"
+                          >
+                            <RefreshCw size={16} className="mr-2" />
+                            Regenerate
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={handleRevokeInvite}
+                            disabled={loading}
+                            className="flex-1"
+                          >
+                            <Trash2 size={16} className="mr-2" />
+                            Revoke
+                          </Button>
+                        </div>
                       </div>
-                      <Avatar className="h-8 w-8">
-                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
-                        <AvatarFallback className="bg-primary/20 text-primary">
-                          {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className={cn(
-                        "font-medium",
-                        entry.user_id === user?.id && "font-bold text-primary"
-                      )}>
-                        {entry.display_name || entry.username || "Unknown"}
-                        {entry.user_id === user?.id && " (You)"}
-                      </span>
-                    </div>
-                    <Badge variant="outline" className={cn(
-                      entry.user_id === user?.id && "border-primary text-primary"
-                    )}>
-                      {entry.best_score}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-center py-8">
-                No members have played this drill yet.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* View Members Dialog */}
-      <Dialog open={viewMembersOpen} onOpenChange={setViewMembersOpen}>
-        <DialogContent className="max-w-md" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle>Group Members</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {members.map((member) => (
-              <div key={member.user_id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    {member.avatar_url ? (
-                      <img src={member.avatar_url} alt={member.display_name || member.username || 'User'} className="object-cover" />
                     ) : (
-                      <AvatarFallback className="text-lg">
-                        {(member.display_name || member.username || 'U')[0].toUpperCase()}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div>
-                    <div className="font-medium text-foreground flex items-center gap-2">
-                      {member.display_name || member.username || 'Unknown'}
-                      {getRoleIcon(member.role)}
-                    </div>
-                    {member.username && member.display_name && (
-                      <div className="text-sm text-muted-foreground">@{member.username}</div>
-                    )}
-                  </div>
-                </div>
-                <Badge variant={member.role === 'owner' ? 'default' : 'secondary'} className="capitalize">
-                  {member.role === 'owner' ? 'admin' : member.role}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          Create a shareable invite link for this group.
+                        </p>
 
-      {/* Add Members Dialog */}
-      <Dialog open={addMembersDialogOpen} onOpenChange={setAddMembersDialogOpen}>
-        <DialogContent className="max-w-md" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle>Add Members</DialogTitle>
-          </DialogHeader>
-
-          <Tabs defaultValue="friends" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="friends">Friends</TabsTrigger>
-              <TabsTrigger value="search">Search</TabsTrigger>
-              <TabsTrigger value="invite">Invite Link</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="friends" className="space-y-4">
-              {friends.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  No friends available to add
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {friends.map((friend) => (
-                    <div key={friend.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
-                      <Checkbox
-                        checked={selectedUsers.has(friend.id)}
-                        onCheckedChange={() => handleToggleUser(friend.id)}
-                      />
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {(friend.display_name || friend.username || 'U')[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">
-                          {friend.display_name || friend.username || 'Unknown'}
+                        <div>
+                          <Label htmlFor="expiry">Expiration (optional)</Label>
+                          <Input
+                            id="expiry"
+                            type="datetime-local"
+                            value={inviteExpiry}
+                            onChange={(e) => setInviteExpiry(e.target.value)}
+                            className="mt-1"
+                          />
                         </div>
-                        {friend.username && friend.display_name && (
-                          <div className="text-xs text-muted-foreground">@{friend.username}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
 
-            <TabsContent value="search" className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by username..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchUsers(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {searchQuery && searchResults.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    No users found
-                  </div>
-                ) : (
-                  searchResults.map((user) => (
-                    <div key={user.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
-                      <Checkbox
-                        checked={selectedUsers.has(user.id)}
-                        onCheckedChange={() => handleToggleUser(user.id)}
-                      />
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {(user.display_name || user.username || 'U')[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">
-                          {user.display_name || user.username || 'Unknown'}
+                        <div>
+                          <Label htmlFor="max-uses">Max Uses (optional)</Label>
+                          <Input
+                            id="max-uses"
+                            type="number"
+                            min="1"
+                            placeholder="Unlimited"
+                            value={inviteMaxUses}
+                            onChange={(e) => setInviteMaxUses(e.target.value)}
+                            className="mt-1"
+                          />
                         </div>
-                        {user.username && user.display_name && (
-                          <div className="text-xs text-muted-foreground">@{user.username}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </TabsContent>
 
-            <TabsContent value="invite" className="space-y-4">
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Share this link to invite people to the group
-                </p>
-                {currentInvite ? (
-                  <>
-                    <div className="flex gap-2">
-                      <Input
-                        value={`${window.location.origin}/invite/${currentInvite.code}`}
-                        readOnly
-                        className="text-sm"
-                      />
-                      <Button size="sm" onClick={handleCopyInviteLink}>
-                        <Copy size={16} />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Uses: {currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}
-                    </p>
+                        <Button
+                          onClick={handleCreateInvite}
+                          disabled={loading}
+                          className="w-full"
+                        >
+                          {loading ? "Creating..." : "Create Invite Link"}
+                        </Button>
+                      </div>
+                    )}
                   </>
                 ) : (
-                  <Button onClick={handleCreateInvite} disabled={loading}>
-                    {loading ? "Creating..." : "Create Invite Link"}
-                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Only group owners and admins can create invite links.
+                  </p>
                 )}
-              </div>
-            </TabsContent>
-          </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setAddMembersDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddMembers}
-              disabled={selectedUsers.size === 0 || loading}
-            >
-              Add {selectedUsers.size > 0 && `(${selectedUsers.size})`}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Invite Link Management Dialog */}
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="max-w-md" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle>Add Members</DialogTitle>
-          </DialogHeader>
-
-          <Tabs defaultValue="friends" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="friends">Friends</TabsTrigger>
-              <TabsTrigger value="search">Search</TabsTrigger>
-              <TabsTrigger value="invite">Invite Link</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="friends" className="space-y-4">
-              {friends.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  No friends available to add
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {friends.map((friend) => (
-                    <div key={friend.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
-                      <Checkbox
-                        checked={selectedUsers.has(friend.id)}
-                        onCheckedChange={() => handleToggleUser(friend.id)}
-                      />
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {(friend.display_name || friend.username || 'U')[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">
-                          {friend.display_name || friend.username || 'Unknown'}
-                        </div>
-                        {friend.username && friend.display_name && (
-                          <div className="text-xs text-muted-foreground">@{friend.username}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="search" className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by username..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchUsers(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {searchQuery && searchResults.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    No users found
-                  </div>
-                ) : (
-                  searchResults.map((user) => (
-                    <div key={user.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent">
-                      <Checkbox
-                        checked={selectedUsers.has(user.id)}
-                        onCheckedChange={() => handleToggleUser(user.id)}
-                      />
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {(user.display_name || user.username || 'U')[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">
-                          {user.display_name || user.username || 'Unknown'}
-                        </div>
-                        {user.username && user.display_name && (
-                          <div className="text-xs text-muted-foreground">@{user.username}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="invite" className="space-y-4">
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Share this link to invite people to the group
+          {/* Message Tab */}
+          <TabsContent value="message" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Group Messages</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Group messaging feature coming soon...
                 </p>
-                {currentInvite ? (
-                  <>
-                    <div className="flex gap-2">
-                      <Input
-                        value={`${window.location.origin}/invite/${currentInvite.code}`}
-                        readOnly
-                        className="text-sm"
-                      />
-                      <Button size="sm" onClick={handleCopyInviteLink}>
-                        <Copy size={16} />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Uses: {currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}
-                    </p>
-                  </>
-                ) : (
-                  <Button onClick={handleCreateInvite} disabled={loading}>
-                    {loading ? "Creating..." : "Create Invite Link"}
-                  </Button>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setAddMembersDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddMembers}
-              disabled={selectedUsers.size === 0 || loading}
-            >
-              Add {selectedUsers.size > 0 && `(${selectedUsers.size})`}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Invite Management Dialog */}
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="max-w-md" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle>Invite Link</DialogTitle>
-          </DialogHeader>
-
-          {currentInvite ? (
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm text-muted-foreground">Current Invite Link</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    value={`${window.location.origin}/invite/${currentInvite.code}`}
-                    readOnly
-                    className="flex-1 text-sm"
-                  />
-                  <Button size="sm" onClick={handleCopyInviteLink}>
-                    <Copy size={16} />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Uses:</span>
-                  <span>{currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}</span>
-                </div>
-                {currentInvite.expires_at && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Expires:</span>
-                    <span>{new Date(currentInvite.expires_at).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleRegenerateInvite}
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  <RefreshCw size={16} className="mr-2" />
-                  Regenerate
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleRevokeInvite}
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  <Trash2 size={16} className="mr-2" />
-                  Revoke
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Create a shareable invite link for this group.
-              </p>
-
-              <div>
-                <Label htmlFor="expiry">Expiration (optional)</Label>
-                <Input
-                  id="expiry"
-                  type="datetime-local"
-                  value={inviteExpiry}
-                  onChange={(e) => setInviteExpiry(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="max-uses">Max Uses (optional)</Label>
-                <Input
-                  id="max-uses"
-                  type="number"
-                  min="1"
-                  placeholder="Unlimited"
-                  value={inviteMaxUses}
-                  onChange={(e) => setInviteMaxUses(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-
-              <Button
-                onClick={handleCreateInvite}
-                disabled={loading}
-                className="w-full"
-              >
-                {loading ? "Creating..." : "Create Invite Link"}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
