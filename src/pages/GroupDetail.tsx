@@ -634,6 +634,28 @@ useEffect(() => {
     }
   };
 
+  const handleOpenGroupMessages = async () => {
+    if (!groupId) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await (supabase as any).rpc('ensure_group_conversation', { p_group_id: groupId });
+      if (error) throw error;
+      
+      const conversationId = data as string;
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error: any) {
+      console.error('Error opening group conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open group conversation",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const canAddMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   const getRoleIcon = (role: string) => {
@@ -873,9 +895,16 @@ useEffect(() => {
                 <CardTitle>Group Messages</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Group messaging feature coming soon...
+                <p className="text-sm text-muted-foreground mb-4">
+                  Open the group chat to communicate with all members.
                 </p>
+                <Button 
+                  onClick={handleOpenGroupMessages}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? "Opening..." : "Open Group Chat"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
