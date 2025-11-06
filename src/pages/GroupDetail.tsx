@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut } from "lucide-react";
+import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 
 interface Member {
   user_id: string;
@@ -53,6 +54,14 @@ interface GroupLevelLeaderboardEntry {
   category: string;
 }
 
+interface Message {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  content: string;
+  created_at: string;
+}
+
 const GroupDetail = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
@@ -84,6 +93,13 @@ const GroupDetail = () => {
   
   // Active tab state
   const [activeTab, setActiveTab] = useState("manage");
+  
+  // Messages state
+  const [groupConversationId, setGroupConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load invite when switching to invite tab
   useEffect(() => {
@@ -91,6 +107,45 @@ const GroupDetail = () => {
       loadCurrentInvite();
     }
   }, [activeTab]);
+
+  // Load group conversation when switching to message tab
+  useEffect(() => {
+    if (activeTab === 'message' && groupId) {
+      loadGroupConversation();
+    }
+  }, [activeTab, groupId]);
+
+  // Subscribe to new messages
+  useEffect(() => {
+    if (groupConversationId) {
+      loadMessages();
+      
+      const channel = supabase
+        .channel(`messages-${groupConversationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${groupConversationId}`
+          },
+          () => {
+            loadMessages();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [groupConversationId]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
 useEffect(() => {
   supabase.auth.getUser().then(({ data: { user } }) => {
@@ -634,25 +689,96 @@ useEffect(() => {
     }
   };
 
-  const handleOpenGroupMessages = async () => {
+  const loadGroupConversation = async () => {
     if (!groupId) return;
 
-    setLoading(true);
     try {
       const { data, error } = await (supabase as any).rpc('ensure_group_conversation', { p_group_id: groupId });
       if (error) throw error;
       
-      const conversationId = data as string;
-      navigate(`/messages?conversation=${conversationId}`);
+      setGroupConversationId(data as string);
     } catch (error: any) {
-      console.error('Error opening group conversation:', error);
+      console.error('Error loading group conversation:', error);
       toast({
         title: "Error",
-        description: "Failed to open group conversation",
+        description: "Failed to load group conversation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const loadMessages = async () => {
+    if (!groupConversationId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id, sender_id, content, created_at')
+        .eq('conversation_id', groupConversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        setMessages([]);
+        return;
+      }
+
+      const senderIds = [...new Set(data.map((msg: any) => msg.sender_id))];
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, display_name, username')
+        .in('id', senderIds);
+
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+      }
+
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      const formattedMessages = data.map((msg: any) => {
+        const profile = profilesMap.get(msg.sender_id);
+        const senderName = profile?.display_name || profile?.username || 'Unknown User';
+        return {
+          id: msg.id,
+          sender_id: msg.sender_id,
+          sender_name: senderName,
+          content: msg.content,
+          created_at: msg.created_at,
+        };
+      });
+
+      setMessages(formattedMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!groupConversationId || !newMessage.trim() || !user) return;
+
+    setSendingMessage(true);
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: groupConversationId,
+          sender_id: user.id,
+          content: newMessage.trim()
+        });
+
+      if (error) throw error;
+
+      setNewMessage("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSendingMessage(false);
     }
   };
 
@@ -892,19 +1018,55 @@ useEffect(() => {
           <TabsContent value="message" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Group Messages</CardTitle>
+                <CardTitle>Group Chat</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Open the group chat to communicate with all members.
-                </p>
-                <Button 
-                  onClick={handleOpenGroupMessages}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  {loading ? "Opening..." : "Open Group Chat"}
-                </Button>
+                <div className="flex flex-col h-[500px]">
+                  <div className="flex-1 overflow-y-auto space-y-3 mb-4 p-4 bg-muted/30 rounded-lg">
+                    {messages.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        No messages yet. Start the conversation!
+                      </p>
+                    ) : (
+                      messages.map((msg) => {
+                        const isOwnMessage = msg.sender_id === user?.id;
+                        return (
+                          <div key={msg.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                            <div
+                              className={`max-w-[70%] rounded-lg p-3 ${
+                                isOwnMessage
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-secondary'
+                              }`}
+                            >
+                              {!isOwnMessage && (
+                                <p className="text-xs font-medium mb-1">{msg.sender_name}</p>
+                              )}
+                              <p className="text-sm">{msg.content}</p>
+                              <p className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Type a message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                      disabled={sendingMessage}
+                    />
+                    <Button onClick={handleSendMessage} disabled={sendingMessage || !newMessage.trim()}>
+                      <Send size={18} />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
