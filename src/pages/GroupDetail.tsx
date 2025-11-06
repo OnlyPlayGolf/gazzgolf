@@ -89,7 +89,6 @@ const GroupDetail = () => {
   // Invite management state
   const [currentInvite, setCurrentInvite] = useState<any>(null);
   const [inviteExpiry, setInviteExpiry] = useState("");
-  const [inviteMaxUses, setInviteMaxUses] = useState("");
   
   // Active tab state
   const [activeTab, setActiveTab] = useState("manage");
@@ -535,10 +534,6 @@ useEffect(() => {
         inviteData.expires_at = new Date(inviteExpiry).toISOString();
       }
 
-      if (inviteMaxUses && parseInt(inviteMaxUses) > 0) {
-        inviteData.max_uses = parseInt(inviteMaxUses);
-      }
-
       const { data, error } = await supabase
         .from('group_invites')
         .insert(inviteData)
@@ -598,10 +593,6 @@ useEffect(() => {
 
       if (inviteExpiry) {
         inviteData.expires_at = new Date(inviteExpiry).toISOString();
-      }
-
-      if (inviteMaxUses && parseInt(inviteMaxUses) > 0) {
-        inviteData.max_uses = parseInt(inviteMaxUses);
       }
 
       const { data, error } = await supabase
@@ -992,7 +983,7 @@ useEffect(() => {
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Uses:</span>
-                            <span>{currentInvite.uses_count}{currentInvite.max_uses ? ` / ${currentInvite.max_uses}` : ' / Unlimited'}</span>
+                            <span>{currentInvite.uses_count}</span>
                           </div>
                           {currentInvite.expires_at && (
                             <div className="flex justify-between">
@@ -1036,19 +1027,6 @@ useEffect(() => {
                             type="datetime-local"
                             value={inviteExpiry}
                             onChange={(e) => setInviteExpiry(e.target.value)}
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="max-uses">Max Uses (optional)</Label>
-                          <Input
-                            id="max-uses"
-                            type="number"
-                            min="1"
-                            placeholder="Unlimited"
-                            value={inviteMaxUses}
-                            onChange={(e) => setInviteMaxUses(e.target.value)}
                             className="mt-1"
                           />
                         </div>
