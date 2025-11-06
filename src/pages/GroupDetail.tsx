@@ -416,7 +416,7 @@ useEffect(() => {
     const { data } = await supabase
       .from('profiles')
       .select('id, username, display_name, avatar_url')
-      .ilike('username', `%${query}%`)
+      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
       .limit(20);
 
     // Filter out users already in the group
@@ -902,59 +902,128 @@ useEffect(() => {
           <TabsContent value="invite" className="space-y-4">
             {/* Add Friends Directly */}
             {canAddMembers && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Add Friends</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {friends.length > 0 ? (
-                    <>
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {friends.map((friend) => (
-                          <div
-                            key={friend.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer"
-                            onClick={() => handleToggleUser(friend.id)}
-                          >
-                            <Checkbox
-                              checked={selectedUsers.has(friend.id)}
-                              onCheckedChange={() => handleToggleUser(friend.id)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <Avatar>
-                              <AvatarImage src={friend.avatar_url || undefined} />
-                              <AvatarFallback>
-                                {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="font-medium">
-                                {friend.display_name || friend.username || 'Unknown'}
-                              </div>
-                              {friend.username && (
-                                <div className="text-sm text-muted-foreground">
-                                  @{friend.username}
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Add Friends</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {friends.length > 0 ? (
+                      <>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                          {friends.map((friend) => (
+                            <div
+                              key={friend.id}
+                              className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer"
+                              onClick={() => handleToggleUser(friend.id)}
+                            >
+                              <Checkbox
+                                checked={selectedUsers.has(friend.id)}
+                                onCheckedChange={() => handleToggleUser(friend.id)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <Avatar>
+                                <AvatarImage src={friend.avatar_url || undefined} />
+                                <AvatarFallback>
+                                  {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="font-medium">
+                                  {friend.display_name || friend.username || 'Unknown'}
                                 </div>
-                              )}
+                                {friend.username && (
+                                  <div className="text-sm text-muted-foreground">
+                                    @{friend.username}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                        <Button
+                          onClick={handleAddMembers}
+                          disabled={loading || selectedUsers.size === 0}
+                          className="w-full"
+                        >
+                          {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}Friend${selectedUsers.size !== 1 ? 's' : ''}`}
+                        </Button>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        No friends available to add. All your friends are already members or you don't have any friends yet.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Search Users */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Search Users</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                      <Input
+                        placeholder="Search by name or username..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearchUsers(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+
+                    {searchQuery && (
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {searchResults.length > 0 ? (
+                          <>
+                            {searchResults.map((user) => (
+                              <div
+                                key={user.id}
+                                className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer"
+                                onClick={() => handleToggleUser(user.id)}
+                              >
+                                <Checkbox
+                                  checked={selectedUsers.has(user.id)}
+                                  onCheckedChange={() => handleToggleUser(user.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <Avatar>
+                                  <AvatarImage src={user.avatar_url || undefined} />
+                                  <AvatarFallback>
+                                    {(user.display_name || user.username || 'U').charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="font-medium">
+                                    {user.display_name || user.username || 'Unknown'}
+                                  </div>
+                                  {user.username && (
+                                    <div className="text-sm text-muted-foreground">
+                                      @{user.username}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                            <Button
+                              onClick={handleAddMembers}
+                              disabled={loading || selectedUsers.size === 0}
+                              className="w-full"
+                            >
+                              {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}User${selectedUsers.size !== 1 ? 's' : ''}`}
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No users found matching "{searchQuery}"
+                          </p>
+                        )}
                       </div>
-                      <Button
-                        onClick={handleAddMembers}
-                        disabled={loading || selectedUsers.size === 0}
-                        className="w-full"
-                      >
-                        {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}Friend${selectedUsers.size !== 1 ? 's' : ''}`}
-                      </Button>
-                    </>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No friends available to add. All your friends are already members or you don't have any friends yet.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
             )}
 
             <Card>
