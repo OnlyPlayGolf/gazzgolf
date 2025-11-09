@@ -337,7 +337,19 @@ const ProHoleTracker = () => {
                   <Button
                     key={lie}
                     variant={endLie === lie ? "default" : "outline"}
-                    onClick={() => setEndLie(lie)}
+                    onClick={() => {
+                      setEndLie(lie);
+                      // Auto-add shot if not green
+                      if (lie !== 'green') {
+                        setTimeout(() => {
+                          const start = parseFloat(startDistance);
+                          const end = parseFloat(endDistance);
+                          if (!isNaN(start) && !isNaN(end)) {
+                            addShot();
+                          }
+                        }, 100);
+                      }
+                    }}
                     size="sm"
                   >
                     {lie.charAt(0).toUpperCase() + lie.slice(1)}
@@ -352,14 +364,33 @@ const ProHoleTracker = () => {
                 <div className="flex gap-2 mt-2">
                   <Button
                     variant={holed ? "default" : "outline"}
-                    onClick={() => setHoled(true)}
+                    onClick={() => {
+                      setHoled(true);
+                      // Auto-add shot when holed
+                      setTimeout(() => {
+                        const start = parseFloat(startDistance);
+                        if (!isNaN(start)) {
+                          addShot();
+                        }
+                      }, 100);
+                    }}
                     className="flex-1"
                   >
                     Holed
                   </Button>
                   <Button
                     variant={!holed ? "default" : "outline"}
-                    onClick={() => setHoled(false)}
+                    onClick={() => {
+                      setHoled(false);
+                      // Auto-add shot when missed
+                      setTimeout(() => {
+                        const start = parseFloat(startDistance);
+                        const end = parseFloat(endDistance);
+                        if (!isNaN(start) && !isNaN(end)) {
+                          addShot();
+                        }
+                      }, 100);
+                    }}
                     className="flex-1"
                   >
                     Missed
@@ -367,10 +398,6 @@ const ProHoleTracker = () => {
                 </div>
               </div>
             )}
-
-            <Button onClick={addShot} className="w-full" size="lg">
-              Add Shot
-            </Button>
           </CardContent>
         </Card>
 
