@@ -114,6 +114,8 @@ export default function RoundTracker() {
         .eq("name", roundData.course_name)
         .maybeSingle();
 
+      let holesArray: CourseHole[] = [];
+      
       if (courseData) {
         const { data: holesData, error: holesError } = await supabase
           .from("course_holes")
@@ -128,9 +130,23 @@ export default function RoundTracker() {
             filteredHoles = holesData.slice(0, 9);
           }
           
-          setCourseHoles(filteredHoles);
+          holesArray = filteredHoles;
         }
       }
+      
+      // If no course data found, create default holes
+      if (holesArray.length === 0) {
+        const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5]; // Default 9-hole pars
+        const numHoles = roundData.holes_played || 18;
+        
+        holesArray = Array.from({ length: numHoles }, (_, i) => ({
+          hole_number: i + 1,
+          par: i < 9 ? defaultPar[i] : defaultPar[i % 9],
+          stroke_index: i + 1,
+        }));
+      }
+      
+      setCourseHoles(holesArray);
 
       // Fetch existing hole scores for all players
       const { data: existingHoles, error: existingError } = await supabase
