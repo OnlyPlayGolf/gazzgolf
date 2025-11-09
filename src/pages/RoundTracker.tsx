@@ -107,30 +107,30 @@ export default function RoundTracker() {
         setPlayers(playersWithProfiles);
       }
 
-      // Fetch course holes
-      const { data: courseData, error: courseError } = await supabase
+      // Fetch course holes if course exists in database
+      const { data: courseData } = await supabase
         .from("courses")
         .select("id")
         .eq("name", roundData.course_name)
-        .single();
+        .maybeSingle();
 
-      if (courseError) throw courseError;
+      if (courseData) {
+        const { data: holesData, error: holesError } = await supabase
+          .from("course_holes")
+          .select("*")
+          .eq("course_id", courseData.id)
+          .order("hole_number");
 
-      const { data: holesData, error: holesError } = await supabase
-        .from("course_holes")
-        .select("*")
-        .eq("course_id", courseData.id)
-        .order("hole_number");
-
-      if (holesError) throw holesError;
-      
-      // Filter holes based on holes_played
-      let filteredHoles = holesData;
-      if (roundData.holes_played === 9) {
-        filteredHoles = holesData.slice(0, 9);
+        if (!holesError && holesData) {
+          // Filter holes based on holes_played
+          let filteredHoles = holesData;
+          if (roundData.holes_played === 9) {
+            filteredHoles = holesData.slice(0, 9);
+          }
+          
+          setCourseHoles(filteredHoles);
+        }
       }
-      
-      setCourseHoles(filteredHoles);
 
       // Fetch existing hole scores for all players
       const { data: existingHoles, error: existingError } = await supabase
