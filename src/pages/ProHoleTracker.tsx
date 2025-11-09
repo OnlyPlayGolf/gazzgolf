@@ -50,6 +50,13 @@ const ProHoleTracker = () => {
     fetchRound();
   }, [roundId]);
 
+  // Reset holed state when end lie changes away from green
+  useEffect(() => {
+    if (endLie !== 'green') {
+      setHoled(false);
+    }
+  }, [endLie]);
+
   const loadBaselineData = async () => {
     try {
       const [puttingTable, longgameTable] = await Promise.all([
@@ -102,12 +109,30 @@ const ProHoleTracker = () => {
     }
 
     const start = parseFloat(startDistance);
-    const end = holed ? 0 : parseFloat(endDistance);
-
-    if (isNaN(start) || (!holed && isNaN(end))) {
-      toast({ title: "Invalid distances", variant: "destructive" });
+    
+    // Validation: if end lie is green, must specify holed/missed
+    if (endLie === 'green' && !holed) {
+      // For green, if not holed, need end distance for the miss
+      const end = parseFloat(endDistance);
+      if (isNaN(end)) {
+        toast({ title: "For missed putts, enter the remaining distance", variant: "destructive" });
+        return;
+      }
+    } else if (endLie !== 'green') {
+      // For non-green shots, always need end distance
+      const end = parseFloat(endDistance);
+      if (isNaN(end)) {
+        toast({ title: "Enter end distance", variant: "destructive" });
+        return;
+      }
+    }
+    
+    if (isNaN(start)) {
+      toast({ title: "Invalid start distance", variant: "destructive" });
       return;
     }
+
+    const end = holed ? 0 : parseFloat(endDistance);
 
     const drillType = shotType === 'putt' ? 'putting' : 'longGame';
     const sg = sgCalculator.calculateStrokesGained(
@@ -295,54 +320,52 @@ const ProHoleTracker = () => {
             </div>
 
             <div>
-              <Label>Result</Label>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  variant={holed ? "default" : "outline"}
-                  onClick={() => setHoled(true)}
-                  className="flex-1"
-                >
-                  Holed
-                </Button>
-                <Button
-                  variant={!holed ? "default" : "outline"}
-                  onClick={() => setHoled(false)}
-                  className="flex-1"
-                >
-                  Missed
-                </Button>
+              <Label>End Distance (m)</Label>
+              <Input
+                type="number"
+                value={endDistance}
+                onChange={(e) => setEndDistance(e.target.value)}
+                placeholder="Distance to hole"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>End Lie</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
+                  <Button
+                    key={lie}
+                    variant={endLie === lie ? "default" : "outline"}
+                    onClick={() => setEndLie(lie)}
+                    size="sm"
+                  >
+                    {lie.charAt(0).toUpperCase() + lie.slice(1)}
+                  </Button>
+                ))}
               </div>
             </div>
 
-            {!holed && (
-              <>
-                <div>
-                  <Label>End Distance (m)</Label>
-                  <Input
-                    type="number"
-                    value={endDistance}
-                    onChange={(e) => setEndDistance(e.target.value)}
-                    placeholder="Distance to hole"
-                    className="mt-2"
-                  />
+            {endLie === 'green' && (
+              <div>
+                <Label>Result</Label>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    variant={holed ? "default" : "outline"}
+                    onClick={() => setHoled(true)}
+                    className="flex-1"
+                  >
+                    Holed
+                  </Button>
+                  <Button
+                    variant={!holed ? "default" : "outline"}
+                    onClick={() => setHoled(false)}
+                    className="flex-1"
+                  >
+                    Missed
+                  </Button>
                 </div>
-
-                <div>
-                  <Label>End Lie</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
-                      <Button
-                        key={lie}
-                        variant={endLie === lie ? "default" : "outline"}
-                        onClick={() => setEndLie(lie)}
-                        size="sm"
-                      >
-                        {lie.charAt(0).toUpperCase() + lie.slice(1)}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </>
+              </div>
             )}
 
             <Button onClick={addShot} className="w-full" size="lg">
