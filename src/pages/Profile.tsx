@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
 
 interface Friend {
   id: string;
@@ -490,14 +491,17 @@ const Profile = () => {
 
         {/* Action buttons */}
         <div className="flex gap-3 mb-6">
-          <Button 
-            variant="outline" 
-            className="flex-1"
-            onClick={() => navigate('/accept-invite')}
-          >
-            <UserPlus size={16} className="mr-2" />
-            Check Invitations
-          </Button>
+          <NotificationsSheet 
+            trigger={
+              <Button 
+                variant="outline" 
+                className="flex-1"
+              >
+                <UserPlus size={16} className="mr-2" />
+                Check Invitations
+              </Button>
+            }
+          />
           <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
             <DialogTrigger asChild>
               <Button className="flex-1">
