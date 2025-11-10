@@ -343,18 +343,21 @@ export type Database = {
       groups: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           name: string
           owner_id: string
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: string
           name: string
           owner_id: string
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           name?: string
           owner_id?: string
