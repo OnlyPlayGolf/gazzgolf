@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Star, Plus, MessageCircle, Crown, UserPlus, Users } from "lucide-react";
+import { Star, Plus, MessageCircle, Crown, UserPlus, Users, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ interface Group {
   role: 'owner' | 'admin' | 'member';
   member_count: number;
   description?: string;
+  created_at?: string;
 }
 
 const Profile = () => {
@@ -147,7 +148,7 @@ const Profile = () => {
       const { data: groupsData } = await (supabase as any)
         .from('group_members')
         .select(`
-          groups(id, name, owner_id),
+          groups(id, name, owner_id, created_at),
           role
         `)
         .eq('user_id', user.id);
@@ -165,7 +166,8 @@ const Profile = () => {
             name: g.groups.name,
             owner_id: g.groups.owner_id,
             role: g.role,
-            member_count: count || 0
+            member_count: count || 0,
+            created_at: g.groups.created_at
           };
         })
       );
@@ -736,6 +738,19 @@ const Profile = () => {
                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                           {group.description}
                         </p>
+                      )}
+                      
+                      {group.created_at && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                          <Calendar size={14} className="text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">
+                            Created {new Date(group.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
+                          </p>
+                        </div>
                       )}
                     </div>
 
