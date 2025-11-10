@@ -81,114 +81,99 @@ export const TopNavBar = () => {
       )}
     >
       <div className="bg-[hsl(120,50%,20%)] px-4 py-3 flex items-center justify-between">
-        {/* Left: Back or Menu */}
-        {showBack ? (
-          <button
-            onClick={() => navigate(backPath)}
-            className="flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white/20"
-            aria-label={fromPage === 'profile' ? "Back to Profile" : "Back to Home"}
-          >
-            <ArrowLeft size={20} />
-          </button>
-        ) : showHamburgerMenu ? (
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger asChild>
-              <button
-                className="flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white/20"
-                aria-label="Open Menu"
-              >
-                <Menu size={20} />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-              <div className="space-y-4 mt-8">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Card key={item.id} className="border-border">
-                      <CardContent className="p-0">
-                        <Button
-                          variant="ghost"
-                          disabled={!item.available}
-                          onClick={item.available && item.path ? () => { 
-                            navigate(item.path, { state: { from: 'home' } }); 
-                            setMenuOpen(false);
-                          } : undefined}
-                          className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-3">
-                              <Icon 
-                                size={20} 
-                                className={item.available ? "text-primary" : "text-muted-foreground"} 
-                              />
-                              <div>
-                                <div className={`font-medium ${item.available ? "text-foreground" : "text-muted-foreground"}`}>
-                                  {item.label}
-                                </div>
-                                {!item.available && (
-                                  <div className="text-xs text-muted-foreground">Coming soon</div>
-                                )}
-                              </div>
-                            </div>
-                            <ChevronRight 
-                              size={16} 
-                              className={item.available ? "text-muted-foreground" : "text-muted-foreground"} 
-                            />
-                          </div>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-                
-                {/* Feedback Link */}
-                <Card className="border-border">
-                  <CardContent className="p-0">
-                    <Button
-                      variant="ghost"
-                      asChild
-                      className="w-full h-auto p-4 justify-start text-left"
-                    >
-                      <a href="mailto:feedback@golftraining.app" className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <Mail size={20} className="text-primary" />
-                          <div>
-                            <div className="font-medium text-foreground">Feedback</div>
-                            <div className="text-xs text-muted-foreground">Send us your thoughts</div>
-                          </div>
-                        </div>
-                        <ChevronRight size={16} className="text-muted-foreground" />
-                      </a>
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </SheetContent>
-          </Sheet>
-        ) : (
-          <button
-            onClick={() => navigate('/profile')}
-            className="flex-shrink-0"
-            aria-label="Go to Profile"
-          >
-            <Avatar className="h-10 w-10 border-2 border-white/20 hover:border-white/40 transition-colors">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile" className="object-cover" />
-              ) : (
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() :
-                   profile?.username ? profile.username.charAt(0).toUpperCase() : "?"}
-                </AvatarFallback>
-              )}
-            </Avatar>
-          </button>
-        )}
-
-        {/* Center: Title */}
-        <h1 className="text-white font-bold text-xl flex-1 text-center px-2">
+        {/* Left: Title */}
+        <h1 className="text-white font-luxury font-semibold text-2xl">
           Gazz Golf
         </h1>
+
+        {/* Center: Back or Menu */}
+        <div className="flex-1 flex justify-center">
+          {showBack ? (
+            <button
+              onClick={() => navigate(backPath)}
+              className="flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white/20"
+              aria-label={fromPage === 'profile' ? "Back to Profile" : "Back to Home"}
+            >
+              <ArrowLeft size={20} />
+            </button>
+          ) : showHamburgerMenu && (
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className="flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white/20"
+                  aria-label="Open Menu"
+                >
+                  <Menu size={20} />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <div className="space-y-4 mt-8">
+                  {menuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Card key={item.id} className="border-border">
+                        <CardContent className="p-0">
+                          <Button
+                            variant="ghost"
+                            disabled={!item.available}
+                            onClick={item.available && item.path ? () => { 
+                              navigate(item.path, { state: { from: 'home' } }); 
+                              setMenuOpen(false);
+                            } : undefined}
+                            className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-3">
+                                <Icon 
+                                  size={20} 
+                                  className={item.available ? "text-primary" : "text-muted-foreground"} 
+                                />
+                                <div>
+                                  <div className={`font-medium ${item.available ? "text-foreground" : "text-muted-foreground"}`}>
+                                    {item.label}
+                                  </div>
+                                  {!item.available && (
+                                    <div className="text-xs text-muted-foreground">Coming soon</div>
+                                  )}
+                                </div>
+                              </div>
+                              <ChevronRight 
+                                size={16} 
+                                className={item.available ? "text-muted-foreground" : "text-muted-foreground"} 
+                              />
+                            </div>
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  
+                  {/* Feedback Link */}
+                  <Card className="border-border">
+                    <CardContent className="p-0">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="w-full h-auto p-4 justify-start text-left"
+                      >
+                        <a href="mailto:feedback@golftraining.app" className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <Mail size={20} className="text-primary" />
+                            <div>
+                              <div className="font-medium text-foreground">Feedback</div>
+                              <div className="text-xs text-muted-foreground">Send us your thoughts</div>
+                            </div>
+                          </div>
+                          <ChevronRight size={16} className="text-muted-foreground" />
+                        </a>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+        </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
