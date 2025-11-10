@@ -872,17 +872,6 @@ useEffect(() => {
                 Invite Friends
               </Button>
               
-              {canAddMembers && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3"
-                  onClick={() => setShowManageDialog(true)}
-                >
-                  <Settings size={20} />
-                  Manage
-                </Button>
-              )}
-              
               <Button
                 variant="outline"
                 className="w-full justify-start gap-3"
@@ -894,6 +883,17 @@ useEffect(() => {
                 <MessageCircle size={20} />
                 Message
               </Button>
+              
+              {canAddMembers && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                  onClick={() => setShowManageDialog(true)}
+                >
+                  <Settings size={20} />
+                  Manage
+                </Button>
+              )}
               
               {currentUserRole !== 'owner' && (
                 <Button
@@ -921,8 +921,8 @@ useEffect(() => {
           <CardContent>
             <Tabs value={leaderboardTab} onValueChange={setLeaderboardTab}>
               <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="drills">Drills</TabsTrigger>
                 <TabsTrigger value="levels">Levels</TabsTrigger>
+                <TabsTrigger value="drills">Drills</TabsTrigger>
                 <TabsTrigger value="play">Play</TabsTrigger>
               </TabsList>
 
