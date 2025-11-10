@@ -148,7 +148,7 @@ const Profile = () => {
       const { data: groupsData } = await (supabase as any)
         .from('group_members')
         .select(`
-          groups(id, name, owner_id, created_at),
+          groups(id, name, owner_id, created_at, description),
           role
         `)
         .eq('user_id', user.id);
@@ -167,7 +167,8 @@ const Profile = () => {
             owner_id: g.groups.owner_id,
             role: g.role,
             member_count: count || 0,
-            created_at: g.groups.created_at
+            created_at: g.groups.created_at,
+            description: g.groups.description
           };
         })
       );
