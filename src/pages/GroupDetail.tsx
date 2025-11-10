@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send, Users, Settings, MessageCircle, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +96,12 @@ const GroupDetail = () => {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showManageDialog, setShowManageDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  
+  // Manage group state
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupDescription, setEditGroupDescription] = useState("");
+  const [editGroupImage, setEditGroupImage] = useState<File | null>(null);
+  const [updatingGroup, setUpdatingGroup] = useState(false);
   
   // Leaderboard tab state
   const [leaderboardTab, setLeaderboardTab] = useState("levels");
@@ -782,6 +789,63 @@ useEffect(() => {
 
   const canAddMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
 
+  // Populate edit fields when manage dialog opens
+  useEffect(() => {
+    if (showManageDialog && group) {
+      setEditGroupName(group.name || "");
+      setEditGroupDescription(group.description || "");
+      setEditGroupImage(null);
+    }
+  }, [showManageDialog, group]);
+
+  const handleUpdateGroup = async () => {
+    if (!editGroupName.trim() || !groupId) {
+      toast({
+        title: "Error",
+        description: "Group name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpdatingGroup(true);
+    try {
+      // Update group name and description
+      const { error: updateError } = await supabase
+        .from('groups')
+        .update({
+          name: editGroupName.trim(),
+          description: editGroupDescription.trim() || null
+        })
+        .eq('id', groupId);
+
+      if (updateError) throw updateError;
+
+      // Handle group image upload if provided
+      if (editGroupImage) {
+        // TODO: Implement image upload when storage is set up
+        console.log('Group image upload not yet implemented');
+      }
+
+      toast({
+        title: "Success",
+        description: "Group updated successfully",
+      });
+
+      setShowManageDialog(false);
+      loadGroupData(); // Reload group data
+    } catch (error: any) {
+      console.error('Error updating group:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update group",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingGroup(false);
+    }
+  };
+
   const getRoleIcon = (role: string) => {
     if (role === 'owner') return <Crown size={16} className="text-yellow-500" />;
     if (role === 'admin') return <Shield size={16} className="text-blue-500" />;
@@ -1248,14 +1312,107 @@ useEffect(() => {
 
       {/* Manage Dialog */}
       <Dialog open={showManageDialog} onOpenChange={setShowManageDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Group</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-center">Manage Group</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Group management features coming soon
-            </p>
+          <div className="space-y-4 py-4">
+            {/* Group Name */}
+            <div>
+              <Label htmlFor="edit-group-name" className="text-foreground">
+                Group Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-group-name"
+                value={editGroupName}
+                onChange={(e) => setEditGroupName(e.target.value)}
+                placeholder="Enter group name"
+                className="mt-1.5"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label htmlFor="edit-group-description" className="text-foreground">
+                Description
+              </Label>
+              <Textarea
+                id="edit-group-description"
+                value={editGroupDescription}
+                onChange={(e) => setEditGroupDescription(e.target.value)}
+                placeholder="Optional group description"
+                className="mt-1.5 min-h-[100px] resize-none"
+              />
+            </div>
+
+            {/* Group Image Upload */}
+            <div>
+              <Label className="text-foreground">Group Image</Label>
+              <div 
+                className="mt-1.5 border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => document.getElementById('edit-group-image-input')?.click()}
+              >
+                <input
+                  id="edit-group-image-input"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setEditGroupImage(file);
+                  }}
+                />
+                {editGroupImage ? (
+                  <div className="text-center">
+                    <p className="text-sm text-foreground font-medium">{editGroupImage.name}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Click to change</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                      <svg
+                        className="w-6 h-6 text-muted-foreground"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Upload group image</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                onClick={handleUpdateGroup}
+                disabled={updatingGroup || !editGroupName.trim()}
+                className="w-full bg-foreground text-background hover:bg-foreground/90"
+              >
+                {updatingGroup ? "Updating..." : "Update Group"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setShowManageDialog(false);
+                  setEditGroupName("");
+                  setEditGroupDescription("");
+                  setEditGroupImage(null);
+                }}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
