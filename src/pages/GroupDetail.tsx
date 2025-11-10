@@ -97,7 +97,7 @@ const GroupDetail = () => {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   
   // Leaderboard tab state
-  const [leaderboardTab, setLeaderboardTab] = useState("drills");
+  const [leaderboardTab, setLeaderboardTab] = useState("levels");
   
   // Messages state
   const [groupConversationId, setGroupConversationId] = useState<string | null>(null);
@@ -884,16 +884,14 @@ useEffect(() => {
                 Message
               </Button>
               
-              {canAddMembers && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3"
-                  onClick={() => setShowManageDialog(true)}
-                >
-                  <Settings size={20} />
-                  Manage
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-3"
+                onClick={() => setShowManageDialog(true)}
+              >
+                <Settings size={20} />
+                Manage
+              </Button>
               
               {currentUserRole !== 'owner' && (
                 <Button
