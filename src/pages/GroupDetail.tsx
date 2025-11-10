@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send } from "lucide-react";
+import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send, Star, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
@@ -792,53 +792,171 @@ useEffect(() => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {members.length} {members.length === 1 ? 'member' : 'members'}
-            </p>
-          </div>
-        </div>
+      <div className="p-4 space-y-4">
+        {/* Header */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(-1)}
+          className="mb-4"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back to Groups
+        </Button>
 
-        {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="manage">Manage</TabsTrigger>
-            <TabsTrigger value="invite">Invite</TabsTrigger>
-            <TabsTrigger value="message">Message</TabsTrigger>
-          </TabsList>
+        {/* Group Info Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarFallback className="text-2xl">
+                  {group.name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
+                  <Crown size={24} className="text-yellow-500" />
+                </div>
+                <p className="text-muted-foreground mb-2">
+                  {members.length} {members.length === 1 ? 'member' : 'members'}
+                </p>
+                {group.description && (
+                  <p className="text-foreground mb-4">{group.description}</p>
+                )}
+                
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                  <Calendar size={16} />
+                  <span>Created {new Date(group.created_at).toLocaleDateString()}</span>
+                </div>
 
-          {/* Manage Tab */}
-          <TabsContent value="manage" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Members</span>
-                  {canAddMembers && (
+                {currentUserRole && (
+                  <Badge className="mb-4">{currentUserRole}</Badge>
+                )}
+
+                <div className="flex gap-3">
+                  <Button 
+                    className="flex-1"
+                    onClick={() => navigate(`/leaderboards?group=${groupId}`)}
+                  >
+                    View Leaderboard
+                  </Button>
+                  
+                  {currentUserRole !== 'owner' && (
                     <Button
-                      size="sm"
                       variant="outline"
-                      onClick={() => {
-                        loadFriendsForAdding();
-                        setActiveTab("invite");
-                      }}
+                      onClick={handleLeaveGroup}
+                      disabled={loading}
                     >
-                      <UserPlus size={16} className="mr-2" />
-                      Add
+                      Leave
                     </Button>
                   )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                </div>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-yellow-500"
+              >
+                <Star size={24} />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          {canAddMembers && (
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => setActiveTab("invite")}
+            >
+              <UserPlus size={20} className="mr-3" />
+              Invite Friends
+            </Button>
+          )}
+          
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => setActiveTab("manage")}
+          >
+            <Shield size={20} className="mr-3" />
+            Manage
+          </Button>
+          
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => setActiveTab("message")}
+          >
+            <Send size={20} className="mr-3" />
+            Message
+          </Button>
+        </div>
+
+        {/* Leaderboard Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy size={24} />
+              Leaderboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingGroupLevels ? (
+              <p className="text-center text-muted-foreground py-4">Loading...</p>
+            ) : groupLevelsLeaderboard.length > 0 ? (
+              <div className="space-y-3">
+                {groupLevelsLeaderboard.slice(0, 5).map((entry, index) => (
+                  <div
+                    key={entry.user_id}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30"
+                  >
+                    <div className="text-2xl font-bold text-muted-foreground w-8">
+                      #{index + 1}
+                    </div>
+                    <Avatar>
+                      <AvatarImage src={entry.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {(entry.display_name || entry.username || 'U').substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-medium">
+                        {entry.display_name || entry.username || 'Unknown'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        HCP: {entry.highest_level || 0}
+                      </div>
+                    </div>
+                    <Badge>Level {entry.highest_level || 0}</Badge>
+                    {entry.user_id === group.owner_id && (
+                      <Crown size={20} className="text-yellow-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">
+                No leaderboard data yet
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Hidden Tabs for Modals */}
+        <Dialog open={activeTab === 'manage' || activeTab === 'invite' || activeTab === 'message'} onOpenChange={() => setActiveTab("")}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            {activeTab === 'manage' && (
+              <div className="space-y-4">
+                <DialogHeader>
+                  <DialogTitle>Manage Members</DialogTitle>
+                </DialogHeader>
+                
                 <div className="space-y-3">
                   {members.map((member) => (
                     <div
@@ -872,45 +990,22 @@ useEffect(() => {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Leave Group Section - Only for non-owners */}
-            {currentUserRole !== 'owner' && (
-              <Card className="border-destructive/50">
-                <CardHeader>
-                  <CardTitle className="text-destructive">Danger Zone</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Once you leave this group, you'll need to be re-invited to join again.
-                  </p>
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleLeaveGroup}
-                    disabled={loading}
-                  >
-                    <LogOut size={16} className="mr-2" />
-                    Leave Group
-                  </Button>
-                </CardContent>
-              </Card>
+              </div>
             )}
-          </TabsContent>
 
-          {/* Invite Tab */}
-          <TabsContent value="invite" className="space-y-4">
-            {/* Add Friends Directly */}
-            {canAddMembers && (
-              <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Add Friends</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {friends.length > 0 ? (
-                      <>
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {activeTab === 'invite' && (
+              <div className="space-y-4">
+                <DialogHeader>
+                  <DialogTitle>Invite to Group</DialogTitle>
+                </DialogHeader>
+
+                {canAddMembers && (
+                  <>
+                    {/* Add Friends */}
+                    {friends.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold">Add Friends</h3>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
                           {friends.map((friend) => (
                             <div
                               key={friend.id}
@@ -948,184 +1043,163 @@ useEffect(() => {
                         >
                           {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}Friend${selectedUsers.size !== 1 ? 's' : ''}`}
                         </Button>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        No friends available to add. All your friends are already members or you don't have any friends yet.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Search Users */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Search Users</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
-                      <Input
-                        placeholder="Search by name or username..."
-                        value={searchQuery}
-                        onChange={(e) => handleSearchUsers(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-
-                    {searchQuery && (
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {searchResults.length > 0 ? (
-                          <>
-                            {searchResults.map((user) => (
-                              <div
-                                key={user.id}
-                                className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer"
-                                onClick={() => handleToggleUser(user.id)}
-                              >
-                                <Checkbox
-                                  checked={selectedUsers.has(user.id)}
-                                  onCheckedChange={() => handleToggleUser(user.id)}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <Avatar>
-                                  <AvatarImage src={user.avatar_url || undefined} />
-                                  <AvatarFallback>
-                                    {(user.display_name || user.username || 'U').charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="font-medium">
-                                    {user.display_name || user.username || 'Unknown'}
-                                  </div>
-                                  {user.username && (
-                                    <div className="text-sm text-muted-foreground">
-                                      @{user.username}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                            <Button
-                              onClick={handleAddMembers}
-                              disabled={loading || selectedUsers.size === 0}
-                              className="w-full"
-                            >
-                              {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}User${selectedUsers.size !== 1 ? 's' : ''}`}
-                            </Button>
-                          </>
-                        ) : (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            No users found matching "{searchQuery}"
-                          </p>
-                        )}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </>
-            )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Invite Link</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {canAddMembers ? (
-                  <>
-                    {currentInvite ? (
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-sm text-muted-foreground">Current Invite Link</Label>
-                          <div className="flex gap-2 mt-2">
-                            <Input
-                              value={`${window.location.origin}/invite/${currentInvite.code}`}
-                              readOnly
-                              className="flex-1 text-sm"
-                            />
-                            <Button size="sm" onClick={handleCopyInviteLink}>
-                              <Copy size={16} />
-                            </Button>
-                          </div>
-                        </div>
+                    {/* Search Users */}
+                    <div className="space-y-3">
+                      <h3 className="font-semibold">Search Users</h3>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                        <Input
+                          placeholder="Search by name or username..."
+                          value={searchQuery}
+                          onChange={(e) => handleSearchUsers(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
 
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Uses:</span>
-                            <span>{currentInvite.uses_count}</span>
-                          </div>
-                          {currentInvite.expires_at && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Expires:</span>
-                              <span>{new Date(currentInvite.expires_at).toLocaleDateString()}</span>
-                            </div>
+                      {searchQuery && (
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                          {searchResults.length > 0 ? (
+                            <>
+                              {searchResults.map((user) => (
+                                <div
+                                  key={user.id}
+                                  className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer"
+                                  onClick={() => handleToggleUser(user.id)}
+                                >
+                                  <Checkbox
+                                    checked={selectedUsers.has(user.id)}
+                                    onCheckedChange={() => handleToggleUser(user.id)}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <Avatar>
+                                    <AvatarImage src={user.avatar_url || undefined} />
+                                    <AvatarFallback>
+                                      {(user.display_name || user.username || 'U').charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <div className="font-medium">
+                                      {user.display_name || user.username || 'Unknown'}
+                                    </div>
+                                    {user.username && (
+                                      <div className="text-sm text-muted-foreground">
+                                        @{user.username}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              <Button
+                                onClick={handleAddMembers}
+                                disabled={loading || selectedUsers.size === 0}
+                                className="w-full"
+                              >
+                                {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}User${selectedUsers.size !== 1 ? 's' : ''}`}
+                              </Button>
+                            </>
+                          ) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No users found matching "{searchQuery}"
+                            </p>
                           )}
                         </div>
+                      )}
+                    </div>
 
-                        <div className="flex gap-2">
+                    {/* Invite Link */}
+                    <div className="space-y-3">
+                      <h3 className="font-semibold">Invite Link</h3>
+                      {currentInvite ? (
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">Current Invite Link</Label>
+                            <div className="flex gap-2 mt-2">
+                              <Input
+                                value={`${window.location.origin}/invite/${currentInvite.code}`}
+                                readOnly
+                                className="flex-1 text-sm"
+                              />
+                              <Button size="sm" onClick={handleCopyInviteLink}>
+                                <Copy size={16} />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Uses:</span>
+                              <span>{currentInvite.uses_count}</span>
+                            </div>
+                            {currentInvite.expires_at && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Expires:</span>
+                                <span>{new Date(currentInvite.expires_at).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={handleRegenerateInvite}
+                              disabled={loading}
+                              className="flex-1"
+                            >
+                              <RefreshCw size={16} className="mr-2" />
+                              Regenerate
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleRevokeInvite}
+                              disabled={loading}
+                              className="flex-1"
+                            >
+                              <Trash2 size={16} className="mr-2" />
+                              Revoke
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            Create a shareable invite link for this group.
+                          </p>
+
+                          <div>
+                            <Label htmlFor="expiry">Expiration (optional)</Label>
+                            <Input
+                              id="expiry"
+                              type="datetime-local"
+                              value={inviteExpiry}
+                              onChange={(e) => setInviteExpiry(e.target.value)}
+                              className="mt-1"
+                            />
+                          </div>
+
                           <Button
-                            variant="outline"
-                            onClick={handleRegenerateInvite}
+                            onClick={handleCreateInvite}
                             disabled={loading}
-                            className="flex-1"
+                            className="w-full"
                           >
-                            <RefreshCw size={16} className="mr-2" />
-                            Regenerate
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={handleRevokeInvite}
-                            disabled={loading}
-                            className="flex-1"
-                          >
-                            <Trash2 size={16} className="mr-2" />
-                            Revoke
+                            {loading ? "Creating..." : "Create Invite Link"}
                           </Button>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                          Create a shareable invite link for this group.
-                        </p>
-
-                        <div>
-                          <Label htmlFor="expiry">Expiration (optional)</Label>
-                          <Input
-                            id="expiry"
-                            type="datetime-local"
-                            value={inviteExpiry}
-                            onChange={(e) => setInviteExpiry(e.target.value)}
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <Button
-                          onClick={handleCreateInvite}
-                          disabled={loading}
-                          className="w-full"
-                        >
-                          {loading ? "Creating..." : "Create Invite Link"}
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Only group owners and admins can create invite links.
-                  </p>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            )}
 
-          {/* Message Tab */}
-          <TabsContent value="message" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Group Chat</CardTitle>
-              </CardHeader>
-              <CardContent>
+            {activeTab === 'message' && (
+              <div className="space-y-4">
+                <DialogHeader>
+                  <DialogTitle>Group Chat</DialogTitle>
+                </DialogHeader>
+                
                 <div className="flex flex-col h-[500px]">
                   <div className="flex-1 overflow-y-auto space-y-3 mb-4 p-4 bg-muted/30 rounded-lg">
                     {messages.length === 0 ? (
@@ -1172,10 +1246,10 @@ useEffect(() => {
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
