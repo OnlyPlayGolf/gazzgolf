@@ -377,11 +377,17 @@ const ProHoleTracker = () => {
 
     // Save to database with detailed shot data
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Authentication required", description: "Please log in", variant: "destructive" });
+        return;
+      }
+
       const { error } = await supabase.from("holes").upsert([
         {
           round_id: roundId!,
           hole_number: currentHole,
-          player_id: (await supabase.auth.getUser()).data.user?.id,
+          player_id: user.id,
           par: data.par,
           score: totalScore,
           putts: data.shots.filter(s => s.type === 'putt').length,
