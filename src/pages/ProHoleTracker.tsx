@@ -595,12 +595,15 @@ const ProHoleTracker = () => {
                     variant={!holed ? "default" : "outline"}
                     onClick={() => {
                       setHoled(false);
+                      setEndLie('green'); // Missed putts stay on green
                       // Auto-add shot when missed
                       setTimeout(() => {
                         const start = parseFloat(startDistance);
                         const end = parseFloat(endDistance);
                         if (!isNaN(start) && !isNaN(end)) {
                           addShot();
+                        } else if (isNaN(end)) {
+                          toast({ title: "Enter end distance", description: "How far is the ball from the hole?", variant: "destructive" });
                         }
                       }, 100);
                     }}
