@@ -68,11 +68,17 @@ const ProHoleTracker = () => {
     }
   }, [startLie]);
 
-  // Auto-add shot when all fields are filled (for non-green lies)
+  // Auto-add shot when all fields are filled
   useEffect(() => {
-    if (endLie !== 'green' && startDistance && endDistance && sgCalculator) {
+    if (startDistance && endDistance && endLie && sgCalculator) {
       const start = parseFloat(startDistance);
       const end = parseFloat(endDistance);
+      
+      // Don't auto-add if we're putting (start on green) - need to select holed/missed
+      if (startLie === 'green') {
+        return;
+      }
+      
       if (!isNaN(start) && !isNaN(end)) {
         // Small delay to allow UI to update
         const timer = setTimeout(() => {
