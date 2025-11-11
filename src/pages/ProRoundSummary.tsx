@@ -68,8 +68,6 @@ interface TraditionalStats {
   totalPutts: number;
   threePutts: number;
   avgPuttsPerHole: number;
-  parOrBetter: number;
-  birdiesOrBetter: number;
 }
 
 const ProRoundSummary = () => {
@@ -231,8 +229,6 @@ const ProRoundSummary = () => {
     let totalGreens = holes.length;
     let totalPutts = 0;
     let threePutts = 0;
-    let parOrBetter = 0;
-    let birdiesOrBetter = 0;
 
     holes.forEach((hole) => {
       if (!hole.pro_shot_data) return;
@@ -271,12 +267,6 @@ const ProRoundSummary = () => {
         }
       }
       if (reachedGreenInReg) greensInRegulation++;
-
-      // Score relative to par
-      const score = strokesUsed;
-      const scoreToPar = score - hole.par;
-      if (scoreToPar <= 0) parOrBetter++;
-      if (scoreToPar <= -1) birdiesOrBetter++;
     });
 
     return {
@@ -289,8 +279,6 @@ const ProRoundSummary = () => {
       totalPutts,
       threePutts,
       avgPuttsPerHole: holes.length > 0 ? totalPutts / holes.length : 0,
-      parOrBetter,
-      birdiesOrBetter,
     };
   };
 
@@ -458,16 +446,6 @@ const ProRoundSummary = () => {
                 <div className="flex justify-between items-center pb-2 border-b">
                   <span className="text-foreground font-medium">Three Putts</span>
                   <span className="text-foreground font-semibold">{traditionalStats.threePutts}</span>
-                </div>
-                
-                <div className="flex justify-between items-center pb-2 border-b">
-                  <span className="text-foreground font-medium">Pars or Better</span>
-                  <span className="text-foreground font-semibold">{traditionalStats.parOrBetter}</span>
-                </div>
-                
-                <div className="flex justify-between items-center pb-2 border-b">
-                  <span className="text-foreground font-medium">Birdies or Better</span>
-                  <span className="text-foreground font-semibold">{traditionalStats.birdiesOrBetter}</span>
                 </div>
               </div>
             </CardContent>
