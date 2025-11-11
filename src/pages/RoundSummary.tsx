@@ -124,7 +124,7 @@ const RoundSummary = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/rounds/${roundId}/${roundOrigin === 'pro_stats' ? 'pro-track' : 'track'}`)}
+                onClick={() => navigate(`/rounds/${roundId}/${roundOrigin === 'pro_stats' ? 'pro-track' : 'stats'}`)}
               >
                 <Edit size={16} />
               </Button>
