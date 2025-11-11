@@ -187,6 +187,7 @@ const ProHoleTracker = () => {
       setStartDistance(endDistance); // Next shot starts where this one ended
       setStartLie(endLie as LieType); // Next shot starts from this lie
       setEndDistance("");
+      setEndLie('fairway'); // Reset end lie to default
       setHoled(false);
       
       // Auto-set next shot type
