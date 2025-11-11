@@ -35,6 +35,7 @@ const ProHoleTracker = () => {
   const [holeData, setHoleData] = useState<Record<number, ProHoleData>>({});
   const [loading, setLoading] = useState(true);
   const [sgCalculator, setSgCalculator] = useState<any>(null);
+  const [proRoundId, setProRoundId] = useState<string | null>(null);
   
   // Current shot inputs
   const [par, setPar] = useState(4);
@@ -49,6 +50,14 @@ const ProHoleTracker = () => {
     loadBaselineData();
     fetchRound();
   }, [roundId]);
+
+  // Ensure a Pro Stats round exists for this route and user
+  useEffect(() => {
+    if (!proRoundId) {
+      ensureProRound();
+    }
+  }, [roundId, round]);
+
 
   // Reset holed state when end lie changes away from green
   useEffect(() => {
@@ -109,13 +118,47 @@ const ProHoleTracker = () => {
     }
   };
 
+  const ensureProRound = async (): Promise<string | null> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Try to find existing pro stats round mapped to this external round id
+    const { data: existing } = await supabase
+      .from('pro_stats_rounds')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('external_round_id', roundId!)
+      .maybeSingle();
+
+    if (existing?.id) {
+      setProRoundId(existing.id);
+      return existing.id;
+    }
+
+    // Create one
+    const { data: created, error: createErr } = await supabase
+      .from('pro_stats_rounds')
+      .insert([{ user_id: user.id, external_round_id: roundId, course_name: round?.course_name ?? null, holes_played: round?.holes_played ?? 18 }])
+      .select('id')
+      .single();
+
+    if (createErr) {
+      console.error('ensureProRound error', createErr);
+      toast({ title: 'Error preparing stats round', variant: 'destructive' });
+      return null;
+    }
+
+    setProRoundId(created.id);
+    return created.id;
+  };
+
   const fetchRound = async () => {
     try {
       const { data: roundData, error: roundError } = await supabase
         .from("rounds")
         .select("*")
         .eq("id", roundId)
-        .single();
+        .maybeSingle();
 
       if (roundError) throw roundError;
       setRound(roundData);
@@ -324,18 +367,20 @@ const ProHoleTracker = () => {
 
       // Proceed without owner-only check; RLS will validate membership/ownership on insert/update
 
+      // Ensure pro stats round exists
+      const prId = proRoundId || await ensureProRound();
+      if (!prId) return;
 
-      const { error } = await supabase.from("holes").upsert([
+      const { error } = await supabase.from("pro_stats_holes").upsert([
         {
-          round_id: roundId!,
+          pro_round_id: prId,
           hole_number: currentHole,
-          player_id: user.id,
           par,
           score: totalScore,
           putts: shots.filter(s => s.type === 'putt').length,
           pro_shot_data: JSON.parse(JSON.stringify(shots)),
         },
-      ], { onConflict: "round_id,hole_number,player_id" });
+      ], { onConflict: "pro_round_id,hole_number" });
 
       if (error) {
         console.error("Hole save error:", error);
@@ -383,17 +428,20 @@ const ProHoleTracker = () => {
         return;
       }
 
-      const { error } = await supabase.from("holes").upsert([
+      // Ensure pro stats round exists
+      const prId = proRoundId || await ensureProRound();
+      if (!prId) return;
+
+      const { error } = await supabase.from("pro_stats_holes").upsert([
         {
-          round_id: roundId!,
+          pro_round_id: prId,
           hole_number: currentHole,
-          player_id: user.id,
           par: data.par,
           score: totalScore,
           putts: data.shots.filter(s => s.type === 'putt').length,
           pro_shot_data: JSON.parse(JSON.stringify(data.shots)),
         },
-      ], { onConflict: "round_id,hole_number,player_id" });
+      ], { onConflict: "pro_round_id,hole_number" });
 
       if (error) throw error;
 

@@ -569,6 +569,66 @@ export type Database = {
         }
         Relationships: []
       }
+      pro_stats_holes: {
+        Row: {
+          created_at: string
+          hole_number: number
+          id: string
+          par: number
+          pro_round_id: string
+          pro_shot_data: Json | null
+          putts: number | null
+          score: number
+        }
+        Insert: {
+          created_at?: string
+          hole_number: number
+          id?: string
+          par: number
+          pro_round_id: string
+          pro_shot_data?: Json | null
+          putts?: number | null
+          score: number
+        }
+        Update: {
+          created_at?: string
+          hole_number?: number
+          id?: string
+          par?: number
+          pro_round_id?: string
+          pro_shot_data?: Json | null
+          putts?: number | null
+          score?: number
+        }
+        Relationships: []
+      }
+      pro_stats_rounds: {
+        Row: {
+          course_name: string | null
+          created_at: string
+          external_round_id: string | null
+          holes_played: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          course_name?: string | null
+          created_at?: string
+          external_round_id?: string | null
+          holes_played?: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          course_name?: string | null
+          created_at?: string
+          external_round_id?: string | null
+          holes_played?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
