@@ -31,6 +31,7 @@ const RoundSummary = () => {
   const { toast } = useToast();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [roundOrigin, setRoundOrigin] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSummary();
@@ -46,6 +47,15 @@ const RoundSummary = () => {
 
       if (error) throw error;
       setSummary(data);
+
+      // Also fetch the round's origin
+      const { data: roundData } = await supabase
+        .from("rounds")
+        .select("origin")
+        .eq("id", roundId)
+        .maybeSingle();
+      
+      setRoundOrigin(roundData?.origin || null);
     } catch (error: any) {
       toast({
         title: "Error loading summary",
@@ -114,7 +124,7 @@ const RoundSummary = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/rounds/${roundId}/track`)}
+                onClick={() => navigate(`/rounds/${roundId}/${roundOrigin === 'pro_stats' ? 'pro-track' : 'track'}`)}
               >
                 <Edit size={16} />
               </Button>
