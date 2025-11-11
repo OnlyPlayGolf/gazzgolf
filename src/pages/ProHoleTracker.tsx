@@ -322,41 +322,20 @@ const ProHoleTracker = () => {
         return;
       }
 
-      const { data: roundCheck, error: roundError } = await supabase
-        .from("rounds")
-        .select("id, user_id")
-        .eq("id", roundId!)
-        .single();
+      // Proceed without owner-only check; RLS will validate membership/ownership on insert/update
 
-      if (roundError || !roundCheck) {
-        toast({
-          title: "Round not found",
-          description: "Unable to verify round ownership",
-          variant: "destructive",
-        });
-        console.error("Round check error:", roundError);
-        return;
-      }
-
-      if (roundCheck.user_id !== user.id) {
-        toast({
-          title: "Permission denied",
-          description: "You don't own this round",
-          variant: "destructive",
-        });
-        return;
-      }
 
       const { error } = await supabase.from("holes").upsert([
         {
           round_id: roundId!,
           hole_number: currentHole,
+          player_id: user.id,
           par,
           score: totalScore,
           putts: shots.filter(s => s.type === 'putt').length,
           pro_shot_data: JSON.parse(JSON.stringify(shots)),
         },
-      ], { onConflict: "round_id,hole_number" });
+      ], { onConflict: "round_id,hole_number,player_id" });
 
       if (error) {
         console.error("Hole save error:", error);
@@ -402,12 +381,13 @@ const ProHoleTracker = () => {
         {
           round_id: roundId!,
           hole_number: currentHole,
+          player_id: (await supabase.auth.getUser()).data.user?.id,
           par: data.par,
           score: totalScore,
           putts: data.shots.filter(s => s.type === 'putt').length,
-          pro_shot_data: JSON.parse(JSON.stringify(data.shots)), // Store all shot details as JSON
+          pro_shot_data: JSON.parse(JSON.stringify(data.shots)),
         },
-      ], { onConflict: "round_id,hole_number" });
+      ], { onConflict: "round_id,hole_number,player_id" });
 
       if (error) throw error;
 
