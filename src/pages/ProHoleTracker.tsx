@@ -203,9 +203,15 @@ const ProHoleTracker = () => {
 
     // Reset inputs and set next shot's start to this shot's end
     if (holed) {
+      // Hole is complete, automatically finish
       setStartDistance("");
       setEndDistance("");
       setHoled(false);
+      
+      // Auto-finish hole after a short delay to allow state to update
+      setTimeout(() => {
+        finishHoleAfterUpdate([...currentData.shots, newShot]);
+      }, 100);
     } else {
       setStartDistance(endDistance); // Next shot starts where this one ended
       setStartLie(endLie as LieType | 'green'); // Next shot starts from this lie
@@ -219,6 +225,41 @@ const ProHoleTracker = () => {
       } else {
         setShotType('approach');
       }
+    }
+  };
+
+  const finishHoleAfterUpdate = async (shots: Shot[]) => {
+    const totalScore = shots.length;
+
+    // Save to database with detailed shot data
+    try {
+      const { error } = await supabase.from("holes").upsert([
+        {
+          round_id: roundId!,
+          hole_number: currentHole,
+          par,
+          score: totalScore,
+          putts: shots.filter(s => s.type === 'putt').length,
+          pro_shot_data: JSON.parse(JSON.stringify(shots)), // Store all shot details as JSON
+        },
+      ], { onConflict: "round_id,hole_number" });
+
+      if (error) throw error;
+
+      if (currentHole < round.holes_played) {
+        setCurrentHole(currentHole + 1);
+        setPar(4);
+        setShotType('tee');
+        setStartLie('tee');
+      } else {
+        navigate(`/rounds/${roundId}/pro-summary`);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error saving hole",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
