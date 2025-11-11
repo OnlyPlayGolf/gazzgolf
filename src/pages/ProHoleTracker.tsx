@@ -142,43 +142,73 @@ const ProHoleTracker = () => {
 
     const start = parseFloat(startDistance);
     
-    // Validation: must select end lie
-    if (!endLie) {
-      toast({ title: "Select end lie", variant: "destructive" });
-      return;
-    }
-    
-    // Validation: if end lie is green, must specify holed/missed
-    if (endLie === 'green' && !holed) {
-      // For green, if not holed, need end distance for the miss
-      const end = parseFloat(endDistance);
-      if (isNaN(end)) {
-        toast({ title: "For missed putts, enter the remaining distance", variant: "destructive" });
-        return;
-      }
-    } else if (endLie !== 'green') {
-      // For non-green shots, always need end distance
-      const end = parseFloat(endDistance);
-      if (isNaN(end)) {
-        toast({ title: "Enter end distance", variant: "destructive" });
-        return;
-      }
-    }
-    
     if (isNaN(start)) {
       toast({ title: "Invalid start distance", variant: "destructive" });
       return;
     }
 
-    const end = holed ? 0 : parseFloat(endDistance);
+    // If holed, we don't need end distance or end lie
+    if (holed) {
+      const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+      const sg = sgCalculator.calculateStrokesGained(
+        drillType,
+        start,
+        startLie,
+        true,
+        'green',
+        0
+      );
+
+      const newShot: Shot = {
+        type: shotType,
+        startDistance: start,
+        startLie,
+        holed: true,
+        endDistance: undefined,
+        endLie: undefined,
+        strokesGained: sg,
+      };
+
+      const currentData = getCurrentHoleData();
+      setHoleData({
+        ...holeData,
+        [currentHole]: {
+          par,
+          shots: [...currentData.shots, newShot],
+        },
+      });
+
+      // Reset and auto-finish hole
+      setStartDistance("");
+      setEndDistance("");
+      setHoled(false);
+      
+      setTimeout(() => {
+        finishHoleAfterUpdate([...currentData.shots, newShot]);
+      }, 100);
+      return;
+    }
+    
+    // For non-holed shots, validate end lie
+    if (!endLie) {
+      toast({ title: "Select end lie", variant: "destructive" });
+      return;
+    }
+    
+    // Validate end distance
+    const end = parseFloat(endDistance);
+    if (isNaN(end)) {
+      toast({ title: "Enter end distance", variant: "destructive" });
+      return;
+    }
 
     const drillType = shotType === 'putt' ? 'putting' : 'longGame';
     const sg = sgCalculator.calculateStrokesGained(
       drillType,
       start,
       startLie,
-      holed,
-      holed ? 'green' : endLie as LieType | 'green',
+      false,
+      endLie as LieType | 'green',
       end
     );
 
@@ -186,9 +216,9 @@ const ProHoleTracker = () => {
       type: shotType,
       startDistance: start,
       startLie,
-      holed,
-      endDistance: holed ? undefined : end,
-      endLie: holed ? undefined : (endLie as LieType | 'green'),
+      holed: false,
+      endDistance: end,
+      endLie: endLie as LieType | 'green',
       strokesGained: sg,
     };
 
