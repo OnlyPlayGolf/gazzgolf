@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -219,6 +219,13 @@ const ProRoundSummary = () => {
                   <span>{summary.holes_played} holes</span>
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/rounds/${roundId}/pro-track`)}
+              >
+                <Edit size={16} />
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
