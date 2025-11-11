@@ -46,16 +46,24 @@ const Rounds = () => {
 
       if (roundsError) throw roundsError;
 
+      const roundIds = (roundsData || []).map(r => r.id);
+      const { data: proLinks } = await supabase
+        .from('pro_stats_rounds')
+        .select('external_round_id')
+        .in('external_round_id', roundIds);
+      const proSet = new Set((proLinks || []).map((r: any) => r.external_round_id));
+
       const roundsWithScores = await Promise.all(
         (roundsData || []).map(async (round) => {
           const { data: summaryData } = await supabase
-            .from("round_summaries")
-            .select("total_score, total_par")
-            .eq("round_id", round.id)
+            .from('round_summaries')
+            .select('total_score, total_par')
+            .eq('round_id', round.id)
             .maybeSingle();
 
           return {
             ...round,
+            origin: proSet.has(round.id) ? 'pro_stats' : (round.origin ?? null),
             total_score: summaryData?.total_score,
             total_par: summaryData?.total_par,
           };

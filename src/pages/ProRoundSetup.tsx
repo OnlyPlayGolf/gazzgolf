@@ -42,7 +42,7 @@ const ProRoundSetup = () => {
             course_name: courseName,
             tee_set: teeSet,
             holes_played: holesPlayed,
-            origin: 'tracker',
+            origin: 'pro_stats',
           },
         ])
         .select()

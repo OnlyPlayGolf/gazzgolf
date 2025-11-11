@@ -48,14 +48,24 @@ const RoundSummary = () => {
       if (error) throw error;
       setSummary(data);
 
-      // Also fetch the round's origin
+      // Also fetch the round's origin, with fallback to pro_stats mapping
       const { data: roundData } = await supabase
-        .from("rounds")
-        .select("origin")
-        .eq("id", roundId)
+        .from('rounds')
+        .select('origin')
+        .eq('id', roundId)
         .maybeSingle();
-      
-      setRoundOrigin(roundData?.origin || null);
+
+      let origin = roundData?.origin || null;
+
+      // If there's a pro_stats_rounds mapping, treat it as pro_stats
+      const { data: proLink } = await supabase
+        .from('pro_stats_rounds')
+        .select('id')
+        .eq('external_round_id', roundId)
+        .maybeSingle();
+
+      if (proLink?.id) origin = 'pro_stats';
+      setRoundOrigin(origin);
     } catch (error: any) {
       toast({
         title: "Error loading summary",
