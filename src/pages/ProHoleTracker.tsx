@@ -178,18 +178,23 @@ const ProHoleTracker = () => {
       },
     });
 
-    // Reset inputs
-    setStartDistance("");
-    setEndDistance("");
-    setHoled(false);
-    
-    // Auto-set next shot type
+    // Reset inputs and set next shot's start to this shot's end
     if (holed) {
-      // Hole complete, don't change
-    } else if (endLie === 'green') {
-      setShotType('putt');
+      setStartDistance("");
+      setEndDistance("");
+      setHoled(false);
     } else {
-      setShotType('approach');
+      setStartDistance(endDistance); // Next shot starts where this one ended
+      setStartLie(endLie as LieType); // Next shot starts from this lie
+      setEndDistance("");
+      setHoled(false);
+      
+      // Auto-set next shot type
+      if (endLie === 'green') {
+        setShotType('putt');
+      } else {
+        setShotType('approach');
+      }
     }
   };
 
