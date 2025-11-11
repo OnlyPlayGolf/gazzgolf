@@ -57,6 +57,21 @@ const ProHoleTracker = () => {
     }
   }, [endLie]);
 
+  // Auto-add shot when all fields are filled (for non-green lies)
+  useEffect(() => {
+    if (endLie !== 'green' && startDistance && endDistance && sgCalculator) {
+      const start = parseFloat(startDistance);
+      const end = parseFloat(endDistance);
+      if (!isNaN(start) && !isNaN(end)) {
+        // Small delay to allow UI to update
+        const timer = setTimeout(() => {
+          addShot();
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [endLie, startDistance, endDistance]);
+
   const loadBaselineData = async () => {
     try {
       const [puttingTable, longgameTable] = await Promise.all([
@@ -337,19 +352,7 @@ const ProHoleTracker = () => {
                   <Button
                     key={lie}
                     variant={endLie === lie ? "default" : "outline"}
-                    onClick={() => {
-                      setEndLie(lie);
-                      // Auto-add shot if not green
-                      if (lie !== 'green') {
-                        setTimeout(() => {
-                          const start = parseFloat(startDistance);
-                          const end = parseFloat(endDistance);
-                          if (!isNaN(start) && !isNaN(end)) {
-                            addShot();
-                          }
-                        }, 100);
-                      }
-                    }}
+                    onClick={() => setEndLie(lie)}
                     size="sm"
                   >
                     {lie.charAt(0).toUpperCase() + lie.slice(1)}
