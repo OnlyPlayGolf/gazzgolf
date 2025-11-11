@@ -43,7 +43,7 @@ const ProHoleTracker = () => {
   const [startLie, setStartLie] = useState<LieType>('tee');
   const [holed, setHoled] = useState(false);
   const [endDistance, setEndDistance] = useState("");
-  const [endLie, setEndLie] = useState<LieType | 'green'>('fairway');
+  const [endLie, setEndLie] = useState<LieType | 'green' | ''>(''); // No preset
 
   useEffect(() => {
     loadBaselineData();
@@ -125,6 +125,12 @@ const ProHoleTracker = () => {
 
     const start = parseFloat(startDistance);
     
+    // Validation: must select end lie
+    if (!endLie) {
+      toast({ title: "Select end lie", variant: "destructive" });
+      return;
+    }
+    
     // Validation: if end lie is green, must specify holed/missed
     if (endLie === 'green' && !holed) {
       // For green, if not holed, need end distance for the miss
@@ -155,7 +161,7 @@ const ProHoleTracker = () => {
       start,
       startLie,
       holed,
-      holed ? 'green' : endLie,
+      holed ? 'green' : endLie as LieType | 'green',
       end
     );
 
@@ -165,7 +171,7 @@ const ProHoleTracker = () => {
       startLie,
       holed,
       endDistance: holed ? undefined : end,
-      endLie: holed ? undefined : endLie,
+      endLie: holed ? undefined : (endLie as LieType | 'green'),
       strokesGained: sg,
     };
 
@@ -187,7 +193,6 @@ const ProHoleTracker = () => {
       setStartDistance(endDistance); // Next shot starts where this one ended
       setStartLie(endLie as LieType); // Next shot starts from this lie
       setEndDistance("");
-      setEndLie('fairway'); // Reset end lie to default
       setHoled(false);
       
       // Auto-set next shot type
