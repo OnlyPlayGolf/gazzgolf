@@ -436,21 +436,23 @@ const ProHoleTracker = () => {
               />
             </div>
 
-            <div>
-              <Label>End Lie</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
-                  <Button
-                    key={lie}
-                    variant={endLie === lie ? "default" : "outline"}
-                    onClick={() => setEndLie(lie)}
-                    size="sm"
-                  >
-                    {lie.charAt(0).toUpperCase() + lie.slice(1)}
-                  </Button>
-                ))}
+            {startLie !== 'green' && (
+              <div>
+                <Label>End Lie</Label>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
+                    <Button
+                      key={lie}
+                      variant={endLie === lie ? "default" : "outline"}
+                      onClick={() => setEndLie(lie)}
+                      size="sm"
+                    >
+                      {lie.charAt(0).toUpperCase() + lie.slice(1)}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {startLie === 'green' && (
               <div>
