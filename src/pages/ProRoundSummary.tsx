@@ -82,30 +82,49 @@ const ProRoundSummary = () => {
       if (summaryError) throw summaryError;
       setSummary(summaryData);
 
-      // Get pro stats round ID
-      const { data: proRound } = await supabase
+      // Get pro stats round ID - use the one with the most holes if there are duplicates
+      const { data: proRounds } = await supabase
         .from('pro_stats_rounds')
         .select('id')
-        .eq('external_round_id', roundId)
-        .maybeSingle();
+        .eq('external_round_id', roundId);
 
-      if (!proRound?.id) {
+      if (!proRounds || proRounds.length === 0) {
         console.log('No Pro Stats data found for this round');
         return;
+      }
+
+      // If multiple pro_stats_rounds exist, find the one with holes
+      let proRoundId = proRounds[0].id;
+      if (proRounds.length > 1) {
+        // Check which one has holes
+        const holeCounts = await Promise.all(
+          proRounds.map(async (pr) => {
+            const { count } = await supabase
+              .from('pro_stats_holes')
+              .select('*', { count: 'exact', head: true })
+              .eq('pro_round_id', pr.id);
+            return { id: pr.id, count: count || 0 };
+          })
+        );
+        const best = holeCounts.sort((a, b) => b.count - a.count)[0];
+        proRoundId = best.id;
       }
 
       // Fetch all holes with pro shot data from pro_stats_holes
       const { data: holesData, error: holesError } = await supabase
         .from("pro_stats_holes")
         .select("par, pro_shot_data")
-        .eq("pro_round_id", proRound.id)
+        .eq("pro_round_id", proRoundId)
         .not("pro_shot_data", "is", null);
 
       if (holesError) throw holesError;
 
+      console.log('Pro Stats holes found:', holesData?.length || 0);
+
       // Calculate detailed strokes gained breakdown
       if (holesData && holesData.length > 0) {
         const breakdown = calculateSGBreakdown(holesData as DBHoleData[]);
+        console.log('Strokes Gained Breakdown:', breakdown);
         setSgBreakdown(breakdown);
       }
     } catch (error: any) {

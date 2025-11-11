@@ -128,6 +128,8 @@ const ProHoleTracker = () => {
       .select('id')
       .eq('user_id', user.id)
       .eq('external_round_id', roundId!)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (existing?.id) {
@@ -135,7 +137,7 @@ const ProHoleTracker = () => {
       return existing.id;
     }
 
-    // Create one
+    // Create one only if it doesn't exist
     const { data: created, error: createErr } = await supabase
       .from('pro_stats_rounds')
       .insert([{ user_id: user.id, external_round_id: roundId, course_name: round?.course_name ?? null, holes_played: round?.holes_played ?? 18 }])
@@ -143,6 +145,20 @@ const ProHoleTracker = () => {
       .single();
 
     if (createErr) {
+      // Check if it's a duplicate key error - if so, fetch it instead
+      if (createErr.code === '23505') {
+        const { data: refetch } = await supabase
+          .from('pro_stats_rounds')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('external_round_id', roundId!)
+          .single();
+        
+        if (refetch?.id) {
+          setProRoundId(refetch.id);
+          return refetch.id;
+        }
+      }
       console.error('ensureProRound error', createErr);
       toast({ title: 'Error preparing stats round', variant: 'destructive' });
       return null;
