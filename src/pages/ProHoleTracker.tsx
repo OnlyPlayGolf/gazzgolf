@@ -311,6 +311,42 @@ const ProHoleTracker = () => {
 
     // Save to database with detailed shot data
     try {
+      // First verify the round exists and belongs to the user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save your round",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: roundCheck, error: roundError } = await supabase
+        .from("rounds")
+        .select("id, user_id")
+        .eq("id", roundId!)
+        .single();
+
+      if (roundError || !roundCheck) {
+        toast({
+          title: "Round not found",
+          description: "Unable to verify round ownership",
+          variant: "destructive",
+        });
+        console.error("Round check error:", roundError);
+        return;
+      }
+
+      if (roundCheck.user_id !== user.id) {
+        toast({
+          title: "Permission denied",
+          description: "You don't own this round",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase.from("holes").upsert([
         {
           round_id: roundId!,
@@ -318,11 +354,14 @@ const ProHoleTracker = () => {
           par,
           score: totalScore,
           putts: shots.filter(s => s.type === 'putt').length,
-          pro_shot_data: JSON.parse(JSON.stringify(shots)), // Store all shot details as JSON
+          pro_shot_data: JSON.parse(JSON.stringify(shots)),
         },
       ], { onConflict: "round_id,hole_number" });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Hole save error:", error);
+        throw error;
+      }
 
       if (currentHole < round.holes_played) {
         setCurrentHole(currentHole + 1);
