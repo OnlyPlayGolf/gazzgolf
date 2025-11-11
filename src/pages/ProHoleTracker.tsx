@@ -14,7 +14,7 @@ import { createStrokesGainedCalculator } from "@/utils/strokesGained";
 interface Shot {
   type: 'tee' | 'approach' | 'putt';
   startDistance: number;
-  startLie: LieType;
+  startLie: LieType | 'green';
   holed: boolean;
   endDistance?: number;
   endLie?: LieType | 'green';
@@ -40,7 +40,7 @@ const ProHoleTracker = () => {
   const [par, setPar] = useState(4);
   const [shotType, setShotType] = useState<'tee' | 'approach' | 'putt'>('tee');
   const [startDistance, setStartDistance] = useState("");
-  const [startLie, setStartLie] = useState<LieType>('tee');
+  const [startLie, setStartLie] = useState<LieType | 'green'>('tee');
   const [holed, setHoled] = useState(false);
   const [endDistance, setEndDistance] = useState("");
   const [endLie, setEndLie] = useState<LieType | 'green' | ''>(''); // No preset
@@ -202,7 +202,7 @@ const ProHoleTracker = () => {
       setHoled(false);
     } else {
       setStartDistance(endDistance); // Next shot starts where this one ended
-      setStartLie(endLie as LieType); // Next shot starts from this lie
+      setStartLie(endLie as LieType | 'green'); // Next shot starts from this lie
       setEndDistance("");
       setHoled(false);
       
@@ -374,7 +374,7 @@ const ProHoleTracker = () => {
               </div>
             </div>
 
-            {endLie === 'green' && (
+            {startLie === 'green' && (
               <div>
                 <Label>Result</Label>
                 <div className="flex gap-2 mt-2">
