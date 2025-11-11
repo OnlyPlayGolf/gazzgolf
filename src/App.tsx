@@ -86,6 +86,7 @@ const App = () => (
             <Route path="/rounds/:roundId/stats" element={<HoleTracker />} />
             <Route path="/rounds/:roundId/leaderboard" element={<RoundLeaderboard />} />
             <Route path="/rounds/:roundId/summary" element={<RoundSummary />} />
+            <Route path="/rounds/:roundId" element={<RoundSummary />} />
             <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
             <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
             <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
