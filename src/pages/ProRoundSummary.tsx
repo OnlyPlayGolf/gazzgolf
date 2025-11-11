@@ -82,11 +82,23 @@ const ProRoundSummary = () => {
       if (summaryError) throw summaryError;
       setSummary(summaryData);
 
-      // Fetch all holes with pro shot data
+      // Get pro stats round ID
+      const { data: proRound } = await supabase
+        .from('pro_stats_rounds')
+        .select('id')
+        .eq('external_round_id', roundId)
+        .maybeSingle();
+
+      if (!proRound?.id) {
+        console.log('No Pro Stats data found for this round');
+        return;
+      }
+
+      // Fetch all holes with pro shot data from pro_stats_holes
       const { data: holesData, error: holesError } = await supabase
-        .from("holes")
+        .from("pro_stats_holes")
         .select("par, pro_shot_data")
-        .eq("round_id", roundId)
+        .eq("pro_round_id", proRound.id)
         .not("pro_shot_data", "is", null);
 
       if (holesError) throw holesError;
