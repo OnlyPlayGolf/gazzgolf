@@ -258,6 +258,54 @@ const ProHoleTracker = () => {
     }
   };
 
+  // Explicit holed-shot adder to avoid end-lie validation on putts
+  const addHoledShot = () => {
+    if (!sgCalculator) {
+      toast({ title: "Baseline data not loaded", variant: "destructive" });
+      return;
+    }
+    const start = parseFloat(startDistance);
+    if (isNaN(start)) {
+      toast({ title: "Invalid start distance", variant: "destructive" });
+      return;
+    }
+
+    const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+    const sg = sgCalculator.calculateStrokesGained(
+      drillType,
+      start,
+      startLie,
+      true,
+      'green',
+      0
+    );
+
+    const newShot: Shot = {
+      type: shotType,
+      startDistance: start,
+      startLie,
+      holed: true,
+      strokesGained: sg,
+    };
+
+    const currentData = getCurrentHoleData();
+    setHoleData({
+      ...holeData,
+      [currentHole]: {
+        par,
+        shots: [...currentData.shots, newShot],
+      },
+    });
+
+    setStartDistance("");
+    setEndDistance("");
+    setHoled(false);
+
+    setTimeout(() => {
+      finishHoleAfterUpdate([...currentData.shots, newShot]);
+    }, 50);
+  };
+
   const finishHoleAfterUpdate = async (shots: Shot[]) => {
     const totalScore = shots.length;
 
@@ -462,13 +510,9 @@ const ProHoleTracker = () => {
                     variant={holed ? "default" : "outline"}
                     onClick={() => {
                       setHoled(true);
-                      // Auto-add shot when holed
                       setTimeout(() => {
-                        const start = parseFloat(startDistance);
-                        if (!isNaN(start)) {
-                          addShot();
-                        }
-                      }, 100);
+                        addHoledShot();
+                      }, 50);
                     }}
                     className="flex-1"
                   >
