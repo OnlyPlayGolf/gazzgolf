@@ -204,6 +204,7 @@ const ProHoleTracker = () => {
       setStartDistance(endDistance); // Next shot starts where this one ended
       setStartLie(endLie as LieType | 'green'); // Next shot starts from this lie
       setEndDistance("");
+      setEndLie(''); // Reset end lie for next shot
       setHoled(false);
       
       // Auto-set next shot type
