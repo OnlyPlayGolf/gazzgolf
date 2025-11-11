@@ -16,6 +16,7 @@ interface Round {
   holes_played: number;
   total_score?: number;
   total_par?: number;
+  origin?: string;
 }
 
 const Rounds = () => {
@@ -40,7 +41,7 @@ const Rounds = () => {
         .from("rounds")
         .select("*")
         .eq("user_id", user.id)
-        .or('origin.is.null,origin.eq.tracker')
+        .or('origin.is.null,origin.eq.tracker,origin.eq.pro_stats')
         .order("date_played", { ascending: false });
 
       if (roundsError) throw roundsError;
@@ -125,7 +126,7 @@ const Rounds = () => {
               <Card
                 key={round.id}
                 className="cursor-pointer hover:border-primary transition-colors"
-                onClick={() => navigate(`/rounds/${round.id}/summary`)}
+                onClick={() => navigate(`/rounds/${round.id}/${round.origin === 'pro_stats' ? 'pro-summary' : 'summary'}`)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
