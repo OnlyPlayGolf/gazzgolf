@@ -58,12 +58,27 @@ interface SGBreakdown {
   total: number;
 }
 
+interface TraditionalStats {
+  fairwaysHit: number;
+  totalFairways: number;
+  fairwayPercentage: number;
+  greensInRegulation: number;
+  totalGreens: number;
+  girPercentage: number;
+  totalPutts: number;
+  threePutts: number;
+  avgPuttsPerHole: number;
+  parOrBetter: number;
+  birdiesOrBetter: number;
+}
+
 const ProRoundSummary = () => {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [sgBreakdown, setSgBreakdown] = useState<SGBreakdown | null>(null);
+  const [traditionalStats, setTraditionalStats] = useState<TraditionalStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -126,6 +141,10 @@ const ProRoundSummary = () => {
         const breakdown = calculateSGBreakdown(holesData as DBHoleData[]);
         console.log('Strokes Gained Breakdown:', breakdown);
         setSgBreakdown(breakdown);
+        
+        const tradStats = calculateTraditionalStats(holesData as DBHoleData[]);
+        console.log('Traditional Stats:', tradStats);
+        setTraditionalStats(tradStats);
       }
     } catch (error: any) {
       toast({
@@ -202,6 +221,76 @@ const ProRoundSummary = () => {
       putting7Plus,
       puttingTotal,
       total,
+    };
+  };
+
+  const calculateTraditionalStats = (holes: DBHoleData[]): TraditionalStats => {
+    let fairwaysHit = 0;
+    let totalFairways = 0;
+    let greensInRegulation = 0;
+    let totalGreens = holes.length;
+    let totalPutts = 0;
+    let threePutts = 0;
+    let parOrBetter = 0;
+    let birdiesOrBetter = 0;
+
+    holes.forEach((hole) => {
+      if (!hole.pro_shot_data) return;
+      
+      const shots = hole.pro_shot_data as Shot[];
+      const puttCount = shots.filter(s => s.type === 'putt').length;
+      totalPutts += puttCount;
+      
+      if (puttCount >= 3) threePutts++;
+
+      // Count fairways (par 4 and 5 only)
+      if (hole.par >= 4) {
+        totalFairways++;
+        const teeShot = shots.find(s => s.type === 'tee');
+        // Assume fairway hit if tee shot exists and didn't hole out (reasonable assumption for pro stats)
+        if (teeShot && !teeShot.holed) {
+          fairwaysHit++;
+        }
+      }
+
+      // GIR: reached green in regulation (par - 2 strokes or less)
+      const strokesUsed = shots.length;
+      const regulationStrokes = hole.par - 2;
+      
+      // Find if green was reached in regulation
+      let reachedGreenInReg = false;
+      let strokesBeforeGreen = 0;
+      for (const shot of shots) {
+        strokesBeforeGreen++;
+        if (shot.type === 'putt' || shot.holed) {
+          // Reached green
+          if (strokesBeforeGreen <= regulationStrokes) {
+            reachedGreenInReg = true;
+          }
+          break;
+        }
+      }
+      if (reachedGreenInReg) greensInRegulation++;
+
+      // Score relative to par
+      const score = strokesUsed;
+      const scoreToPar = score - hole.par;
+      if (scoreToPar <= 0) parOrBetter++;
+      if (scoreToPar <= -1) birdiesOrBetter++;
+    });
+
+    return {
+      fairwaysHit,
+      totalFairways,
+      fairwayPercentage: totalFairways > 0 ? (fairwaysHit / totalFairways) * 100 : 0,
+      greensInRegulation,
+      totalGreens,
+      girPercentage: totalGreens > 0 ? (greensInRegulation / totalGreens) * 100 : 0,
+      totalPutts,
+      threePutts,
+      avgPuttsPerHole: holes.length > 0 ? totalPutts / holes.length : 0,
+      parOrBetter,
+      birdiesOrBetter,
     };
   };
 
@@ -333,6 +422,57 @@ const ProRoundSummary = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Traditional Stats */}
+        {traditionalStats && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Traditional Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-foreground font-medium">Fairways Hit</span>
+                  <span className="text-foreground font-semibold">
+                    {traditionalStats.fairwaysHit}/{traditionalStats.totalFairways} ({traditionalStats.fairwayPercentage.toFixed(1)}%)
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-foreground font-medium">Greens in Regulation</span>
+                  <span className="text-foreground font-semibold">
+                    {traditionalStats.greensInRegulation}/{traditionalStats.totalGreens} ({traditionalStats.girPercentage.toFixed(1)}%)
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-foreground font-medium">Total Putts</span>
+                  <span className="text-foreground font-semibold">{traditionalStats.totalPutts}</span>
+                </div>
+                
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-foreground font-medium">Avg Putts/Hole</span>
+                  <span className="text-foreground font-semibold">{traditionalStats.avgPuttsPerHole.toFixed(2)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-foreground font-medium">Three Putts</span>
+                  <span className="text-foreground font-semibold">{traditionalStats.threePutts}</span>
+                </div>
+                
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-foreground font-medium">Pars or Better</span>
+                  <span className="text-foreground font-semibold">{traditionalStats.parOrBetter}</span>
+                </div>
+                
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-foreground font-medium">Birdies or Better</span>
+                  <span className="text-foreground font-semibold">{traditionalStats.birdiesOrBetter}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Strokes Gained Breakdown */}
         {sgBreakdown && (
