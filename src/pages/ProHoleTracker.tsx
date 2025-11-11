@@ -57,6 +57,17 @@ const ProHoleTracker = () => {
     }
   }, [endLie]);
 
+  // Auto-set shot type based on start lie
+  useEffect(() => {
+    if (startLie === 'tee') {
+      setShotType('tee');
+    } else if (startLie === 'green' as any) {
+      setShotType('putt');
+    } else {
+      setShotType('approach');
+    }
+  }, [startLie]);
+
   // Auto-add shot when all fields are filled (for non-green lies)
   useEffect(() => {
     if (endLie !== 'green' && startDistance && endDistance && sgCalculator) {
@@ -318,18 +329,9 @@ const ProHoleTracker = () => {
           <CardContent className="pt-6 space-y-4">
             {currentData.shots.length > 0 && (
               <div>
-                <Label>Shot Type</Label>
-                <div className="flex gap-2 mt-2">
-                  {(['tee', 'approach', 'putt'] as const).map((type) => (
-                    <Button
-                      key={type}
-                      variant={shotType === type ? "default" : "outline"}
-                      onClick={() => setShotType(type)}
-                      className="flex-1"
-                    >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </Button>
-                  ))}
+                <Label>Shot Type (auto)</Label>
+                <div className="text-sm text-muted-foreground mt-2 p-2 bg-muted rounded">
+                  {shotType.charAt(0).toUpperCase() + shotType.slice(1)} from {startLie}
                 </div>
               </div>
             )}
