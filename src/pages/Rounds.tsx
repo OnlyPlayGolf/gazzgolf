@@ -3,7 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, MapPin, Trophy } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Plus, Calendar, MapPin, Trophy, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -24,6 +34,8 @@ const Rounds = () => {
   const { toast } = useToast();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [roundToDelete, setRoundToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRounds();
@@ -89,6 +101,67 @@ const Rounds = () => {
     return diff > 0 ? `+${diff}` : `${diff}`;
   };
 
+  const handleDeleteClick = (roundId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRoundToDelete(roundId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!roundToDelete) return;
+
+    try {
+      // Delete pro stats holes first if they exist
+      const { data: proRound } = await supabase
+        .from('pro_stats_rounds')
+        .select('id')
+        .eq('external_round_id', roundToDelete)
+        .maybeSingle();
+
+      if (proRound?.id) {
+        await supabase
+          .from('pro_stats_holes')
+          .delete()
+          .eq('pro_round_id', proRound.id);
+        
+        await supabase
+          .from('pro_stats_rounds')
+          .delete()
+          .eq('id', proRound.id);
+      }
+
+      // Delete regular holes
+      await supabase
+        .from('holes')
+        .delete()
+        .eq('round_id', roundToDelete);
+
+      // Delete the round
+      const { error } = await supabase
+        .from('rounds')
+        .delete()
+        .eq('id', roundToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Round deleted",
+        description: "The round has been removed",
+      });
+
+      fetchRounds();
+    } catch (error: any) {
+      toast({
+        title: "Error deleting round",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setRoundToDelete(null);
+    }
+  };
+
   return (
     <div className="pb-20 min-h-screen bg-background">
       <TopNavBar />
@@ -137,7 +210,7 @@ const Rounds = () => {
                 onClick={() => navigate(`/rounds/${round.id}/${round.origin === 'pro_stats' ? 'pro-summary' : 'summary'}`)}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <MapPin size={16} className="text-primary" />
@@ -156,15 +229,25 @@ const Rounds = () => {
                         <span>{round.holes_played} holes</span>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">
-                        {getScoreDisplay(round)}
-                      </div>
-                      {round.total_score && (
-                        <div className="text-sm text-muted-foreground">
-                          {round.total_score}
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary">
+                          {getScoreDisplay(round)}
                         </div>
-                      )}
+                        {round.total_score && (
+                          <div className="text-sm text-muted-foreground">
+                            {round.total_score}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={(e) => handleDeleteClick(round.id, e)}
+                      >
+                        <Trash2 size={18} />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -172,6 +255,23 @@ const Rounds = () => {
             ))}
           </div>
         )}
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Round?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this round and all its data. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

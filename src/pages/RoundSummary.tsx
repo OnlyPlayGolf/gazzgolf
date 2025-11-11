@@ -4,7 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Calendar, MapPin, Edit } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Calendar, MapPin, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -84,6 +95,37 @@ const RoundSummary = () => {
     if (diff <= 0) return "text-green-500";
     if (diff <= 5) return "text-yellow-500";
     return "text-red-500";
+  };
+
+  const handleDelete = async () => {
+    try {
+      // Delete holes first
+      await supabase
+        .from('holes')
+        .delete()
+        .eq('round_id', roundId);
+
+      // Delete the round
+      const { error } = await supabase
+        .from('rounds')
+        .delete()
+        .eq('id', roundId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Round deleted",
+        description: "The round has been removed",
+      });
+
+      navigate('/rounds');
+    } catch (error: any) {
+      toast({
+        title: "Error deleting round",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const StatCard = ({ title, value, subtitle, progress }: any) => (
@@ -190,13 +232,38 @@ const RoundSummary = () => {
           />
         </div>
 
-        <Button 
-          onClick={() => navigate("/rounds")} 
-          className="w-full" 
-          size="lg"
-        >
-          Done
-        </Button>
+        <div className="flex gap-3">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="lg" className="flex-1">
+                <Trash2 className="mr-2" size={18} />
+                Delete Round
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Round?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this round and all its data. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          
+          <Button 
+            onClick={() => navigate("/rounds")} 
+            className="flex-1" 
+            size="lg"
+          >
+            Done
+          </Button>
+        </div>
       </div>
     </div>
   );
