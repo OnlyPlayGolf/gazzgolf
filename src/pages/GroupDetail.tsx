@@ -1071,9 +1071,9 @@ useEffect(() => {
                         {drillLeaderboard.map((entry, index) => (
                           <div
                             key={entry.user_id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
                           >
-                            <div className="font-bold text-lg text-muted-foreground w-8">
+                            <div className="font-bold text-sm text-muted-foreground w-8">
                               #{index + 1}
                             </div>
                             <Avatar>
@@ -1112,7 +1112,7 @@ useEffect(() => {
                      {groupLevelsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.user_id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30"
+                        className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
                       >
                         <div className="font-bold text-sm text-muted-foreground w-8">
                           #{index + 1}
