@@ -18,19 +18,25 @@ export default function ShotShapeMasterInfo() {
             <div>
               <h3 className="font-medium text-foreground mb-2">Overview</h3>
               <p className="text-sm text-muted-foreground">
-                The Shot Shape Master drill tests your ability to execute intended shot shapes under pressure. 
-                Hit 14 tee shots, attempting to hit your called shot shape (draw, fade, straight) while finding the fairway.
+                The Shot Shape Master drill tests your ability to execute required shot shapes under pressure. 
+                Based on 14 tee shots from an 18-hole round with average fairway and dispersion numbers from PGA Tour data.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Fairway width: 30 meters
               </p>
             </div>
 
             <div>
               <h3 className="font-medium text-foreground mb-2">Drill Structure</h3>
               <p className="text-sm text-muted-foreground mb-2">
-                Total: 14 shots
+                Total: 14 shots (7 draws, 7 fades)
+              </p>
+              <p className="text-sm text-muted-foreground mb-2">
+                Club distribution: 9 Drivers, 2 Fairway Woods, 3 Hybrid/Utility Irons
               </p>
               <p className="text-sm text-muted-foreground">
-                Before each shot, decide on your shot shape. After hitting, record whether you achieved 
-                the intended shape and whether you found the fairway.
+                Each shot will specify the required shot shape (draw or fade) and club. Record whether you achieved 
+                the required shape and whether you found the fairway.
               </p>
             </div>
 
@@ -47,7 +53,7 @@ export default function ShotShapeMasterInfo() {
                   <span className="font-medium text-yellow-600">1 Point:</span> Correct shot shape BUT missed fairway by 10m or less
                 </li>
                 <li>
-                  <span className="font-medium text-muted-foreground">0 Points:</span> Wrong shot shape OR missed fairway by more than 10m
+                  <span className="font-medium text-muted-foreground">0 Points:</span> Missed fairway by more than 10m (regardless of shot shape)
                 </li>
               </ul>
             </div>

@@ -15,12 +15,31 @@ interface ShotShapeMasterComponentProps {
 
 interface Attempt {
   shotNumber: number;
+  requiredShape: 'draw' | 'fade';
+  club: string;
   correctShape: boolean;
   hitFairway: boolean;
   missDistance?: number; // in meters, only if missed fairway
   points: number;
   bonusPoints: number;
 }
+
+const SHOT_SEQUENCE: Array<{ shape: 'draw' | 'fade'; club: string }> = [
+  { shape: 'draw', club: 'Driver' },
+  { shape: 'fade', club: 'Driver' },
+  { shape: 'draw', club: 'Driver' },
+  { shape: 'fade', club: 'Fairway Wood' },
+  { shape: 'draw', club: 'Driver' },
+  { shape: 'fade', club: 'Driver' },
+  { shape: 'draw', club: 'Hybrid/Utility' },
+  { shape: 'fade', club: 'Driver' },
+  { shape: 'draw', club: 'Driver' },
+  { shape: 'fade', club: 'Fairway Wood' },
+  { shape: 'fade', club: 'Hybrid/Utility' },
+  { shape: 'fade', club: 'Driver' },
+  { shape: 'fade', club: 'Hybrid/Utility' },
+  { shape: 'draw', club: 'Driver' },
+];
 
 const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMasterComponentProps) => {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
@@ -61,11 +80,16 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
   };
 
   const calculatePoints = (isCorrectShape: boolean, didHitFairway: boolean, distance?: number): number => {
+    // 0 points if missed fairway by more than 10m
+    if (!didHitFairway && distance && distance > 10) return 0;
+    
     if (isCorrectShape && didHitFairway) return 3;
     if (!isCorrectShape && didHitFairway) return 2;
     if (isCorrectShape && !didHitFairway && distance && distance <= 10) return 1;
     return 0;
   };
+
+  const currentShotInfo = SHOT_SEQUENCE[currentShot - 1];
 
   const addAttempt = () => {
     if (!correctShape || !hitFairway) {
@@ -114,6 +138,8 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
 
     const newAttempt: Attempt = {
       shotNumber: currentShot,
+      requiredShape: currentShotInfo.shape,
+      club: currentShotInfo.club,
       correctShape: isCorrectShape,
       hitFairway: didHitFairway,
       missDistance: distance,
@@ -222,7 +248,10 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
           <div>
             <h3 className="font-semibold text-lg mb-2">Instructions</h3>
             <p className="text-muted-foreground mb-2">
-              Hit 14 tee shots, attempting to hit your intended shot shape and fairway.
+              Hit 14 tee shots following the required shot shape and club for each shot. Fairway width: 30 meters.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Based on 14 tee shots from an 18-hole round with PGA Tour average fairway and dispersion data.
             </p>
           </div>
           
@@ -232,7 +261,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
               <li>• <span className="font-medium text-foreground">3 Points:</span> Correct shot shape + hit fairway</li>
               <li>• <span className="font-medium text-foreground">2 Points:</span> Wrong shot shape + hit fairway</li>
               <li>• <span className="font-medium text-foreground">1 Point:</span> Correct shot shape + missed fairway by ≤10m</li>
-              <li>• <span className="font-medium text-foreground">0 Points:</span> Wrong shape + missed OR missed fairway by &gt;10m</li>
+              <li>• <span className="font-medium text-foreground">0 Points:</span> Missed fairway by &gt;10m</li>
             </ul>
           </div>
 
@@ -267,6 +296,12 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
             <CardTitle>Shot #{currentShot} of 14</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="p-3 bg-primary/10 rounded-md text-center">
+              <div className="text-sm text-muted-foreground">Required Shot</div>
+              <div className="text-xl font-bold text-primary capitalize">{currentShotInfo.shape}</div>
+              <div className="text-sm font-medium text-foreground mt-1">{currentShotInfo.club}</div>
+            </div>
+            
             <div className="text-center">
               <div className="text-lg font-medium">
                 Current Score: {totalPoints} points
@@ -286,7 +321,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
             {/* Input Form */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Did you hit your intended shot shape?</Label>
+                <Label>Did you hit the required {currentShotInfo.shape}?</Label>
                 <RadioGroup value={correctShape} onValueChange={setCorrectShape}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="yes" id="shape-yes" />
@@ -357,7 +392,10 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
             <div className="space-y-2">
               {attempts.map((attempt, index) => (
                 <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                  <span className="text-sm">Shot #{attempt.shotNumber}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">Shot #{attempt.shotNumber}</span>
+                    <span className="text-xs text-muted-foreground capitalize">{attempt.requiredShape} • {attempt.club}</span>
+                  </div>
                   <div className="text-right">
                     <span className={`text-sm font-medium ${
                       attempt.points === 3 ? 'text-green-600' : 
