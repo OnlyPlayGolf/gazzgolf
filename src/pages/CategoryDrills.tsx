@@ -62,8 +62,9 @@ const categoryNames = {
   putting: 'Putting',
   shortgame: 'Short Game',
   wedges: 'Wedges',
-  longgame: 'Long Game',
-  favourites: 'Favourites',
+  approach: 'Approach',
+  teeshots: 'Tee Shots',
+  favorites: 'Favorites',
 };
 
 const CategoryDrills = () => {
@@ -92,7 +93,7 @@ const CategoryDrills = () => {
   };
 
   const getDrillsForCategory = () => {
-    if (categoryId === 'favourites') {
+    if (categoryId === 'favorites') {
       return favorites.map(fav => 
         allDrills.find(drill => drill.id === fav.id)
       ).filter(Boolean).sort((a, b) => a!.title.localeCompare(b!.title));
@@ -124,12 +125,12 @@ const CategoryDrills = () => {
           </div>
         </div>
 
-        {categoryId === 'favourites' && drills.length === 0 ? (
+        {categoryId === 'favorites' && drills.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-8">
               <Star className="text-muted-foreground mb-4" size={48} />
               <p className="text-muted-foreground text-center">
-                No favourites yet — tap ★ on any drill to add it.
+                No favorites yet — tap ★ on any drill to add it.
               </p>
             </CardContent>
           </Card>
