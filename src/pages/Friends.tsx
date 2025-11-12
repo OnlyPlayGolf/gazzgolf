@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Users, UserPlus, Search, Check, X, ArrowUpDown, MessageCircle } from "lucide-react";
+import { Users, UserPlus, Search, Check, X, ArrowUp, ArrowDown, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -616,57 +616,64 @@ const Friends = () => {
                       className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
                     >
                       Name
-                      <ArrowUpDown size={14} />
+                      {sortField === 'name' && (
+                        sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                      )}
                     </button>
                     <button
                       onClick={() => handleSort('handicap')}
                       className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Handicap
-                      <ArrowUpDown size={14} />
+                      {sortField === 'handicap' && (
+                        sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                      )}
                     </button>
                     <button
                       onClick={() => handleSort('club')}
                       className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
                     >
                       Club
-                      <ArrowUpDown size={14} />
+                      {sortField === 'club' && (
+                        sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                      )}
                     </button>
                   </div>
 
                   {/* Friends List */}
                   {sortedFriends.map((friend) => (
                     <Card key={friend.id}>
-                      <CardContent className="pt-6">
-                        <div className="flex flex-col items-center gap-4">
-                          <Avatar className="w-16 h-16">
-                            <AvatarFallback className="text-2xl">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="w-12 h-12 flex-shrink-0">
+                            <AvatarFallback>
                               {(friend.display_name || friend.username || '?')[0].toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           
-                          <div className="text-center w-full">
-                            <h3 className="font-semibold text-lg">{friend.display_name || friend.username}</h3>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base truncate">{friend.display_name || friend.username}</h3>
                             <p className="text-muted-foreground text-sm">
                               {friend.handicap ? `HCP: ${friend.handicap}` : 'HCP: -'}
                             </p>
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-muted-foreground text-sm truncate">
                               {friend.home_club || '-'}
                             </p>
                           </div>
 
-                          <div className="flex gap-2 w-full">
+                          <div className="flex flex-col gap-2 flex-shrink-0">
                             <Button
                               variant="outline"
-                              className="flex-1"
+                              size="sm"
                               onClick={() => handleMessageFriend(friend.id)}
                             >
-                              <MessageCircle size={16} className="mr-2" />
+                              <MessageCircle size={16} className="mr-1" />
                               Message
                             </Button>
                             <Button
                               variant="outline"
-                              className="flex-1 text-destructive hover:text-destructive"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
                               onClick={() => {
                                 setFriendToRemove(friend);
                                 setIsRemoveDialogOpen(true);
