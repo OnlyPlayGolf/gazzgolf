@@ -1128,7 +1128,7 @@ useEffect(() => {
                             {entry.display_name || entry.username || 'Unknown'}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {entry.completed_levels} completed levels • Highest: Level {entry.highest_level || 0}
+                            {entry.completed_levels} levels completed • Highest: Level {entry.highest_level || 0}
                           </div>
                         </div>
                       </div>
