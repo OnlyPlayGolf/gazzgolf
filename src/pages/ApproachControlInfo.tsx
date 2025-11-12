@@ -85,10 +85,8 @@ export default function ApproachControlInfo() {
               <h3 className="font-medium text-foreground mb-2">Tips for Success</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Focus on ball striking quality and tempo</li>
-                <li>• Use your natural shot shape to control the ball</li>
                 <li>• Pay attention to wind conditions</li>
                 <li>• Commit to your club selection</li>
-                <li>• Aim for the center of the green when in doubt</li>
               </ul>
             </div>
 
