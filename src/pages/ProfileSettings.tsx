@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,11 +62,6 @@ const ProfileSettings = () => {
     } catch (error) {
       console.error('Error loading user data:', error);
     }
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/auth');
   };
 
   const handleUpdateProfile = async (field: string, value: string) => {
@@ -139,17 +134,8 @@ const ProfileSettings = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h1 className="text-xl font-bold text-foreground">Personal Information</h1>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSignOut}
-            className="text-destructive hover:text-destructive"
-          >
-            <LogOut size={16} className="mr-2" />
-            Sign Out
-          </Button>
         </div>
 
         <Card>

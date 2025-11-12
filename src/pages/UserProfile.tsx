@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, QrCode, Users, Target, TrendingUp, BarChart3, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info, MessageCircle as MessageCircleIcon, Crown } from "lucide-react";
+import { Camera, QrCode, Users, Target, TrendingUp, BarChart3, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info, MessageCircle as MessageCircleIcon, Crown, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -351,6 +351,28 @@ export default function UserProfile() {
                             <div className="font-medium text-muted-foreground">Support</div>
                             <div className="text-xs text-muted-foreground">Coming soon</div>
                           </div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      onClick={async () => { 
+                        await supabase.auth.signOut();
+                        setMenuOpen(false);
+                        navigate('/auth');
+                      }}
+                      className="w-full h-auto p-4 justify-start text-left text-destructive hover:text-destructive"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <LogOut size={20} className="text-destructive" />
+                          <div className="font-medium">Log Out</div>
                         </div>
                         <ChevronRight size={16} className="text-muted-foreground" />
                       </div>
