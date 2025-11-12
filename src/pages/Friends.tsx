@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, UserPlus, Search, Check, X } from "lucide-react";
+import { Users, UserPlus, Search, Check, X, ArrowUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,9 +17,14 @@ interface Friend {
   id: string;
   display_name: string | null;
   username: string | null;
+  handicap: string | null;
+  home_club: string | null;
   status: 'accepted' | 'pending' | 'blocked';
   is_requester: boolean;
 }
+
+type SortField = 'name' | 'handicap' | 'club';
+type SortOrder = 'asc' | 'desc';
 
 const Friends = () => {
   const navigate = useNavigate();
@@ -28,6 +33,8 @@ const Friends = () => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<Friend[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<Friend[]>([]);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   
   // Dialog states
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
@@ -99,7 +106,7 @@ const Friends = () => {
           const friendId = friendship.requester === user.id ? friendship.addressee : friendship.requester;
           const { data: friendProfile } = await supabase
             .from('profiles')
-            .select('display_name, username')
+            .select('display_name, username, handicap, home_club')
             .eq('id', friendId)
             .single();
 
@@ -108,6 +115,8 @@ const Friends = () => {
               id: friendId,
               display_name: friendProfile.display_name,
               username: friendProfile.username,
+              handicap: friendProfile.handicap,
+              home_club: friendProfile.home_club,
               status: 'accepted',
               is_requester: friendship.requester === user.id
             });
@@ -125,6 +134,8 @@ const Friends = () => {
                 id: friendship.requester,
                 display_name: requesterProfile.display_name,
                 username: requesterProfile.username,
+                handicap: null,
+                home_club: null,
                 status: 'pending',
                 is_requester: false
               });
@@ -141,6 +152,8 @@ const Friends = () => {
                 id: friendship.addressee,
                 display_name: addresseeProfile.display_name,
                 username: addresseeProfile.username,
+                handicap: null,
+                home_club: null,
                 status: 'pending',
                 is_requester: true
               });
@@ -258,6 +271,45 @@ const Friends = () => {
       });
     }
   };
+
+  const parseHandicap = (handicap: string | null): number => {
+    if (!handicap) return 999; // Put null handicaps at the end
+    const trimmed = handicap.trim();
+    if (trimmed.startsWith('+')) {
+      // Plus handicaps are actually better (lower), so negate them
+      return -parseFloat(trimmed.substring(1));
+    }
+    return parseFloat(trimmed);
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedFriends = [...friends].sort((a, b) => {
+    let comparison = 0;
+
+    if (sortField === 'name') {
+      const nameA = (a.display_name || a.username || '').toLowerCase();
+      const nameB = (b.display_name || b.username || '').toLowerCase();
+      comparison = nameA.localeCompare(nameB, 'sv');
+    } else if (sortField === 'handicap') {
+      const hcpA = parseHandicap(a.handicap);
+      const hcpB = parseHandicap(b.handicap);
+      comparison = hcpA - hcpB;
+    } else if (sortField === 'club') {
+      const clubA = (a.home_club || '').toLowerCase();
+      const clubB = (b.home_club || '').toLowerCase();
+      comparison = clubA.localeCompare(clubB, 'sv');
+    }
+
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
 
   if (!user) {
     return (
@@ -445,18 +497,50 @@ const Friends = () => {
                 <p className="text-center text-muted-foreground py-8">No friends yet. Add some friends to get started!</p>
               ) : (
                 <div className="space-y-3">
-                  {friends.map((friend) => (
-                    <div key={friend.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
+                  {/* Table Headers */}
+                  <div className="grid grid-cols-[1fr_100px_1fr] gap-4 px-3 pb-2 border-b">
+                    <button
+                      onClick={() => handleSort('name')}
+                      className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
+                    >
+                      Name
+                      <ArrowUpDown size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleSort('handicap')}
+                      className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Handicap
+                      <ArrowUpDown size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleSort('club')}
+                      className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
+                    >
+                      Club
+                      <ArrowUpDown size={14} />
+                    </button>
+                  </div>
+
+                  {/* Friends List */}
+                  {sortedFriends.map((friend) => (
+                    <div key={friend.id} className="grid grid-cols-[1fr_100px_1fr] gap-4 items-center p-3 border rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="flex-shrink-0">
                           <AvatarFallback>
                             {(friend.display_name || friend.username || '?')[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-medium">{friend.display_name || friend.username}</p>
-                          {friend.display_name && <p className="text-sm text-muted-foreground">@{friend.username}</p>}
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{friend.display_name || friend.username}</p>
+                          {friend.display_name && <p className="text-sm text-muted-foreground truncate">@{friend.username}</p>}
                         </div>
+                      </div>
+                      <div className="text-sm">
+                        {friend.handicap ? `HCP: ${friend.handicap}` : '-'}
+                      </div>
+                      <div className="text-sm truncate">
+                        {friend.home_club || '-'}
                       </div>
                     </div>
                   ))}
