@@ -644,27 +644,30 @@ const Friends = () => {
                   {sortedFriends.map((friend) => (
                     <Card key={friend.id}>
                       <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="w-12 h-12 flex-shrink-0">
-                            <AvatarFallback>
-                              {(friend.display_name || friend.username || '?')[0].toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base truncate">{friend.display_name || friend.username}</h3>
-                            <p className="text-muted-foreground text-sm">
-                              {friend.handicap ? `HCP: ${friend.handicap}` : 'HCP: -'}
-                            </p>
-                            <p className="text-muted-foreground text-sm truncate">
-                              {friend.home_club || '-'}
-                            </p>
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="w-12 h-12 flex-shrink-0">
+                              <AvatarFallback>
+                                {(friend.display_name || friend.username || '?')[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-base truncate">{friend.display_name || friend.username}</h3>
+                              <p className="text-muted-foreground text-sm">
+                                {friend.handicap ? `HCP: ${friend.handicap}` : 'HCP: -'}
+                              </p>
+                              <p className="text-muted-foreground text-sm truncate">
+                                {friend.home_club || '-'}
+                              </p>
+                            </div>
                           </div>
 
-                          <div className="flex flex-col gap-2 flex-shrink-0">
+                          <div className="flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
+                              className="flex-1"
                               onClick={() => handleMessageFriend(friend.id)}
                             >
                               <MessageCircle size={16} className="mr-1" />
@@ -673,7 +676,7 @@ const Friends = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-destructive hover:text-destructive"
+                              className="flex-1 text-destructive hover:text-destructive"
                               onClick={() => {
                                 setFriendToRemove(friend);
                                 setIsRemoveDialogOpen(true);
