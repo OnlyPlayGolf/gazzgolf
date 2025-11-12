@@ -179,7 +179,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
             <div>
               <h3 className="font-semibold text-lg mb-2">Instructions</h3>
               <p className="text-muted-foreground mb-2">
-                Hit 3 putts from each marker in this order:
+                Hit one putt from each marker in this order:
               </p>
               <p className="text-sm text-muted-foreground font-mono">
                 6m up → 6m down → 8m up → 8m down → 10m up → 10m down
