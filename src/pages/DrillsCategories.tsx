@@ -6,11 +6,12 @@ import { cn } from "@/lib/utils";
 import { TopNavBar } from "@/components/TopNavBar";
 
 const categories = [
+  { id: 'favorites', name: 'Favorites', icon: Star, enabled: true, description: 'Your favorite drills' },
   { id: 'putting', name: 'Putting', icon: Target, enabled: true, description: 'Precision on the green' },
   { id: 'shortgame', name: 'Short Game', icon: Zap, enabled: true, description: 'Chipping, pitching, and bunker shots' },
-  { id: 'wedges', name: 'Wedges', icon: Hammer, enabled: true, description: 'Sand and lob shots' },
-  { id: 'longgame', name: 'Long Game', icon: Activity, enabled: true, description: 'Mid to long range shots' },
-  { id: 'favourites', name: 'Favourites', icon: Star, enabled: true, description: 'Your starred drills' },
+  { id: 'wedges', name: 'Wedges', icon: Hammer, enabled: true, description: 'Wedge shots' },
+  { id: 'approach', name: 'Approach', icon: Activity, enabled: true, description: 'Mid to long range shots' },
+  { id: 'teeshots', name: 'Tee Shots', icon: Target, enabled: true, description: 'Driving and tee shot accuracy' },
 ];
 
 const DrillsCategories = () => {
