@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, UserPlus, Search, Check, X, ArrowUpDown } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Users, UserPlus, Search, Check, X, ArrowUpDown, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,10 @@ const Friends = () => {
   const [friendSearch, setFriendSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  
+  // Remove friend dialog
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [friendToRemove, setFriendToRemove] = useState<Friend | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -311,6 +316,113 @@ const Friends = () => {
     return sortOrder === 'asc' ? comparison : -comparison;
   });
 
+  const handleMessageFriend = async (friendId: string) => {
+    if (!user) return;
+
+    try {
+      // Check if conversation already exists
+      const { data: existingConversation } = await supabase
+        .from('conversations')
+        .select('id, conversation_participants!inner(user_id)')
+        .eq('type', 'friend')
+        .or(`conversation_participants.user_id.eq.${user.id},conversation_participants.user_id.eq.${friendId}`);
+
+      let conversationId: string;
+
+      if (existingConversation && existingConversation.length > 0) {
+        // Find conversation where both users are participants
+        const conv = existingConversation.find(c => {
+          const participants = c.conversation_participants as any[];
+          return participants.some(p => p.user_id === user.id) && 
+                 participants.some(p => p.user_id === friendId);
+        });
+        
+        if (conv) {
+          conversationId = conv.id;
+        } else {
+          // Create new conversation
+          const { data: newConv, error: convError } = await supabase
+            .from('conversations')
+            .insert({ type: 'friend' })
+            .select()
+            .single();
+
+          if (convError) throw convError;
+          conversationId = newConv.id;
+
+          // Add participants
+          const { error: participantsError } = await supabase
+            .from('conversation_participants')
+            .insert([
+              { conversation_id: conversationId, user_id: user.id },
+              { conversation_id: conversationId, user_id: friendId }
+            ]);
+
+          if (participantsError) throw participantsError;
+        }
+      } else {
+        // Create new conversation
+        const { data: newConv, error: convError } = await supabase
+          .from('conversations')
+          .insert({ type: 'friend' })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+        conversationId = newConv.id;
+
+        // Add participants
+        const { error: participantsError } = await supabase
+          .from('conversation_participants')
+          .insert([
+            { conversation_id: conversationId, user_id: user.id },
+            { conversation_id: conversationId, user_id: friendId }
+          ]);
+
+        if (participantsError) throw participantsError;
+      }
+
+      // Navigate to messages page with conversation ID
+      navigate(`/messages?conversation=${conversationId}`);
+    } catch (error) {
+      console.error('Error creating/finding conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveFriend = async () => {
+    if (!user || !friendToRemove) return;
+
+    try {
+      const { error } = await supabase
+        .from('friendships')
+        .delete()
+        .or(`and(requester.eq.${user.id},addressee.eq.${friendToRemove.id}),and(requester.eq.${friendToRemove.id},addressee.eq.${user.id})`);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Friend removed successfully"
+      });
+
+      setIsRemoveDialogOpen(false);
+      setFriendToRemove(null);
+      loadUserData();
+    } catch (error) {
+      console.error('Error removing friend:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove friend",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -524,25 +636,48 @@ const Friends = () => {
 
                   {/* Friends List */}
                   {sortedFriends.map((friend) => (
-                    <div key={friend.id} className="grid grid-cols-[1fr_100px_1fr] gap-4 items-center p-3 border rounded-lg">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Avatar className="flex-shrink-0">
-                          <AvatarFallback>
-                            {(friend.display_name || friend.username || '?')[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="font-medium truncate">{friend.display_name || friend.username}</p>
-                          {friend.display_name && <p className="text-sm text-muted-foreground truncate">@{friend.username}</p>}
+                    <Card key={friend.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col items-center gap-4">
+                          <Avatar className="w-16 h-16">
+                            <AvatarFallback className="text-2xl">
+                              {(friend.display_name || friend.username || '?')[0].toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="text-center w-full">
+                            <h3 className="font-semibold text-lg">{friend.display_name || friend.username}</h3>
+                            <p className="text-muted-foreground text-sm">
+                              {friend.handicap ? `HCP: ${friend.handicap}` : 'HCP: -'}
+                            </p>
+                            <p className="text-muted-foreground text-sm">
+                              {friend.home_club || '-'}
+                            </p>
+                          </div>
+
+                          <div className="flex gap-2 w-full">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handleMessageFriend(friend.id)}
+                            >
+                              <MessageCircle size={16} className="mr-2" />
+                              Message
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="flex-1 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setFriendToRemove(friend);
+                                setIsRemoveDialogOpen(true);
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-sm">
-                        {friend.handicap ? `HCP: ${friend.handicap}` : '-'}
-                      </div>
-                      <div className="text-sm truncate">
-                        {friend.home_club || '-'}
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               )}
@@ -550,6 +685,27 @@ const Friends = () => {
           </Card>
         </div>
       </div>
+
+      {/* Remove Friend Confirmation Dialog */}
+      <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Friend</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {friendToRemove?.display_name || friendToRemove?.username} from your friends list? This action will remove the friendship for both of you.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setFriendToRemove(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemoveFriend}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove Friend
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
