@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Star, Plus, MessageCircle, Crown, UserPlus, Users, Calendar } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Star, Plus, MessageCircle, Crown, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +53,7 @@ const Profile = () => {
   const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -486,6 +488,165 @@ const Profile = () => {
       <div className="p-4 pt-20">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold text-foreground">My Groups</h1>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                aria-label="Open Menu"
+              >
+                <Menu size={24} />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <div className="space-y-4 mt-8">
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      onClick={() => { 
+                        navigate('/profile-settings'); 
+                        setMenuOpen(false);
+                      }}
+                      className="w-full h-auto p-4 justify-start text-left"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <UserIcon size={20} className="text-primary" />
+                          <div className="font-medium text-foreground">Edit Profile</div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      disabled
+                      className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <Crown size={20} className="text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-muted-foreground">Account Membership</div>
+                            <div className="text-xs text-muted-foreground">Coming soon</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      disabled
+                      className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <MessageCircle size={20} className="text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-muted-foreground">Notifications</div>
+                            <div className="text-xs text-muted-foreground">Coming soon</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      disabled
+                      className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <SettingsIcon size={20} className="text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-muted-foreground">Settings</div>
+                            <div className="text-xs text-muted-foreground">Coming soon</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      disabled
+                      className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <Info size={20} className="text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-muted-foreground">About</div>
+                            <div className="text-xs text-muted-foreground">Coming soon</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      asChild
+                      className="w-full h-auto p-4 justify-start text-left"
+                    >
+                      <a href="mailto:feedback@golftraining.app" className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <Mail size={20} className="text-primary" />
+                          <div className="font-medium text-foreground">Feedback</div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border">
+                  <CardContent className="p-0">
+                    <Button
+                      variant="ghost"
+                      disabled
+                      className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <MessageCircle size={20} className="text-muted-foreground" />
+                          <div>
+                            <div className="font-medium text-muted-foreground">Support</div>
+                            <div className="text-xs text-muted-foreground">Coming soon</div>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground" />
+                      </div>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <p className="text-muted-foreground text-sm mb-6">
