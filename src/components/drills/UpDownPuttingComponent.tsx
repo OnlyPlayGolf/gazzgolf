@@ -55,17 +55,18 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
 
   const initializeAttempts = () => {
     const newAttempts: Attempt[] = [];
-    putts.forEach((putt, puttSetIndex) => {
-      for (let rep = 0; rep < 3; rep++) {
+    // 3 rounds, each round goes through all 6 stations once
+    for (let round = 0; round < 3; round++) {
+      putts.forEach((putt, stationIndex) => {
         newAttempts.push({
-          puttIndex: puttSetIndex * 3 + rep,
+          puttIndex: round * 6 + stationIndex,
           distance: putt.distance,
           direction: putt.direction,
           outcome: null,
           score: 0,
         });
-      }
-    });
+      });
+    }
     setAttempts(newAttempts);
     setDrillStarted(true);
     onTabChange?.('score');
@@ -178,12 +179,12 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
             <div>
               <h3 className="font-semibold text-lg mb-2">Instructions</h3>
               <p className="text-muted-foreground mb-2">
-                Hit 3 putts in a row from each marker in this order:
+                Hit 3 putts from each marker in this order:
               </p>
               <p className="text-sm text-muted-foreground font-mono">
                 6m up → 6m down → 8m up → 8m down → 10m up → 10m down
               </p>
-              <p className="text-muted-foreground mt-2">Total: 18 putts</p>
+              <p className="text-muted-foreground mt-2">Complete 3 rounds. Total: 18 putts</p>
             </div>
 
             <div>
@@ -221,32 +222,35 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {putts.map((putt, puttSetIndex) => (
-                  <div key={puttSetIndex} className="space-y-3">
+                {[0, 1, 2].map((round) => (
+                  <div key={round} className="space-y-3">
                     <div className="flex items-center gap-2 pb-2 border-b">
-                      {putt.direction === 'uphill' ? (
-                        <TrendingUp className="text-primary" size={18} />
-                      ) : (
-                        <TrendingDown className="text-primary" size={18} />
-                      )}
+                      <Target className="text-primary" size={18} />
                       <span className="font-semibold">
-                        {putt.distance} {putt.direction}
+                        Round {round + 1}
                       </span>
                       <span className="text-xs text-muted-foreground ml-auto">
-                        ({puttSetIndex * 3 + 1}-{puttSetIndex * 3 + 3} of 18)
+                        ({round * 6 + 1}-{round * 6 + 6} of 18)
                       </span>
                     </div>
 
-                    {[0, 1, 2].map((rep) => {
-                      const puttIndex = puttSetIndex * 3 + rep;
+                    {putts.map((putt, stationIndex) => {
+                      const puttIndex = round * 6 + stationIndex;
                       const attempt = attempts[puttIndex];
                       
                       return (
                         <div key={puttIndex} className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">
-                              Putt {puttIndex + 1}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {putt.direction === 'uphill' ? (
+                                <TrendingUp className="text-primary" size={14} />
+                              ) : (
+                                <TrendingDown className="text-primary" size={14} />
+                              )}
+                              <span className="text-sm text-muted-foreground">
+                                {putt.distance} {putt.direction}
+                              </span>
+                            </div>
                             {attempt?.outcome && (
                               <span className={`text-sm font-medium ${
                                 attempt.score < 0 ? 'text-green-500' : 
