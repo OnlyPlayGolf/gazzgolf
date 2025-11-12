@@ -1109,12 +1109,12 @@ useEffect(() => {
                   <p className="text-center text-muted-foreground py-8">Loading...</p>
                 ) : groupLevelsLeaderboard.length > 0 ? (
                   <div className="space-y-2">
-                    {groupLevelsLeaderboard.map((entry, index) => (
+                     {groupLevelsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.user_id}
                         className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30"
                       >
-                        <div className="font-bold text-lg text-muted-foreground w-8">
+                        <div className="font-bold text-sm text-muted-foreground w-8">
                           #{index + 1}
                         </div>
                         <Avatar>
@@ -1128,10 +1128,9 @@ useEffect(() => {
                             {entry.display_name || entry.username || 'Unknown'}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {entry.completed_levels} levels • Highest: Level {entry.highest_level || 0}
+                            {entry.completed_levels} completed levels • Highest: Level {entry.highest_level || 0}
                           </div>
                         </div>
-                        {index === 0 && <Crown size={20} className="text-yellow-500" />}
                       </div>
                     ))}
                   </div>
