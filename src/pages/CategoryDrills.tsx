@@ -56,6 +56,13 @@ const allDrills = [
     category: 'wedges',
     icon: Hammer,
   },
+  {
+    id: 'shot-shape-master',
+    title: 'Shot Shape Master',
+    shortDescription: '14 tee shots testing your ability to shape shots on command. Master draws, fades, and fairway finding with bonus streaks.',
+    category: 'teeshots',
+    icon: Target,
+  },
 ];
 
 const categoryNames = {
@@ -147,7 +154,8 @@ const CategoryDrills = () => {
                 'pga-tour-18',
                 'up-down-putting',
                 'short-putting-test',
-                '8-ball-drill'
+                '8-ball-drill',
+                'shot-shape-master'
               ];
               
               const handleDrillClick = () => {

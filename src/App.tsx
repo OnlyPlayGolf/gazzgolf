@@ -45,6 +45,7 @@ import PGATour18Drill from "./pages/PGATour18Drill";
 import UpDownPuttingDrill from "./pages/UpDownPuttingDrill";
 import ShortPuttingDrill from "./pages/ShortPuttingDrill";
 import EightBallDrill from "./pages/EightBallDrill";
+import ShotShapeMasterDrill from "./pages/ShotShapeMasterDrill";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />
             <Route path="/drill/short-putting-test/*" element={<ShortPuttingDrill />} />
             <Route path="/drill/8-ball-drill/*" element={<EightBallDrill />} />
+            <Route path="/drill/shot-shape-master/*" element={<ShotShapeMasterDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
