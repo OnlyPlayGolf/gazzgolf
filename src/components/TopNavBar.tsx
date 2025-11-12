@@ -67,8 +67,9 @@ export const TopNavBar = () => {
   };
 
   const fromPage = (location.state as any)?.from;
-  const showBack = fromPage && (location.pathname !== '/profile' && location.pathname !== '/');
-  const backPath = fromPage === 'profile' ? '/profile' : fromPage === 'practice' ? '/practice' : '/';
+  const isDrillPage = location.pathname.includes('/drill/');
+  const showBack = (fromPage && (location.pathname !== '/profile' && location.pathname !== '/')) || isDrillPage;
+  const backPath = isDrillPage ? '/practice' : (fromPage === 'profile' ? '/profile' : fromPage === 'practice' ? '/practice' : '/');
   
   return (
     <div
