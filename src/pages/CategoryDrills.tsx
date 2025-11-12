@@ -63,6 +63,13 @@ const allDrills = [
     category: 'teeshots',
     icon: Target,
   },
+  {
+    id: 'approach-control',
+    title: 'Approach Control',
+    shortDescription: '14 randomized approach shots from 130-180 meters. Test your precision and control with PGA Tour-based scoring.',
+    category: 'approach',
+    icon: Activity,
+  },
 ];
 
 const categoryNames = {
@@ -155,7 +162,8 @@ const CategoryDrills = () => {
                 'up-down-putting',
                 'short-putting-test',
                 '8-ball-drill',
-                'shot-shape-master'
+                'shot-shape-master',
+                'approach-control'
               ];
               
               const handleDrillClick = () => {
