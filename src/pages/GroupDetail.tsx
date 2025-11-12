@@ -290,9 +290,14 @@ useEffect(() => {
       .order('title');
 
     if (data && data.length > 0) {
-      setDrills(data);
-      setSelectedDrill(data[0].title);
-      loadDrillLeaderboard(data[0].title, data[0].lower_is_better);
+      // Deduplicate drills by title (keep first occurrence)
+      const uniqueDrills = Array.from(
+        new Map(data.map(drill => [drill.title, drill])).values()
+      );
+      
+      setDrills(uniqueDrills);
+      setSelectedDrill(uniqueDrills[0].title);
+      loadDrillLeaderboard(uniqueDrills[0].title, uniqueDrills[0].lower_is_better);
     }
   };
 
