@@ -37,6 +37,31 @@ interface Drill {
   lower_is_better: boolean;
 }
 
+type DrillCategory = 'Putting' | 'Short Game' | 'Wedges' | 'Approach' | 'Tee Shots';
+
+const getDrillCategory = (drillTitle: string): DrillCategory => {
+  const title = drillTitle.toLowerCase();
+  
+  if (title.includes('putting') || title.includes('putt')) {
+    return 'Putting';
+  }
+  if (title.includes('wedge')) {
+    return 'Wedges';
+  }
+  if (title.includes('short game') || title.includes('chip') || title.includes('up') && title.includes('down')) {
+    return 'Short Game';
+  }
+  if (title.includes('approach') || title.includes('iron')) {
+    return 'Approach';
+  }
+  if (title.includes('tee') || title.includes('drive') || title.includes('driver')) {
+    return 'Tee Shots';
+  }
+  
+  // Default to Short Game for other drills
+  return 'Short Game';
+};
+
 interface LeaderboardEntry {
   user_id: string;
   display_name: string | null;
@@ -1003,11 +1028,35 @@ useEffect(() => {
                       }}
                       className="w-full p-2 rounded-md border bg-background text-foreground"
                     >
-                      {drills.map((drill) => (
-                        <option key={drill.id} value={drill.title}>
-                          {drill.title}
-                        </option>
-                      ))}
+                      {(() => {
+                        const categories: DrillCategory[] = ['Putting', 'Short Game', 'Wedges', 'Approach', 'Tee Shots'];
+                        const drillsByCategory = new Map<DrillCategory, Drill[]>();
+                        
+                        // Group drills by category
+                        drills.forEach(drill => {
+                          const category = getDrillCategory(drill.title);
+                          if (!drillsByCategory.has(category)) {
+                            drillsByCategory.set(category, []);
+                          }
+                          drillsByCategory.get(category)!.push(drill);
+                        });
+                        
+                        // Render grouped options
+                        return categories.map(category => {
+                          const categoryDrills = drillsByCategory.get(category);
+                          if (!categoryDrills || categoryDrills.length === 0) return null;
+                          
+                          return (
+                            <optgroup key={category} label={category}>
+                              {categoryDrills.map(drill => (
+                                <option key={drill.id} value={drill.title}>
+                                  {drill.title}
+                                </option>
+                              ))}
+                            </optgroup>
+                          );
+                        });
+                      })()}
                     </select>
 
                     {loadingLeaderboard ? (
