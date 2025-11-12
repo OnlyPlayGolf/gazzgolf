@@ -367,7 +367,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
 
               {hitFairway === "no" && (
                 <div className="space-y-2">
-                  <Label>Was the miss less than 10 meters of the fairway?</Label>
+                  <Label>Was the miss less than 10 meters off the fairway?</Label>
                   <RadioGroup value={missWithin10m} onValueChange={setMissWithin10m}>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="within-yes" />

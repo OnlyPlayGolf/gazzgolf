@@ -84,7 +84,6 @@ export default function ShotShapeMasterInfo() {
             <div>
               <h3 className="font-medium text-foreground mb-2">Tips for Success</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Was the miss less than 10 meters off the fairway?</li>
                 <li>• Commit fully to each shot shape decision</li>
                 <li>• Focus on tempo and balance for consistency</li>
                 <li>• Use alignment aids to help with target lines</li>
