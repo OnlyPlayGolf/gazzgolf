@@ -57,7 +57,9 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
   
   // Current shot input state
   const [correctSide, setCorrectSide] = useState<string>("");
-  const [proximity, setProximity] = useState<string>("");
+  const [inside10m, setInside10m] = useState<string>("");
+  const [inside15m, setInside15m] = useState<string>("");
+  const [inside5m, setInside5m] = useState<string>("");
   
   const { toast } = useToast();
 
@@ -82,48 +84,86 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
 
   const resetInputs = () => {
     setCorrectSide("");
-    setProximity("");
+    setInside10m("");
+    setInside15m("");
+    setInside5m("");
   };
 
-  const calculatePoints = (isCorrectSide: boolean, proximityM: number): number => {
-    // 3 Points: correct side and inside 10 meters
-    if (isCorrectSide && proximityM <= 10) return 3;
-    // 2 Points: wrong side but inside 5 meters
-    if (!isCorrectSide && proximityM <= 5) return 2;
-    // 1 Point: Correct side and inside 15 meters
-    if (isCorrectSide && proximityM <= 15) return 1;
-    // 0 Points: Correct side but outside 15 meters
-    if (isCorrectSide && proximityM > 15) return 0;
-    // -1 Point: Wrong side and outside 5 meters
-    if (!isCorrectSide && proximityM > 5) return -1;
-    
-    return 0;
+  const calculatePoints = (isCorrectSide: boolean, inside10: boolean, inside15: boolean, inside5: boolean): number => {
+    if (isCorrectSide) {
+      // 3 Points: correct side and inside 10 meters
+      if (inside10) return 3;
+      // 1 Point: Correct side and inside 15 meters
+      if (inside15) return 1;
+      // 0 Points: Correct side but outside 15 meters
+      return 0;
+    } else {
+      // 2 Points: wrong side but inside 5 meters
+      if (inside5) return 2;
+      // -1 Point: Wrong side and outside 5 meters
+      return -1;
+    }
   };
 
   const currentShotInfo = shotSequence[currentShot - 1];
 
   const addAttempt = () => {
-    if (!correctSide || !proximity) {
+    const isCorrectSide = correctSide === "yes";
+    
+    // Validate based on correct side
+    if (!correctSide) {
       toast({
         title: "Missing information",
-        description: "Please answer all required fields.",
+        description: "Please answer if you landed on the correct side.",
         variant: "destructive",
       });
       return;
     }
 
-    const proximityM = parseFloat(proximity);
-    if (isNaN(proximityM) || proximityM < 0) {
-      toast({
-        title: "Invalid proximity",
-        description: "Please enter a valid distance in meters.",
-        variant: "destructive",
-      });
-      return;
+    if (isCorrectSide) {
+      if (!inside10m) {
+        toast({
+          title: "Missing information",
+          description: "Please answer if you were inside 10 meters.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (inside10m === "no" && !inside15m) {
+        toast({
+          title: "Missing information",
+          description: "Please answer if you were inside 15 meters.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      if (!inside5m) {
+        toast({
+          title: "Missing information",
+          description: "Please answer if you were inside 5 meters.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
-    const isCorrectSide = correctSide === "yes";
-    const basePoints = calculatePoints(isCorrectSide, proximityM);
+    const inside10 = inside10m === "yes";
+    const inside15 = inside15m === "yes";
+    const inside5 = inside5m === "yes";
+    
+    const basePoints = calculatePoints(isCorrectSide, inside10, inside15, inside5);
+    
+    // Estimate proximity for display purposes
+    let estimatedProximity = 0;
+    if (isCorrectSide) {
+      if (inside10) estimatedProximity = 7;
+      else if (inside15) estimatedProximity = 12;
+      else estimatedProximity = 18;
+    } else {
+      if (inside5) estimatedProximity = 3;
+      else estimatedProximity = 8;
+    }
     let bonus = 0;
     let newBonusStreak = bonusStreak;
 
@@ -149,7 +189,7 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
       distance: currentShotInfo.distance,
       requiredSide: currentShotInfo.side,
       correctSide: isCorrectSide,
-      proximityMeters: proximityM,
+      proximityMeters: estimatedProximity,
       points: basePoints,
       bonusPoints: bonus,
     };
@@ -331,7 +371,12 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Did you land on the {currentShotInfo.side} side?</Label>
-                <RadioGroup value={correctSide} onValueChange={setCorrectSide}>
+                <RadioGroup value={correctSide} onValueChange={(value) => {
+                  setCorrectSide(value);
+                  setInside10m("");
+                  setInside15m("");
+                  setInside5m("");
+                }}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="yes" id="side-yes" />
                     <Label htmlFor="side-yes">Yes</Label>
@@ -343,17 +388,58 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
                 </RadioGroup>
               </div>
 
-              <div className="space-y-2">
-                <Label>Proximity to target (meters)</Label>
-                <Input
-                  type="number"
-                  placeholder="Enter distance in meters"
-                  value={proximity}
-                  onChange={(e) => setProximity(e.target.value)}
-                  step="0.1"
-                  min="0"
-                />
-              </div>
+              {correctSide === "yes" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Was it inside 10 meters?</Label>
+                    <RadioGroup value={inside10m} onValueChange={(value) => {
+                      setInside10m(value);
+                      if (value === "yes") setInside15m("");
+                    }}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="inside10-yes" />
+                        <Label htmlFor="inside10-yes">Yes</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="inside10-no" />
+                        <Label htmlFor="inside10-no">No</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  {inside10m === "no" && (
+                    <div className="space-y-2">
+                      <Label>Was it inside 15 meters?</Label>
+                      <RadioGroup value={inside15m} onValueChange={setInside15m}>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="inside15-yes" />
+                          <Label htmlFor="inside15-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="inside15-no" />
+                          <Label htmlFor="inside15-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {correctSide === "no" && (
+                <div className="space-y-2">
+                  <Label>Was it inside 5 meters?</Label>
+                  <RadioGroup value={inside5m} onValueChange={setInside5m}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="inside5-yes" />
+                      <Label htmlFor="inside5-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="inside5-no" />
+                      <Label htmlFor="inside5-no">No</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
