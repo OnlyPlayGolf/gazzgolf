@@ -19,27 +19,41 @@ interface Attempt {
   club: string;
   correctShape: boolean;
   hitFairway: boolean;
-  missDistance?: number; // in meters, only if missed fairway
+  missWithin10m?: boolean; // only if missed fairway
   points: number;
   bonusPoints: number;
 }
 
-const SHOT_SEQUENCE: Array<{ shape: 'draw' | 'fade'; club: string }> = [
-  { shape: 'draw', club: 'Driver' },
-  { shape: 'fade', club: 'Driver' },
-  { shape: 'draw', club: 'Driver' },
-  { shape: 'fade', club: 'Fairway Wood' },
-  { shape: 'draw', club: 'Driver' },
-  { shape: 'fade', club: 'Driver' },
-  { shape: 'draw', club: 'Hybrid/Utility' },
-  { shape: 'fade', club: 'Driver' },
-  { shape: 'draw', club: 'Driver' },
-  { shape: 'fade', club: 'Fairway Wood' },
-  { shape: 'fade', club: 'Hybrid/Utility' },
-  { shape: 'fade', club: 'Driver' },
-  { shape: 'fade', club: 'Hybrid/Utility' },
-  { shape: 'draw', club: 'Driver' },
-];
+const generateRandomSequence = (): Array<{ shape: 'draw' | 'fade'; club: string }> => {
+  // Create the pool of shots: 7 draws, 7 fades, 9 drivers, 2 fairway woods, 3 hybrid/utility
+  const shots: Array<{ shape: 'draw' | 'fade'; club: string }> = [
+    // 9 Drivers (5 draws, 4 fades)
+    { shape: 'draw', club: 'Driver' },
+    { shape: 'draw', club: 'Driver' },
+    { shape: 'draw', club: 'Driver' },
+    { shape: 'draw', club: 'Driver' },
+    { shape: 'draw', club: 'Driver' },
+    { shape: 'fade', club: 'Driver' },
+    { shape: 'fade', club: 'Driver' },
+    { shape: 'fade', club: 'Driver' },
+    { shape: 'fade', club: 'Driver' },
+    // 2 Fairway Woods (1 draw, 1 fade)
+    { shape: 'draw', club: 'Fairway Wood' },
+    { shape: 'fade', club: 'Fairway Wood' },
+    // 3 Hybrid/Utility (1 draw, 2 fades)
+    { shape: 'draw', club: 'Hybrid/Utility' },
+    { shape: 'fade', club: 'Hybrid/Utility' },
+    { shape: 'fade', club: 'Hybrid/Utility' },
+  ];
+
+  // Shuffle using Fisher-Yates algorithm
+  for (let i = shots.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shots[i], shots[j]] = [shots[j], shots[i]];
+  }
+
+  return shots;
+};
 
 const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMasterComponentProps) => {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
@@ -47,11 +61,12 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [bonusStreak, setBonusStreak] = useState(0);
+  const [shotSequence, setShotSequence] = useState<Array<{ shape: 'draw' | 'fade'; club: string }>>([]);
   
   // Current shot input state
   const [correctShape, setCorrectShape] = useState<string>("");
   const [hitFairway, setHitFairway] = useState<string>("");
-  const [missDistance, setMissDistance] = useState<string>("");
+  const [missWithin10m, setMissWithin10m] = useState<string>("");
   
   const { toast } = useToast();
 
@@ -69,6 +84,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
     setAttempts([]);
     setCurrentShot(1);
     setBonusStreak(0);
+    setShotSequence(generateRandomSequence());
     resetInputs();
     onTabChange?.('score');
   };
@@ -76,20 +92,20 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
   const resetInputs = () => {
     setCorrectShape("");
     setHitFairway("");
-    setMissDistance("");
+    setMissWithin10m("");
   };
 
-  const calculatePoints = (isCorrectShape: boolean, didHitFairway: boolean, distance?: number): number => {
+  const calculatePoints = (isCorrectShape: boolean, didHitFairway: boolean, missedWithin10m?: boolean): number => {
     // 0 points if missed fairway by more than 10m
-    if (!didHitFairway && distance && distance > 10) return 0;
+    if (!didHitFairway && missedWithin10m === false) return 0;
     
     if (isCorrectShape && didHitFairway) return 3;
     if (!isCorrectShape && didHitFairway) return 2;
-    if (isCorrectShape && !didHitFairway && distance && distance <= 10) return 1;
+    if (isCorrectShape && !didHitFairway && missedWithin10m === true) return 1;
     return 0;
   };
 
-  const currentShotInfo = SHOT_SEQUENCE[currentShot - 1];
+  const currentShotInfo = shotSequence[currentShot - 1];
 
   const addAttempt = () => {
     if (!correctShape || !hitFairway) {
@@ -103,25 +119,25 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
 
     const isCorrectShape = correctShape === "yes";
     const didHitFairway = hitFairway === "yes";
-    const distance = didHitFairway ? undefined : (missDistance ? parseFloat(missDistance) : undefined);
+    const within10m = didHitFairway ? undefined : (missWithin10m === "yes");
 
-    // Validate distance if fairway was missed
-    if (!didHitFairway && !distance) {
+    // Validate miss distance if fairway was missed
+    if (!didHitFairway && missWithin10m === "") {
       toast({
-        title: "Missing distance",
-        description: "Please enter how far you missed the fairway.",
+        title: "Missing information",
+        description: "Please answer if the miss was within 10 meters.",
         variant: "destructive",
       });
       return;
     }
 
-    const basePoints = calculatePoints(isCorrectShape, didHitFairway, distance);
+    const basePoints = calculatePoints(isCorrectShape, didHitFairway, within10m);
     let bonus = 0;
     let newBonusStreak = bonusStreak;
 
-    // Check for bonus
+    // Check for bonus - starts after 3 consecutive 3-pointers
     if (basePoints === 3) {
-      if (bonusStreak >= 2) {
+      if (bonusStreak >= 3) {
         // Already have 3+ consecutive 3-pointers, add bonus
         bonus = 1;
         newBonusStreak = bonusStreak + 1;
@@ -142,7 +158,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
       club: currentShotInfo.club,
       correctShape: isCorrectShape,
       hitFairway: didHitFairway,
-      missDistance: distance,
+      missWithin10m: within10m,
       points: basePoints,
       bonusPoints: bonus,
     };
@@ -231,6 +247,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
     setAttempts([]);
     setCurrentShot(1);
     setBonusStreak(0);
+    setShotSequence([]);
     resetInputs();
   };
 
@@ -290,7 +307,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
       </Card>
 
       {/* Active Drill */}
-      {isActive && (
+      {isActive && currentShotInfo && (
         <Card>
           <CardHeader>
             <CardTitle>Shot #{currentShot} of 14</CardTitle>
@@ -306,7 +323,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
               <div className="text-lg font-medium">
                 Current Score: {totalPoints} points
               </div>
-              {bonusStreak >= 2 && (
+              {bonusStreak >= 3 && (
                 <div className="text-sm text-primary font-medium mt-1">
                   🔥 Bonus Streak Active! ({bonusStreak} consecutive 3-pointers)
                 </div>
@@ -321,7 +338,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
             {/* Input Form */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Did you hit the required {currentShotInfo.shape}?</Label>
+                <Label>Did you hit a {currentShotInfo.shape}?</Label>
                 <RadioGroup value={correctShape} onValueChange={setCorrectShape}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="yes" id="shape-yes" />
@@ -350,16 +367,17 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
 
               {hitFairway === "no" && (
                 <div className="space-y-2">
-                  <Label htmlFor="miss-distance">How far did you miss the fairway? (meters)</Label>
-                  <Input
-                    id="miss-distance"
-                    type="number"
-                    placeholder="e.g., 5"
-                    value={missDistance}
-                    onChange={(e) => setMissDistance(e.target.value)}
-                    min="0"
-                    step="0.1"
-                  />
+                  <Label>Was the miss less than 10 meters of the fairway?</Label>
+                  <RadioGroup value={missWithin10m} onValueChange={setMissWithin10m}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="within-yes" />
+                      <Label htmlFor="within-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="within-no" />
+                      <Label htmlFor="within-no">No</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               )}
             </div>
@@ -390,7 +408,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {attempts.map((attempt, index) => (
+              {[...attempts].reverse().map((attempt, index) => (
                 <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">Shot #{attempt.shotNumber}</span>
