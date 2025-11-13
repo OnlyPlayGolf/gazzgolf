@@ -27,7 +27,7 @@ const getScoreUnit = (drillName: string): string => {
     "Short Putting Test": "putts",
     "PGA Tour 18 Holes": "putts",
     "Up & Down Putting": "points",
-    "Aggressive Putting": "points",
+    "Aggressive Putting": "putts",
     "8-Ball Drill": "points",
     "Approach Control": "points",
     "Shot Shape Master": "points",
