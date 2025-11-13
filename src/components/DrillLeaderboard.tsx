@@ -24,7 +24,7 @@ interface DrillLeaderboardProps {
 
 const getScoreUnit = (drillName: string): string => {
   const drillUnits: { [key: string]: string } = {
-    "Short Putting Test": "putts",
+    "Short Putting Test": "putts in a row",
     "PGA Tour 18 Holes": "putts",
     "Up & Down Putting": "points",
     "Aggressive Putting": "putts",
