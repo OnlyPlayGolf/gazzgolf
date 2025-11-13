@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,32 +10,49 @@ interface PGATour18ComponentProps {
   onScoreSaved?: () => void;
 }
 
-const distances = [
-  { hole: 1, distance: "1.5m (5ft)" },
-  { hole: 2, distance: "12m" },
-  { hole: 3, distance: "0.6m (2ft)" },
-  { hole: 4, distance: "4m" },
-  { hole: 5, distance: "1.2m (4ft)" },
-  { hole: 6, distance: "16m" },
-  { hole: 7, distance: "8m" },
-  { hole: 8, distance: "3m" },
-  { hole: 9, distance: "6m" },
-  { hole: 10, distance: "9m" },
-  { hole: 11, distance: "0.9m (3ft)" },
-  { hole: 12, distance: "7m" },
-  { hole: 13, distance: "2.1m (7ft)" },
-  { hole: 14, distance: "3.5m" },
-  { hole: 15, distance: "10m" },
-  { hole: 16, distance: "1.8m (6ft)" },
-  { hole: 17, distance: "5m" },
-  { hole: 18, distance: "2.4m (8ft)" },
+interface PuttAttempt {
+  puttNumber: number;
+  distance: string;
+  putts: number;
+}
+
+const baseDistances = [
+  "1.5m (5ft)",
+  "12m",
+  "0.6m (2ft)",
+  "4m",
+  "1.2m (4ft)",
+  "16m",
+  "8m",
+  "3m",
+  "6m",
+  "9m",
+  "0.9m (3ft)",
+  "7m",
+  "2.1m (7ft)",
+  "3.5m",
+  "10m",
+  "1.8m (6ft)",
+  "5m",
+  "2.4m (8ft)",
 ];
 
+const generateRandomSequence = (): string[] => {
+  const shuffled = [...baseDistances];
+  // Fisher-Yates shuffle
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentProps) => {
-  const [totalPutts, setTotalPutts] = useState<string>("");
+  const [attempts, setAttempts] = useState<PuttAttempt[]>([]);
+  const [currentPutt, setCurrentPutt] = useState(1);
+  const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [drillStarted, setDrillStarted] = useState(false);
-  const [completedHoles, setCompletedHoles] = useState<number[]>([]);
+  const [distanceSequence, setDistanceSequence] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,28 +61,49 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
     });
   }, []);
 
-  const handleSave = async () => {
-    const putts = parseInt(totalPutts);
-    if (isNaN(putts) || putts < 18 || putts > 100) {
-      toast({
-        title: "Invalid Input",
-        description: "Please enter a valid number of putts (18-100)",
-        variant: "destructive",
-      });
-      return;
-    }
+  const totalPuttsCount = attempts.reduce((sum, att) => sum + att.putts, 0);
+  const currentDistance = distanceSequence[currentPutt - 1];
 
+  const handleStartDrill = () => {
+    setIsActive(true);
+    setAttempts([]);
+    setCurrentPutt(1);
+    setDistanceSequence(generateRandomSequence());
+    onTabChange?.('score');
+  };
+
+  const handlePuttSelection = (numPutts: number) => {
+    const newAttempt: PuttAttempt = {
+      puttNumber: currentPutt,
+      distance: currentDistance,
+      putts: numPutts,
+    };
+
+    const newAttempts = [...attempts, newAttempt];
+    setAttempts(newAttempts);
+
+    if (currentPutt === 18) {
+      // Drill completed
+      handleSaveScore(newAttempts);
+    } else {
+      setCurrentPutt(currentPutt + 1);
+    }
+  };
+
+  const handleSaveScore = async (finalAttempts: PuttAttempt[]) => {
     if (!userId) {
       toast({
         title: "Sign in required",
         description: "Please sign in to save your score.",
         variant: "destructive",
       });
+      setIsActive(false);
       return;
     }
 
+    const totalPutts = finalAttempts.reduce((sum, att) => sum + att.putts, 0);
+
     try {
-      // Ensure drill exists and get its UUID by title
       const { data: drillId, error: drillError } = await (supabase as any)
         .rpc('get_or_create_drill_by_title', { p_title: 'PGA Tour 18 Holes' });
 
@@ -78,17 +114,17 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
           description: "Could not save score.",
           variant: "destructive",
         });
+        setIsActive(false);
         return;
       }
 
-      // Save drill result to Supabase
       const { error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
           user_id: userId,
-          total_points: putts,
-          attempts_json: [{ totalPutts: putts }]
+          total_points: totalPutts,
+          attempts_json: finalAttempts
         });
 
       if (saveError) {
@@ -98,14 +134,15 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
           description: "Please try again.",
           variant: "destructive",
         });
+        setIsActive(false);
         return;
       }
 
-      setTotalPutts("");
+      setIsActive(false);
       
       toast({
-        title: "Score Saved",
-        description: `Your score of ${putts} putts has been recorded`,
+        title: "Drill Completed!",
+        description: `Total Putts: ${totalPutts}`,
       });
 
       onScoreSaved?.();
@@ -116,21 +153,15 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
         description: "An unexpected error occurred.",
         variant: "destructive",
       });
+      setIsActive(false);
     }
   };
 
-
-  const handleStartDrill = () => {
-    setDrillStarted(true);
-    onTabChange?.('score');
-  };
-
-  const toggleHoleCompletion = (holeNumber: number) => {
-    setCompletedHoles(prev => 
-      prev.includes(holeNumber)
-        ? prev.filter(h => h !== holeNumber)
-        : [...prev, holeNumber]
-    );
+  const resetDrill = () => {
+    setIsActive(false);
+    setAttempts([]);
+    setCurrentPutt(1);
+    setDistanceSequence([]);
   };
 
   return (
@@ -140,78 +171,104 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="text-primary" size={20} />
-            Instructions
+            PGA Tour 18 Holes
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            Practice putting at the distances shown below. Each hole represents the average first putt distance for that hole on the PGA Tour.
-          </p>
-          <Button 
-            onClick={handleStartDrill}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            Start Drill
-          </Button>
+          <div>
+            <h3 className="font-semibold text-lg mb-2">Instructions</h3>
+            <p className="text-muted-foreground mb-2">
+              Practice putting at 18 different distances. Each putt represents the average first putt distance for that hole on the PGA Tour.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              The distances will be presented in random order each time.
+            </p>
+          </div>
+
+          {!isActive && (
+            <Button 
+              onClick={handleStartDrill}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Start Drill
+            </Button>
+          )}
         </CardContent>
       </Card>
 
-      {drillStarted && (
-        <>
-          {/* Distances Grid */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Hole Distances</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {distances.map((item) => (
-                  <div 
-                    key={item.hole} 
-                    onClick={() => toggleHoleCompletion(item.hole)}
-                    className={`flex justify-between items-center p-2 rounded-md cursor-pointer transition-colors ${
-                      completedHoles.includes(item.hole)
-                        ? 'bg-green-500/20 border-2 border-green-500'
-                        : 'bg-muted/50 hover:bg-muted'
-                    }`}
+      {/* Active Drill */}
+      {isActive && currentDistance && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Putt #{currentPutt} of 18</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-3 bg-primary/10 rounded-md text-center">
+              <div className="text-sm text-muted-foreground">Distance</div>
+              <div className="text-2xl font-bold text-primary">{currentDistance}</div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-lg font-medium">
+                Current Total: {totalPuttsCount} putts
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-center mb-3">How many putts did it take?</div>
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <Button
+                    key={num}
+                    onClick={() => handlePuttSelection(num)}
+                    className="h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
-                    <span className="font-medium">Hole {item.hole}</span>
-                    <span className="text-muted-foreground">{item.distance}</span>
-                  </div>
+                    {num}
+                  </Button>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Scoring Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Record Your Score</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="total-putts">Total Putts (18 holes)</Label>
-                <Input
-                  id="total-putts"
-                  type="number"
-                  min="18"
-                  max="100"
-                  value={totalPutts}
-                  onChange={(e) => setTotalPutts(e.target.value)}
-                  placeholder="Enter total putts"
-                />
-              </div>
-              
-              <Button 
-                onClick={handleSave}
-                disabled={!totalPutts}
-                className="w-full bg-primary hover:bg-primary/90"
-              >
-                Save Score
-              </Button>
-            </CardContent>
-          </Card>
-        </>
+            <Button 
+              onClick={resetDrill}
+              variant="outline"
+              className="w-full"
+            >
+              Reset Drill
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Shot History */}
+      {attempts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Putt History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {[...attempts].reverse().map((attempt, index) => (
+                <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">Putt #{attempt.puttNumber}</span>
+                    <span className="text-xs text-muted-foreground">{attempt.distance}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-sm font-medium ${
+                      attempt.putts === 1 ? 'text-green-600' : 
+                      attempt.putts === 2 ? 'text-blue-600' :
+                      attempt.putts === 3 ? 'text-yellow-600' :
+                      'text-muted-foreground'
+                    }`}>
+                      {attempt.putts} {attempt.putts === 1 ? 'putt' : 'putts'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
