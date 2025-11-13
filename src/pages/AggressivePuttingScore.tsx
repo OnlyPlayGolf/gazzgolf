@@ -120,6 +120,39 @@ export default function AggressivePuttingScore() {
 
   return (
     <div className="space-y-6">
+      {/* Point System */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Trophy size={20} className="text-primary" />
+            Point System
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground font-medium">
+            Objective: Reach 15 points in as few putts as possible
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-2 p-2 bg-green-600/10 rounded">
+              <span className="font-semibold text-green-600">+3</span>
+              <span className="text-foreground">Holed</span>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-blue-600/10 rounded">
+              <span className="font-semibold text-blue-600">+1</span>
+              <span className="text-foreground">Good Pace (within 1m past)</span>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-orange-600/10 rounded">
+              <span className="font-semibold text-orange-600">-3</span>
+              <span className="text-foreground">Short (doesn't reach)</span>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-red-600/10 rounded">
+              <span className="font-semibold text-red-600">-3</span>
+              <span className="text-foreground">Long + Miss Return (&gt;1m)</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Current Status */}
       <Card>
         <CardHeader className="pb-3">
