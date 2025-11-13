@@ -22,6 +22,19 @@ interface DrillLeaderboardProps {
   refreshTrigger?: number;
 }
 
+const getScoreUnit = (drillName: string): string => {
+  const drillUnits: { [key: string]: string } = {
+    "Short Putting Test": "putts",
+    "PGA Tour 18 Holes": "putts",
+    "Up & Down Putting": "points",
+    "Aggressive Putting": "points",
+    "8-Ball Drill": "points",
+    "Approach Control": "points",
+    "Shot Shape Master": "points",
+  };
+  return drillUnits[drillName] || "points";
+};
+
 const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
   drillId,
   drillName,
@@ -326,7 +339,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                     <Badge variant="outline" className={cn(
                       entry.user_id === user?.id && "border-primary text-primary"
                     )}>
-                      {entry.best_score}
+                      {entry.best_score} {getScoreUnit(drillName)}
                     </Badge>
                   </div>
                 ))}
@@ -391,7 +404,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                     <Badge variant="outline" className={cn(
                       entry.user_id === user?.id && "border-primary text-primary"
                     )}>
-                      {entry.best_score}
+                      {entry.best_score} {getScoreUnit(drillName)}
                     </Badge>
                   </div>
                 ))}
