@@ -62,6 +62,19 @@ const getDrillCategory = (drillTitle: string): DrillCategory => {
   return 'Short Game';
 };
 
+const getScoreUnit = (drillName: string): string => {
+  const drillUnits: { [key: string]: string } = {
+    "Short Putting Test": "putts in a row",
+    "PGA Tour 18 Holes": "putts",
+    "Up & Down Putting": "points",
+    "Aggressive Putting": "putts",
+    "8-Ball Drill": "points",
+    "Approach Control": "points",
+    "Shot Shape Master": "points",
+  };
+  return drillUnits[drillName] || "points";
+};
+
 interface LeaderboardEntry {
   user_id: string;
   display_name: string | null;
@@ -1087,7 +1100,7 @@ useEffect(() => {
                                 {entry.display_name || entry.username || 'Unknown'}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                Score: {entry.best_score}
+                                {entry.best_score} {getScoreUnit(selectedDrill || '')}
                               </div>
                             </div>
                             {index === 0 && <Crown size={20} className="text-yellow-500" />}
