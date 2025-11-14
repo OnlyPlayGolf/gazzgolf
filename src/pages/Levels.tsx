@@ -172,7 +172,7 @@ const Levels = () => {
               </div>
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground">Categories</p>
-                <div className="flex flex-wrap gap-1">
+                <div className="grid grid-cols-2 gap-1">
                   {Array.from(new Set(levels.map(l => l.type)))
                     .filter(type => !["Chip/Putt", "Bunker/Putt", "Pitch/Putt"].includes(type))
                     .map(type => (
