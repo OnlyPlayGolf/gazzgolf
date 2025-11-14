@@ -57,6 +57,13 @@ const allDrills = [
     icon: Hammer,
   },
   {
+    id: 'wedges-progression',
+    title: 'Wedges 60–120 m — Progression',
+    shortDescription: 'Test your distance control across 13 distances. Hit within 3m to advance. Score is total shots needed.',
+    category: 'wedges',
+    icon: Hammer,
+  },
+  {
     id: 'shot-shape-master',
     title: 'Shot Shape Master',
     shortDescription: '14 tee shots testing your ability to shape shots on command. Master draws, fades, and fairway finding with bonus streaks.',

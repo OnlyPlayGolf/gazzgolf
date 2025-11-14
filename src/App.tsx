@@ -47,6 +47,7 @@ import ShortPuttingDrill from "./pages/ShortPuttingDrill";
 import EightBallDrill from "./pages/EightBallDrill";
 import ShotShapeMasterDrill from "./pages/ShotShapeMasterDrill";
 import ApproachControlDrill from "./pages/ApproachControlDrill";
+import WedgesProgressionDrill from "./pages/WedgesProgressionDrill";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,7 @@ const App = () => (
             <Route path="/drill/8-ball-drill/*" element={<EightBallDrill />} />
             <Route path="/drill/shot-shape-master/*" element={<ShotShapeMasterDrill />} />
             <Route path="/drill/approach-control/*" element={<ApproachControlDrill />} />
+            <Route path="/drill/wedges-progression/*" element={<WedgesProgressionDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
