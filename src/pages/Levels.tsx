@@ -175,6 +175,14 @@ const Levels = () => {
                 <div className="grid grid-cols-2 gap-1">
                   {Array.from(new Set(levels.map(l => l.type)))
                     .filter(type => !["Chip/Putt", "Bunker/Putt", "Pitch/Putt"].includes(type))
+                    .sort((a, b) => {
+                      // Custom sorting for professional level to swap approach and play
+                      if (difficulty?.toLowerCase() === "professional") {
+                        const order = ["Putt", "Chip", "Wedge", "Bunker", "Play", "Approach", "Driver"];
+                        return order.indexOf(a) - order.indexOf(b);
+                      }
+                      return a.localeCompare(b);
+                    })
                     .map(type => (
                       <Badge key={type} className={`text-xs rounded-full ${getTypeColor(type)}`}>
                         {type}
