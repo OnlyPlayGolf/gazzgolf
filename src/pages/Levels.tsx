@@ -152,7 +152,7 @@ const Levels = () => {
                 </div>
               </div>
               <div className="bg-muted rounded-xl p-3">
-                <p className="text-xs text-muted-foreground">Completed levels</p>
+                <p className="text-xs text-muted-foreground">Completed Levels</p>
                 <div className="space-y-1">
                   <p className="text-lg font-semibold text-foreground">
                     {stats.totalCompleted} of 500 ({Math.round((stats.totalCompleted / 500) * 100) || 0}%)
@@ -161,10 +161,14 @@ const Levels = () => {
                 </div>
               </div>
               <div className="bg-muted rounded-xl p-3">
-                <p className="text-xs text-muted-foreground">Category</p>
-                <Badge className={`text-xs rounded-full ${getTypeColor(currentLevel?.type || "putt")}`}>
-                  {currentLevel?.type || "Putt"}
-                </Badge>
+                <p className="text-xs text-muted-foreground">Categories</p>
+                <div className="flex flex-wrap gap-1">
+                  {Array.from(new Set(levels.map(l => l.type))).map(type => (
+                    <Badge key={type} className={`text-xs rounded-full ${getTypeColor(type)}`}>
+                      {type}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           </CardContent>
