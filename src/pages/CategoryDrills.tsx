@@ -58,8 +58,8 @@ const allDrills = [
   },
   {
     id: 'wedges-progression',
-    title: 'Wedges 60–120 m — Progression',
-    shortDescription: 'Test your distance control across 13 distances. Hit within 3m to advance. Score is total shots needed.',
+    title: 'Wedge Ladder',
+    shortDescription: 'Test your distance control across 13 distances (60-120m). Hit within 3m to advance. Score is total shots needed.',
     category: 'wedges',
     icon: Hammer,
   },
@@ -170,7 +170,8 @@ const CategoryDrills = () => {
                 'short-putting-test',
                 '8-ball-drill',
                 'shot-shape-master',
-                'approach-control'
+                'approach-control',
+                'wedges-progression'
               ];
               
               const handleDrillClick = () => {
