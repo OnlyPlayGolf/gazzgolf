@@ -176,9 +176,12 @@ const Levels = () => {
                   {Array.from(new Set(levels.map(l => l.type)))
                     .filter(type => !["Chip/Putt", "Bunker/Putt", "Pitch/Putt"].includes(type))
                     .sort((a, b) => {
-                      // Custom sorting for professional level to swap approach and play
+                      // Custom sorting based on difficulty level
                       if (difficulty?.toLowerCase() === "professional") {
-                        const order = ["Putt", "Chip", "Wedge", "Bunker", "Play", "Approach", "Driver"];
+                        const order = ["Putt", "Chip", "Wedge", "Bunker", "Driver", "Play", "Approach"];
+                        return order.indexOf(a) - order.indexOf(b);
+                      } else if (difficulty?.toLowerCase() === "amateur") {
+                        const order = ["Putt", "Chip", "Approach", "Pitch", "Wedge", "Bunker"];
                         return order.indexOf(a) - order.indexOf(b);
                       }
                       return a.localeCompare(b);
