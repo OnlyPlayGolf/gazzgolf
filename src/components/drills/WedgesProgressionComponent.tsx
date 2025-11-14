@@ -22,7 +22,6 @@ const distances = [60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120];
 const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgressionComponentProps) => {
   const [progress, setProgress] = useState<DistanceProgress[]>([]);
   const [currentDistanceIndex, setCurrentDistanceIndex] = useState(0);
-  const [currentAttempt, setCurrentAttempt] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const { toast } = useToast();
@@ -45,37 +44,24 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
     onTabChange?.('score');
   };
 
-  const recordAttempt = () => {
-    const attemptDistance = parseFloat(currentAttempt);
-    
-    if (isNaN(attemptDistance) || attemptDistance <= 0) {
-      toast({
-        title: "Invalid distance",
-        description: "Please enter a valid distance.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const recordAttempt = (successful: boolean) => {
     const targetDistance = distances[currentDistanceIndex];
-    const difference = Math.abs(attemptDistance - targetDistance);
     
     setProgress(prev => {
       const updated = [...prev];
-      updated[currentDistanceIndex].attempts.push(attemptDistance);
+      // Record the attempt (we just increment the count, not storing actual distances anymore)
+      updated[currentDistanceIndex].attempts.push(targetDistance);
       
-      // Check if within 3 meters
-      if (difference <= 3) {
+      // Mark as completed if successful
+      if (successful) {
         updated[currentDistanceIndex].completed = true;
       }
       
       return updated;
     });
 
-    setCurrentAttempt("");
-
     // If completed, move to next distance
-    if (difference <= 3) {
+    if (successful) {
       if (currentDistanceIndex < distances.length - 1) {
         setCurrentDistanceIndex(currentDistanceIndex + 1);
         toast({
@@ -217,40 +203,34 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-2">
-                Enter how far you hit (must be within 3m to advance)
+              <p className="text-sm text-muted-foreground mb-3 text-center">
+                Did you hit within 3 meters?
               </p>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="Distance in meters"
-                  value={currentAttempt}
-                  onChange={(e) => setCurrentAttempt(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && recordAttempt()}
-                />
-                <Button onClick={recordAttempt}>Record</Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={() => recordAttempt(true)}
+                  variant="default"
+                  size="lg"
+                  className="h-16"
+                >
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
+                  Hit Target
+                </Button>
+                <Button 
+                  onClick={() => recordAttempt(false)}
+                  variant="outline"
+                  size="lg"
+                  className="h-16"
+                >
+                  Try Again
+                </Button>
               </div>
             </div>
             
             {progress[currentDistanceIndex]?.attempts.length > 0 && (
               <div>
                 <p className="text-sm font-medium mb-2">Attempts at {distances[currentDistanceIndex]}m:</p>
-                <div className="flex flex-wrap gap-2">
-                  {progress[currentDistanceIndex].attempts.map((attempt, idx) => {
-                    const diff = Math.abs(attempt - distances[currentDistanceIndex]);
-                    const isGood = diff <= 3;
-                    return (
-                      <span
-                        key={idx}
-                        className={`px-2 py-1 rounded text-sm ${
-                          isGood ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'
-                        }`}
-                      >
-                        {attempt}m ({diff > 0 ? '+' : ''}{(attempt - distances[currentDistanceIndex]).toFixed(1)})
-                      </span>
-                    );
-                  })}
-                </div>
+                <p className="text-2xl font-bold text-primary">{progress[currentDistanceIndex].attempts.length}</p>
               </div>
             )}
           </CardContent>
