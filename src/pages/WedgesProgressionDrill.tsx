@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -19,6 +19,14 @@ export default function WedgesProgressionDrill() {
     if (location.pathname.includes("/messages")) return "messages";
     return "score";
   });
+
+  useEffect(() => {
+    if (location.pathname.includes("/info")) setActiveTab("info");
+    else if (location.pathname.includes("/feed")) setActiveTab("feed");
+    else if (location.pathname.includes("/leaderboard")) setActiveTab("leaderboard");
+    else if (location.pathname.includes("/messages")) setActiveTab("messages");
+    else setActiveTab("score");
+  }, [location.pathname]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
