@@ -80,6 +80,16 @@ const Levels = () => {
         return "bg-primary text-primary-foreground";
       case "chip":
         return "bg-secondary text-secondary-foreground";
+      case "driver":
+        return "bg-accent text-accent-foreground";
+      case "approach":
+        return "bg-blue-500 text-white";
+      case "bunker":
+        return "bg-amber-500 text-white";
+      case "wedge":
+        return "bg-purple-500 text-white";
+      case "play":
+        return "bg-green-500 text-white";
       default:
         return "bg-muted text-muted-foreground";
     }
@@ -163,11 +173,13 @@ const Levels = () => {
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground">Categories</p>
                 <div className="flex flex-wrap gap-1">
-                  {Array.from(new Set(levels.map(l => l.type))).map(type => (
-                    <Badge key={type} className={`text-xs rounded-full ${getTypeColor(type)}`}>
-                      {type}
-                    </Badge>
-                  ))}
+                  {Array.from(new Set(levels.map(l => l.type)))
+                    .filter(type => !["Chip/Putt", "Bunker/Putt", "Pitch/Putt"].includes(type))
+                    .map(type => (
+                      <Badge key={type} className={`text-xs rounded-full ${getTypeColor(type)}`}>
+                        {type}
+                      </Badge>
+                    ))}
                 </div>
               </div>
             </div>
