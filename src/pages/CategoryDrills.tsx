@@ -94,9 +94,23 @@ const CategoryDrills = () => {
   const [favorites, setFavorites] = useState<FavoriteDrill[]>([]);
 
   useEffect(() => {
-    setFavorites(getFavorites());
-  }, []);
+    const load = () => setFavorites(getFavorites());
+    load();
 
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === 'drillFavorites') {
+        load();
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', load);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', load);
+    };
+  }, [categoryId]);
   const toggleFavorite = (drill: typeof allDrills[0]) => {
     const drillIsFavorite = isFavorite(drill.id);
     
