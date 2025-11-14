@@ -16,7 +16,7 @@ const Levels = () => {
   const navigate = useNavigate();
   const { difficulty } = useParams<{ difficulty: string }>();
   const [levels, setLevels] = useState<Level[]>([]);
-  const [stats, setStats] = useState({ completed: 0, total: 0, percentage: 0 });
+  const [stats, setStats] = useState({ completed: 0, total: 0, percentage: 0, totalCompleted: 0, totalLevels: 0 });
   const [activeTab, setActiveTab] = useState("play");
   const [profile, setProfile] = useState<any>(null);
 
@@ -31,8 +31,12 @@ const Levels = () => {
       const total = filteredLevels.length;
       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
+      // Calculate total completed across all difficulties
+      const totalCompleted = allLevels.filter((level) => level.completed).length;
+      const totalLevels = allLevels.length;
+
       setLevels(filteredLevels);
-      setStats({ completed, total, percentage });
+      setStats({ completed, total, percentage, totalCompleted, totalLevels });
 
       const {
         data: { user },
@@ -51,14 +55,20 @@ const Levels = () => {
 
   const handleCompleteLevel = (levelId: string) => {
     completeLevelz(levelId);
-    const levelsData = getLevelsWithProgress().filter(
+    const allLevels = getLevelsWithProgress();
+    const levelsData = allLevels.filter(
       (level) => level.difficulty.toLowerCase() === (difficulty || "beginner").toLowerCase()
     );
     const completed = levelsData.filter((l) => l.completed).length;
     const total = levelsData.length;
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    // Calculate total completed across all difficulties
+    const totalCompleted = allLevels.filter((level) => level.completed).length;
+    const totalLevels = allLevels.length;
+    
     setLevels(levelsData);
-    setStats({ completed, total, percentage });
+    setStats({ completed, total, percentage, totalCompleted, totalLevels });
   };
 
   const currentLevel = levels.find((level) => !level.completed) || levels[levels.length - 1];
@@ -127,7 +137,7 @@ const Levels = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-muted rounded-xl p-3">
-                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="text-xs text-muted-foreground">Progress</p>
                 <p className="text-lg font-semibold text-foreground">
                   {stats.completed} of {stats.total} levels
                 </p>
@@ -142,10 +152,12 @@ const Levels = () => {
                 </div>
               </div>
               <div className="bg-muted rounded-xl p-3">
-                <p className="text-xs text-muted-foreground">Progress</p>
+                <p className="text-xs text-muted-foreground">Completed levels</p>
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold text-foreground">{stats.percentage}%</p>
-                  <Progress value={stats.percentage} className="h-1" />
+                  <p className="text-lg font-semibold text-foreground">
+                    {stats.totalCompleted} of {stats.totalLevels} levels ({Math.round((stats.totalCompleted / stats.totalLevels) * 100) || 0}%)
+                  </p>
+                  <Progress value={Math.round((stats.totalCompleted / stats.totalLevels) * 100) || 0} className="h-1" />
                 </div>
               </div>
               <div className="bg-muted rounded-xl p-3">
