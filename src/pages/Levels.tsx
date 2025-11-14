@@ -139,7 +139,7 @@ const Levels = () => {
               <div className="bg-muted rounded-xl p-3">
                 <p className="text-xs text-muted-foreground">Progress</p>
                 <p className="text-lg font-semibold text-foreground">
-                  {stats.completed} of {stats.total} levels
+                  {stats.completed} of {stats.total}
                 </p>
               </div>
               <div className="bg-muted rounded-xl p-3">
@@ -155,9 +155,9 @@ const Levels = () => {
                 <p className="text-xs text-muted-foreground">Completed levels</p>
                 <div className="space-y-1">
                   <p className="text-lg font-semibold text-foreground">
-                    {stats.totalCompleted} of {stats.totalLevels} levels ({Math.round((stats.totalCompleted / stats.totalLevels) * 100) || 0}%)
+                    {stats.totalCompleted} of 500 ({Math.round((stats.totalCompleted / 500) * 100) || 0}%)
                   </p>
-                  <Progress value={Math.round((stats.totalCompleted / stats.totalLevels) * 100) || 0} className="h-1" />
+                  <Progress value={Math.round((stats.totalCompleted / 500) * 100) || 0} className="h-1" />
                 </div>
               </div>
               <div className="bg-muted rounded-xl p-3">
