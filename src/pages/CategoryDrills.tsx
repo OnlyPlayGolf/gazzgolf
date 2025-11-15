@@ -53,14 +53,14 @@ const allDrills = [
     id: 'wedges-2-laps',
     title: 'Wedges 40–80 m — 2 Laps',
     shortDescription: 'Hit the specified distances. One shot per length, 2 laps.',
-    category: 'wedges',
+    category: 'approach',
     icon: Hammer,
   },
   {
     id: 'wedges-progression',
     title: "Åberg's Wedge Ladder",
     shortDescription: 'Test your distance control across 13 distances (60-120m). Hit within 3m to advance. Score is total shots needed.',
-    category: 'wedges',
+    category: 'approach',
     icon: Hammer,
   },
   {
@@ -82,7 +82,6 @@ const allDrills = [
 const categoryNames = {
   putting: 'Putting',
   shortgame: 'Short Game',
-  wedges: 'Wedges',
   approach: 'Approach',
   teeshots: 'Tee Shots',
   favorites: 'Favorites',

@@ -9,8 +9,7 @@ const categories = [
   { id: 'favorites', name: 'Favorites', icon: Star, enabled: true, description: 'Your favorite drills' },
   { id: 'putting', name: 'Putting', icon: Target, enabled: true, description: 'Precision on the green' },
   { id: 'shortgame', name: 'Short Game', icon: Zap, enabled: true, description: 'Chipping, pitching, and bunker shots' },
-  { id: 'wedges', name: 'Wedges', icon: Hammer, enabled: true, description: 'Wedge shots' },
-  { id: 'approach', name: 'Approach', icon: Activity, enabled: true, description: 'Mid to long range shots' },
+  { id: 'approach', name: 'Approach', icon: Activity, enabled: true, description: 'Wedges and approach shots' },
   { id: 'teeshots', name: 'Tee Shots', icon: Target, enabled: true, description: 'Driving and tee shot accuracy' },
 ];
 
@@ -31,7 +30,7 @@ const DrillsCategories = () => {
             >
               <ArrowLeft size={20} />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">Performance Drills</h1>
+            <h1 className="text-2xl font-bold text-foreground">Test & Drills</h1>
           </div>
           <p className="text-muted-foreground">Choose your skill area to practice</p>
         </div>
