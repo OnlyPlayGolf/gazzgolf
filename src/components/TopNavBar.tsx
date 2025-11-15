@@ -66,15 +66,7 @@ export const TopNavBar = () => {
     setProfile(profileData);
   };
 
-  // Main menu pages (from BottomTabBar) should NOT have back button
-  const mainMenuPages = ['/', '/practice', '/rounds', '/leaderboards', '/menu'];
-  const isMainMenuPage = mainMenuPages.includes(location.pathname);
-  const showBack = !isMainMenuPage;
-  
-  // Determine back path based on current page context
-  const isDrillPage = location.pathname.includes('/drill/');
-  const fromPage = (location.state as any)?.from;
-  const backPath = isDrillPage ? '/practice' : (fromPage || '/');
+  // Never show back button in TopNavBar
   
   return (
     <div
@@ -89,17 +81,8 @@ export const TopNavBar = () => {
           Gazz Golf
         </h1>
 
-        {/* Center: Back button */}
+        {/* Center: Empty space for balance */}
         <div className="flex-1 flex justify-center">
-          {showBack && (
-            <button
-              onClick={() => navigate(backPath)}
-              className="flex-shrink-0 rounded-full h-10 w-10 flex items-center justify-center text-white hover:bg-white/20"
-              aria-label={fromPage === 'profile' ? "Back to Profile" : "Back to Home"}
-            >
-              <ArrowLeft size={20} />
-            </button>
-          )}
         </div>
 
         {/* Right: Actions */}
