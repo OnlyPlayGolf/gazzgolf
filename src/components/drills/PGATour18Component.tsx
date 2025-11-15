@@ -48,12 +48,41 @@ const generateRandomSequence = (): string[] => {
 };
 
 const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentProps) => {
+  const STORAGE_KEY = 'pga-tour-18-drill-state';
   const [attempts, setAttempts] = useState<PuttAttempt[]>([]);
   const [currentPutt, setCurrentPutt] = useState(1);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setAttempts(state.attempts || []);
+        setCurrentPutt(state.currentPutt || 1);
+        setIsActive(state.isActive || false);
+        setDistanceSequence(state.distanceSequence || []);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (isActive) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        attempts,
+        currentPutt,
+        isActive,
+        distanceSequence
+      }));
+    }
+  }, [attempts, currentPutt, isActive, distanceSequence]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -65,11 +94,20 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   const currentDistance = distanceSequence[currentPutt - 1];
 
   const handleStartDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
     setIsActive(true);
     setAttempts([]);
     setCurrentPutt(1);
     setDistanceSequence(generateRandomSequence());
     onTabChange?.('score');
+  };
+
+  const handleResetDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setIsActive(false);
+    setAttempts([]);
+    setCurrentPutt(1);
+    setDistanceSequence([]);
   };
 
   const handlePuttSelection = (numPutts: number) => {
@@ -145,6 +183,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
         description: `Total Putts: ${totalPutts}`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       onScoreSaved?.();
     } catch (error) {
       console.error('Error:', error);

@@ -47,12 +47,41 @@ const outcomes = [
 ];
 
 const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponentProps) => {
+  const STORAGE_KEY = 'jason-day-lag-drill-state';
   const [attempts, setAttempts] = useState<PuttAttempt[]>([]);
   const [currentPutt, setCurrentPutt] = useState(1);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<number[]>([]);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setAttempts(state.attempts || []);
+        setCurrentPutt(state.currentPutt || 1);
+        setIsActive(state.isActive || false);
+        setDistanceSequence(state.distanceSequence || []);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (isActive) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        attempts,
+        currentPutt,
+        isActive,
+        distanceSequence
+      }));
+    }
+  }, [attempts, currentPutt, isActive, distanceSequence]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -64,11 +93,20 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   const currentDistance = distanceSequence[currentPutt - 1];
 
   const handleStartDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
     setIsActive(true);
     setAttempts([]);
     setCurrentPutt(1);
     setDistanceSequence(generateRandomDistances());
     onTabChange?.('score');
+  };
+
+  const resetDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setIsActive(false);
+    setAttempts([]);
+    setCurrentPutt(1);
+    setDistanceSequence([]);
   };
 
   const handleOutcome = (outcome: string, points: number) => {
@@ -142,6 +180,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
         description: `You scored ${finalPoints} points!`,
       });
       
+      localStorage.removeItem(STORAGE_KEY);
       setIsActive(false);
       onScoreSaved?.();
       onTabChange?.('leaderboard');
@@ -156,11 +195,6 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     }
   };
 
-  const resetDrill = () => {
-    setIsActive(false);
-    setAttempts([]);
-    setCurrentPutt(1);
-  };
 
   if (!isActive) {
     return (

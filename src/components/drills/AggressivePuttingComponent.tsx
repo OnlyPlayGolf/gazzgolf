@@ -20,11 +20,38 @@ interface Attempt {
 const distances = [4, 5, 6]; // meters
 
 const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePuttingComponentProps) => {
+  const STORAGE_KEY = 'aggressive-putting-drill-state';
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [currentDistance, setCurrentDistance] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setAttempts(state.attempts || []);
+        setCurrentDistance(state.currentDistance || 0);
+        setIsActive(state.isActive || false);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (isActive) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        attempts,
+        currentDistance,
+        isActive
+      }));
+    }
+  }, [attempts, currentDistance, isActive]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -36,10 +63,18 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
   const currentDistanceValue = distances[currentDistance % distances.length];
 
   const handleStartDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
     setIsActive(true);
     setAttempts([]);
     setCurrentDistance(0);
     onTabChange?.('score');
+  };
+
+  const handleResetDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setIsActive(false);
+    setAttempts([]);
+    setCurrentDistance(0);
   };
 
   const addAttempt = (holed: boolean, withinOne: boolean = false) => {
@@ -117,6 +152,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
         description: `You reached 15 points in ${attempts.length + 1} attempts`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       onScoreSaved?.();
     } catch (error) {
       console.error('Error:', error);
