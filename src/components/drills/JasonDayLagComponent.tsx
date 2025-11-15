@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,8 +13,7 @@ interface JasonDayLagComponentProps {
 interface PuttAttempt {
   puttNumber: number;
   distance: number;
-  result: 'holed' | 'proximity';
-  proximity?: number; // in meters
+  outcome: string;
   points: number;
 }
 
@@ -37,19 +34,17 @@ const generateRandomDistances = (): number[] => {
     [distances[i], distances[j]] = [distances[j], distances[i]];
   }
   
-  return distances.map(d => Math.round(d * 10) / 10);
+  return distances.map(d => Math.round(d));
 };
 
-const calculatePoints = (holed: boolean, proximity?: number): number => {
-  if (holed) return 3;
-  if (!proximity) return 0;
-  
-  if (proximity <= 0.6) return 2;
-  if (proximity <= 1.0) return 1;
-  if (proximity <= 2.0) return 0;
-  if (proximity <= 3.0) return -1;
-  return -2;
-};
+const outcomes = [
+  { label: 'Holed', points: 3 },
+  { label: 'Within 0.6m (2 feet)', points: 2 },
+  { label: '0.6m-1m (2-3 feet)', points: 1 },
+  { label: '1-2 meters', points: 0 },
+  { label: '2-3 meters', points: -1 },
+  { label: 'Outside 3 meters', points: -2 },
+];
 
 const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponentProps) => {
   const [attempts, setAttempts] = useState<PuttAttempt[]>([]);
@@ -57,8 +52,6 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<number[]>([]);
-  const [proximityInput, setProximityInput] = useState("");
-  const [showProximityInput, setShowProximityInput] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,58 +68,19 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     setAttempts([]);
     setCurrentPutt(1);
     setDistanceSequence(generateRandomDistances());
-    setShowProximityInput(false);
-    setProximityInput("");
     onTabChange?.('score');
   };
 
-  const handleHoled = () => {
+  const handleOutcome = (outcome: string, points: number) => {
     const newAttempt: PuttAttempt = {
       puttNumber: currentPutt,
       distance: currentDistance,
-      result: 'holed',
-      points: 3,
-    };
-
-    const newAttempts = [...attempts, newAttempt];
-    setAttempts(newAttempts);
-
-    if (currentPutt === 18) {
-      handleSaveScore(newAttempts);
-    } else {
-      setCurrentPutt(currentPutt + 1);
-    }
-  };
-
-  const handleMissed = () => {
-    setShowProximityInput(true);
-  };
-
-  const handleProximitySubmit = () => {
-    const proximity = parseFloat(proximityInput);
-    
-    if (isNaN(proximity) || proximity < 0) {
-      toast({
-        title: "Invalid input",
-        description: "Please enter a valid distance in meters.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const points = calculatePoints(false, proximity);
-    const newAttempt: PuttAttempt = {
-      puttNumber: currentPutt,
-      distance: currentDistance,
-      result: 'proximity',
-      proximity,
+      outcome,
       points,
     };
 
     const newAttempts = [...attempts, newAttempt];
     setAttempts(newAttempts);
-    setShowProximityInput(false);
-    setProximityInput("");
 
     if (currentPutt === 18) {
       handleSaveScore(newAttempts);
@@ -206,8 +160,6 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     setIsActive(false);
     setAttempts([]);
     setCurrentPutt(1);
-    setShowProximityInput(false);
-    setProximityInput("");
   };
 
   if (!isActive) {
@@ -267,49 +219,25 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
           <div className="text-center p-6 bg-muted rounded-lg">
             <div className="text-sm text-muted-foreground mb-2">Distance</div>
             <div className="text-4xl font-bold text-foreground">
-              {currentDistance.toFixed(1)}m
+              {currentDistance}m
             </div>
           </div>
 
-          {!showProximityInput ? (
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={handleHoled} variant="default" size="lg">
-                Holed
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-center mb-2">Select outcome:</p>
+            {outcomes.map((outcome) => (
+              <Button
+                key={outcome.label}
+                onClick={() => handleOutcome(outcome.label, outcome.points)}
+                className="w-full"
+                variant={outcome.points >= 0 ? "default" : "outline"}
+                size="lg"
+              >
+                <span className="flex-1 text-left">{outcome.label}</span>
+                <span className="font-bold">{outcome.points > 0 ? '+' : ''}{outcome.points}</span>
               </Button>
-              <Button onClick={handleMissed} variant="outline" size="lg">
-                Missed
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="proximity">Distance from hole (meters)</Label>
-                <Input
-                  id="proximity"
-                  type="number"
-                  step="0.1"
-                  value={proximityInput}
-                  onChange={(e) => setProximityInput(e.target.value)}
-                  placeholder="e.g., 0.5"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Button onClick={handleProximitySubmit} size="lg">
-                  Submit
-                </Button>
-                <Button 
-                  onClick={() => {
-                    setShowProximityInput(false);
-                    setProximityInput("");
-                  }} 
-                  variant="outline" 
-                  size="lg"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
 
           <Button onClick={resetDrill} variant="ghost" className="w-full">
             Reset Drill
@@ -324,17 +252,16 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {attempts.map((attempt) => (
+              {[...attempts].reverse().map((attempt) => (
                 <div 
                   key={attempt.puttNumber}
                   className="flex justify-between items-center p-2 bg-muted rounded"
                 >
                   <span className="text-sm">
-                    Putt {attempt.puttNumber}: {attempt.distance.toFixed(1)}m
+                    Putt {attempt.puttNumber}: {attempt.distance}m
                   </span>
                   <span className="text-sm font-semibold">
-                    {attempt.result === 'holed' ? 'Holed' : `${attempt.proximity}m`} 
-                    {' '}({attempt.points > 0 ? '+' : ''}{attempt.points})
+                    {attempt.outcome} ({attempt.points > 0 ? '+' : ''}{attempt.points})
                   </span>
                 </div>
               ))}
