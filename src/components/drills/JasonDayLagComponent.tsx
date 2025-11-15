@@ -15,6 +15,7 @@ interface PuttAttempt {
   distance: number;
   outcome: string;
   points: number;
+  bonusPoints?: number;
 }
 
 const generateRandomDistances = (): number[] => {
@@ -38,12 +39,12 @@ const generateRandomDistances = (): number[] => {
 };
 
 const outcomes = [
-  { label: 'Holed', points: 3 },
-  { label: 'Within 0.6m (2 feet)', points: 2 },
-  { label: '0.6m-1m (2-3 feet)', points: 1 },
-  { label: '1-2 meters', points: 0 },
-  { label: '2-3 meters', points: -1 },
-  { label: 'Outside 3 meters', points: -2 },
+  { label: 'Holed', points: 5 },
+  { label: 'Within 0.6m (2 feet)', points: 3 },
+  { label: '0.6m-1m (2-3 feet)', points: 2 },
+  { label: '1-2 meters', points: 1 },
+  { label: '2-3 meters', points: 0 },
+  { label: 'Outside 3 meters', points: -1 },
 ];
 
 const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponentProps) => {
@@ -53,6 +54,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<number[]>([]);
+  const [bonusStreak, setBonusStreak] = useState(0);
   const { toast } = useToast();
 
   // Load state from localStorage on mount
@@ -65,6 +67,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
         setCurrentPutt(state.currentPutt || 1);
         setIsActive(state.isActive || false);
         setDistanceSequence(state.distanceSequence || []);
+        setBonusStreak(state.bonusStreak || 0);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
       }
@@ -78,10 +81,11 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
         attempts,
         currentPutt,
         isActive,
-        distanceSequence
+        distanceSequence,
+        bonusStreak
       }));
     }
-  }, [attempts, currentPutt, isActive, distanceSequence]);
+  }, [attempts, currentPutt, isActive, distanceSequence, bonusStreak]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -89,7 +93,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     });
   }, []);
 
-  const totalPoints = attempts.reduce((sum, att) => sum + att.points, 0);
+  const totalPoints = attempts.reduce((sum, att) => sum + att.points + (att.bonusPoints || 0), 0);
   const currentDistance = distanceSequence[currentPutt - 1];
 
   const handleStartDrill = () => {
@@ -98,6 +102,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     setAttempts([]);
     setCurrentPutt(1);
     setDistanceSequence(generateRandomDistances());
+    setBonusStreak(0);
     onTabChange?.('score');
   };
 
@@ -107,14 +112,34 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     setAttempts([]);
     setCurrentPutt(1);
     setDistanceSequence([]);
+    setBonusStreak(0);
   };
 
   const handleOutcome = (outcome: string, points: number) => {
+    // Calculate bonus
+    let bonusPoints = 0;
+    let newBonusStreak = bonusStreak;
+    
+    if (points >= 3) {
+      // Increment streak
+      newBonusStreak = bonusStreak + 1;
+      // Apply bonus if streak is 4 or more (3+ consecutive then bonus starts)
+      if (newBonusStreak >= 4) {
+        bonusPoints = 1;
+      }
+    } else {
+      // Reset streak if points < 3
+      newBonusStreak = 0;
+    }
+    
+    setBonusStreak(newBonusStreak);
+
     const newAttempt: PuttAttempt = {
       puttNumber: currentPutt,
       distance: currentDistance,
       outcome,
       points,
+      bonusPoints,
     };
 
     const newAttempts = [...attempts, newAttempt];
@@ -138,7 +163,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
       return;
     }
 
-    const finalPoints = finalAttempts.reduce((sum, att) => sum + att.points, 0);
+    const finalPoints = finalAttempts.reduce((sum, att) => sum + att.points + (att.bonusPoints || 0), 0);
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
@@ -219,13 +244,20 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
             <div className="space-y-2">
               <h3 className="font-semibold">Scoring:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>Holed: +3 points</li>
-                <li>Within 0.6m (2 feet): +2 points</li>
-                <li>0.6m-1m (2-3 feet): +1 point</li>
-                <li>1-2 meters: 0 points</li>
-                <li>2-3 meters: -1 point</li>
-                <li>Outside 3 meters: -2 points</li>
+                <li>Holed: +5 points</li>
+                <li>Within 0.6m (2 feet): +3 points</li>
+                <li>0.6m-1m (2-3 feet): +2 points</li>
+                <li>1-2 meters: +1 point</li>
+                <li>2-3 meters: 0 points</li>
+                <li>Outside 3 meters: -1 point</li>
               </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold">Bonus Streak:</h3>
+              <p className="text-sm text-muted-foreground">
+                After 3 consecutive putts scoring 3+ points, earn +1 bonus on each subsequent 3+ point putt until you score less than 3 points.
+              </p>
             </div>
 
             <Button onClick={handleStartDrill} className="w-full">
@@ -246,7 +278,12 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
               <Target className="text-primary" />
               Putt {currentPutt} of 18
             </span>
-            <span className="text-lg">Score: {totalPoints}</span>
+            <div className="flex flex-col items-end">
+              <span className="text-lg">Score: {totalPoints}</span>
+              {bonusStreak >= 3 && (
+                <span className="text-xs text-primary">🔥 Streak: {bonusStreak}</span>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -259,18 +296,24 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
 
           <div className="space-y-3">
             <p className="text-sm font-medium text-center mb-2">Select outcome:</p>
-            {outcomes.map((outcome) => (
-              <Button
-                key={outcome.label}
-                onClick={() => handleOutcome(outcome.label, outcome.points)}
-                className="w-full"
-                variant={outcome.points >= 0 ? "default" : "outline"}
-                size="lg"
-              >
-                <span className="flex-1 text-left">{outcome.label}</span>
-                <span className="font-bold">{outcome.points > 0 ? '+' : ''}{outcome.points}</span>
-              </Button>
-            ))}
+            {outcomes.map((outcome) => {
+              const willGetBonus = outcome.points >= 3 && bonusStreak >= 3;
+              return (
+                <Button
+                  key={outcome.label}
+                  onClick={() => handleOutcome(outcome.label, outcome.points)}
+                  className="w-full"
+                  variant="outline"
+                  size="lg"
+                >
+                  <span className="flex-1 text-left">{outcome.label}</span>
+                  <span className="font-bold">
+                    {outcome.points > 0 ? '+' : ''}{outcome.points}
+                    {willGetBonus && <span className="text-primary ml-1">(+1 bonus)</span>}
+                  </span>
+                </Button>
+              );
+            })}
           </div>
 
           <Button onClick={resetDrill} variant="ghost" className="w-full">
@@ -295,7 +338,8 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
                     Putt {attempt.puttNumber}: {attempt.distance}m
                   </span>
                   <span className="text-sm font-semibold">
-                    {attempt.outcome} ({attempt.points > 0 ? '+' : ''}{attempt.points})
+                    {attempt.outcome} ({attempt.points > 0 ? '+' : ''}{attempt.points}
+                    {attempt.bonusPoints ? ` +${attempt.bonusPoints} bonus` : ''})
                   </span>
                 </div>
               ))}
