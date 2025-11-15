@@ -44,11 +44,12 @@ import AggressivePuttingDrill from "./pages/AggressivePuttingDrill";
 import PGATour18Drill from "./pages/PGATour18Drill";
 import UpDownPuttingDrill from "./pages/UpDownPuttingDrill";
 import ShortPuttingDrill from "./pages/ShortPuttingDrill";
+import JasonDayLagDrill from "./pages/JasonDayLagDrill";
 import EightBallDrill from "./pages/EightBallDrill";
 import ShotShapeMasterDrill from "./pages/ShotShapeMasterDrill";
 import ApproachControlDrill from "./pages/ApproachControlDrill";
 import WedgesProgressionDrill from "./pages/WedgesProgressionDrill";
-import JasonDayLagDrill from "./pages/JasonDayLagDrill";
+import Wedges2LapsDrill from "./pages/Wedges2LapsDrill";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,7 @@ const App = () => (
             <Route path="/drill/shot-shape-master/*" element={<ShotShapeMasterDrill />} />
             <Route path="/drill/approach-control/*" element={<ApproachControlDrill />} />
             <Route path="/drill/wedges-progression/*" element={<WedgesProgressionDrill />} />
+            <Route path="/drill/wedges-2-laps/*" element={<Wedges2LapsDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
