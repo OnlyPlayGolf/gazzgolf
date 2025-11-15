@@ -173,7 +173,7 @@ const Rounds = () => {
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  onClick={() => navigate("/menu")}
+                  onClick={() => navigate("/profile")}
                   className="rounded-full flex-shrink-0"
                 >
                   <ArrowLeft size={20} />
