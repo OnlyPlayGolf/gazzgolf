@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, Trophy } from "lucide-react";
+import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { STORAGE_KEYS } from "@/constants/app";
 import { getStorageItem, setStorageItem } from "@/utils/storageManager";
@@ -10,6 +10,12 @@ interface Score {
   name: string;
   score: number;
   timestamp: number;
+}
+interface Attempt {
+  attemptNumber: number;
+  distance: number;
+  outcome: string;
+  points: number;
 }
 
 export default function AggressivePuttingScore() {
@@ -20,6 +26,7 @@ export default function AggressivePuttingScore() {
   const [distanceIndex, setDistanceIndex] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [lastScore, setLastScore] = useState<Score | null>(null);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
   
   const distances = [4, 5, 6]; // meters, cycling pattern
   const targetPoints = 15;
@@ -58,6 +65,22 @@ export default function AggressivePuttingScore() {
         pointChange = -3;
         break;
     }
+
+    // Record attempt before updating indices
+    const outcomeLabels: Record<string, string> = {
+      'holed': 'Holed',
+      'good-pace': 'Good Pace',
+      'short': 'Short',
+      'long-miss': 'Long Miss',
+    };
+
+    const attempt: Attempt = {
+      attemptNumber: putts + 1,
+      distance: distances[distanceIndex],
+      outcome: outcomeLabels[outcome],
+      points: pointChange,
+    };
+    setAttempts((prev) => [...prev, attempt]);
 
     const newPoints = Math.max(0, points + pointChange);
     const newPutts = putts + 1;
@@ -119,112 +142,72 @@ export default function AggressivePuttingScore() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Point System */}
+    <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Trophy size={20} className="text-primary" />
-            Point System
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground font-medium">
-            Objective: Reach 15 points in as few putts as possible
-          </p>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex items-center gap-2 p-2 bg-green-600/10 rounded">
-              <span className="font-semibold text-green-600">+3</span>
-              <span className="text-foreground">Holed</span>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Target className="text-primary" />
+              Putt {putts + 1}
+            </span>
+            <div className="flex flex-col items-end">
+              <span className="text-lg">Score: {points}</span>
             </div>
-            <div className="flex items-center gap-2 p-2 bg-blue-600/10 rounded">
-              <span className="font-semibold text-blue-600">+1</span>
-              <span className="text-foreground">Good Pace (within 1m past)</span>
-            </div>
-            <div className="flex items-center gap-2 p-2 bg-orange-600/10 rounded">
-              <span className="font-semibold text-orange-600">-3</span>
-              <span className="text-foreground">Short (doesn't reach)</span>
-            </div>
-            <div className="flex items-center gap-2 p-2 bg-red-600/10 rounded">
-              <span className="font-semibold text-red-600">-3</span>
-              <span className="text-foreground">Long + Miss Return (&gt;1m)</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Current Status */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Target size={20} className="text-primary" />
-            Current Status
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-primary">{distances[distanceIndex]}m</div>
-              <div className="text-sm text-muted-foreground">Next Distance</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{points}/15</div>
-              <div className="text-sm text-muted-foreground">Points</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{putts}</div>
-              <div className="text-sm text-muted-foreground">Putts</div>
+          <div className="text-center p-6 bg-muted rounded-lg">
+            <div className="text-sm text-muted-foreground mb-2">Distance</div>
+            <div className="text-4xl font-bold text-foreground">
+              {distances[distanceIndex]}m
             </div>
           </div>
-          
-          {isFinished && (
-            <div className="text-center space-y-2 p-4 bg-primary/10 rounded-lg">
-              <div className="flex items-center justify-center gap-2">
-                <Trophy size={20} className="text-primary" />
-                <span className="font-bold text-foreground">Drill Complete!</span>
-              </div>
-              <div className="text-lg font-bold text-foreground">Score: {putts} putts</div>
-              <div className="text-sm text-muted-foreground">Tour Average: {tourAverage} putts</div>
+
+          {!isFinished && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-center mb-2">Select outcome:</p>
+              <Button onClick={() => handleOutcome('holed')} className="w-full" variant="outline" size="lg">
+                <span className="flex-1 text-left">Holed</span>
+                <span className="font-bold">+3</span>
+              </Button>
+              <Button onClick={() => handleOutcome('good-pace')} className="w-full" variant="outline" size="lg">
+                <span className="flex-1 text-left">Good Pace</span>
+                <span className="font-bold">+1</span>
+              </Button>
+              <Button onClick={() => handleOutcome('short')} className="w-full" variant="outline" size="lg">
+                <span className="flex-1 text-left">Short</span>
+                <span className="font-bold">-3</span>
+              </Button>
+              <Button onClick={() => handleOutcome('long-miss')} className="w-full" variant="outline" size="lg">
+                <span className="flex-1 text-left">Long Miss</span>
+                <span className="font-bold">-3</span>
+              </Button>
             </div>
           )}
+
+          <Button onClick={handleReset} variant="ghost" className="w-full">
+            Reset Drill
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Outcome Buttons */}
-      {!isFinished && (
+      {attempts.length > 0 && (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-foreground">Record Outcome</CardTitle>
+          <CardHeader>
+            <CardTitle>Attempt History</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Button 
-              onClick={() => handleOutcome('holed')}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-            >
-              Holed (+3 points)
-            </Button>
-            <Button 
-              onClick={() => handleOutcome('good-pace')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Good Pace (+1 point)
-            </Button>
-            <Button 
-              onClick={() => handleOutcome('short')}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              Short (-3 points)
-            </Button>
-            <Button 
-              onClick={() => handleOutcome('long-miss')}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
-            >
-              Long + Miss Return (-3 points)
-            </Button>
+          <CardContent>
+            <div className="space-y-2">
+              {[...attempts].reverse().map((attempt) => (
+                <div key={attempt.attemptNumber} className="flex justify-between items-center p-2 bg-muted rounded">
+                  <span className="text-sm">Putt {attempt.attemptNumber}: {attempt.distance}m</span>
+                  <span className="text-sm font-semibold">{attempt.outcome} ({attempt.points > 0 ? '+' : ''}{attempt.points})</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
-
     </div>
   );
 }
