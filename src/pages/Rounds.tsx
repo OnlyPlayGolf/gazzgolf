@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Calendar, MapPin, Trophy, Trash2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Trophy, Trash2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -169,7 +169,17 @@ const Rounds = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">Round Stats</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => navigate("/menu")}
+                  className="rounded-full flex-shrink-0"
+                >
+                  <ArrowLeft size={20} />
+                </Button>
+                <h1 className="text-2xl font-bold text-foreground">Round Stats</h1>
+              </div>
               <p className="text-muted-foreground">Log and review your rounds</p>
             </div>
           </div>

@@ -47,7 +47,7 @@ const LevelSelection = () => {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate("/menu")}
+              onClick={() => navigate("/practice")}
               className="rounded-full flex-shrink-0"
             >
               <ArrowLeft size={20} />
