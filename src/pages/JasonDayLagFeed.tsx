@@ -1,15 +1,9 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { DrillHistory } from "@/components/DrillHistory";
 
 export default function JasonDayLagFeed() {
   return (
     <div className="p-4">
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-muted-foreground text-center">
-            Feed coming soon. Share your Jason Day's Lag Drill results with friends!
-          </p>
-        </CardContent>
-      </Card>
+      <DrillHistory drillTitle="Jason Day's Lag Drill" />
     </div>
   );
 }
