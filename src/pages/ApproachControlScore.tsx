@@ -11,15 +11,17 @@ export default function ApproachControlScore() {
     <div className="pb-20 min-h-screen bg-background">
       <TopNavBar />
       <div className="p-4 pt-20">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft size={16} className="mr-2" />
-          Back
-        </Button>
+        <div className="flex items-center gap-3 mb-6">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/drills')}
+            className="p-2"
+          >
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-xl font-bold text-foreground">Approach Control</h1>
+        </div>
         <ApproachControlComponent />
       </div>
     </div>
