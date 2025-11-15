@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, Trophy, Star, Crown } from "lucide-react";
+import { Target, Trophy, Star, Crown, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { TopNavBar } from "@/components/TopNavBar";
 
@@ -43,10 +43,18 @@ const LevelSelection = () => {
       <TopNavBar />
       <div className="p-4 pt-20">
         <div className="mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Choose Your Level</h1>
-            <p className="text-muted-foreground">Select your stage and start leveling up.</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/menu")}
+              className="rounded-full flex-shrink-0"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-2xl font-bold text-foreground">Choose Your Level</h1>
           </div>
+          <p className="text-muted-foreground">Select your stage and start leveling up.</p>
         </div>
 
         {/* Tier Cards */}

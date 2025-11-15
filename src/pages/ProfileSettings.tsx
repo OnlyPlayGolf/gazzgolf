@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,7 +135,17 @@ const ProfileSettings = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-foreground">Personal Information</h1>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/menu")}
+              className="rounded-full flex-shrink-0"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-xl font-bold text-foreground">Personal Information</h1>
+          </div>
         </div>
 
         <Card>

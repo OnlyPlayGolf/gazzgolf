@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, MapPin, Trophy, Users, Trash2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Trophy, Users, Trash2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -159,7 +159,17 @@ const PlayedRounds = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">Played Rounds</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => navigate("/menu")}
+                  className="rounded-full flex-shrink-0"
+                >
+                  <ArrowLeft size={20} />
+                </Button>
+                <h1 className="text-2xl font-bold text-foreground">Played Rounds</h1>
+              </div>
               <p className="text-muted-foreground">Rounds played with friends</p>
             </div>
           </div>

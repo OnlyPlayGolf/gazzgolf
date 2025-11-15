@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Users, UserPlus, Search, Check, X, ArrowUp, ArrowDown, MessageCircle } from "lucide-react";
+import { Users, UserPlus, Search, Check, X, ArrowUp, ArrowDown, MessageCircle, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -443,7 +443,17 @@ const Friends = () => {
       <TopNavBar />
       <div className="p-4 pt-20">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Friends</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/menu")}
+              className="rounded-full flex-shrink-0"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-2xl font-bold text-foreground">Friends</h1>
+          </div>
           <p className="text-muted-foreground">Manage your friends and requests</p>
         </div>
 
