@@ -186,7 +186,8 @@ const CategoryDrills = () => {
                 '8-ball-drill',
                 'shot-shape-master',
                 'approach-control',
-                'wedges-progression'
+                'wedges-progression',
+                'wedges-2-laps'
               ];
               
               const handleDrillClick = () => {
