@@ -56,6 +56,7 @@ const generateRandomSequence = (): Array<{ shape: 'draw' | 'fade'; club: string 
 };
 
 const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMasterComponentProps) => {
+  const STORAGE_KEY = 'shot-shape-master-drill-state';
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [currentShot, setCurrentShot] = useState(1);
   const [isActive, setIsActive] = useState(false);
@@ -70,6 +71,36 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
   
   const { toast } = useToast();
 
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setAttempts(state.attempts || []);
+        setCurrentShot(state.currentShot || 1);
+        setIsActive(state.isActive || false);
+        setBonusStreak(state.bonusStreak || 0);
+        setShotSequence(state.shotSequence || []);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (isActive) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        attempts,
+        currentShot,
+        isActive,
+        bonusStreak,
+        shotSequence
+      }));
+    }
+  }, [attempts, currentShot, isActive, bonusStreak, shotSequence]);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUserId(user?.id || null);
@@ -80,6 +111,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
   const maxPoints = 14 * 3; // 42 points if all perfect
 
   const handleStartDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
     setIsActive(true);
     setAttempts([]);
     setCurrentShot(1);
@@ -230,6 +262,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
         description: `Total Score: ${finalScore} points (out of ${maxPoints})`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       onScoreSaved?.();
     } catch (error) {
       console.error('Error:', error);

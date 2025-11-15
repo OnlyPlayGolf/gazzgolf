@@ -46,10 +46,35 @@ const outcomeLabels: Record<ShotOutcome, string> = {
 };
 
 const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponentProps) => {
+  const STORAGE_KEY = 'wedges-2-laps-drill-state';
   const [attempts, setAttempts] = useState<Shot[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setAttempts(state.attempts || []);
+        setDrillStarted(state.drillStarted || false);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (drillStarted) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        attempts,
+        drillStarted
+      }));
+    }
+  }, [attempts, drillStarted]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -58,6 +83,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
   }, []);
 
   const initializeAttempts = () => {
+    localStorage.removeItem(STORAGE_KEY);
     const newAttempts: Shot[] = shots.map((shot, index) => ({
       shotIndex: index,
       distance: shot.distance,
@@ -130,6 +156,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
         description: `Your score of ${totalPoints} points has been saved.`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       if (onScoreSaved) {
         onScoreSaved();
       }

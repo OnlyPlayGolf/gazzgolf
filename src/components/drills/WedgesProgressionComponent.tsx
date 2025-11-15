@@ -20,11 +20,38 @@ interface DistanceProgress {
 const distances = [60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120];
 
 const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgressionComponentProps) => {
+  const STORAGE_KEY = 'wedges-progression-drill-state';
   const [progress, setProgress] = useState<DistanceProgress[]>([]);
   const [currentDistanceIndex, setCurrentDistanceIndex] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setProgress(state.progress || []);
+        setCurrentDistanceIndex(state.currentDistanceIndex || 0);
+        setDrillStarted(state.drillStarted || false);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (drillStarted) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        progress,
+        currentDistanceIndex,
+        drillStarted
+      }));
+    }
+  }, [progress, currentDistanceIndex, drillStarted]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -33,6 +60,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
   }, []);
 
   const initializeDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
     const initialProgress: DistanceProgress[] = distances.map(distance => ({
       distance,
       attempts: [],
@@ -124,6 +152,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
         description: `Your score of ${totalShots} shots has been saved.`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       if (onScoreSaved) {
         onScoreSaved();
       }

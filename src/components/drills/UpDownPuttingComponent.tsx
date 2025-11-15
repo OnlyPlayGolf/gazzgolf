@@ -42,10 +42,35 @@ const outcomeLabels: Record<PuttOutcome, string> = {
 };
 
 const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComponentProps) => {
+  const STORAGE_KEY = 'up-down-putting-drill-state';
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setAttempts(state.attempts || []);
+        setDrillStarted(state.drillStarted || false);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (drillStarted) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        attempts,
+        drillStarted
+      }));
+    }
+  }, [attempts, drillStarted]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -54,6 +79,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
   }, []);
 
   const initializeAttempts = () => {
+    localStorage.removeItem(STORAGE_KEY);
     const newAttempts: Attempt[] = [];
     // 3 rounds, each round goes through all 6 stations once
     for (let round = 0; round < 3; round++) {
@@ -139,6 +165,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
         description: `Your score: ${totalScore > 0 ? '+' : ''}${totalScore}. ${comparison}`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       if (onScoreSaved) {
         onScoreSaved();
       }
