@@ -24,19 +24,23 @@ interface Attempt {
 }
 
 const generateRandomSequence = (): Array<{ distance: number; side: 'left' | 'right' }> => {
-  const shots: Array<{ distance: number; side: 'left' | 'right' }> = [];
-  
-  // Generate 7 left and 7 right shots with random distances
-  for (let i = 0; i < 7; i++) {
-    shots.push({
-      distance: Math.floor(Math.random() * (180 - 130 + 1)) + 130,
-      side: 'left'
-    });
-    shots.push({
-      distance: Math.floor(Math.random() * (180 - 130 + 1)) + 130,
-      side: 'right'
-    });
-  }
+  // Fixed set of 14 shots: 7 left and 7 right with predefined distances
+  const shots: Array<{ distance: number; side: 'left' | 'right' }> = [
+    { distance: 130, side: 'left' },
+    { distance: 140, side: 'left' },
+    { distance: 150, side: 'left' },
+    { distance: 160, side: 'left' },
+    { distance: 170, side: 'left' },
+    { distance: 175, side: 'left' },
+    { distance: 180, side: 'left' },
+    { distance: 135, side: 'right' },
+    { distance: 145, side: 'right' },
+    { distance: 155, side: 'right' },
+    { distance: 165, side: 'right' },
+    { distance: 170, side: 'right' },
+    { distance: 175, side: 'right' },
+    { distance: 180, side: 'right' },
+  ];
 
   // Shuffle using Fisher-Yates algorithm
   for (let i = shots.length - 1; i > 0; i--) {
