@@ -19,23 +19,16 @@ interface PuttAttempt {
 }
 
 const generateRandomDistances = (): number[] => {
-  const distances: number[] = [];
-  const minDistance = 8;
-  const maxDistance = 20;
+  // Fixed set of 18 distances between 8 and 20 meters
+  const distances: number[] = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 9, 11, 13, 15, 17];
   
-  // Generate 18 unique random distances between 8 and 20 meters
-  const step = (maxDistance - minDistance) / 17;
-  for (let i = 0; i < 18; i++) {
-    distances.push(minDistance + (i * step));
-  }
-  
-  // Fisher-Yates shuffle
+  // Fisher-Yates shuffle to randomize order
   for (let i = distances.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [distances[i], distances[j]] = [distances[j], distances[i]];
   }
   
-  return distances.map(d => Math.round(d));
+  return distances;
 };
 
 const outcomes = [
