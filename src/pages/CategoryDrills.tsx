@@ -50,13 +50,6 @@ const allDrills = [
     icon: Zap,
   },
   {
-    id: 'wedges-distance-control',
-    title: 'Wedges 40–80 m — Distance Control',
-    shortDescription: 'Hit specified distances in carry with precise distance control. Score points for accuracy.',
-    category: 'wedges',
-    icon: Hammer,
-  },
-  {
     id: 'wedges-2-laps',
     title: 'Wedges 40–80 m — 2 Laps',
     shortDescription: 'Hit the specified distances. One shot per length, 2 laps.',
