@@ -12,9 +12,8 @@ export function DrillBottomTabBar({ drillSlug }: DrillBottomTabBarProps) {
   const tabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/drill/${drillSlug}/score` },
     { id: "info", label: "Drill guide", icon: BookOpen, path: `/drill/${drillSlug}/info` },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/drill/${drillSlug}/feed` },
+    { id: "feed", label: "Drill history", icon: Newspaper, path: `/drill/${drillSlug}/feed` },
     { id: "leaderboard", label: "Leaderboards", icon: List, path: `/drill/${drillSlug}/leaderboard` },
-    { id: "messages", label: "Messages", icon: MessageSquare, path: `/drill/${drillSlug}/messages` },
   ];
 
   return (
