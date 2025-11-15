@@ -36,6 +36,13 @@ const allDrills = [
     icon: Target,
   },
   {
+    id: 'jason-day-lag',
+    title: 'Jason Day Lag Drill',
+    shortDescription: '18 putts from 8-20 meters randomized. Score points based on proximity - holed putts earn 3 points, within 2 feet earns 2 points. Get as many points as possible!',
+    category: 'putting',
+    icon: Target,
+  },
+  {
     id: '8-ball-drill',
     title: '8-Ball Drill',
     shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',
@@ -58,7 +65,7 @@ const allDrills = [
   },
   {
     id: 'wedges-progression',
-    title: 'Wedge Ladder',
+    title: 'Åberg Wedge Ladder',
     shortDescription: 'Test your distance control across 13 distances (60-120m). Hit within 3m to advance. Score is total shots needed.',
     category: 'wedges',
     icon: Hammer,

@@ -101,7 +101,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
     }
 
     try {
-      const drillTitle = 'Wedges 60–120 m — Progression';
+      const drillTitle = 'Åberg Wedge Ladder';
       
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
