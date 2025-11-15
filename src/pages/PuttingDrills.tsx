@@ -128,6 +128,32 @@ const PuttingDrills = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Target size={24} className="text-primary" />
+                <div>
+                  <div>Jason Day Lag Drill</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Putting • 8-20m lag putting
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                18 putts from 8-20 meters randomized. Score points based on proximity - holed putts earn 3 points, within 2 feet earns 2 points. Get as many points as possible!
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/drill/jason-day-lag/score')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Open Drill
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
