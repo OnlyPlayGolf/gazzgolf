@@ -66,10 +66,15 @@ export const TopNavBar = () => {
     setProfile(profileData);
   };
 
-  const fromPage = (location.state as any)?.from;
+  // Main menu pages (from BottomTabBar) should NOT have back button
+  const mainMenuPages = ['/', '/practice', '/rounds', '/leaderboards', '/menu'];
+  const isMainMenuPage = mainMenuPages.includes(location.pathname);
+  const showBack = !isMainMenuPage;
+  
+  // Determine back path based on current page context
   const isDrillPage = location.pathname.includes('/drill/');
-  const showBack = (fromPage && (location.pathname !== '/profile' && location.pathname !== '/')) || isDrillPage;
-  const backPath = isDrillPage ? '/practice' : (fromPage === 'profile' ? '/profile' : fromPage === 'practice' ? '/practice' : '/');
+  const fromPage = (location.state as any)?.from;
+  const backPath = isDrillPage ? '/practice' : (fromPage || '/');
   
   return (
     <div
