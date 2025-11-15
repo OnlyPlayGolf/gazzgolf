@@ -281,7 +281,10 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
             <div className="flex flex-col items-end">
               <span className="text-lg">Score: {totalPoints}</span>
               {bonusStreak >= 3 && (
-                <span className="text-xs text-primary">🔥 Streak: {bonusStreak}</span>
+                <span className="text-xs text-primary">🔥 Bonus Active!</span>
+              )}
+              {bonusStreak === 2 && (
+                <span className="text-xs text-amber-500">⚡ 1 more for bonus!</span>
               )}
             </div>
           </CardTitle>
