@@ -99,6 +99,7 @@ const DrillDetail = () => {
       'pga-tour-18': '/drill/pga-tour-18/score',
       'up-down-putting': '/drill/up-down-putting/score',
       'short-putting-test': '/drill/short-putting-test/score',
+      'jason-day-lag': '/drill/jason-day-lag/score',
       '8-ball-drill': '/drill/8-ball-drill/score',
     };
     
