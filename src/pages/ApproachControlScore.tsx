@@ -15,7 +15,7 @@ export default function ApproachControlScore() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate('/drills')}
+            onClick={() => navigate('/drills/approach')}
             className="p-2"
           >
             <ArrowLeft size={20} />

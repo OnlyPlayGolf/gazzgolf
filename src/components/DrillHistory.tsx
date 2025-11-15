@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Newspaper, Calendar } from "lucide-react";
+import { Newspaper, Calendar, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface DrillHistoryProps {
   drillTitle: string;
+}
+
+interface DrillAttempt {
+  attemptNumber?: number;
+  distance?: number;
+  outcome?: string;
+  points?: number;
+  bonusPoints?: number;
+  club?: string;
+  shotType?: string;
+  result?: string;
+  [key: string]: any;
 }
 
 interface DrillResult {
@@ -18,6 +31,7 @@ interface DrillResult {
 export function DrillHistory({ drillTitle }: DrillHistoryProps) {
   const [results, setResults] = useState<DrillResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedResult, setSelectedResult] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -84,6 +98,93 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
     );
   }
 
+  const selectedResultData = results.find((r) => r.id === selectedResult);
+
+  if (selectedResult && selectedResultData) {
+    const attempts = (selectedResultData.attempts_json as DrillAttempt[]) || [];
+
+    return (
+      <div className="space-y-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setSelectedResult(null)}
+          className="mb-2"
+        >
+          ← Back to history
+        </Button>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">
+              Score: {selectedResultData.total_points} points
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {format(new Date(selectedResultData.created_at), 'MMM d, yyyy • h:mm a')}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {attempts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No attempt details available</p>
+            ) : (
+              attempts.map((attempt, index) => (
+                <div
+                  key={index}
+                  className="p-3 rounded-lg border bg-muted"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {attempt.attemptNumber
+                          ? `Attempt ${attempt.attemptNumber}`
+                          : `Attempt ${index + 1}`}
+                      </p>
+                      {attempt.distance && (
+                        <p className="text-sm text-muted-foreground">
+                          Distance: {attempt.distance}m
+                        </p>
+                      )}
+                      {attempt.club && (
+                        <p className="text-sm text-muted-foreground">
+                          Club: {attempt.club}
+                        </p>
+                      )}
+                      {attempt.shotType && (
+                        <p className="text-sm text-muted-foreground">
+                          Type: {attempt.shotType}
+                        </p>
+                      )}
+                      {attempt.outcome && (
+                        <p className="text-sm text-muted-foreground">
+                          Outcome: {attempt.outcome}
+                        </p>
+                      )}
+                      {attempt.result && (
+                        <p className="text-sm text-muted-foreground">
+                          Result: {attempt.result}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">
+                        {attempt.points !== undefined ? `${attempt.points > 0 ? '+' : ''}${attempt.points}` : '0'}
+                      </p>
+                      {attempt.bonusPoints !== undefined && attempt.bonusPoints > 0 && (
+                        <p className="text-sm text-green-600">
+                          +{attempt.bonusPoints} bonus
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -97,7 +198,8 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
           {results.map((result) => (
             <div
               key={result.id}
-              className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+              className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors cursor-pointer"
+              onClick={() => setSelectedResult(result.id)}
             >
               <div className="flex items-center gap-3">
                 <Calendar size={16} className="text-muted-foreground" />
@@ -105,10 +207,11 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                   {format(new Date(result.created_at), 'MMM d, yyyy • h:mm a')}
                 </span>
               </div>
-              <div className="text-right">
+              <div className="flex items-center gap-2">
                 <span className="text-lg font-bold text-foreground">
                   {result.total_points} points
                 </span>
+                <ChevronRight size={20} className="text-muted-foreground" />
               </div>
             </div>
           ))}
