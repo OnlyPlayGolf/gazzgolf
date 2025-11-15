@@ -49,6 +49,7 @@ const outcomeLabels = {
 const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentProps) => {
   const [attempts, setAttempts] = useState<StationAttempt[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [currentRound, setCurrentRound] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -86,6 +87,22 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
       return attempt;
     }));
   };
+
+  // Auto-advance to next round when current round is completed
+  useEffect(() => {
+    if (attempts.length === 0) return;
+    
+    const currentRoundAttempts = attempts.filter(a => a.roundIndex === currentRound);
+    const isCurrentRoundComplete = currentRoundAttempts.every(a => a.outcome !== null);
+    
+    if (isCurrentRoundComplete && currentRound < 4) {
+      // Small delay before auto-advancing
+      const timer = setTimeout(() => {
+        setCurrentRound(currentRound + 1);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [attempts, currentRound]);
 
   const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
   const completedAttempts = attempts.filter(a => a.outcome !== null).length;
@@ -221,41 +238,55 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
           </div>
 
           <div className="space-y-4">
-            {[0, 1, 2, 3, 4].map(roundIndex => (
-              <Card key={roundIndex}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Round {roundIndex + 1}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {stations.map((station, stationIndex) => {
-                      const attempt = attempts.find(a => 
-                        a.stationIndex === stationIndex && a.roundIndex === roundIndex
-                      );
-                      
-                      return (
-                        <div key={stationIndex} className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{station}</span>
-                          <div className="flex gap-1">
-                            {(Object.keys(outcomePoints) as ShotOutcome[]).map(outcome => (
-                              <Button
-                                key={outcome}
-                                variant={attempt?.outcome === outcome ? "default" : "outline"}
-                                size="sm"
-                                className="text-xs px-2 py-1 h-7"
-                                onClick={() => updateAttempt(stationIndex, roundIndex, outcome)}
-                              >
-                                {outcomeLabels[outcome]}
-                              </Button>
-                            ))}
-                          </div>
+            {/* Round Navigation */}
+            <div className="flex gap-2 justify-center items-center mb-4">
+              {[0, 1, 2, 3, 4].map((roundIndex) => (
+                <Button
+                  key={roundIndex}
+                  variant={currentRound === roundIndex ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentRound(roundIndex)}
+                  className="w-12"
+                >
+                  {roundIndex + 1}
+                </Button>
+              ))}
+            </div>
+
+            {/* Current Round */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Round {currentRound + 1}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {stations.map((station, stationIndex) => {
+                    const attempt = attempts.find(a => 
+                      a.stationIndex === stationIndex && a.roundIndex === currentRound
+                    );
+                    
+                    return (
+                      <div key={stationIndex} className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{station}</span>
+                        <div className="flex gap-1">
+                          {(Object.keys(outcomePoints) as ShotOutcome[]).map(outcome => (
+                            <Button
+                              key={outcome}
+                              variant={attempt?.outcome === outcome ? "default" : "outline"}
+                              size="sm"
+                              className="text-xs px-2 py-1 h-7"
+                              onClick={() => updateAttempt(stationIndex, currentRound, outcome)}
+                            >
+                              {outcomeLabels[outcome]}
+                            </Button>
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </>
       )}
