@@ -16,6 +16,7 @@ interface TeePosition {
 }
 
 const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTestComponentProps) => {
+  const STORAGE_KEY = 'short-putting-test-drill-state';
   const [teePositions, setTeePositions] = useState<TeePosition[]>([
     { name: '12 o\'clock', distance: 4 },
     { name: '3 o\'clock', distance: 4 },
@@ -28,6 +29,41 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
   const [drillEnded, setDrillEnded] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setTeePositions(state.teePositions || [
+          { name: '12 o\'clock', distance: 4 },
+          { name: '3 o\'clock', distance: 4 },
+          { name: '6 o\'clock', distance: 4 },
+          { name: '9 o\'clock', distance: 4 },
+        ]);
+        setCurrentTeeIndex(state.currentTeeIndex || 0);
+        setConsecutiveMakes(state.consecutiveMakes || 0);
+        setDrillStarted(state.drillStarted || false);
+        setDrillEnded(state.drillEnded || false);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (drillStarted) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        teePositions,
+        currentTeeIndex,
+        consecutiveMakes,
+        drillStarted,
+        drillEnded
+      }));
+    }
+  }, [teePositions, currentTeeIndex, consecutiveMakes, drillStarted, drillEnded]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -98,6 +134,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
         description: `You made ${consecutiveMakes} consecutive putts!`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       if (onScoreSaved) {
         onScoreSaved();
       }
@@ -113,6 +150,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
   };
 
   const handleStartDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
     setDrillStarted(true);
     setDrillEnded(false);
     setConsecutiveMakes(0);
