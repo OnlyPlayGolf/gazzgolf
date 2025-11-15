@@ -15,7 +15,7 @@ export default function ShotShapeMasterScore() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate('/drills')}
+            onClick={() => navigate('/drills/teeshots')}
             className="p-2"
           >
             <ArrowLeft size={20} />
