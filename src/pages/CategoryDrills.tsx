@@ -189,6 +189,7 @@ const CategoryDrills = () => {
                 'pga-tour-18',
                 'up-down-putting',
                 'short-putting-test',
+                'jason-day-lag',
                 '8-ball-drill',
                 'shot-shape-master',
                 'approach-control',
