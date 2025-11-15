@@ -23,7 +23,7 @@ const JasonDayLagDrill = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-xl font-bold text-foreground">Jason Day Lag Drill</h1>
+          <h1 className="text-xl font-bold text-foreground">Jason Day's Lag Drill</h1>
         </div>
 
         <Routes>

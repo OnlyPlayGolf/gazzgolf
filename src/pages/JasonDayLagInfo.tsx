@@ -8,14 +8,14 @@ export default function JasonDayLagInfo() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="text-primary" />
-            About Jason Day Lag Drill
+            About Jason Day's Lag Drill
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <h3 className="font-semibold mb-2">Overview</h3>
             <p className="text-muted-foreground">
-              The Jason Day Lag Drill is designed to improve your lag putting skills from long distances. 
+              Jason Day's Lag Drill is designed to improve your lag putting skills from long distances. 
               This drill focuses on distance control and getting the ball close to the hole from 8-20 meters.
             </p>
           </div>

@@ -8,7 +8,7 @@ export default function WedgesProgressionInfo() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Hammer className="text-primary" />
-            Åberg Wedge Ladder
+            Åberg's Wedge Ladder
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

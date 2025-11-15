@@ -6,7 +6,7 @@ export default function JasonDayLagFeed() {
       <Card>
         <CardContent className="pt-6">
           <p className="text-muted-foreground text-center">
-            Feed coming soon. Share your Jason Day Lag Drill results with friends!
+            Feed coming soon. Share your Jason Day's Lag Drill results with friends!
           </p>
         </CardContent>
       </Card>
