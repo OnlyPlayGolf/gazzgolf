@@ -101,7 +101,69 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
   const selectedResultData = results.find((r) => r.id === selectedResult);
 
   if (selectedResult && selectedResultData) {
-    const attempts = (selectedResultData.attempts_json as DrillAttempt[]) || [];
+    const attemptsData = selectedResultData.attempts_json;
+    
+    // Check if this is Wedges Progression format (array of {distance, attempts, completed})
+    const isWedgesProgression = Array.isArray(attemptsData) && 
+      attemptsData.length > 0 && 
+      attemptsData[0]?.distance !== undefined && 
+      Array.isArray(attemptsData[0]?.attempts);
+
+    if (isWedgesProgression) {
+      return (
+        <div className="space-y-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedResult(null)}
+            className="mb-2"
+          >
+            ← Back to history
+          </Button>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Total Shots: {selectedResultData.total_points}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(selectedResultData.created_at), 'MMM d, yyyy • h:mm a')}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {attemptsData.map((distanceData: any, index: number) => (
+                <div
+                  key={index}
+                  className="p-3 rounded-lg border bg-muted"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {distanceData.distance}m
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {distanceData.completed ? '✓ Completed' : 'Not completed'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">
+                        {distanceData.attempts?.length || 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {distanceData.attempts?.length === 1 ? 'shot' : 'shots'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Standard drill format
+    const attempts = (attemptsData as DrillAttempt[]) || [];
 
     return (
       <div className="space-y-4">
