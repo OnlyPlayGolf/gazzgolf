@@ -8,7 +8,7 @@ export default function WedgesProgressionInfo() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Hammer className="text-primary" />
-            Wedges 60–120 m — Progression
+            Åberg Wedge Ladder
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

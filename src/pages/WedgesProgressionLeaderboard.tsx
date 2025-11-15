@@ -5,7 +5,7 @@ export default function WedgesProgressionLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="wedges-progression"
-        drillName="Wedges 60–120 m — Progression"
+        drillName="Åberg Wedge Ladder"
       />
     </div>
   );
