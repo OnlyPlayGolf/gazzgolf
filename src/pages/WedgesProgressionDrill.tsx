@@ -46,7 +46,7 @@ export default function WedgesProgressionDrill() {
               <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Åberg Wedge Ladder</h1>
+              <h1 className="text-xl font-bold">Åberg's Wedge Ladder</h1>
               <p className="text-sm text-muted-foreground">Distance control progression</p>
             </div>
             <div className="w-10" />

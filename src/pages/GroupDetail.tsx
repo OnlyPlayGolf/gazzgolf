@@ -73,7 +73,7 @@ const getScoreUnit = (drillName: string): string => {
     "Shot Shape Master": "points",
     "Wedges 40–80 m — Distance Control": "points",
     "Wedges 40–80 m — 2 Laps": "points",
-    "Åberg Wedge Ladder": "shots",
+    "Åberg's Wedge Ladder": "shots",
   };
   return drillUnits[drillName] || "points";
 };

@@ -104,7 +104,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: 'Jason Day Lag Drill' });
+        .rpc('get_or_create_drill_by_title', { p_title: "Jason Day's Lag Drill" });
 
       if (drillError || !drillId) {
         console.error('Drill not found or could not create:', drillError);
@@ -169,7 +169,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="text-primary" />
-              Jason Day Lag Drill
+              Jason Day's Lag Drill
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

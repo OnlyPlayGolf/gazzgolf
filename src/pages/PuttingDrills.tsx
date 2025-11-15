@@ -134,7 +134,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Jason Day Lag Drill</div>
+                  <div>Jason Day's Lag Drill</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • 8-20m lag putting
                   </div>
