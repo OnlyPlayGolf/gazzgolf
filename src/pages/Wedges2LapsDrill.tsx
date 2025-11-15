@@ -25,7 +25,7 @@ const Wedges2LapsDrill = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/drills/wedges')}
+              onClick={() => navigate('/drills/approach')}
               className="rounded-full"
             >
               <ArrowLeft size={24} />
