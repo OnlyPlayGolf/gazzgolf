@@ -11,18 +11,25 @@ interface AggressivePuttingComponentProps {
 }
 
 interface Attempt {
+  attemptNumber: number;
   distance: number;
-  holed: boolean;
-  withinOne: boolean;
+  outcome: string;
   points: number;
 }
 
 const distances = [4, 5, 6]; // meters
 
+const outcomes = [
+  { label: 'Holed', points: 3 },
+  { label: 'Good Pace', points: 1 },
+  { label: 'Short', points: -3 },
+  { label: 'Long Miss', points: -3 },
+];
+
 const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePuttingComponentProps) => {
   const STORAGE_KEY = 'aggressive-putting-drill-state';
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [currentDistance, setCurrentDistance] = useState(0);
+  const [currentAttempt, setCurrentAttempt] = useState(1);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -34,7 +41,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
       try {
         const state = JSON.parse(saved);
         setAttempts(state.attempts || []);
-        setCurrentDistance(state.currentDistance || 0);
+        setCurrentAttempt(state.currentAttempt || 1);
         setIsActive(state.isActive || false);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
@@ -47,11 +54,11 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     if (isActive) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         attempts,
-        currentDistance,
+        currentAttempt,
         isActive
       }));
     }
-  }, [attempts, currentDistance, isActive]);
+  }, [attempts, currentAttempt, isActive]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -60,45 +67,45 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
   }, []);
 
   const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
-  const currentDistanceValue = distances[currentDistance % distances.length];
+  const currentDistanceIndex = (attempts.length) % distances.length;
+  const currentDistance = distances[currentDistanceIndex];
 
   const handleStartDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
     setIsActive(true);
     setAttempts([]);
-    setCurrentDistance(0);
+    setCurrentAttempt(1);
     onTabChange?.('score');
   };
 
-  const handleResetDrill = () => {
+  const resetDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
     setIsActive(false);
     setAttempts([]);
-    setCurrentDistance(0);
+    setCurrentAttempt(1);
   };
 
-  const addAttempt = (holed: boolean, withinOne: boolean = false) => {
-    let points = 0;
-    if (holed) points = 3;
-    else if (withinOne) points = 1;
-
+  const handleOutcome = (outcome: string, points: number) => {
     const newAttempt: Attempt = {
-      distance: currentDistanceValue,
-      holed,
-      withinOne: !holed && withinOne,
+      attemptNumber: currentAttempt,
+      distance: currentDistance,
+      outcome,
       points,
     };
 
-    setAttempts(prev => [...prev, newAttempt]);
-    setCurrentDistance(prev => prev + 1);
+    const newAttempts = [...attempts, newAttempt];
+    setAttempts(newAttempts);
+    setCurrentAttempt(currentAttempt + 1);
 
-    if (totalPoints + points >= 15) {
+    const newTotalPoints = newAttempts.reduce((sum, att) => sum + att.points, 0);
+    
+    if (newTotalPoints >= 15) {
       // Drill completed
-      handleSaveScore(totalPoints + points);
+      handleSaveScore(newTotalPoints, newAttempts.length);
     }
   };
 
-  const handleSaveScore = async (finalScore: number) => {
+  const handleSaveScore = async (finalPoints: number, totalAttempts: number) => {
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -130,8 +137,8 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
         .insert({
           drill_id: drillId,
           user_id: userId,
-          total_points: finalScore,
-          attempts_json: attempts
+          total_points: totalAttempts,
+          attempts_json: attempts,
         });
 
       if (saveError) {
@@ -145,17 +152,17 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
         return;
       }
 
-      setIsActive(false);
-      
       toast({
-        title: "Drill Completed!",
-        description: `You reached 15 points in ${attempts.length + 1} attempts`,
+        title: "Score saved!",
+        description: `You completed the drill in ${totalAttempts} putts!`,
       });
-
+      
       localStorage.removeItem(STORAGE_KEY);
+      setIsActive(false);
       onScoreSaved?.();
+      onTabChange?.('leaderboard');
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Unexpected error:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
@@ -165,102 +172,96 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     }
   };
 
-  const resetDrill = () => {
-    setIsActive(false);
-    setAttempts([]);
-    setCurrentDistance(0);
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Instructions Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="text-primary" size={20} />
-            Instructions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            Putt from distances of 4m, 5m, and 6m in that order, repeating the cycle. 
-            Score 3 points for holed putts, 1 point for putts finishing within 1m. 
-            Reach 15 points as quickly as possible.
-          </p>
-          
-          <div className="p-3 bg-muted/50 rounded-md">
-            <h4 className="font-medium mb-2">Scoring:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Holed putt: <span className="font-medium text-foreground">3 points</span></li>
-              <li>• Within 1m: <span className="font-medium text-foreground">1 point</span></li>
-              <li>• Miss: <span className="font-medium text-foreground">0 points</span></li>
-            </ul>
-          </div>
-          
-          {!isActive && (
-            <Button 
-              onClick={handleStartDrill}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Start Drill
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Active Drill */}
-      {isActive && (
+  if (!isActive) {
+    return (
+      <div className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Current Attempt</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="text-primary" />
+              Aggressive Putting
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{currentDistanceValue}m</div>
-              <div className="text-muted-foreground">Attempt #{attempts.length + 1}</div>
+            <div className="space-y-2">
+              <h3 className="font-semibold">Instructions:</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                <li>Distances cycle: 4m → 5m → 6m → repeat</li>
+                <li>Choose any starting putt</li>
+                <li>Reach 15 points in as few putts as possible</li>
+                <li>Tour Average: 12.28 putts</li>
+              </ul>
             </div>
             
-            <div className="text-center">
-              <div className="text-lg font-medium">Current Score: {totalPoints}/15</div>
+            <div className="space-y-2">
+              <h3 className="font-semibold">Scoring:</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                <li>Holed putt: +3 points</li>
+                <li>Good pace (within 3 ft past): +1 point</li>
+                <li>Short putt: -3 points</li>
+                <li>Long and missed return: -3 points</li>
+              </ul>
             </div>
-            
-            <div className="grid grid-cols-3 gap-2">
-              <Button 
-                onClick={() => addAttempt(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Holed
-                <br />
-                <span className="text-xs">(3 pts)</span>
-              </Button>
-              <Button 
-                onClick={() => addAttempt(false, true)}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
-              >
-                Within 1m
-                <br />
-                <span className="text-xs">(1 pt)</span>
-              </Button>
-              <Button 
-                onClick={() => addAttempt(false, false)}
-                variant="secondary"
-              >
-                Miss
-                <br />
-                <span className="text-xs">(0 pts)</span>
-              </Button>
-            </div>
-            
-            <Button 
-              onClick={resetDrill}
-              variant="outline"
-              className="w-full"
-            >
-              Reset Drill
+
+            <Button onClick={handleStartDrill} className="w-full">
+              Start Drill
             </Button>
           </CardContent>
         </Card>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Target className="text-primary" />
+              Putt {currentAttempt}
+            </span>
+            <div className="flex flex-col items-end">
+              <span className="text-lg">Score: {totalPoints}/15</span>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center p-6 bg-muted rounded-lg">
+            <div className="text-sm text-muted-foreground mb-2">Distance</div>
+            <div className="text-4xl font-bold text-foreground">
+              {currentDistance}m
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground text-center mb-2">
+              Select outcome:
+            </div>
+            {outcomes.map((outcome) => (
+              <Button
+                key={outcome.label}
+                onClick={() => handleOutcome(outcome.label, outcome.points)}
+                className="w-full h-auto py-3 flex flex-col gap-1"
+                variant={outcome.points > 0 ? "default" : outcome.points === 0 ? "secondary" : "destructive"}
+              >
+                <span className="font-semibold">{outcome.label}</span>
+                <span className="text-xs opacity-90">
+                  {outcome.points > 0 ? '+' : ''}{outcome.points} {outcome.points === 1 || outcome.points === -1 ? 'point' : 'points'}
+                </span>
+              </Button>
+            ))}
+          </div>
+
+          <Button 
+            onClick={resetDrill}
+            variant="outline"
+            className="w-full mt-4"
+          >
+            Reset Drill
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Attempts History */}
       {attempts.length > 0 && (
@@ -271,16 +272,20 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
           <CardContent>
             <div className="space-y-2">
               {attempts.map((attempt, index) => (
-                <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
-                  <span className="text-sm">#{index + 1} - {attempt.distance}m</span>
-                  <span className={`text-sm font-medium ${
-                    attempt.holed ? 'text-green-600' : 
-                    attempt.withinOne ? 'text-yellow-600' : 
-                    'text-muted-foreground'
-                  }`}>
-                    {attempt.holed ? 'Holed' : attempt.withinOne ? 'Within 1m' : 'Miss'} 
-                    ({attempt.points} pts)
-                  </span>
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">#{attempt.attemptNumber}</span>
+                    <span className="text-sm text-muted-foreground">{attempt.distance}m</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{attempt.outcome}</span>
+                    <span className={`font-medium ${attempt.points > 0 ? 'text-green-600' : attempt.points < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      {attempt.points > 0 ? '+' : ''}{attempt.points}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
