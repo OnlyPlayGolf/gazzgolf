@@ -30,16 +30,8 @@ export default function AggressivePuttingInfo() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            The Aggressive Putting drill is designed to help you develop a more aggressive putting stroke 
-            while maintaining control and precision.
-          </p>
-          <p>
-            By cycling through distances of 4m, 5m, and 6m, you'll train your feel for longer putts 
-            and learn to manage speed and line effectively.
-          </p>
-          <p>
-            The scoring system rewards holed putts heavily while penalizing overly cautious or aggressive 
-            misses, helping you find the right balance in your approach.
+            The Aggressive Putting drill helps you become a more aggressive putter within 6 meters while still maintaining good speed control. 
+            The scoring system heavily rewards holed putts and penalizes cautious or overly aggressive putts.
           </p>
           <p className="font-medium text-foreground">
             Tour Average: 12.28 putts
