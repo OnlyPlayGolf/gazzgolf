@@ -47,10 +47,35 @@ const outcomeLabels = {
 };
 
 const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentProps) => {
+  const STORAGE_KEY = '8-ball-drill-state';
   const [attempts, setAttempts] = useState<StationAttempt[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(0);
   const { toast } = useToast();
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        setAttempts(state.attempts || []);
+        setCurrentRound(state.currentRound || 0);
+      } catch (e) {
+        console.error('Failed to restore drill state:', e);
+      }
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (attempts.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        attempts,
+        currentRound
+      }));
+    }
+  }, [attempts, currentRound]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -60,6 +85,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
 
   // Initialize attempts array for 8 stations × 5 rounds = 40 attempts
   const initializeAttempts = () => {
+    localStorage.removeItem(STORAGE_KEY);
     const newAttempts: StationAttempt[] = [];
     for (let round = 0; round < 5; round++) {
       for (let station = 0; station < 8; station++) {
@@ -72,6 +98,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
       }
     }
     setAttempts(newAttempts);
+    setCurrentRound(0);
     onTabChange?.('score');
   };
 
@@ -163,6 +190,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
         description: `Your score of ${totalPoints} points has been recorded`,
       });
 
+      localStorage.removeItem(STORAGE_KEY);
       onScoreSaved?.();
     } catch (error) {
       console.error('Error:', error);
