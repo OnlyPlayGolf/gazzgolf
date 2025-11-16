@@ -133,7 +133,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
     }
 
     try {
-      const drillTitle = 'Wedges 40–80 m — 2 Laps';
+      const drillTitle = 'Wedge Point Game';
       
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: drillTitle });

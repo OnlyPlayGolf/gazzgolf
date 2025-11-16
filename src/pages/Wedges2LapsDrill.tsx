@@ -31,7 +31,7 @@ const Wedges2LapsDrill = () => {
               <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Wedges 40–80 m — 2 Laps</h1>
+              <h1 className="text-xl font-bold">Wedge Point Game</h1>
               <p className="text-sm text-muted-foreground">Distance control practice</p>
             </div>
             <div className="w-10" />

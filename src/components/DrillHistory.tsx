@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Newspaper, Calendar, ChevronRight } from "lucide-react";
+import { Newspaper, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface DrillHistoryProps {
   drillTitle: string;
@@ -31,7 +36,6 @@ interface DrillResult {
 export function DrillHistory({ drillTitle }: DrillHistoryProps) {
   const [results, setResults] = useState<DrillResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedResult, setSelectedResult] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -98,12 +102,10 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
     );
   }
 
-  const selectedResultData = results.find((r) => r.id === selectedResult);
-
-  if (selectedResult && selectedResultData) {
-    const attemptsData = selectedResultData.attempts_json;
+  const renderAttemptDetails = (result: DrillResult) => {
+    const attemptsData = result.attempts_json;
     
-    // Check if this is Wedges Progression format (array of {distance, attempts, completed})
+    // Check if this is Wedges Progression format
     const isWedgesProgression = Array.isArray(attemptsData) && 
       attemptsData.length > 0 && 
       attemptsData[0]?.distance !== undefined && 
@@ -111,53 +113,32 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
 
     if (isWedgesProgression) {
       return (
-        <div className="space-y-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedResult(null)}
-            className="mb-2"
-          >
-            ← Back to history
-          </Button>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                Total Shots: {selectedResultData.total_points}
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {format(new Date(selectedResultData.created_at), 'MMM d, yyyy • h:mm a')}
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {attemptsData.map((distanceData: any, index: number) => (
-                <div
-                  key={index}
-                  className="p-3 rounded-lg border bg-muted"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        {distanceData.distance}m
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {distanceData.completed ? '✓ Completed' : 'Not completed'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-primary">
-                        {distanceData.attempts?.length || 0}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {distanceData.attempts?.length === 1 ? 'shot' : 'shots'}
-                      </p>
-                    </div>
-                  </div>
+        <div className="space-y-2 pt-2">
+          {attemptsData.map((distanceData: any, index: number) => (
+            <div
+              key={index}
+              className="p-3 rounded-lg border bg-muted"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    {distanceData.distance}m
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {distanceData.completed ? '✓ Completed' : 'Not completed'}
+                  </p>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-primary">
+                    {distanceData.attempts?.length || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {distanceData.attempts?.length === 1 ? 'shot' : 'shots'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       );
     }
@@ -166,86 +147,65 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
     const attempts = (attemptsData as DrillAttempt[]) || [];
 
     return (
-      <div className="space-y-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSelectedResult(null)}
-          className="mb-2"
-        >
-          ← Back to history
-        </Button>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Score: {selectedResultData.total_points} points
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(selectedResultData.created_at), 'MMM d, yyyy • h:mm a')}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {attempts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No attempt details available</p>
-            ) : (
-              attempts.map((attempt, index) => (
-                <div
-                  key={index}
-                  className="p-3 rounded-lg border bg-muted"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        {attempt.attemptNumber
-                          ? `Attempt ${attempt.attemptNumber}`
-                          : `Attempt ${index + 1}`}
-                      </p>
-                      {attempt.distance && (
-                        <p className="text-sm text-muted-foreground">
-                          Distance: {attempt.distance}m
-                        </p>
-                      )}
-                      {attempt.club && (
-                        <p className="text-sm text-muted-foreground">
-                          Club: {attempt.club}
-                        </p>
-                      )}
-                      {attempt.shotType && (
-                        <p className="text-sm text-muted-foreground">
-                          Type: {attempt.shotType}
-                        </p>
-                      )}
-                      {attempt.outcome && (
-                        <p className="text-sm text-muted-foreground">
-                          Outcome: {attempt.outcome}
-                        </p>
-                      )}
-                      {attempt.result && (
-                        <p className="text-sm text-muted-foreground">
-                          Result: {attempt.result}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-primary">
-                        {attempt.points !== undefined ? `${attempt.points > 0 ? '+' : ''}${attempt.points}` : '0'}
-                      </p>
-                      {attempt.bonusPoints !== undefined && attempt.bonusPoints > 0 && (
-                        <p className="text-sm text-green-600">
-                          +{attempt.bonusPoints} bonus
-                        </p>
-                      )}
-                    </div>
-                  </div>
+      <div className="space-y-2 pt-2">
+        {attempts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No attempt details available</p>
+        ) : (
+          attempts.map((attempt, index) => (
+            <div
+              key={index}
+              className="p-3 rounded-lg border bg-muted"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    {attempt.attemptNumber
+                      ? `Attempt ${attempt.attemptNumber}`
+                      : `Attempt ${index + 1}`}
+                  </p>
+                  {attempt.distance && (
+                    <p className="text-sm text-muted-foreground">
+                      Distance: {attempt.distance}m
+                    </p>
+                  )}
+                  {attempt.club && (
+                    <p className="text-sm text-muted-foreground">
+                      Club: {attempt.club}
+                    </p>
+                  )}
+                  {attempt.shotType && (
+                    <p className="text-sm text-muted-foreground">
+                      Type: {attempt.shotType}
+                    </p>
+                  )}
+                  {attempt.outcome && (
+                    <p className="text-sm text-muted-foreground">
+                      Outcome: {attempt.outcome}
+                    </p>
+                  )}
+                  {attempt.result && (
+                    <p className="text-sm text-muted-foreground">
+                      Result: {attempt.result}
+                    </p>
+                  )}
                 </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-primary">
+                    {attempt.points !== undefined ? `${attempt.points > 0 ? '+' : ''}${attempt.points}` : '0'}
+                  </p>
+                  {attempt.bonusPoints !== undefined && attempt.bonusPoints > 0 && (
+                    <p className="text-sm text-green-600">
+                      +{attempt.bonusPoints} bonus
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     );
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -256,27 +216,29 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
             Drill History
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {results.map((result) => (
-            <div
-              key={result.id}
-              className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors cursor-pointer"
-              onClick={() => setSelectedResult(result.id)}
-            >
-              <div className="flex items-center gap-3">
-                <Calendar size={16} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  {format(new Date(result.created_at), 'MMM d, yyyy • h:mm a')}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-foreground">
-                  {result.total_points} points
-                </span>
-                <ChevronRight size={20} className="text-muted-foreground" />
-              </div>
-            </div>
-          ))}
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {results.map((result) => (
+              <AccordionItem key={result.id} value={result.id}>
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center justify-between w-full pr-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar size={16} className="text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {format(new Date(result.created_at), 'MMM d, yyyy • h:mm a')}
+                      </span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">
+                      {result.total_points} points
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  {renderAttemptDetails(result)}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </CardContent>
       </Card>
     </div>
