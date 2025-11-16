@@ -3598,5 +3598,905 @@
     "Target": "Under Par",
     "Type": "Play",
     "Difficulty": "Professional"
+  },
+  {
+    "Level": 1,
+    "Title": "Elite Short Putting",
+    "Description": "Make 10 out of 10 different putts from 4 feet",
+    "Distance": "4 feet",
+    "Target": "10 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 2,
+    "Title": "2 Putts Only",
+    "Description": "2 putt 10 out of 10 times from at least 15 meters",
+    "Distance": "Minimum 15m",
+    "Target": "10 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 3,
+    "Title": "Make sure it fades",
+    "Description": "From 150m, hit a fade that lands within 10 m left of target, without missing right",
+    "Distance": "150m",
+    "Target": "4 out of 5",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 4,
+    "Title": "Distance control",
+    "Description": "Pick one club. Hit 5/5 shots within 3 m of your carry target at 40 m, 50 m, 60 m, 70 m, and 80 m.",
+    "Distance": "40-80m",
+    "Target": "5 out of 5",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 5,
+    "Title": "Short sided",
+    "Description": "Pick a short sided chip from at least 7meters and hit 5/5 inside 1,5 meters",
+    "Distance": "Mininum 7m",
+    "Target": "5 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 6,
+    "Title": "Easy Chip Shots",
+    "Description": "Hit 9 out of 10 chip shots inside 2meters from at least 10meters",
+    "Distance": "Mininum 10m",
+    "Target": "9 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 7,
+    "Title": "Lob Shots from Rough",
+    "Description": "Hit 5 out of 5 lob shots within 2 meters from 8meters",
+    "Distance": "8meters",
+    "Target": "5 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 8,
+    "Title": "Sandy Par",
+    "Description": "Make 4 out of 5 up and downs from a bunker",
+    "Distance": "Optional",
+    "Target": "4 out of 5",
+    "Type": "Bunker/Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 9,
+    "Title": "Short Putts With Slope",
+    "Description": "Make 5 out of 5 different putts from 5 feet on putts with a large slope",
+    "Distance": "5 feet",
+    "Target": "5 out of 5",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 10,
+    "Title": "Putting Speed",
+    "Description": "Hit one putt from 3m, 4m, 5m, 6m, and 7m, both uphill and downhill. Each putt must be holed or finish within 2 feet past the hole.",
+    "Distance": "3-7m",
+    "Target": "9 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 11,
+    "Title": "Wedge Trajectory",
+    "Description": "Hit 3 low and 3 high wedges from 40m, 50m, and 60m. Carry at least 5 out of 6 shots within 5 m of the target.",
+    "Distance": "40-60m",
+    "Target": "5 out of 6",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 12,
+    "Title": "Shot Shaping",
+    "Description": "Pick a target between 120 m and 140 m. Hit 3 draws and 3 fades, landing at least 5 out of 6 shots within 5 m of the hole.",
+    "Distance": "120-140m",
+    "Target": "5 out of 6",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 13,
+    "Title": "Driver Test",
+    "Description": "Pick a 20 meter wide target and hit 4 out of 5 drives inside the target",
+    "Distance": "230m+",
+    "Target": "4 out of 5",
+    "Type": "Driver",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 14,
+    "Title": "Bail out left",
+    "Description": "Pick a 20 m wide target. Hit 5 out of 5 shots that land within the target or no more than 10 m left of it.",
+    "Distance": "-",
+    "Target": "5 out of 5",
+    "Type": "Driver",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 15,
+    "Title": "Easy Chip Shots",
+    "Description": "From the fairway, hit 10 chip shots that finish within 1 m of the hole. All shots must start at least 7 m away.",
+    "Distance": "minimum 7m",
+    "Target": "10 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 16,
+    "Title": "Chip in",
+    "Description": "Pick an optional chip. Make at least 3 in 10 attempts",
+    "Distance": "Optional",
+    "Target": "3 out of 10",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 17,
+    "Title": "Bunker Shots",
+    "Description": "5 out of 5 bunker shots inside 2meters from at least 20 meters",
+    "Distance": "20m",
+    "Target": "5 out of 5",
+    "Type": "Bunker",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 18,
+    "Title": "Pitching",
+    "Description": "Hit 9 out of 10 shots from 30-40 meters inside 3meters",
+    "Distance": "30-40m",
+    "Target": "9 out of 10",
+    "Type": "Pitch",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 19,
+    "Title": "9 hole putting course",
+    "Description": "Hit 9 putts from the following distances with different slopes: 5ft, 12m, 2ft, 4m, 4ft, 16m, 8m, 3m, 6m and score max 13 putts",
+    "Distance": "1.5-6m",
+    "Target": "Max 13",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 20,
+    "Title": "Clutch putts",
+    "Description": "Make 5 out of 5 different putts from 2meters",
+    "Distance": "2m",
+    "Target": "5 out of 5",
+    "Type": "Pitch",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 21,
+    "Title": "Distance control",
+    "Description": "Hit 9/10 shots that carry between 100-105m",
+    "Distance": "100-105m",
+    "Target": "9 out of 10",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 22,
+    "Title": "Mid iron Trajectory",
+    "Description": "Carry the ball 150meters with 3 different trajectorys, high, mid and low. Each shot must finish within 2 m of the carry target.",
+    "Distance": "150m",
+    "Target": "3 out of 3",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 23,
+    "Title": "Fairway wood control",
+    "Description": "Pick a 15 meter wide target and hit one stock shot, one high fade and one low flighted shot. All three must that land inside the target zone.",
+    "Distance": "220m+",
+    "Target": "3 consecutive",
+    "Type": "Wood",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 24,
+    "Title": "Pitching",
+    "Description": "Make 5 out of 5 up and downs from 50meters or hit each shot inside 1 meter if you use a launch monitor",
+    "Distance": "50m",
+    "Target": "5 out of 5",
+    "Type": "Wedge/Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 25,
+    "Title": "Grip it and rip it",
+    "Description": "Hit 3 drives minimum 245m carry in a row",
+    "Distance": "245m+",
+    "Target": "3 out of 10",
+    "Type": "Driver",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 26,
+    "Title": "9 Windows Iron",
+    "Description": "3 different curves (fade, straight and draw), 3 different heights, (High, medium and low), hit all 9 window shots in a row with an iron that lands within a 20 meter  wide target",
+    "Distance": "150+",
+    "Target": "9 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 27,
+    "Title": "Distance control",
+    "Description": "Pick one club. Hit 5/5 shots within 3m of your carry target at 70m, 75m, 80m, 85m, 90m",
+    "Distance": "70-90m",
+    "Target": "5 out of 5",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 28,
+    "Title": "Lag Putting",
+    "Description": "Putt 10 balls from 12m. Each putt must finish within 60cm past the hole no short putts count.",
+    "Distance": "12m",
+    "Target": "7 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 29,
+    "Title": "Up and down Putting",
+    "Description": "Two lines: One up hill and one down hill. Place markers at 3m, 6m, 9m. Hit 2 putts in a row from each marker in this order: 3m up, 3m down, 6m up, 6m down, 9m up, 9m down",
+    "Distance": "3-9m",
+    "Target": "6 out of 12",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 30,
+    "Title": "Wedge distance control",
+    "Description": "Hit 9/10 shots within 3m of your carry target at 30,35,40,45,50,55,60,65,70,75",
+    "Distance": "30-75m",
+    "Target": "9 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 31,
+    "Title": "Wedge High, Medium, Low",
+    "Description": "Hit 6 wedge shots with one club: 2 low, 2 medium, 2 high. Each must finish within 5m of the 100meter marker.",
+    "Distance": "100m",
+    "Target": "6 ot of 6",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 32,
+    "Title": "3 Clubs  Challenge 140m",
+    "Description": "Hit 3 consecutive shots to the same 140m target with three different clubs. All has to carry within 5 meters of the target in a row.",
+    "Distance": "140m",
+    "Target": "3 in a row",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 33,
+    "Title": "9 Hole Best Ball",
+    "Description": "Play 9 holes best ball 6 under par or better. (Best ball: Hit two balls and pick the best one. Do the same on the following shots)",
+    "Distance": "-",
+    "Target": "6 under par",
+    "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 34,
+    "Title": "25 Putts Challenge",
+    "Description": "Hole out putts from 1, 2, 3, 4 and 5 meters. Do it 5 times (25 putts total), preferably 5 diffrent holes and count the total amount of putts.",
+    "Distance": "1-5m",
+    "Target": "Max 35 putts",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 35,
+    "Title": "Uphill and Downhill Putts",
+    "Description": "Pick a hole surrounded by noticeable slope. Hit 5putts (3m) from the uphill side and 5putts (3m) from the down hill side. Hole at least 8 out of 10.",
+    "Distance": "3m",
+    "Target": "8 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 36,
+    "Title": "Tour Iron Skill",
+    "Description": "Pick one club and hit inside 3 meters of 120m, 130m, and 140 meters in a row",
+    "Distance": "120-140m",
+    "Target": "3 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 37,
+    "Title": "Speed Control Long to Short",
+    "Description": "Put down two markers 10-20 feet away from a marked spot. Hit one putt inside the zone but not past 20 feet. Hit the next putt short of the previous ball but if it's past it, restart.",
+    "Distance": "10-20 feet",
+    "Target": "10 in a row",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 38,
+    "Title": "Wedge distance control",
+    "Description": "Pick one club. Hit 5/5 shots within 2m of your carry target at 80m,85m,90m,95m,100m",
+    "Distance": "80-100m",
+    "Target": "4 out of 5",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 39,
+    "Title": "Green in regulation",
+    "Description": "Play 9 holes and hit all greens",
+    "Distance": "-",
+    "Target": "9 out of 9",
+    "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 40,
+    "Title": "Great Fade Driver",
+    "Description": "Pick a target 20 meters wide and hit 3 fade shots in a row inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "3 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 41,
+    "Title": "Great Draw Driver",
+    "Description": "Pick a target 20 meters wide and hit 3 draw shots in a row inside the target with a driver",
+    "Distance": "230m+",
+    "Target": "3 consecutive",
+    "Type": "Driver",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 42,
+    "Title": "5 clubs chip",
+    "Description": "Hit 5 chip shots in a row inside 1 meters of the hole from 12 meters in the Fairway with 5 different clubs",
+    "Distance": "12m",
+    "Target": "5 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 43,
+    "Title": "Easy Chips Shots Challenge",
+    "Description": "Hit 5 different easy chip shots around the green to a total of 5 meters away from the hole.",
+    "Distance": "Optional",
+    "Target": "5m",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 44,
+    "Title": "Consistent Wedge Challenge",
+    "Description": "Hit 15 wedges from 50-120 meter with 5m increment (50, 55, 60, 65…). The goal is to average 3 meters from the target, total of 45 meters away from the target.",
+    "Distance": "50-120m",
+    "Target": "45m Max",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 45,
+    "Title": "3 Clubs  Challenge 140-150m",
+    "Description": "Hit 3 consecutive shots to a 140m target and 3 shots to a 150m target with three different clubs. All has to carry within 5 meters of the target in a row.",
+    "Distance": "140-150m",
+    "Target": "6 in a row",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 46,
+    "Title": "Wedge spin control",
+    "Description": "Pick a club with stock distance approximately 90meters. Hit 5/5 shots that carry inside 75-80meters.",
+    "Distance": "75-80m",
+    "Target": "5 out of 5",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 47,
+    "Title": "9 Hole Worst ball",
+    "Description": "Play 9 holes beworst ball 3 over par or better. (Worst ball: Hit two balls and pick the worst one. Do the same on the following shots)",
+    "Distance": "-",
+    "Target": "3 over par",
+    "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 48,
+    "Title": "Lag Putting",
+    "Description": "Putt 10 balls from 12m. Each putt must finish within 50cm past the hole no short putts count.",
+    "Distance": "12m",
+    "Target": "8 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 49,
+    "Title": "Hell Drill",
+    "Description": "5 tees around the hole. Begin at 4feet. Made putt: move back 1feet. Missed putt: move up 1 feet. Drill complete when all tees are at 6 feet. If a putt is hole from 8 feet, pick up the tee.",
+    "Distance": "1-8 feet",
+    "Target": "-",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 50,
+    "Title": "Consistent flop shots",
+    "Description": "Pick a short sided lie and flop it inside of 2m, 5 out of 5 times.",
+    "Distance": "10-15m",
+    "Target": "5 out of 5",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 51,
+    "Title": "9 Hole Wedge Challenge",
+    "Description": "Play 9 holes, drop a ball in the fairway between 80-120 meter to the hole. Par is 3 on each hole, play 5 under par or better.",
+    "Distance": "80-120m",
+    "Target": "5 under par",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 52,
+    "Title": "9 iron Challenge",
+    "Description": "Hit five 9 irons with an average of 5 meters of the target, total of 25 meters.",
+    "Distance": "135m",
+    "Target": "25m Max",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 53,
+    "Title": "7/10 Right to Left Putts",
+    "Description": "Hit putts from 4, 6, 8,10, 12 feet with right to left break and to it twice. Goal is to make 7/10",
+    "Distance": "4-12 feet",
+    "Target": "7 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 54,
+    "Title": "18 Holes PGA Tour Putt Drill",
+    "Description": "5 holes of 8-13 meter putts, 5 holes of 5-8 meter putts, 4 holes of 2-4 meter putts, 4 holes of 1-2 meter putts. Count the total amount of putts in 18 holes",
+    "Distance": "1-13m",
+    "Target": "Max 28 Putts",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 55,
+    "Title": "Bunker Escape 3 Clubs",
+    "Description": "Hit 3 bunker shots in a row inside 1 meters of the hole from 15 meters  with 3 different clubs",
+    "Distance": "15m",
+    "Target": "3 consecutive",
+    "Type": "Bunker",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 56,
+    "Title": "5 Medium Chips Shots",
+    "Description": "Hit 5 different medium chip shots around the green to a total of 8 meters away from the hole.",
+    "Distance": "Optional",
+    "Target": "8m",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 57,
+    "Title": "Speed Control Long to Short",
+    "Description": "Put down two markers 10-20 feet away from a marked spot. Hit one putt inside the zone but not short of 10 feet. Hit the next putt past the previous ball but if it's short, restart.",
+    "Distance": "10-20 feet",
+    "Target": "10 in a row",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 58,
+    "Title": "Iron High, Medium, Low",
+    "Description": "Hit 6 iron shots with one club: 2 low, 2 medium, 2 high. Each must finish within 5m of the 150meter marker.",
+    "Distance": "150m",
+    "Target": "6 ot of 6",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 59,
+    "Title": "Miss in the right spot",
+    "Description": "Play 9 holes, if you hit the green in regulation (Right amount of shots) or better is it 1 penalty stroke. Play the nine holes in 2 over par or better.",
+    "Distance": "-",
+    "Target": "2 over par",
+    "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 60,
+    "Title": "Tour Speed Putting",
+    "Description": "Stop a putt 0.3m past the hole from 2m, 3m and 5m, stop it inside a 0.3m circle from 8m and inside a 0.5m circle from 12 meters",
+    "Distance": "2-12m",
+    "Target": "5 consecutive",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 61,
+    "Title": "Up and Down Rough",
+    "Description": "Get 8 up and downs from the rough with 9 attempts",
+    "Distance": "Optional",
+    "Target": "8 out of 9",
+    "Type": "Chip/Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 62,
+    "Title": "25 Putts Challenge Tour",
+    "Description": "Hole out putts from 1, 2, 3, 4 and 5 meters. Do it 5 times (25 putts total), preferably 5 diffrent holes and count the total amount of putts.",
+    "Distance": "1-5m",
+    "Target": "Max 31 putts",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 63,
+    "Title": "Tracterory Control",
+    "Description": "Hit 6 shots with a 7 iron, 2 low, 2 midium, and 2 high trajectories , all finishing within 5 meters of 150 meters.",
+    "Distance": "150m",
+    "Target": "6 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 64,
+    "Title": "7/10 Left to Right Putts",
+    "Description": "Hit putts from 4, 6, 8,10, 12 feet with left to right break and to it twice. Goal is to make 7/10",
+    "Distance": "4-12 feet",
+    "Target": "7 out of 10",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 65,
+    "Title": "6 iron Challenge",
+    "Description": "Hit five 6 irons with an average of 8 meters of the target, total of 40 meters.",
+    "Distance": "170m",
+    "Target": "40m Max",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 66,
+    "Title": "Mid iron distance control",
+    "Description": "Pick one club. Hit 7/8 shots within 2 meters of your carry distance from 145m, 150m, 155m, 160m",
+    "Distance": "145-160m",
+    "Target": "7 out of 8",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 67,
+    "Title": "9 Windows Iron Fairway Bunker",
+    "Description": "3 different curves (fade, straight and draw), 3 different heights, (High, medium and low), hit all 9 window shots in a row that lands within 5 meters of 150m. Hit from a fairway bunker.",
+    "Distance": "150+",
+    "Target": "9 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 68,
+    "Title": "9 Hole Wedge Par 3 Rough",
+    "Description": "Play 9 holes, drop a ball in the rough between 80-120 meter to the hole. Par is 3 on each hole, play 4 under par or better.",
+    "Distance": "80-120m",
+    "Target": "4 under par",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 69,
+    "Title": "All around short game",
+    "Description": "Make 8 consecutive up and downs from the following: Chip 10m, chip 30m, pitch 20m, pitch 40m, lob 15m, lob 25m, bunker 10m, bunker 20m",
+    "Distance": "10-40m",
+    "Target": "8 consecutive",
+    "Type": "Chip/Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 70,
+    "Title": "5 Hard Chips Shots",
+    "Description": "Hit 5 different hard chip shots around the green to a total of 10 meters away from the hole.",
+    "Distance": "Optional",
+    "Target": "10m",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 71,
+    "Title": "5 Bunker Shots Challenge",
+    "Description": "Hit 5 different bunker shots around the green to a total of 10 meters away from the hole.",
+    "Distance": "Optional",
+    "Target": "10m",
+    "Type": "Bunker",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 72,
+    "Title": "Distance control Fairway Bunker",
+    "Description": "Pick one club. Hit 5/5 shots within 3m of your carry target at 70m, 75m, 80m, 85m, 90m from a fairway bunker.",
+    "Distance": "70-90m",
+    "Target": "5 out of 5",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 73,
+    "Title": "Driver Draw, Straight, Fade",
+    "Description": "Hit 6 drivers: 2 draw, 2 straight, 2 fade. Each must finish within a 30 meter wide target.",
+    "Distance": "230m+",
+    "Target": "6 ot of 6",
+    "Type": "Driver",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 74,
+    "Title": "All Round Up and Down Challenge",
+    "Description": "Hit 3 bunker shots, drop 3 balls in the rough and 3 in the fairway. Pick all easy shots and get 9/9 up and downs",
+    "Distance": "Optional",
+    "Target": "9 out of 9",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 75,
+    "Title": "Luke Donald Putt Challenge",
+    "Description": "Hit putts from 4, 5, 6, 7 and 8 feet on 4 different holes (20 total putts). The goal is to make 15 out of 20 to complete.",
+    "Distance": "4-8 feet",
+    "Target": "15 out of 20",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 76,
+    "Title": "Elite Putting",
+    "Description": "18 holes, hitting putts ranging from 2-4 meter. Never hit the same putt twice. You must switch up the distance of the putt, and break of putt each hole.",
+    "Distance": "2-4m",
+    "Target": "10 out of 18",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 77,
+    "Title": "Pizza Slice Approach Drill",
+    "Description": "From 120 meters, hit one shot short right, short left, long right and long left of the target. Each shot has to be in inside 5 meters of the target and in the correct pizza slice and in a row.",
+    "Distance": "120m",
+    "Target": "4 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 78,
+    "Title": "Straight Wedges",
+    "Description": "Pick a target 5 meter wide and 5 meter long. From 100 meters out, hit 10 shots in a row inside the target area.",
+    "Distance": "100m",
+    "Target": "10 out of 10",
+    "Type": "Wedge",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 79,
+    "Title": "Putting Speed",
+    "Description": "Find a breaking putt (3degrees or more slope). Create 6 one foot zones from 10 to 16 feet. Roll one putt through each of the 6 zones in a row.",
+    "Distance": "10-16feet",
+    "Target": "6 ot of 6",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 80,
+    "Title": "Go Low Challenge",
+    "Description": "Play 18 holes and shot 10 under par or better.",
+    "Distance": "-",
+    "Target": "10 under par",
+    "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 81,
+    "Title": "Lagergren Challenge",
+    "Description": "Make a 2 putt from 15 meters, hole a 3 meter putt, hole two different 1.5 meter putts and make one hard up and down. It has to be done in a row.",
+    "Distance": "-",
+    "Target": "4 in a row",
+    "Type": "Chip/Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 82,
+    "Title": "Tour One Iron Skill",
+    "Description": "Pick one club and hit inside 5 meters of 120m, 125m, 130m, 135m and 140 meters in a row",
+    "Distance": "120-140m",
+    "Target": "5 in a row",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 83,
+    "Title": "50 Putts Challenge",
+    "Description": "Hit putts from 3, 4, 5, 6, 7, 8, 9, 10 , 11, 12 feet around hole, do it 5 times. Make sure and switch holes as much as you can. The goal is 30/50.",
+    "Distance": "3-12 feet",
+    "Target": "30/50",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 84,
+    "Title": "Master the Bunker",
+    "Description": "Hit one bunker shot from 30m, 35m, 40m, 45m and 50 meters. Hit all shots inside 5 meters in a row.",
+    "Distance": "30-50m",
+    "Target": "5 in a row",
+    "Type": "Bunker",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 85,
+    "Title": "Tour Driver Shot Shaping",
+    "Description": "Hit 10 drives toward a 25 meter wide fairway. Alternate between a fade and draw. The drive has to stay in the fairway zone and be the correct shot shape to be completed.",
+    "Distance": "230m+",
+    "Target": "7 out of 10",
+    "Type": "Drive",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 86,
+    "Title": "All Round Chip Challenge",
+    "Description": "Hit 3 bunker shots, drop 3 balls in the rough and 3 in the fairway. Pick all easy shots and get all shots within 2 meters",
+    "Distance": "Optional",
+    "Target": "9 out of 9",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 87,
+    "Title": "Tour Fairway Finder Left",
+    "Description": "Hit 10 tee shots to a 20 meter wide fairway. If you miss left of the fairway you have to restart. The ball must carry 215 meters or more.",
+    "Distance": "215m+",
+    "Target": "9 out of 10",
+    "Type": "Wood",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 88,
+    "Title": "Break Putt Drill",
+    "Description": "Start from 4 feet and hit 3 putts with right to left break and 3 putts with left to right break. Change hole and to the same from 6 feet, then same from 8 and 10 feet. (24 total putts)",
+    "Distance": "4-10 Feet",
+    "Target": "16/24",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 89,
+    "Title": "Chip in pro",
+    "Description": "Hole 3 chips in a row",
+    "Distance": "Optional",
+    "Target": "3 out of 3",
+    "Type": "Chip",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 90,
+    "Title": "25 Putt Game",
+    "Description": "Hit 5 putts around the hole at 4, 6, 8, 10, and 12 feet. Use 5 different holes on putting green. Therefore total of 25 putts, goal is 14/25.",
+    "Distance": "4-12 feet",
+    "Target": "14/25",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 91,
+    "Title": "Tour Fairway Finder Right",
+    "Description": "Hit 10 tee shots to a 20 meter wide fairway. If you miss right of the fairway you have to restart. The ball must carry 215 meters or more.",
+    "Distance": "215m+",
+    "Target": "9 out of 10",
+    "Type": "Wood",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 92,
+    "Title": "Tiger 5 Challenge",
+    "Description": "Play a round with no bogeys on par 5s, no double bogeys, no three putts, don't hit 4 shots or more inside 135 meter in the fairway, and no blown easy up-and-downs (or double chips)",
+    "Distance": "-",
+    "Target": "5 out of 5",
+    "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 93,
+    "Title": "Tour Hell Drill",
+    "Description": "5 tees around the hole. Begin at 6 feet. Made putt: move back 1 feet. Missed putt: move up 1 feet. Drill complete when all tees are at 8 feet. If a putt is holed from 10 feet, pick up the tee.",
+    "Distance": "1-10 feet",
+    "Target": "-",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 94,
+    "Title": "Great Lag",
+    "Description": "Putt 10 balls from 12m. Each ball must finish within a 50cm circle of the hole.",
+    "Distance": "12m",
+    "Target": "10 in a row",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 95,
+    "Title": "Tour Pizza Slice Approach Drill",
+    "Description": "From 150 meters, hit one shot short right, short left, long right and long left of the target. Each shot has to be in inside 5 meters of the target and in the correct pizza slice and in a row.",
+    "Distance": "150m",
+    "Target": "4 consecutive",
+    "Type": "Approach",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 96,
+    "Title": "Bogey Free Challenge",
+    "Description": "Play 18 holes from back tess without making a bogey.",
+    "Distance": "-",
+    "Target": "18 out of 18",
+    "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 97,
+    "Title": "Tour All Round Chip Challenge",
+    "Description": "Hit 3 bunker shots, drop 3 balls in the rough and  drop 3 in the fairway. Every three shots will be one easy, medium and hard shot (in total 3 easy, 3 medium, 3 hard), get 8/9 up and down.",
+    "Distance": "Optional",
+    "Target": "8 out of 9",
+    "Type": "Chip/Bunker/Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 98,
+    "Title": "Full Swing Tour Level",
+    "Description": "Hit three 9 irons to a total of 15 meters of the target, three 6 irons  to a total of 24 meters of the target and three drivers in a row within a 20 meter fairway",
+    "Distance": "130-250m",
+    "Target": "9 consecutive",
+    "Type": "Approach/Driver",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 99,
+    "Title": "Dirty Thirty",
+    "Description": "Make 30, 5 feet putts in a row. Every putt has to be different.",
+    "Distance": "5 feet",
+    "Target": "30 in a row",
+    "Type": "Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 100,
+    "Title": "Ultimate Tour Test",
+    "Description": "Play 18 holes worst ball and shoot under par",
+    "Distance": "-",
+    "Target": "Under par",
+    "Type": "Play",
+    "Difficulty": "Tour"
   }
 ]
