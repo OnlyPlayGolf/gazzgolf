@@ -26,13 +26,13 @@ const getScoreUnit = (drillName: string): string => {
   const drillUnits: { [key: string]: string } = {
     "Short Putting Test": "putts in a row",
     "PGA Tour 18 Holes": "putts",
-    "Up & Down Putting": "points",
+    "Up & Down Putting Drill": "points",
     "Aggressive Putting": "putts",
     "8-Ball Drill": "points",
     "Approach Control": "points",
     "Shot Shape Master": "points",
     "Wedges 40–80 m — Distance Control": "points",
-    "Wedges 40–80 m — 2 Laps": "points",
+    "Wedge Point Game": "points",
     "Åberg's Wedge Ladder": "shots",
   };
   return drillUnits[drillName] || "points";

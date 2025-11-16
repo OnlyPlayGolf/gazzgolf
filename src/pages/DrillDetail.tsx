@@ -76,7 +76,7 @@ const drills: Record<string, Drill> = {
   },
   'wedges-2-laps': {
     id: 'wedges-2-laps',
-    title: 'Wedges 40–80 m — 2 Laps',
+    title: 'Wedge Point Game',
     shortDescription: 'Hit the specified distances. One shot per length, 2 laps.',
     longDescription: 'A simpler wedge distance drill with 2 laps of 9 different distances from 40-80 meters. Focus on hitting precise distances from the fairway. Score points based on accuracy: 3 points for within 2m, 2 points for within 3m, 1 point for within 4m, 0 points for more than 4m off, and -1 point for missed greens.',
     category: 'Wedges',
