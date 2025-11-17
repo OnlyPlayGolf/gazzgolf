@@ -14,6 +14,12 @@ interface DrillHistoryProps {
   drillTitle: string;
 }
 
+const DRILL_ALIASES: Record<string, string[]> = {
+  "Up & Down Putting Drill": ["Up & Down Putting"],
+  "Wedge Point Game": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
+  "8-Ball Drill": ["8-Ball Drill (points)"]
+};
+
 interface DrillAttempt {
   attemptNumber?: number;
   distance?: number;
@@ -43,21 +49,24 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: drill } = await supabase
-          .from('drills')
-          .select('id')
-          .eq('title', drillTitle)
-          .single();
+        const titles = [drillTitle, ...(DRILL_ALIASES[drillTitle] || [])];
 
-        if (!drill) return;
+        // Find all matching drills (current and legacy titles)
+        const { data: drillsList } = await supabase
+          .from('drills')
+          .select('id, title')
+          .in('title', titles);
+
+        if (!drillsList || drillsList.length === 0) return;
+        const drillIds = drillsList.map(d => d.id);
 
         const { data: drillResults } = await supabase
           .from('drill_results')
           .select('*')
-          .eq('drill_id', drill.id)
+          .in('drill_id', drillIds)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(20);
+          .limit(50);
 
         setResults(drillResults || []);
       } catch (error) {
@@ -178,6 +187,16 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                       Type: {attempt.shotType}
                     </p>
                   )}
+                  {attempt.round !== undefined && (
+                    <p className="text-sm text-muted-foreground">
+                      Round: {attempt.round}
+                    </p>
+                  )}
+                  {attempt.station && (
+                    <p className="text-sm text-muted-foreground">
+                      Station: {attempt.station}
+                    </p>
+                  )}
                   {attempt.outcome && (
                     <p className="text-sm text-muted-foreground">
                       Outcome: {attempt.outcome}
@@ -191,9 +210,10 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-primary">
-                    {attempt.points !== undefined ? `${attempt.points > 0 ? '+' : ''}${attempt.points}` : '0'}
+                    {(() => { const v = (attempt.points ?? attempt.score ?? attempt.putts ?? 0) as number; return `${v > 0 ? '+' : ''}${v}`; })()}
                   </p>
                   {attempt.bonusPoints !== undefined && attempt.bonusPoints > 0 && (
+                    <p className="text-sm text-green-600">
                     <p className="text-sm text-green-600">
                       +{attempt.bonusPoints} bonus
                     </p>
