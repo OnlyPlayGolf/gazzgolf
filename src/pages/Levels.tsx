@@ -90,6 +90,8 @@ const Levels = () => {
         return "bg-purple-500 text-white";
       case "play":
         return "bg-green-500 text-white";
+      case "wood":
+        return "bg-orange-600 text-white";
       default:
         return "bg-muted text-muted-foreground";
     }
