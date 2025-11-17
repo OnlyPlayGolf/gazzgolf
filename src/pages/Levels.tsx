@@ -176,7 +176,7 @@ const Levels = () => {
                 <p className="text-xs text-muted-foreground">Categories</p>
                 <div className="grid grid-cols-2 gap-1">
                   {Array.from(new Set(levels.map(l => l.type)))
-                    .filter(type => !["Chip/Putt", "Bunker/Putt", "Pitch/Putt"].includes(type))
+                    .filter(type => !["Chip/Putt", "Bunker/Putt", "Pitch/Putt", "Wedge/Putt", "Chip/Bunker/Putt", "Approach/Driver"].includes(type))
                     .sort((a, b) => {
                       // Custom sorting based on difficulty level
                       if (difficulty?.toLowerCase() === "professional") {

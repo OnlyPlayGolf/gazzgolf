@@ -3807,6 +3807,15 @@
     "Difficulty": "Tour"
   },
   {
+    "Level": 24,
+    "Title": "Pitching",
+    "Description": "Make 5 out of 5 up and downs from 50meters or hit each shot inside 1 meter if you use a launch monitor",
+    "Distance": "50m",
+    "Target": "5 out of 5",
+    "Type": "Wedge/Putt",
+    "Difficulty": "Tour"
+  },
+  {
     "Level": 25,
     "Title": "Grip it and rip it",
     "Description": "Hit 3 drives minimum 245m carry in a row",
@@ -4452,6 +4461,24 @@
     "Distance": "-",
     "Target": "18 out of 18",
     "Type": "Play",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 97,
+    "Title": "Tour All Round Chip Challenge",
+    "Description": "Hit 3 bunker shots, drop 3 balls in the rough and  drop 3 in the fairway. Every three shots will be one easy, medium and hard shot (in total 3 easy, 3 medium, 3 hard), get 8/9 up and down.",
+    "Distance": "Optional",
+    "Target": "8 out of 9",
+    "Type": "Chip/Bunker/Putt",
+    "Difficulty": "Tour"
+  },
+  {
+    "Level": 98,
+    "Title": "Full Swing Tour Level",
+    "Description": "Hit three 9 irons to a total of 15 meters of the target, three 6 irons  to a total of 24 meters of the target and three drivers in a row within a 20 meter fairway",
+    "Distance": "130-250m",
+    "Target": "9 consecutive",
+    "Type": "Approach/Driver",
     "Difficulty": "Tour"
   },
   {
