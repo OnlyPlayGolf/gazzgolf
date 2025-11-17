@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, Trophy, Star, Crown, ArrowLeft } from "lucide-react";
+import { Target, Trophy, Star, Crown, Zap, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { TopNavBar } from "@/components/TopNavBar";
 
@@ -35,6 +35,13 @@ const LevelSelection = () => {
       subtitle: "Compete like a pro.",
       icon: Crown,
       action: () => navigate("/levels/professional"),
+    },
+    {
+      id: "tour",
+      title: "Tour",
+      subtitle: "Elite level mastery.",
+      icon: Zap,
+      action: () => navigate("/levels/tour"),
     },
   ];
 

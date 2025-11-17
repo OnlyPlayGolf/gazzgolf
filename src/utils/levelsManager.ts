@@ -22,7 +22,8 @@ export const loadLevels = (): Level[] => {
       'Beginner': 0,      // 1-100
       'Intermediate': 100, // 101-200
       'Amateur': 200,     // 201-300
-      'Professional': 300 // 301-400
+      'Professional': 300, // 301-400
+      'Tour': 400         // 401-500
     };
     
     return {
