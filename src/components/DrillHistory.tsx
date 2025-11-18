@@ -153,7 +153,7 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
     }
 
     // Standard drill format
-    const attempts = (attemptsData as DrillAttempt[]) || [];
+    const attempts = Array.isArray(attemptsData) ? attemptsData : [];
 
     return (
       <div className="space-y-2 pt-2">
