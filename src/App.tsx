@@ -51,6 +51,7 @@ import ApproachControlDrill from "./pages/ApproachControlDrill";
 import WedgesProgressionDrill from "./pages/WedgesProgressionDrill";
 import Wedges2LapsDrill from "./pages/Wedges2LapsDrill";
 
+// Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
 
 const App = () => (
