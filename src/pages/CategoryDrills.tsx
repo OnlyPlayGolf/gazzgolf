@@ -77,6 +77,13 @@ const allDrills = [
     category: 'approach',
     icon: Activity,
   },
+  {
+    id: 'tw-9-windows',
+    title: "TW's 9 Windows Test",
+    shortDescription: 'Hit all 9 shot combinations (3 trajectories × 3 shapes) with a 7 iron. Count shots needed to complete all windows.',
+    category: 'approach',
+    icon: Target,
+  },
 ];
 
 const categoryNames = {
