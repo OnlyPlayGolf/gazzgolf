@@ -214,7 +214,6 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                   </p>
                   {attempt.bonusPoints !== undefined && attempt.bonusPoints > 0 && (
                     <p className="text-sm text-green-600">
-                    <p className="text-sm text-green-600">
                       +{attempt.bonusPoints} bonus
                     </p>
                   )}
