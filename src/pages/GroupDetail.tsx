@@ -37,29 +37,26 @@ interface Drill {
   lower_is_better: boolean;
 }
 
-type DrillCategory = 'Putting' | 'Short Game' | 'Wedges' | 'Approach' | 'Tee Shots';
+type DrillCategory = 'Putting' | 'Short Game' | 'Approach' | 'Tee Shots';
 
-const getDrillCategory = (drillTitle: string): DrillCategory => {
-  const title = drillTitle.toLowerCase();
+const getDrillCategory = (drillTitle: string): DrillCategory | null => {
+  // Explicit mapping of drill titles to categories
+  const categoryMap: Record<string, DrillCategory> = {
+    'Aggressive Putting': 'Putting',
+    'PGA Tour 18 Holes': 'Putting',
+    'Short Putting Test': 'Putting',
+    "Up & Down Putting Drill": 'Putting',
+    "Jason Day's Lag Drill": 'Putting',
+    '8-Ball Drill': 'Short Game',
+    '18 Up & Downs': 'Short Game',
+    'Approach Control': 'Approach',
+    "TW's 9 Windows Test": 'Approach',
+    'Shot Shape Master': 'Tee Shots',
+    'Driver Control Drill': 'Tee Shots',
+  };
   
-  if (title.includes('putting') || title.includes('putt')) {
-    return 'Putting';
-  }
-  if (title.includes('wedge')) {
-    return 'Wedges';
-  }
-  if (title.includes('short game') || title.includes('chip') || title.includes('up') && title.includes('down')) {
-    return 'Short Game';
-  }
-  if (title.includes('approach') || title.includes('iron')) {
-    return 'Approach';
-  }
-  if (title.includes('tee') || title.includes('drive') || title.includes('driver')) {
-    return 'Tee Shots';
-  }
-  
-  // Default to Short Game for other drills
-  return 'Short Game';
+  // Return null for drills not in the map (like Wedges drills)
+  return categoryMap[drillTitle] || null;
 };
 
 const getScoreUnit = (drillName: string): string => {
@@ -1050,16 +1047,18 @@ useEffect(() => {
                       className="w-full p-2 rounded-md border bg-background text-foreground"
                     >
                       {(() => {
-                        const categories: DrillCategory[] = ['Putting', 'Short Game', 'Wedges', 'Approach', 'Tee Shots'];
+                        const categories: DrillCategory[] = ['Putting', 'Short Game', 'Approach', 'Tee Shots'];
                         const drillsByCategory = new Map<DrillCategory, Drill[]>();
                         
-                        // Group drills by category
+                        // Group drills by category (exclude drills not in any category)
                         drills.forEach(drill => {
                           const category = getDrillCategory(drill.title);
-                          if (!drillsByCategory.has(category)) {
-                            drillsByCategory.set(category, []);
+                          if (category) {
+                            if (!drillsByCategory.has(category)) {
+                              drillsByCategory.set(category, []);
+                            }
+                            drillsByCategory.get(category)!.push(drill);
                           }
-                          drillsByCategory.get(category)!.push(drill);
                         });
                         
                         // Render grouped options
