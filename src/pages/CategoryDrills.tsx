@@ -193,7 +193,8 @@ const CategoryDrills = () => {
                 'shot-shape-master',
                 'approach-control',
                 'wedges-progression',
-                'wedges-2-laps'
+                'wedges-2-laps',
+                'tw-9-windows'
               ];
               
               const handleDrillClick = () => {
