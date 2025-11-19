@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +22,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
   const [currentStationIndex, setCurrentStationIndex] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
+  const [currentScore, setCurrentScore] = useState(0);
   const { toast } = useToast();
 
   // Initialize stations with randomized order
@@ -70,6 +69,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         setStations(state.stations || []);
         setCurrentStationIndex(state.currentStationIndex || 0);
         setDrillStarted(state.drillStarted || false);
+        setCurrentScore(0); // Always reset current score on load
       } catch (e) {
         console.error('Failed to restore drill state:', e);
       }
@@ -98,13 +98,28 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     const newStations = initializeStations();
     setStations(newStations);
     setCurrentStationIndex(0);
+    setCurrentScore(0);
     setDrillStarted(true);
   };
 
-  const recordShots = (shots: number) => {
+  const addToScore = (value: number) => {
+    setCurrentScore(prev => prev + value);
+  };
+
+  const submitScore = () => {
+    if (currentScore === 0) {
+      toast({
+        title: "Invalid score",
+        description: "Please enter a score greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const updatedStations = [...stations];
-    updatedStations[currentStationIndex].shots = shots;
+    updatedStations[currentStationIndex].shots = currentScore;
     setStations(updatedStations);
+    setCurrentScore(0);
 
     if (currentStationIndex < stations.length - 1) {
       setCurrentStationIndex(currentStationIndex + 1);
@@ -294,25 +309,44 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         </div>
 
         <div className="space-y-4">
-          <p className="text-sm font-semibold">How many shots to hole out?</p>
-          <RadioGroup onValueChange={(value) => recordShots(parseInt(value))}>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="1" id="1-shot" />
-              <Label htmlFor="1-shot">1 shot (Up & Down!)</Label>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">How many shots to hole out?</p>
+            <div className="text-2xl font-bold text-primary">
+              {currentScore || '-'}
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="2" id="2-shots" />
-              <Label htmlFor="2-shots">2 shots</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="3" id="3-shots" />
-              <Label htmlFor="3-shots">3 shots</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="4" id="4-shots" />
-              <Label htmlFor="4-shots">4+ shots</Label>
-            </div>
-          </RadioGroup>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+              <Button
+                key={num}
+                variant="outline"
+                size="lg"
+                onClick={() => addToScore(num)}
+                className="h-16 text-xl font-semibold"
+              >
+                {num}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setCurrentScore(0)}
+              variant="outline"
+              className="flex-1"
+              disabled={currentScore === 0}
+            >
+              Clear
+            </Button>
+            <Button
+              onClick={submitScore}
+              className="flex-1"
+              disabled={currentScore === 0}
+            >
+              Next Shot
+            </Button>
+          </div>
         </div>
 
         <div className="bg-muted/50 rounded-lg p-3">
