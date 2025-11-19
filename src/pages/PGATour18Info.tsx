@@ -1,27 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
 
-const distances = [
-  { hole: 1, distance: "1.5m (5ft)" },
-  { hole: 2, distance: "12m" },
-  { hole: 3, distance: "0.6m (2ft)" },
-  { hole: 4, distance: "4m" },
-  { hole: 5, distance: "1.2m (4ft)" },
-  { hole: 6, distance: "16m" },
-  { hole: 7, distance: "8m" },
-  { hole: 8, distance: "3m" },
-  { hole: 9, distance: "6m" },
-  { hole: 10, distance: "9m" },
-  { hole: 11, distance: "0.9m (3ft)" },
-  { hole: 12, distance: "7m" },
-  { hole: 13, distance: "2.1m (7ft)" },
-  { hole: 14, distance: "3.5m" },
-  { hole: 15, distance: "10m" },
-  { hole: 16, distance: "1.8m (6ft)" },
-  { hole: 17, distance: "5m" },
-  { hole: 18, distance: "2.4m (8ft)" },
-];
-
 export default function PGATour18Info() {
   return (
     <div className="space-y-6">
@@ -34,32 +13,40 @@ export default function PGATour18Info() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-medium text-foreground mb-2">About This Drill</h3>
+            <h3 className="font-medium text-foreground mb-2">Overview</h3>
             <p className="text-sm text-muted-foreground">
-              Practice putting from tournament-style distances across 18 holes. This drill simulates
-              the putting challenges you'll face on a PGA Tour course, helping you develop consistency
-              under pressure and build confidence in your putting stroke.
+              Putt one ball at a time from the distances listed in the test. The distances reflect an average PGA Tour round, allowing you to compare your performance to Tour standards. This drill can be done on the putting green or in a practice round before a competition.
             </p>
           </div>
 
           <div>
-            <h3 className="font-medium text-foreground mb-2">Hole Distances</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {distances.map((hole) => (
-                <div key={hole.hole} className="flex justify-between text-sm p-2 bg-muted/50 rounded">
-                  <span className="text-muted-foreground">Hole {hole.hole}:</span>
-                  <span className="font-medium">{hole.distance}</span>
-                </div>
-              ))}
-            </div>
+            <h3 className="font-medium text-foreground mb-2">How It Works</h3>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Hit one putt from each designated distance</li>
+              <li>• Vary the break and whether the putt is uphill or downhill</li>
+              <li>• Treat it like a tournament: read the line, commit to your routine, and execute each putt</li>
+            </ul>
           </div>
 
           <div>
-            <h3 className="font-medium text-foreground mb-2">Scoring</h3>
-            <p className="text-sm text-muted-foreground">
-              Record your total number of putts for all 18 holes. Lower scores are better.
-              Challenge yourself to beat your personal best!
+            <h3 className="font-medium text-foreground mb-2">Scoring System</h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              You can compare your total putts to PGA Tour benchmarks:
             </p>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Best PGA Tour: 28.5</li>
+              <li>• Average PGA Tour: 29.2</li>
+              <li>• Worst PGA Tour: 30.2</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-medium text-foreground mb-2">Tips</h3>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Always read the putt as if you're competing</li>
+              <li>• Keep a consistent pre-shot routine</li>
+              <li>• Focus on speed control, especially on downhill or big-breaking putts</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
