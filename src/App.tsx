@@ -51,6 +51,12 @@ import ApproachControlDrill from "./pages/ApproachControlDrill";
 import WedgesProgressionDrill from "./pages/WedgesProgressionDrill";
 import Wedges2LapsDrill from "./pages/Wedges2LapsDrill";
 import TW9WindowsDrill from "./pages/TW9WindowsDrill";
+import DriverControlDrill from "./pages/DriverControlDrill";
+import DriverControlInfo from "./pages/DriverControlInfo";
+import DriverControlScore from "./pages/DriverControlScore";
+import DriverControlFeed from "./pages/DriverControlFeed";
+import DriverControlLeaderboard from "./pages/DriverControlLeaderboard";
+import DriverControlMessages from "./pages/DriverControlMessages";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -108,6 +114,7 @@ const App = () => (
             <Route path="/drill/wedges-progression/*" element={<WedgesProgressionDrill />} />
             <Route path="/drill/wedges-2-laps/*" element={<Wedges2LapsDrill />} />
             <Route path="/drill/tw-9-windows/*" element={<TW9WindowsDrill />} />
+            <Route path="/drill/driver-control/*" element={<DriverControlDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

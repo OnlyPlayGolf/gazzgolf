@@ -84,6 +84,13 @@ const allDrills = [
     category: 'approach',
     icon: Target,
   },
+  {
+    id: 'driver-control',
+    title: 'Driver Control',
+    shortDescription: '14 tee shots testing fairway accuracy. Earn points for hitting fairways, with bonus streaks for consistency.',
+    category: 'teeshots',
+    icon: Target,
+  },
 ];
 
 const categoryNames = {
