@@ -201,7 +201,8 @@ const CategoryDrills = () => {
                 'approach-control',
                 'wedges-progression',
                 'wedges-2-laps',
-                'tw-9-windows'
+                'tw-9-windows',
+                'driver-control'
               ];
               
               const handleDrillClick = () => {
