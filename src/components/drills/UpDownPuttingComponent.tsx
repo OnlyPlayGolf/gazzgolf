@@ -46,6 +46,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
+  const [currentRound, setCurrentRound] = useState(0);
   const { toast } = useToast();
 
   // Load state from localStorage on mount
@@ -248,63 +249,82 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
               <CardTitle>Record Your Putts</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {[0, 1, 2].map((round) => (
-                  <div key={round} className="space-y-3">
-                    <div className="flex items-center gap-2 pb-2 border-b">
-                      <Target className="text-primary" size={18} />
-                      <span className="font-semibold">
-                        Round {round + 1}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        ({round * 6 + 1}-{round * 6 + 6} of 18)
-                      </span>
-                    </div>
-
-                    {putts.map((putt, stationIndex) => {
-                      const puttIndex = round * 6 + stationIndex;
-                      const attempt = attempts[puttIndex];
-                      
-                      return (
-                        <div key={puttIndex} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              {putt.direction === 'uphill' ? (
-                                <TrendingUp className="text-primary" size={14} />
-                              ) : (
-                                <TrendingDown className="text-primary" size={14} />
-                              )}
-                              <span className="text-sm text-muted-foreground">
-                                {putt.distance} {putt.direction}
-                              </span>
-                            </div>
-                            {attempt?.outcome && (
-                              <span className={`text-sm font-medium ${
-                                attempt.score < 0 ? 'text-green-500' : 
-                                attempt.score === 0 ? 'text-blue-500' : 'text-red-500'
-                              }`}>
-                                {attempt.score > 0 ? '+' : ''}{attempt.score}
-                              </span>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            {(Object.keys(outcomeScores) as PuttOutcome[]).map((outcome) => (
-                              <Button
-                                key={outcome}
-                                variant={attempt?.outcome === outcome ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => updateAttempt(puttIndex, outcome)}
-                                className="text-xs px-2"
-                              >
-                                {outcomeLabels[outcome]}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b">
+                  <div className="flex items-center gap-2">
+                    <Target className="text-primary" size={18} />
+                    <span className="font-semibold">
+                      Round {currentRound + 1} of 3
+                    </span>
                   </div>
-                ))}
+                  <span className="text-xs text-muted-foreground">
+                    Putts {currentRound * 6 + 1}-{currentRound * 6 + 6} of 18
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {putts.map((putt, stationIndex) => {
+                    const puttIndex = currentRound * 6 + stationIndex;
+                    const attempt = attempts[puttIndex];
+                    
+                    return (
+                      <div key={puttIndex} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            {putt.direction === 'uphill' ? (
+                              <TrendingUp className="text-primary" size={14} />
+                            ) : (
+                              <TrendingDown className="text-primary" size={14} />
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                              {putt.distance} {putt.direction}
+                            </span>
+                          </div>
+                          {attempt?.outcome && (
+                            <span className={`text-sm font-medium ${
+                              attempt.score < 0 ? 'text-green-500' : 
+                              attempt.score === 0 ? 'text-blue-500' : 'text-red-500'
+                            }`}>
+                              {attempt.score > 0 ? '+' : ''}{attempt.score}
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(Object.keys(outcomeScores) as PuttOutcome[]).map((outcome) => (
+                            <Button
+                              key={outcome}
+                              variant={attempt?.outcome === outcome ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => updateAttempt(puttIndex, outcome)}
+                              className="text-xs px-2"
+                            >
+                              {outcomeLabels[outcome]}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentRound(prev => Math.max(0, prev - 1))}
+                    disabled={currentRound === 0}
+                    className="flex-1"
+                  >
+                    Previous Round
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentRound(prev => Math.min(2, prev + 1))}
+                    disabled={currentRound === 2}
+                    className="flex-1"
+                  >
+                    Next Round
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
