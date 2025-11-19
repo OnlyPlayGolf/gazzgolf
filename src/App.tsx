@@ -57,6 +57,7 @@ import DriverControlScore from "./pages/DriverControlScore";
 import DriverControlFeed from "./pages/DriverControlFeed";
 import DriverControlLeaderboard from "./pages/DriverControlLeaderboard";
 import DriverControlMessages from "./pages/DriverControlMessages";
+import UpDownsTestDrill from "./pages/UpDownsTestDrill";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -115,6 +116,7 @@ const App = () => (
             <Route path="/drill/wedges-2-laps/*" element={<Wedges2LapsDrill />} />
             <Route path="/drill/tw-9-windows/*" element={<TW9WindowsDrill />} />
             <Route path="/drill/driver-control/*" element={<DriverControlDrill />} />
+            <Route path="/drill/up-downs-test/*" element={<UpDownsTestDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
