@@ -91,6 +91,13 @@ const allDrills = [
     category: 'teeshots',
     icon: Target,
   },
+  {
+    id: 'up-downs-test',
+    title: '18 Up & Downs',
+    shortDescription: '18 randomized short game stations from bunkers, rough, and fairway. Track total shots needed for all stations.',
+    category: 'shortgame',
+    icon: Zap,
+  },
 ];
 
 const categoryNames = {
@@ -202,7 +209,8 @@ const CategoryDrills = () => {
                 'wedges-progression',
                 'wedges-2-laps',
                 'tw-9-windows',
-                'driver-control'
+                'driver-control',
+                'up-downs-test'
               ];
               
               const handleDrillClick = () => {
