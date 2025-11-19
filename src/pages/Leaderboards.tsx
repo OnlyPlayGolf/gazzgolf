@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Trophy, Star, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -331,11 +331,38 @@ const Leaderboards = () => {
                     <SelectValue placeholder="Choose a drill..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from(new Map(drills.map(drill => [drill.title, drill])).values()).map((drill) => (
-                      <SelectItem key={drill.id} value={drill.title}>
-                        {drill.title}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      <SelectLabel>Putting</SelectLabel>
+                      {drills.filter(d => ['Aggressive Putting', 'PGA Tour 18 Holes', 'Short Putting Test', "Up & Down Putting Drill", "Jason Day's Lag Drill"].includes(d.title)).map((drill) => (
+                        <SelectItem key={drill.id} value={drill.title}>
+                          {drill.title}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Short Game</SelectLabel>
+                      {drills.filter(d => ['8-Ball Drill', '18 Up & Downs'].includes(d.title)).map((drill) => (
+                        <SelectItem key={drill.id} value={drill.title}>
+                          {drill.title}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Approach</SelectLabel>
+                      {drills.filter(d => ['Wedge Point Game', "Åberg's Wedge Ladder", 'Approach Control', "TW's 9 Windows Test"].includes(d.title)).map((drill) => (
+                        <SelectItem key={drill.id} value={drill.title}>
+                          {drill.title}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Tee Shots</SelectLabel>
+                      {drills.filter(d => ['Shot Shape Master', 'Driver Control Drill'].includes(d.title)).map((drill) => (
+                        <SelectItem key={drill.id} value={drill.title}>
+                          {drill.title}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
