@@ -15,8 +15,7 @@ export default function ShortPuttingInfo() {
           <div>
             <h3 className="font-medium text-foreground mb-2">Overview</h3>
             <p className="text-sm text-muted-foreground">
-              This drill tests your ability to make consecutive short putts from all angles around the hole. 
-              Each missed putt ends the drill, creating pressure similar to tournament conditions where every putt counts.
+              This drill tests your short-putting under pressure and builds confidence on the putts that matter most.
             </p>
           </div>
 
@@ -24,7 +23,7 @@ export default function ShortPuttingInfo() {
             <h3 className="font-medium text-foreground mb-2">How It Works</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
               <li>• Set 4 tees around the hole at 12, 3, 6, and 9 o'clock</li>
-              <li>• Start each tee at 3 feet</li>
+              <li>• Start each tee at 4 feet</li>
               <li>• Every made putt: move that tee back 1 foot</li>
               <li>• After each putt, rotate to the next tee</li>
             </ul>
