@@ -85,7 +85,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     // Mark current window as completed and increment attempts
     const updatedWindows = [...windows];
     updatedWindows[currentWindowIndex].completed = true;
-    updatedWindows[currentWindowIndex].attempts += 1;
+    updatedWindows[currentWindowIndex].attempts = (updatedWindows[currentWindowIndex].attempts || 0) + 1;
     setWindows(updatedWindows);
     setTotalShots(totalShots + 1);
 
@@ -99,7 +99,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   const handleTryAgain = () => {
     // Increment attempts for current window
     const updatedWindows = [...windows];
-    updatedWindows[currentWindowIndex].attempts += 1;
+    updatedWindows[currentWindowIndex].attempts = (updatedWindows[currentWindowIndex].attempts || 0) + 1;
     setWindows(updatedWindows);
     setTotalShots(totalShots + 1);
   };
