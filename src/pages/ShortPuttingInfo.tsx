@@ -15,7 +15,7 @@ export default function ShortPuttingInfo() {
           <div>
             <h3 className="font-medium text-foreground mb-2">Overview</h3>
             <p className="text-sm text-muted-foreground">
-              This drill tests your short-putting under pressure and builds confidence on the putts that matter most.
+              This drill builds confidence and consistency on short putts by testing your ability to make consecutive putts from four different angles around the hole. Starting at 3 feet, the challenge increases as you move each tee marker progressively farther away. It simulates the pressure of must-make putts during a round while developing a solid putting routine.
             </p>
           </div>
 
@@ -23,7 +23,7 @@ export default function ShortPuttingInfo() {
             <h3 className="font-medium text-foreground mb-2">How It Works</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
               <li>• Set 4 tees around the hole at 12, 3, 6, and 9 o'clock</li>
-              <li>• Start each tee at 4 feet</li>
+              <li>• Start each tee at 3 feet</li>
               <li>• Every made putt: move that tee back 1 foot</li>
               <li>• After each putt, rotate to the next tee</li>
             </ul>
