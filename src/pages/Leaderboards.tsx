@@ -349,7 +349,7 @@ const Leaderboards = () => {
                     </SelectGroup>
                     <SelectGroup>
                       <SelectLabel>Approach</SelectLabel>
-                      {drills.filter(d => ['Wedge Point Game', "Åberg's Wedge Ladder", 'Approach Control', "TW's 9 Windows Test"].includes(d.title)).map((drill) => (
+                      {drills.filter(d => ['Approach Control', "TW's 9 Windows Test"].includes(d.title)).map((drill) => (
                         <SelectItem key={drill.id} value={drill.title}>
                           {drill.title}
                         </SelectItem>
