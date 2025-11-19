@@ -35,6 +35,7 @@ const getScoreUnit = (drillName: string): string => {
     "Wedge Point Game": "points",
     "Åberg's Wedge Ladder": "shots",
     "TW's 9 Windows Test": "shots",
+    "Driver Control": "points",
   };
   return drillUnits[drillName] || "points";
 };
