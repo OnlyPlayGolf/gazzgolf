@@ -18,7 +18,7 @@ const DRILL_ALIASES: Record<string, string[]> = {
   "Up & Down Putting Drill": ["Up & Down Putting"],
   "Wedge Point Game": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
   "8-Ball Drill": ["8-Ball Drill (points)"],
-  "Driver Control": ["Driver Control"]
+  "Driver Control Drill": ["Driver Control"]
 };
 
 interface DrillAttempt {

@@ -6,7 +6,7 @@ export default function DriverControlFeed() {
     <div className="pb-20 min-h-screen bg-background">
       <TopNavBar />
       <div className="p-4 pt-20">
-        <DrillHistory drillTitle="Driver Control" />
+        <DrillHistory drillTitle="Driver Control Drill" />
       </div>
     </div>
   );
