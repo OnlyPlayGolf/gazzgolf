@@ -28,17 +28,17 @@ export default function TW9WindowsInfo() {
               <li><strong>Trajectory:</strong> Low, Middle, High</li>
               <li><strong>Shape:</strong> Fade, Straight, Draw</li>
             </ul>
-            <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-              <div className="p-2 border rounded bg-muted">Low Fade</div>
-              <div className="p-2 border rounded bg-muted">Low Straight</div>
-              <div className="p-2 border rounded bg-muted">Low Draw</div>
-              <div className="p-2 border rounded bg-muted">Mid Fade</div>
-              <div className="p-2 border rounded bg-muted">Mid Straight</div>
-              <div className="p-2 border rounded bg-muted">Mid Draw</div>
-              <div className="p-2 border rounded bg-muted">High Fade</div>
-              <div className="p-2 border rounded bg-muted">High Straight</div>
-              <div className="p-2 border rounded bg-muted">High Draw</div>
-            </div>
+          <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
+            <div className="p-2 border rounded bg-muted">High Fade</div>
+            <div className="p-2 border rounded bg-muted">High Straight</div>
+            <div className="p-2 border rounded bg-muted">High Draw</div>
+            <div className="p-2 border rounded bg-muted">Mid Fade</div>
+            <div className="p-2 border rounded bg-muted">Mid Straight</div>
+            <div className="p-2 border rounded bg-muted">Mid Draw</div>
+            <div className="p-2 border rounded bg-muted">Low Fade</div>
+            <div className="p-2 border rounded bg-muted">Low Straight</div>
+            <div className="p-2 border rounded bg-muted">Low Draw</div>
+          </div>
           </div>
 
           <div>
