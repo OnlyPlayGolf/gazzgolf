@@ -39,10 +39,10 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     const savedState = localStorage.getItem('tw9WindowsState');
     if (savedState) {
       const parsed = JSON.parse(savedState);
-      // Ensure all windows have attempts field (handle legacy data)
+      // Ensure all windows have attempts field
       const windowsWithAttempts = parsed.windows.map((w: Window) => ({
         ...w,
-        attempts: w.attempts || 0
+        attempts: typeof w.attempts === 'number' ? w.attempts : 0
       }));
       setWindows(windowsWithAttempts);
       setCurrentWindowIndex(parsed.currentWindowIndex);
