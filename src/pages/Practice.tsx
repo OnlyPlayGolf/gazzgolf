@@ -59,7 +59,7 @@ const Practice = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Compete with friends and climb the leaderboards
+                Improve your game and climb the leaderboards
               </p>
             </CardContent>
           </Card>
