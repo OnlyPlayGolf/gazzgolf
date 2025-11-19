@@ -35,7 +35,7 @@ const Practice = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                See where you stand across all aspects of the game
+                Turn your golf practice into a video game
               </p>
             </CardContent>
           </Card>
