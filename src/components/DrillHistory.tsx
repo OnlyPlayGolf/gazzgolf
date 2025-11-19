@@ -140,10 +140,10 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-primary">
-                    {window.attempts || 0}
+                    {window.attempts ?? (window.completed ? '?' : '0')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {(window.attempts || 0) === 1 ? 'shot' : 'shots'}
+                    {window.attempts ? (window.attempts === 1 ? 'shot' : 'shots') : (window.completed ? 'shots' : 'shots')}
                   </p>
                 </div>
               </div>
