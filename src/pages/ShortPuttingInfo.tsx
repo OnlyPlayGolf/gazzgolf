@@ -40,8 +40,9 @@ export default function ShortPuttingInfo() {
           <div>
             <h3 className="font-medium text-foreground mb-2">Tips</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
-              <li>• Commit fully to each read and routine</li>
-              <li>• Focus on starting the ball on line</li>
+              <li>• Commit fully to each read and your routine</li>
+              <li>• Focus on starting the ball on your intended line</li>
+              <li>• Focus on having consistent speed</li>
             </ul>
           </div>
         </CardContent>
