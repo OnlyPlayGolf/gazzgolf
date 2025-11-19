@@ -13,28 +13,35 @@ export default function ShortPuttingInfo() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h3 className="font-medium text-foreground mb-2">About This Drill</h3>
+            <h3 className="font-medium text-foreground mb-2">Overview</h3>
             <p className="text-sm text-muted-foreground">
-              Test your short putting accuracy with this pressure-packed drill. Build confidence in those crucial short putts that can make or break your score.
+              This drill tests your short-putting under pressure and builds confidence on the putts that matter most.
             </p>
           </div>
 
           <div>
-            <h3 className="font-medium text-foreground mb-2">Setup</h3>
+            <h3 className="font-medium text-foreground mb-2">How It Works</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
-              <li>• Place 4 tees around the hole at 12, 3, 6, and 9 o'clock positions</li>
-              <li>• Each tee starts 4 feet away from the hole</li>
-              <li>• Every successful putt: move that tee back 1 foot</li>
-              <li>• Rotate to the next position after each putt</li>
+              <li>• Set 4 tees around the hole at 12, 3, 6, and 9 o'clock</li>
+              <li>• Start each tee at 4 feet</li>
+              <li>• Every made putt: move that tee back 1 foot</li>
+              <li>• After each putt, rotate to the next tee</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-medium text-foreground mb-2">Rules</h3>
+            <h3 className="font-medium text-foreground mb-2">Scoring System</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
-              <li>• One miss ends the test</li>
-              <li>• Your score is the number of consecutive putts made</li>
-              <li>• Challenge yourself to beat your personal best!</li>
+              <li>• One miss ends the drill</li>
+              <li>• Your score = total consecutive putts made</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-medium text-foreground mb-2">Tips</h3>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• Commit fully to each read and routine</li>
+              <li>• Focus on starting the ball on line</li>
             </ul>
           </div>
         </CardContent>
