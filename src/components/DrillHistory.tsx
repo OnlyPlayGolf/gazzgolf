@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Newspaper, Calendar } from "lucide-react";
+import { Newspaper, Calendar, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import {
@@ -113,6 +113,44 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
 
   const renderAttemptDetails = (result: DrillResult) => {
     const attemptsData = result.attempts_json;
+    
+    // Check if this is TW's 9 Windows Test format
+    const isTW9Windows = Array.isArray(attemptsData) && 
+      attemptsData.length > 0 && 
+      attemptsData[0]?.height !== undefined && 
+      attemptsData[0]?.shape !== undefined &&
+      attemptsData[0]?.windowNumber !== undefined;
+
+    if (isTW9Windows) {
+      return (
+        <div className="space-y-2 pt-2">
+          {attemptsData.map((window: any, index: number) => (
+            <div
+              key={index}
+              className="p-3 rounded-lg border bg-muted"
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">
+                    Window {window.windowNumber}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {window.height} • {window.shape}
+                  </p>
+                </div>
+                <div className="text-right">
+                  {window.completed ? (
+                    <Check className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <X className="h-5 w-5 text-red-600" />
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
     
     // Check if this is Wedges Progression format
     const isWedgesProgression = Array.isArray(attemptsData) && 

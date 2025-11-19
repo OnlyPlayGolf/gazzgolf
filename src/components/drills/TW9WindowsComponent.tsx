@@ -163,15 +163,15 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
             <div className="space-y-2">
               <h3 className="font-semibold">The 9 Windows</h3>
               <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="p-2 border rounded">Low Fade</div>
-                <div className="p-2 border rounded">Low Straight</div>
-                <div className="p-2 border rounded">Low Draw</div>
-                <div className="p-2 border rounded">Mid Fade</div>
-                <div className="p-2 border rounded">Mid Straight</div>
-                <div className="p-2 border rounded">Mid Draw</div>
                 <div className="p-2 border rounded">High Fade</div>
                 <div className="p-2 border rounded">High Straight</div>
                 <div className="p-2 border rounded">High Draw</div>
+                <div className="p-2 border rounded">Mid Fade</div>
+                <div className="p-2 border rounded">Mid Straight</div>
+                <div className="p-2 border rounded">Mid Draw</div>
+                <div className="p-2 border rounded">Low Fade</div>
+                <div className="p-2 border rounded">Low Straight</div>
+                <div className="p-2 border rounded">Low Draw</div>
               </div>
             </div>
 
