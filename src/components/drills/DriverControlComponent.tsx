@@ -293,6 +293,14 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {bonusStreak === 2 && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+              <p className="text-sm font-semibold text-amber-600 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                ⚡ One more fairway to start the bonus!
+              </p>
+            </div>
+          )}
           {bonusStreak >= 3 && (
             <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
               <p className="text-sm font-semibold text-primary flex items-center gap-2">

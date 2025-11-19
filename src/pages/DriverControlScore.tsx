@@ -20,7 +20,7 @@ export default function DriverControlScore() {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-xl font-bold text-foreground">Driver Control</h1>
+          <h1 className="text-xl font-bold text-foreground">Driver Control Drill</h1>
         </div>
         <DriverControlComponent />
       </div>

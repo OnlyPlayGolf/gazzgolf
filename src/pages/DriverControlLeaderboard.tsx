@@ -6,7 +6,7 @@ export default function DriverControlLeaderboard() {
     <div className="pb-20 min-h-screen bg-background">
       <TopNavBar />
       <div className="p-4 pt-20">
-        <DrillLeaderboard drillId="" drillName="Driver Control" />
+        <DrillLeaderboard drillId="" drillName="Driver Control Drill" />
       </div>
     </div>
   );
