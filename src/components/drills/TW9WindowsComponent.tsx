@@ -14,6 +14,7 @@ type Window = {
   height: 'Low' | 'Middle' | 'High';
   shape: 'Fade' | 'Straight' | 'Draw';
   completed: boolean;
+  attempts: number;
 };
 
 const HEIGHT_OPTIONS = ['Low', 'Middle', 'High'] as const;
@@ -61,7 +62,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     const allWindows: Window[] = [];
     HEIGHT_OPTIONS.forEach(height => {
       SHAPE_OPTIONS.forEach(shape => {
-        allWindows.push({ height, shape, completed: false });
+        allWindows.push({ height, shape, completed: false, attempts: 0 });
       });
     });
 
@@ -76,9 +77,10 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   };
 
   const handleNextShot = () => {
-    // Mark current window as completed
+    // Mark current window as completed and increment attempts
     const updatedWindows = [...windows];
     updatedWindows[currentWindowIndex].completed = true;
+    updatedWindows[currentWindowIndex].attempts += 1;
     setWindows(updatedWindows);
     setTotalShots(totalShots + 1);
 
@@ -90,6 +92,10 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   };
 
   const handleTryAgain = () => {
+    // Increment attempts for current window
+    const updatedWindows = [...windows];
+    updatedWindows[currentWindowIndex].attempts += 1;
+    setWindows(updatedWindows);
     setTotalShots(totalShots + 1);
   };
 
@@ -111,7 +117,8 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
         windowNumber: index + 1,
         height: window.height,
         shape: window.shape,
-        completed: window.completed
+        completed: window.completed,
+        attempts: window.attempts
       }));
 
       const { error: insertError } = await supabase

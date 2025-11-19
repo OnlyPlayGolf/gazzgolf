@@ -140,7 +140,12 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                 </div>
                 <div className="text-right">
                   {window.completed ? (
-                    <Check className="h-5 w-5 text-green-600" />
+                    <div className="flex flex-col items-end gap-1">
+                      <Check className="h-5 w-5 text-green-600" />
+                      <p className="text-xs text-muted-foreground">
+                        {window.attempts || 1} {window.attempts === 1 ? 'shot' : 'shots'}
+                      </p>
+                    </div>
                   ) : (
                     <X className="h-5 w-5 text-red-600" />
                   )}
