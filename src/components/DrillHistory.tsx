@@ -18,7 +18,8 @@ const DRILL_ALIASES: Record<string, string[]> = {
   "Up & Down Putting Drill": ["Up & Down Putting"],
   "Wedge Point Game": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
   "8-Ball Drill": ["8-Ball Drill (points)"],
-  "Driver Control Drill": ["Driver Control"]
+  "Driver Control Drill": ["Driver Control"],
+  "18 Up & Downs": []
 };
 
 interface DrillAttempt {
@@ -192,6 +193,50 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
       );
     }
 
+    // Check if this is 18 Up & Downs format
+    const isUpDownsTest = Array.isArray(attemptsData) && 
+      attemptsData.length > 0 && 
+      attemptsData[0]?.lie !== undefined && 
+      attemptsData[0]?.distance !== undefined &&
+      attemptsData[0]?.shots !== undefined;
+
+    if (isUpDownsTest) {
+      const upAndDowns = attemptsData.filter((station: any) => station.shots === 1).length;
+      return (
+        <div className="space-y-3 pt-2">
+          <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+            <p className="text-sm font-medium text-center">
+              <span className="text-green-600 font-bold">{upAndDowns}/18</span> Up & Downs
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {attemptsData.map((station: any, index: number) => (
+              <div
+                key={index}
+                className="p-2 rounded-lg border bg-muted"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-medium">
+                      {station.lie}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {station.distance}m
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${station.shots === 1 ? 'text-green-600' : 'text-primary'}`}>
+                      {station.shots}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     // Standard drill format
     const attempts = Array.isArray(attemptsData) ? attemptsData : [];
 
@@ -288,7 +333,7 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                       </span>
                     </div>
                     <span className="text-lg font-bold text-foreground">
-                      {result.total_points} {drillTitle === "TW's 9 Windows Test" ? 'shots' : 'points'}
+                      {result.total_points} {drillTitle === "TW's 9 Windows Test" || drillTitle === "18 Up & Downs" ? 'shots' : 'points'}
                     </span>
                   </div>
                 </AccordionTrigger>
