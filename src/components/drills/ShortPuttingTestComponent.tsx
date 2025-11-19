@@ -18,10 +18,10 @@ interface TeePosition {
 const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTestComponentProps) => {
   const STORAGE_KEY = 'short-putting-test-drill-state';
   const [teePositions, setTeePositions] = useState<TeePosition[]>([
-    { name: '12 o\'clock', distance: 4 },
-    { name: '3 o\'clock', distance: 4 },
-    { name: '6 o\'clock', distance: 4 },
-    { name: '9 o\'clock', distance: 4 },
+    { name: '12 o\'clock', distance: 3 },
+    { name: '3 o\'clock', distance: 3 },
+    { name: '6 o\'clock', distance: 3 },
+    { name: '9 o\'clock', distance: 3 },
   ]);
   const [currentTeeIndex, setCurrentTeeIndex] = useState(0);
   const [consecutiveMakes, setConsecutiveMakes] = useState(0);
@@ -37,10 +37,10 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
       try {
         const state = JSON.parse(saved);
         setTeePositions(state.teePositions || [
-          { name: '12 o\'clock', distance: 4 },
-          { name: '3 o\'clock', distance: 4 },
-          { name: '6 o\'clock', distance: 4 },
-          { name: '9 o\'clock', distance: 4 },
+          { name: '12 o\'clock', distance: 3 },
+          { name: '3 o\'clock', distance: 3 },
+          { name: '6 o\'clock', distance: 3 },
+          { name: '9 o\'clock', distance: 3 },
         ]);
         setCurrentTeeIndex(state.currentTeeIndex || 0);
         setConsecutiveMakes(state.consecutiveMakes || 0);
