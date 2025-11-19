@@ -18,10 +18,10 @@ interface TeePosition {
 const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTestComponentProps) => {
   const STORAGE_KEY = 'short-putting-test-drill-state';
   const [teePositions, setTeePositions] = useState<TeePosition[]>([
-    { name: '12 o\'clock', distance: 4 },
-    { name: '3 o\'clock', distance: 4 },
-    { name: '6 o\'clock', distance: 4 },
-    { name: '9 o\'clock', distance: 4 },
+    { name: '12 o\'clock', distance: 3 },
+    { name: '3 o\'clock', distance: 3 },
+    { name: '6 o\'clock', distance: 3 },
+    { name: '9 o\'clock', distance: 3 },
   ]);
   const [currentTeeIndex, setCurrentTeeIndex] = useState(0);
   const [consecutiveMakes, setConsecutiveMakes] = useState(0);
@@ -37,10 +37,10 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
       try {
         const state = JSON.parse(saved);
         setTeePositions(state.teePositions || [
-          { name: '12 o\'clock', distance: 4 },
-          { name: '3 o\'clock', distance: 4 },
-          { name: '6 o\'clock', distance: 4 },
-          { name: '9 o\'clock', distance: 4 },
+          { name: '12 o\'clock', distance: 3 },
+          { name: '3 o\'clock', distance: 3 },
+          { name: '6 o\'clock', distance: 3 },
+          { name: '9 o\'clock', distance: 3 },
         ]);
         setCurrentTeeIndex(state.currentTeeIndex || 0);
         setConsecutiveMakes(state.consecutiveMakes || 0);
@@ -156,10 +156,10 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
     setConsecutiveMakes(0);
     setCurrentTeeIndex(0);
     setTeePositions([
-      { name: '12 o\'clock', distance: 4 },
-      { name: '3 o\'clock', distance: 4 },
-      { name: '6 o\'clock', distance: 4 },
-      { name: '9 o\'clock', distance: 4 },
+      { name: '12 o\'clock', distance: 3 },
+      { name: '3 o\'clock', distance: 3 },
+      { name: '6 o\'clock', distance: 3 },
+      { name: '9 o\'clock', distance: 3 },
     ]);
   };
 
@@ -169,10 +169,10 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
     setConsecutiveMakes(0);
     setCurrentTeeIndex(0);
     setTeePositions([
-      { name: '12 o\'clock', distance: 4 },
-      { name: '3 o\'clock', distance: 4 },
-      { name: '6 o\'clock', distance: 4 },
-      { name: '9 o\'clock', distance: 4 },
+      { name: '12 o\'clock', distance: 3 },
+      { name: '3 o\'clock', distance: 3 },
+      { name: '6 o\'clock', distance: 3 },
+      { name: '9 o\'clock', distance: 3 },
     ]);
   };
 
@@ -184,7 +184,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
             <div>
               <h3 className="font-semibold text-lg mb-2">Setup</h3>
               <p className="text-muted-foreground">
-                Place 4 tees around the hole at the 12, 3, 6, and 9 o'clock positions, each 4 feet from the hole.
+                Place 4 tees around the hole at the 12, 3, 6, and 9 o'clock positions, each 3 feet from the hole.
               </p>
             </div>
 
@@ -192,7 +192,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
               <h3 className="font-semibold text-lg mb-2">How to Play</h3>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• Start by putting from any tee</li>
-                <li>• If you hole it → move that tee back 1 foot (e.g. 4 ft → 5 ft)</li>
+                <li>• If you hole it → move that tee back 1 foot (e.g. 3 ft → 4 ft)</li>
                 <li>• Rotate to the next tee and continue</li>
                 <li>• If you miss a putt → the test ends immediately</li>
               </ul>
