@@ -91,7 +91,7 @@ const PuttingDrills = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Short putts under pressure.
+                A confidence-building putting drill where you make as many putts in a row as possible to improve consistency, handle pressure, and sharpen your must-make routine.
               </p>
               
               <Button 
