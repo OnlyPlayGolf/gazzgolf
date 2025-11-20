@@ -105,6 +105,13 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
     }
   };
 
+  const handleReset = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setProgress([]);
+    setCurrentDistanceIndex(0);
+    setDrillStarted(false);
+  };
+
   const totalShots = progress.reduce((sum, p) => sum + p.attempts.length, 0);
   const completedDistances = progress.filter(p => p.completed).length;
   const isCompleted = completedDistances === distances.length;
@@ -311,20 +318,36 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
               <span>{completedDistances}/{distances.length}</span>
             </div>
             
-            {userId && (
-              <Button
-                onClick={saveScore}
-                className="w-full"
-                disabled={totalShots === 0}
-              >
-                Save Score
-              </Button>
-            )}
-            
-            {!userId && (
-              <p className="text-sm text-center text-muted-foreground">
-                Sign in to save your score
-              </p>
+            {userId ? (
+              <div className="space-y-2">
+                <Button
+                  onClick={saveScore}
+                  className="w-full"
+                  disabled={totalShots === 0}
+                >
+                  Save Score
+                </Button>
+                <Button
+                  onClick={handleReset}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Reset Drill
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-center text-muted-foreground">
+                  Sign in to save your score
+                </p>
+                <Button
+                  onClick={handleReset}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Reset Drill
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

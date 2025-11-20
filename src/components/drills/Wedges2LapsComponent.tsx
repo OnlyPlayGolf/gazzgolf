@@ -175,6 +175,12 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
     initializeAttempts();
   };
 
+  const handleReset = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setAttempts([]);
+    setDrillStarted(false);
+  };
+
   return (
     <div className="space-y-6">
       {!drillStarted ? (
@@ -274,13 +280,22 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
                     <p className="text-xl font-semibold">{completedAttempts}/{totalAttempts}</p>
                   </div>
                 </div>
-                <Button
-                  onClick={saveScore}
-                  disabled={completedAttempts === 0}
-                  className="w-full bg-primary hover:bg-primary/90"
-                >
-                  Save Score
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={saveScore}
+                    disabled={completedAttempts === 0}
+                    className="w-full bg-primary hover:bg-primary/90"
+                  >
+                    Save Score
+                  </Button>
+                  <Button
+                    onClick={handleReset}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Reset Drill
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -289,6 +304,13 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
                 <p className="text-muted-foreground mb-2">
                   Sign in to save your score and compete on the leaderboard
                 </p>
+                <Button
+                  onClick={handleReset}
+                  variant="outline"
+                  className="w-full mt-4"
+                >
+                  Reset Drill
+                </Button>
               </CardContent>
             </Card>
           )}
