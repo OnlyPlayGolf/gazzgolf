@@ -12,17 +12,17 @@ export default function WedgesProgressionInfo() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-semibold mb-2">Overview</h3>
-            <p className="text-muted-foreground">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Overview</h3>
+            <p className="text-sm text-muted-foreground">
               This drill tests your distance control across 13 different distances from 60 to 120 meters. 
               You must hit each distance within 3 meters to advance to the next one.
             </p>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">How it works</h3>
-            <ul className="space-y-2 text-muted-foreground">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">How it works</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Start at 60 meters</li>
               <li>• Hit a shot and record your actual distance</li>
               <li>• If within 3 meters of target, advance to next distance (65m)</li>
@@ -31,20 +31,20 @@ export default function WedgesProgressionInfo() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">Scoring</h3>
-            <p className="text-muted-foreground">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Scoring</h3>
+            <p className="text-sm text-muted-foreground">
               Your score is the total number of shots needed to complete all distances. 
               A perfect score would be 13 shots (one per distance).
             </p>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               <strong>Lower score is better.</strong>
             </p>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">Tips</h3>
-            <ul className="space-y-2 text-muted-foreground">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Tips</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Focus on consistent tempo and technique</li>
               <li>• Know your yardages for different clubs and swings</li>
               <li>• Account for wind and elevation</li>
