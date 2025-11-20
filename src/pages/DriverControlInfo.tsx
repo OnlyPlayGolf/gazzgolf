@@ -15,50 +15,37 @@ export default function DriverControlInfo() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="font-semibold">Overview</h3>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Overview</h3>
               <p className="text-sm text-muted-foreground">
-                The Driver Control drill tests your accuracy off the tee with 14 shots. 
-                Perfect for range sessions or on-course practice (one shot per hole). 
-                The fairway is 30 meters wide, simulating real playing conditions.
+                The Driver Control drill tests your driving accuracy over 14 shots. The fairway is set to 30 meters wide, simulating realistic on-course conditions. Ideal for both range sessions and one-shot-per-hole on-course practice.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <h3 className="font-semibold">Scoring System</h3>
-              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                <li><strong>Fairway Hit:</strong> +1 point</li>
-                <li><strong>Miss Left:</strong> 0, -1, or -2 points (randomized per shot)</li>
-                <li><strong>Miss Right:</strong> 0, -1, or -2 points (randomized per shot)</li>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">How It Works</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground pl-4">
+                <li>Hit 14 total drives</li>
+                <li>Each shot has a predefined point outcome for: Fairway Hit, Miss Left, or Miss Right</li>
+                <li>Left and right misses have randomized penalties (0, –1, or –2 points) to keep the drill challenging and unpredictable</li>
+                <li>After each shot, record whether you hit the fairway or missed</li>
               </ul>
-              <p className="text-sm text-muted-foreground italic mt-2">
-                Each shot has a unique point structure, keeping you focused and engaged throughout the drill.
-              </p>
             </div>
 
-            <div className="space-y-2">
-              <h3 className="font-semibold">Bonus Streak Mechanic</h3>
-              <p className="text-sm text-muted-foreground">
-                Consistency is rewarded! After hitting 3 consecutive fairways, you'll enter bonus territory.
-                Each additional fairway hit earns you +1 bonus point on top of the base point, until you miss.
-              </p>
-              <div className="bg-muted/50 p-3 rounded-lg mt-2">
-                <p className="text-sm font-semibold mb-1">Example:</p>
-                <p className="text-sm text-muted-foreground">
-                  Shot 1: FIR (+1) → Shot 2: FIR (+1) → Shot 3: FIR (+1)<br/>
-                  Shot 4: FIR (+1 base +1 bonus = +2) → Shot 5: FIR (+1 +1 = +2)<br/>
-                  Shot 6: Miss Left (-1) → Bonus streak resets
-                </p>
-              </div>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Scoring System</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground pl-4">
+                <li><strong>Fairway Hit (FIR):</strong> +1 point</li>
+                <li><strong>Miss Left:</strong> 0 / –1 / –2 points (randomized each shot)</li>
+                <li><strong>Miss Right:</strong> 0 / –1 / –2 points (randomized each shot)</li>
+              </ul>
             </div>
 
-            <div className="space-y-2">
-              <h3 className="font-semibold">Tips</h3>
-              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                <li>Focus on hitting the center of the fairway to build your streak</li>
-                <li>Don't let negative points discourage you - stay committed to your routine</li>
-                <li>Use this drill to develop consistency rather than chasing distance</li>
-                <li>Track your progress over time to see improvement in fairway accuracy</li>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Bonus Streak</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground pl-4">
+                <li>After 3 consecutive fairways, you enter bonus mode</li>
+                <li>Every additional FIR earns +1 bonus point until you miss</li>
               </ul>
             </div>
           </CardContent>
