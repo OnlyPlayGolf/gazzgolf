@@ -293,69 +293,94 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
   const currentStation = stations[currentStationIndex];
 
   return (
-    <Card className="mx-auto max-w-2xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-6 w-6" />
-          18 Up & Downs
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="bg-primary/10 rounded-lg p-4 text-center">
-          <p className="text-sm text-muted-foreground mb-1">Station {currentStationIndex + 1} of 18</p>
-          <p className="text-2xl font-bold">
-            {currentStation.lie} - {currentStation.distance}m
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">How many shots to hole out?</p>
+    <div className="space-y-6">
+      {/* Active Drill */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Station {currentStationIndex + 1} of 18</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="p-3 bg-primary/10 rounded-md text-center">
+            <div className="text-sm text-muted-foreground">Current Station</div>
             <div className="text-2xl font-bold text-primary">
-              {currentScore || '-'}
+              {currentStation.lie} - {currentStation.distance}m
             </div>
           </div>
-          
-          <div className="grid grid-cols-3 gap-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <Button
-                key={num}
-                variant="outline"
-                size="lg"
-                onClick={() => addToScore(num)}
-                className="h-16 text-xl font-semibold"
-              >
-                {num}
-              </Button>
-            ))}
+
+          <div className="text-center">
+            <div className="text-lg font-medium">
+              Current Score: {currentScore || 0}
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setCurrentScore(0)}
-              variant="outline"
-              className="flex-1"
-              disabled={currentScore === 0}
-            >
-              Clear
-            </Button>
-            <Button
-              onClick={submitScore}
-              className="flex-1"
-              disabled={currentScore === 0}
-            >
-              Next Shot
-            </Button>
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-center mb-3">How many shots to hole out?</div>
+            <div className="grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5].map((num) => (
+                <Button
+                  key={num}
+                  onClick={() => {
+                    setCurrentScore(num);
+                    setTimeout(() => submitScore(), 100);
+                  }}
+                  className="h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {num}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="bg-muted/50 rounded-lg p-3">
-          <p className="text-sm text-muted-foreground">
-            Completed: {currentStationIndex} / 18 stations
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+          <Button 
+            onClick={() => {
+              localStorage.removeItem(STORAGE_KEY);
+              setDrillStarted(false);
+              setStations([]);
+              setCurrentStationIndex(0);
+              setCurrentScore(0);
+            }}
+            variant="outline"
+            className="w-full"
+          >
+            Reset Drill
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Station History */}
+      {currentStationIndex > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Station History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {stations.slice(0, currentStationIndex).reverse().map((station, index) => {
+                const actualIndex = currentStationIndex - 1 - index;
+                return (
+                  <div key={actualIndex} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Station #{actualIndex + 1}</span>
+                      <span className="text-xs text-muted-foreground">{station.lie} - {station.distance}m</span>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-sm font-medium ${
+                        station.shots === 1 ? 'text-green-600' : 
+                        station.shots === 2 ? 'text-blue-600' :
+                        station.shots === 3 ? 'text-yellow-600' :
+                        'text-muted-foreground'
+                      }`}>
+                        {station.shots} {station.shots === 1 ? 'shot' : 'shots'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 
