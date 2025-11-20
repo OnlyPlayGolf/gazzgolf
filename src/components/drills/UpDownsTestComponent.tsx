@@ -106,8 +106,10 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     setCurrentScore(prev => prev + value);
   };
 
-  const submitScore = () => {
-    if (currentScore === 0) {
+  const submitScore = (score?: number) => {
+    const scoreToSubmit = score ?? currentScore;
+    
+    if (scoreToSubmit === 0) {
       toast({
         title: "Invalid score",
         description: "Please enter a score greater than 0",
@@ -117,7 +119,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     }
 
     const updatedStations = [...stations];
-    updatedStations[currentStationIndex].shots = currentScore;
+    updatedStations[currentStationIndex].shots = scoreToSubmit;
     setStations(updatedStations);
     setCurrentScore(0);
 
@@ -319,10 +321,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
               {[1, 2, 3, 4, 5].map((num) => (
                 <Button
                   key={num}
-                  onClick={() => {
-                    setCurrentScore(num);
-                    setTimeout(() => submitScore(), 100);
-                  }}
+                  onClick={() => submitScore(num)}
                   className="h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {num}
