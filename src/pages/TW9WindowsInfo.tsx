@@ -12,69 +12,50 @@ export default function TW9WindowsInfo() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-semibold mb-2">Overview</h3>
-            <p className="text-muted-foreground">
-              Inspired by Tiger Woods' legendary shot-making ability, this drill tests your 
-              capacity to control both trajectory and shape with precision. Hit shots through 
-              all 9 "windows" - every combination of trajectory and shape.
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Overview</h3>
+            <p className="text-sm text-muted-foreground">
+              Inspired by Tiger Woods' legendary shot-making, this drill challenges your ability to control trajectory and shape with precision. You must hit all nine combinations — the full "window" matrix.
             </p>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">The 9 Windows</h3>
-            <p className="text-muted-foreground mb-2">Every combination of:</p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-4">
-              <li><strong>Trajectory:</strong> Low, Middle, High</li>
-              <li><strong>Shape:</strong> Fade, Straight, Draw</li>
-            </ul>
-          <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-            <div className="p-2 border rounded bg-muted">High Fade</div>
-            <div className="p-2 border rounded bg-muted">High Straight</div>
-            <div className="p-2 border rounded bg-muted">High Draw</div>
-            <div className="p-2 border rounded bg-muted">Mid Fade</div>
-            <div className="p-2 border rounded bg-muted">Mid Straight</div>
-            <div className="p-2 border rounded bg-muted">Mid Draw</div>
-            <div className="p-2 border rounded bg-muted">Low Fade</div>
-            <div className="p-2 border rounded bg-muted">Low Straight</div>
-            <div className="p-2 border rounded bg-muted">Low Draw</div>
-          </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-2">Equipment</h3>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-4">
-              <li>7 iron only</li>
-              <li>15-meter wide target area</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-2">Rules</h3>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-4">
-              <li>Window order is randomized each session</li>
-              <li>Each shot must land in the target AND match the required trajectory/shape</li>
-              <li>After each shot, mark it as "Next Shot" (success) or "Try Again" (miss)</li>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">How It Works</h3>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground pl-4">
+              <li>Windows are randomized each session</li>
+              <li>Each window combines a trajectory (Low / Mid / High) with a shape (Fade / Straight / Draw)</li>
+              <li>Use a 7-iron only</li>
+              <li>Your shot must land in a 15-meter target area and match the required trajectory + shape</li>
+              <li>After each attempt, mark the shot as <strong>Next Shot</strong> (success) or <strong>Try Again</strong> (miss)</li>
               <li>Complete all 9 windows in as few shots as possible</li>
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">Scoring</h3>
-            <p className="text-muted-foreground">
-              Lower score is better. Your total shot count includes both successful shots 
-              and misses. A perfect score is 9 shots (hitting each window on the first try).
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">The 9 Windows</h3>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground pl-4">
+              <li><strong>High:</strong> Fade, Straight, Draw</li>
+              <li><strong>Mid:</strong> Fade, Straight, Draw</li>
+              <li><strong>Low:</strong> Fade, Straight, Draw</li>
+            </ul>
+          </div>
+
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Scoring System</h3>
+            <p className="text-sm text-muted-foreground">
+              Your score is the total number of shots it takes to complete all 9 windows, including both successful shots and misses.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <strong>A perfect score: 9 shots.</strong>
             </p>
           </div>
 
-          <div>
-            <h3 className="font-semibold mb-2">Tips</h3>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-4">
-              <li>Adjust ball position for trajectory control (back for low, forward for high)</li>
-              <li>Use grip pressure and clubface angle for shape</li>
-              <li>Focus on commitment to each shot type - half-hearted attempts won't work</li>
-              <li>Practice the windows you struggle with most</li>
-              <li>Visualize the shot before hitting it</li>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Tips</h3>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground pl-4">
+              <li>Move ball position to adjust trajectory (back = low, forward = high)</li>
+              <li>Commit fully to each window - indecision leads to misses</li>
+              <li>Visualize the exact flight before swinging</li>
             </ul>
           </div>
         </CardContent>
