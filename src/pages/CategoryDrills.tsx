@@ -24,7 +24,7 @@ const allDrills = [
   {
     id: 'short-putting-test',
     title: 'Short Putting Test',
-    shortDescription: 'Short putts under pressure.',
+    shortDescription: "A confidence-building putting drill where you make as many putts in a row as possible to improve consistency, handle pressure, and sharpen your must-make routine.",
     category: 'putting',
     icon: Target,
   },
