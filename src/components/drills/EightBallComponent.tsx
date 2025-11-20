@@ -258,11 +258,28 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
                 {completedAttempts}/{totalAttempts} attempts completed
               </div>
             </div>
-            {completedAttempts === totalAttempts && (
-              <Button onClick={saveScore} className="bg-primary hover:bg-primary/90">
-                Save Score
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => {
+                  localStorage.removeItem(STORAGE_KEY);
+                  setAttempts([]);
+                  setCurrentRound(0);
+                  toast({
+                    title: "Score Reset",
+                    description: "Your score has been cleared.",
+                  });
+                }}
+                variant="outline"
+                size="sm"
+              >
+                Reset Score
               </Button>
-            )}
+              {completedAttempts === totalAttempts && (
+                <Button onClick={saveScore} className="bg-primary hover:bg-primary/90">
+                  Save Score
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">
