@@ -104,6 +104,14 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     setTotalShots(totalShots + 1);
   };
 
+  const handleReset = () => {
+    localStorage.removeItem('tw9WindowsState');
+    setWindows([]);
+    setCurrentWindowIndex(0);
+    setTotalShots(0);
+    setDrillStarted(false);
+  };
+
   const saveScore = async () => {
     if (!userId) {
       toast.error("Please sign in to save your score");
@@ -283,6 +291,14 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
               Try Again
             </Button>
           </div>
+
+          <Button 
+            onClick={handleReset} 
+            variant="ghost"
+            className="w-full"
+          >
+            Reset Drill
+          </Button>
         </CardContent>
       </Card>
 

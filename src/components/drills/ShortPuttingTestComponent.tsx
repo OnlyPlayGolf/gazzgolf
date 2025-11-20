@@ -273,6 +273,14 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
                         Missed
                       </Button>
                     </div>
+
+                    <Button
+                      onClick={handleReset}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Reset Drill
+                    </Button>
                   </>
                 )}
 
