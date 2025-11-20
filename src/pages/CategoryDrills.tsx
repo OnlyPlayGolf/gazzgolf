@@ -217,7 +217,8 @@ const CategoryDrills = () => {
                 'wedges-2-laps',
                 'tw-9-windows',
                 'driver-control',
-                'up-downs-test'
+                'up-downs-test',
+                'easy-chip'
               ];
               
               const handleDrillClick = () => {
