@@ -25,47 +25,52 @@ const ShortGameDrills = () => {
         </div>
 
         <div className="space-y-4">
-          <Card className="border-golf-light">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-primary">
-                <Target size={20} />
-                8-Ball Drill (Points)
+          <Card className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Target size={24} className="text-primary" />
+                <div>
+                  <div>Easy Chip Drill</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Short Game • Consecutive chips
+                  </div>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground mb-3">
+              <p className="text-sm text-muted-foreground mb-4">
+                Build consistency on simple chip shots. See how many chips in a row you can land inside one wedge length from the hole.
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/drill/easy-chip/score')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Open Drill
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Target size={24} className="text-primary" />
+                <div>
+                  <div>8-Ball Drill</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Short Game • Circuit points
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
                 Perform circuit 5 times across 8 stations with point-based scoring system
               </p>
               
-              <div className="space-y-3 mb-4">
-                <div>
-                  <h4 className="font-medium mb-2">Stations (8):</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                    <li>• Chip 10m</li>
-                    <li>• Chip 30m</li>
-                    <li>• Pitch 20m</li>
-                    <li>• Pitch 40m</li>
-                    <li>• Lob 15m</li>
-                    <li>• Lob 25m</li>
-                    <li>• Bunker 10m</li>
-                    <li>• Bunker 20m</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Scoring:</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                    <li>• Holed: <span className="font-medium">4 pts</span></li>
-                    <li>• Within 1m: <span className="font-medium">3 pts</span></li>
-                    <li>• Within 2m: <span className="font-medium">2 pts</span></li>
-                    <li>• Within 3m: <span className="font-medium">1 pt</span></li>
-                  </ul>
-                </div>
-              </div>
-              
               <Button 
                 onClick={() => navigate('/drill/8-ball-points')}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Open Drill
               </Button>

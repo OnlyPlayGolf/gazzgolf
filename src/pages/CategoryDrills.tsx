@@ -43,6 +43,13 @@ const allDrills = [
     icon: Target,
   },
   {
+    id: 'easy-chip',
+    title: 'Easy Chip Drill',
+    shortDescription: 'Build consistency on simple chip shots. See how many chips in a row you can land inside one wedge length from the hole.',
+    category: 'shortgame',
+    icon: Zap,
+  },
+  {
     id: '8-ball-drill',
     title: '8-Ball Drill',
     shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',

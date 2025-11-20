@@ -58,6 +58,7 @@ import DriverControlFeed from "./pages/DriverControlFeed";
 import DriverControlLeaderboard from "./pages/DriverControlLeaderboard";
 import DriverControlMessages from "./pages/DriverControlMessages";
 import UpDownsTestDrill from "./pages/UpDownsTestDrill";
+import EasyChipDrill from "./pages/EasyChipDrill";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -117,6 +118,7 @@ const App = () => (
             <Route path="/drill/tw-9-windows/*" element={<TW9WindowsDrill />} />
             <Route path="/drill/driver-control/*" element={<DriverControlDrill />} />
             <Route path="/drill/up-downs-test/*" element={<UpDownsTestDrill />} />
+            <Route path="/drill/easy-chip/*" element={<EasyChipDrill />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
