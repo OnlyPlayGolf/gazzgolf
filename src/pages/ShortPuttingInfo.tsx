@@ -12,16 +12,16 @@ export default function ShortPuttingInfo() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Overview</h3>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Overview</h3>
             <p className="text-sm text-muted-foreground">
               This drill builds confidence and consistency on short putts by testing your ability to make consecutive putts from four different angles around the hole. Starting at 3 feet, the challenge increases as you move each tee marker progressively farther away. It simulates the pressure of must-make putts during a round while developing a solid putting routine.
             </p>
           </div>
 
-          <div>
-            <h3 className="font-medium text-foreground mb-2">How It Works</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">How It Works</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Set 4 tees around the hole at 12, 3, 6, and 9 o'clock</li>
               <li>• Start each tee at 3 feet</li>
               <li>• Every made putt: move that tee back 1 foot</li>
@@ -29,17 +29,17 @@ export default function ShortPuttingInfo() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Scoring System</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Scoring System</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• One miss ends the drill</li>
               <li>• Your score = total consecutive putts made</li>
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Tips</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Tips</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Commit fully to each read and your routine</li>
               <li>• Focus on starting the ball on your intended line</li>
               <li>• Focus on having consistent speed</li>

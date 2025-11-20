@@ -12,16 +12,16 @@ export default function UpDownPuttingInfo() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Overview</h3>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Overview</h3>
             <p className="text-sm text-muted-foreground">
               This uphill-downhill putting drill sharpens your speed control and consistency across varying slopes. It trains you to manage pace and break from both directions.
             </p>
           </div>
 
-          <div>
-            <h3 className="font-medium text-foreground mb-2">How It Works</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">How It Works</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Two lines: one uphill and one downhill</li>
               <li>• Mark distances at 6 m, 8 m, and 10 m from the hole on both lines</li>
               <li>• Create a 3-foot "zone" short and long of the hole</li>
@@ -30,9 +30,9 @@ export default function UpDownPuttingInfo() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Scoring System</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Scoring System</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Holed → −1 (Birdie)</li>
               <li>• Missed inside 3 ft → 0 (Par)</li>
               <li>• Missed short/long outside zone → +1 (Bogey)</li>
@@ -41,9 +41,9 @@ export default function UpDownPuttingInfo() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-medium text-foreground mb-2">Tips</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <h3 className="font-semibold text-sm">Tips</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Notice how much more the downhill putt breaks</li>
             </ul>
           </div>
