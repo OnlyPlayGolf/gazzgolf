@@ -106,6 +106,7 @@ const ProfileSettings = () => {
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
+      navigate('/profile');
     } catch (error) {
       toast({
         title: "Error",
