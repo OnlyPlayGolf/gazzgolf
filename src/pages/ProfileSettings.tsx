@@ -139,7 +139,7 @@ const ProfileSettings = () => {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate("/user-profile")}
+              onClick={() => navigate("/profile")}
               className="rounded-full flex-shrink-0"
             >
               <ArrowLeft size={20} />
