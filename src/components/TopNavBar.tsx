@@ -90,21 +90,21 @@ export const TopNavBar = () => {
           <AddFriendDialog 
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-white hover:bg-white/20">
-                <UserPlus size={18} />
+                <UserPlus size={18} fill="white" strokeWidth={0} />
               </Button>
             }
           />
           <NotificationsSheet 
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
-                <Bell size={18} />
+                <Bell size={18} fill="white" strokeWidth={0} />
               </Button>
             }
           />
           <MessagesSheet 
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
-                <MessageCircle size={18} />
+                <MessageCircle size={18} fill="white" strokeWidth={0} />
               </Button>
             }
           />
