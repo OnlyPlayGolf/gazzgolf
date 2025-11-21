@@ -307,8 +307,7 @@ const Levels = () => {
               {levels.map((level) => (
                 <Card
                   key={level.id}
-                  className={`rounded-2xl transition-all cursor-pointer ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm hover:shadow-md"}`}
-                  onClick={() => handleCompleteLevel(level.id)}
+                  className={`rounded-2xl transition-all ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm"}`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
