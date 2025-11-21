@@ -201,7 +201,7 @@ const CategoryDrills = () => {
             {drills.map((drill) => {
               if (!drill) return null;
               const Icon = drill.icon;
-              const drillIsFavorite = isFavorite(drill.id);
+              const drillIsFavorite = favorites.some(fav => fav.id === drill.id);
               
               // Drills with new game mode structure
               const gameModeDrills = [
