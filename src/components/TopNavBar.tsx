@@ -90,7 +90,7 @@ export const TopNavBar = () => {
           <AddFriendDialog 
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-white hover:bg-white/20">
-                <UserPlus size={18} fill="white" strokeWidth={0} />
+                <UserPlus size={18} />
               </Button>
             }
           />
