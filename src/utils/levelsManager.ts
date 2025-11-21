@@ -50,13 +50,15 @@ export const saveLevelProgress = (progress: Record<string, LevelProgress>) => {
 };
 
 // Mark level as completed and sync to database
-export const completeLevelz = async (levelId: string, attempts: number = 1) => {
+export const completeLevelz = async (levelId: string, attempts: number = 1, completed: boolean = true) => {
   const progress = getLevelProgress();
+  const existingProgress = progress[levelId];
+  
   progress[levelId] = {
     levelId,
-    completed: true,
-    completedAt: Date.now(),
-    attempts,
+    completed: completed,
+    completedAt: completed ? Date.now() : (existingProgress?.completedAt || 0),
+    attempts: attempts,
   };
   saveLevelProgress(progress);
 
@@ -81,8 +83,8 @@ export const completeLevelz = async (levelId: string, attempts: number = 1) => {
       await supabase
         .from('level_progress')
         .update({
-          completed: true,
-          completed_at: new Date().toISOString(),
+          completed: completed,
+          completed_at: completed ? new Date().toISOString() : (existing as any).completed_at,
           attempts: attempts ?? existing.attempts ?? 1,
           level_number: levelNumber,
           updated_at: new Date().toISOString(),
@@ -94,8 +96,8 @@ export const completeLevelz = async (levelId: string, attempts: number = 1) => {
         .insert({
           user_id: user.id,
           level_id: levelId,
-          completed: true,
-          completed_at: new Date().toISOString(),
+          completed: completed,
+          completed_at: completed ? new Date().toISOString() : null,
           attempts: attempts ?? 1,
           level_number: levelNumber,
           updated_at: new Date().toISOString(),
@@ -169,7 +171,8 @@ export const getLevelsWithProgress = (): Level[] => {
     ...level,
     completed: progress[level.id]?.completed || false,
     completedAt: progress[level.id]?.completedAt,
-  }));
+    attempts: progress[level.id]?.attempts || 0,
+  } as any));
 };
 
 // Get completion stats

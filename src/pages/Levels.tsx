@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, CheckCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getLevelsWithProgress, getCompletionStats, completeLevelz } from "@/utils/levelsManager";
+import { getLevelsWithProgress, getCompletionStats, completeLevelz, getLevelProgress } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,6 +19,7 @@ const Levels = () => {
   const [stats, setStats] = useState({ completed: 0, total: 0, percentage: 0, totalCompleted: 0, totalLevels: 0 });
   const [activeTab, setActiveTab] = useState("play");
   const [profile, setProfile] = useState<any>(null);
+  const [isLevelStarted, setIsLevelStarted] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -37,6 +38,7 @@ const Levels = () => {
 
       setLevels(filteredLevels);
       setStats({ completed, total, percentage, totalCompleted, totalLevels });
+      setIsLevelStarted(false);
 
       const {
         data: { user },
@@ -53,8 +55,16 @@ const Levels = () => {
     loadData();
   }, [difficulty]);
 
+  const handleStartLevel = () => {
+    setIsLevelStarted(true);
+  };
+
   const handleCompleteLevel = (levelId: string) => {
-    completeLevelz(levelId);
+    // Get current progress to increment attempts
+    const progress = getLevelProgress();
+    const currentAttempts = progress[levelId]?.attempts || 0;
+    
+    completeLevelz(levelId, currentAttempts + 1, true);
     const allLevels = getLevelsWithProgress();
     const levelsData = allLevels.filter(
       (level) => level.difficulty.toLowerCase() === (difficulty || "beginner").toLowerCase()
@@ -69,6 +79,24 @@ const Levels = () => {
     
     setLevels(levelsData);
     setStats({ completed, total, percentage, totalCompleted, totalLevels });
+    setIsLevelStarted(false);
+  };
+
+  const handleFailLevel = (levelId: string) => {
+    // Get current progress to increment attempts
+    const progress = getLevelProgress();
+    const currentAttempts = progress[levelId]?.attempts || 0;
+    
+    // Increment attempts without completing
+    completeLevelz(levelId, currentAttempts + 1, false);
+    
+    // Refresh levels data
+    const allLevels = getLevelsWithProgress();
+    const levelsData = allLevels.filter(
+      (level) => level.difficulty.toLowerCase() === (difficulty || "beginner").toLowerCase()
+    );
+    setLevels(levelsData);
+    setIsLevelStarted(false);
   };
 
   const currentLevel = levels.find((level) => !level.completed) || levels[levels.length - 1];
@@ -241,13 +269,33 @@ const Levels = () => {
                     </Badge>
                   </div>
 
-                  <Button
-                    onClick={() => handleCompleteLevel(currentLevel.id)}
-                    className="w-full rounded-2xl bg-foreground text-background hover:bg-foreground/90"
-                    size="lg"
-                  >
-                    Start Level
-                  </Button>
+                  {!isLevelStarted ? (
+                    <Button
+                      onClick={handleStartLevel}
+                      className="w-full rounded-2xl bg-foreground text-background hover:bg-foreground/90"
+                      size="lg"
+                    >
+                      Start Level
+                    </Button>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        onClick={() => handleCompleteLevel(currentLevel.id)}
+                        className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
+                        size="lg"
+                      >
+                        Completed
+                      </Button>
+                      <Button
+                        onClick={() => handleFailLevel(currentLevel.id)}
+                        variant="outline"
+                        className="rounded-2xl"
+                        size="lg"
+                      >
+                        Failed
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -285,6 +333,11 @@ const Levels = () => {
                         <p className="text-sm font-semibold text-foreground mb-2">{level.distance}</p>
                         {level.completed && (
                           <Badge variant="outline" className="text-xs">Completed</Badge>
+                        )}
+                        {(level as any).attempts && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {(level as any).attempts} attempt{(level as any).attempts > 1 ? 's' : ''}
+                          </p>
                         )}
                       </div>
                     </div>
