@@ -15,7 +15,7 @@ export default function Wedges2LapsInfo() {
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <h3 className="font-semibold text-sm">Overview</h3>
             <p className="text-sm text-muted-foreground">
-              Hit the specified distances. One shot per length, 2 laps. 40-80 meters. Score points based on proximity to the hole.
+              A wedge distance-control challenge featuring two laps of nine distances between 40–80 meters. Designed to sharpen your precision from the fairway and improve your scoring game.
             </p>
           </div>
 
