@@ -235,7 +235,7 @@ const Levels = () => {
 
                   <div className="flex items-center gap-2 mb-6">
                     <Target size={16} className="text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Target: {currentLevel.target}</span>
+                    <span className="text-sm text-muted-foreground">Target: <strong>{currentLevel.target}</strong></span>
                     <Badge variant="outline" className={getDifficultyColor(currentLevel.difficulty)}>
                       {currentLevel.difficulty}
                     </Badge>
@@ -274,7 +274,7 @@ const Levels = () => {
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Target size={12} />
-                            <span>Target: {level.target}</span>
+                            <span>Target: <strong>{level.target}</strong></span>
                           </div>
                           <Badge variant="outline" className={`${getDifficultyColor(level.difficulty)} text-xs`}>
                             {level.difficulty}
