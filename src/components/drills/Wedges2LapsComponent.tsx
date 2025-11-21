@@ -189,7 +189,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
             <div>
               <h3 className="font-semibold text-lg mb-2">Description</h3>
               <p className="text-muted-foreground">
-                Hit the specified distances. One shot per length, 2 laps.
+                Test your wedge distance control from 40-80 meters. One shot per distance, 2 laps.
               </p>
               <p className="text-muted-foreground mt-2 font-medium">
                 Distances: 40, 45, 50, 55, 60, 65, 70, 75, 80 meters
