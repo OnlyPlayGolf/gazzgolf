@@ -56,7 +56,7 @@ const Auth = () => {
             localStorage.removeItem('pending_invite_code');
             navigate(`/invite/${pendingInviteCode}`);
           } else {
-            navigate('/drills');
+            navigate('/');
           }
         }
       }
@@ -74,7 +74,7 @@ const Auth = () => {
           localStorage.removeItem('pending_invite_code');
           navigate(`/invite/${pendingInviteCode}`);
         } else {
-          navigate('/drills');
+          navigate('/');
         }
       }
     });
