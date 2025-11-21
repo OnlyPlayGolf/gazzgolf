@@ -59,7 +59,7 @@ const allDrills = [
   {
     id: 'wedges-2-laps',
     title: 'Wedge Point Game',
-    shortDescription: 'Hit the specified distances. One shot per length, 2 laps.',
+    shortDescription: 'Test your wedge control from 40-80 meters. One shot per distance, 2 laps.',
     category: 'approach',
     icon: Hammer,
   },
