@@ -254,17 +254,6 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="flex items-center gap-3 mb-6">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/drills')}
-            className="p-2"
-          >
-            <ArrowLeft size={20} />
-          </Button>
-        </div>
-
         <Card>
           <CardHeader>
             <CardTitle className="text-center text-2xl">Welcome to Gazz Golf</CardTitle>
