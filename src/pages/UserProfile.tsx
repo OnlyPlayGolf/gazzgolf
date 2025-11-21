@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Profile {
   id: string;
@@ -43,6 +44,7 @@ export default function UserProfile() {
   const [recentRounds, setRecentRounds] = useState<RecentRound[]>([]);
   const [averageScore, setAverageScore] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   useEffect(() => {
     loadProfileData();
@@ -362,11 +364,7 @@ export default function UserProfile() {
                   <CardContent className="p-0">
                     <Button
                       variant="ghost"
-                      onClick={async () => { 
-                        await supabase.auth.signOut();
-                        setMenuOpen(false);
-                        navigate('/auth');
-                      }}
+                      onClick={() => setLogoutDialogOpen(true)}
                       className="w-full h-auto p-4 justify-start text-left text-destructive hover:text-destructive"
                     >
                       <div className="flex items-center justify-between w-full">
@@ -552,6 +550,32 @@ export default function UserProfile() {
         </div>
 
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Log Out</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to log out?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                await supabase.auth.signOut();
+                setMenuOpen(false);
+                setLogoutDialogOpen(false);
+                navigate('/auth');
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Log Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
