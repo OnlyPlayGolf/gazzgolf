@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
+import { migrateStorageKeys } from "@/utils/storageManager";
 import Index from "./pages/Index";
 import DrillsCategories from "./pages/DrillsCategories";
 import CategoryDrills from "./pages/CategoryDrills";
@@ -63,12 +64,18 @@ import EasyChipDrill from "./pages/EasyChipDrill";
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+const App = () => {
+  useEffect(() => {
+    // Run storage migration on app startup
+    migrateStorageKeys();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
         <div className="relative">
           <Routes>
             <Route path="/" element={<Index />} />
@@ -127,6 +134,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

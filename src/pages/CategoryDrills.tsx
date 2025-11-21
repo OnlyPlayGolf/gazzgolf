@@ -130,16 +130,20 @@ const CategoryDrills = () => {
       }
     };
 
+    const onFavoritesChanged = () => load();
+
     window.addEventListener('storage', onStorage);
+    window.addEventListener('favoritesChanged', onFavoritesChanged);
     window.addEventListener('focus', load);
 
     return () => {
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener('favoritesChanged', onFavoritesChanged);
       window.removeEventListener('focus', load);
     };
   }, [categoryId]);
   const toggleFavorite = (drill: typeof allDrills[0]) => {
-    const drillIsFavorite = isFavorite(drill.id);
+    const drillIsFavorite = favorites.some(f => f.id === drill.id);
     
     if (drillIsFavorite) {
       const updated = removeFromFavorites(drill.id);
@@ -152,6 +156,9 @@ const CategoryDrills = () => {
       });
       setFavorites(updated);
     }
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('favoritesChanged'));
   };
 
   const getDrillsForCategory = () => {
