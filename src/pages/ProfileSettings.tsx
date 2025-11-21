@@ -17,6 +17,14 @@ const ProfileSettings = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    country: '',
+    handicap: '',
+    homeClub: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -59,23 +67,41 @@ const ProfileSettings = () => {
         .single();
       
       setProfile(profileData);
+      
+      // Split display_name into first and last name for editing
+      const nameParts = (profileData?.display_name || '').split(' ');
+      setFormData({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        country: profileData?.country || '',
+        handicap: profileData?.handicap || '',
+        homeClub: profileData?.home_club || ''
+      });
     } catch (error) {
       console.error('Error loading user data:', error);
     }
   };
 
-  const handleUpdateProfile = async (field: string, value: string) => {
+  const handleSaveProfile = async () => {
     if (!user) return;
 
+    setIsSaving(true);
     try {
+      const displayName = `${formData.firstName} ${formData.lastName}`.trim();
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ [field]: value })
+        .update({ 
+          display_name: displayName,
+          country: formData.country,
+          handicap: formData.handicap,
+          home_club: formData.homeClub
+        })
         .eq('id', user.id);
 
       if (error) throw error;
       
-      setProfile((prev: any) => ({ ...prev, [field]: value }));
+      await loadUserData();
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
@@ -86,6 +112,8 @@ const ProfileSettings = () => {
         description: "Failed to update profile.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -110,7 +138,15 @@ const ProfileSettings = () => {
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      await handleUpdateProfile('avatar_url', data.publicUrl);
+      
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: data.publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      await loadUserData();
 
       toast({
         title: "Avatar updated",
@@ -175,33 +211,42 @@ const ProfileSettings = () => {
                 </label>
               </div>
               <div className="flex-1">
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="display-name">Display Name</Label>
+                    <Label htmlFor="first-name">First Name</Label>
                     <Input
-                      id="display-name"
-                      value={profile?.display_name || ""}
-                      onChange={(e) => handleUpdateProfile('display_name', e.target.value)}
-                      placeholder="Enter your display name"
+                      id="first-name"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="Enter your first name"
                       className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="last-name">Last Name</Label>
                     <Input
-                      id="username"
-                      value={profile?.username || ""}
-                      onChange={(e) => handleUpdateProfile('username', e.target.value)}
-                      placeholder="Enter your username"
+                      id="last-name"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="Enter your last name"
                       className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      value={user?.email || ""}
+                      disabled
+                      className="mt-1 opacity-60 cursor-not-allowed"
                     />
                   </div>
                   <div>
                     <Label htmlFor="country">Country</Label>
                     <Input
                       id="country"
-                      value={profile?.country || ""}
-                      onChange={(e) => handleUpdateProfile('country', e.target.value)}
+                      value={formData.country}
+                      onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
                       placeholder="Enter your country"
                       className="mt-1"
                     />
@@ -210,8 +255,8 @@ const ProfileSettings = () => {
                     <Label htmlFor="handicap">Handicap</Label>
                     <Input
                       id="handicap"
-                      value={profile?.handicap || ""}
-                      onChange={(e) => handleUpdateProfile('handicap', e.target.value)}
+                      value={formData.handicap}
+                      onChange={(e) => setFormData(prev => ({ ...prev, handicap: e.target.value }))}
                       placeholder="e.g. +10 to 54"
                       className="mt-1"
                     />
@@ -220,12 +265,19 @@ const ProfileSettings = () => {
                     <Label htmlFor="home-club">Home Club</Label>
                     <Input
                       id="home-club"
-                      value={profile?.home_club || ""}
-                      onChange={(e) => handleUpdateProfile('home_club', e.target.value)}
+                      value={formData.homeClub}
+                      onChange={(e) => setFormData(prev => ({ ...prev, homeClub: e.target.value }))}
                       placeholder="Enter your golf club"
                       className="mt-1"
                     />
                   </div>
+                  <Button 
+                    onClick={handleSaveProfile} 
+                    disabled={isSaving}
+                    className="w-full"
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
                 </div>
               </div>
             </div>
