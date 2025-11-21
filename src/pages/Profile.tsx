@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -478,6 +478,18 @@ const Profile = () => {
       .slice(0, 2);
   };
 
+  // Sort groups to show favorites first
+  const sortedGroups = useMemo(() => {
+    return [...groups].sort((a, b) => {
+      const aIsFavorite = favoriteGroupIds.includes(a.id);
+      const bIsFavorite = favoriteGroupIds.includes(b.id);
+      
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      return 0;
+    });
+  }, [groups, favoriteGroupIds]);
+
   if (!user) {
     return null; // Will redirect to auth
   }
@@ -701,8 +713,8 @@ const Profile = () => {
 
         {/* Groups List */}
         <div className="space-y-4">
-          {groups.length > 0 ? (
-            groups.map((group) => (
+          {sortedGroups.length > 0 ? (
+            sortedGroups.map((group) => (
               <Card 
                 key={group.id} 
                 className="border-border cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
