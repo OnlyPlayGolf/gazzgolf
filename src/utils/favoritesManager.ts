@@ -1,4 +1,6 @@
-const FAVORITES_KEY = 'drillFavorites';
+import { STORAGE_KEYS } from "@/constants/app";
+
+const FAVORITES_KEY = STORAGE_KEYS.FAVORITES;
 
 export interface FavoriteDrill {
   id: string;

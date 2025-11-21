@@ -11,7 +11,8 @@ export const STORAGE_KEYS = {
   USER_DRILLS: "app_user_drills",
   DRILL_SESSIONS: "app_drill_sessions",
   PUTTING_UNIT: "app_putting_unit",
-  LONGGAME_UNIT: "app_longgame_unit"
+  LONGGAME_UNIT: "app_longgame_unit",
+  FAVORITES: "app_favorites"
 };
 
 export const OLD_STORAGE_KEYS = {
