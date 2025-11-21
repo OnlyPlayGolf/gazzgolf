@@ -125,7 +125,7 @@ const CategoryDrills = () => {
     load();
 
     const onStorage = (e: StorageEvent) => {
-      if (!e.key || e.key === 'drillFavorites') {
+      if (!e.key || e.key === 'app_favorites' || e.key === 'drillFavorites') {
         load();
       }
     };

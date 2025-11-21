@@ -12,6 +12,8 @@ export const migrateStorageKeys = () => {
     { old: OLD_STORAGE_KEYS.LEVELS_STATE, new: STORAGE_KEYS.LEVELS_STATE },
     // Legacy key from original implementation
     { old: "pga18_total_putts", new: STORAGE_KEYS.PGA18_SCORES },
+    // Legacy favorites key
+    { old: "drillFavorites", new: STORAGE_KEYS.FAVORITES },
   ];
 
   migrations.forEach(({ old, new: newKey }) => {
