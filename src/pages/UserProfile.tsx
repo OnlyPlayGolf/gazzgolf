@@ -551,41 +551,6 @@ export default function UserProfile() {
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/levels')}
-          >
-            <Target size={24} />
-            <span>Levels</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/drills')}
-          >
-            <TrendingUp size={24} />
-            <span>Drills</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/groups')}
-          >
-            <Users size={24} />
-            <span>Groups</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => navigate('/leaderboards')}
-          >
-            <BarChart3 size={24} />
-            <span>Leaderboards</span>
-          </Button>
-        </div>
       </div>
     </div>
   );
