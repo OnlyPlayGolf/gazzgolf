@@ -185,6 +185,9 @@ const Levels = () => {
                       } else if (difficulty?.toLowerCase() === "amateur") {
                         const order = ["Putt", "Chip", "Approach", "Pitch", "Wedge", "Bunker"];
                         return order.indexOf(a) - order.indexOf(b);
+                      } else if (difficulty?.toLowerCase() === "tour") {
+                        const order = ["Putt", "Chip", "Wedge", "Bunker", "Driver", "Wood", "Approach", "Play"];
+                        return order.indexOf(a) - order.indexOf(b);
                       }
                       return a.localeCompare(b);
                     })
