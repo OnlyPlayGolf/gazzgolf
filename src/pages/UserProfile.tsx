@@ -364,7 +364,10 @@ export default function UserProfile() {
                   <CardContent className="p-0">
                     <Button
                       variant="ghost"
-                      onClick={() => setLogoutDialogOpen(true)}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setTimeout(() => setLogoutDialogOpen(true), 300);
+                      }}
                       className="w-full h-auto p-4 justify-start text-left text-destructive hover:text-destructive"
                     >
                       <div className="flex items-center justify-between w-full">
@@ -565,7 +568,6 @@ export default function UserProfile() {
             <AlertDialogAction
               onClick={async () => {
                 await supabase.auth.signOut();
-                setMenuOpen(false);
                 setLogoutDialogOpen(false);
                 navigate('/auth');
               }}
