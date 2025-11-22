@@ -12,6 +12,7 @@ interface SearchResult {
   display_name: string | null;
   country: string | null;
   groups: string[];
+  isFriend: boolean;
 }
 
 interface AddFriendDialogProps {
@@ -49,22 +50,30 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
         return;
       }
 
-      // Get group memberships for each user
-      const usersWithGroups = await Promise.all(
+      // Get group memberships and friendship status for each user
+      const usersWithGroupsAndFriendship = await Promise.all(
         users.map(async (u: any) => {
           const { data: groupData } = await supabase
             .from('group_members')
             .select('groups(name)')
             .eq('user_id', u.id);
 
+          // Check if already friends
+          const { data: friendshipData } = await supabase
+            .from('friendships')
+            .select('id, status')
+            .or(`and(requester.eq.${user.id},addressee.eq.${u.id}),and(requester.eq.${u.id},addressee.eq.${user.id})`)
+            .maybeSingle();
+
           return {
             ...u,
-            groups: groupData?.map((g: any) => g.groups.name) || []
+            groups: groupData?.map((g: any) => g.groups.name) || [],
+            isFriend: friendshipData?.status === 'accepted'
           };
         })
       );
 
-      setSearchResults(usersWithGroups);
+      setSearchResults(usersWithGroupsAndFriendship);
     } catch (error) {
       toast({
         title: "Error",
@@ -174,13 +183,23 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
                     </p>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => handleSendFriendRequest(result.id, result.username || result.display_name || 'this user')}
-                >
-                  <UserPlus size={16} className="mr-1" />
-                  Add
-                </Button>
+                {result.isFriend ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled
+                  >
+                    Friends
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => handleSendFriendRequest(result.id, result.username || result.display_name || 'this user')}
+                  >
+                    <UserPlus size={16} className="mr-1" />
+                    Add
+                  </Button>
+                )}
               </div>
             ))}
           </div>
