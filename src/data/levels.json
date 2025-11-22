@@ -1793,7 +1793,7 @@
   {
     "Level": 100,
     "Title": "Clutch Bunker Up and Downs",
-    "Description": "Make 2 up and downs from 8 the bunker (Any distance)",
+    "Description": "Make 2 up and downs from 10 attempts in the bunker and choose a distance of your choice",
     "Distance": "Optional",
     "Target": "2 out of 10",
     "Type": "Bunker/Putt",
