@@ -1163,7 +1163,7 @@
   {
     "Level": 30,
     "Title": "Pitch Control 25m",
-    "Description": "Stop 2 pitches within 5m of the hole from 25 (Fairway)",
+    "Description": "Stop 2 out of 8 pitches within 5 meters of the hole from 25 meters (Fairway)",
     "Distance": "25m",
     "Target": "2 out of 8",
     "Type": "Pitch",
