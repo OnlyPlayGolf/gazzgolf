@@ -1316,7 +1316,7 @@
   {
     "Level": 47,
     "Title": "First Up and Down",
-    "Description": "Hit 1 chip from 8m (Fairway) and hit the ball in the hole",
+    "Description": "Hit one chip shot from 8 meters in the fairway and putt the ball in the hole (An up and down is a total of max 2 shots)",
     "Distance": "8m",
     "Target": "8m",
     "Type": "Chip/Putt",
