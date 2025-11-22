@@ -38,7 +38,7 @@
   {
     "Level": 5,
     "Title": "Gentle Pace 1m",
-    "Description": "Stop 1 putt within 1m of the hole from 1 meter",
+    "Description": "Hit one putt in the hole or past the hole within 1 meter from 1 meter",
     "Distance": "1m",
     "Target": "1 out of 10",
     "Type": "Putt",
@@ -74,7 +74,7 @@
   {
     "Level": 9,
     "Title": "Soft Speed 1.5m",
-    "Description": "Stop 2 putts within 1m of hole from 1.5 meters",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 1.5 meters",
     "Distance": "1.5m",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -110,7 +110,7 @@
   {
     "Level": 13,
     "Title": "Speed Feel 2m",
-    "Description": "Stop 2 putts within 1m of hole from 2 meters",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 2 meters",
     "Distance": "2m",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -146,7 +146,7 @@
   {
     "Level": 17,
     "Title": "Speed 2m Safer",
-    "Description": "Stop 3 putts within 1m from 2 meters",
+    "Description": "Hit 3 putts in the hole or past the hole within 1 meter from 2 meters",
     "Distance": "2m",
     "Target": "3 out of 10",
     "Type": "Putt",
@@ -200,7 +200,7 @@
   {
     "Level": 23,
     "Title": "Speed 2.5m Soft",
-    "Description": "Stop 2 putts within 1m from 2.5 meters",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 2.5 meters",
     "Distance": "2.5m",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -236,7 +236,7 @@
   {
     "Level": 27,
     "Title": "Speed 3m Intro",
-    "Description": "Stop 2 putts within 1m from 3m",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 3 meters",
     "Distance": "3m",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -308,7 +308,7 @@
   {
     "Level": 35,
     "Title": "Speed 3m Safer",
-    "Description": "Stop 3 putts within 1m from 3 meter",
+    "Description": "Hit 3 putts in the hole or past the hole within 1 meter from 3 meters",
     "Distance": "3m",
     "Target": "3 out of 10",
     "Type": "Putt",
@@ -344,7 +344,7 @@
   {
     "Level": 39,
     "Title": "Speed 2–3m Mix",
-    "Description": "Stop 3 putts within 1m from 2m, 2.5m, 3m",
+    "Description": "Hit 3 putts in the hole or past the hole within 1 meter from 2 meters, 2.5 meters and 3 meters",
     "Distance": "2m, 2.5m, 3m",
     "Target": "10 attempts",
     "Type": "Putt",
@@ -371,7 +371,7 @@
   {
     "Level": 42,
     "Title": "Speed 3.5m Intro",
-    "Description": "Stop 2 putts within 1 m from 3.5 meters",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 3.5 meters",
     "Distance": "3.5m",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -416,7 +416,7 @@
   {
     "Level": 47,
     "Title": "Speed 4m Intro",
-    "Description": "Stop 2 putts within 1m from 4 meters",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 4 meters",
     "Distance": "4m ",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -443,7 +443,7 @@
   {
     "Level": 50,
     "Title": "Speed 3m Repeat",
-    "Description": "Stop 4 putts within 1m from 3 meters",
+    "Description": "Hit 4 putts in the hole or past the hole within 1 meter from 3 meters",
     "Distance": "3m",
     "Target": "4 out of 10",
     "Type": "Putt",
@@ -479,7 +479,7 @@
   {
     "Level": 54,
     "Title": "Speed 2–4m Mix",
-    "Description": "Stop 4 putts within 1m from 2m, 3m, 3.5m, 4 meters",
+    "Description": "Hit 4 putts in the hole or past the hole within 1 meter from 2 meters, 3 meters, 3.5 meters and 4 meters",
     "Distance": "2m, 3m, 3.5m, 4m",
     "Target": "10 attempts",
     "Type": "Putt",
@@ -515,7 +515,7 @@
   {
     "Level": 58,
     "Title": "Speed 4m Repeat",
-    "Description": "Stop 3 putts within 1m from 4 meters",
+    "Description": "Hit 3 putts in the hole or past the hole within 1 meter from 4 meters",
     "Distance": "4m ",
     "Target": "3 out of 10",
     "Type": "Putt",
@@ -569,7 +569,7 @@
   {
     "Level": 64,
     "Title": "Consistent speed 3m",
-    "Description": "Stop 3 consecutive putts within 1m of the hole from 3 meters",
+    "Description": "Hit 3 consecutive putts in the hole or past the hole within 1 meter from 3 meters",
     "Distance": "3m",
     "Target": "3 consecutive",
     "Type": "Putt",
@@ -587,7 +587,7 @@
   {
     "Level": 66,
     "Title": "Speed 5m Intro",
-    "Description": "Stop 2 putts within 1m from 5m",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 5 meters",
     "Distance": "5m",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -623,7 +623,7 @@
   {
     "Level": 70,
     "Title": "Speed 4–5m Mix",
-    "Description": "Stop 3 putts within 1m from 4m, 4.5m, 5 meters",
+    "Description": "Hit 3 putts in the hole or past the hole within 1 meter from 4 meters, 4.5 meters and 5 meters",
     "Distance": "4m, 4.5m, 5m",
     "Target": "10 attempts",
     "Type": "Putt",
@@ -650,7 +650,7 @@
   {
     "Level": 73,
     "Title": "Speed 6m Intro",
-    "Description": "Stop 2 putts within 1m from 6m",
+    "Description": "Hit 2 putts in the hole or past the hole within 1 meter from 6 meters",
     "Distance": "6m",
     "Target": "2 out of 10",
     "Type": "Putt",
@@ -686,7 +686,7 @@
   {
     "Level": 77,
     "Title": "Speed 5–6m",
-    "Description": "Stop 3 putts within 1m from 5m, 5.5m, 6 meters",
+    "Description": "Hit 3 putts in the hole or past the hole within 1 meter from 5 meters, 5.5 meters and 6 meters",
     "Distance": "5m, 5.5m, 6m",
     "Target": "10 attempts",
     "Type": "Putt",
