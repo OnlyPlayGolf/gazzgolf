@@ -179,9 +179,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
   };
 
   const handleReset = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setAttempts([]);
-    setDrillStarted(false);
+    initializeAttempts();
   };
 
   return (

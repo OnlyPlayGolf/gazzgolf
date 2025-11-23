@@ -167,16 +167,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
   };
 
   const handleReset = () => {
-    setDrillStarted(false);
-    setDrillEnded(false);
-    setConsecutiveMakes(0);
-    setCurrentTeeIndex(0);
-    setTeePositions([
-      { name: '12 o\'clock', distance: 3 },
-      { name: '3 o\'clock', distance: 3 },
-      { name: '6 o\'clock', distance: 3 },
-      { name: '9 o\'clock', distance: 3 },
-    ]);
+    handleStartDrill();
   };
 
   return (

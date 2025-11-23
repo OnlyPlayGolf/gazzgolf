@@ -107,11 +107,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   };
 
   const handleReset = () => {
-    localStorage.removeItem('tw9WindowsState');
-    setWindows([]);
-    setCurrentWindowIndex(0);
-    setTotalShots(0);
-    setDrillStarted(false);
+    initializeDrill();
   };
 
   const saveScore = async () => {

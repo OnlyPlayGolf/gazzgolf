@@ -198,8 +198,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
   };
 
   const handleReset = () => {
-    setDrillStarted(false);
-    setAttempts([]);
+    initializeAttempts();
   };
 
   return (
