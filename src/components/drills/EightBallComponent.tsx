@@ -263,15 +263,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
             </div>
             <div className="flex gap-2">
               <Button 
-                onClick={() => {
-                  localStorage.removeItem(STORAGE_KEY);
-                  setAttempts([]);
-                  setCurrentRound(0);
-                  toast({
-                    title: "Score Reset",
-                    description: "Your score has been cleared.",
-                  });
-                }}
+                onClick={initializeAttempts}
                 variant="outline"
                 size="sm"
               >
