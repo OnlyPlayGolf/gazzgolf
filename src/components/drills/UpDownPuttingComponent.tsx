@@ -105,6 +105,15 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
   const updateAttempt = (puttIndex: number, outcome: PuttOutcome) => {
     setAttempts(prev => prev.map(attempt => {
       if (attempt.puttIndex === puttIndex) {
+        // If clicking the same outcome, deselect it
+        if (attempt.outcome === outcome) {
+          return {
+            ...attempt,
+            outcome: null,
+            score: 0,
+          };
+        }
+        // Otherwise select the new outcome
         return {
           ...attempt,
           outcome,
