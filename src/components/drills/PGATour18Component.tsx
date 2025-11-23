@@ -200,10 +200,11 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   };
 
   const resetDrill = () => {
-    setIsActive(false);
+    localStorage.removeItem(STORAGE_KEY);
+    setIsActive(true);
     setAttempts([]);
     setCurrentPutt(1);
-    setDistanceSequence([]);
+    setDistanceSequence(generateRandomSequence());
   };
 
   return (
