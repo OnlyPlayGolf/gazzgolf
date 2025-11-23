@@ -60,7 +60,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     }));
   };
 
-  // Load state from localStorage on mount
+  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -72,7 +72,10 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         setCurrentScore(0); // Always reset current score on load
       } catch (e) {
         console.error('Failed to restore drill state:', e);
+        startDrill();
       }
+    } else {
+      startDrill();
     }
   }, []);
 
