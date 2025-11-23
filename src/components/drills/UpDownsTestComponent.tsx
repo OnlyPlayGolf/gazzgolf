@@ -334,13 +334,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
           </div>
 
           <Button 
-            onClick={() => {
-              localStorage.removeItem(STORAGE_KEY);
-              setDrillStarted(false);
-              setStations([]);
-              setCurrentStationIndex(0);
-              setCurrentScore(0);
-            }}
+            onClick={startDrill}
             variant="outline"
             className="w-full"
           >

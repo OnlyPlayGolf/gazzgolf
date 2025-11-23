@@ -109,10 +109,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
   };
 
   const handleReset = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setProgress([]);
-    setCurrentDistanceIndex(0);
-    setDrillStarted(false);
+    initializeDrill();
   };
 
   const totalShots = progress.reduce((sum, p) => sum + p.attempts.length, 0);
