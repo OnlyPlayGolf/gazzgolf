@@ -50,7 +50,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   const [bonusStreak, setBonusStreak] = useState(0);
   const { toast } = useToast();
 
-  // Load state from localStorage on mount
+  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -63,7 +63,10 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
         setBonusStreak(state.bonusStreak || 0);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
+        handleStartDrill();
       }
+    } else {
+      handleStartDrill();
     }
   }, []);
 

@@ -65,7 +65,10 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
         setShotSequence(state.shotSequence || []);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
+        handleStartDrill();
       }
+    } else {
+      handleStartDrill();
     }
   }, []);
 

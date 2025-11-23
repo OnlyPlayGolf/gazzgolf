@@ -70,6 +70,13 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
     });
   }, []);
 
+  // Auto-start drill on mount
+  useEffect(() => {
+    if (attempts.length === 0 && !drillStarted) {
+      initializeAttempts();
+    }
+  }, []);
+
   const initializeAttempts = () => {
     const newAttempts: Shot[] = shots.map((shot, index) => ({
       shotIndex: index,
