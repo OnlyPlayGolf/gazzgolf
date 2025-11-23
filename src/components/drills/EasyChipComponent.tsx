@@ -18,7 +18,7 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Load state from localStorage on mount
+  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -29,7 +29,10 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
         setDrillEnded(state.drillEnded || false);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
+        handleStartDrill();
       }
+    } else {
+      handleStartDrill();
     }
   }, []);
 

@@ -68,7 +68,7 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
   
   const { toast } = useToast();
 
-  // Load state from localStorage on mount
+  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -81,7 +81,10 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
         setShotSequence(state.shotSequence || []);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
+        handleStartDrill();
       }
+    } else {
+      handleStartDrill();
     }
   }, []);
 
