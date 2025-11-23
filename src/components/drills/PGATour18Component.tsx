@@ -208,36 +208,6 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
 
   return (
     <div className="space-y-6">
-      {/* Instructions Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="text-primary" size={20} />
-            PGA Tour 18 Holes
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-semibold text-lg mb-2">Instructions</h3>
-            <p className="text-muted-foreground mb-2">
-              Practice putting at 18 different distances. Each putt represents the average first putt distance for that hole on the PGA Tour.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              The distances will be presented in random order each time.
-            </p>
-          </div>
-
-          {!isActive && (
-            <Button 
-              onClick={handleStartDrill}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Start Drill
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Active Drill */}
       {isActive && currentDistance && (
         <Card>
