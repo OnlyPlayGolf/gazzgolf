@@ -262,7 +262,19 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
                               variant={attempt?.outcome === outcome ? "default" : "outline"}
                               size="sm"
                               className="text-xs px-2 py-1 h-7"
-                              onClick={() => updateAttempt(stationIndex, currentRound, outcome)}
+                              onClick={() => {
+                                if (attempt?.outcome === outcome) {
+                                  // Deselect if clicking the same button
+                                  setAttempts(prev => prev.map(a => {
+                                    if (a.stationIndex === stationIndex && a.roundIndex === currentRound) {
+                                      return { ...a, outcome: null, points: 0 };
+                                    }
+                                    return a;
+                                  }));
+                                } else {
+                                  updateAttempt(stationIndex, currentRound, outcome);
+                                }
+                              }}
                             >
                               {outcomeLabels[outcome]}
                             </Button>
