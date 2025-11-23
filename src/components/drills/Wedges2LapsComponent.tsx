@@ -52,7 +52,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
   const [drillStarted, setDrillStarted] = useState(false);
   const { toast } = useToast();
 
-  // Load state from localStorage on mount
+  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -62,7 +62,10 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
         setDrillStarted(state.drillStarted || false);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
+        initializeAttempts();
       }
+    } else {
+      initializeAttempts();
     }
   }, []);
 

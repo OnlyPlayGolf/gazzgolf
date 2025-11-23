@@ -49,7 +49,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
   const [currentRound, setCurrentRound] = useState(0);
   const { toast } = useToast();
 
-  // Load state from localStorage on mount
+  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -59,7 +59,10 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
         setDrillStarted(state.drillStarted || false);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
+        initializeAttempts();
       }
+    } else {
+      initializeAttempts();
     }
   }, []);
 

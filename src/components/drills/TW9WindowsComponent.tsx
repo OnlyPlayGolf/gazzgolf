@@ -48,6 +48,8 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
       setCurrentWindowIndex(parsed.currentWindowIndex);
       setTotalShots(parsed.totalShots);
       setDrillStarted(parsed.drillStarted);
+    } else {
+      initializeDrill();
     }
   }, []);
 
