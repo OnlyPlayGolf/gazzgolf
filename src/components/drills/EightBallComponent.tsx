@@ -207,50 +207,6 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
 
   return (
     <div className="space-y-6">
-      {/* Instructions Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="text-primary" size={20} />
-            Instructions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            Perform the circuit 5 times. Complete all 8 stations in each round for a total of 40 shots.
-          </p>
-          
-          <div>
-            <h4 className="font-medium mb-2">Stations (8):</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              {stations.map((station, index) => (
-                <li key={index}>• {station}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-medium mb-2">Scoring:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Holed: <span className="font-medium text-foreground">4 pts</span></li>
-              <li>• Within 1m: <span className="font-medium text-foreground">3 pts</span></li>
-              <li>• Within 2m: <span className="font-medium text-foreground">2 pts</span></li>
-              <li>• Within 3m: <span className="font-medium text-foreground">1 pt</span></li>
-              <li>• Miss: <span className="font-medium text-foreground">0 pts</span></li>
-            </ul>
-          </div>
-
-          {attempts.length === 0 && (
-            <Button 
-              onClick={initializeAttempts}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Start Drill
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Scoring Grid */}
       {attempts.length > 0 && (
         <>
@@ -261,20 +217,11 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
                 {completedAttempts}/{totalAttempts} attempts completed
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={initializeAttempts}
-                variant="outline"
-                size="sm"
-              >
-                Reset Score
+            {completedAttempts === totalAttempts && (
+              <Button onClick={saveScore} className="bg-primary hover:bg-primary/90">
+                Save Score
               </Button>
-              {completedAttempts === totalAttempts && (
-                <Button onClick={saveScore} className="bg-primary hover:bg-primary/90">
-                  Save Score
-                </Button>
-              )}
-            </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -328,6 +275,14 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
               </CardContent>
             </Card>
           </div>
+
+          <Button 
+            onClick={initializeAttempts}
+            variant="outline"
+            className="w-full"
+          >
+            Reset Drill
+          </Button>
         </>
       )}
     </div>
