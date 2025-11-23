@@ -254,7 +254,6 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
             </div>
 
             <div className="space-y-2">
-              <div className="text-sm font-medium text-center mb-3">How many putts did it take?</div>
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5].map((num) => (
                   <Button
