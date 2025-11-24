@@ -1919,7 +1919,7 @@
   {
     "Level": 14,
     "Title": "Speed Ladder 6-8m",
-    "Description": "Hit the ball in the hole or 1m past the hole from 6m, 7m, 8 meters",
+    "Description": "Hit the ball in the hole or 1 meter past the hole in a row from 6 meters, 7 meters and 8 meters",
     "Distance": "6m, 7m, 8m",
     "Target": "3 consecutive",
     "Type": "Putt",
@@ -1991,10 +1991,10 @@
   {
     "Level": 22,
     "Title": "Up and Down Rougher",
-    "Description": "Make 2 up and downs from 15m away in the Rough (10 attempts)",
+    "Description": "Make 2 up and downs from 15 meters away in the rough (10 attempts)",
     "Distance": "15m",
     "Target": "2 out of 10",
-    "Type": "Chip",
+    "Type": "Chip/Putt",
     "Difficulty": "Amateur"
   },
   {
