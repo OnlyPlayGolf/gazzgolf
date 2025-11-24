@@ -2648,7 +2648,7 @@
   {
     "Level": 95,
     "Title": "2m Around The Hole",
-    "Description": "Make 4 putts around the hole from 2 meters",
+    "Description": "Make 4 putts around the hole in a row from 2 meters",
     "Distance": "2m",
     "Target": "4 consecutive",
     "Type": "Putt",
