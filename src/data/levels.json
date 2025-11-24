@@ -902,7 +902,7 @@
   {
     "Level": 1,
     "Title": "First Bunker Shot",
-    "Description": "Hit 1 bunker shots onto the green within 15 meters (Any distance)",
+    "Description": "Hit 1 bunker shots onto the green within 15 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 10",
     "Type": "Bunker",
@@ -911,7 +911,7 @@
   {
     "Level": 2,
     "Title": "Bunker Escape",
-    "Description": "Hit 1 bunker shots onto the green within 10 meters (Any distance)",
+    "Description": "Hit 1 bunker shots onto the green within 10 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 10",
     "Type": "Bunker",
@@ -938,7 +938,7 @@
   {
     "Level": 5,
     "Title": "3 Bunker Escapes",
-    "Description": "Hit 2 bunker shots onto the green within 12 meters (Any distance)",
+    "Description": "Hit 2 bunker shots onto the green within 12 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "3 out of 10",
     "Type": "Bunker",
@@ -1037,7 +1037,7 @@
   {
     "Level": 16,
     "Title": "Bunker Escape inside 8m",
-    "Description": "Hit 1 bunker shot onto the green within 8 meters (Any distance)",
+    "Description": "Hit 1 bunker shot onto the green within 8 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 8",
     "Type": "Bunker",
@@ -1199,7 +1199,7 @@
   {
     "Level": 34,
     "Title": "Bunker Escape 5m",
-    "Description": "Hit 1 bunker shots onto the green within 7m (Any distance)",
+    "Description": "Hit 1 bunker shots onto the green within 7m of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 10",
     "Type": "Bunker",
@@ -1217,7 +1217,7 @@
   {
     "Level": 36,
     "Title": "Bunker Escape 5m",
-    "Description": "Hit 1 bunker shots onto the green within 5 meters (Any distance)",
+    "Description": "Hit 1 bunker shots onto the green within 5 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 8",
     "Type": "Bunker",
@@ -1289,7 +1289,7 @@
   {
     "Level": 44,
     "Title": "Bunker Inside 5m",
-    "Description": "Hit 2 bunker shots onto the green within 5 meters (Any distance)",
+    "Description": "Hit 2 bunker shots onto the green within 5 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "2 out of 10",
     "Type": "Bunker",
@@ -1370,7 +1370,7 @@
   {
     "Level": 53,
     "Title": "Bunker Escape 10m",
-    "Description": "Hit 2 bunker shots onto the green within 10m",
+    "Description": "Hit 2 bunker shots onto the green within 10m of the hole",
     "Distance": "10m",
     "Target": "2 out of 10",
     "Type": "Bunker",
@@ -1604,7 +1604,7 @@
   {
     "Level": 79,
     "Title": "Bunker Escape 5m",
-    "Description": "Hit 1 bunker shot onto the green within 5 meters (Any distance)",
+    "Description": "Hit 1 bunker shot onto the green within 5 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 10",
     "Type": "Bunker",
@@ -1613,7 +1613,7 @@
   {
     "Level": 80,
     "Title": "Bunker Escape 3m",
-    "Description": "Hit 1 bunker shot onto the green within 3 meters (Any distance)",
+    "Description": "Hit 1 bunker shot onto the green within 3 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 10",
     "Type": "Bunker",
@@ -1694,7 +1694,7 @@
   {
     "Level": 89,
     "Title": "Intermediate Bunker Escape 3m",
-    "Description": "Hit 1 bunker shot onto the green within 3 meters (Any distance)",
+    "Description": "Hit 1 bunker shot onto the green within 3 meters of the hole (Any distance)",
     "Distance": "Optional",
     "Target": "1 out of 8",
     "Type": "Bunker",
