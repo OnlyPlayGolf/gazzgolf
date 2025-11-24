@@ -3719,7 +3719,7 @@
   {
     "Level": 14,
     "Title": "Bail out left",
-    "Description": "Hit the ball in the hole or 1 meter past the hole in a row from 6 meters, 7 meters and 8 meters",
+    "Description": "Pick a 20 m wide target. Hit 5 out of 5 shots that land within the target or no more than 10 m left of it.",
     "Distance": "-",
     "Target": "5 out of 5",
     "Type": "Driver",
