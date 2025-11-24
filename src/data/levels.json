@@ -2471,7 +2471,7 @@
     "Description": "Make 2 up and downs from 25m away in the Rough (8 attempts)",
     "Distance": "25m",
     "Target": "2 out of 8",
-    "Type": "Chip",
+    "Type": "Chip/Putt",
     "Difficulty": "Amateur"
   },
   {
@@ -2480,7 +2480,7 @@
     "Description": "Make 2 up and downs from 30m away in the Fairway (8 attempts)",
     "Distance": "30m",
     "Target": "2 out of 8",
-    "Type": "Chip",
+    "Type": "Chip/Putt",
     "Difficulty": "Amateur"
   },
   {
@@ -2579,7 +2579,7 @@
     "Description": "Make 2 up and downs from 20m away in the Fairway (10 attempts)",
     "Distance": "20m",
     "Target": "2 out of 10",
-    "Type": "Chip",
+    "Type": "Chip/Putt",
     "Difficulty": "Amateur"
   },
   {
