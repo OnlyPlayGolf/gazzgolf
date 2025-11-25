@@ -3244,7 +3244,7 @@
     "Title": "Controlled Trajectory Test",
     "Description": "Pick a 10 meter wide target and hit 6 shots with a 7 iron, 2 low, 2 mid, and 2 high trajectories , all finishing within the target.",
     "Distance": "130m+",
-    "Target": "5 out of 6",
+    "Target": "6 out of 6",
     "Type": "Approach",
     "Difficulty": "Professional"
   },
@@ -3253,7 +3253,7 @@
     "Title": "Par Save Challenge",
     "Description": "Drop 5 balls around the green between 10–20 meters (fairway and rough). Try to get each chip inside 2 meters and then hole the putt",
     "Distance": "10-20m",
-    "Target": "4 out of 5",
+    "Target": "5 out of 5",
     "Type": "Chip",
     "Difficulty": "Professional"
   },
