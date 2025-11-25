@@ -2729,7 +2729,7 @@
   {
     "Level": 4,
     "Title": "150m Approach Right",
-    "Description": "Pick a target 150m away. Hit 3 balls  right of the target but no more than 20 yards right of the target",
+    "Description": "Pick a target 150m away. Hit 5 balls right of the target but no more than 20 yards right of the target",
     "Distance": "150m",
     "Target": "5 out of 10",
     "Type": "Approach",
