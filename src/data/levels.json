@@ -2774,7 +2774,7 @@
   {
     "Level": 9,
     "Title": "150m Approach Left",
-    "Description": "Pick a target 150m away. Hit 3 balls left of the target but no more than 20 yards left of the target",
+    "Description": "Pick a target 150m away. Hit 5 balls left of the target but no more than 20 yards left of the target",
     "Distance": "150m",
     "Target": "5 out of 10",
     "Type": "Approach",
