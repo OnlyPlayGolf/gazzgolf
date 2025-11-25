@@ -3244,7 +3244,7 @@
     "Title": "Controlled Trajectory Test",
     "Description": "Pick a 10 meter wide target and hit 6 shots with a 7 iron, 2 low, 2 mid, and 2 high trajectories , all finishing within the target.",
     "Distance": "130m+",
-    "Target": "6 out of 6",
+    "Target": "5 out of 6",
     "Type": "Approach",
     "Difficulty": "Professional"
   },
@@ -3262,7 +3262,7 @@
     "Title": "Creative Chip Shot",
     "Description": "Hit 3 chip shots inside 1 meters of the hole from 15 meters in the fairway with 3 different clubs",
     "Distance": "15m",
-    "Target": "5 out of 5",
+    "Target": "3 out of 5",
     "Type": "Chip",
     "Difficulty": "Professional"
   },
