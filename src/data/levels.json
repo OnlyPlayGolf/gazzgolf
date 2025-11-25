@@ -2747,7 +2747,7 @@
   {
     "Level": 6,
     "Title": "Short Bunker Escape",
-    "Description": "Hit 5 bunker shots inside 3 meters from 15 meters",
+    "Description": "Hit 5 bunker shots inside 3 meters of the hole from 15 meters",
     "Distance": "15m",
     "Target": "5 out of 10",
     "Type": "Bunker",
@@ -2765,7 +2765,7 @@
   {
     "Level": 8,
     "Title": "Long Bunker Escape",
-    "Description": "Hit 5 bunker shots inside 4 meters from 25 meters",
+    "Description": "Hit 5 bunker shots inside 4 meters of the hole from 25 meters",
     "Distance": "25m",
     "Target": "5 out of 10",
     "Type": "Bunker",
