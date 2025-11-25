@@ -3260,7 +3260,7 @@
   {
     "Level": 63,
     "Title": "Creative Chip Shot",
-    "Description": "Hit 3 chip shots inside 1 meters of the hole from 15 meters in the fairway with 3 different clubs",
+    "Description": "Hit 3 chip shots inside 1 meter of the hole from 15 meters in the fairway with 3 different clubs",
     "Distance": "15m",
     "Target": "3 out of 5",
     "Type": "Chip",
