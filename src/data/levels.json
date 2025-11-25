@@ -3053,7 +3053,7 @@
   {
     "Level": 40,
     "Title": "Wedge Ladder Start",
-    "Description": "Carry a wedge shot within 10 meters (+/- 5m) of the target distance at 60m, 65m, 70m, 75m and 80 meters",
+    "Description": "Carry a wedge shot within 5 meters (+/- 5m) of the target distance at 60m, 65m, 70m, 75m and 80 meters",
     "Distance": "60-80m",
     "Target": "5 out of 12",
     "Type": "Wedge",
@@ -3062,7 +3062,7 @@
   {
     "Level": 41,
     "Title": "Approach Feel",
-    "Description": "Carry a shot within 10 meters (+/- 5m) of the hole from 120 meters with 3 different clubs",
+    "Description": "Carry a shot within 5 meters (+/- 5m) of the hole from 120 meters with 3 different clubs",
     "Distance": "120m",
     "Target": "3 out of 10",
     "Type": "Approach",
