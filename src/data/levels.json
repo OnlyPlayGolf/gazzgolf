@@ -2009,7 +2009,7 @@
   {
     "Level": 24,
     "Title": "Amateur Wedge 60m Left",
-    "Description": "Pick a target 60m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target.",
+    "Description": "Pick a target 60m away. Hit a ball left of the target, and make sure it finishes no more than 20 meters left of the target. The shot must carry over 50 meters",
     "Distance": "60m",
     "Target": "1 out of 10",
     "Type": "Wedge",
@@ -2018,7 +2018,7 @@
   {
     "Level": 25,
     "Title": "Amateur Wedge 60m",
-    "Description": "Pick a target 60m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target",
+    "Description": "Pick a target 60m away. Hit a ball right of the target, and make sure it finishes no more than 20 meters right of the target. The shot must carry over 50 meters",
     "Distance": "60m",
     "Target": "1 out of 10",
     "Type": "Wedge",
