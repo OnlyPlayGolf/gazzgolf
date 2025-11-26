@@ -2027,7 +2027,7 @@
   {
     "Level": 26,
     "Title": "Zone Carry Drill 80m",
-    "Description": "Hit 3 out of 10 balls that clearly carry the 80m sign. (With a club that goes around 80 meters)",
+    "Description": "Hit 3 shots that carry over 80 meters and land in a 20 meter wide zone",
     "Distance": "80m",
     "Target": "3 out of 10",
     "Type": "Wedge",
@@ -2037,7 +2037,7 @@
     "Level": 27,
     "Title": "Direction Control 100-120m",
     "Description": "Hit 3 out of 10 shots that land between the 100m and 120m markers",
-    "Distance": "90-110m",
+    "Distance": "100-120m",
     "Target": "3 out of 10",
     "Type": "Wedge",
     "Difficulty": "Amateur"
