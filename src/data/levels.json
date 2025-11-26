@@ -1172,7 +1172,7 @@
   {
     "Level": 31,
     "Title": "Bunker Escape 15-20m",
-    "Description": "Hit 2 bunker shots onto the green within 10 meters from 15-20 meters",
+    "Description": "Hit 2 bunker shots onto the green within 10 meters of the hole from 15-20 meters",
     "Distance": "15-20m",
     "Target": "2 out of 10",
     "Type": "Bunker",
@@ -1190,7 +1190,7 @@
   {
     "Level": 33,
     "Title": "2nd Bunker Escape 15-20m",
-    "Description": "Hit 2 bunker shots onto the green within 8m from 15-20 meters",
+    "Description": "Hit 2 bunker shots onto the green within 8m of the hole from 15-20 meters",
     "Distance": "15-20m",
     "Target": "2 out of 10",
     "Type": "Bunker",
