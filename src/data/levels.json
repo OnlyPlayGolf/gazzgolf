@@ -2136,15 +2136,15 @@
     "Level": 38,
     "Title": "Control Pitching Wedge 80m",
     "Description": "With your Pitching Wedge, hit 3 out of 10 shots that land between 80-100 meters",
-    "Distance": "80m",
-    "Target": "5 out of 10",
+    "Distance": "80-100m",
+    "Target": "3 out of 10",
     "Type": "Approach",
     "Difficulty": "Amateur"
   },
   {
     "Level": 39,
     "Title": "Strike Quality 80m",
-    "Description": "Hit 3 consecutive clean shots that reach the 80m marker",
+    "Description": "Hit 3 shots in a row with clean contact that carry over 80 meters. Use a pitching wedge",
     "Distance": "80m",
     "Target": "3 consecutive",
     "Type": "Approach",
