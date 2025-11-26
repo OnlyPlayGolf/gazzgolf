@@ -2423,7 +2423,7 @@
   {
     "Level": 70,
     "Title": "Low Trajectory Challenge",
-    "Description": "Hit 3 shots to a 100 meter target that has a low trajectory",
+    "Description": "Hit 3 shots to a 100 meter target that has a low trajectory (Use a club that goes around 100 meters)",
     "Distance": "100m",
     "Target": "3 out of 10",
     "Type": "Approach",
