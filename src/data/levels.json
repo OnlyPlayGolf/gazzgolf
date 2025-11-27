@@ -3845,7 +3845,7 @@
   {
     "Level": 28,
     "Title": "Lag Putting",
-    "Description": "Putt 10 balls from 12m. Each putt must finish within 60cm past the hole no short putts count.",
+    "Description": "Putt 10 balls from 12 meters. Each putt must finish within a 0.5 meter circle around the hole for the putt to count",
     "Distance": "12m",
     "Target": "7 out of 10",
     "Type": "Putt",
