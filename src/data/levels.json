@@ -3863,7 +3863,7 @@
   {
     "Level": 30,
     "Title": "Wedge distance control",
-    "Description": "Hit 9/10 shots within 3m of your carry target at 30,35,40,45,50,55,60,65,70,75",
+    "Description": "Hit 9 out of 10 shots within 3 meters of the carry target at 30, 35, 40, 45, 50, 55, 60, 65, 70 and 75 meters.",
     "Distance": "30-75m",
     "Target": "9 out of 10",
     "Type": "Wedge",
