@@ -3971,7 +3971,7 @@
   {
     "Level": 42,
     "Title": "5 clubs chip",
-    "Description": "Hit 5 chip shots in a row inside 1 meters of the hole from 12 meters in the Fairway with 5 different clubs",
+    "Description": "Hit 5 chip shots in a row inside 1 meter of the hole. Do it from 12 meters in the fairway and use 5 different clubs.",
     "Distance": "12m",
     "Target": "5 out of 5",
     "Type": "Chip",
