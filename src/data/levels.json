@@ -4376,7 +4376,7 @@
   {
     "Level": 87,
     "Title": "Tour Fairway Finder Left",
-    "Description": "Hit 10 tee shots to a 20 meter wide fairway. If you miss left of the fairway you have to restart. The ball must carry 215 meters or more.",
+    "Description": "Hit 10 tee shots to a 20 meter wide fairway. If you miss left of the fairway you have to restart, you can continue with a right miss but it doesn't count as a point. The ball must carry 215 meters or more",
     "Distance": "215m+",
     "Target": "9 out of 10",
     "Type": "Wood",
