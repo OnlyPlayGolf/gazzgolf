@@ -3854,9 +3854,9 @@
   {
     "Level": 29,
     "Title": "Up and down Putting",
-    "Description": "Two lines: One up hill and one down hill. Place markers at 3m, 6m, 9m. Hit 2 putts in a row from each marker in this order: 3m up, 3m down, 6m up, 6m down, 9m up, 9m down",
+    "Description": "Two lines: One up hill and one down hill. Hit the putts in this order: 3m up, 3m down, 6m up, 6m down, 9m up, 9m down and do it twice (12 total putts). The putt counts if it is holed or 0.5 meter past the hole.",
     "Distance": "3-9m",
-    "Target": "6 out of 12",
+    "Target": "9 out of 12",
     "Type": "Putt",
     "Difficulty": "Tour"
   },
