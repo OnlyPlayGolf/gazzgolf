@@ -4034,9 +4034,9 @@
   {
     "Level": 49,
     "Title": "Hell Drill",
-    "Description": "5 tees around the hole. Begin at 4feet. Made putt: move back 1feet. Missed putt: move up 1 feet. Drill complete when all tees are at 6 feet. If a putt is hole from 8 feet, pick up the tee.",
+    "Description": "5 tees around the hole. Begin at 4 feet. Made putt: move back 1 feet. Missed putt: move up 1 feet. The level is complete when all tees are at 6 feet. If a putt is holed from 8 feet, pick up the tee.",
     "Distance": "1-8 feet",
-    "Target": "-",
+    "Target": "6 feet or more",
     "Type": "Putt",
     "Difficulty": "Tour"
   },
