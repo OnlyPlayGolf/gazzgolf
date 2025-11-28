@@ -58,7 +58,13 @@ const DrillsCategories = () => {
                     <div className="flex items-center gap-3">
                       <Icon 
                         size={24} 
-                        className={category.enabled ? "text-primary" : "text-locked"} 
+                        className={
+                          category.id === 'favorites' 
+                            ? "text-amber-500" 
+                            : category.enabled 
+                              ? "text-primary" 
+                              : "text-locked"
+                        } 
                       />
                       <span>{category.name}</span>
                     </div>
