@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import QRCode from "react-qr-code";
 
 interface Profile {
   id: string;
@@ -45,6 +47,7 @@ export default function UserProfile() {
   const [averageScore, setAverageScore] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
 
   useEffect(() => {
     loadProfileData();
@@ -450,16 +453,31 @@ export default function UserProfile() {
             variant="outline"
             size="icon"
             className="h-12 w-12 rounded-full"
-            onClick={() => {
-              toast({
-                title: "QR Code",
-                description: "QR code sharing coming soon!",
-              });
-            }}
+            onClick={() => setQrDialogOpen(true)}
           >
             <QrCode size={24} />
           </Button>
         </div>
+
+        {/* QR Code Dialog */}
+        <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-center">My Friend QR Code</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center space-y-4 py-4">
+              <div className="bg-white p-4 rounded-lg">
+                <QRCode 
+                  value={`${window.location.origin}/add-friend/${profile.id}`}
+                  size={200}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                Share this QR code with friends to let them add you instantly!
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Rounds section */}
         <div className="mb-6">
