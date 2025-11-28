@@ -64,7 +64,8 @@ const DrillsCategories = () => {
                             : category.enabled 
                               ? "text-primary" 
                               : "text-locked"
-                        } 
+                        }
+                        fill={category.id === 'favorites' ? "currentColor" : "none"}
                       />
                       <span>{category.name}</span>
                     </div>
