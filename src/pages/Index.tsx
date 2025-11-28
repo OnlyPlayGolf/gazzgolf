@@ -233,36 +233,6 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
-        {/* Profile Header */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20 border-2 border-primary">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Profile" className="object-cover" />
-                ) : (
-                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                    {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() : 
-                     profile?.username ? profile.username.charAt(0).toUpperCase() : "?"}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-foreground">
-                  {profile?.display_name || profile?.username || 'Golfer'}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {profile?.handicap ? `HCP ${profile.handicap}` : 'No handicap set'} 
-                  {profile?.country && ` | ${profile.country}`}
-                </p>
-                {profile?.home_club && (
-                  <p className="text-sm text-muted-foreground">{profile.home_club}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Friends Section */}
         <Card 
           className="cursor-pointer hover:border-primary transition-colors" 
