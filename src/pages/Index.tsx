@@ -234,7 +234,8 @@ const Index = () => {
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
         {/* Friends Section */}
-        <Card 
+        <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
+        <Card
           className="cursor-pointer hover:border-primary transition-colors" 
           onClick={() => navigate('/friends', { state: { from: 'home' } })}
         >
