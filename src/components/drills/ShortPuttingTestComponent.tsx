@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -172,42 +172,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
 
   return (
     <div className="space-y-6">
-      {!drillStarted ? (
-        <>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Setup</h3>
-              <p className="text-muted-foreground">
-                Place 4 tees around the hole at the 12, 3, 6, and 9 o'clock positions, each 3 feet from the hole.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">How to Play</h3>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Start by putting from any tee</li>
-                <li>• If you hole it → move that tee back 1 foot (e.g. 3 ft → 4 ft)</li>
-                <li>• Rotate to the next tee and continue</li>
-                <li>• If you miss a putt → the test ends immediately</li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Scoring</h3>
-              <p className="text-muted-foreground">
-                Your score is the number of consecutive putts made in a row.
-              </p>
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleStartDrill}
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            Start Test
-          </Button>
-        </>
-      ) : (
+      {drillStarted && (
         <>
           {/* Current Tee Positions */}
           <Card>

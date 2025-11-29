@@ -162,56 +162,8 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   const allCompleted = windows.every(w => w.completed);
   const currentWindow = windows[currentWindowIndex];
 
-  if (!drillStarted) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>TW's 9 Windows Test</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="font-semibold">Overview</h3>
-              <p className="text-sm text-muted-foreground">
-                Hit shots through all 9 "windows" - every combination of trajectory and shape. 
-                Each shot must land within a 15-meter wide target area.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">The 9 Windows</h3>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="p-2 border rounded">High Fade</div>
-                <div className="p-2 border rounded">High Straight</div>
-                <div className="p-2 border rounded">High Draw</div>
-                <div className="p-2 border rounded">Mid Fade</div>
-                <div className="p-2 border rounded">Mid Straight</div>
-                <div className="p-2 border rounded">Mid Draw</div>
-                <div className="p-2 border rounded">Low Fade</div>
-                <div className="p-2 border rounded">Low Straight</div>
-                <div className="p-2 border rounded">Low Draw</div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">Rules</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>Use a 7 iron for all shots</li>
-                <li>Target must be 15 meters wide</li>
-                <li>Window order is randomized each time</li>
-                <li>Shot must land in target AND match the window requirements</li>
-                <li>After each shot, choose "Next Shot" or "Try Again"</li>
-                <li>Goal: Complete all 9 windows in as few shots as possible</li>
-              </ul>
-            </div>
-
-            <Button onClick={initializeDrill} className="w-full">
-              Start Drill
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!drillStarted || !currentWindow) {
+    return null;
   }
 
   if (allCompleted) {

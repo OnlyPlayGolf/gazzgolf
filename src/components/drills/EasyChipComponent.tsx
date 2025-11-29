@@ -130,48 +130,7 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
 
   return (
     <div className="space-y-6">
-      {!drillStarted ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="text-primary" size={20} />
-              Easy Chip Drill
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Setup</h3>
-              <p className="text-muted-foreground">
-                Hit chips from 10 meters from a fairway lie to the hole.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">How to Play</h3>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Hit a chip shot from 10 meters</li>
-                <li>• If it finishes within one wedge length → count it (+1 streak)</li>
-                <li>• If it misses outside one wedge length → the drill ends</li>
-                <li>• See how many consecutive chips you can make</li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Scoring</h3>
-              <p className="text-muted-foreground">
-                Your score is the number of consecutive chips made within one wedge length.
-              </p>
-            </div>
-
-            <Button 
-              onClick={handleStartDrill}
-              className="w-full bg-primary hover:bg-primary/90"
-            >
-              Start Drill
-            </Button>
-          </CardContent>
-        </Card>
-      ) : drillEnded ? (
+      {drillEnded ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

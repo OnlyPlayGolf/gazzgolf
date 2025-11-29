@@ -217,52 +217,8 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   };
 
 
-  if (!isActive) {
-    return (
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="text-primary" />
-              Jason Day's Lag Drill
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="font-semibold">Instructions:</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>18 putts from 8-20 meters (randomized, never same distance twice)</li>
-                <li>Can be done on the course (one putt per hole)</li>
-                <li>Goal: Score as many points as possible</li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="font-semibold">Scoring:</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>Holed: +5 points</li>
-                <li>Within 0.6m (2 feet): +3 points</li>
-                <li>0.6m-1m (2-3 feet): +2 points</li>
-                <li>1-2 meters: +1 point</li>
-                <li>2-3 meters: 0 points</li>
-                <li>Outside 3 meters: -1 point</li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">Bonus Streak:</h3>
-              <p className="text-sm text-muted-foreground">
-                After 3 consecutive putts scoring 3+ points, earn +1 bonus on each subsequent 3+ point putt until you score less than 3 points.
-              </p>
-            </div>
-
-            <Button onClick={handleStartDrill} className="w-full">
-              Start Drill
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!isActive || !currentDistance) {
+    return null;
   }
 
   return (

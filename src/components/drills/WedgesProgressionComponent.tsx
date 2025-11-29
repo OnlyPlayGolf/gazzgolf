@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Hammer, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -175,48 +174,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
   };
 
   if (!drillStarted) {
-    return (
-      <div className="p-4 space-y-6">
-        <Card className="border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <Hammer size={24} />
-              Wedges 60–120 m — Progression
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3 text-foreground">
-              <p className="font-medium">Drill Overview:</p>
-              <ul className="space-y-2 text-sm text-muted-foreground ml-4">
-                <li>• 13 distances from 60-120 meters (5m increments)</li>
-                <li>• Hit each distance within 3 meters to advance</li>
-                <li>• If you miss, retry the same distance</li>
-                <li>• Score is the total number of shots needed</li>
-                <li>• Lower score is better</li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <p className="font-medium text-foreground">Distances:</p>
-              <div className="flex flex-wrap gap-2">
-                {distances.map(d => (
-                  <span key={d} className="px-2 py-1 bg-muted rounded text-sm">
-                    {d}m
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <Button 
-              onClick={initializeDrill}
-              className="w-full"
-            >
-              Start Drill
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
   return (
