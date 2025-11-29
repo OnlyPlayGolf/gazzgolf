@@ -103,12 +103,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   };
 
   const resetDrill = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setIsActive(false);
-    setAttempts([]);
-    setCurrentPutt(1);
-    setDistanceSequence([]);
-    setBonusStreak(0);
+    handleStartDrill();
   };
 
   const handleOutcome = (outcome: string, points: number) => {

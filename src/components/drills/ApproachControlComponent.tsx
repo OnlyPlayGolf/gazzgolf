@@ -313,12 +313,7 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
   };
 
   const resetDrill = () => {
-    setIsActive(false);
-    setAttempts([]);
-    setCurrentShot(1);
-    setBonusStreak(0);
-    setShotSequence([]);
-    resetInputs();
+    handleStartDrill();
   };
 
   return (
