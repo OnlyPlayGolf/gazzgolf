@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -284,59 +283,6 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
 
   return (
     <div className="space-y-6">
-      {/* Instructions Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="text-primary" size={20} />
-            Shot Shape Master
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-semibold text-lg mb-2">Instructions</h3>
-            <p className="text-muted-foreground mb-2">
-              Hit 14 tee shots following the required shot shape and club for each shot. Fairway width: 30 meters.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Based on 14 tee shots from an 18-hole round with PGA Tour average fairway and dispersion data.
-            </p>
-          </div>
-          
-          <div className="p-3 bg-muted/50 rounded-md">
-            <h4 className="font-medium mb-2">Scoring:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• <span className="font-medium text-foreground">3 Points:</span> Correct shot shape + hit fairway</li>
-              <li>• <span className="font-medium text-foreground">2 Points:</span> Wrong shot shape + hit fairway</li>
-              <li>• <span className="font-medium text-foreground">1 Point:</span> Correct shot shape + missed fairway by ≤10m</li>
-              <li>• <span className="font-medium text-foreground">0 Points:</span> Missed fairway by &gt;10m</li>
-            </ul>
-          </div>
-
-          <div className="p-3 bg-primary/10 rounded-md">
-            <h4 className="font-medium mb-2 flex items-center gap-2">
-              <TrendingUp size={16} className="text-primary" />
-              Bonus Streak:
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              After 3 consecutive 3-pointers, earn +1 bonus point for each additional 3-pointer until you miss one.
-            </p>
-            <p className="text-xs text-muted-foreground mt-2 font-mono">
-              Example: 3, 3, 3, (bonus starts) → 3+1, 3+1, miss → streak resets
-            </p>
-          </div>
-          
-          {!isActive && (
-            <Button 
-              onClick={handleStartDrill}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Start Drill
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Active Drill */}
       {isActive && currentShotInfo && (
         <Card>
