@@ -82,10 +82,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
   };
 
   const resetDrill = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setIsActive(false);
-    setAttempts([]);
-    setCurrentAttempt(1);
+    handleStartDrill();
   };
 
   const handleOutcome = (outcome: string, points: number) => {
