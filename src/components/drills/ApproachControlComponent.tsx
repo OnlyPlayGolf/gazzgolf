@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -324,60 +323,6 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
 
   return (
     <div className="space-y-6">
-      {/* Instructions Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="text-primary" size={20} />
-            Approach Control
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-semibold text-lg mb-2">Instructions</h3>
-            <p className="text-muted-foreground mb-2">
-              Hit 14 approach shots from 130-180 meters. Each shot will specify the distance and target side.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Based on PGA Tour approach shot data for average accuracy and proximity.
-            </p>
-          </div>
-          
-          <div className="p-3 bg-muted/50 rounded-md">
-            <h4 className="font-medium mb-2">Scoring:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• <span className="font-medium text-foreground">3 Points:</span> Correct side + inside 10m</li>
-              <li>• <span className="font-medium text-foreground">2 Points:</span> Wrong side + inside 5m</li>
-              <li>• <span className="font-medium text-foreground">1 Point:</span> Correct side + inside 15m</li>
-              <li>• <span className="font-medium text-foreground">0 Points:</span> Correct side + outside 15m</li>
-              <li>• <span className="font-medium text-foreground">-1 Point:</span> Wrong side + outside 5m</li>
-            </ul>
-          </div>
-
-          <div className="p-3 bg-primary/10 rounded-md">
-            <h4 className="font-medium mb-2 flex items-center gap-2">
-              <TrendingUp size={16} className="text-primary" />
-              Bonus Streak:
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              After 3 consecutive 3-pointers, earn +1 bonus point for each additional 3-pointer until you miss one.
-            </p>
-            <p className="text-xs text-muted-foreground mt-2 font-mono">
-              Example: 3, 3, 3, (bonus starts) → 3+1, 3+1, miss → streak resets
-            </p>
-          </div>
-          
-          {!isActive && (
-            <Button 
-              onClick={handleStartDrill}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Start Drill
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Active Drill */}
       {isActive && currentShotInfo && (
         <Card>
