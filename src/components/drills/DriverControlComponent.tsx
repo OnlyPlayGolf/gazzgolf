@@ -110,13 +110,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
   };
 
   const handleResetDrill = () => {
-    setAttempts([]);
-    setCurrentShot(1);
-    setIsActive(false);
-    setBonusStreak(0);
-    setShotSequence([]);
-    setSelectedResult("");
-    localStorage.removeItem(STORAGE_KEY);
+    handleStartDrill();
   };
 
   const handleRecordShot = () => {
