@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Hammer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -184,39 +183,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
 
   return (
     <div className="space-y-6">
-      {!drillStarted ? (
-        <>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Description</h3>
-              <p className="text-muted-foreground">
-                Test your wedge distance control from 40-80 meters. One shot per distance, 2 laps.
-              </p>
-              <p className="text-muted-foreground mt-2 font-medium">
-                Distances: 40, 45, 50, 55, 60, 65, 70, 75, 80 meters
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Scoring</h3>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Within 2m of target → 3 points</li>
-                <li>• Within 3m → 2 points</li>
-                <li>• Within 4m → 1 point</li>
-                <li>• More than 4m off → 0 points</li>
-                <li>• Missed green → −1 point</li>
-              </ul>
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleStartDrill}
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            Start Drill
-          </Button>
-        </>
-      ) : (
+      {drillStarted && (
         <>
           {/* Record Your Score */}
           <Card>

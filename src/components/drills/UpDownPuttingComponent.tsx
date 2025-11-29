@@ -203,56 +203,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
 
   return (
     <div className="space-y-6">
-      {!drillStarted ? (
-        <>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Setup</h3>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Two lines: one uphill and one downhill</li>
-                <li>• Place markers at 6m, 8m, and 10m from the hole on both lines</li>
-                <li>• Mark 3 feet long and 3 feet short around the hole</li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Instructions</h3>
-              <p className="text-muted-foreground mb-2">
-                Hit one putt from each marker in this order:
-              </p>
-              <p className="text-sm text-muted-foreground font-mono">
-                6m up → 6m down → 8m up → 8m down → 10m up → 10m down
-              </p>
-              <p className="text-muted-foreground mt-2">Complete 3 rounds. Total: 18 putts</p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Scoring</h3>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• Holed → Birdie (−1)</li>
-                <li>• Missed inside 3 ft → Par (E)</li>
-                <li>• Missed short/long (outside zone) → Bogey (+1)</li>
-              </ul>
-            </div>
-
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                <strong>Goal:</strong> Achieve the lowest total score possible. Focus on distance control and speed consistency on both uphill and downhill putts.
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                <strong>Tour average:</strong> +{tourAverage.toFixed(2)}
-              </p>
-            </div>
-          </div>
-
-          <Button 
-            onClick={handleStartDrill}
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            Start Drill
-          </Button>
-        </>
-      ) : (
+      {drillStarted && (
         <>
           {/* Record Your Putts */}
           <Card>

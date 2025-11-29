@@ -176,43 +176,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
   };
 
   if (!isActive) {
-    return (
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="text-primary" />
-              Aggressive Putting
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="font-semibold">Instructions:</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>Distances cycle: 4m → 5m → 6m → repeat</li>
-                <li>Choose any starting putt</li>
-                <li>Reach 15 points in as few putts as possible</li>
-                <li>Tour Average: 12.28 putts</li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="font-semibold">Scoring:</h3>
-              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                <li>Holed putt: +3 points</li>
-                <li>Good pace (within 3 ft past): +1 point</li>
-                <li>Short putt: -3 points</li>
-                <li>Long and missed return: -3 points</li>
-              </ul>
-            </div>
-
-            <Button onClick={handleStartDrill} className="w-full">
-              Start Drill
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return null;
   }
 
   return (

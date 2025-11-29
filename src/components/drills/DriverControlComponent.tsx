@@ -234,53 +234,8 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
 
   const currentShotStructure = shotSequence[currentShot - 1];
 
-  if (!isActive) {
-    return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-6 w-6" />
-            Driver Control Instructions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <h3 className="font-semibold">Overview</h3>
-            <p className="text-sm text-muted-foreground">
-              Test your driver accuracy with 14 tee shots. The fairway is 30 meters wide.
-              Can be done on the range or on the course (one shot per hole).
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="font-semibold">Scoring</h3>
-            <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-              <li>Hit fairway: 1 point</li>
-              <li>Miss left: 0, -1, or -2 points (randomized per shot)</li>
-              <li>Miss right: 0, -1, or -2 points (randomized per shot)</li>
-            </ul>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold">Bonus Streak</h3>
-            <p className="text-sm text-muted-foreground">
-              After 3 consecutive fairway hits, earn +1 bonus point for each additional fairway hit until you miss.
-            </p>
-            <p className="text-sm text-muted-foreground italic">
-              Example: FIR, FIR, FIR → next FIR gets +1 bonus, then another FIR gets +1 bonus → then you miss → bonus resets.
-            </p>
-          </div>
-          
-          <Button 
-            onClick={handleStartDrill} 
-            className="w-full"
-            size="lg"
-          >
-            Start Drill
-          </Button>
-        </CardContent>
-      </Card>
-    );
+  if (!isActive || !currentShotStructure) {
+    return null;
   }
 
   return (
