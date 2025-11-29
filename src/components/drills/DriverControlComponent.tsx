@@ -310,7 +310,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
               Record Shot
             </Button>
             <Button onClick={handleResetDrill} variant="outline" size="lg">
-              Reset
+              Reset Drill
             </Button>
           </div>
         </CardContent>
