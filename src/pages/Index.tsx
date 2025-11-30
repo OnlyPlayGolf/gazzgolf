@@ -13,7 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { TopNavBar } from "@/components/TopNavBar";
-
+import { PostBox } from "@/components/PostBox";
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -233,6 +233,9 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
+        {/* Post Box */}
+        <PostBox profile={profile} userId={user.id} />
+
         {/* Friends Section */}
         <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
         <Card
