@@ -157,12 +157,11 @@ export default function RoundTracker() {
       if (!existingError && existingHoles) {
         const scoresMap = new Map<string, Map<number, number>>();
         existingHoles.forEach((hole) => {
-          const oderId = hole.player_id;
-          if (oderId) {
-            if (!scoresMap.has(oderId)) {
-              scoresMap.set(oderId, new Map());
+          if (hole.player_id) {
+            if (!scoresMap.has(hole.player_id)) {
+              scoresMap.set(hole.player_id, new Map());
             }
-            scoresMap.get(oderId)!.set(hole.hole_number, hole.score);
+            scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
           }
         });
         setScores(scoresMap);
@@ -182,18 +181,18 @@ export default function RoundTracker() {
 
   const currentHole = courseHoles[currentHoleIndex];
 
-  const getPlayerScore = (userId: string) => {
-    const playerScores = scores.get(userId) || new Map();
+  const getPlayerScore = (playerId: string) => {
+    const playerScores = scores.get(playerId) || new Map();
     return playerScores.get(currentHole?.hole_number) || currentHole?.par || 0;
   };
 
-  const updateScore = async (userId: string, newScore: number) => {
+  const updateScore = async (playerId: string, newScore: number) => {
     if (!currentHole || newScore < 0) return;
 
     const updatedScores = new Map(scores);
-    const playerScores = updatedScores.get(userId) || new Map();
+    const playerScores = updatedScores.get(playerId) || new Map();
     playerScores.set(currentHole.hole_number, newScore);
-    updatedScores.set(userId, playerScores);
+    updatedScores.set(playerId, playerScores);
     setScores(updatedScores);
 
     try {
@@ -201,7 +200,7 @@ export default function RoundTracker() {
         .from("holes")
         .upsert({
           round_id: roundId,
-          player_id: userId,
+          player_id: playerId,
           hole_number: currentHole.hole_number,
           par: currentHole.par,
           score: newScore,
@@ -228,10 +227,10 @@ export default function RoundTracker() {
     }
   };
 
-  const calculateScoreToPar = (userId: string) => {
+  const calculateScoreToPar = (playerId: string) => {
     let totalScore = 0;
     let totalPar = 0;
-    const playerScores = scores.get(userId) || new Map();
+    const playerScores = scores.get(playerId) || new Map();
     
     courseHoles.forEach((hole) => {
       const score = playerScores.get(hole.hole_number) || 0;
@@ -244,8 +243,8 @@ export default function RoundTracker() {
     return totalScore - totalPar;
   };
 
-  const getScoreDisplay = (userId: string) => {
-    const diff = calculateScoreToPar(userId);
+  const getScoreDisplay = (playerId: string) => {
+    const diff = calculateScoreToPar(playerId);
     if (diff === 0) return "E";
     if (diff > 0) return `+${diff}`;
     return diff.toString();
@@ -366,7 +365,7 @@ export default function RoundTracker() {
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         {players.map((player) => {
-          const playerScore = getPlayerScore(player.user_id);
+          const playerScore = getPlayerScore(player.id);
           return (
             <Card key={player.id} className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -377,7 +376,7 @@ export default function RoundTracker() {
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-muted-foreground">{getScoreDisplay(player.user_id)}</div>
+                  <div className="text-2xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
                   <div className="text-xs text-muted-foreground">To Par</div>
                 </div>
               </div>
@@ -387,7 +386,7 @@ export default function RoundTracker() {
                   variant="outline"
                   size="icon"
                   className="h-12 w-12 rounded-full"
-                  onClick={() => updateScore(player.user_id, Math.max(1, playerScore - 1))}
+                  onClick={() => updateScore(player.id, Math.max(1, playerScore - 1))}
                 >
                   <Minus size={20} />
                 </Button>
@@ -401,7 +400,7 @@ export default function RoundTracker() {
                   variant="outline"
                   size="icon"
                   className="h-12 w-12 rounded-full"
-                  onClick={() => updateScore(player.user_id, playerScore + 1)}
+                  onClick={() => updateScore(player.id, playerScore + 1)}
                 >
                   <Plus size={20} />
                 </Button>
