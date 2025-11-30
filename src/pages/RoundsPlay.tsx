@@ -37,7 +37,7 @@ export default function RoundsPlay() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<HoleCount>("18");
-  const [roundName, setRoundName] = useState(`Round ${new Date().toLocaleDateString()}`);
+  const [roundName, setRoundName] = useState("");
   const [datePlayer, setDatePlayed] = useState(new Date().toISOString().split('T')[0]);
   const [teeColor, setTeeColor] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,6 +46,7 @@ export default function RoundsPlay() {
 
   useEffect(() => {
     fetchCourses();
+    fetchRoundCount();
     
     // Check for saved players on mount
     const savedPlayers = sessionStorage.getItem('roundPlayers');
@@ -77,6 +78,29 @@ export default function RoundsPlay() {
       setDatePlayed(savedDate);
     }
   }, []);
+
+  const fetchRoundCount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { count, error } = await supabase
+        .from("rounds")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      
+      // Only set default if no saved round name exists
+      const savedRoundName = sessionStorage.getItem('roundName');
+      if (!savedRoundName) {
+        setRoundName(`Round ${(count || 0) + 1}`);
+      }
+    } catch (error: any) {
+      console.error("Error fetching round count:", error);
+      setRoundName("Round 1");
+    }
+  };
 
   useEffect(() => {
     if (searchQuery.trim()) {
