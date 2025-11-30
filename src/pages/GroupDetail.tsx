@@ -49,6 +49,7 @@ const getDrillCategory = (drillTitle: string): DrillCategory | null => {
     "Jason Day's Lag Drill": 'Putting',
     '8-Ball Drill': 'Short Game',
     '18 Up & Downs': 'Short Game',
+    'Easy Chip Drill': 'Short Game',
     'Approach Control': 'Approach',
     "TW's 9 Windows Test": 'Approach',
     'Shot Shape Master': 'Tee Shots',
@@ -71,6 +72,7 @@ const getScoreUnit = (drillName: string): string => {
     "Wedges 40–80 m — Distance Control": "points",
     "Wedge Point Game": "points",
     "Åberg's Wedge Ladder": "shots",
+    "Easy Chip Drill": "in a row",
   };
   return drillUnits[drillName] || "points";
 };
