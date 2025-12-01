@@ -902,7 +902,7 @@
   {
     "Level": 1,
     "Title": "First Bunker Shot",
-    "Description": "Hit 1 bunker shots onto the green within 15 meters of the hole (Any distance)",
+    "Description": "From any distance, hit 1 bunker shot onto the green within 15 meters of the hole, and the ball must stay on the green",
     "Distance": "Optional",
     "Target": "1 out of 10",
     "Type": "Bunker",
