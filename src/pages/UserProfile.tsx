@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QRCode from "react-qr-code";
+import { FeedPost } from "@/components/FeedPost";
 
 interface Profile {
   id: string;
@@ -48,6 +49,7 @@ export default function UserProfile() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [userPosts, setUserPosts] = useState<any[]>([]);
 
   useEffect(() => {
     loadProfileData();
@@ -146,6 +148,24 @@ export default function UserProfile() {
         const total = scores.reduce((sum, score) => sum + score, 0);
         setAverageScore(Math.round((total / scores.length) * 10) / 10);
       }
+    }
+
+    // Load user's posts
+    const { data: postsData } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profile:user_id (
+          display_name,
+          username,
+          avatar_url
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (postsData) {
+      setUserPosts(postsData);
     }
   };
 
@@ -568,6 +588,31 @@ export default function UserProfile() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Posts Section */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-foreground mb-3">Posts</h2>
+          {userPosts.length > 0 ? (
+            <div className="space-y-4">
+              {userPosts.map((post) => (
+                <FeedPost key={post.id} post={post} currentUserId={profile.id} />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">No posts yet</p>
+                <Button
+                  variant="link"
+                  className="text-primary mt-2"
+                  onClick={() => navigate('/')}
+                >
+                  Share your first golf moment
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
       </div>
