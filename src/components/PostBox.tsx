@@ -36,6 +36,12 @@ export const PostBox = ({ profile, userId, onPostCreated }: PostBoxProps) => {
     }
   };
 
+  const handleCameraClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
@@ -138,6 +144,7 @@ export const PostBox = ({ profile, userId, onPostCreated }: PostBoxProps) => {
               <input
                 type="file"
                 accept="image/*"
+                capture="environment"
                 className="hidden"
                 ref={fileInputRef}
                 onChange={handleImageSelect}
@@ -145,7 +152,7 @@ export const PostBox = ({ profile, userId, onPostCreated }: PostBoxProps) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleCameraClick}
                 disabled={isPosting}
               >
                 <Image size={18} className="mr-2" />
