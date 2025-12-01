@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserPlus, Search } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserPlus, Search, QrCode, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import QRCode from "react-qr-code";
+import { Scanner } from "@yudiel/react-qr-scanner";
+import { useNavigate } from "react-router-dom";
 
 interface SearchResult {
   id: string;
@@ -22,10 +26,52 @@ interface AddFriendDialogProps {
 
 export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("search");
+
+  useEffect(() => {
+    if (open) {
+      loadCurrentUser();
+    }
+  }, [open]);
+
+  const loadCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  };
+
+  const handleQrScan = (result: string) => {
+    try {
+      // Extract user ID from QR code URL
+      const url = new URL(result);
+      const pathParts = url.pathname.split('/');
+      const userId = pathParts[pathParts.length - 1];
+      
+      if (userId && userId !== currentUserId) {
+        setOpen(false);
+        navigate(`/add-friend/${userId}`);
+      } else if (userId === currentUserId) {
+        toast({
+          title: "Invalid QR Code",
+          description: "You cannot add yourself as a friend!",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Invalid QR Code",
+        description: "This QR code is not a valid friend code.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSearchFriends = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -148,62 +194,115 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
         <DialogHeader>
           <DialogTitle>Add Friend</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Search by username..."
-              value={friendSearch}
-              onChange={(e) => setFriendSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearchFriends()}
-            />
-            <Button onClick={handleSearchFriends} disabled={loading}>
-              <Search size={18} />
-            </Button>
-          </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="search">
+              <Search size={16} className="mr-2" />
+              Search
+            </TabsTrigger>
+            <TabsTrigger value="scan">
+              <Camera size={16} className="mr-2" />
+              Scan QR
+            </TabsTrigger>
+            <TabsTrigger value="myqr">
+              <QrCode size={16} className="mr-2" />
+              My QR
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {searchResults.map((result) => (
-              <div
-                key={result.id}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div>
-                  <p className="font-medium">
-                    {result.display_name || result.username || 'Unknown'}
-                  </p>
-                  {result.username && (
-                    <p className="text-sm text-muted-foreground">@{result.username}</p>
-                  )}
-                  {result.country && (
-                    <p className="text-xs text-muted-foreground">{result.country}</p>
-                  )}
-                  {result.groups.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Groups: {result.groups.join(', ')}
+          {/* Search Tab */}
+          <TabsContent value="search" className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search by username..."
+                value={friendSearch}
+                onChange={(e) => setFriendSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchFriends()}
+              />
+              <Button onClick={handleSearchFriends} disabled={loading}>
+                <Search size={18} />
+              </Button>
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {searchResults.map((result) => (
+                <div
+                  key={result.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {result.display_name || result.username || 'Unknown'}
                     </p>
+                    {result.username && (
+                      <p className="text-sm text-muted-foreground">@{result.username}</p>
+                    )}
+                    {result.country && (
+                      <p className="text-xs text-muted-foreground">{result.country}</p>
+                    )}
+                    {result.groups.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Groups: {result.groups.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                  {result.isFriend ? (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled
+                    >
+                      Friends
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => handleSendFriendRequest(result.id, result.username || result.display_name || 'this user')}
+                    >
+                      <UserPlus size={16} className="mr-1" />
+                      Add
+                    </Button>
                   )}
                 </div>
-                {result.isFriend ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled
-                  >
-                    Friends
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => handleSendFriendRequest(result.id, result.username || result.display_name || 'this user')}
-                  >
-                    <UserPlus size={16} className="mr-1" />
-                    Add
-                  </Button>
-                )}
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Scan QR Tab */}
+          <TabsContent value="scan" className="space-y-4">
+            <div className="flex flex-col items-center space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Position the QR code within the camera frame to scan
+              </p>
+              <div className="w-full aspect-square max-w-sm rounded-lg overflow-hidden border-2 border-primary">
+                <Scanner
+                  onScan={(result) => {
+                    if (result && result[0]) {
+                      handleQrScan(result[0].rawValue);
+                    }
+                  }}
+                  onError={(error) => console.error(error)}
+                />
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </TabsContent>
+
+          {/* My QR Tab */}
+          <TabsContent value="myqr" className="space-y-4">
+            <div className="flex flex-col items-center space-y-4 py-4">
+              <div className="bg-white p-4 rounded-lg">
+                <QRCode 
+                  value={`${window.location.origin}/add-friend/${currentUserId}`}
+                  size={200}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground text-center">
+                Share this QR code with friends to let them add you instantly!
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
