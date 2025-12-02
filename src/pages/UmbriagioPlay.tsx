@@ -254,16 +254,18 @@ export default function UmbriagioPlay() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading game...</div>
+        {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
       </div>
     );
   }
 
   if (!game) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
+        {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
       </div>
     );
   }
