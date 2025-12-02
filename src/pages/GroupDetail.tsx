@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send, Users, Settings, MessageCircle, Calendar } from "lucide-react";
+import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
+import { GroupDrillHistory } from "@/components/GroupDrillHistory";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
@@ -1027,9 +1028,10 @@ useEffect(() => {
           </CardHeader>
           <CardContent>
             <Tabs value={leaderboardTab} onValueChange={setLeaderboardTab}>
-              <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="levels">Levels</TabsTrigger>
                 <TabsTrigger value="drills">Drills</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger value="play">Play</TabsTrigger>
               </TabsList>
 
@@ -1156,6 +1158,11 @@ useEffect(() => {
                     No level progress yet
                   </p>
                 )}
+              </TabsContent>
+
+              {/* History Tab */}
+              <TabsContent value="history">
+                {groupId && <GroupDrillHistory groupId={groupId} />}
               </TabsContent>
 
               {/* Play Tab */}
