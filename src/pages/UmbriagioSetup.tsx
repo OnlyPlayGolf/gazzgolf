@@ -185,11 +185,6 @@ export default function UmbriagioSetup() {
                 <li><strong>Double Back:</strong> The other team can respond with "Double Back" to multiply by 4 instead</li>
               </ul>
             </div>
-
-            <div>
-              <p className="font-semibold text-foreground mb-1">The Roll</p>
-              <p>If you're behind, you can call a "Roll" to cut the point difference in half and keep fighting!</p>
-            </div>
           </CardContent>
         </Card>
 
