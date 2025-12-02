@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
 import { NotificationsSheet } from "@/components/NotificationsSheet";
-import { FeedPost } from "@/components/FeedPost";
 
 interface Friend {
   id: string;
@@ -55,7 +54,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [userPosts, setUserPosts] = useState<any[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -214,24 +212,6 @@ const Profile = () => {
       });
 
       setFriends(acceptedFriends);
-
-      // Load user's posts
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profile:user_id (
-            display_name,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (postsData) {
-        setUserPosts(postsData);
-      }
 
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -813,26 +793,6 @@ const Profile = () => {
               <CardContent className="p-8">
                 <p className="text-muted-foreground text-sm text-center">
                   No groups yet. Create a group to get started!
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Posts Section */}
-        <div className="mt-8 space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">Posts</h2>
-          {userPosts.length > 0 ? (
-            <div className="space-y-4">
-              {userPosts.map((post) => (
-                <FeedPost key={post.id} post={post} currentUserId={user.id} />
-              ))}
-            </div>
-          ) : (
-            <Card className="border-border">
-              <CardContent className="p-8">
-                <p className="text-muted-foreground text-sm text-center">
-                  No posts yet. Share your first golf moment!
                 </p>
               </CardContent>
             </Card>
