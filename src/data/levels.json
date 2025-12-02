@@ -2189,7 +2189,7 @@
   {
     "Level": 44,
     "Title": "Zone Carry Drill 100m",
-    "Description": "Hit 3 out of 10 balls that clearly carry the 100m sign. (With a club that goes around 100 meters)",
+    "Description": "Hit 3 out of 10 balls that clearly carry the 100m sign and land within a 20 meter wide target. Use a club that goes around 100-120 meters.",
     "Distance": "100m",
     "Target": "3 out of 10",
     "Type": "Approach",
