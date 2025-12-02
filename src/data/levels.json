@@ -2513,9 +2513,9 @@
   {
     "Level": 80,
     "Title": "Strike Quality 120m",
-    "Description": "Hit 5 consecutive clean shots that reach the 120m marker",
+    "Description": "Hit 5 shots in a row that carry at least 120 meter and land within a 20 meter wide target. Use a club that carry around 120-140 meters.",
     "Distance": "120m",
-    "Target": "3 consecutive",
+    "Target": "5 in a row",
     "Type": "Approach",
     "Difficulty": "Amateur"
   },
