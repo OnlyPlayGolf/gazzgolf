@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Pencil, List, Newspaper, MessageSquare, Settings } from "lucide-react";
+import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface RoundBottomTabBarProps {
   roundId: string;
@@ -11,9 +11,9 @@ export function RoundBottomTabBar({ roundId }: RoundBottomTabBarProps) {
   
   const tabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/rounds/${roundId}/track` },
-    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/rounds/${roundId}/leaderboard` },
+    { id: "info", label: "Game info", icon: Info, path: `/rounds/${roundId}/info` },
     { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed` },
-    { id: "messages", label: "Messages", icon: MessageSquare, path: `/rounds/${roundId}/messages` },
+    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/rounds/${roundId}/leaderboard` },
     { id: "settings", label: "Settings", icon: Settings, path: `/rounds/${roundId}/settings` },
   ];
 

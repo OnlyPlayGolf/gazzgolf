@@ -1,0 +1,64 @@
+import { useParams } from "react-router-dom";
+import { TopNavBar } from "@/components/TopNavBar";
+import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Info } from "lucide-react";
+
+export default function RoundInfo() {
+  const { roundId } = useParams();
+
+  return (
+    <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
+      <TopNavBar />
+      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="text-primary" />
+              About Stroke Play
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Overview</h3>
+              <p className="text-sm text-muted-foreground">
+                Stroke play is the most common format in golf. Each player counts the total number of strokes taken to complete the round. The player with the fewest strokes wins.
+              </p>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">How It Works</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Count every stroke on each hole</li>
+                <li>• Add up your total strokes for all holes</li>
+                <li>• Lowest total score wins</li>
+                <li>• Handicaps can be applied for net scoring</li>
+              </ul>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Scoring Terms</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• <strong>Eagle:</strong> 2 under par</li>
+                <li>• <strong>Birdie:</strong> 1 under par</li>
+                <li>• <strong>Par:</strong> Expected strokes for the hole</li>
+                <li>• <strong>Bogey:</strong> 1 over par</li>
+                <li>• <strong>Double Bogey:</strong> 2 over par</li>
+              </ul>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Tips</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Focus on avoiding big numbers</li>
+                <li>• Play smart on difficult holes</li>
+                <li>• Track your fairways, greens, and putts for improvement</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {roundId && <RoundBottomTabBar roundId={roundId} />}
+    </div>
+  );
+}
