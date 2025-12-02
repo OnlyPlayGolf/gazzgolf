@@ -70,7 +70,7 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
   const [selectedDrill, setSelectedDrill] = useState<string>("all");
   const [selectedMember, setSelectedMember] = useState<string>("all");
   const [drills, setDrills] = useState<DrillInfo[]>([]);
-  const [members, setMembers] = useState<{ user_id: string; display_name: string | null; username: string | null }[]>([]);
+  const [members, setMembers] = useState<{ user_id: string; display_name: string | null; username: string | null; role: string }[]>([]);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -81,6 +81,7 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
           .from('group_members')
           .select(`
             user_id,
+            role,
             profiles!inner(display_name, username, avatar_url)
           `)
           .eq('group_id', groupId);
@@ -90,12 +91,15 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
           return;
         }
 
-        const memberIds = groupMembers.map(m => m.user_id);
-        const memberProfiles = groupMembers.map((m: any) => ({
+        // Filter out coaches from members
+        const nonCoachMembers = groupMembers.filter((m: any) => m.role !== 'coach');
+        const memberIds = nonCoachMembers.map(m => m.user_id);
+        const memberProfiles = nonCoachMembers.map((m: any) => ({
           user_id: m.user_id,
           display_name: m.profiles.display_name,
           username: m.profiles.username,
-          avatar_url: m.profiles.avatar_url
+          avatar_url: m.profiles.avatar_url,
+          role: m.role
         }));
         setMembers(memberProfiles);
 
@@ -183,7 +187,7 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
           onChange={(e) => setSelectedMember(e.target.value)}
           className="w-full p-2 rounded-md border bg-background text-foreground text-sm"
         >
-          <option value="all">All Members</option>
+          <option value="all">All Players</option>
           {members.map(member => (
             <option key={member.user_id} value={member.user_id}>
               {member.display_name || member.username || 'Unknown'}
