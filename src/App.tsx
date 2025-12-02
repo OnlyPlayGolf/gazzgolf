@@ -42,6 +42,8 @@ import ProRoundSummary from "./pages/ProRoundSummary";
 import ManagePlayers from "./pages/ManagePlayers";
 import RoundLeaderboard from "./pages/RoundLeaderboard";
 import RoundInfo from "./pages/RoundInfo";
+import RoundFeed from "./pages/RoundFeed";
+import RoundSettings from "./pages/RoundSettings";
 import Practice from "./pages/Practice";
 import AggressivePuttingDrill from "./pages/AggressivePuttingDrill";
 import PGATour18Drill from "./pages/PGATour18Drill";
@@ -116,8 +118,10 @@ const App = () => {
             <Route path="/rounds/setup" element={<RoundSetup />} />
             <Route path="/rounds/:roundId/track" element={<RoundTracker />} />
             <Route path="/rounds/:roundId/info" element={<RoundInfo />} />
-            <Route path="/rounds/:roundId/stats" element={<HoleTracker />} />
+            <Route path="/rounds/:roundId/feed" element={<RoundFeed />} />
             <Route path="/rounds/:roundId/leaderboard" element={<RoundLeaderboard />} />
+            <Route path="/rounds/:roundId/settings" element={<RoundSettings />} />
+            <Route path="/rounds/:roundId/stats" element={<HoleTracker />} />
             <Route path="/rounds/:roundId/summary" element={<RoundSummary />} />
             <Route path="/rounds/:roundId" element={<RoundSummary />} />
             <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
