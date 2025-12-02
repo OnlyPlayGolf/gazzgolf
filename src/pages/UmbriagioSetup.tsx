@@ -158,35 +158,35 @@ export default function UmbriagioSetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <h3 className="font-semibold mb-2">Overview</h3>
-              <p className="text-muted-foreground">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Overview</h3>
+              <p className="text-sm text-muted-foreground">
                 A 2v2 team game where points are won across 4 categories on every hole. The team with the most points at the end wins.
               </p>
             </div>
             
-            <div>
-              <h3 className="font-semibold mb-2">4 Ways to Win Points Each Hole</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li><strong>Team Low:</strong> Team with the lowest combined score wins 1 point</li>
-                <li><strong>Individual Low:</strong> Team of the player with the lowest score wins 1 point</li>
-                <li><strong>Closest to Pin:</strong> Team of the player closest to the pin on their approach wins 1 point</li>
-                <li><strong>Birdie or Better:</strong> If only one team makes birdie (or better), they win 1 point</li>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">4 Ways to Win Points Each Hole</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• <strong>Team Low:</strong> Team with the lowest combined score wins 1 point</li>
+                <li>• <strong>Individual Low:</strong> Team of the player with the lowest score wins 1 point</li>
+                <li>• <strong>Closest to Pin:</strong> Team of the player closest to the pin on their approach wins 1 point</li>
+                <li>• <strong>Birdie or Better:</strong> If only one team makes birdie (or better), they win 1 point</li>
               </ul>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Umbriago Sweep (Bonus!)</h3>
-              <p className="text-muted-foreground">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Umbriago Sweep (Bonus!)</h3>
+              <p className="text-sm text-muted-foreground">
                 Win all 4 categories on a single hole? Your points are <strong>doubled</strong> (4 → 8 points)!
               </p>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Doubles & Double Backs</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li><strong>Double:</strong> Before a hole, the losing team can call "Double" to multiply that hole's points by 2</li>
-                <li><strong>Double Back:</strong> The other team can respond with "Double Back" to multiply by 4 instead</li>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Doubles & Double Backs</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• <strong>Double:</strong> Before a hole, the losing team can call "Double" to multiply that hole's points by 2</li>
+                <li>• <strong>Double Back:</strong> The other team can respond with "Double Back" to multiply by 4 instead</li>
               </ul>
             </div>
           </CardContent>
