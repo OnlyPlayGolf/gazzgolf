@@ -307,16 +307,18 @@ export default function RoundTracker() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading round...</div>
+        {roundId && <RoundBottomTabBar roundId={roundId} />}
       </div>
     );
   }
 
   if (!round || !currentHole) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Round not found</div>
+        {roundId && <RoundBottomTabBar roundId={roundId} />}
       </div>
     );
   }
