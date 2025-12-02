@@ -464,9 +464,18 @@ export default function RoundsPlay() {
 
               <div className="space-y-2">
                 <Label>Game Format</Label>
-                <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
-                  <div className="font-semibold">Stroke Play</div>
-                  <div className="text-sm text-muted-foreground">Standard scoring format</div>
+                <div className="space-y-2">
+                  <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
+                    <div className="font-semibold">Stroke Play</div>
+                    <div className="text-sm text-muted-foreground">Standard scoring format</div>
+                  </div>
+                  <button
+                    onClick={() => navigate('/umbriago/setup')}
+                    className="w-full p-4 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all"
+                  >
+                    <div className="font-semibold">Umbriago (2v2)</div>
+                    <div className="text-sm text-muted-foreground">Team game with doubles, sweeps & rolls</div>
+                  </button>
                 </div>
               </div>
 
