@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Trophy, Zap, RotateCcw, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Trophy, Zap } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,15 +13,7 @@ import {
   calculateIndividualLow,
   calculateBirdieEagle,
   calculateHolePoints,
-  calculateRoll,
 } from "@/utils/umbriagioScoring";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 export default function UmbriagioPlay() {
   const { gameId } = useParams();
@@ -48,10 +39,6 @@ export default function UmbriagioPlay() {
   const [doubleCalledBy, setDoubleCalledBy] = useState<'A' | 'B' | null>(null);
   const [doubleBackCalled, setDoubleBackCalled] = useState(false);
   
-  // Roll dialog
-  const [showRollDialog, setShowRollDialog] = useState(false);
-  const [currentStake, setCurrentStake] = useState(10);
-
   useEffect(() => {
     if (gameId) {
       fetchGame();
@@ -77,7 +64,6 @@ export default function UmbriagioPlay() {
       };
       
       setGame(typedGame);
-      setCurrentStake(typedGame.stake_per_point);
 
       const { data: holesData, error: holesError } = await supabase
         .from("umbriago_holes")
@@ -99,12 +85,6 @@ export default function UmbriagioPlay() {
       }));
       
       setHoles(typedHoles);
-
-      // Calculate current stake based on rolls
-      if (typedGame.roll_history.length > 0) {
-        const lastRoll = typedGame.roll_history[typedGame.roll_history.length - 1];
-        setCurrentStake(lastRoll.new_stake);
-      }
 
       // Set current hole to first incomplete or next hole
       if (typedHoles.length > 0) {
@@ -130,72 +110,6 @@ export default function UmbriagioPlay() {
       setMultiplier(4);
       setDoubleBackCalled(true);
       toast({ title: "Double Back!", description: "Multiplier is now ×4" });
-    }
-  };
-
-  const handleRoll = () => {
-    if (!game) return;
-    
-    const currentDiff = Math.abs(game.team_a_total_points - game.team_b_total_points);
-    const { newDifference, newStake } = calculateRoll(currentDiff, currentStake);
-    
-    setShowRollDialog(true);
-  };
-
-  const confirmRoll = async () => {
-    if (!game) return;
-    
-    const currentDiff = Math.abs(game.team_a_total_points - game.team_b_total_points);
-    const { newDifference, newStake } = calculateRoll(currentDiff, currentStake);
-    
-    const rollEvent: RollEvent = {
-      hole: currentHole,
-      old_difference: currentDiff,
-      new_stake: newStake,
-    };
-
-    const updatedRollHistory = [...game.roll_history, rollEvent];
-    
-    // Adjust team points based on new difference
-    const leadingTeam = game.team_a_total_points > game.team_b_total_points ? 'A' : 'B';
-    let newTeamAPoints = 0;
-    let newTeamBPoints = 0;
-    
-    if (leadingTeam === 'A') {
-      newTeamAPoints = newDifference;
-      newTeamBPoints = 0;
-    } else {
-      newTeamAPoints = 0;
-      newTeamBPoints = newDifference;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("umbriago_games")
-        .update({
-          roll_history: updatedRollHistory as unknown as any,
-          team_a_total_points: newTeamAPoints,
-          team_b_total_points: newTeamBPoints,
-        })
-        .eq("id", game.id);
-
-      if (error) throw error;
-
-      setGame({
-        ...game,
-        roll_history: updatedRollHistory,
-        team_a_total_points: newTeamAPoints,
-        team_b_total_points: newTeamBPoints,
-      });
-      setCurrentStake(newStake);
-      setShowRollDialog(false);
-      
-      toast({ 
-        title: "Roll applied!", 
-        description: `New stake: ${newStake} SEK per point. Difference now: ${newDifference}` 
-      });
-    } catch (error: any) {
-      toast({ title: "Error applying roll", variant: "destructive" });
     }
   };
 
@@ -354,33 +268,11 @@ export default function UmbriagioPlay() {
                 <div className="text-3xl font-bold text-blue-500">{game.team_a_total_points}</div>
               </div>
               <div className="text-center px-4">
-                <div className="text-xs text-muted-foreground">Stake</div>
-                <div className="font-semibold">{currentStake} SEK</div>
+                <div className="text-lg font-bold text-muted-foreground">vs</div>
               </div>
               <div className="text-center flex-1">
                 <div className="text-xs text-muted-foreground">Team B</div>
                 <div className="text-3xl font-bold text-red-500">{game.team_b_total_points}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Par Selection */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <Label className="font-semibold">Par</Label>
-              <div className="flex gap-2">
-                {[3, 4, 5].map(p => (
-                  <Button
-                    key={p}
-                    variant={par === p ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setPar(p)}
-                  >
-                    {p}
-                  </Button>
-                ))}
               </div>
             </div>
           </CardContent>
@@ -512,16 +404,6 @@ export default function UmbriagioPlay() {
         {/* Actions */}
         <div className="space-y-2">
           <Button
-            onClick={handleRoll}
-            variant="outline"
-            className="w-full"
-            disabled={game.team_a_total_points === game.team_b_total_points}
-          >
-            <RotateCcw size={16} className="mr-2" />
-            Roll (Split)
-          </Button>
-          
-          <Button
             onClick={saveHole}
             disabled={saving || scores.teamAPlayer1 === 0}
             className="w-full"
@@ -532,42 +414,6 @@ export default function UmbriagioPlay() {
           </Button>
         </div>
       </div>
-
-      {/* Roll Dialog */}
-      <Dialog open={showRollDialog} onOpenChange={setShowRollDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Roll</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Roll will halve the point difference and double the stake per point.
-            </p>
-            <div className="bg-muted rounded-lg p-4 space-y-2">
-              <div className="flex justify-between">
-                <span>Current difference:</span>
-                <span className="font-bold">{Math.abs(game.team_a_total_points - game.team_b_total_points)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>New difference:</span>
-                <span className="font-bold">{Math.ceil(Math.abs(game.team_a_total_points - game.team_b_total_points) / 2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Current stake:</span>
-                <span>{currentStake} SEK</span>
-              </div>
-              <div className="flex justify-between">
-                <span>New stake:</span>
-                <span className="font-bold text-primary">{currentStake * 2} SEK</span>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRollDialog(false)}>Cancel</Button>
-            <Button onClick={confirmRoll}>Confirm Roll</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
