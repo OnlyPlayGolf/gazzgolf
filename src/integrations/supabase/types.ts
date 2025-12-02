@@ -1218,7 +1218,7 @@ export type Database = {
       approach_result: "GIR" | "MissL" | "MissR" | "Short" | "Long" | "Penalty"
       first_putt_band: "0-2" | "2-7" | "7+"
       friend_status: "pending" | "accepted" | "blocked"
-      group_role: "member" | "admin" | "owner"
+      group_role: "member" | "admin" | "owner" | "coach"
       tee_result: "FIR" | "MissL" | "MissR" | "Water" | "OOB"
     }
     CompositeTypes: {
@@ -1358,7 +1358,7 @@ export const Constants = {
       approach_result: ["GIR", "MissL", "MissR", "Short", "Long", "Penalty"],
       first_putt_band: ["0-2", "2-7", "7+"],
       friend_status: ["pending", "accepted", "blocked"],
-      group_role: ["member", "admin", "owner"],
+      group_role: ["member", "admin", "owner", "coach"],
       tee_result: ["FIR", "MissL", "MissR", "Water", "OOB"],
     },
   },

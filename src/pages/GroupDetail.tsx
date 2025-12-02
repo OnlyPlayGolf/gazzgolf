@@ -19,7 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 
 interface Member {
   user_id: string;
-  role: 'owner' | 'admin' | 'member';
+  role: 'owner' | 'admin' | 'member' | 'coach';
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
@@ -118,7 +118,9 @@ const GroupDetail = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'admin' | 'member' | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'admin' | 'member' | 'coach' | null>(null);
+  const [manageMembersMode, setManageMembersMode] = useState(false);
+  const [updatingMemberRole, setUpdatingMemberRole] = useState<string | null>(null);
   
   // Leaderboard state
   const [drills, setDrills] = useState<Drill[]>([]);
@@ -895,8 +897,53 @@ useEffect(() => {
   const getRoleIcon = (role: string) => {
     if (role === 'owner') return <Crown size={16} className="text-yellow-500" />;
     if (role === 'admin') return <Shield size={16} className="text-blue-500" />;
+    if (role === 'coach') return <Shield size={16} className="text-green-500" />;
     return null;
   };
+
+  const getRoleDisplayName = (role: string) => {
+    if (role === 'owner') return 'Owner';
+    if (role === 'admin') return 'Admin';
+    if (role === 'coach') return 'Coach';
+    return 'Player';
+  };
+
+  const hasCoachInGroup = members.some(m => m.role === 'coach');
+
+  const handleUpdateMemberRole = async (memberId: string, newRole: 'owner' | 'member' | 'coach') => {
+    if (!groupId) return;
+    
+    setUpdatingMemberRole(memberId);
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .update({ role: newRole })
+        .eq('group_id', groupId)
+        .eq('user_id', memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Role updated",
+        description: "Member role has been updated",
+      });
+
+      await loadMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingMemberRole(null);
+    }
+  };
+
+  // Filter out coaches from leaderboard data
+  const coachUserIds = new Set(members.filter(m => m.role === 'coach').map(m => m.user_id));
+  const filteredDrillLeaderboard = drillLeaderboard.filter(entry => !coachUserIds.has(entry.user_id));
+  const filteredGroupLevelsLeaderboard = groupLevelsLeaderboard.filter(entry => !coachUserIds.has(entry.user_id));
 
   if (!group) {
     return (
@@ -1085,9 +1132,9 @@ useEffect(() => {
 
                     {loadingLeaderboard ? (
                       <p className="text-center text-muted-foreground py-8">Loading...</p>
-                    ) : drillLeaderboard.length > 0 ? (
+                    ) : filteredDrillLeaderboard.length > 0 ? (
                       <div className="space-y-2">
-                        {drillLeaderboard.map((entry, index) => (
+                        {filteredDrillLeaderboard.map((entry, index) => (
                           <div
                             key={entry.user_id}
                             className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
@@ -1126,9 +1173,9 @@ useEffect(() => {
               <TabsContent value="levels" className="space-y-4">
                 {loadingGroupLevels ? (
                   <p className="text-center text-muted-foreground py-8">Loading...</p>
-                ) : groupLevelsLeaderboard.length > 0 ? (
+                ) : filteredGroupLevelsLeaderboard.length > 0 ? (
                   <div className="space-y-2">
-                     {groupLevelsLeaderboard.map((entry, index) => (
+                     {filteredGroupLevelsLeaderboard.map((entry, index) => (
                       <div
                         key={entry.user_id}
                         className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
@@ -1207,7 +1254,7 @@ useEffect(() => {
                 <div className="flex items-center gap-2">
                   {getRoleIcon(member.role)}
                   <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
-                    {member.role}
+                    {getRoleDisplayName(member.role)}
                   </Badge>
                 </div>
               </div>
@@ -1394,6 +1441,44 @@ useEffect(() => {
             <DialogTitle className="text-xl font-semibold text-center">Manage Group</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Members Management */}
+            {(currentUserRole === 'owner' || currentUserRole === 'admin') && (
+              <div>
+                <Label className="text-foreground">Members</Label>
+                <div className="mt-1.5 border rounded-lg divide-y max-h-[200px] overflow-y-auto">
+                  {members.filter(m => m.user_id !== user?.id).map((member) => (
+                    <div key={member.user_id} className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={member.avatar_url || undefined} />
+                          <AvatarFallback className="text-xs">
+                            {(member.display_name || member.username || 'U').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-medium">
+                          {member.display_name || member.username || 'Unknown'}
+                        </span>
+                      </div>
+                      <select
+                        value={member.role}
+                        onChange={(e) => handleUpdateMemberRole(member.user_id, e.target.value as 'owner' | 'member' | 'coach')}
+                        disabled={updatingMemberRole === member.user_id || member.role === 'owner'}
+                        className="text-sm p-1.5 rounded border bg-background disabled:opacity-50"
+                      >
+                        <option value="member">Player</option>
+                        <option value="owner">Owner</option>
+                        {hasCoachInGroup && <option value="coach">Coach</option>}
+                        {!hasCoachInGroup && <option value="coach">Coach</option>}
+                      </select>
+                    </div>
+                  ))}
+                  {members.filter(m => m.user_id !== user?.id).length === 0 && (
+                    <p className="p-3 text-sm text-muted-foreground text-center">No other members</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Group Name */}
             <div>
               <Label htmlFor="edit-group-name" className="text-foreground">
