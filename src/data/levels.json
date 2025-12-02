@@ -2675,9 +2675,9 @@
   {
     "Level": 98,
     "Title": "Trajectory Challenge 100m",
-    "Description": "Hit 3 high shots and 3 low shots to the 100m target",
+    "Description": "Hit 3 high shots and 3 low shots that carry at least 100 meters and land within a 20 meter wide window. Use the same club for every shot.",
     "Distance": "100m",
-    "Target": "6 out of 10",
+    "Target": "6 out of 6",
     "Type": "Approach",
     "Difficulty": "Amateur"
   },
