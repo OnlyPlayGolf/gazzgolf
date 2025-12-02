@@ -301,7 +301,6 @@ const Index = () => {
         {/* Friends Activity Feed */}
         {(friendsPosts.length > 0 || friendsActivity.length > 0) && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Friends Activity</h2>
             
             {/* Posts */}
             {friendsPosts.map((post) => (
