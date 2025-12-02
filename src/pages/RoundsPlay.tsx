@@ -492,7 +492,7 @@ export default function RoundsPlay() {
                     className="w-full p-4 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all"
                   >
                     <div className="font-semibold">Umbriago</div>
-                    <div className="text-sm text-muted-foreground">Team game with doubles, sweeps & rolls</div>
+                    <div className="text-sm text-muted-foreground">2v2 team game without handicap</div>
                   </button>
                 </div>
               </div>
