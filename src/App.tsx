@@ -65,6 +65,10 @@ import EasyChipDrill from "./pages/EasyChipDrill";
 import UmbriagioSetup from "./pages/UmbriagioSetup";
 import UmbriagioPlay from "./pages/UmbriagioPlay";
 import UmbriagioSummary from "./pages/UmbriagioSummary";
+import UmbriagioInfo from "./pages/UmbriagioInfo";
+import UmbriagioFeed from "./pages/UmbriagioFeed";
+import UmbriagioLeaderboard from "./pages/UmbriagioLeaderboard";
+import UmbriagioSettings from "./pages/UmbriagioSettings";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -121,6 +125,10 @@ const App = () => {
             <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
             <Route path="/umbriago/setup" element={<UmbriagioSetup />} />
             <Route path="/umbriago/:gameId/play" element={<UmbriagioPlay />} />
+            <Route path="/umbriago/:gameId/info" element={<UmbriagioInfo />} />
+            <Route path="/umbriago/:gameId/feed" element={<UmbriagioFeed />} />
+            <Route path="/umbriago/:gameId/leaderboard" element={<UmbriagioLeaderboard />} />
+            <Route path="/umbriago/:gameId/settings" element={<UmbriagioSettings />} />
             <Route path="/umbriago/:gameId/summary" element={<UmbriagioSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
