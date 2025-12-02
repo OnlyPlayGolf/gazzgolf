@@ -2369,9 +2369,9 @@
   {
     "Level": 64,
     "Title": "Strike Quality 100m",
-    "Description": "Hit 3 consecutive clean shots that reach the 100m marker. (With a club that goes around 100 meters)",
+    "Description": "Hit 3 shots in a row that clearly carry the 100 meter sign and land within a 20 meter wide target. Use a club that goes around 100-120 meters.",
     "Distance": "100m",
-    "Target": "3 consecutive",
+    "Target": "3 in a row",
     "Type": "Approach",
     "Difficulty": "Amateur"
   },
