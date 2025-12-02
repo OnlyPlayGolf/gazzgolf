@@ -3737,9 +3737,9 @@
   {
     "Level": 16,
     "Title": "Chip in",
-    "Description": "Pick an optional chip. Make at least 3 in 10 attempts",
+    "Description": "Pick an optional chip shot from the rough. Hit 2 chip shots in the hole out of 10 attempts.",
     "Distance": "Optional",
-    "Target": "3 out of 10",
+    "Target": "2 out of 10",
     "Type": "Chip",
     "Difficulty": "Tour"
   },
