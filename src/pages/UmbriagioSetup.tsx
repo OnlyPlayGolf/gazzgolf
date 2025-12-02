@@ -20,6 +20,35 @@ export default function UmbriagioSetup() {
   const [teamBPlayer1, setTeamBPlayer1] = useState("");
   const [teamBPlayer2, setTeamBPlayer2] = useState("");
 
+  // Load players from session storage on mount
+  useEffect(() => {
+    const loadPlayers = async () => {
+      // Get current user's display name
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('display_name, username')
+          .eq('id', user.id)
+          .single();
+        
+        const currentUserName = profile?.display_name || profile?.username || 'You';
+        setTeamAPlayer1(currentUserName);
+      }
+
+      // Get saved players from session storage
+      const savedPlayers = sessionStorage.getItem('roundPlayers');
+      if (savedPlayers) {
+        const players = JSON.parse(savedPlayers);
+        // Auto-assign players to teams
+        if (players.length >= 1) setTeamAPlayer2(players[0].displayName || players[0].username || 'Player 2');
+        if (players.length >= 2) setTeamBPlayer1(players[1].displayName || players[1].username || 'Player 3');
+        if (players.length >= 3) setTeamBPlayer2(players[2].displayName || players[2].username || 'Player 4');
+      }
+    };
+    loadPlayers();
+  }, []);
+
   const handleStartGame = async () => {
     if (!teamAPlayer1.trim() || !teamAPlayer2.trim() || !teamBPlayer1.trim() || !teamBPlayer2.trim()) {
       toast({ title: "All player names required", variant: "destructive" });
