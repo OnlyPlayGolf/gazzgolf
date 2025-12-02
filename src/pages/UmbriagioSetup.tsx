@@ -176,7 +176,7 @@ export default function UmbriagioSetup() {
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Umbriago Sweep (Bonus!)</h3>
+              <h3 className="font-semibold text-sm">Umbriago (Bonus!)</h3>
               <p className="text-sm text-muted-foreground">
                 Win all 4 categories on a single hole? Your points are <strong>doubled</strong> (4 → 8 points)!
               </p>
