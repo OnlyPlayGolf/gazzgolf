@@ -61,6 +61,9 @@ import DriverControlLeaderboard from "./pages/DriverControlLeaderboard";
 import DriverControlMessages from "./pages/DriverControlMessages";
 import UpDownsTestDrill from "./pages/UpDownsTestDrill";
 import EasyChipDrill from "./pages/EasyChipDrill";
+import UmbriagioSetup from "./pages/UmbriagioSetup";
+import UmbriagioPlay from "./pages/UmbriagioPlay";
+import UmbriagioSummary from "./pages/UmbriagioSummary";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -114,6 +117,9 @@ const App = () => {
             <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
             <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
             <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
+            <Route path="/umbriago/setup" element={<UmbriagioSetup />} />
+            <Route path="/umbriago/:gameId/play" element={<UmbriagioPlay />} />
+            <Route path="/umbriago/:gameId/summary" element={<UmbriagioSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />

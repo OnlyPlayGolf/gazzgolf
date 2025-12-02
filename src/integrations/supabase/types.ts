@@ -853,6 +853,152 @@ export type Database = {
         }
         Relationships: []
       }
+      umbriago_games: {
+        Row: {
+          course_name: string
+          created_at: string | null
+          date_played: string
+          final_payout: number | null
+          holes_played: number
+          id: string
+          is_finished: boolean
+          payout_mode: string
+          roll_history: Json | null
+          stake_per_point: number
+          team_a_player_1: string
+          team_a_player_2: string
+          team_a_total_points: number
+          team_b_player_1: string
+          team_b_player_2: string
+          team_b_total_points: number
+          tee_set: string | null
+          user_id: string
+          winning_team: string | null
+        }
+        Insert: {
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          final_payout?: number | null
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          payout_mode?: string
+          roll_history?: Json | null
+          stake_per_point?: number
+          team_a_player_1: string
+          team_a_player_2: string
+          team_a_total_points?: number
+          team_b_player_1: string
+          team_b_player_2: string
+          team_b_total_points?: number
+          tee_set?: string | null
+          user_id: string
+          winning_team?: string | null
+        }
+        Update: {
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          final_payout?: number | null
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          payout_mode?: string
+          roll_history?: Json | null
+          stake_per_point?: number
+          team_a_player_1?: string
+          team_a_player_2?: string
+          team_a_total_points?: number
+          team_b_player_1?: string
+          team_b_player_2?: string
+          team_b_total_points?: number
+          tee_set?: string | null
+          user_id?: string
+          winning_team?: string | null
+        }
+        Relationships: []
+      }
+      umbriago_holes: {
+        Row: {
+          birdie_eagle_winner: string | null
+          closest_to_pin_winner: string | null
+          created_at: string | null
+          double_back_called: boolean | null
+          double_called_by: string | null
+          game_id: string
+          hole_number: number
+          id: string
+          individual_low_winner: string | null
+          is_umbriago: boolean
+          multiplier: number
+          par: number
+          team_a_hole_points: number
+          team_a_player_1_score: number | null
+          team_a_player_2_score: number | null
+          team_a_running_total: number
+          team_b_hole_points: number
+          team_b_player_1_score: number | null
+          team_b_player_2_score: number | null
+          team_b_running_total: number
+          team_low_winner: string | null
+        }
+        Insert: {
+          birdie_eagle_winner?: string | null
+          closest_to_pin_winner?: string | null
+          created_at?: string | null
+          double_back_called?: boolean | null
+          double_called_by?: string | null
+          game_id: string
+          hole_number: number
+          id?: string
+          individual_low_winner?: string | null
+          is_umbriago?: boolean
+          multiplier?: number
+          par?: number
+          team_a_hole_points?: number
+          team_a_player_1_score?: number | null
+          team_a_player_2_score?: number | null
+          team_a_running_total?: number
+          team_b_hole_points?: number
+          team_b_player_1_score?: number | null
+          team_b_player_2_score?: number | null
+          team_b_running_total?: number
+          team_low_winner?: string | null
+        }
+        Update: {
+          birdie_eagle_winner?: string | null
+          closest_to_pin_winner?: string | null
+          created_at?: string | null
+          double_back_called?: boolean | null
+          double_called_by?: string | null
+          game_id?: string
+          hole_number?: number
+          id?: string
+          individual_low_winner?: string | null
+          is_umbriago?: boolean
+          multiplier?: number
+          par?: number
+          team_a_hole_points?: number
+          team_a_player_1_score?: number | null
+          team_a_player_2_score?: number | null
+          team_a_running_total?: number
+          team_b_hole_points?: number
+          team_b_player_1_score?: number | null
+          team_b_player_2_score?: number | null
+          team_b_running_total?: number
+          team_low_winner?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "umbriago_holes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "umbriago_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_settings: {
         Row: {
           favourite_group_ids: string[] | null
