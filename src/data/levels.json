@@ -4394,7 +4394,7 @@
   {
     "Level": 89,
     "Title": "Tap-Out",
-    "Description": "Hit 5 putts from 3 feet, 3 putts from 5 feet and 2 putts from 7 feet and make them all.",
+    "Description": "Hit 5 putts from 3 feet, 3 from 5 feet, and 2 from 7 feet, and make them all. Every putt must be from a different spot.",
     "Distance": "3-7 feet",
     "Target": "10 out of 10",
     "Type": "Putt",
