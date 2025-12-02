@@ -1,19 +1,29 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Trophy, Zap } from "lucide-react";
-import { TopNavBar } from "@/components/TopNavBar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronLeft, ChevronRight, Minus, Plus, Check, Zap } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
+import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import {
   calculateTeamLow,
   calculateIndividualLow,
   calculateBirdieEagle,
   calculateHolePoints,
 } from "@/utils/umbriagioScoring";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function UmbriagioPlay() {
   const { gameId } = useParams();
@@ -22,9 +32,10 @@ export default function UmbriagioPlay() {
   
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [holes, setHoles] = useState<UmbriagioHole[]>([]);
-  const [currentHole, setCurrentHole] = useState(1);
+  const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   
   // Current hole state
   const [par, setPar] = useState(4);
@@ -39,6 +50,9 @@ export default function UmbriagioPlay() {
   const [doubleCalledBy, setDoubleCalledBy] = useState<'A' | 'B' | null>(null);
   const [doubleBackCalled, setDoubleBackCalled] = useState(false);
   
+  const currentHole = currentHoleIndex + 1;
+  const totalHoles = game?.holes_played || 18;
+
   useEffect(() => {
     if (gameId) {
       fetchGame();
@@ -55,7 +69,6 @@ export default function UmbriagioPlay() {
 
       if (gameError) throw gameError;
       
-      // Type cast the game data
       const typedGame: UmbriagioGame = {
         ...gameData,
         payout_mode: gameData.payout_mode as 'difference' | 'total',
@@ -73,7 +86,6 @@ export default function UmbriagioPlay() {
 
       if (holesError) throw holesError;
       
-      // Type cast holes data
       const typedHoles: UmbriagioHole[] = (holesData || []).map(h => ({
         ...h,
         team_low_winner: h.team_low_winner as 'A' | 'B' | null,
@@ -86,9 +98,8 @@ export default function UmbriagioPlay() {
       
       setHoles(typedHoles);
 
-      // Set current hole to first incomplete or next hole
       if (typedHoles.length > 0) {
-        setCurrentHole(typedHoles.length + 1);
+        setCurrentHoleIndex(typedHoles.length);
       }
     } catch (error: any) {
       toast({ title: "Error loading game", description: error.message, variant: "destructive" });
@@ -116,7 +127,6 @@ export default function UmbriagioPlay() {
   const saveHole = async () => {
     if (!game) return;
     
-    // Calculate category winners
     const holeScores = {
       teamAPlayer1: scores.teamAPlayer1,
       teamAPlayer2: scores.teamAPlayer2,
@@ -138,13 +148,11 @@ export default function UmbriagioPlay() {
 
     const { teamAPoints, teamBPoints, isUmbriago } = calculateHolePoints(categories, multiplier);
 
-    // Calculate running totals
     const teamARunning = game.team_a_total_points + teamAPoints;
     const teamBRunning = game.team_b_total_points + teamBPoints;
 
     setSaving(true);
     try {
-      // Insert hole
       const { error: holeError } = await supabase
         .from("umbriago_holes")
         .insert({
@@ -171,7 +179,6 @@ export default function UmbriagioPlay() {
 
       if (holeError) throw holeError;
 
-      // Update game totals
       const { error: gameError } = await supabase
         .from("umbriago_games")
         .update({
@@ -182,7 +189,6 @@ export default function UmbriagioPlay() {
 
       if (gameError) throw gameError;
 
-      // Update local state
       setGame({
         ...game,
         team_a_total_points: teamARunning,
@@ -193,12 +199,10 @@ export default function UmbriagioPlay() {
         toast({ title: "🎉 UMBRIAGO!", description: "All 4 categories won - points doubled!" });
       }
 
-      // Check if game is over
       if (currentHole >= game.holes_played) {
         navigate(`/umbriago/${game.id}/summary`);
       } else {
-        // Move to next hole
-        setCurrentHole(currentHole + 1);
+        setCurrentHoleIndex(currentHoleIndex + 1);
         resetHoleState();
         await fetchGame();
       }
@@ -225,10 +229,33 @@ export default function UmbriagioPlay() {
     }));
   };
 
+  const navigateHole = (direction: "prev" | "next") => {
+    if (direction === "prev" && currentHoleIndex > 0) {
+      setCurrentHoleIndex(currentHoleIndex - 1);
+    } else if (direction === "next" && currentHoleIndex < totalHoles - 1) {
+      setCurrentHoleIndex(currentHoleIndex + 1);
+    }
+  };
+
+  const handleFinishGame = () => {
+    navigate(`/umbriago/${gameId}/summary`);
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("umbriago_holes").delete().eq("game_id", gameId);
+      await supabase.from("umbriago_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/rounds-play");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary" />
+        <div className="text-muted-foreground">Loading game...</div>
       </div>
     );
   }
@@ -236,184 +263,255 @@ export default function UmbriagioPlay() {
   if (!game) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Game not found</p>
+        <div className="text-muted-foreground">Game not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
-      <TopNavBar />
-      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/rounds')}>
-            <ArrowLeft size={20} />
-          </Button>
-          <div className="text-center">
-            <h1 className="font-bold">Hole {currentHole} of {game.holes_played}</h1>
-            <p className="text-sm text-muted-foreground">{game.course_name}</p>
+    <div className="min-h-screen pb-24 bg-background">
+      {/* Header */}
+      <div className="bg-card border-b border-border">
+        <div className="p-4 max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowExitDialog(true)}
+              className="rounded-full"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+            <div className="flex-1 text-center">
+              <h1 className="text-xl font-bold">{game.date_played}</h1>
+              <p className="text-sm text-muted-foreground">{game.course_name}</p>
+            </div>
+            <div className="w-10" />
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/umbriago/${game.id}/summary`)}>
-            <Trophy size={20} />
-          </Button>
         </div>
 
-        {/* Running Score */}
-        <Card className="bg-gradient-to-r from-blue-500/10 to-red-500/10">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center">
-              <div className="text-center flex-1">
-                <div className="text-xs text-muted-foreground">Team A</div>
-                <div className="text-3xl font-bold text-blue-500">{game.team_a_total_points}</div>
-              </div>
-              <div className="text-center px-4">
-                <div className="text-lg font-bold text-muted-foreground">vs</div>
-              </div>
-              <div className="text-center flex-1">
-                <div className="text-xs text-muted-foreground">Team B</div>
-                <div className="text-3xl font-bold text-red-500">{game.team_b_total_points}</div>
-              </div>
+        {/* Game Info Bar */}
+        <div className="bg-primary text-primary-foreground py-4 px-4">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <div>
+              <div className="text-lg font-bold">UMBRIAGO</div>
+              <div className="text-sm opacity-90">2v2</div>
             </div>
-          </CardContent>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{game.team_a_total_points} - {game.team_b_total_points}</div>
+              <div className="text-xs opacity-90">Points</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{currentHole}</div>
+              <div className="text-xs opacity-90">Hole</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Score Entry */}
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        {/* Team A */}
+        <Card className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <span className="font-semibold">Team A</span>
+            <span className="text-2xl font-bold text-blue-500 ml-auto">{game.team_a_total_points}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <ScoreInput
+              label={game.team_a_player_1}
+              value={scores.teamAPlayer1}
+              onChange={(delta) => updateScore('teamAPlayer1', delta)}
+            />
+            <ScoreInput
+              label={game.team_a_player_2}
+              value={scores.teamAPlayer2}
+              onChange={(delta) => updateScore('teamAPlayer2', delta)}
+            />
+          </div>
         </Card>
 
-        {/* Scores */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Scores</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Team A */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="font-semibold text-sm">Team A</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <ScoreInput
-                  label={game.team_a_player_1}
-                  value={scores.teamAPlayer1}
-                  onChange={(delta) => updateScore('teamAPlayer1', delta)}
-                />
-                <ScoreInput
-                  label={game.team_a_player_2}
-                  value={scores.teamAPlayer2}
-                  onChange={(delta) => updateScore('teamAPlayer2', delta)}
-                />
-              </div>
-            </div>
-            
-            {/* Team B */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="font-semibold text-sm">Team B</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <ScoreInput
-                  label={game.team_b_player_1}
-                  value={scores.teamBPlayer1}
-                  onChange={(delta) => updateScore('teamBPlayer1', delta)}
-                />
-                <ScoreInput
-                  label={game.team_b_player_2}
-                  value={scores.teamBPlayer2}
-                  onChange={(delta) => updateScore('teamBPlayer2', delta)}
-                />
-              </div>
-            </div>
-          </CardContent>
+        {/* Team B */}
+        <Card className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-3 h-3 rounded-full bg-red-500" />
+            <span className="font-semibold">Team B</span>
+            <span className="text-2xl font-bold text-red-500 ml-auto">{game.team_b_total_points}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <ScoreInput
+              label={game.team_b_player_1}
+              value={scores.teamBPlayer1}
+              onChange={(delta) => updateScore('teamBPlayer1', delta)}
+            />
+            <ScoreInput
+              label={game.team_b_player_2}
+              value={scores.teamBPlayer2}
+              onChange={(delta) => updateScore('teamBPlayer2', delta)}
+            />
+          </div>
         </Card>
 
         {/* Closest to Pin */}
-        <Card>
-          <CardContent className="p-4">
-            <Label className="font-semibold">Closest to Pin in Regulation</Label>
-            <div className="flex gap-2 mt-2">
-              <Button
-                variant={closestToPinWinner === 'A' ? "default" : "outline"}
-                onClick={() => setClosestToPinWinner('A')}
-                className="flex-1"
-              >
-                <div className="w-3 h-3 rounded-full bg-blue-500 mr-2" />
-                Team A
-              </Button>
-              <Button
-                variant={closestToPinWinner === null ? "default" : "outline"}
-                onClick={() => setClosestToPinWinner(null)}
-                className="flex-1"
-              >
-                Tie
-              </Button>
-              <Button
-                variant={closestToPinWinner === 'B' ? "default" : "outline"}
-                onClick={() => setClosestToPinWinner('B')}
-                className="flex-1"
-              >
-                <div className="w-3 h-3 rounded-full bg-red-500 mr-2" />
-                Team B
-              </Button>
-            </div>
-          </CardContent>
+        <Card className="p-4">
+          <Label className="font-semibold text-sm mb-2 block">Closest to Pin (GIR)</Label>
+          <div className="flex gap-2">
+            <Button
+              variant={closestToPinWinner === 'A' ? "default" : "outline"}
+              onClick={() => setClosestToPinWinner('A')}
+              className="flex-1"
+              size="sm"
+            >
+              Team A
+            </Button>
+            <Button
+              variant={closestToPinWinner === null ? "secondary" : "outline"}
+              onClick={() => setClosestToPinWinner(null)}
+              className="flex-1"
+              size="sm"
+            >
+              Tie
+            </Button>
+            <Button
+              variant={closestToPinWinner === 'B' ? "default" : "outline"}
+              onClick={() => setClosestToPinWinner('B')}
+              className="flex-1"
+              size="sm"
+            >
+              Team B
+            </Button>
+          </div>
         </Card>
 
         {/* Multiplier */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="font-semibold">Hole Multiplier</Label>
-              <div className="flex items-center gap-2">
-                <Zap className={multiplier > 1 ? "text-yellow-500" : "text-muted-foreground"} size={16} />
-                <span className="text-xl font-bold">×{multiplier}</span>
-              </div>
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="font-semibold text-sm">Multiplier</Label>
+            <div className="flex items-center gap-2">
+              <Zap className={multiplier > 1 ? "text-yellow-500" : "text-muted-foreground"} size={16} />
+              <span className="text-xl font-bold">×{multiplier}</span>
             </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => handleDouble('A')}
-                disabled={multiplier > 1}
-                className="text-blue-500 border-blue-500/50"
-              >
-                Team A: Double
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleDouble('B')}
-                disabled={multiplier > 1}
-                className="text-red-500 border-red-500/50"
-              >
-                Team B: Double
-              </Button>
-            </div>
-            
-            {multiplier === 2 && (
-              <Button
-                variant="outline"
-                onClick={handleDoubleBack}
-                disabled={doubleBackCalled}
-                className="w-full"
-              >
-                {doubleBackCalled ? "Double Back Applied" : "Double Back (→ ×4)"}
-              </Button>
-            )}
-          </CardContent>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleDouble('A')}
+              disabled={multiplier > 1}
+              size="sm"
+              className="text-blue-500"
+            >
+              Team A: Double
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDouble('B')}
+              disabled={multiplier > 1}
+              size="sm"
+              className="text-red-500"
+            >
+              Team B: Double
+            </Button>
+          </div>
+          
+          {multiplier === 2 && (
+            <Button
+              variant="outline"
+              onClick={handleDoubleBack}
+              disabled={doubleBackCalled}
+              className="w-full mt-2"
+              size="sm"
+            >
+              {doubleBackCalled ? "Double Back Applied" : "Double Back (→ ×4)"}
+            </Button>
+          )}
         </Card>
+      </div>
 
-        {/* Actions */}
-        <div className="space-y-2">
-          <Button
-            onClick={saveHole}
-            disabled={saving || scores.teamAPlayer1 === 0}
-            className="w-full"
-            size="lg"
-          >
-            {saving ? "Saving..." : currentHole >= game.holes_played ? "Finish Game" : "Next Hole"}
-            <ArrowRight size={16} className="ml-2" />
-          </Button>
+      {/* Hole Navigation */}
+      <div className="fixed bottom-16 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-4">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center justify-between mb-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("prev")}
+              disabled={currentHoleIndex === 0}
+            >
+              <ChevronLeft size={24} />
+            </Button>
+
+            <div className="text-center">
+              <div className="text-2xl font-bold">Hole {currentHole}</div>
+              <div className="text-sm text-muted-foreground">{currentHole} of {totalHoles}</div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("next")}
+              disabled={currentHoleIndex === totalHoles - 1}
+            >
+              <ChevronRight size={24} />
+            </Button>
+          </div>
+          
+          {currentHoleIndex === totalHoles - 1 ? (
+            <Button
+              onClick={handleFinishGame}
+              className="w-full"
+              size="lg"
+            >
+              <Check size={20} className="mr-2" />
+              Finish Game
+            </Button>
+          ) : (
+            <Button
+              onClick={saveHole}
+              disabled={saving || scores.teamAPlayer1 === 0}
+              className="w-full"
+              size="lg"
+            >
+              {saving ? "Saving..." : "Save & Next Hole"}
+            </Button>
+          )}
         </div>
       </div>
+
+      <UmbriagioBottomTabBar gameId={gameId!} />
+
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exit Game</AlertDialogTitle>
+            <AlertDialogDescription>
+              What would you like to do with this game?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                navigate("/rounds-play");
+              }}
+              className="w-full"
+            >
+              Save and Exit
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                handleDeleteGame();
+              }}
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Game
+            </AlertDialogAction>
+            <AlertDialogCancel className="w-full mt-0">Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -430,24 +528,24 @@ function ScoreInput({
   return (
     <div className="space-y-1">
       <span className="text-xs text-muted-foreground truncate block">{label}</span>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
           onClick={() => onChange(-1)}
           disabled={value <= 1}
-          className="h-10 w-10"
+          className="h-10 w-10 rounded-full"
         >
-          -
+          <Minus size={16} />
         </Button>
-        <div className="flex-1 text-center text-xl font-bold">{value || '-'}</div>
+        <div className="flex-1 text-center text-2xl font-bold">{value || '-'}</div>
         <Button
           variant="outline"
-          size="sm"
+          size="icon"
           onClick={() => onChange(1)}
-          className="h-10 w-10"
+          className="h-10 w-10 rounded-full"
         >
-          +
+          <Plus size={16} />
         </Button>
       </div>
     </div>
