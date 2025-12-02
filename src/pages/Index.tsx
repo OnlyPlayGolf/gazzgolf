@@ -254,9 +254,6 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
-        {/* Post Box */}
-        <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
-
         {/* Friends Section */}
         <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
         <Card
@@ -297,6 +294,9 @@ const Index = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Post Box */}
+        <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
 
         {/* Friends Activity Feed */}
         {(friendsPosts.length > 0 || friendsActivity.length > 0) && (
