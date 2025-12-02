@@ -154,15 +154,42 @@ export default function UmbriagioSetup() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Trophy size={20} className="text-primary" />
-              Quick Rules
+              How to Play Umbriago
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p><strong>4 Categories per hole:</strong> Team Low, Individual Low, Closest to Pin, Birdie/Eagle</p>
-            <p><strong>Umbriago Sweep:</strong> Win all 4 = points doubled (4→8)</p>
-            <p><strong>Double:</strong> Losing team can call Double (×2)</p>
-            <p><strong>Double Back:</strong> Other team can reply (×4)</p>
-            <p><strong>Roll:</strong> Halves point difference, doubles stake</p>
+          <CardContent className="text-sm text-muted-foreground space-y-4">
+            <div>
+              <p className="font-semibold text-foreground mb-1">Overview</p>
+              <p>A 2v2 team game where points are won across 4 categories on every hole. The team with the most points at the end wins.</p>
+            </div>
+            
+            <div>
+              <p className="font-semibold text-foreground mb-1">4 Ways to Win Points Each Hole</p>
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li><strong>Team Low:</strong> Team with the lowest combined score wins 1 point</li>
+                <li><strong>Individual Low:</strong> Team of the player with the lowest score wins 1 point</li>
+                <li><strong>Closest to Pin:</strong> Team of the player closest to the pin on their approach wins 1 point</li>
+                <li><strong>Birdie or Better:</strong> If only one team makes birdie (or better), they win 1 point</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-semibold text-foreground mb-1">Umbriago Sweep (Bonus!)</p>
+              <p>Win all 4 categories on a single hole? Your points are <strong>doubled</strong> (4 → 8 points)!</p>
+            </div>
+
+            <div>
+              <p className="font-semibold text-foreground mb-1">Doubles & Double Backs</p>
+              <ul className="list-disc list-inside space-y-1 ml-1">
+                <li><strong>Double:</strong> Before a hole, the losing team can call "Double" to multiply that hole's points by 2</li>
+                <li><strong>Double Back:</strong> The other team can respond with "Double Back" to multiply by 4 instead</li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-semibold text-foreground mb-1">The Roll</p>
+              <p>If you're behind, you can call a "Roll" to cut the point difference in half and keep fighting!</p>
+            </div>
           </CardContent>
         </Card>
 
