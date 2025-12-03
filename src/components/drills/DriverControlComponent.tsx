@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface DriverControlComponentProps {
   onTabChange?: (tab: string) => void;
@@ -48,6 +49,8 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
   const [userId, setUserId] = useState<string | null>(null);
   const [bonusStreak, setBonusStreak] = useState(0);
   const [shotSequence, setShotSequence] = useState<ShotStructure[]>([]);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
   
   const [selectedResult, setSelectedResult] = useState<string>("");
   
@@ -212,10 +215,8 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
       });
 
       localStorage.removeItem(STORAGE_KEY);
-      onScoreSaved?.();
-      if (onTabChange) {
-        onTabChange('feed');
-      }
+      setFinalScore(totalScore);
+      setShowCompletionDialog(true);
     } catch (error) {
       console.error('Error saving score:', error);
       toast({
@@ -347,6 +348,17 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
           </CardContent>
         </Card>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Driver Control"
+        score={finalScore}
+        unit="points"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

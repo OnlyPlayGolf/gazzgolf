@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface ShortPuttingTestComponentProps {
   onTabChange?: (tab: string) => void;
@@ -28,6 +29,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
   const [drillStarted, setDrillStarted] = useState(false);
   const [drillEnded, setDrillEnded] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -138,11 +140,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
       });
 
       localStorage.removeItem(STORAGE_KEY);
-      if (onScoreSaved) {
-        onScoreSaved();
-      }
-
-      onTabChange?.('leaderboard');
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({
         title: "Error saving score",
@@ -289,6 +287,17 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
           </Card>
         </>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Short Putting Test"
+        score={consecutiveMakes}
+        unit="putts"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

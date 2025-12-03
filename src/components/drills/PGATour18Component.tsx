@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface PGATour18ComponentProps {
   onTabChange?: (tab: string) => void;
@@ -54,6 +55,8 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<string[]>([]);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -180,14 +183,9 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       }
 
       setIsActive(false);
-      
-      toast({
-        title: "Drill Completed!",
-        description: `Total Putts: ${totalPutts}`,
-      });
-
+      setFinalScore(totalPutts);
+      setShowCompletionDialog(true);
       localStorage.removeItem(STORAGE_KEY);
-      onScoreSaved?.();
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -282,6 +280,17 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
           </CardContent>
         </Card>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="PGA Tour 18 Holes"
+        score={finalScore}
+        unit="putts"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };
