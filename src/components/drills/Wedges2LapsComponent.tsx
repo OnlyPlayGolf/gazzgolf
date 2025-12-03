@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface Wedges2LapsComponentProps {
   onTabChange?: (tab: string) => void;
@@ -49,6 +50,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
   const [attempts, setAttempts] = useState<Shot[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -159,11 +161,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
       });
 
       localStorage.removeItem(STORAGE_KEY);
-      if (onScoreSaved) {
-        onScoreSaved();
-      }
-
-      onTabChange?.('leaderboard');
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({
         title: "Error saving score",
@@ -284,6 +282,17 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
           )}
         </>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Wedge Point Game"
+        score={totalPoints}
+        unit="points"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

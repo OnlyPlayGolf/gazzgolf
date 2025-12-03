@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface EightBallComponentProps {
   onTabChange?: (tab: string) => void;
@@ -51,6 +52,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
   const [attempts, setAttempts] = useState<StationAttempt[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(0);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -194,7 +196,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
       });
 
       localStorage.removeItem(STORAGE_KEY);
-      onScoreSaved?.();
+      setShowCompletionDialog(true);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -297,6 +299,17 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
           </Button>
         </>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="8-Ball Drill"
+        score={totalPoints}
+        unit="points"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

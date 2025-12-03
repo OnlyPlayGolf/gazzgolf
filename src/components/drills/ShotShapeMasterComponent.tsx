@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface ShotShapeMasterComponentProps {
   onTabChange?: (tab: string) => void;
@@ -62,6 +63,8 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
   const [userId, setUserId] = useState<string | null>(null);
   const [bonusStreak, setBonusStreak] = useState(0);
   const [shotSequence, setShotSequence] = useState<Array<{ shape: 'draw' | 'fade'; club: string }>>([]);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
   
   // Current shot input state
   const [correctShape, setCorrectShape] = useState<string>("");
@@ -258,14 +261,9 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
       }
 
       setIsActive(false);
-      
-      toast({
-        title: "Drill Completed!",
-        description: `Total Score: ${finalScore} points (out of ${maxPoints})`,
-      });
-
+      setFinalScore(finalScore);
+      setShowCompletionDialog(true);
       localStorage.removeItem(STORAGE_KEY);
-      onScoreSaved?.();
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -418,6 +416,17 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
           </CardContent>
         </Card>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Shot Shape Master"
+        score={finalScore}
+        unit="points"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

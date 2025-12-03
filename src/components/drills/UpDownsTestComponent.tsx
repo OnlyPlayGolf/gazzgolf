@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface UpDownsTestComponentProps {
   onTabChange?: (tab: string) => void;
@@ -23,6 +24,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const [currentScore, setCurrentScore] = useState(0);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const { toast } = useToast();
 
   // Initialize stations with randomized order
@@ -176,7 +178,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
       });
 
       localStorage.removeItem(STORAGE_KEY);
-      onScoreSaved?.();
+      setShowCompletionDialog(true);
     } catch (error) {
       console.error('Error saving score:', error);
       toast({
@@ -333,6 +335,17 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
           </CardContent>
         </Card>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="18 Up & Downs"
+        score={totalShots}
+        unit="shots"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

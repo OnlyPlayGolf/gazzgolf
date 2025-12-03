@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface TW9WindowsComponentProps {
   onTabChange?: (tab: string) => void;
@@ -26,6 +27,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   const [totalShots, setTotalShots] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -145,14 +147,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
 
       toast.success(`Score saved! Total shots: ${totalShots}`);
       localStorage.removeItem('tw9WindowsState');
-      
-      if (onScoreSaved) {
-        onScoreSaved();
-      }
-      
-      if (onTabChange) {
-        onTabChange('leaderboard');
-      }
+      setShowCompletionDialog(true);
     } catch (error) {
       console.error('Error saving score:', error);
       toast.error("Failed to save score");
@@ -290,6 +285,17 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
           </div>
         </CardContent>
       </Card>
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="TW's 9 Windows Test"
+        score={totalShots}
+        unit="shots"
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 }
