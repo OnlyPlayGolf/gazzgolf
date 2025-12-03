@@ -334,11 +334,12 @@ useEffect(() => {
         return;
       }
 
-      // Get all group members
+      // Get all group members (excluding coaches)
       const { data: groupMembers } = await supabase
         .from('group_members')
-        .select('user_id')
-        .eq('group_id', groupId);
+        .select('user_id, role')
+        .eq('group_id', groupId)
+        .neq('role', 'coach');
 
       if (!groupMembers || groupMembers.length === 0) {
         setDrillLeaderboard([]);
@@ -419,13 +420,24 @@ useEffect(() => {
     if (!groupId || !user) return;
     setLoadingGroupLevels(true);
     try {
+      // Get coach user IDs to filter them out
+      const { data: coachMembers } = await supabase
+        .from('group_members')
+        .select('user_id')
+        .eq('group_id', groupId)
+        .eq('role', 'coach');
+      
+      const coachIds = new Set(coachMembers?.map(m => m.user_id) || []);
+
       const { data, error } = await supabase
         .rpc('group_level_leaderboard', { p_group_id: groupId });
       if (error) {
         console.error('Error loading group levels leaderboard:', error);
         setGroupLevelsLeaderboard([]);
       } else {
-        setGroupLevelsLeaderboard(data || []);
+        // Filter out coaches from results
+        const filteredData = (data || []).filter((entry: GroupLevelLeaderboardEntry) => !coachIds.has(entry.user_id));
+        setGroupLevelsLeaderboard(filteredData);
       }
     } catch (e) {
       console.error('Error loading group levels leaderboard:', e);
