@@ -137,6 +137,8 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
   const totalShots = stations.reduce((sum, s) => sum + (s.shots || 0), 0);
   const upAndDowns = stations.filter(s => s.shots === 1).length;
 
+  const [finalScore, setFinalScore] = useState(0);
+
   const saveScore = async () => {
     if (!userId) {
       toast({
@@ -146,6 +148,9 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
       });
       return;
     }
+
+    // Capture the score before any state changes
+    const scoreToSave = totalShots;
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
@@ -166,7 +171,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         .insert({
           drill_id: drillId,
           user_id: userId,
-          total_points: totalShots,
+          total_points: scoreToSave,
           attempts_json: stations,
         });
 
@@ -174,9 +179,11 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
 
       toast({
         title: "Score saved!",
-        description: `${totalShots} total shots recorded.`,
+        description: `${scoreToSave} total shots recorded.`,
       });
 
+      // Set the final score before clearing localStorage
+      setFinalScore(scoreToSave);
       localStorage.removeItem(STORAGE_KEY);
       setShowCompletionDialog(true);
     } catch (error) {
@@ -340,7 +347,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
         drillTitle="18 Up & Downs"
-        score={totalShots}
+        score={finalScore}
         unit="shots"
         onContinue={() => {
           onScoreSaved?.();

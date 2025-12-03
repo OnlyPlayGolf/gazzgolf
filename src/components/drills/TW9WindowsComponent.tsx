@@ -28,6 +28,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedScore, setSavedScore] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -118,6 +119,9 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
       return;
     }
 
+    // Capture the score before any state changes
+    const scoreToSave = totalShots;
+
     try {
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { 
@@ -139,13 +143,14 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
         .insert({
           drill_id: drillData,
           user_id: userId,
-          total_points: totalShots,
+          total_points: scoreToSave,
           attempts_json: attemptsJson
         });
 
       if (insertError) throw insertError;
 
-      toast.success(`Score saved! Total shots: ${totalShots}`);
+      toast.success(`Score saved! Total shots: ${scoreToSave}`);
+      setSavedScore(scoreToSave);
       localStorage.removeItem('tw9WindowsState');
       setShowCompletionDialog(true);
     } catch (error) {
@@ -290,7 +295,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
         drillTitle="TW's 9 Windows Test"
-        score={totalShots}
+        score={savedScore}
         unit="shots"
         onContinue={() => {
           onScoreSaved?.();
