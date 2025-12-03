@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 
 interface GroupDrillHistoryProps {
   groupId: string;
-  isCoachGroup?: boolean;
 }
 
 interface DrillResultWithProfile {
@@ -65,13 +64,13 @@ interface DrillInfo {
   title: string;
 }
 
-export function GroupDrillHistory({ groupId, isCoachGroup = false }: GroupDrillHistoryProps) {
+export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
   const [results, setResults] = useState<DrillResultWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrill, setSelectedDrill] = useState<string>("all");
   const [selectedMember, setSelectedMember] = useState<string>("all");
   const [drills, setDrills] = useState<DrillInfo[]>([]);
-  const [members, setMembers] = useState<{ user_id: string; display_name: string | null; username: string | null; role: string }[]>([]);
+  const [members, setMembers] = useState<{ user_id: string; display_name: string | null; username: string | null }[]>([]);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -82,7 +81,6 @@ export function GroupDrillHistory({ groupId, isCoachGroup = false }: GroupDrillH
           .from('group_members')
           .select(`
             user_id,
-            role,
             profiles!inner(display_name, username, avatar_url)
           `)
           .eq('group_id', groupId);
@@ -92,19 +90,12 @@ export function GroupDrillHistory({ groupId, isCoachGroup = false }: GroupDrillH
           return;
         }
 
-        // Filter out coaches (and owners if coach group) from members
-        const nonCoachMembers = groupMembers.filter((m: any) => {
-          if (m.role === 'coach') return false;
-          if (isCoachGroup && m.role === 'owner') return false;
-          return true;
-        });
-        const memberIds = nonCoachMembers.map(m => m.user_id);
-        const memberProfiles = nonCoachMembers.map((m: any) => ({
+        const memberIds = groupMembers.map(m => m.user_id);
+        const memberProfiles = groupMembers.map((m: any) => ({
           user_id: m.user_id,
           display_name: m.profiles.display_name,
           username: m.profiles.username,
-          avatar_url: m.profiles.avatar_url,
-          role: m.role
+          avatar_url: m.profiles.avatar_url
         }));
         setMembers(memberProfiles);
 
@@ -192,7 +183,7 @@ export function GroupDrillHistory({ groupId, isCoachGroup = false }: GroupDrillH
           onChange={(e) => setSelectedMember(e.target.value)}
           className="w-full p-2 rounded-md border bg-background text-foreground text-sm"
         >
-          <option value="all">All Players</option>
+          <option value="all">All Members</option>
           {members.map(member => (
             <option key={member.user_id} value={member.user_id}>
               {member.display_name || member.username || 'Unknown'}

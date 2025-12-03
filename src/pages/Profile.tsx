@@ -245,8 +245,7 @@ const Profile = () => {
         .from('groups')
         .insert({
           name: groupName.trim(),
-          owner_id: user.id,
-          is_coach_group: groupType === "Coach"
+          owner_id: user.id
         })
         .select()
         .single();
