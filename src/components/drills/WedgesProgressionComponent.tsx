@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface WedgesProgressionComponentProps {
   onTabChange?: (tab: string) => void;
@@ -24,6 +25,8 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
   const [currentDistanceIndex, setCurrentDistanceIndex] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedScore, setSavedScore] = useState(0);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -134,6 +137,9 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
       return;
     }
 
+    // Capture the score before any state changes
+    const scoreToSave = totalShots;
+
     try {
       const drillTitle = "Åberg's Wedge Ladder";
       
@@ -147,7 +153,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
         .insert([{
           drill_id: drillData,
           user_id: userId,
-          total_points: totalShots,
+          total_points: scoreToSave,
           attempts_json: progress as any,
         }]);
 
@@ -155,15 +161,12 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
 
       toast({
         title: "Score saved!",
-        description: `Your score of ${totalShots} shots has been saved.`,
+        description: `Your score of ${scoreToSave} shots has been saved.`,
       });
 
+      setSavedScore(scoreToSave);
       localStorage.removeItem(STORAGE_KEY);
-      if (onScoreSaved) {
-        onScoreSaved();
-      }
-
-      onTabChange?.('leaderboard');
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({
         title: "Error saving score",
@@ -310,6 +313,18 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
           </CardContent>
         </Card>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Åberg's Wedge Ladder"
+        score={savedScore}
+        unit="shots"
+        onContinue={() => {
+          onScoreSaved?.();
+          onTabChange?.('leaderboard');
+        }}
+      />
     </div>
   );
 };
