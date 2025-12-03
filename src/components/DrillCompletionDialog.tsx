@@ -98,9 +98,11 @@ export function DrillCompletionDialog({
         return;
       }
 
+      // Create structured post content with drill result marker
+      const drillResult = `[DRILL_RESULT]${drillTitle}|${score}|${unit}|${isPersonalBest}[/DRILL_RESULT]`;
       const postContent = comment.trim()
-        ? `${comment}\n\n🎯 ${drillTitle}: ${score} ${unit}${isPersonalBest ? ' 🏆 Personal Best!' : ''}`
-        : `🎯 ${drillTitle}: ${score} ${unit}${isPersonalBest ? ' 🏆 Personal Best!' : ''}`;
+        ? `${comment}\n\n${drillResult}`
+        : drillResult;
 
       const { error } = await supabase
         .from('posts')
