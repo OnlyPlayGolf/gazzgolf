@@ -225,9 +225,21 @@ useEffect(() => {
     if (groupId && user) {
       loadGroupData();
       loadDrills();
-      loadGroupLevelsLeaderboard();
     }
   }, [groupId, user]);
+
+  // Reload leaderboards when group data changes (to apply is_coach_group filtering)
+  useEffect(() => {
+    if (group && user) {
+      loadGroupLevelsLeaderboard();
+      if (selectedDrill) {
+        const drill = drills.find(d => d.title === selectedDrill);
+        if (drill) {
+          loadDrillLeaderboard(drill.title, drill.lower_is_better);
+        }
+      }
+    }
+  }, [group?.is_coach_group]);
 
   // Realtime subscription for members
   useEffect(() => {
@@ -334,12 +346,11 @@ useEffect(() => {
         return;
       }
 
-      // Get all group members (excluding coaches)
+      // Get all group members
       const { data: groupMembers } = await supabase
         .from('group_members')
         .select('user_id, role')
-        .eq('group_id', groupId)
-        .neq('role', 'coach');
+        .eq('group_id', groupId);
 
       if (!groupMembers || groupMembers.length === 0) {
         setDrillLeaderboard([]);
@@ -347,7 +358,14 @@ useEffect(() => {
         return;
       }
 
-      const memberIds = groupMembers.map(m => m.user_id);
+      // Filter out coaches and owners (if is_coach_group)
+      const filteredMembers = groupMembers.filter(m => {
+        if (m.role === 'coach') return false;
+        if (group?.is_coach_group && m.role === 'owner') return false;
+        return true;
+      });
+
+      const memberIds = filteredMembers.map(m => m.user_id);
 
       // Get best scores for all group members
       const { data: memberScores } = await supabase
@@ -420,14 +438,17 @@ useEffect(() => {
     if (!groupId || !user) return;
     setLoadingGroupLevels(true);
     try {
-      // Get coach user IDs to filter them out
-      const { data: coachMembers } = await supabase
+      // Get members to exclude (coaches and owners if is_coach_group)
+      const { data: allMembers } = await supabase
         .from('group_members')
-        .select('user_id')
-        .eq('group_id', groupId)
-        .eq('role', 'coach');
+        .select('user_id, role')
+        .eq('group_id', groupId);
       
-      const coachIds = new Set(coachMembers?.map(m => m.user_id) || []);
+      const excludeIds = new Set(
+        (allMembers || [])
+          .filter(m => m.role === 'coach' || (group?.is_coach_group && m.role === 'owner'))
+          .map(m => m.user_id)
+      );
 
       const { data, error } = await supabase
         .rpc('group_level_leaderboard', { p_group_id: groupId });
@@ -435,8 +456,8 @@ useEffect(() => {
         console.error('Error loading group levels leaderboard:', error);
         setGroupLevelsLeaderboard([]);
       } else {
-        // Filter out coaches from results
-        const filteredData = (data || []).filter((entry: GroupLevelLeaderboardEntry) => !coachIds.has(entry.user_id));
+        // Filter out excluded members from results
+        const filteredData = (data || []).filter((entry: GroupLevelLeaderboardEntry) => !excludeIds.has(entry.user_id));
         setGroupLevelsLeaderboard(filteredData);
       }
     } catch (e) {
@@ -914,7 +935,7 @@ useEffect(() => {
   };
 
   const getRoleDisplayName = (role: string) => {
-    if (role === 'owner') return 'Owner';
+    if (role === 'owner') return group?.is_coach_group ? 'Coach' : 'Owner';
     if (role === 'admin') return 'Admin';
     if (role === 'coach') return 'Coach';
     return 'Player';
@@ -1221,7 +1242,7 @@ useEffect(() => {
 
               {/* History Tab */}
               <TabsContent value="history">
-                {groupId && <GroupDrillHistory groupId={groupId} />}
+                {groupId && <GroupDrillHistory groupId={groupId} isCoachGroup={group?.is_coach_group} />}
               </TabsContent>
 
               {/* Play Tab */}

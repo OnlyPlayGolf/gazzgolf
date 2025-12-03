@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 interface GroupDrillHistoryProps {
   groupId: string;
+  isCoachGroup?: boolean;
 }
 
 interface DrillResultWithProfile {
@@ -64,7 +65,7 @@ interface DrillInfo {
   title: string;
 }
 
-export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
+export function GroupDrillHistory({ groupId, isCoachGroup = false }: GroupDrillHistoryProps) {
   const [results, setResults] = useState<DrillResultWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrill, setSelectedDrill] = useState<string>("all");
@@ -91,8 +92,12 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
           return;
         }
 
-        // Filter out coaches from members
-        const nonCoachMembers = groupMembers.filter((m: any) => m.role !== 'coach');
+        // Filter out coaches (and owners if coach group) from members
+        const nonCoachMembers = groupMembers.filter((m: any) => {
+          if (m.role === 'coach') return false;
+          if (isCoachGroup && m.role === 'owner') return false;
+          return true;
+        });
         const memberIds = nonCoachMembers.map(m => m.user_id);
         const memberProfiles = nonCoachMembers.map((m: any) => ({
           user_id: m.user_id,

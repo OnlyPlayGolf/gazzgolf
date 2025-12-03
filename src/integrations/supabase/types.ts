@@ -345,6 +345,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_coach_group: boolean
           name: string
           owner_id: string
         }
@@ -352,6 +353,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_coach_group?: boolean
           name: string
           owner_id: string
         }
@@ -359,6 +361,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_coach_group?: boolean
           name?: string
           owner_id?: string
         }
