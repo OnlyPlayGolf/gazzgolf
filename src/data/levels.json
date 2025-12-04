@@ -2837,7 +2837,7 @@
   {
     "Level": 16,
     "Title": "Credit Card Putts",
-    "Description": "From a 1.5m straight putt, put two tees 0.5m infront of the ball with the with of a credit card. Make 5 putts in a row without touching the tees.",
+    "Description": "From an 1.5 meter straight putt, put two tees 0.5 meters infront of the ball with the width of a credit card. Make 5 putts in a row without touching the tees.",
     "Distance": "1.5m",
     "Target": "5 consecutive",
     "Type": "Putt",
