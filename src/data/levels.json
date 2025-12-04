@@ -2972,7 +2972,7 @@
   {
     "Level": 31,
     "Title": "100m Wedge",
-    "Description": "From 100 meters stop 3 carry indside 5 meters with 5 attempts",
+    "Description": "Stop or carry (do the same for every shot) 3 shots inside 4 meters of the hole from 100 meters with 5 attempts.",
     "Distance": "100m",
     "Target": "3 out of 5",
     "Type": "Wedge",
