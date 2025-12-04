@@ -3188,7 +3188,7 @@
   {
     "Level": 55,
     "Title": "Left Consistency",
-    "Description": "Land 5 shots within 10 meters left of the target without without missing right or no more than 10 meters left from 120 meters",
+    "Description": "From 120 meters, get 5 shots to finish within 10 meters left of the target, without missing right or more than 10 meters left.",
     "Distance": "120m",
     "Target": "5 out of 10",
     "Type": "Approach",
