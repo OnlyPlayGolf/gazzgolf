@@ -28,7 +28,7 @@ export function UmbriagioBottomTabBar({ gameId }: UmbriagioBottomTabBarProps) {
             <button
               key={tab.id}
               onClick={() => navigate(tab.path)}
-              className={`flex flex-col items-center gap-1 py-3 px-4 flex-1 transition-colors ${
+              className={`flex flex-col items-center gap-1 py-3 px-2 flex-1 transition-colors ${
                 isActive 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
