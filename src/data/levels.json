@@ -3305,9 +3305,9 @@
   {
     "Level": 68,
     "Title": "Wedge Ladder",
-    "Description": "Carry a wedge shot within 6 meters (+/- 3m) of the target distance at 60m, 65m, 70m, 75m and 80 meters",
+    "Description": "Carry a wedge shot within 3 meters (+/- 3m) of the target distance at 60m, 65m, 70m, 75m and 80 meters.",
     "Distance": "60-80m",
-    "Target": "5 out of 12",
+    "Target": "5 out of 5",
     "Type": "Wedge",
     "Difficulty": "Professional"
   },
