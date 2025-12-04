@@ -3152,7 +3152,7 @@
   {
     "Level": 51,
     "Title": "10m Putting Test",
-    "Description": "Hit 9 different putts from 10 meters and hole out every putt wih a total of 18 putts or less",
+    "Description": "Hit 9 different putts from 10 meters and hole out every putt. The target is a total of 18 putts or less (2 putts per hole on average).",
     "Distance": "10m",
     "Target": "18 or less",
     "Type": "Putt",
