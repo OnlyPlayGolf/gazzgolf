@@ -3278,9 +3278,9 @@
   {
     "Level": 65,
     "Title": "Chip in Rough",
-    "Description": "Make one chip shot in the hole from the hole",
-    "Distance": "10m+",
-    "Target": "1 succesfull",
+    "Description": "Hit one chip shot in the hole from 10 meters of the hole in the rough.",
+    "Distance": "10m",
+    "Target": "1 successful",
     "Type": "Chip",
     "Difficulty": "Professional"
   },
