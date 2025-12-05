@@ -15,9 +15,6 @@ import {
 import { TopNavBar } from "@/components/TopNavBar";
 import { PostBox } from "@/components/PostBox";
 import { FeedPost } from "@/components/FeedPost";
-import { FriendActivityCard, FriendActivity } from "@/components/FriendActivityCard";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -29,7 +26,6 @@ const Index = () => {
   const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
   const [friendsActivity, setFriendsActivity] = useState<any[]>([]);
   const [friendsPosts, setFriendsPosts] = useState<any[]>([]);
-  const [friendActivities, setFriendActivities] = useState<FriendActivity[]>([]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -94,152 +90,28 @@ const Index = () => {
       if (friendsData && friendsData.length > 0) {
         setFriendsCount(friendsData.length);
         
-        // Get all friend user IDs
+        // Get friend user IDs
         const friendIds = friendsData.map(f => 
           f.user_a === user.id ? f.user_b : f.user_a
-        );
+        ).slice(0, 3); // Only get first 3 for avatars
 
-        // Load all friend profiles
+        // Load friend profiles
         const { data: friendProfiles } = await supabase
           .from('profiles')
           .select('id, avatar_url, display_name, username')
           .in('id', friendIds);
 
-        setFriendsAvatars((friendProfiles || []).slice(0, 3));
+        setFriendsAvatars(friendProfiles || []);
+      } else {
+        setFriendsCount(0);
+        setFriendsAvatars([]);
+      }
 
-        // Load friend activities for the horizontal scroll
-        if (friendProfiles && friendProfiles.length > 0) {
-          const activities: FriendActivity[] = [];
-          const profileMap = new Map(friendProfiles.map(p => [p.id, p]));
-
-          // Get recent drill results
-          const { data: drillResults } = await supabase
-            .from('drill_results')
-            .select('user_id, drill_id, created_at, drills(title)')
-            .in('user_id', friendIds)
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-          // Get recent level progress
-          const { data: levelProgress } = await supabase
-            .from('level_progress')
-            .select('user_id, level_number, completed, completed_at, updated_at')
-            .in('user_id', friendIds)
-            .order('updated_at', { ascending: false })
-            .limit(20);
-
-          // Get recent rounds
-          const { data: rounds } = await supabase
-            .from('rounds')
-            .select('id, user_id, course_name, created_at')
-            .in('user_id', friendIds)
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-          // Get round summaries for completed rounds
-          const roundIds = rounds?.map(r => r.id) || [];
-          const { data: roundSummaries } = await supabase
-            .from('round_summaries')
-            .select('round_id, total_score, total_par, holes_played')
-            .in('round_id', roundIds);
-
-          const summaryMap = new Map(roundSummaries?.map(s => [s.round_id, s]) || []);
-
-          // Build friend activity map (one per friend - most recent)
-          const friendActivityMap = new Map<string, FriendActivity>();
-
-          // Process drill results
-          drillResults?.forEach(dr => {
-            const profile = profileMap.get(dr.user_id);
-            if (!profile || friendActivityMap.has(dr.user_id)) return;
-            
-            const drillTitle = (dr.drills as any)?.title || 'Unknown Drill';
-            friendActivityMap.set(dr.user_id, {
-              friendId: dr.user_id,
-              friendName: profile.display_name || profile.username || 'Friend',
-              friendUsername: profile.username,
-              avatarUrl: profile.avatar_url,
-              activityType: 'drill_completed',
-              activityDetail: drillTitle,
-              timestamp: new Date(dr.created_at!),
-            });
-          });
-
-          // Process level progress
-          levelProgress?.forEach(lp => {
-            const profile = profileMap.get(lp.user_id);
-            if (!profile) return;
-            
-            const existing = friendActivityMap.get(lp.user_id);
-            const lpTimestamp = new Date(lp.completed_at || lp.updated_at);
-            
-            if (!existing || lpTimestamp > existing.timestamp) {
-              friendActivityMap.set(lp.user_id, {
-                friendId: lp.user_id,
-                friendName: profile.display_name || profile.username || 'Friend',
-                friendUsername: profile.username,
-                avatarUrl: profile.avatar_url,
-                activityType: lp.completed ? 'level_completed' : 'level_started',
-                activityDetail: lp.level_number?.toString() || '',
-                timestamp: lpTimestamp,
-              });
-            }
-          });
-
-          // Process rounds
-          rounds?.forEach(r => {
-            const profile = profileMap.get(r.user_id);
-            if (!profile) return;
-            
-            const existing = friendActivityMap.get(r.user_id);
-            const roundTimestamp = new Date(r.created_at!);
-            
-            if (!existing || roundTimestamp > existing.timestamp) {
-              const summary = summaryMap.get(r.id);
-              let activityDetail = r.course_name;
-              let activityType: FriendActivity['activityType'] = 'round_started';
-              
-              if (summary && summary.total_score) {
-                activityType = 'round_completed';
-                const scoreDiff = summary.total_score - (summary.total_par || 0);
-                const scoreStr = scoreDiff === 0 ? 'E' : scoreDiff > 0 ? `+${scoreDiff}` : `${scoreDiff}`;
-                activityDetail = `${scoreStr} / ${summary.total_score}`;
-              }
-              
-              friendActivityMap.set(r.user_id, {
-                friendId: r.user_id,
-                friendName: profile.display_name || profile.username || 'Friend',
-                friendUsername: profile.username,
-                avatarUrl: profile.avatar_url,
-                activityType,
-                activityDetail,
-                timestamp: roundTimestamp,
-              });
-            }
-          });
-
-          // Add inactive friends (no recent activity)
-          friendProfiles.forEach(profile => {
-            if (!friendActivityMap.has(profile.id)) {
-              friendActivityMap.set(profile.id, {
-                friendId: profile.id,
-                friendName: profile.display_name || profile.username || 'Friend',
-                friendUsername: profile.username,
-                avatarUrl: profile.avatar_url,
-                activityType: 'inactive',
-                activityDetail: 'Last active: a while ago',
-                timestamp: new Date(0),
-              });
-            }
-          });
-
-          // Sort by most recent and take top entries
-          const sortedActivities = Array.from(friendActivityMap.values())
-            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-            .slice(0, 10);
-
-          setFriendActivities(sortedActivities);
-        }
+      // Load friends' recent activity and posts
+      if (friendsData && friendsData.length > 0) {
+        const friendIds = friendsData.map(f => 
+          f.user_a === user.id ? f.user_b : f.user_a
+        );
 
         // Get friends' posts (and own posts)
         const { data: posts } = await supabase
@@ -260,7 +132,7 @@ const Index = () => {
           setFriendsPosts(posts);
         }
 
-        // Get friends' recent rounds for the feed
+        // Get friends' recent rounds
         const { data: friendRounds } = await supabase
           .from('rounds')
           .select('id, user_id, course_name, date_played, created_at')
@@ -269,6 +141,7 @@ const Index = () => {
           .limit(10);
 
         if (friendRounds) {
+          // Get friend profiles and round summaries
           const activityWithDetails = await Promise.all(
             friendRounds.map(async (round) => {
               const { data: profile } = await supabase
@@ -293,10 +166,6 @@ const Index = () => {
 
           setFriendsActivity(activityWithDetails);
         }
-      } else {
-        setFriendsCount(0);
-        setFriendsAvatars([]);
-        setFriendActivities([]);
       }
 
       // Load recent activity (rounds)
@@ -385,39 +254,46 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
-        {/* Friends Activity Section */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-muted-foreground"
-              onClick={() => navigate('/friends', { state: { from: 'home' } })}
-            >
-              <span className="text-sm">{friendsCount} Friends</span>
-              <ChevronRight size={16} className="ml-1" />
-            </Button>
-          </div>
-          
-          {friendActivities.length > 0 ? (
-            <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-3 pb-3">
-                {friendActivities.map((activity) => (
-                  <FriendActivityCard key={activity.friendId} activity={activity} />
-                ))}
+        {/* Friends Section */}
+        <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
+        <Card
+          className="cursor-pointer hover:border-primary transition-colors" 
+          onClick={() => navigate('/friends', { state: { from: 'home' } })}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex -space-x-2">
+                  {friendsAvatars.length > 0 ? (
+                    friendsAvatars.map((friend, index) => (
+                      <Avatar key={friend.id} className="h-12 w-12 border-2 border-background">
+                        {friend.avatar_url ? (
+                          <img src={friend.avatar_url} alt={friend.display_name || friend.username} className="object-cover" />
+                        ) : (
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {friend.display_name ? friend.display_name.charAt(0).toUpperCase() : 
+                             friend.username ? friend.username.charAt(0).toUpperCase() : "?"}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    ))
+                  ) : (
+                    <Avatar className="h-12 w-12 border-2 border-background">
+                      <AvatarFallback className="bg-muted text-muted-foreground">
+                        <Users size={20} />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{friendsCount}</p>
+                  <p className="text-sm text-muted-foreground">Friends</p>
+                </div>
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-          ) : (
-            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => navigate('/friends', { state: { from: 'home' } })}>
-              <CardContent className="p-6 text-center">
-                <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">Add friends to see their activity</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              <ChevronRight size={20} className="text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Post Box */}
         <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
