@@ -71,6 +71,7 @@ import UmbriagioInfo from "./pages/UmbriagioInfo";
 import UmbriagioFeed from "./pages/UmbriagioFeed";
 import UmbriagioLeaderboard from "./pages/UmbriagioLeaderboard";
 import UmbriagioSettings from "./pages/UmbriagioSettings";
+import HowToPlayUmbriago from "./pages/HowToPlayUmbriago";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -127,6 +128,7 @@ const App = () => {
             <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
             <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
             <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
+            <Route path="/umbriago/how-to-play" element={<HowToPlayUmbriago />} />
             <Route path="/umbriago/setup" element={<UmbriagioSetup />} />
             <Route path="/umbriago/:gameId/play" element={<UmbriagioPlay />} />
             <Route path="/umbriago/:gameId/info" element={<UmbriagioInfo />} />
