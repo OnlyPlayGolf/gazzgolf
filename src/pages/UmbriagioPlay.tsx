@@ -416,11 +416,13 @@ export default function UmbriagioPlay() {
               label={game.team_a_player_1}
               value={scores.teamAPlayer1}
               onChange={(delta) => updateScore('teamAPlayer1', delta)}
+              labelColor="text-blue-500"
             />
             <ScoreInput
               label={game.team_a_player_2}
               value={scores.teamAPlayer2}
               onChange={(delta) => updateScore('teamAPlayer2', delta)}
+              labelColor="text-blue-500"
             />
           </div>
         </Card>
@@ -435,11 +437,13 @@ export default function UmbriagioPlay() {
               label={game.team_b_player_1}
               value={scores.teamBPlayer1}
               onChange={(delta) => updateScore('teamBPlayer1', delta)}
+              labelColor="text-red-500"
             />
             <ScoreInput
               label={game.team_b_player_2}
               value={scores.teamBPlayer2}
               onChange={(delta) => updateScore('teamBPlayer2', delta)}
+              labelColor="text-red-500"
             />
           </div>
         </Card>
@@ -589,15 +593,17 @@ export default function UmbriagioPlay() {
 function ScoreInput({ 
   label, 
   value, 
-  onChange 
+  onChange,
+  labelColor = "text-muted-foreground"
 }: { 
   label: string; 
   value: number; 
   onChange: (delta: number) => void;
+  labelColor?: string;
 }) {
   return (
     <div className="space-y-0.5">
-      <span className="text-[10px] text-muted-foreground truncate block">{label}</span>
+      <span className={`text-sm font-medium truncate block ${labelColor}`}>{label}</span>
       <div className="flex items-center gap-1">
         <Button
           variant="outline"
