@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Search, Calendar, MapPin, Users, ChevronRight, Plus } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -43,6 +44,7 @@ export default function RoundsPlay() {
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<string[]>([]);
   const [selectedPlayersCount, setSelectedPlayersCount] = useState(0);
+  const [gameFormat, setGameFormat] = useState<"stroke_play" | "umbriago">("stroke_play");
 
   useEffect(() => {
     fetchCourses();
@@ -196,6 +198,13 @@ export default function RoundsPlay() {
         description: "Please select a tee color",
         variant: "destructive",
       });
+      return;
+    }
+
+    // If Umbriago is selected, navigate to Umbriago setup
+    if (gameFormat === "umbriago") {
+      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+      navigate('/umbriago/setup');
       return;
     }
 
@@ -465,22 +474,39 @@ export default function RoundsPlay() {
             <div className="space-y-2">
               <Label>Game Format</Label>
               <div className="space-y-2">
-                <div className="p-3 rounded-lg border-2 border-primary bg-primary/5">
+                <button
+                  onClick={() => setGameFormat("stroke_play")}
+                  className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
+                    gameFormat === "stroke_play"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
                   <div className="font-semibold text-sm">Stroke Play</div>
                   <div className="text-xs text-muted-foreground">Standard scoring format</div>
-                </div>
-                <button
-                  onClick={() => {
-                    if (selectedCourse) {
-                      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
-                    }
-                    navigate('/umbriago/how-to-play');
-                  }}
-                  className="w-full p-3 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all"
-                >
-                  <div className="font-semibold text-sm">Umbriago</div>
-                  <div className="text-xs text-muted-foreground">2v2 team game without handicap</div>
                 </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setGameFormat("umbriago")}
+                    className={`w-full p-3 rounded-lg border-2 text-left transition-all pr-12 ${
+                      gameFormat === "umbriago"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">Umbriago</div>
+                    <div className="text-xs text-muted-foreground">2v2 team game without handicap</div>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/umbriago/how-to-play');
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted transition-colors"
+                  >
+                    <Info size={18} className="text-muted-foreground" />
+                  </button>
+                </div>
               </div>
             </div>
 
