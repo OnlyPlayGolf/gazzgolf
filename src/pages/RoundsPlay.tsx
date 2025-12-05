@@ -488,7 +488,12 @@ export default function RoundsPlay() {
                     <div className="text-sm text-muted-foreground">Standard scoring format</div>
                   </div>
                   <button
-                    onClick={() => navigate('/umbriago/setup')}
+                    onClick={() => {
+                      if (selectedCourse) {
+                        sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+                      }
+                      navigate('/umbriago/setup');
+                    }}
                     className="w-full p-4 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all"
                   >
                     <div className="font-semibold">Umbriago</div>
