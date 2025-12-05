@@ -271,7 +271,7 @@ export default function UmbriagioPlay() {
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-44 bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="p-4 max-w-2xl mx-auto">
