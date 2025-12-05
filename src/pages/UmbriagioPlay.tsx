@@ -404,10 +404,6 @@ export default function UmbriagioPlay() {
               <div className="text-3xl font-bold">{game.team_a_total_points} - {game.team_b_total_points}</div>
               <div className="text-xs opacity-90">Points</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{currentHole}</div>
-              <div className="text-xs opacity-90">Hole</div>
-            </div>
           </div>
           <div className="w-10" />
         </div>
