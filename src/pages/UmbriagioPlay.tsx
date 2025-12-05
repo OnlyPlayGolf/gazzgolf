@@ -384,25 +384,18 @@ export default function UmbriagioPlay() {
 
   return (
     <div className="min-h-screen pb-44 bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="p-4 max-w-2xl mx-auto">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowExitDialog(true)}
-              className="rounded-full"
-            >
-              <ChevronLeft size={24} />
-            </Button>
-            <div className="flex-1" />
-          </div>
-        </div>
-
-        {/* Game Info Bar */}
-        <div className="bg-primary text-primary-foreground py-4 px-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-center gap-8">
+      {/* Game Info Bar */}
+      <div className="bg-primary text-primary-foreground py-4 px-4">
+        <div className="max-w-2xl mx-auto flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowExitDialog(true)}
+            className="rounded-full text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <ChevronLeft size={24} />
+          </Button>
+          <div className="flex-1 flex items-center justify-center gap-8">
             <div className="text-center">
               <div className="text-lg font-bold">UMBRIAGO</div>
               <div className="text-sm opacity-90">2v2</div>
@@ -416,6 +409,7 @@ export default function UmbriagioPlay() {
               <div className="text-xs opacity-90">Hole</div>
             </div>
           </div>
+          <div className="w-10" />
         </div>
       </div>
 
