@@ -65,12 +65,16 @@ export default function UmbriagioPlay() {
     }
   }, [gameId]);
 
-  // Update par when hole changes and we have course data
+  // Update par and default scores when hole changes and we have course data
   useEffect(() => {
     if (courseHoles.length > 0) {
       const holeData = courseHoles.find(h => h.hole_number === currentHole);
       if (holeData) {
         setPar(holeData.par);
+        // Only set default scores if all scores are 0 (new hole, not loaded from DB)
+        if (scores.teamAPlayer1 === 0 && scores.teamAPlayer2 === 0 && scores.teamBPlayer1 === 0 && scores.teamBPlayer2 === 0) {
+          setScores({ teamAPlayer1: holeData.par, teamAPlayer2: holeData.par, teamBPlayer1: holeData.par, teamBPlayer2: holeData.par });
+        }
       }
     }
   }, [currentHoleIndex, courseHoles]);
@@ -304,12 +308,10 @@ export default function UmbriagioPlay() {
     // Par will be set by useEffect when courseHoles is available
     const nextHoleNumber = currentHoleIndex + 2; // +1 for 0-index, +1 for next hole
     const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
-    if (nextHoleData) {
-      setPar(nextHoleData.par);
-    } else {
-      setPar(4); // Default fallback
-    }
-    setScores({ teamAPlayer1: 0, teamAPlayer2: 0, teamBPlayer1: 0, teamBPlayer2: 0 });
+    const nextPar = nextHoleData?.par || 4;
+    setPar(nextPar);
+    // Default scores to par
+    setScores({ teamAPlayer1: nextPar, teamAPlayer2: nextPar, teamBPlayer1: nextPar, teamBPlayer2: nextPar });
     setClosestToPinWinner(null);
     setMultiplier(1);
     setDoubleCalledBy(null);
@@ -385,7 +387,7 @@ export default function UmbriagioPlay() {
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="p-4 max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
@@ -394,23 +396,19 @@ export default function UmbriagioPlay() {
             >
               <ChevronLeft size={24} />
             </Button>
-            <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">{game.date_played}</h1>
-              <p className="text-sm text-muted-foreground">{game.course_name}</p>
-            </div>
-            <div className="w-10" />
+            <div className="flex-1" />
           </div>
         </div>
 
         {/* Game Info Bar */}
         <div className="bg-primary text-primary-foreground py-4 px-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div>
+          <div className="max-w-2xl mx-auto flex items-center justify-center gap-8">
+            <div className="text-center">
               <div className="text-lg font-bold">UMBRIAGO</div>
               <div className="text-sm opacity-90">2v2</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{game.team_a_total_points} - {game.team_b_total_points}</div>
+              <div className="text-3xl font-bold">{game.team_a_total_points} - {game.team_b_total_points}</div>
               <div className="text-xs opacity-90">Points</div>
             </div>
             <div className="text-center">
@@ -423,13 +421,6 @@ export default function UmbriagioPlay() {
 
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Par Display */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <Label className="font-semibold text-sm">Par</Label>
-            <span className="text-2xl font-bold">{par}</span>
-          </div>
-        </Card>
 
         {/* Team A */}
         <Card className="p-4">
