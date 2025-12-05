@@ -25,6 +25,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+}
+
 export default function UmbriagioPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
@@ -32,6 +37,7 @@ export default function UmbriagioPlay() {
   
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [holes, setHoles] = useState<UmbriagioHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,6 +65,16 @@ export default function UmbriagioPlay() {
     }
   }, [gameId]);
 
+  // Update par when hole changes and we have course data
+  useEffect(() => {
+    if (courseHoles.length > 0) {
+      const holeData = courseHoles.find(h => h.hole_number === currentHole);
+      if (holeData) {
+        setPar(holeData.par);
+      }
+    }
+  }, [currentHoleIndex, courseHoles]);
+
   const fetchGame = async () => {
     try {
       const { data: gameData, error: gameError } = await supabase
@@ -77,6 +93,24 @@ export default function UmbriagioPlay() {
       };
       
       setGame(typedGame);
+
+      // Fetch course holes if course_id exists
+      if (gameData.course_id) {
+        const { data: courseHolesData, error: courseHolesError } = await supabase
+          .from("course_holes")
+          .select("hole_number, par")
+          .eq("course_id", gameData.course_id)
+          .order("hole_number");
+
+        if (!courseHolesError && courseHolesData) {
+          setCourseHoles(courseHolesData);
+          // Set initial par for hole 1
+          const hole1 = courseHolesData.find(h => h.hole_number === 1);
+          if (hole1) {
+            setPar(hole1.par);
+          }
+        }
+      }
 
       const { data: holesData, error: holesError } = await supabase
         .from("umbriago_holes")
@@ -214,7 +248,14 @@ export default function UmbriagioPlay() {
   };
 
   const resetHoleState = () => {
-    setPar(4);
+    // Par will be set by useEffect when courseHoles is available
+    const nextHoleNumber = currentHoleIndex + 2; // +1 for 0-index, +1 for next hole
+    const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+    if (nextHoleData) {
+      setPar(nextHoleData.par);
+    } else {
+      setPar(4); // Default fallback
+    }
     setScores({ teamAPlayer1: 0, teamAPlayer2: 0, teamBPlayer1: 0, teamBPlayer2: 0 });
     setClosestToPinWinner(null);
     setMultiplier(1);
@@ -329,6 +370,32 @@ export default function UmbriagioPlay() {
 
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
+        {/* Par Display */}
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <Label className="font-semibold text-sm">Par</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPar(Math.max(3, par - 1))}
+              >
+                <Minus size={16} />
+              </Button>
+              <span className="text-2xl font-bold w-8 text-center">{par}</span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPar(Math.min(5, par + 1))}
+              >
+                <Plus size={16} />
+              </Button>
+            </div>
+          </div>
+        </Card>
+
         {/* Team A */}
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-3">
