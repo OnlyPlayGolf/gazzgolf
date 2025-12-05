@@ -407,13 +407,12 @@ export default function UmbriagioPlay() {
       <div className="max-w-2xl mx-auto p-4 space-y-4">
 
         {/* Team A */}
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
-            <span className="font-semibold">Team A</span>
-            <span className="text-2xl font-bold text-blue-500 ml-auto">{game.team_a_total_points}</span>
+        <Card className="p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="text-xl font-bold text-blue-500 ml-auto">{game.team_a_total_points}</span>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <ScoreInput
               label={game.team_a_player_1}
               value={scores.teamAPlayer1}
@@ -428,13 +427,12 @@ export default function UmbriagioPlay() {
         </Card>
 
         {/* Team B */}
-        <Card className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="font-semibold">Team B</span>
-            <span className="text-2xl font-bold text-red-500 ml-auto">{game.team_b_total_points}</span>
+        <Card className="p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <span className="text-xl font-bold text-red-500 ml-auto">{game.team_b_total_points}</span>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <ScoreInput
               label={game.team_b_player_1}
               value={scores.teamBPlayer1}
@@ -600,26 +598,26 @@ function ScoreInput({
   onChange: (delta: number) => void;
 }) {
   return (
-    <div className="space-y-1">
-      <span className="text-xs text-muted-foreground truncate block">{label}</span>
-      <div className="flex items-center gap-2">
+    <div className="space-y-0.5">
+      <span className="text-[10px] text-muted-foreground truncate block">{label}</span>
+      <div className="flex items-center gap-1">
         <Button
           variant="outline"
           size="icon"
           onClick={() => onChange(-1)}
           disabled={value <= 1}
-          className="h-10 w-10 rounded-full"
+          className="h-8 w-8 rounded-full"
         >
-          <Minus size={16} />
+          <Minus size={14} />
         </Button>
-        <div className="flex-1 text-center text-2xl font-bold">{value || '-'}</div>
+        <div className="flex-1 text-center text-xl font-bold">{value || '-'}</div>
         <Button
           variant="outline"
           size="icon"
           onClick={() => onChange(1)}
-          className="h-10 w-10 rounded-full"
+          className="h-8 w-8 rounded-full"
         >
-          <Plus size={16} />
+          <Plus size={14} />
         </Button>
       </div>
     </div>
