@@ -229,11 +229,27 @@ export default function UmbriagioPlay() {
     }));
   };
 
-  const navigateHole = (direction: "prev" | "next") => {
+  const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
+      // Load previous hole data
+      const prevHole = holes[currentHoleIndex - 1];
+      if (prevHole) {
+        setPar(prevHole.par);
+        setScores({
+          teamAPlayer1: prevHole.team_a_player_1_score || 0,
+          teamAPlayer2: prevHole.team_a_player_2_score || 0,
+          teamBPlayer1: prevHole.team_b_player_1_score || 0,
+          teamBPlayer2: prevHole.team_b_player_2_score || 0,
+        });
+        setClosestToPinWinner(prevHole.closest_to_pin_winner);
+        setMultiplier(prevHole.multiplier);
+        setDoubleCalledBy(prevHole.double_called_by);
+        setDoubleBackCalled(prevHole.double_back_called || false);
+      }
       setCurrentHoleIndex(currentHoleIndex - 1);
-    } else if (direction === "next" && currentHoleIndex < totalHoles - 1) {
-      setCurrentHoleIndex(currentHoleIndex + 1);
+    } else if (direction === "next") {
+      // Save current hole before moving to next (saveHole handles last hole → summary)
+      await saveHole();
     }
   };
 
@@ -453,7 +469,7 @@ export default function UmbriagioPlay() {
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("next")}
-              disabled={currentHoleIndex === totalHoles - 1}
+              disabled={saving}
             >
               <ChevronRight size={24} />
             </Button>
