@@ -47,6 +47,19 @@ export default function UmbriagioSetup() {
       const currentUserName = profile?.display_name || profile?.username || 'You';
       setTeamAPlayer1(currentUserName);
       
+      // Load added players from sessionStorage
+      const savedPlayers = sessionStorage.getItem('roundPlayers');
+      if (savedPlayers) {
+        const players = JSON.parse(savedPlayers);
+        // Fill in team slots with added players
+        if (players.length >= 1) setTeamAPlayer2(players[0].displayName || '');
+        if (players.length >= 2) setTeamBPlayer1(players[1].displayName || '');
+        if (players.length >= 3) setTeamBPlayer2(players[2].displayName || '');
+      }
+      
+      // Check for course from sessionStorage first
+      const savedCourse = sessionStorage.getItem('selectedCourse');
+      
       // Fetch available courses
       const { data: coursesData } = await supabase
         .from('courses')
@@ -57,7 +70,17 @@ export default function UmbriagioSetup() {
         setCourses(coursesData);
       }
       
-      // Get last used course from previous umbriago games
+      // Set course from sessionStorage if available
+      if (savedCourse) {
+        const course = JSON.parse(savedCourse);
+        const matchingCourse = coursesData?.find(c => c.name === course.name);
+        if (matchingCourse) {
+          setSelectedCourseId(matchingCourse.id);
+          return;
+        }
+      }
+      
+      // Otherwise get last used course from previous umbriago games
       const { data: lastGame } = await supabase
         .from('umbriago_games')
         .select('course_id')
