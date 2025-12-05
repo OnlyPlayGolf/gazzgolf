@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Trophy, MapPin } from "lucide-react";
+import { ArrowLeft, Users, Trophy } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,19 +9,10 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface SelectedCourse {
-  id: string;
-  name: string;
-  location: string;
-}
-
 export default function UmbriagioSetup() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  
-  // Course
-  const [selectedCourse, setSelectedCourse] = useState<SelectedCourse | null>(null);
   
   // Team players
   const [teamAPlayer1, setTeamAPlayer1] = useState("");
@@ -29,15 +20,9 @@ export default function UmbriagioSetup() {
   const [teamBPlayer1, setTeamBPlayer1] = useState("");
   const [teamBPlayer2, setTeamBPlayer2] = useState("");
 
-  // Load players and course from session storage on mount
+  // Load current user on mount
   useEffect(() => {
     const loadData = async () => {
-      // Get selected course from session storage
-      const savedCourse = sessionStorage.getItem('selectedCourse');
-      if (savedCourse) {
-        setSelectedCourse(JSON.parse(savedCourse));
-      }
-      
       // Get current user's display name
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -50,26 +35,11 @@ export default function UmbriagioSetup() {
         const currentUserName = profile?.display_name || profile?.username || 'You';
         setTeamAPlayer1(currentUserName);
       }
-
-      // Get saved players from session storage
-      const savedPlayers = sessionStorage.getItem('roundPlayers');
-      if (savedPlayers) {
-        const players = JSON.parse(savedPlayers);
-        // Auto-assign players to teams
-        if (players.length >= 1) setTeamAPlayer2(players[0].displayName || players[0].username || 'Player 2');
-        if (players.length >= 2) setTeamBPlayer1(players[1].displayName || players[1].username || 'Player 3');
-        if (players.length >= 3) setTeamBPlayer2(players[2].displayName || players[2].username || 'Player 4');
-      }
     };
     loadData();
   }, []);
 
   const handleStartGame = async () => {
-    if (!selectedCourse) {
-      toast({ title: "Please select a course first", variant: "destructive" });
-      return;
-    }
-    
     if (!teamAPlayer1.trim() || !teamAPlayer2.trim() || !teamBPlayer1.trim() || !teamBPlayer2.trim()) {
       toast({ title: "All player names required", variant: "destructive" });
       return;
@@ -87,8 +57,7 @@ export default function UmbriagioSetup() {
         .from("umbriago_games")
         .insert({
           user_id: user.id,
-          course_name: selectedCourse.name,
-          course_id: selectedCourse.id,
+          course_name: "Umbriago Game",
           holes_played: 18,
           team_a_player_1: teamAPlayer1,
           team_a_player_2: teamAPlayer2,
@@ -101,10 +70,6 @@ export default function UmbriagioSetup() {
         .single();
 
       if (error) throw error;
-
-      // Clear session storage
-      sessionStorage.removeItem('selectedCourse');
-      sessionStorage.removeItem('roundPlayers');
 
       toast({ title: "Umbriago game started!" });
       navigate(`/umbriago/${game.id}/play`);
@@ -125,47 +90,6 @@ export default function UmbriagioSetup() {
           </Button>
           <h1 className="text-2xl font-bold text-foreground">Umbriago Setup</h1>
         </div>
-
-        {/* Course Info */}
-        {selectedCourse ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MapPin size={20} className="text-primary" />
-                Course
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">{selectedCourse.name}</div>
-                    <div className="text-sm text-muted-foreground">{selectedCourse.location}</div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate('/rounds-play')}
-                  >
-                    Change
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="py-6">
-              <div className="text-center space-y-3">
-                <MapPin size={32} className="mx-auto text-muted-foreground" />
-                <p className="text-muted-foreground">No course selected</p>
-                <Button onClick={() => navigate('/rounds-play')}>
-                  Select a Course
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Teams */}
         <Card>
