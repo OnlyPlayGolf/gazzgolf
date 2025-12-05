@@ -408,9 +408,8 @@ export default function UmbriagioPlay() {
 
         {/* Team A */}
         <Card className="p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-            <span className="text-xl font-bold text-blue-500 ml-auto">{game.team_a_total_points}</span>
+          <div className="text-center mb-2">
+            <span className="text-xl font-bold text-blue-500">{game.team_a_total_points}</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <ScoreInput
@@ -428,9 +427,8 @@ export default function UmbriagioPlay() {
 
         {/* Team B */}
         <Card className="p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="text-xl font-bold text-red-500 ml-auto">{game.team_b_total_points}</span>
+          <div className="text-center mb-2">
+            <span className="text-xl font-bold text-red-500">{game.team_b_total_points}</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <ScoreInput
