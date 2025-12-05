@@ -14,7 +14,7 @@ export default {
     },
       extend: {
         fontFamily: {
-          'luxury': ['Playfair Display', 'serif'],
+          'luxury': ['Inter', 'sans-serif'],
         },
         colors: {
         border: "hsl(var(--border))",
