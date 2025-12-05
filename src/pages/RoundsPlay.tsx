@@ -480,7 +480,7 @@ export default function RoundsPlay() {
                     if (selectedCourse) {
                       sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
                     }
-                    navigate('/umbriago/setup');
+                    navigate('/umbriago/how-to-play');
                   }}
                   className="w-full p-3 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all"
                 >
