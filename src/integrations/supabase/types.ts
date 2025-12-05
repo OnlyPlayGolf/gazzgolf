@@ -858,6 +858,7 @@ export type Database = {
       }
       umbriago_games: {
         Row: {
+          course_id: string | null
           course_name: string
           created_at: string | null
           date_played: string
@@ -879,6 +880,7 @@ export type Database = {
           winning_team: string | null
         }
         Insert: {
+          course_id?: string | null
           course_name: string
           created_at?: string | null
           date_played?: string
@@ -900,6 +902,7 @@ export type Database = {
           winning_team?: string | null
         }
         Update: {
+          course_id?: string | null
           course_name?: string
           created_at?: string | null
           date_played?: string
@@ -920,7 +923,15 @@ export type Database = {
           user_id?: string
           winning_team?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "umbriago_games_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       umbriago_holes: {
         Row: {
