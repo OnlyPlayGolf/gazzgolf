@@ -525,7 +525,7 @@ export default function UmbriagioPlay() {
       </div>
 
       {/* Hole Navigation */}
-      <div className="fixed bottom-16 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-2">
+      <div className="fixed bottom-10 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-2">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between">
             <Button
