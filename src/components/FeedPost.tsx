@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Send, Trophy, Target } from "lucide-react";
+import { Heart, MessageCircle, Send, Trophy, Target, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -18,6 +18,21 @@ const parseDrillResult = (content: string) => {
       unit: match[3],
       isPersonalBest: match[4] === 'true',
       textContent: content.replace(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/, '').trim()
+    };
+  }
+  return null;
+};
+
+// Parse round result from post content
+const parseRoundResult = (content: string) => {
+  const match = content?.match(/\[ROUND_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_RESULT\]/);
+  if (match) {
+    return {
+      courseName: match[1],
+      score: parseInt(match[2]),
+      scoreVsPar: parseInt(match[3]),
+      holesPlayed: parseInt(match[4]),
+      textContent: content.replace(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/, '').trim()
     };
   }
   return null;
@@ -48,6 +63,48 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest }: {
     </div>
   </div>
 );
+
+// Round Result Card Component
+const RoundResultCard = ({ courseName, score, scoreVsPar, holesPlayed }: { 
+  courseName: string; 
+  score: number; 
+  scoreVsPar: number; 
+  holesPlayed: number;
+}) => {
+  const formatScoreVsPar = (diff: number) => {
+    if (diff === 0) return "E";
+    return diff > 0 ? `+${diff}` : `${diff}`;
+  };
+
+  const getScoreColor = (diff: number) => {
+    if (diff <= 0) return "text-green-500";
+    if (diff <= 5) return "text-yellow-500";
+    return "text-red-500";
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2">
+      <div className="flex items-center gap-2 mb-2">
+        <MapPin className="h-5 w-5 text-primary" />
+        <span className="text-sm font-medium text-muted-foreground">Round Completed</span>
+        <span className="text-xs text-muted-foreground ml-auto">{holesPlayed} holes</span>
+      </div>
+      <div className="text-lg font-semibold text-foreground">{courseName}</div>
+      <div className="flex items-baseline gap-4 mt-2">
+        <div>
+          <span className="text-3xl font-bold text-primary">{score}</span>
+          <span className="text-sm text-muted-foreground ml-1">score</span>
+        </div>
+        <div>
+          <span className={`text-3xl font-bold ${getScoreColor(scoreVsPar)}`}>
+            {formatScoreVsPar(scoreVsPar)}
+          </span>
+          <span className="text-sm text-muted-foreground ml-1">vs par</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface FeedPostProps {
   post: any;
@@ -151,8 +208,9 @@ export const FeedPost = ({ post, currentUserId }: FeedPostProps) => {
   const initials = displayName.charAt(0).toUpperCase();
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
-  // Check if this post contains a drill result
+  // Check if this post contains a drill result or round result
   const drillResult = parseDrillResult(post.content);
+  const roundResult = parseRoundResult(post.content);
 
   return (
     <Card>
@@ -185,6 +243,18 @@ export const FeedPost = ({ post, currentUserId }: FeedPostProps) => {
               score={drillResult.score}
               unit={drillResult.unit}
               isPersonalBest={drillResult.isPersonalBest}
+            />
+          </>
+        ) : roundResult ? (
+          <>
+            {roundResult.textContent && (
+              <p className="text-foreground whitespace-pre-wrap">{roundResult.textContent}</p>
+            )}
+            <RoundResultCard 
+              courseName={roundResult.courseName}
+              score={roundResult.score}
+              scoreVsPar={roundResult.scoreVsPar}
+              holesPlayed={roundResult.holesPlayed}
             />
           </>
         ) : post.content && (

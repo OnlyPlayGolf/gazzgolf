@@ -15,9 +15,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Calendar, MapPin, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Edit, Trash2, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { RoundShareDialog } from "@/components/RoundShareDialog";
 
 interface Summary {
   round_id: string;
@@ -43,6 +44,7 @@ const RoundSummary = () => {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [roundOrigin, setRoundOrigin] = useState<string | null>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   useEffect(() => {
     fetchSummary();
@@ -233,28 +235,15 @@ const RoundSummary = () => {
         </div>
 
         <div className="flex gap-3">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="lg" className="flex-1">
-                <Trash2 className="mr-2" size={18} />
-                Delete Round
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Round?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this round and all its data. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button 
+            variant="outline"
+            size="lg"
+            className="flex-1"
+            onClick={() => setShowShareDialog(true)}
+          >
+            <Share2 className="mr-2" size={18} />
+            Share
+          </Button>
           
           <Button 
             onClick={() => navigate("/rounds")} 
@@ -264,7 +253,40 @@ const RoundSummary = () => {
             Done
           </Button>
         </div>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full text-destructive hover:text-destructive">
+              <Trash2 className="mr-2" size={16} />
+              Delete Round
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Round?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this round and all its data. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
+
+      <RoundShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        courseName={summary.course_name}
+        score={summary.total_score}
+        scoreVsPar={summary.score_vs_par}
+        holesPlayed={summary.holes_played}
+        onContinue={() => navigate("/rounds")}
+      />
     </div>
   );
 };
