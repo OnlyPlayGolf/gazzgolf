@@ -132,10 +132,10 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
   teamAPlayers: string;
   teamBPlayers: string;
 }) => {
-  const getWinnerText = () => {
+  const getWinnerNames = () => {
     if (winningTeam === 'TIE') return 'Tie Game';
-    if (winningTeam === 'A') return 'Team A Wins';
-    if (winningTeam === 'B') return 'Team B Wins';
+    if (winningTeam === 'A') return `${teamAPlayers} Win`;
+    if (winningTeam === 'B') return `${teamBPlayers} Win`;
     return '';
   };
 
@@ -144,22 +144,23 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
       <div className="flex items-center gap-2 mb-2">
         <Trophy className="h-5 w-5 text-yellow-500" />
         <span className="text-sm font-medium text-muted-foreground">Umbriago Complete</span>
-        {winningTeam !== 'null' && winningTeam !== 'TIE' && (
-          <span className="flex items-center gap-1 text-xs font-semibold text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-full ml-auto">
-            {getWinnerText()}
-          </span>
-        )}
       </div>
       <div className="text-lg font-semibold text-foreground">{courseName}</div>
-      <div className="flex items-center justify-between mt-3">
-        <div className="text-center">
+      {winningTeam !== 'null' && winningTeam !== 'TIE' && (
+        <p className="text-sm text-yellow-600 font-medium mt-1">{getWinnerNames()}</p>
+      )}
+      {winningTeam === 'TIE' && (
+        <p className="text-sm text-muted-foreground font-medium mt-1">Tie Game</p>
+      )}
+      <div className="flex items-center justify-between mt-3 gap-2">
+        <div className="text-center flex-1">
           <span className="text-2xl font-bold text-blue-500">{teamAPoints}</span>
-          <p className="text-xs text-muted-foreground mt-1">Team A</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{teamAPlayers}</p>
         </div>
         <span className="text-muted-foreground font-semibold">vs</span>
-        <div className="text-center">
+        <div className="text-center flex-1">
           <span className="text-2xl font-bold text-red-500">{teamBPoints}</span>
-          <p className="text-xs text-muted-foreground mt-1">Team B</p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{teamBPlayers}</p>
         </div>
       </div>
     </div>
