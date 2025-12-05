@@ -449,7 +449,7 @@ export default function UmbriagioPlay() {
         </Card>
 
         {/* Closest to Pin */}
-        <Card className="p-4">
+        <Card className="p-3">
           <Label className="font-semibold text-sm mb-2 block">Closest to Pin (GIR)</Label>
           <div className="flex gap-2">
             <Button
@@ -480,47 +480,46 @@ export default function UmbriagioPlay() {
         </Card>
 
         {/* Multiplier */}
-        <Card className="p-4">
+        <Card className="p-3">
           <div className="flex items-center justify-between mb-2">
             <Label className="font-semibold text-sm">Multiplier</Label>
-            <div className="flex items-center gap-2">
-              <Zap className={multiplier > 1 ? "text-yellow-500" : "text-muted-foreground"} size={16} />
-              <span className="text-xl font-bold">×{multiplier}</span>
+            <div className="flex items-center gap-1">
+              <Zap className={multiplier > 1 ? "text-yellow-500" : "text-muted-foreground"} size={14} />
+              <span className="text-lg font-bold">×{multiplier}</span>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => handleDouble('A')}
               disabled={multiplier > 1}
               size="sm"
-              className="text-blue-500"
+              className="flex-1 text-blue-500"
             >
-              Team A: Double
+              A: Double
             </Button>
             <Button
               variant="outline"
               onClick={() => handleDouble('B')}
               disabled={multiplier > 1}
               size="sm"
-              className="text-red-500"
+              className="flex-1 text-red-500"
             >
-              Team B: Double
+              B: Double
             </Button>
+            {multiplier === 2 && (
+              <Button
+                variant="outline"
+                onClick={handleDoubleBack}
+                disabled={doubleBackCalled}
+                size="sm"
+                className="flex-1"
+              >
+                {doubleBackCalled ? "×4" : "Back"}
+              </Button>
+            )}
           </div>
-          
-          {multiplier === 2 && (
-            <Button
-              variant="outline"
-              onClick={handleDoubleBack}
-              disabled={doubleBackCalled}
-              className="w-full mt-2"
-              size="sm"
-            >
-              {doubleBackCalled ? "Double Back Applied" : "Double Back (→ ×4)"}
-            </Button>
-          )}
         </Card>
       </div>
 
