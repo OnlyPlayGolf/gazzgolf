@@ -182,9 +182,7 @@ export default function ManagePlayers() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-lg font-bold">PLAYERS</h1>
-          <Button variant="ghost" className="text-primary" onClick={handleSave}>
-            Save & Leave
-          </Button>
+          <div className="w-10" />
         </div>
       </div>
 
