@@ -1,18 +1,29 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Trophy } from "lucide-react";
+import { ArrowLeft, Users, Trophy, MapPin } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+interface Course {
+  id: string;
+  name: string;
+  location: string | null;
+}
 
 export default function UmbriagioSetup() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  
+  // Course selection
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   
   // Team players
   const [teamAPlayer1, setTeamAPlayer1] = useState("");
@@ -20,24 +31,52 @@ export default function UmbriagioSetup() {
   const [teamBPlayer1, setTeamBPlayer1] = useState("");
   const [teamBPlayer2, setTeamBPlayer2] = useState("");
 
-  // Load current user on mount
+  // Load current user and courses on mount
   useEffect(() => {
     const loadData = async () => {
-      // Get current user's display name
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('display_name, username')
-          .eq('id', user.id)
-          .single();
-        
-        const currentUserName = profile?.display_name || profile?.username || 'You';
-        setTeamAPlayer1(currentUserName);
+      if (!user) return;
+      
+      // Get current user's display name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, username')
+        .eq('id', user.id)
+        .single();
+      
+      const currentUserName = profile?.display_name || profile?.username || 'You';
+      setTeamAPlayer1(currentUserName);
+      
+      // Fetch available courses
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select('id, name, location')
+        .order('name');
+      
+      if (coursesData) {
+        setCourses(coursesData);
+      }
+      
+      // Get last used course from previous umbriago games
+      const { data: lastGame } = await supabase
+        .from('umbriago_games')
+        .select('course_id')
+        .eq('user_id', user.id)
+        .not('course_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (lastGame?.course_id) {
+        setSelectedCourseId(lastGame.course_id);
+      } else if (coursesData && coursesData.length > 0) {
+        setSelectedCourseId(coursesData[0].id);
       }
     };
     loadData();
   }, []);
+
+  const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
   const handleStartGame = async () => {
     if (!teamAPlayer1.trim() || !teamAPlayer2.trim() || !teamBPlayer1.trim() || !teamBPlayer2.trim()) {
@@ -57,7 +96,8 @@ export default function UmbriagioSetup() {
         .from("umbriago_games")
         .insert({
           user_id: user.id,
-          course_name: "Umbriago Game",
+          course_name: selectedCourse?.name || "Umbriago Game",
+          course_id: selectedCourseId || null,
           holes_played: 18,
           team_a_player_1: teamAPlayer1,
           team_a_player_2: teamAPlayer2,
@@ -90,6 +130,30 @@ export default function UmbriagioSetup() {
           </Button>
           <h1 className="text-2xl font-bold text-foreground">Umbriago Setup</h1>
         </div>
+
+        {/* Course Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MapPin size={20} className="text-primary" />
+              Course
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a course" />
+              </SelectTrigger>
+              <SelectContent>
+                {courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id}>
+                    {course.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
         {/* Teams */}
         <Card>
