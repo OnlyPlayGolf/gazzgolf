@@ -407,25 +407,13 @@ export default function RoundsPlay() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="round-name">Round Name</Label>
-                <Input
-                  id="round-name"
-                  value={roundName}
-                  onChange={(e) => setRoundName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={datePlayer}
-                  onChange={(e) => setDatePlayed(e.target.value)}
-                  className="cursor-pointer"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="round-name">Round Name</Label>
+              <Input
+                id="round-name"
+                value={roundName}
+                onChange={(e) => setRoundName(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">
