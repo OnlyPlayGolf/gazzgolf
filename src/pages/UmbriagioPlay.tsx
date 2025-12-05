@@ -395,11 +395,9 @@ export default function UmbriagioPlay() {
           >
             <ChevronLeft size={20} />
           </Button>
-          <div className="flex-1 flex items-center justify-center gap-6">
-            <div className="text-sm font-bold">UMBRIAGO</div>
-            <div className="text-center">
-              <div className="text-xl font-bold">{game.team_a_total_points} - {game.team_b_total_points}</div>
-            </div>
+          <div className="flex-1 text-center">
+            <div className="text-base font-bold">Game {game.date_played}</div>
+            <div className="text-xs opacity-80">{game.course_name}</div>
           </div>
           <div className="w-8" />
         </div>
