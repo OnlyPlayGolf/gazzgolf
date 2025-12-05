@@ -28,6 +28,7 @@ import {
 interface CourseHole {
   hole_number: number;
   par: number;
+  stroke_index: number;
 }
 
 export default function UmbriagioPlay() {
@@ -102,7 +103,7 @@ export default function UmbriagioPlay() {
       if (gameData.course_id) {
         const { data: courseHolesData, error: courseHolesError } = await supabase
           .from("course_holes")
-          .select("hole_number, par")
+          .select("hole_number, par, stroke_index")
           .eq("course_id", gameData.course_id)
           .order("hole_number");
 
@@ -536,8 +537,12 @@ export default function UmbriagioPlay() {
               <ChevronLeft size={20} />
             </Button>
 
-            <div className="text-center">
+            <div className="flex items-center justify-center gap-6">
+              <div className="text-sm text-muted-foreground">Par {par}</div>
               <div className="text-lg font-bold">Hole {currentHole}</div>
+              <div className="text-sm text-muted-foreground">
+                HCP {courseHoles.find(h => h.hole_number === currentHole)?.stroke_index || '-'}
+              </div>
             </div>
 
             <Button
