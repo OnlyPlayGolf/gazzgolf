@@ -24,6 +24,7 @@ const Index = () => {
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
   const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
+  const [friendsOnCourse, setFriendsOnCourse] = useState<any[]>([]);
   const [friendsActivity, setFriendsActivity] = useState<any[]>([]);
   const [friendsPosts, setFriendsPosts] = useState<any[]>([]);
 
@@ -165,6 +166,27 @@ const Index = () => {
           );
 
           setFriendsActivity(activityWithDetails);
+
+          // Filter friends "on the course" - those with rounds in the last 24 hours
+          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+          const activeFriendIds = new Set(
+            friendRounds
+              .filter(r => new Date(r.created_at) >= twentyFourHoursAgo)
+              .map(r => r.user_id)
+          );
+
+          if (activeFriendIds.size > 0) {
+            const { data: activeProfiles } = await supabase
+              .from('profiles')
+              .select('id, avatar_url, display_name, username')
+              .in('id', Array.from(activeFriendIds));
+            
+            setFriendsOnCourse(activeProfiles || []);
+          } else {
+            setFriendsOnCourse([]);
+          }
+        } else {
+          setFriendsOnCourse([]);
         }
       }
 
@@ -254,46 +276,42 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
-        {/* Friends Section */}
-        <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
-        <Card
-          className="cursor-pointer hover:border-primary transition-colors" 
-          onClick={() => navigate('/friends', { state: { from: 'home' } })}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex -space-x-2">
-                  {friendsAvatars.length > 0 ? (
-                    friendsAvatars.map((friend, index) => (
-                      <Avatar key={friend.id} className="h-12 w-12 border-2 border-background">
-                        {friend.avatar_url ? (
-                          <img src={friend.avatar_url} alt={friend.display_name || friend.username} className="object-cover" />
-                        ) : (
-                          <AvatarFallback className="bg-primary text-primary-foreground">
-                            {friend.display_name ? friend.display_name.charAt(0).toUpperCase() : 
-                             friend.username ? friend.username.charAt(0).toUpperCase() : "?"}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                    ))
-                  ) : (
-                    <Avatar className="h-12 w-12 border-2 border-background">
-                      <AvatarFallback className="bg-muted text-muted-foreground">
-                        <Users size={20} />
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
+        {/* Friends on the Course Section - Only show if there are active friends */}
+        {friendsOnCourse.length > 0 && (
+          <>
+            <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
+            <Card
+              className="cursor-pointer hover:border-primary transition-colors" 
+              onClick={() => navigate('/friends', { state: { from: 'home' } })}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex -space-x-2">
+                      {friendsOnCourse.map((friend) => (
+                        <Avatar key={friend.id} className="h-12 w-12 border-2 border-background">
+                          {friend.avatar_url ? (
+                            <img src={friend.avatar_url} alt={friend.display_name || friend.username} className="object-cover" />
+                          ) : (
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {friend.display_name ? friend.display_name.charAt(0).toUpperCase() : 
+                               friend.username ? friend.username.charAt(0).toUpperCase() : "?"}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{friendsOnCourse.length}</p>
+                      <p className="text-sm text-muted-foreground">Playing now</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={20} className="text-muted-foreground" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{friendsCount}</p>
-                  <p className="text-sm text-muted-foreground">Friends</p>
-                </div>
-              </div>
-              <ChevronRight size={20} className="text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* Post Box */}
         <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
