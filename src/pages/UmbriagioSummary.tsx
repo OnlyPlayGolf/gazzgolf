@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Trophy, DollarSign, History, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Trophy, DollarSign, History, ChevronDown, ChevronUp, Share2 } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
 import { calculatePayout } from "@/utils/umbriagioScoring";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { UmbriagioShareDialog } from "@/components/UmbriagioShareDialog";
 
 export default function UmbriagioSummary() {
   const { gameId } = useParams();
@@ -19,6 +20,7 @@ export default function UmbriagioSummary() {
   const [holes, setHoles] = useState<UmbriagioHole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showHoleDetails, setShowHoleDetails] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   useEffect(() => {
     if (gameId) {
@@ -322,10 +324,33 @@ export default function UmbriagioSummary() {
           </Button>
         )}
 
-        <Button variant="outline" onClick={() => navigate('/rounds')} className="w-full">
-          Back to Rounds
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowShareDialog(true)} 
+            className="flex-1"
+            size="lg"
+          >
+            <Share2 className="mr-2" size={18} />
+            Share
+          </Button>
+          <Button onClick={() => navigate('/rounds')} className="flex-1" size="lg">
+            Done
+          </Button>
+        </div>
       </div>
+
+      <UmbriagioShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        courseName={game.course_name}
+        teamAPoints={game.team_a_total_points}
+        teamBPoints={game.team_b_total_points}
+        winningTeam={game.winning_team}
+        teamAPlayers={`${game.team_a_player_1} & ${game.team_a_player_2}`}
+        teamBPlayers={`${game.team_b_player_1} & ${game.team_b_player_2}`}
+        onContinue={() => navigate('/rounds')}
+      />
     </div>
   );
 }
