@@ -531,30 +531,29 @@ export default function UmbriagioPlay() {
       </div>
 
       {/* Hole Navigation */}
-      <div className="fixed bottom-16 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-4">
+      <div className="fixed bottom-16 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-2">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={20} />
             </Button>
 
             <div className="text-center">
-              <div className="text-2xl font-bold">Hole {currentHole}</div>
-              <div className="text-sm text-muted-foreground">{currentHole} of {totalHoles}</div>
+              <div className="text-lg font-bold">Hole {currentHole}</div>
             </div>
 
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={() => navigateHole("next")}
               disabled={saving}
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={20} />
             </Button>
           </div>
         </div>
