@@ -152,16 +152,24 @@ export default function ManagePlayers() {
     ));
   };
 
-  const handleSave = () => {
-    // Save to sessionStorage
+  const savePlayersToStorage = () => {
     sessionStorage.setItem('roundPlayers', JSON.stringify(selectedPlayers));
     sessionStorage.setItem('userTeeColor', teeColor);
+  };
+
+  const handleSave = () => {
+    savePlayersToStorage();
     
     toast({
       title: "Players saved",
       description: "Your player selections have been saved",
     });
     
+    navigate('/rounds-play');
+  };
+
+  const handleBack = () => {
+    savePlayersToStorage();
     navigate('/rounds-play');
   };
 
@@ -178,7 +186,7 @@ export default function ManagePlayers() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="flex items-center justify-between p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/rounds-play')}>
+          <Button variant="ghost" size="icon" onClick={handleBack}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-lg font-bold">PLAYERS</h1>
