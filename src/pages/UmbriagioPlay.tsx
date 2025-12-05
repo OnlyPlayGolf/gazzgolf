@@ -458,26 +458,6 @@ export default function UmbriagioPlay() {
               <ChevronRight size={24} />
             </Button>
           </div>
-          
-          {currentHoleIndex === totalHoles - 1 ? (
-            <Button
-              onClick={handleFinishGame}
-              className="w-full"
-              size="lg"
-            >
-              <Check size={20} className="mr-2" />
-              Finish Game
-            </Button>
-          ) : (
-            <Button
-              onClick={saveHole}
-              disabled={saving || scores.teamAPlayer1 === 0}
-              className="w-full"
-              size="lg"
-            >
-              {saving ? "Saving..." : "Save & Next Hole"}
-            </Button>
-          )}
         </div>
       </div>
 
