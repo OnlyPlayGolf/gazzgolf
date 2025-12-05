@@ -596,7 +596,7 @@ export default function UserProfile() {
           {userPosts.length > 0 ? (
             <div className="space-y-4">
               {userPosts.map((post) => (
-                <FeedPost key={post.id} post={post} currentUserId={profile.id} />
+                <FeedPost key={post.id} post={post} currentUserId={profile.id} onPostDeleted={loadProfileData} />
               ))}
             </div>
           ) : (

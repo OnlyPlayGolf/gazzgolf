@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Send, Trophy, Target, MapPin } from "lucide-react";
+import { Heart, MessageCircle, Send, Trophy, Target, MapPin, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -170,15 +170,41 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
 interface FeedPostProps {
   post: any;
   currentUserId: string;
+  onPostDeleted?: () => void;
 }
 
-export const FeedPost = ({ post, currentUserId }: FeedPostProps) => {
+export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [comments, setComments] = useState<any[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isOwnPost = post.user_id === currentUserId;
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", post.id);
+
+      if (error) throw error;
+
+      toast.success("Post deleted");
+      onPostDeleted?.();
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("Failed to delete post");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     loadLikes();
@@ -292,6 +318,17 @@ export const FeedPost = ({ post, currentUserId }: FeedPostProps) => {
             <p className="font-semibold text-foreground">{displayName}</p>
             <p className="text-xs text-muted-foreground">{timeAgo}</p>
           </div>
+          {isOwnPost && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 size={18} />
+            </Button>
+          )}
         </div>
 
         {/* Post Content */}

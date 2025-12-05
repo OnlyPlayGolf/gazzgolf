@@ -322,7 +322,7 @@ const Index = () => {
             
             {/* Posts */}
             {friendsPosts.map((post) => (
-              <FeedPost key={post.id} post={post} currentUserId={user.id} />
+              <FeedPost key={post.id} post={post} currentUserId={user.id} onPostDeleted={loadUserData} />
             ))}
 
             {/* Round Activity */}
