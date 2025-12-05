@@ -65,7 +65,7 @@ export default function HowToPlayUmbriago() {
               <h3 className="font-semibold text-sm">Doubles & Double Backs</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• <strong>Double:</strong> Before a hole, the losing team can call "Double" to multiply that hole's points by 2</li>
-                <li>• <strong>Double Back:</strong> The other team can respond with "Double Back" to multiply by 4 instead</li>
+                <li>• <strong>Double Back:</strong> After everyone has played their shot, the opposing team may call "Double Back" to instead multiply the points for that hole by 4</li>
               </ul>
             </div>
 
