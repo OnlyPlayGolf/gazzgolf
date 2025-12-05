@@ -38,6 +38,23 @@ const parseRoundResult = (content: string) => {
   return null;
 };
 
+// Parse Umbriago result from post content
+const parseUmbriagioResult = (content: string) => {
+  const match = content?.match(/\[UMBRIAGO_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/UMBRIAGO_RESULT\]/);
+  if (match) {
+    return {
+      courseName: match[1],
+      teamAPoints: parseInt(match[2]),
+      teamBPoints: parseInt(match[3]),
+      winningTeam: match[4] as 'A' | 'B' | 'TIE' | 'null',
+      teamAPlayers: match[5],
+      teamBPlayers: match[6],
+      textContent: content.replace(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/, '').trim()
+    };
+  }
+  return null;
+};
+
 // Drill Result Card Component
 const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest }: { 
   drillTitle: string; 
@@ -100,6 +117,49 @@ const RoundResultCard = ({ courseName, score, scoreVsPar, holesPlayed }: {
             {formatScoreVsPar(scoreVsPar)}
           </span>
           <span className="text-sm text-muted-foreground ml-1">vs par</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Umbriago Result Card Component
+const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam, teamAPlayers, teamBPlayers }: { 
+  courseName: string; 
+  teamAPoints: number; 
+  teamBPoints: number; 
+  winningTeam: string;
+  teamAPlayers: string;
+  teamBPlayers: string;
+}) => {
+  const getWinnerText = () => {
+    if (winningTeam === 'TIE') return 'Tie Game';
+    if (winningTeam === 'A') return 'Team A Wins';
+    if (winningTeam === 'B') return 'Team B Wins';
+    return '';
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-2">
+      <div className="flex items-center gap-2 mb-2">
+        <Trophy className="h-5 w-5 text-yellow-500" />
+        <span className="text-sm font-medium text-muted-foreground">Umbriago Complete</span>
+        {winningTeam !== 'null' && winningTeam !== 'TIE' && (
+          <span className="flex items-center gap-1 text-xs font-semibold text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-full ml-auto">
+            {getWinnerText()}
+          </span>
+        )}
+      </div>
+      <div className="text-lg font-semibold text-foreground">{courseName}</div>
+      <div className="flex items-center justify-between mt-3">
+        <div className="text-center">
+          <span className="text-2xl font-bold text-blue-500">{teamAPoints}</span>
+          <p className="text-xs text-muted-foreground mt-1">Team A</p>
+        </div>
+        <span className="text-muted-foreground font-semibold">vs</span>
+        <div className="text-center">
+          <span className="text-2xl font-bold text-red-500">{teamBPoints}</span>
+          <p className="text-xs text-muted-foreground mt-1">Team B</p>
         </div>
       </div>
     </div>
@@ -208,9 +268,10 @@ export const FeedPost = ({ post, currentUserId }: FeedPostProps) => {
   const initials = displayName.charAt(0).toUpperCase();
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
-  // Check if this post contains a drill result or round result
+  // Check if this post contains a drill result, round result, or umbriago result
   const drillResult = parseDrillResult(post.content);
   const roundResult = parseRoundResult(post.content);
+  const umbriagioResult = parseUmbriagioResult(post.content);
 
   return (
     <Card>
@@ -255,6 +316,20 @@ export const FeedPost = ({ post, currentUserId }: FeedPostProps) => {
               score={roundResult.score}
               scoreVsPar={roundResult.scoreVsPar}
               holesPlayed={roundResult.holesPlayed}
+            />
+          </>
+        ) : umbriagioResult ? (
+          <>
+            {umbriagioResult.textContent && (
+              <p className="text-foreground whitespace-pre-wrap">{umbriagioResult.textContent}</p>
+            )}
+            <UmbriagioResultCard 
+              courseName={umbriagioResult.courseName}
+              teamAPoints={umbriagioResult.teamAPoints}
+              teamBPoints={umbriagioResult.teamBPoints}
+              winningTeam={umbriagioResult.winningTeam}
+              teamAPlayers={umbriagioResult.teamAPlayers}
+              teamBPlayers={umbriagioResult.teamBPlayers}
             />
           </>
         ) : post.content && (
