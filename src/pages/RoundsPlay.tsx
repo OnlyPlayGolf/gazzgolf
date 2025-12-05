@@ -304,60 +304,53 @@ export default function RoundsPlay() {
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
       <div className="p-4 pt-20 max-w-2xl mx-auto space-y-6">
-        {/* Course Selection */}
+        {/* Game Setup */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="text-primary" size={20} />
-              Select Course
+              <Users className="text-primary" size={20} />
+              Game Setup
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!selectedCourse ? (
-              <>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                  <Input
-                    placeholder="Search courses..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
+            {/* Course Selection */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <MapPin size={16} />
+                Course
+              </Label>
+              {!selectedCourse ? (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                    <Input
+                      placeholder="Search courses..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {filteredCourses.length > 0 && searchQuery && (
+                    <div className="space-y-1 max-h-40 overflow-y-auto border rounded-lg p-2">
+                      {filteredCourses.slice(0, 5).map((course) => (
+                        <button
+                          key={course.id}
+                          onClick={() => handleCourseSelect(course)}
+                          className="w-full p-2 rounded-md hover:bg-muted text-left text-sm"
+                        >
+                          <div className="font-medium">{course.name}</div>
+                          <div className="text-xs text-muted-foreground">{course.location}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                
-                {filteredCourses.length > 0 ? (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {filteredCourses.map((course) => (
-                      <button
-                        key={course.id}
-                        onClick={() => handleCourseSelect(course)}
-                        className="w-full p-4 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all group"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold group-hover:text-primary transition-colors">
-                              {course.name}
-                            </div>
-                            <div className="text-sm text-muted-foreground">{course.location}</div>
-                          </div>
-                          <ChevronRight className="text-muted-foreground group-hover:text-primary transition-colors" size={20} />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <p className="text-sm">No courses found</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
+              ) : (
+                <div className="p-3 rounded-lg border-2 border-primary bg-primary/5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold">{selectedCourse.name}</div>
-                      <div className="text-sm text-muted-foreground">{selectedCourse.location}</div>
+                      <div className="font-semibold text-sm">{selectedCourse.name}</div>
+                      <div className="text-xs text-muted-foreground">{selectedCourse.location}</div>
                     </div>
                     <Button
                       variant="ghost"
@@ -371,150 +364,144 @@ export default function RoundsPlay() {
                     </Button>
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div className="space-y-3">
-                  <Label className="text-base font-semibold">How many holes are you playing?</Label>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => setSelectedHoles("18")}
-                      className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                        selectedHoles === "18"
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="font-semibold">Full 18</div>
-                      <div className="text-sm text-muted-foreground">Play all 18 holes</div>
-                    </button>
-                    <button
-                      onClick={() => setSelectedHoles("front9")}
-                      className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                        selectedHoles === "front9"
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="font-semibold">Front 9</div>
-                      <div className="text-sm text-muted-foreground">Play holes 1-9</div>
-                    </button>
-                    <button
-                      onClick={() => setSelectedHoles("back9")}
-                      className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
-                        selectedHoles === "back9"
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="font-semibold">Back 9</div>
-                      <div className="text-sm text-muted-foreground">Play holes 10-18</div>
-                    </button>
-                  </div>
-                </div>
+            {/* Holes Selection */}
+            <div className="space-y-2">
+              <Label>Holes</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => setSelectedHoles("18")}
+                  className={`p-3 rounded-lg border-2 text-center transition-all ${
+                    selectedHoles === "18"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold text-sm">Full 18</div>
+                </button>
+                <button
+                  onClick={() => setSelectedHoles("front9")}
+                  className={`p-3 rounded-lg border-2 text-center transition-all ${
+                    selectedHoles === "front9"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold text-sm">Front 9</div>
+                </button>
+                <button
+                  onClick={() => setSelectedHoles("back9")}
+                  className={`p-3 rounded-lg border-2 text-center transition-all ${
+                    selectedHoles === "back9"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold text-sm">Back 9</div>
+                </button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
 
-        {/* Game Setup */}
-        {selectedCourse && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="text-primary" size={20} />
-                Game Setup
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="round-name">Round Name</Label>
-                  <Input
-                    id="round-name"
-                    value={roundName}
-                    onChange={(e) => setRoundName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={datePlayer}
-                    onChange={(e) => setDatePlayed(e.target.value)}
-                    className="cursor-pointer"
-                  />
-                </div>
-              </div>
-
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tee-color">Tee Color</Label>
-                <Select value={teeColor} onValueChange={setTeeColor}>
-                  <SelectTrigger id="tee-color">
-                    <SelectValue placeholder="Select tee color" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTees.map((tee) => (
+                <Label htmlFor="round-name">Round Name</Label>
+                <Input
+                  id="round-name"
+                  value={roundName}
+                  onChange={(e) => setRoundName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={datePlayer}
+                  onChange={(e) => setDatePlayed(e.target.value)}
+                  className="cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tee-color">Tee Color</Label>
+              <Select value={teeColor} onValueChange={setTeeColor}>
+                <SelectTrigger id="tee-color">
+                  <SelectValue placeholder="Select tee color" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTees.length > 0 ? (
+                    availableTees.map((tee) => (
                       <SelectItem key={tee} value={tee}>
                         {tee}
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Player Management */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Players</Label>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start gap-2"
-                  onClick={openPlayersPage}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Players
-                  {selectedPlayersCount > 0 && (
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      +{selectedPlayersCount} player{selectedPlayersCount !== 1 ? 's' : ''}
-                    </span>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="White">White</SelectItem>
+                      <SelectItem value="Yellow">Yellow</SelectItem>
+                      <SelectItem value="Blue">Blue</SelectItem>
+                      <SelectItem value="Red">Red</SelectItem>
+                    </>
                   )}
-                </Button>
-              </div>
+                </SelectContent>
+              </Select>
+            </div>
 
+            {/* Player Management */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Players</Label>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2"
+                onClick={openPlayersPage}
+              >
+                <Plus className="w-4 h-4" />
+                Add Players
+                {selectedPlayersCount > 0 && (
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    +{selectedPlayersCount} player{selectedPlayersCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Game Format</Label>
               <div className="space-y-2">
-                <Label>Game Format</Label>
-                <div className="space-y-2">
-                  <div className="p-4 rounded-lg border-2 border-primary bg-primary/5">
-                    <div className="font-semibold">Stroke Play</div>
-                    <div className="text-sm text-muted-foreground">Standard scoring format</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (selectedCourse) {
-                        sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
-                      }
-                      navigate('/umbriago/setup');
-                    }}
-                    className="w-full p-4 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all"
-                  >
-                    <div className="font-semibold">Umbriago</div>
-                    <div className="text-sm text-muted-foreground">2v2 team game without handicap</div>
-                  </button>
+                <div className="p-3 rounded-lg border-2 border-primary bg-primary/5">
+                  <div className="font-semibold text-sm">Stroke Play</div>
+                  <div className="text-xs text-muted-foreground">Standard scoring format</div>
                 </div>
-              </div>
-
-              <div className="pt-4">
-                <Button
-                  onClick={handleStartRound}
-                  disabled={loading}
-                  className="w-full"
-                  size="lg"
+                <button
+                  onClick={() => {
+                    if (selectedCourse) {
+                      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+                    }
+                    navigate('/umbriago/setup');
+                  }}
+                  className="w-full p-3 rounded-lg border-2 border-border hover:border-primary/50 text-left transition-all"
                 >
-                  {loading ? "Starting..." : "Start Round"}
-                </Button>
+                  <div className="font-semibold text-sm">Umbriago</div>
+                  <div className="text-xs text-muted-foreground">2v2 team game without handicap</div>
+                </button>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+
+            <div className="pt-2">
+              <Button
+                onClick={handleStartRound}
+                disabled={loading || !selectedCourse}
+                className="w-full"
+                size="lg"
+              >
+                {loading ? "Starting..." : "Start Round"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
