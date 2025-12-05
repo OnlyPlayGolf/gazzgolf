@@ -282,22 +282,16 @@ export default function RoundsPlay() {
   };
 
   const openPlayersPage = () => {
-    if (!selectedCourse) {
-      toast({
-        title: "Select a course first",
-        description: "Please select a course before adding players",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     // Save game setup state before navigating
-    sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+    if (selectedCourse) {
+      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+    }
     sessionStorage.setItem('selectedHoles', selectedHoles);
     sessionStorage.setItem('roundName', roundName);
     sessionStorage.setItem('datePlayer', datePlayer);
     
-    navigate(`/rounds/manage-players?tees=${availableTees.join(',')}`);
+    const tees = availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"];
+    navigate(`/rounds/manage-players?tees=${tees.join(',')}`);
   };
 
   return (
