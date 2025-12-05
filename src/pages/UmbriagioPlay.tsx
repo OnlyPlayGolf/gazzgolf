@@ -182,42 +182,95 @@ export default function UmbriagioPlay() {
 
     const { teamAPoints, teamBPoints, isUmbriago } = calculateHolePoints(categories, multiplier);
 
-    const teamARunning = game.team_a_total_points + teamAPoints;
-    const teamBRunning = game.team_b_total_points + teamBPoints;
+    // Check if this hole already exists
+    const existingHole = holes.find(h => h.hole_number === currentHole);
+
+    // Calculate running totals properly
+    // Sum up all previous holes' points (excluding current hole if it exists)
+    const previousHolesTeamA = holes
+      .filter(h => h.hole_number < currentHole)
+      .reduce((sum, h) => sum + h.team_a_hole_points, 0);
+    const previousHolesTeamB = holes
+      .filter(h => h.hole_number < currentHole)
+      .reduce((sum, h) => sum + h.team_b_hole_points, 0);
+
+    const teamARunning = previousHolesTeamA + teamAPoints;
+    const teamBRunning = previousHolesTeamB + teamBPoints;
 
     setSaving(true);
     try {
-      const { error: holeError } = await supabase
-        .from("umbriago_holes")
-        .insert({
-          game_id: game.id,
-          hole_number: currentHole,
-          par,
-          team_a_player_1_score: scores.teamAPlayer1,
-          team_a_player_2_score: scores.teamAPlayer2,
-          team_b_player_1_score: scores.teamBPlayer1,
-          team_b_player_2_score: scores.teamBPlayer2,
-          team_low_winner: teamLowWinner,
-          individual_low_winner: individualLowWinner,
-          closest_to_pin_winner: closestToPinWinner,
-          birdie_eagle_winner: birdieEagleWinner,
-          multiplier,
-          double_called_by: doubleCalledBy,
-          double_back_called: doubleBackCalled,
-          is_umbriago: isUmbriago,
-          team_a_hole_points: teamAPoints,
-          team_b_hole_points: teamBPoints,
-          team_a_running_total: teamARunning,
-          team_b_running_total: teamBRunning,
-        });
+      if (existingHole) {
+        // Update existing hole
+        const { error: holeError } = await supabase
+          .from("umbriago_holes")
+          .update({
+            par,
+            team_a_player_1_score: scores.teamAPlayer1,
+            team_a_player_2_score: scores.teamAPlayer2,
+            team_b_player_1_score: scores.teamBPlayer1,
+            team_b_player_2_score: scores.teamBPlayer2,
+            team_low_winner: teamLowWinner,
+            individual_low_winner: individualLowWinner,
+            closest_to_pin_winner: closestToPinWinner,
+            birdie_eagle_winner: birdieEagleWinner,
+            multiplier,
+            double_called_by: doubleCalledBy,
+            double_back_called: doubleBackCalled,
+            is_umbriago: isUmbriago,
+            team_a_hole_points: teamAPoints,
+            team_b_hole_points: teamBPoints,
+            team_a_running_total: teamARunning,
+            team_b_running_total: teamBRunning,
+          })
+          .eq("id", existingHole.id);
 
-      if (holeError) throw holeError;
+        if (holeError) throw holeError;
+      } else {
+        // Insert new hole
+        const { error: holeError } = await supabase
+          .from("umbriago_holes")
+          .insert({
+            game_id: game.id,
+            hole_number: currentHole,
+            par,
+            team_a_player_1_score: scores.teamAPlayer1,
+            team_a_player_2_score: scores.teamAPlayer2,
+            team_b_player_1_score: scores.teamBPlayer1,
+            team_b_player_2_score: scores.teamBPlayer2,
+            team_low_winner: teamLowWinner,
+            individual_low_winner: individualLowWinner,
+            closest_to_pin_winner: closestToPinWinner,
+            birdie_eagle_winner: birdieEagleWinner,
+            multiplier,
+            double_called_by: doubleCalledBy,
+            double_back_called: doubleBackCalled,
+            is_umbriago: isUmbriago,
+            team_a_hole_points: teamAPoints,
+            team_b_hole_points: teamBPoints,
+            team_a_running_total: teamARunning,
+            team_b_running_total: teamBRunning,
+          });
+
+        if (holeError) throw holeError;
+      }
+
+      // Calculate total game points from all holes including this update
+      // Sum previous holes + current hole + future holes (if any)
+      const futureHolesTeamA = holes
+        .filter(h => h.hole_number > currentHole)
+        .reduce((sum, h) => sum + h.team_a_hole_points, 0);
+      const futureHolesTeamB = holes
+        .filter(h => h.hole_number > currentHole)
+        .reduce((sum, h) => sum + h.team_b_hole_points, 0);
+
+      const totalTeamA = previousHolesTeamA + teamAPoints + futureHolesTeamA;
+      const totalTeamB = previousHolesTeamB + teamBPoints + futureHolesTeamB;
 
       const { error: gameError } = await supabase
         .from("umbriago_games")
         .update({
-          team_a_total_points: teamARunning,
-          team_b_total_points: teamBRunning,
+          team_a_total_points: totalTeamA,
+          team_b_total_points: totalTeamB,
         })
         .eq("id", game.id);
 
@@ -225,8 +278,8 @@ export default function UmbriagioPlay() {
 
       setGame({
         ...game,
-        team_a_total_points: teamARunning,
-        team_b_total_points: teamBRunning,
+        team_a_total_points: totalTeamA,
+        team_b_total_points: totalTeamB,
       });
 
       if (isUmbriago) {
