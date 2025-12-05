@@ -385,27 +385,23 @@ export default function UmbriagioPlay() {
   return (
     <div className="min-h-screen pb-44 bg-background">
       {/* Game Info Bar */}
-      <div className="bg-primary text-primary-foreground py-4 px-4">
+      <div className="bg-primary text-primary-foreground py-2 px-4">
         <div className="max-w-2xl mx-auto flex items-center">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={() => setShowExitDialog(true)}
             className="rounded-full text-primary-foreground hover:bg-primary-foreground/20"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={20} />
           </Button>
-          <div className="flex-1 flex items-center justify-center gap-8">
+          <div className="flex-1 flex items-center justify-center gap-6">
+            <div className="text-sm font-bold">UMBRIAGO</div>
             <div className="text-center">
-              <div className="text-lg font-bold">UMBRIAGO</div>
-              <div className="text-sm opacity-90">2v2</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{game.team_a_total_points} - {game.team_b_total_points}</div>
-              <div className="text-xs opacity-90">Points</div>
+              <div className="text-xl font-bold">{game.team_a_total_points} - {game.team_b_total_points}</div>
             </div>
           </div>
-          <div className="w-10" />
+          <div className="w-8" />
         </div>
       </div>
 
