@@ -427,25 +427,7 @@ export default function UmbriagioPlay() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <Label className="font-semibold text-sm">Par</Label>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setPar(Math.max(3, par - 1))}
-              >
-                <Minus size={16} />
-              </Button>
-              <span className="text-2xl font-bold w-8 text-center">{par}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setPar(Math.min(5, par + 1))}
-              >
-                <Plus size={16} />
-              </Button>
-            </div>
+            <span className="text-2xl font-bold">{par}</span>
           </div>
         </Card>
 
