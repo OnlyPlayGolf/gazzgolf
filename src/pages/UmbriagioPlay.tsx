@@ -174,27 +174,28 @@ export default function UmbriagioPlay() {
       return;
     }
 
-    const pointsBefore = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
-    const pointsAfter = Math.floor(pointsBefore / 2);
+    // Both teams' points get halved when a Roll is called
+    const teamABefore = game.team_a_total_points;
+    const teamBBefore = game.team_b_total_points;
+    const teamAAfter = Math.floor(teamABefore / 2);
+    const teamBAfter = Math.floor(teamBBefore / 2);
     
     const newRoll: RollEvent = {
       team,
       hole: currentHole,
-      points_before: pointsBefore,
-      points_after: pointsAfter,
+      points_before: team === 'A' ? teamABefore : teamBBefore,
+      points_after: team === 'A' ? teamAAfter : teamBAfter,
     };
 
     const newRollHistory = [...rollHistory, newRoll];
-    const newTeamAPoints = team === 'A' ? pointsAfter : game.team_a_total_points;
-    const newTeamBPoints = team === 'B' ? pointsAfter : game.team_b_total_points;
 
     try {
       const { error } = await supabase
         .from("umbriago_games")
         .update({
           roll_history: newRollHistory as unknown as any,
-          team_a_total_points: newTeamAPoints,
-          team_b_total_points: newTeamBPoints,
+          team_a_total_points: teamAAfter,
+          team_b_total_points: teamBAfter,
         })
         .eq("id", game.id);
 
@@ -203,8 +204,8 @@ export default function UmbriagioPlay() {
       setGame({
         ...game,
         roll_history: newRollHistory,
-        team_a_total_points: newTeamAPoints,
-        team_b_total_points: newTeamBPoints,
+        team_a_total_points: teamAAfter,
+        team_b_total_points: teamBAfter,
       });
       
       // Set multiplier for current hole to 2
@@ -212,7 +213,7 @@ export default function UmbriagioPlay() {
 
       toast({ 
         title: `🎲 Team ${team} called Roll!`, 
-        description: `Points: ${pointsBefore} → ${pointsAfter}. This hole is now ×2!` 
+        description: `All points halved (${teamABefore}-${teamBBefore} → ${teamAAfter}-${teamBAfter}). This hole is now ×2!` 
       });
     } catch (error: any) {
       console.error("Roll error:", error);
