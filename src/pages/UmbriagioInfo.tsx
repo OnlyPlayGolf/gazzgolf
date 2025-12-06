@@ -61,7 +61,7 @@ export default function UmbriagioInfo() {
               <h3 className="font-semibold text-sm">Umbriago Roll</h3>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Only the <strong>losing team</strong> can call a Roll</li>
-                <li>• When a Roll is called, their total points are <strong>halved</strong> and the next hole is worth <strong>double points (×2)</strong></li>
+                <li>• A Roll halves <strong>both teams' total points</strong> and makes all remaining holes worth <strong>double points (×2)</strong></li>
                 <li>• By default, each team can use <strong>one Roll per round</strong>, but this can be adjusted in the game settings</li>
               </ul>
             </div>
