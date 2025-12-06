@@ -602,27 +602,35 @@ export default function UmbriagioPlay() {
               const teamBRolls = rollHistory.filter(r => r.team === 'B').length;
               const teamAIsLosing = game.team_a_total_points < game.team_b_total_points;
               const teamBIsLosing = game.team_b_total_points < game.team_a_total_points;
+              const isTied = game.team_a_total_points === game.team_b_total_points;
               
               return (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleRoll('A')}
-                    disabled={!teamAIsLosing || teamARolls >= game.rolls_per_team}
-                    size="sm"
-                    className="flex-1 text-blue-500"
-                  >
-                    A: Roll ({teamARolls}/{game.rolls_per_team})
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleRoll('B')}
-                    disabled={!teamBIsLosing || teamBRolls >= game.rolls_per_team}
-                    size="sm"
-                    className="flex-1 text-red-500"
-                  >
-                    B: Roll ({teamBRolls}/{game.rolls_per_team})
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRoll('A')}
+                      disabled={!teamAIsLosing || teamARolls >= game.rolls_per_team}
+                      size="sm"
+                      className="flex-1 text-blue-500"
+                    >
+                      A: Roll ({teamARolls}/{game.rolls_per_team})
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleRoll('B')}
+                      disabled={!teamBIsLosing || teamBRolls >= game.rolls_per_team}
+                      size="sm"
+                      className="flex-1 text-red-500"
+                    >
+                      B: Roll ({teamBRolls}/{game.rolls_per_team})
+                    </Button>
+                  </div>
+                  {isTied && (
+                    <p className="text-xs text-amber-500">
+                      Score is tied - no team can roll
+                    </p>
+                  )}
                 </div>
               );
             })()}
