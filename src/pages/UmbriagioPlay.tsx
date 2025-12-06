@@ -185,7 +185,7 @@ export default function UmbriagioPlay() {
       birdieEagleWinner,
     };
 
-    const { teamAPoints, teamBPoints, isUmbriago } = calculateHolePoints(categories, multiplier);
+    const { teamAPoints, teamBPoints, isUmbriago, umbriagioMultiplier } = calculateHolePoints(categories, multiplier, holeScores);
 
     // Check if this hole already exists
     const existingHole = holes.find(h => h.hole_number === currentHole);
@@ -288,7 +288,11 @@ export default function UmbriagioPlay() {
       });
 
       if (isUmbriago) {
-        toast({ title: "🎉 UMBRIAGO!", description: "All 4 categories won - points doubled!" });
+        const umbriagioLabel = umbriagioMultiplier === 4 ? "x4 UMBRIAGO!" : umbriagioMultiplier === 2 ? "x2 UMBRIAGO!" : "UMBRIAGO!";
+        const description = umbriagioMultiplier === 4 ? "Both players with eagle - 32 base points!" : 
+                            umbriagioMultiplier === 2 ? "Eagle scored - 16 base points!" : 
+                            "All 4 categories won - points doubled!";
+        toast({ title: `🎉 ${umbriagioLabel}`, description });
       }
 
       if (currentHole >= game.holes_played) {
