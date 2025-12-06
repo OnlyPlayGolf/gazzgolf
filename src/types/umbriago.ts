@@ -2,6 +2,7 @@ export interface UmbriagioGame {
   id: string;
   user_id: string;
   course_name: string;
+  course_id?: string | null;
   tee_set: string | null;
   holes_played: number;
   date_played: string;
@@ -18,6 +19,7 @@ export interface UmbriagioGame {
   team_a_total_points: number;
   team_b_total_points: number;
   
+  rolls_per_team: number;
   roll_history: RollEvent[];
   
   is_finished: boolean;
@@ -56,9 +58,10 @@ export interface UmbriagioHole {
 }
 
 export interface RollEvent {
+  team: 'A' | 'B';
   hole: number;
-  old_difference: number;
-  new_stake: number;
+  points_before: number;
+  points_after: number;
 }
 
 export interface UmbriagioSetup {
