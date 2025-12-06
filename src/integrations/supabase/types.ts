@@ -868,6 +868,7 @@ export type Database = {
           is_finished: boolean
           payout_mode: string
           roll_history: Json | null
+          rolls_per_team: number
           stake_per_point: number
           team_a_player_1: string
           team_a_player_2: string
@@ -890,6 +891,7 @@ export type Database = {
           is_finished?: boolean
           payout_mode?: string
           roll_history?: Json | null
+          rolls_per_team?: number
           stake_per_point?: number
           team_a_player_1: string
           team_a_player_2: string
@@ -912,6 +914,7 @@ export type Database = {
           is_finished?: boolean
           payout_mode?: string
           roll_history?: Json | null
+          rolls_per_team?: number
           stake_per_point?: number
           team_a_player_1?: string
           team_a_player_2?: string

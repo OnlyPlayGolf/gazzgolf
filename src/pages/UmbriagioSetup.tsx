@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5 } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,9 @@ export default function UmbriagioSetup() {
   const [teamAPlayer2, setTeamAPlayer2] = useState("");
   const [teamBPlayer1, setTeamBPlayer1] = useState("");
   const [teamBPlayer2, setTeamBPlayer2] = useState("");
+  
+  // Game settings
+  const [rollsPerTeam, setRollsPerTeam] = useState(1);
 
   // Load current user and courses on mount
   useEffect(() => {
@@ -128,6 +131,7 @@ export default function UmbriagioSetup() {
           team_b_player_2: teamBPlayer2,
           stake_per_point: 0,
           payout_mode: "difference",
+          rolls_per_team: rollsPerTeam,
         })
         .select()
         .single();
@@ -222,6 +226,35 @@ export default function UmbriagioSetup() {
                   placeholder="Player 2"
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Game Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Dice5 size={20} className="text-primary" />
+              Game Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label>Rolls per Team</Label>
+              <Select value={rollsPerTeam.toString()} onValueChange={(v) => setRollsPerTeam(parseInt(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No Rolls</SelectItem>
+                  <SelectItem value="1">1 Roll</SelectItem>
+                  <SelectItem value="2">2 Rolls</SelectItem>
+                  <SelectItem value="3">3 Rolls</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                A Roll halves your team's points and doubles the next hole
+              </p>
             </div>
           </CardContent>
         </Card>
