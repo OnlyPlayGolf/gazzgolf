@@ -207,14 +207,15 @@ export default function UmbriagioPlay() {
         team_b_total_points: newTeamBPoints,
       });
       
-      // Set multiplier for next hole to 2
+      // Set multiplier for current hole to 2
       setMultiplier(2);
 
       toast({ 
         title: `🎲 Team ${team} called Roll!`, 
-        description: `Points halved (${pointsBefore} → ${pointsAfter}). Next hole is ×2!` 
+        description: `Points: ${pointsBefore} → ${pointsAfter}. This hole is now ×2!` 
       });
     } catch (error: any) {
+      console.error("Roll error:", error);
       toast({ title: "Error saving roll", description: error.message, variant: "destructive" });
     }
   };
