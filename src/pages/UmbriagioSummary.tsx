@@ -79,11 +79,8 @@ export default function UmbriagioSummary() {
   };
 
   const finishGame = async (gameData: UmbriagioGame, holesData: UmbriagioHole[]) => {
-    // Get current stake (after any rolls)
-    let finalStake = gameData.stake_per_point;
-    if (gameData.roll_history.length > 0) {
-      finalStake = gameData.roll_history[gameData.roll_history.length - 1].new_stake;
-    }
+    // Use stake_per_point directly
+    const finalStake = gameData.stake_per_point;
 
     const { winner, payout } = calculatePayout(
       gameData.team_a_total_points,
@@ -132,9 +129,6 @@ export default function UmbriagioSummary() {
   }
 
   const getFinalStake = () => {
-    if (game.roll_history.length > 0) {
-      return game.roll_history[game.roll_history.length - 1].new_stake;
-    }
     return game.stake_per_point;
   };
 
@@ -245,10 +239,9 @@ export default function UmbriagioSummary() {
               <div className="space-y-2">
                 {game.roll_history.map((roll, idx) => (
                   <div key={idx} className="flex justify-between text-sm p-2 bg-muted rounded-lg">
-                    <span>After Hole {roll.hole}</span>
+                    <span>Team {roll.team} - Hole {roll.hole}</span>
                     <span>
-                      Diff: {roll.old_difference} → {Math.ceil(roll.old_difference / 2)}, 
-                      Stake: {roll.new_stake} SEK
+                      Points: {roll.points_before} → {roll.points_after}
                     </span>
                   </div>
                 ))}

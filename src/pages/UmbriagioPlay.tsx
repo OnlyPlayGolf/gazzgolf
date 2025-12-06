@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Check, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, Check, Zap, Dices } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -160,6 +160,62 @@ export default function UmbriagioPlay() {
       setMultiplier(4);
       setDoubleBackCalled(true);
       toast({ title: "Double Back!", description: "Multiplier is now ×4" });
+    }
+  };
+
+  const handleRoll = async (team: 'A' | 'B') => {
+    if (!game) return;
+    
+    const rollHistory = game.roll_history || [];
+    const teamRolls = rollHistory.filter(r => r.team === team).length;
+    
+    if (teamRolls >= game.rolls_per_team) {
+      toast({ title: "No rolls remaining", variant: "destructive" });
+      return;
+    }
+
+    const pointsBefore = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
+    const pointsAfter = Math.floor(pointsBefore / 2);
+    
+    const newRoll: RollEvent = {
+      team,
+      hole: currentHole,
+      points_before: pointsBefore,
+      points_after: pointsAfter,
+    };
+
+    const newRollHistory = [...rollHistory, newRoll];
+    const newTeamAPoints = team === 'A' ? pointsAfter : game.team_a_total_points;
+    const newTeamBPoints = team === 'B' ? pointsAfter : game.team_b_total_points;
+
+    try {
+      const { error } = await supabase
+        .from("umbriago_games")
+        .update({
+          roll_history: newRollHistory as unknown as any,
+          team_a_total_points: newTeamAPoints,
+          team_b_total_points: newTeamBPoints,
+        })
+        .eq("id", game.id);
+
+      if (error) throw error;
+
+      setGame({
+        ...game,
+        roll_history: newRollHistory,
+        team_a_total_points: newTeamAPoints,
+        team_b_total_points: newTeamBPoints,
+      });
+      
+      // Set multiplier for next hole to 2
+      setMultiplier(2);
+
+      toast({ 
+        title: `🎲 Team ${team} called Roll!`, 
+        description: `Points halved (${pointsBefore} → ${pointsAfter}). Next hole is ×2!` 
+      });
+    } catch (error: any) {
+      toast({ title: "Error saving roll", description: error.message, variant: "destructive" });
     }
   };
 
@@ -526,6 +582,55 @@ export default function UmbriagioPlay() {
             )}
           </div>
         </Card>
+
+        {/* Rolls */}
+        {game.rolls_per_team > 0 && (
+          <Card className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <Label className="font-semibold text-sm flex items-center gap-1">
+                <Dices size={14} />
+                Rolls
+              </Label>
+              <div className="text-xs text-muted-foreground">
+                {game.rolls_per_team} per team
+              </div>
+            </div>
+            
+            {(() => {
+              const rollHistory = game.roll_history || [];
+              const teamARolls = rollHistory.filter(r => r.team === 'A').length;
+              const teamBRolls = rollHistory.filter(r => r.team === 'B').length;
+              const teamAIsLosing = game.team_a_total_points < game.team_b_total_points;
+              const teamBIsLosing = game.team_b_total_points < game.team_a_total_points;
+              
+              return (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleRoll('A')}
+                    disabled={!teamAIsLosing || teamARolls >= game.rolls_per_team}
+                    size="sm"
+                    className="flex-1 text-blue-500"
+                  >
+                    A: Roll ({teamARolls}/{game.rolls_per_team})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleRoll('B')}
+                    disabled={!teamBIsLosing || teamBRolls >= game.rolls_per_team}
+                    size="sm"
+                    className="flex-1 text-red-500"
+                  >
+                    B: Roll ({teamBRolls}/{game.rolls_per_team})
+                  </Button>
+                </div>
+              );
+            })()}
+            <p className="text-xs text-muted-foreground mt-2">
+              Only losing team can roll. Halves points, doubles next hole.
+            </p>
+          </Card>
+        )}
       </div>
 
       {/* Hole Navigation */}
