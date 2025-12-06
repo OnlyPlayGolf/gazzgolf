@@ -56,8 +56,9 @@ export function calculateBirdieEagle(scores: HoleScores): 'A' | 'B' | null {
 
 export function calculateHolePoints(
   categories: CategoryResults,
-  multiplier: 1 | 2 | 4
-): { teamAPoints: number; teamBPoints: number; isUmbriago: boolean } {
+  multiplier: 1 | 2 | 4,
+  scores?: HoleScores
+): { teamAPoints: number; teamBPoints: number; isUmbriago: boolean; umbriagioMultiplier?: number } {
   let teamACategories = 0;
   let teamBCategories = 0;
   
@@ -77,21 +78,52 @@ export function calculateHolePoints(
   const isUmbriagioA = teamACategories === 4;
   const isUmbriagioB = teamBCategories === 4;
   
-  // Apply Umbriago doubling first, then multiplier
+  // Calculate umbriago multiplier based on eagle (-2) scores
+  let umbriagioMultiplierA = 1;
+  let umbriagioMultiplierB = 1;
+  
+  if (scores) {
+    const teamAPlayer1Eagle = scores.teamAPlayer1 <= scores.par - 2;
+    const teamAPlayer2Eagle = scores.teamAPlayer2 <= scores.par - 2;
+    const teamBPlayer1Eagle = scores.teamBPlayer1 <= scores.par - 2;
+    const teamBPlayer2Eagle = scores.teamBPlayer2 <= scores.par - 2;
+    
+    // x4 if both players have eagle or better, x2 if one player has eagle or better
+    if (isUmbriagioA) {
+      if (teamAPlayer1Eagle && teamAPlayer2Eagle) {
+        umbriagioMultiplierA = 4; // 32 points total (4 * 2 * 4)
+      } else if (teamAPlayer1Eagle || teamAPlayer2Eagle) {
+        umbriagioMultiplierA = 2; // 16 points total (4 * 2 * 2)
+      }
+    }
+    
+    if (isUmbriagioB) {
+      if (teamBPlayer1Eagle && teamBPlayer2Eagle) {
+        umbriagioMultiplierB = 4;
+      } else if (teamBPlayer1Eagle || teamBPlayer2Eagle) {
+        umbriagioMultiplierB = 2;
+      }
+    }
+  }
+  
+  // Apply Umbriago doubling first, then super umbriago multiplier, then hole multiplier
   let teamAPoints = teamACategories;
   let teamBPoints = teamBCategories;
   
-  if (isUmbriagioA) teamAPoints *= 2; // 4 → 8
-  if (isUmbriagioB) teamBPoints *= 2; // 4 → 8
+  if (isUmbriagioA) teamAPoints = teamAPoints * 2 * umbriagioMultiplierA; // 4 → 8 → 16/32
+  if (isUmbriagioB) teamBPoints = teamBPoints * 2 * umbriagioMultiplierB;
   
-  // Apply hole multiplier
+  // Apply hole multiplier (doubles/double-back)
   teamAPoints *= multiplier;
   teamBPoints *= multiplier;
+  
+  const umbriagioMultiplier = isUmbriagioA ? umbriagioMultiplierA : isUmbriagioB ? umbriagioMultiplierB : undefined;
   
   return {
     teamAPoints,
     teamBPoints,
-    isUmbriago: isUmbriagioA || isUmbriagioB
+    isUmbriago: isUmbriagioA || isUmbriagioB,
+    umbriagioMultiplier
   };
 }
 
