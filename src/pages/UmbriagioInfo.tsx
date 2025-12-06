@@ -56,6 +56,15 @@ export default function UmbriagioInfo() {
                 <li>• <strong>Double Back:</strong> After everyone has played their shot, the opposing team may call "Double Back" to instead multiply the points for that hole by 4</li>
               </ul>
             </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Umbriago Roll</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Only the <strong>losing team</strong> can call a Roll</li>
+                <li>• When a Roll is called, their total points are <strong>halved</strong> and the next hole is worth <strong>double points (×2)</strong></li>
+                <li>• By default, each team can use <strong>one Roll per round</strong>, but this can be adjusted in the game settings</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
