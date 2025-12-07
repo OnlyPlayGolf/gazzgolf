@@ -111,10 +111,15 @@ export function calculateWolfHoleScore(input: WolfScoreInput): WolfScoreResult {
   return { winningSide, playerPoints };
 }
 
-export function getWolfPlayerForHole(holeNumber: number, playerCount: number): number {
+export function getWolfPlayerForHole(holeNumber: number, playerCount: number, wolfPosition: 'first' | 'last' = 'last'): number {
   // Wolf rotates each hole
-  // Hole 1: last player, Hole 2: first player, etc.
-  return ((holeNumber - 1) % playerCount) + 1;
+  if (wolfPosition === 'last') {
+    // Hole 1: last player (playerCount), Hole 2: player 1, Hole 3: player 2, etc.
+    return ((holeNumber - 2 + playerCount) % playerCount) + 1;
+  } else {
+    // Hole 1: player 1, Hole 2: player 2, etc.
+    return ((holeNumber - 1) % playerCount) + 1;
+  }
 }
 
 export function shuffleArray<T>(array: T[]): T[] {
