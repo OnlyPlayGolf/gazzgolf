@@ -357,9 +357,9 @@ const ProRoundSummary = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4 space-y-4">
-        <Button variant="ghost" onClick={() => navigate("/rounds")}>
+        <Button variant="ghost" onClick={() => navigate("/practice")}>
           <ArrowLeft className="mr-2" size={20} />
-          Back to Rounds
+          Back to Practice
         </Button>
 
         {/* Header */}

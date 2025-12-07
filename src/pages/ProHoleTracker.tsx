@@ -570,7 +570,7 @@ const ProHoleTracker = () => {
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/rounds")}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/practice")}>
               <ArrowLeft className="mr-2" size={18} />
               Exit
             </Button>
