@@ -64,7 +64,7 @@ export const ProStatsAverages = () => {
         .from('pro_stats_rounds')
         .select('id, created_at')
         .eq('user_id', user.id)
-        .not('external_round_id', 'is', null);
+        .eq('holes_played', 18);
 
       const dateFilter = getDateFilter();
       if (dateFilter) {
