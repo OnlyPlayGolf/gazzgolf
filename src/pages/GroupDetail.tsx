@@ -1095,14 +1095,20 @@ useEffect(() => {
                             <div className="font-bold text-sm text-muted-foreground w-8">
                               #{index + 1}
                             </div>
-                            <Avatar>
+                            <Avatar 
+                              className="cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => navigate(`/user/${entry.user_id}`)}
+                            >
                               <AvatarImage src={entry.avatar_url || undefined} />
                               <AvatarFallback>
                                 {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
-                              <div className="font-medium">
+                              <div 
+                                className="font-medium cursor-pointer hover:underline"
+                                onClick={() => navigate(`/user/${entry.user_id}`)}
+                              >
                                 {entry.display_name || entry.username || 'Unknown'}
                               </div>
                               <div className="text-sm text-muted-foreground">
@@ -1136,14 +1142,20 @@ useEffect(() => {
                         <div className="font-bold text-sm text-muted-foreground w-8">
                           #{index + 1}
                         </div>
-                        <Avatar>
+                        <Avatar 
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => navigate(`/user/${entry.user_id}`)}
+                        >
                           <AvatarImage src={entry.avatar_url || undefined} />
                           <AvatarFallback>
                             {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <div className="font-medium">
+                          <div 
+                            className="font-medium cursor-pointer hover:underline"
+                            onClick={() => navigate(`/user/${entry.user_id}`)}
+                          >
                             {entry.display_name || entry.username || 'Unknown'}
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -1188,14 +1200,20 @@ useEffect(() => {
                 key={member.user_id}
                 className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30"
               >
-                <Avatar>
+                <Avatar 
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => navigate(`/user/${member.user_id}`)}
+                >
                   <AvatarImage src={member.avatar_url || undefined} />
                   <AvatarFallback>
                     {(member.display_name || member.username || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="font-medium">
+                  <div 
+                    className="font-medium cursor-pointer hover:underline"
+                    onClick={() => navigate(`/user/${member.user_id}`)}
+                  >
                     {member.display_name || member.username || 'Unknown'}
                   </div>
                   {member.username && (
