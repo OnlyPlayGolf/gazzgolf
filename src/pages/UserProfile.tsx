@@ -413,8 +413,8 @@ export default function UserProfile() {
         {/* Profile photo */}
         <div className="flex flex-col items-center">
           <div className="relative">
-            <Avatar className="h-32 w-32 border-4 border-border">
-              <AvatarImage src={profile.avatar_url || undefined} />
+            <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
+              <AvatarImage src={profile.avatar_url || undefined} className="object-cover" />
               <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
                 {displayName.charAt(0).toUpperCase()}
               </AvatarFallback>
