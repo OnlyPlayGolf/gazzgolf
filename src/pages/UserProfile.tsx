@@ -107,7 +107,7 @@ export default function UserProfile() {
       .from('rounds')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
-      .or('origin.is.null,origin.eq.tracker');
+      .or('origin.is.null,origin.eq.tracker,origin.eq.play');
 
     setRoundsCount(roundsCount || 0);
     
@@ -116,7 +116,7 @@ export default function UserProfile() {
       .from('rounds')
       .select('id, course_name, date_played')
       .eq('user_id', user.id)
-      .or('origin.is.null,origin.eq.tracker')
+      .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false })
       .limit(3);
 
