@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import { ProStatsAverages } from "@/components/ProStatsAverages";
 interface Course {
   id: string;
   name: string;
@@ -184,6 +184,8 @@ const ProRoundSetup = () => {
             </Button>
           </CardContent>
         </Card>
+
+        <ProStatsAverages />
       </div>
     </div>
   );
