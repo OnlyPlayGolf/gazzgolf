@@ -1,6 +1,6 @@
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Trophy } from "lucide-react";
+import { Target, Trophy, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Practice = () => {
@@ -60,6 +60,30 @@ const Practice = () => {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Improve your game and climb the leaderboards
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
+            onClick={() => navigate('/pro-round-setup')}
+          >
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <BarChart3 size={32} className="text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl">Pro Stats</div>
+                  <div className="text-sm font-normal text-muted-foreground mt-1">
+                    Track strokes gained
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Detailed shot-by-shot tracking with strokes gained analysis
               </p>
             </CardContent>
           </Card>
