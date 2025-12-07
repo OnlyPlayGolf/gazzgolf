@@ -499,7 +499,13 @@ const Friends = () => {
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {searchResults.map((result) => (
                           <div key={result.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex items-center gap-3">
+                            <div 
+                              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
+                              onClick={() => {
+                                setIsAddFriendOpen(false);
+                                navigate(`/user/${result.id}`);
+                              }}
+                            >
                               <Avatar>
                                 <AvatarFallback>
                                   {(result.display_name || result.username || '?')[0].toUpperCase()}
@@ -512,7 +518,10 @@ const Friends = () => {
                             </div>
                             <Button
                               size="sm"
-                              onClick={() => handleSendFriendRequest(result.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSendFriendRequest(result.id);
+                              }}
                             >
                               <UserPlus size={16} />
                             </Button>
@@ -539,7 +548,10 @@ const Friends = () => {
                 <div className="space-y-3">
                   {incomingRequests.map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
+                        onClick={() => navigate(`/user/${request.id}`)}
+                      >
                         <Avatar>
                           <AvatarFallback>
                             {(request.display_name || request.username || '?')[0].toUpperCase()}
@@ -553,7 +565,10 @@ const Friends = () => {
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => handleFriendRequestResponse(request.id, true)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFriendRequestResponse(request.id, true);
+                          }}
                           className="bg-primary hover:bg-primary/90"
                         >
                           <Check size={16} />
@@ -561,7 +576,10 @@ const Friends = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleFriendRequestResponse(request.id, false)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFriendRequestResponse(request.id, false);
+                          }}
                         >
                           <X size={16} />
                         </Button>
@@ -586,7 +604,10 @@ const Friends = () => {
                 <div className="space-y-3">
                   {outgoingRequests.map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
+                        onClick={() => navigate(`/user/${request.id}`)}
+                      >
                         <Avatar>
                           <AvatarFallback>
                             {(request.display_name || request.username || '?')[0].toUpperCase()}
@@ -655,7 +676,10 @@ const Friends = () => {
                     <Card key={friend.id}>
                       <CardContent className="p-4">
                         <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-4">
+                          <div 
+                            className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => navigate(`/user/${friend.id}`)}
+                          >
                             <Avatar className="w-12 h-12 flex-shrink-0">
                               <AvatarFallback>
                                 {(friend.display_name || friend.username || '?')[0].toUpperCase()}
