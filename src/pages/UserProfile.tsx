@@ -547,7 +547,7 @@ export default function UserProfile() {
                 <Button
                   variant="link"
                   className="text-primary mt-2"
-                  onClick={() => navigate('/rounds')}
+                  onClick={() => navigate('/rounds/play')}
                 >
                   Start your first round
                 </Button>
