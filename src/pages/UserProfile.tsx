@@ -102,19 +102,21 @@ export default function UserProfile() {
 
     setFriendsCount(totalFriendsCount || 0);
 
-    // Load rounds count
+    // Load rounds count (exclude pro_stats rounds - only count "play" rounds)
     const { count: roundsCount } = await supabase
       .from('rounds')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .or('origin.is.null,origin.eq.tracker');
 
     setRoundsCount(roundsCount || 0);
     
-    // Load recent rounds with scores from holes
+    // Load recent rounds with scores from holes (exclude pro_stats rounds)
     const { data: roundsData } = await supabase
       .from('rounds')
       .select('id, course_name, date_played')
       .eq('user_id', user.id)
+      .or('origin.is.null,origin.eq.tracker')
       .order('date_played', { ascending: false })
       .limit(3);
 
@@ -581,10 +583,13 @@ export default function UserProfile() {
               </CardContent>
             </Card>
 
-            <Card className="bg-card hover:bg-accent/50 transition-colors cursor-pointer">
+            <Card 
+              className="bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+              onClick={() => navigate('/rounds')}
+            >
               <CardContent className="p-4 text-center">
                 <BarChart3 className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs text-muted-foreground mb-1">Compare</p>
+                <p className="text-xs text-muted-foreground mb-1">Performance Stats</p>
               </CardContent>
             </Card>
           </div>
