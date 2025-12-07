@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -46,10 +47,15 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
   drillName,
   refreshTrigger
 }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [globalLeaderboard, setGlobalLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [friendsLeaderboard, setFriendsLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleProfileClick = (userId: string) => {
+    navigate(`/user/${userId}`);
+  };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -223,16 +229,22 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                           `#${index + 1}`
                         )}
                       </div>
-                      <Avatar className="h-8 w-8">
+                      <Avatar 
+                        className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleProfileClick(entry.user_id)}
+                      >
                         {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
                         <AvatarFallback className="bg-primary/20 text-primary">
                           {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className={cn(
-                        "font-medium",
-                        entry.user_id === user?.id && "font-bold text-primary"
-                      )}>
+                      <span 
+                        className={cn(
+                          "font-medium cursor-pointer hover:underline",
+                          entry.user_id === user?.id && "font-bold text-primary"
+                        )}
+                        onClick={() => handleProfileClick(entry.user_id)}
+                      >
                         {entry.display_name || entry.username || "Unknown"}
                         {entry.user_id === user?.id && " (You)"}
                       </span>

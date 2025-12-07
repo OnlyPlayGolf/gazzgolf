@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -180,6 +181,7 @@ interface FeedPostProps {
 }
 
 export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) => {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [comments, setComments] = useState<any[]>([]);
@@ -189,6 +191,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [isDeleting, setIsDeleting] = useState(false);
 
   const isOwnPost = post.user_id === currentUserId;
+
+  const handleProfileClick = (userId: string) => {
+    navigate(`/user/${userId}`);
+  };
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this post?")) return;
@@ -311,7 +317,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       <CardContent className="p-4 space-y-4">
         {/* Post Header */}
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
+          <Avatar 
+            className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => handleProfileClick(post.user_id)}
+          >
             {post.profile?.avatar_url ? (
               <img src={post.profile.avatar_url} alt={displayName} className="object-cover" />
             ) : (
@@ -321,7 +330,12 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             )}
           </Avatar>
           <div className="flex-1">
-            <p className="font-semibold text-foreground">{displayName}</p>
+            <p 
+              className="font-semibold text-foreground cursor-pointer hover:underline"
+              onClick={() => handleProfileClick(post.user_id)}
+            >
+              {displayName}
+            </p>
             <p className="text-xs text-muted-foreground">{timeAgo}</p>
           </div>
           {isOwnPost && (
@@ -437,7 +451,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
               return (
                 <div key={comment.id} className="flex gap-2">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
+                  <Avatar 
+                    className="h-8 w-8 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => handleProfileClick(comment.user_id)}
+                  >
                     {comment.profiles?.avatar_url ? (
                       <img
                         src={comment.profiles.avatar_url}
@@ -452,7 +469,12 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                   </Avatar>
                   <div className="flex-1">
                     <div className="bg-muted rounded-lg p-2">
-                      <p className="text-sm font-semibold">{commentName}</p>
+                      <p 
+                        className="text-sm font-semibold cursor-pointer hover:underline"
+                        onClick={() => handleProfileClick(comment.user_id)}
+                      >
+                        {commentName}
+                      </p>
                       <p className="text-sm text-foreground">{comment.content}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 ml-2">{commentTime}</p>
