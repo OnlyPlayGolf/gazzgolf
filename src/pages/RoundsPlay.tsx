@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { StrokePlaySettingsDialog } from "@/components/StrokePlaySettingsDialog";
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -46,7 +45,6 @@ export default function RoundsPlay() {
   const [availableTees, setAvailableTees] = useState<string[]>([]);
   const [selectedPlayersCount, setSelectedPlayersCount] = useState(0);
   const [gameFormat, setGameFormat] = useState<"stroke_play" | "umbriago" | "wolf">("stroke_play");
-  const [strokePlaySettingsOpen, setStrokePlaySettingsOpen] = useState(false);
   const [strokePlaySettings, setStrokePlaySettings] = useState({
     mulligansPerPlayer: 0,
     handicapEnabled: false,
@@ -84,6 +82,12 @@ export default function RoundsPlay() {
     }
     if (savedDate) {
       setDatePlayed(savedDate);
+    }
+
+    // Restore stroke play settings
+    const savedStrokePlaySettings = sessionStorage.getItem('strokePlaySettings');
+    if (savedStrokePlaySettings) {
+      setStrokePlaySettings(JSON.parse(savedStrokePlaySettings));
     }
   }, []);
 
@@ -499,7 +503,7 @@ export default function RoundsPlay() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setStrokePlaySettingsOpen(true);
+                      navigate('/stroke-play/settings');
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted transition-colors"
                   >
@@ -566,13 +570,6 @@ export default function RoundsPlay() {
           </CardContent>
         </Card>
       </div>
-
-      <StrokePlaySettingsDialog
-        open={strokePlaySettingsOpen}
-        onOpenChange={setStrokePlaySettingsOpen}
-        settings={strokePlaySettings}
-        onSettingsChange={setStrokePlaySettings}
-      />
     </div>
   );
 }
