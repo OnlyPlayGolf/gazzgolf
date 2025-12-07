@@ -1042,6 +1042,181 @@ export type Database = {
           },
         ]
       }
+      wolf_games: {
+        Row: {
+          course_id: string | null
+          course_name: string
+          created_at: string | null
+          date_played: string
+          holes_played: number
+          id: string
+          is_finished: boolean
+          lone_wolf_loss_points: number
+          lone_wolf_win_points: number
+          player_1: string
+          player_1_points: number
+          player_2: string
+          player_2_points: number
+          player_3: string
+          player_3_points: number
+          player_4: string | null
+          player_4_points: number
+          player_5: string | null
+          player_5_points: number
+          team_win_points: number
+          user_id: string
+          winner_player: string | null
+          wolf_position: string
+        }
+        Insert: {
+          course_id?: string | null
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          lone_wolf_loss_points?: number
+          lone_wolf_win_points?: number
+          player_1: string
+          player_1_points?: number
+          player_2: string
+          player_2_points?: number
+          player_3: string
+          player_3_points?: number
+          player_4?: string | null
+          player_4_points?: number
+          player_5?: string | null
+          player_5_points?: number
+          team_win_points?: number
+          user_id: string
+          winner_player?: string | null
+          wolf_position?: string
+        }
+        Update: {
+          course_id?: string | null
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          lone_wolf_loss_points?: number
+          lone_wolf_win_points?: number
+          player_1?: string
+          player_1_points?: number
+          player_2?: string
+          player_2_points?: number
+          player_3?: string
+          player_3_points?: number
+          player_4?: string | null
+          player_4_points?: number
+          player_5?: string | null
+          player_5_points?: number
+          team_win_points?: number
+          user_id?: string
+          winner_player?: string | null
+          wolf_position?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wolf_games_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wolf_holes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          hole_number: number
+          id: string
+          par: number
+          partner_player: number | null
+          player_1_hole_points: number
+          player_1_running_total: number
+          player_1_score: number | null
+          player_2_hole_points: number
+          player_2_running_total: number
+          player_2_score: number | null
+          player_3_hole_points: number
+          player_3_running_total: number
+          player_3_score: number | null
+          player_4_hole_points: number
+          player_4_running_total: number
+          player_4_score: number | null
+          player_5_hole_points: number
+          player_5_running_total: number
+          player_5_score: number | null
+          winning_side: string | null
+          wolf_choice: string | null
+          wolf_player: number
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          hole_number: number
+          id?: string
+          par?: number
+          partner_player?: number | null
+          player_1_hole_points?: number
+          player_1_running_total?: number
+          player_1_score?: number | null
+          player_2_hole_points?: number
+          player_2_running_total?: number
+          player_2_score?: number | null
+          player_3_hole_points?: number
+          player_3_running_total?: number
+          player_3_score?: number | null
+          player_4_hole_points?: number
+          player_4_running_total?: number
+          player_4_score?: number | null
+          player_5_hole_points?: number
+          player_5_running_total?: number
+          player_5_score?: number | null
+          winning_side?: string | null
+          wolf_choice?: string | null
+          wolf_player: number
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          hole_number?: number
+          id?: string
+          par?: number
+          partner_player?: number | null
+          player_1_hole_points?: number
+          player_1_running_total?: number
+          player_1_score?: number | null
+          player_2_hole_points?: number
+          player_2_running_total?: number
+          player_2_score?: number | null
+          player_3_hole_points?: number
+          player_3_running_total?: number
+          player_3_score?: number | null
+          player_4_hole_points?: number
+          player_4_running_total?: number
+          player_4_score?: number | null
+          player_5_hole_points?: number
+          player_5_running_total?: number
+          player_5_score?: number | null
+          winning_side?: string | null
+          wolf_choice?: string | null
+          wolf_player?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wolf_holes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "wolf_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       friends_pairs: {
