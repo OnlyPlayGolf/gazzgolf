@@ -63,7 +63,8 @@ export default function WolfPlay() {
   };
   
   // Get current wolf player for this hole
-  const currentWolfPlayer = getWolfPlayerForHole(currentHole, getPlayerCount());
+  const wolfPosition = game?.wolf_position as 'first' | 'last' || 'last';
+  const currentWolfPlayer = getWolfPlayerForHole(currentHole, getPlayerCount(), wolfPosition);
 
   useEffect(() => {
     if (gameId) {
