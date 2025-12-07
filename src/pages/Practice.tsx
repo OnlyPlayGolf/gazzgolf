@@ -66,7 +66,7 @@ const Practice = () => {
 
           <Card 
             className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
-            onClick={() => navigate('/pro-round-setup')}
+            onClick={() => navigate('/rounds/pro-setup')}
           >
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-foreground">
