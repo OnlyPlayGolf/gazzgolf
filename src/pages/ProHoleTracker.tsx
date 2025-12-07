@@ -26,6 +26,16 @@ interface ProHoleData {
   shots: Shot[];
 }
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  white_distance: number | null;
+  yellow_distance: number | null;
+  blue_distance: number | null;
+  red_distance: number | null;
+  orange_distance: number | null;
+}
+
 const ProHoleTracker = () => {
   const { roundId } = useParams();
   const navigate = useNavigate();
@@ -36,6 +46,8 @@ const ProHoleTracker = () => {
   const [loading, setLoading] = useState(true);
   const [sgCalculator, setSgCalculator] = useState<any>(null);
   const [proRoundId, setProRoundId] = useState<string | null>(null);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
+  const [teeSet, setTeeSet] = useState<string>("");
   
   // Current shot inputs
   const [par, setPar] = useState(4);
@@ -49,6 +61,7 @@ const ProHoleTracker = () => {
   useEffect(() => {
     loadBaselineData();
     fetchRound();
+    fetchCourseData();
   }, [roundId]);
 
   // Ensure a Pro Stats round exists for this route and user
@@ -58,6 +71,17 @@ const ProHoleTracker = () => {
     }
   }, [roundId, round]);
 
+  // Set initial hole data when course holes are loaded
+  useEffect(() => {
+    if (courseHoles.length > 0 && teeSet) {
+      const holePar = getHolePar(currentHole);
+      const holeDistance = getHoleDistance(currentHole);
+      setPar(holePar);
+      if (holeDistance && !startDistance) {
+        setStartDistance(String(holeDistance));
+      }
+    }
+  }, [courseHoles, teeSet, currentHole]);
 
   // Reset holed state when end lie changes away from green
   useEffect(() => {
@@ -178,6 +202,10 @@ const ProHoleTracker = () => {
 
       if (roundError) throw roundError;
       setRound(roundData);
+      
+      // Get tee set from sessionStorage or round data
+      const storedTeeSet = sessionStorage.getItem('proStatsTeeSet');
+      setTeeSet(storedTeeSet || roundData?.tee_set || 'White');
     } catch (error: any) {
       toast({
         title: "Error loading round",
@@ -187,6 +215,41 @@ const ProHoleTracker = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCourseData = async () => {
+    const courseId = sessionStorage.getItem('proStatsCourseId');
+    if (!courseId) return;
+
+    const { data, error } = await supabase
+      .from("course_holes")
+      .select("hole_number, par, white_distance, yellow_distance, blue_distance, red_distance, orange_distance")
+      .eq("course_id", courseId)
+      .order("hole_number");
+
+    if (!error && data) {
+      setCourseHoles(data);
+    }
+  };
+
+  const getHoleDistance = (holeNumber: number): number | null => {
+    const hole = courseHoles.find(h => h.hole_number === holeNumber);
+    if (!hole) return null;
+
+    const teeKey = teeSet.toLowerCase();
+    switch (teeKey) {
+      case 'white': return hole.white_distance;
+      case 'yellow': return hole.yellow_distance;
+      case 'blue': return hole.blue_distance;
+      case 'red': return hole.red_distance;
+      case 'orange': return hole.orange_distance;
+      default: return hole.white_distance;
+    }
+  };
+
+  const getHolePar = (holeNumber: number): number => {
+    const hole = courseHoles.find(h => h.hole_number === holeNumber);
+    return hole?.par || 4;
   };
 
   const getCurrentHoleData = (): ProHoleData => {
@@ -404,10 +467,13 @@ const ProHoleTracker = () => {
       }
 
       if (currentHole < round.holes_played) {
-        setCurrentHole(currentHole + 1);
-        setPar(4);
+        const nextHole = currentHole + 1;
+        setCurrentHole(nextHole);
+        setPar(getHolePar(nextHole));
         setShotType('tee');
         setStartLie('tee');
+        const nextDistance = getHoleDistance(nextHole);
+        setStartDistance(nextDistance ? String(nextDistance) : "");
       } else {
         navigate(`/rounds/${roundId}/pro-summary`);
       }
@@ -462,10 +528,13 @@ const ProHoleTracker = () => {
       if (error) throw error;
 
       if (currentHole < round.holes_played) {
-        setCurrentHole(currentHole + 1);
-        setPar(4);
+        const nextHole = currentHole + 1;
+        setCurrentHole(nextHole);
+        setPar(getHolePar(nextHole));
         setShotType('tee');
         setStartLie('tee');
+        const nextDistance = getHoleDistance(nextHole);
+        setStartDistance(nextDistance ? String(nextDistance) : "");
       } else {
         navigate(`/rounds/${roundId}/pro-summary`);
       }
