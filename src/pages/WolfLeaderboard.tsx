@@ -3,23 +3,52 @@ import { useParams } from "react-router-dom";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { WolfGame } from "@/types/wolf";
+import { WolfGame, WolfHole } from "@/types/wolf";
+import { ChevronDown } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function WolfLeaderboard() {
   const { gameId } = useParams();
   const [game, setGame] = useState<WolfGame | null>(null);
+  const [holes, setHoles] = useState<WolfHole[]>([]);
+  const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(1);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (gameId) fetchGame();
+    if (gameId) fetchGameData();
   }, [gameId]);
 
-  const fetchGame = async () => {
-    const { data } = await supabase
-      .from("wolf_games" as any)
-      .select("*")
-      .eq("id", gameId)
-      .single();
-    if (data) setGame(data as unknown as WolfGame);
+  const fetchGameData = async () => {
+    try {
+      const { data: gameData } = await supabase
+        .from("wolf_games" as any)
+        .select("*")
+        .eq("id", gameId)
+        .single();
+      
+      if (gameData) {
+        setGame(gameData as unknown as WolfGame);
+      }
+
+      const { data: holesData } = await supabase
+        .from("wolf_holes" as any)
+        .select("*")
+        .eq("game_id", gameId)
+        .order("hole_number");
+
+      if (holesData) {
+        setHoles(holesData as unknown as WolfHole[]);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getPlayerCount = () => {
@@ -30,40 +59,260 @@ export default function WolfLeaderboard() {
     return count;
   };
 
-  const players = game ? [
-    { name: game.player_1, points: game.player_1_points },
-    { name: game.player_2, points: game.player_2_points },
-    { name: game.player_3, points: game.player_3_points },
-    { name: game.player_4 || '', points: game.player_4_points },
-    { name: game.player_5 || '', points: game.player_5_points },
-  ].slice(0, getPlayerCount()).sort((a, b) => b.points - a.points) : [];
+  const getPlayerName = (playerNum: number) => {
+    if (!game) return '';
+    switch (playerNum) {
+      case 1: return game.player_1;
+      case 2: return game.player_2;
+      case 3: return game.player_3;
+      case 4: return game.player_4 || '';
+      case 5: return game.player_5 || '';
+      default: return '';
+    }
+  };
+
+  const getPlayerPoints = (playerNum: number) => {
+    if (!game) return 0;
+    switch (playerNum) {
+      case 1: return game.player_1_points;
+      case 2: return game.player_2_points;
+      case 3: return game.player_3_points;
+      case 4: return game.player_4_points;
+      case 5: return game.player_5_points;
+      default: return 0;
+    }
+  };
+
+  const getHolePoints = (hole: WolfHole, playerNum: number) => {
+    switch (playerNum) {
+      case 1: return hole.player_1_hole_points;
+      case 2: return hole.player_2_hole_points;
+      case 3: return hole.player_3_hole_points;
+      case 4: return hole.player_4_hole_points;
+      case 5: return hole.player_5_hole_points;
+      default: return 0;
+    }
+  };
+
+  const playerCount = getPlayerCount();
+  
+  const players = game ? Array.from({ length: playerCount }, (_, i) => ({
+    num: i + 1,
+    name: getPlayerName(i + 1),
+    points: getPlayerPoints(i + 1),
+  })).sort((a, b) => b.points - a.points) : [];
+
+  const frontNine = holes.filter(h => h.hole_number <= 9);
+  const backNine = holes.filter(h => h.hole_number > 9);
+
+  const calculateNineTotal = (holesSubset: WolfHole[], playerNum: number) => {
+    return holesSubset.reduce((sum, h) => sum + getHolePoints(h, playerNum), 0);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pb-16">
+        <div className="text-muted-foreground">Loading scorecard...</div>
+      </div>
+    );
+  }
+
+  if (!game) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pb-16">
+        <div className="text-muted-foreground">Game not found</div>
+      </div>
+    );
+  }
+
+  const renderPlayerCard = (player: { num: number; name: string; points: number }, rank: number) => {
+    const isExpanded = expandedPlayerId === player.num;
+    const isLeader = rank === 0;
+
+    return (
+      <Card key={player.num} className="overflow-hidden">
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground p-4">
+          <div className="flex items-center justify-center mb-2">
+            <div className="flex-1 text-center">
+              <h2 className="text-lg font-bold">
+                Game {new Date(game.date_played).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: '2-digit', 
+                  day: '2-digit' 
+                }).replace(/\//g, '-')}
+              </h2>
+              <p className="text-sm opacity-90">{game.course_name}</p>
+            </div>
+          </div>
+
+          <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
+            <div className="text-xl font-bold">Wolf</div>
+          </div>
+        </div>
+
+        {/* Player Info Bar - Clickable */}
+        <div 
+          className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setExpandedPlayerId(isExpanded ? null : player.num)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ChevronDown 
+                size={20} 
+                className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+              />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                isLeader ? 'bg-amber-500/20 text-amber-600' : 'bg-muted'
+              }`}>
+                {rank + 1}
+              </div>
+              <div>
+                <div className="text-xl font-bold">{player.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  Player {player.num}
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold">
+                {player.points}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {isLeader ? 'LEADING' : 'POINTS'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scorecard Table - Only shown when expanded */}
+        {isExpanded && holes.length > 0 && (
+          <>
+            {/* Front 9 */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-primary/5">
+                    <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                    {frontNine.map(hole => (
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                        {hole.hole_number}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                        {hole.par}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      {frontNine.reduce((sum, h) => sum + h.par, 0)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="font-bold">
+                    <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
+                    {frontNine.map(hole => {
+                      const points = getHolePoints(hole, player.num);
+                      return (
+                        <TableCell 
+                          key={hole.hole_number} 
+                          className={`text-center font-bold text-xs px-1 py-1.5 ${points > 0 ? 'text-green-600' : points < 0 ? 'text-red-600' : ''}`}
+                        >
+                          {points !== 0 ? (points > 0 ? `+${points}` : points) : '-'}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      {calculateNineTotal(frontNine, player.num)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Back 9 - Only show if 18 holes */}
+            {game.holes_played === 18 && backNine.length > 0 && (
+              <div className="overflow-x-auto border-t">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-primary/5">
+                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                      {backNine.map(hole => (
+                        <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                          {hole.hole_number}
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                          {hole.par}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                        {backNine.reduce((sum, h) => sum + h.par, 0)}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="font-bold">
+                      <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
+                      {backNine.map(hole => {
+                        const points = getHolePoints(hole, player.num);
+                        return (
+                          <TableCell 
+                            key={hole.hole_number} 
+                            className={`text-center font-bold text-xs px-1 py-1.5 ${points > 0 ? 'text-green-600' : points < 0 ? 'text-red-600' : ''}`}
+                          >
+                            {points !== 0 ? (points > 0 ? `+${points}` : points) : '-'}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                        {calculateNineTotal(backNine, player.num)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Summary */}
+            <div className="border-t bg-muted/30 p-4">
+              <div className="flex items-center justify-around text-center">
+                <div>
+                  <div className="text-2xl font-bold">{player.points}</div>
+                  <div className="text-xs text-muted-foreground">Total Points</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{holes.length}</div>
+                  <div className="text-xs text-muted-foreground">Holes Played</div>
+                </div>
+                <div>
+                  <div className={`text-2xl font-bold ${isLeader ? 'text-amber-600' : ''}`}>
+                    {rank + 1}{rank === 0 ? 'st' : rank === 1 ? 'nd' : rank === 2 ? 'rd' : 'th'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Position</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="bg-primary text-primary-foreground py-4 px-4">
-        <h1 className="text-xl font-bold text-center">Leaderboard</h1>
-      </div>
-      
-      <div className="max-w-2xl mx-auto p-4">
-        <Card className="p-4">
-          <h2 className="font-semibold mb-4 text-center">Current Standings</h2>
-          <div className="space-y-3">
-            {players.map((player, index) => (
-              <div 
-                key={index} 
-                className={`flex justify-between items-center p-3 rounded ${
-                  index === 0 ? 'bg-amber-500/10' : ''
-                }`}
-              >
-                <span className="font-medium">
-                  {index + 1}. {player.name}
-                  {index === 0 && ' 🏆'}
-                </span>
-                <span className="font-bold text-lg">{player.points} pts</span>
-              </div>
-            ))}
-          </div>
-        </Card>
+      <div className="max-w-4xl mx-auto p-4 space-y-4">
+        {players.map((player, index) => renderPlayerCard(player, index))}
       </div>
 
       <WolfBottomTabBar gameId={gameId!} />
