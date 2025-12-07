@@ -15,6 +15,7 @@ export default function StrokePlaySettings() {
   
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [handicapEnabled, setHandicapEnabled] = useState(false);
+  const [gimmesEnabled, setGimmesEnabled] = useState(false);
 
   useEffect(() => {
     // Load saved settings
@@ -23,6 +24,7 @@ export default function StrokePlaySettings() {
       const settings = JSON.parse(savedSettings);
       setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
       setHandicapEnabled(settings.handicapEnabled || false);
+      setGimmesEnabled(settings.gimmesEnabled || false);
     }
   }, []);
 
@@ -30,6 +32,7 @@ export default function StrokePlaySettings() {
     const settings = {
       mulligansPerPlayer,
       handicapEnabled,
+      gimmesEnabled,
     };
     sessionStorage.setItem('strokePlaySettings', JSON.stringify(settings));
     toast({
@@ -105,6 +108,21 @@ export default function StrokePlaySettings() {
                 id="handicap"
                 checked={handicapEnabled}
                 onCheckedChange={setHandicapEnabled}
+              />
+            </div>
+
+            {/* Gimmes toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="gimmes">Allow Gimmes</Label>
+                <p className="text-xs text-muted-foreground">
+                  Short putts can be conceded without being played
+                </p>
+              </div>
+              <Switch
+                id="gimmes"
+                checked={gimmesEnabled}
+                onCheckedChange={setGimmesEnabled}
               />
             </div>
 

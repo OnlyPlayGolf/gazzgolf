@@ -48,6 +48,7 @@ export default function RoundsPlay() {
   const [strokePlaySettings, setStrokePlaySettings] = useState({
     mulligansPerPlayer: 0,
     handicapEnabled: false,
+    gimmesEnabled: false,
   });
 
   useEffect(() => {
@@ -491,11 +492,13 @@ export default function RoundsPlay() {
                     <div className="font-semibold text-sm">Stroke Play</div>
                     <div className="text-xs text-muted-foreground">
                       Standard scoring format
-                      {(strokePlaySettings.mulligansPerPlayer > 0 || strokePlaySettings.handicapEnabled) && (
+                      {(strokePlaySettings.mulligansPerPlayer > 0 || strokePlaySettings.handicapEnabled || strokePlaySettings.gimmesEnabled) && (
                         <span className="ml-1 text-primary">
-                          ({strokePlaySettings.mulligansPerPlayer > 0 ? `${strokePlaySettings.mulligansPerPlayer} mulligan${strokePlaySettings.mulligansPerPlayer !== 1 ? 's' : ''}` : ''}
-                          {strokePlaySettings.mulligansPerPlayer > 0 && strokePlaySettings.handicapEnabled ? ', ' : ''}
-                          {strokePlaySettings.handicapEnabled ? 'HCP on' : ''})
+                          ({[
+                            strokePlaySettings.mulligansPerPlayer > 0 ? `${strokePlaySettings.mulligansPerPlayer} mulligan${strokePlaySettings.mulligansPerPlayer !== 1 ? 's' : ''}` : '',
+                            strokePlaySettings.handicapEnabled ? 'HCP' : '',
+                            strokePlaySettings.gimmesEnabled ? 'Gimmes' : ''
+                          ].filter(Boolean).join(', ')})
                         </span>
                       )}
                     </div>
