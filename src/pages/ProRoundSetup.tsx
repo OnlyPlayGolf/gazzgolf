@@ -1,26 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+interface Course {
+  id: string;
+  name: string;
+  location: string | null;
+}
 
 const ProRoundSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [courseName, setCourseName] = useState("");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
   const [teeSet, setTeeSet] = useState("");
   const [holesPlayed, setHolesPlayed] = useState<9 | 18>(18);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, name, location")
+        .order("name");
+      
+      if (!error && data) {
+        setCourses(data);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  const selectedCourse = courses.find(c => c.id === selectedCourseId);
+
   const handleStartRound = async () => {
-    if (!courseName.trim()) {
+    if (!selectedCourseId) {
       toast({
-        title: "Course name required",
-        description: "Please enter a course name",
+        title: "Course required",
+        description: "Please select a course",
         variant: "destructive",
       });
       return;
@@ -39,7 +68,7 @@ const ProRoundSetup = () => {
         .insert([
           {
             user_id: user.id,
-            course_name: courseName,
+            course_name: selectedCourse?.name || "",
             tee_set: teeSet,
             holes_played: holesPlayed,
             origin: 'pro_stats',
@@ -50,9 +79,13 @@ const ProRoundSetup = () => {
 
       if (error) throw error;
 
+      // Store course_id in sessionStorage for the tracker to use
+      sessionStorage.setItem('proStatsCourseId', selectedCourseId);
+      sessionStorage.setItem('proStatsTeeSet', teeSet);
+
       toast({
         title: "Pro Round started!",
-        description: `Good luck tracking strokes gained at ${courseName}`,
+        description: `Good luck tracking strokes gained at ${selectedCourse?.name}`,
       });
 
       navigate(`/rounds/${round.id}/pro-track`);
@@ -74,7 +107,7 @@ const ProRoundSetup = () => {
       <div className="p-4">
         <Button
           variant="ghost"
-          onClick={() => navigate("/rounds")}
+          onClick={() => navigate("/practice")}
           className="mb-4"
         >
           <ArrowLeft className="mr-2" size={20} />
@@ -90,13 +123,19 @@ const ProRoundSetup = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="course">Course Name</Label>
-              <Input
-                id="course"
-                placeholder="Enter course name"
-                value={courseName}
-                onChange={(e) => setCourseName(e.target.value)}
-              />
+              <Label>Course</Label>
+              <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a course" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
