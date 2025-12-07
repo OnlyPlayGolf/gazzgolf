@@ -71,6 +71,21 @@ export default function StrokePlaySettings() {
               </p>
             </div>
 
+            {/* Handicap toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="handicap">Use Handicaps</Label>
+                <p className="text-xs text-muted-foreground">
+                  Apply player handicaps to scoring
+                </p>
+              </div>
+              <Switch
+                id="handicap"
+                checked={handicapEnabled}
+                onCheckedChange={setHandicapEnabled}
+              />
+            </div>
+
             {/* Mulligans per player */}
             <div className="space-y-2">
               <Label htmlFor="mulligans">Mulligans per Player</Label>
@@ -94,21 +109,6 @@ export default function StrokePlaySettings() {
               <p className="text-xs text-muted-foreground">
                 Number of allowed do-overs per player during the round
               </p>
-            </div>
-
-            {/* Handicap toggle */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply player handicaps to scoring
-                </p>
-              </div>
-              <Switch
-                id="handicap"
-                checked={handicapEnabled}
-                onCheckedChange={setHandicapEnabled}
-              />
             </div>
 
             {/* Gimmes toggle */}
