@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,10 +27,15 @@ interface LeaderboardPreviewProps {
 }
 
 const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refreshTrigger }: LeaderboardPreviewProps) => {
+  const navigate = useNavigate();
   const [friendsLeaderboard, setFriendsLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [groupLeaderboards, setGroupLeaderboards] = useState<Array<{ groupId: string; groupName: string; leaderboard: LeaderboardEntry[] }>>([]);
   const [personalStats, setPersonalStats] = useState<PersonalStats>({ personalBest: null, lastScore: null });
   const [loading, setLoading] = useState(true);
+
+  const handleProfileClick = (userId: string) => {
+    navigate(`/user/${userId}`);
+  };
 
   useEffect(() => {
     loadLeaderboards();
@@ -295,13 +301,19 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
                     <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                       {index + 1}
                     </div>
-                    <Avatar className="w-6 h-6">
+                    <Avatar 
+                      className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleProfileClick(entry.user_id)}
+                    >
                       {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
                       <AvatarFallback className="text-xs">
                         {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">
+                    <span 
+                      className="text-sm font-medium cursor-pointer hover:underline"
+                      onClick={() => handleProfileClick(entry.user_id)}
+                    >
                       {entry.display_name || entry.username || 'Unknown'}
                     </span>
                   </div>
@@ -330,13 +342,19 @@ const LeaderboardPreview = ({ drillId, drillTitle, onViewFullLeaderboard, refres
                     <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                       {index + 1}
                     </div>
-                    <Avatar className="w-6 h-6">
+                    <Avatar 
+                      className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleProfileClick(entry.user_id)}
+                    >
                       {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
                       <AvatarFallback className="text-xs">
                         {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">
+                    <span 
+                      className="text-sm font-medium cursor-pointer hover:underline"
+                      onClick={() => handleProfileClick(entry.user_id)}
+                    >
                       {entry.display_name || entry.username || 'Unknown'}
                     </span>
                   </div>
