@@ -72,6 +72,14 @@ import UmbriagioFeed from "./pages/UmbriagioFeed";
 import UmbriagioLeaderboard from "./pages/UmbriagioLeaderboard";
 import UmbriagioSettings from "./pages/UmbriagioSettings";
 import HowToPlayUmbriago from "./pages/HowToPlayUmbriago";
+import WolfSetup from "./pages/WolfSetup";
+import WolfPlay from "./pages/WolfPlay";
+import WolfSummary from "./pages/WolfSummary";
+import WolfInfo from "./pages/WolfInfo";
+import WolfFeed from "./pages/WolfFeed";
+import WolfLeaderboard from "./pages/WolfLeaderboard";
+import WolfSettings from "./pages/WolfSettings";
+import HowToPlayWolf from "./pages/HowToPlayWolf";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -136,6 +144,14 @@ const App = () => {
             <Route path="/umbriago/:gameId/leaderboard" element={<UmbriagioLeaderboard />} />
             <Route path="/umbriago/:gameId/settings" element={<UmbriagioSettings />} />
             <Route path="/umbriago/:gameId/summary" element={<UmbriagioSummary />} />
+            <Route path="/wolf/how-to-play" element={<HowToPlayWolf />} />
+            <Route path="/wolf/setup" element={<WolfSetup />} />
+            <Route path="/wolf/:gameId/play" element={<WolfPlay />} />
+            <Route path="/wolf/:gameId/info" element={<WolfInfo />} />
+            <Route path="/wolf/:gameId/feed" element={<WolfFeed />} />
+            <Route path="/wolf/:gameId/leaderboard" element={<WolfLeaderboard />} />
+            <Route path="/wolf/:gameId/settings" element={<WolfSettings />} />
+            <Route path="/wolf/:gameId/summary" element={<WolfSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />

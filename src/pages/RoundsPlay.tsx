@@ -44,7 +44,7 @@ export default function RoundsPlay() {
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<string[]>([]);
   const [selectedPlayersCount, setSelectedPlayersCount] = useState(0);
-  const [gameFormat, setGameFormat] = useState<"stroke_play" | "umbriago">("stroke_play");
+  const [gameFormat, setGameFormat] = useState<"stroke_play" | "umbriago" | "wolf">("stroke_play");
 
   useEffect(() => {
     fetchCourses();
@@ -205,6 +205,13 @@ export default function RoundsPlay() {
     if (gameFormat === "umbriago") {
       sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
       navigate('/umbriago/setup');
+      return;
+    }
+
+    // If Wolf is selected, navigate to Wolf setup
+    if (gameFormat === "wolf") {
+      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+      navigate('/wolf/setup');
       return;
     }
 
@@ -489,6 +496,28 @@ export default function RoundsPlay() {
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate('/umbriago/how-to-play');
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted transition-colors"
+                  >
+                    <Info size={18} className="text-muted-foreground" />
+                  </button>
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setGameFormat("wolf")}
+                    className={`w-full p-3 rounded-lg border-2 text-left transition-all pr-12 ${
+                      gameFormat === "wolf"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-semibold text-sm">🐺 Wolf</div>
+                    <div className="text-xs text-muted-foreground">3-5 players, Wolf picks partner or goes solo</div>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/wolf/how-to-play');
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted transition-colors"
                   >

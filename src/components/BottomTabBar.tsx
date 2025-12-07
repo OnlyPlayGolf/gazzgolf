@@ -14,11 +14,12 @@ export const BottomTabBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, and umbriago
+  // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, umbriago, and wolf
   const hideTabBar = (
     (location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds') ||
     location.pathname.startsWith('/drill/') ||
-    location.pathname.startsWith('/umbriago/')
+    location.pathname.startsWith('/umbriago/') ||
+    location.pathname.startsWith('/wolf/')
   );
   if (hideTabBar) return null;
 
