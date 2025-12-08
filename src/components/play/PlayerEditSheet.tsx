@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Player } from "@/types/playSetup";
-import { parseHandicapInput, formatHandicapForInput } from "@/utils/handicapFormatter";
 
 interface PlayerEditSheetProps {
   isOpen: boolean;
@@ -23,7 +22,7 @@ export function PlayerEditSheet({
   onSave,
 }: PlayerEditSheetProps) {
   const [displayName, setDisplayName] = useState("");
-  const [handicapInput, setHandicapInput] = useState("");
+  const [handicap, setHandicap] = useState("");
   const [teeColor, setTeeColor] = useState("");
 
   useEffect(() => {
@@ -32,33 +31,20 @@ export function PlayerEditSheet({
         ? player.displayName.replace(" (Guest)", "") 
         : player.displayName
       );
-      // Display the handicap with proper formatting for editing
-      setHandicapInput(formatHandicapForInput(player.handicap));
+      setHandicap(player.handicap !== undefined ? String(player.handicap) : "");
       setTeeColor(player.teeColor);
     }
   }, [player]);
 
-  const handleHandicapChange = (value: string) => {
-    // Replace comma with dot immediately
-    let processed = value.replace(",", ".");
-    
-    // Don't allow minus sign - strip it
-    processed = processed.replace("-", "");
-    
-    setHandicapInput(processed);
-  };
-
   const handleSave = () => {
     if (!player) return;
-
-    const parsedHandicap = parseHandicapInput(handicapInput);
 
     const updatedPlayer: Player = {
       ...player,
       displayName: player.isTemporary 
         ? (displayName.trim() || "Guest Player")
         : displayName.trim() || player.displayName,
-      handicap: parsedHandicap,
+      handicap: handicap ? parseFloat(handicap) : undefined,
       teeColor: teeColor || player.teeColor,
     };
     
@@ -87,7 +73,7 @@ export function PlayerEditSheet({
             />
             {!player.isTemporary && (
               <p className="text-xs text-muted-foreground">
-                Only temporary player names can be edited
+                Only guest player names can be edited
               </p>
             )}
           </div>
@@ -96,15 +82,12 @@ export function PlayerEditSheet({
             <Label htmlFor="player-handicap">Handicap</Label>
             <Input
               id="player-handicap"
-              type="text"
-              inputMode="decimal"
-              value={handicapInput}
-              onChange={(e) => handleHandicapChange(e.target.value)}
-              placeholder="e.g. 15 or +2.4 for plus handicap"
+              type="number"
+              step="0.1"
+              value={handicap}
+              onChange={(e) => setHandicap(e.target.value)}
+              placeholder="e.g. 15 or -2.4"
             />
-            <p className="text-xs text-muted-foreground">
-              Use + for plus handicaps (e.g., +2.4). Normal handicaps need no sign.
-            </p>
           </div>
 
           <div className="space-y-2">
