@@ -17,6 +17,7 @@ import Levels from "./pages/Levels";
 import Groups from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import PublicProfile from "./pages/PublicProfile";
+import FriendRounds from "./pages/FriendRounds";
 import ProfileSettings from "./pages/ProfileSettings";
 import Messages from "./pages/Messages";
 import AddFriendFromQR from "./pages/AddFriendFromQR";
@@ -110,6 +111,7 @@ const App = () => {
             <Route path="/levels/:difficulty" element={<Levels />} />
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/user/:userId" element={<PublicProfile />} />
+            <Route path="/user/:userId/rounds" element={<FriendRounds />} />
             <Route path="/add-friend/:userId" element={<AddFriendFromQR />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile-settings" element={<ProfileSettings />} />

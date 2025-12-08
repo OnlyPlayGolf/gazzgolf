@@ -51,6 +51,7 @@ export default function PublicProfile() {
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showQRCode, setShowQRCode] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -325,6 +326,7 @@ export default function PublicProfile() {
       setFriends([]);
       setRecentRounds([]);
       setUserPosts([]);
+      setShowRemoveConfirm(false);
       toast({
         title: "Success",
         description: "Friend removed"
@@ -334,6 +336,33 @@ export default function PublicProfile() {
       toast({
         title: "Error",
         description: "Failed to remove friend",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancelFriendRequest = async () => {
+    if (!currentUserId || !userId) return;
+
+    try {
+      const { error } = await supabase
+        .from('friendships')
+        .delete()
+        .eq('requester', currentUserId)
+        .eq('addressee', userId);
+
+      if (error) throw error;
+
+      setFriendshipStatus('none');
+      toast({
+        title: "Success",
+        description: "Friend request cancelled"
+      });
+    } catch (error) {
+      console.error('Error cancelling friend request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel friend request",
         variant: "destructive"
       });
     }
@@ -404,9 +433,9 @@ export default function PublicProfile() {
             </Button>
           )}
           {friendshipStatus === 'pending_sent' && (
-            <Button variant="outline" disabled className="gap-2">
-              <UserPlus size={18} />
-              Request Sent
+            <Button variant="outline" onClick={handleCancelFriendRequest} className="gap-2">
+              <X size={18} />
+              Cancel Request
             </Button>
           )}
           {friendshipStatus === 'pending_received' && (
@@ -421,7 +450,7 @@ export default function PublicProfile() {
                 <MessageCircle size={18} />
                 Message
               </Button>
-              <Button variant="outline" onClick={handleRemoveFriend} className="gap-2 text-destructive hover:text-destructive">
+              <Button variant="outline" onClick={() => setShowRemoveConfirm(true)} className="gap-2 text-destructive hover:text-destructive">
                 <UserMinus size={18} />
                 Remove
               </Button>
@@ -464,31 +493,13 @@ export default function PublicProfile() {
             </Button>
           </div>
         ) : (
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center gap-3">
-                <Users size={32} className="text-muted-foreground" />
-                <p className="text-muted-foreground text-center">
-                  {friendsCount} Friends
-                </p>
-                {friendshipStatus === 'none' && (
-                  <Button onClick={handleSendFriendRequest} className="gap-2">
-                    <UserPlus size={18} />
-                    Add Friend
-                  </Button>
-                )}
-                {friendshipStatus === 'pending_sent' && (
-                  <p className="text-sm text-muted-foreground">Friend request pending</p>
-                )}
-                {friendshipStatus === 'pending_received' && (
-                  <Button onClick={handleAcceptFriendRequest} className="gap-2">
-                    <UserPlus size={18} />
-                    Accept Request
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center justify-center gap-6 mb-6">
+            <div className="flex items-center gap-3 px-4 h-12 border-2 border-border rounded-full">
+              <Users size={20} className="text-muted-foreground" />
+              <span className="text-lg font-semibold text-foreground">{friendsCount}</span>
+              <span className="text-sm text-muted-foreground">Friends</span>
+            </div>
+          </div>
         )}
 
         {/* Rounds section - locked if not friends */}
@@ -496,7 +507,12 @@ export default function PublicProfile() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-foreground">Rounds ({roundsCount})</h2>
             {isFriend && recentRounds.length > 0 && (
-              <Button variant="ghost" size="sm" className="text-primary">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary"
+                onClick={() => navigate(`/user/${userId}/rounds`)}
+              >
                 View all
               </Button>
             )}
@@ -612,6 +628,35 @@ export default function PublicProfile() {
             <p className="text-sm text-muted-foreground text-center">
               Scan this code to add {displayName} as a friend
             </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Friend Confirmation Dialog */}
+      <Dialog open={showRemoveConfirm} onOpenChange={setShowRemoveConfirm}>
+        <DialogContent className="max-w-sm">
+          <div className="flex flex-col items-center gap-4 p-4">
+            <UserMinus size={48} className="text-destructive" />
+            <h3 className="text-lg font-semibold">Remove Friend?</h3>
+            <p className="text-sm text-muted-foreground text-center">
+              Are you sure you want to remove {displayName} as a friend?
+            </p>
+            <div className="flex gap-3 w-full">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowRemoveConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                className="flex-1"
+                onClick={handleRemoveFriend}
+              >
+                Remove
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
