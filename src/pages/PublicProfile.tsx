@@ -3,12 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UserPlus, Users, ArrowLeft, MessageCircle, Lock } from "lucide-react";
+import { UserPlus, Users, ArrowLeft, MessageCircle, Lock, UserMinus, QrCode, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
 import { FeedPost } from "@/components/FeedPost";
-
+import QRCode from "react-qr-code";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 interface Profile {
   id: string;
   display_name: string | null;
@@ -49,6 +50,7 @@ export default function PublicProfile() {
   const [averageScore, setAverageScore] = useState<number | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showQRCode, setShowQRCode] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -308,6 +310,37 @@ export default function PublicProfile() {
     }
   };
 
+  const handleRemoveFriend = async () => {
+    if (!currentUserId || !userId) return;
+
+    try {
+      const { error } = await supabase
+        .from('friendships')
+        .delete()
+        .or(`and(requester.eq.${currentUserId},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${currentUserId})`);
+
+      if (error) throw error;
+
+      setFriendshipStatus('none');
+      setFriends([]);
+      setRecentRounds([]);
+      setUserPosts([]);
+      toast({
+        title: "Success",
+        description: "Friend removed"
+      });
+    } catch (error) {
+      console.error('Error removing friend:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove friend",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const qrCodeUrl = `${window.location.origin}/add-friend/${userId}`;
+
   if (loading || !profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -383,17 +416,23 @@ export default function PublicProfile() {
             </Button>
           )}
           {friendshipStatus === 'accepted' && (
-            <Button variant="outline" onClick={handleMessageFriend} className="gap-2">
-              <MessageCircle size={18} />
-              Message
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleMessageFriend} className="gap-2">
+                <MessageCircle size={18} />
+                Message
+              </Button>
+              <Button variant="outline" onClick={handleRemoveFriend} className="gap-2 text-destructive hover:text-destructive">
+                <UserMinus size={18} />
+                Remove
+              </Button>
+            </>
           )}
         </div>
 
         {/* Friends section - show Add Friend box if not friends */}
         {isFriend ? (
-          <div className="flex items-center justify-center gap-6 mb-6">
-            <div className="flex items-center gap-3 px-4 h-12 border-2 border-border rounded-full min-w-[200px]">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="flex items-center gap-3 px-4 h-12 border-2 border-border rounded-full">
               <div className="flex -space-x-2 p-1">
                 {friends.length > 0 ? (
                   friends.slice(0, 3).map((friend) => (
@@ -415,6 +454,14 @@ export default function PublicProfile() {
               <span className="text-lg font-semibold text-foreground">{friendsCount}</span>
               <span className="text-sm text-muted-foreground">Friends</span>
             </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full border-2"
+              onClick={() => setShowQRCode(true)}
+            >
+              <QrCode size={20} />
+            </Button>
           </div>
         ) : (
           <Card className="mb-6">
@@ -447,7 +494,12 @@ export default function PublicProfile() {
         {/* Rounds section - locked if not friends */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-foreground">Rounds</h2>
+            <h2 className="text-xl font-bold text-foreground">Rounds ({roundsCount})</h2>
+            {isFriend && recentRounds.length > 0 && (
+              <Button variant="ghost" size="sm" className="text-primary">
+                View all
+              </Button>
+            )}
           </div>
 
           {isFriend ? (
@@ -548,6 +600,21 @@ export default function PublicProfile() {
           )}
         </div>
       </div>
+
+      {/* QR Code Dialog */}
+      <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
+        <DialogContent className="max-w-sm">
+          <div className="flex flex-col items-center gap-4 p-4">
+            <h3 className="text-lg font-semibold">{displayName}'s QR Code</h3>
+            <div className="bg-white p-4 rounded-lg">
+              <QRCode value={qrCodeUrl} size={200} />
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              Scan this code to add {displayName} as a friend
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
