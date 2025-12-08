@@ -83,6 +83,7 @@ import WolfLeaderboard from "./pages/WolfLeaderboard";
 import WolfSettings from "./pages/WolfSettings";
 import HowToPlayWolf from "./pages/HowToPlayWolf";
 import StrokePlaySettings from "./pages/StrokePlaySettings";
+import PerformanceStats from "./pages/PerformanceStats";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -115,6 +116,7 @@ const App = () => {
             <Route path="/add-friend/:userId" element={<AddFriendFromQR />} />
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile-settings" element={<ProfileSettings />} />
+            <Route path="/performance-stats" element={<PerformanceStats />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/menu" element={<Menu />} />
