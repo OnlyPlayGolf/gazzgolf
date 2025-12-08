@@ -113,48 +113,33 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
     }
   };
 
-  const handleFriendRequest = async (notificationId: string, requestId: string, accept: boolean) => {
+  const handleFriendRequest = async (notificationId: string, requesterId: string, accept: boolean) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     setLoading(true);
     try {
       if (accept) {
-        // Get the friendship details
-        const { data: friendship } = await supabase
-          .from('friendships')
-          .select('requester, addressee')
-          .eq('id', requestId)
-          .single();
-
-        if (!friendship) throw new Error('Friend request not found');
-
-        // Update status to accepted
+        // Update friendship status using requester and addressee (matching Friends.tsx approach)
         const { error: updateError } = await supabase
           .from('friendships')
           .update({ status: 'accepted' })
-          .eq('id', requestId);
+          .eq('requester', requesterId)
+          .eq('addressee', user.id);
 
         if (updateError) throw updateError;
-
-        // Ensure canonical pair exists
-        const { error: ensureError } = await supabase
-          .rpc('ensure_friendship', {
-            u1: friendship.requester,
-            u2: friendship.addressee
-          });
-
-        if (ensureError) throw ensureError;
 
         toast({
           title: "Friend request accepted",
           description: "You are now friends!",
         });
       } else {
+        // Delete using requester and addressee
         const { error } = await supabase
           .from('friendships')
           .delete()
-          .eq('id', requestId);
+          .eq('requester', requesterId)
+          .eq('addressee', user.id);
 
         if (error) throw error;
 
@@ -166,6 +151,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
       // Delete the notification
       await deleteNotification(notificationId);
     } catch (error) {
+      console.error('Error handling friend request:', error);
       toast({
         title: "Error",
         description: "Failed to process friend request.",
@@ -232,11 +218,11 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
                       {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                     </p>
                     
-                    {notification.type === 'friend_request' && notification.related_id && !notification.is_read && (
+                    {notification.type === 'friend_request' && notification.related_user_id && !notification.is_read && (
                       <div className="flex gap-2 mt-3">
                         <Button
                           size="sm"
-                          onClick={() => handleFriendRequest(notification.id, notification.related_id!, true)}
+                          onClick={() => handleFriendRequest(notification.id, notification.related_user_id!, true)}
                           disabled={loading}
                         >
                           <Check size={14} className="mr-1" />
@@ -245,7 +231,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleFriendRequest(notification.id, notification.related_id!, false)}
+                          onClick={() => handleFriendRequest(notification.id, notification.related_user_id!, false)}
                           disabled={loading}
                         >
                           <X size={14} className="mr-1" />
