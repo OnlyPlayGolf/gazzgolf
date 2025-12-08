@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/types/playSetup";
+import { formatHandicap } from "@/utils/handicapFormatter";
 
 interface AddPlayerDialogProps {
   isOpen: boolean;
@@ -152,13 +153,8 @@ export function AddPlayerDialog({
                   {searchQuery ? "No friends found" : "All friends already added"}
                 </p>
               ) : (
-                filteredFriends.map((friend) => {
+              filteredFriends.map((friend) => {
                   const handicap = friend.handicap ? parseFloat(friend.handicap) : undefined;
-                  const formatHandicap = (hcp: number | undefined): string => {
-                    if (hcp === undefined) return "";
-                    if (hcp > 0) return `+${hcp}`;
-                    return `${hcp}`;
-                  };
                   return (
                     <button
                       key={friend.id}
