@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/types/playSetup";
-import { formatHandicap } from "@/utils/handicapFormatter";
+import { formatHandicap, parseHandicapInput } from "@/utils/handicapFormatter";
 
 interface AddPlayerDialogProps {
   isOpen: boolean;
@@ -98,16 +98,25 @@ export function AddPlayerDialog({
     onAddPlayer(player);
   };
 
+  const handleHandicapChange = (value: string) => {
+    // Replace comma with dot immediately
+    let processed = value.replace(",", ".");
+    // Don't allow minus sign - strip it
+    processed = processed.replace("-", "");
+    setTempHandicap(processed);
+  };
+
   const handleAddTempPlayer = () => {
     const baseName = tempName.trim() || "Guest Player";
+    const parsedHandicap = parseHandicapInput(tempHandicap);
     
     const player: Player = {
       odId: `temp_${Date.now()}`,
       teeColor: defaultTee,
-      displayName: baseName, // Store base name, formatting happens in display
+      displayName: baseName,
       username: baseName.toLowerCase().replace(/\s+/g, '_'),
       isTemporary: true,
-      handicap: tempHandicap ? parseFloat(tempHandicap) : undefined,
+      handicap: parsedHandicap,
     };
     onAddPlayer(player);
     setTempName("");
@@ -198,11 +207,15 @@ export function AddPlayerDialog({
               <Label htmlFor="guest-handicap">Handicap (optional)</Label>
               <Input
                 id="guest-handicap"
-                placeholder="e.g. 15"
-                type="number"
+                placeholder="e.g. 15 or +2.4"
+                type="text"
+                inputMode="decimal"
                 value={tempHandicap}
-                onChange={(e) => setTempHandicap(e.target.value)}
+                onChange={(e) => handleHandicapChange(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Use + for plus handicaps (e.g., +2.4). Normal handicaps need no sign.
+              </p>
             </div>
             <Button
               onClick={handleAddTempPlayer}

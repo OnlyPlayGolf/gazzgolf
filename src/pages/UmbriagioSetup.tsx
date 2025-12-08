@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle, UserPlus } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
+import { Player } from "@/types/playSetup";
 
 interface Course {
   id: string;
@@ -85,12 +87,18 @@ export default function UmbriagioSetup() {
   // Game settings
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
   const [teamRotation, setTeamRotation] = useState<TeamRotation>("none");
+  
+  // Add player dialog
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [existingPlayerIds, setExistingPlayerIds] = useState<string[]>([]);
 
   // Load current user and courses on mount
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      
+      setExistingPlayerIds([user.id]);
       
       // Get current user's display name
       const { data: profile } = await supabase
@@ -155,6 +163,30 @@ export default function UmbriagioSetup() {
   }, []);
 
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
+
+  const handleAddPlayer = (player: Player) => {
+    // Find first empty slot
+    const slots = [
+      { value: teamAPlayer2, setter: setTeamAPlayer2 },
+      { value: teamBPlayer1, setter: setTeamBPlayer1 },
+      { value: teamBPlayer2, setter: setTeamBPlayer2 },
+    ];
+    
+    const emptySlot = slots.find(s => !s.value.trim());
+    if (!emptySlot) {
+      toast({ title: "All player slots are filled", variant: "destructive" });
+      return;
+    }
+    
+    emptySlot.setter(player.displayName);
+    
+    if (!player.isTemporary && player.odId) {
+      setExistingPlayerIds(prev => [...prev, player.odId]);
+    }
+    
+    setShowAddPlayer(false);
+    toast({ title: `${player.displayName} added!` });
+  };
 
   const handleStartGame = async () => {
     if (!teamAPlayer1.trim() || !teamAPlayer2.trim() || !teamBPlayer1.trim() || !teamBPlayer2.trim()) {
@@ -288,27 +320,38 @@ export default function UmbriagioSetup() {
                 <Users size={20} className="text-primary" />
                 Teams (2 vs 2)
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2].filter(p => p.trim());
-                  if (players.length < 4) {
-                    toast({ title: "Add all 4 players first", variant: "destructive" });
-                    return;
-                  }
-                  const shuffled = [...players].sort(() => Math.random() - 0.5);
-                  setTeamAPlayer1(shuffled[0]);
-                  setTeamAPlayer2(shuffled[1]);
-                  setTeamBPlayer1(shuffled[2]);
-                  setTeamBPlayer2(shuffled[3]);
-                  toast({ title: "Teams randomized!" });
-                }}
-                className="gap-1"
-              >
-                <Shuffle size={14} />
-                Randomize
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddPlayer(true)}
+                  className="gap-1"
+                >
+                  <UserPlus size={14} />
+                  Add Player
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2].filter(p => p.trim());
+                    if (players.length < 4) {
+                      toast({ title: "Add all 4 players first", variant: "destructive" });
+                      return;
+                    }
+                    const shuffled = [...players].sort(() => Math.random() - 0.5);
+                    setTeamAPlayer1(shuffled[0]);
+                    setTeamAPlayer2(shuffled[1]);
+                    setTeamBPlayer1(shuffled[2]);
+                    setTeamBPlayer2(shuffled[3]);
+                    toast({ title: "Teams randomized!" });
+                  }}
+                  className="gap-1"
+                >
+                  <Shuffle size={14} />
+                  Randomize
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -407,6 +450,14 @@ export default function UmbriagioSetup() {
           {loading ? "Starting..." : "Start Umbriago"}
         </Button>
       </div>
+      
+      <AddPlayerDialog
+        isOpen={showAddPlayer}
+        onClose={() => setShowAddPlayer(false)}
+        onAddPlayer={handleAddPlayer}
+        existingPlayerIds={existingPlayerIds}
+        defaultTee="White"
+      />
     </div>
   );
 }
