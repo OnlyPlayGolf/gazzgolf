@@ -3,17 +3,25 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Plus, X, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Player {
-  userId: string;
+  odId: string;
   teeColor: string;
   displayName: string;
   username: string;
   avatarUrl?: string;
+  isTemporary?: boolean;
+}
+
+// Keep userId for backwards compatibility but internally use odId
+interface PlayerWithUserId extends Player {
+  userId: string;
 }
 
 export default function ManagePlayers() {
@@ -23,10 +31,15 @@ export default function ManagePlayers() {
   
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [friends, setFriends] = useState<any[]>([]);
-  const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
+  const [selectedPlayers, setSelectedPlayers] = useState<PlayerWithUserId[]>([]);
   const [availableTees, setAvailableTees] = useState<string[]>([]);
   const [teeColor, setTeeColor] = useState("");
   const [loading, setLoading] = useState(true);
+  
+  // Temporary player dialog
+  const [showAddTempPlayer, setShowAddTempPlayer] = useState(false);
+  const [tempPlayerName, setTempPlayerName] = useState("");
+  const [tempPlayerHandicap, setTempPlayerHandicap] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -45,7 +58,14 @@ export default function ManagePlayers() {
       const savedPlayers = sessionStorage.getItem('roundPlayers');
       const savedTee = sessionStorage.getItem('userTeeColor');
       if (savedPlayers) {
-        setSelectedPlayers(JSON.parse(savedPlayers));
+        const parsed = JSON.parse(savedPlayers);
+        // Map old format to new format if needed
+        const mapped = parsed.map((p: any) => ({
+          ...p,
+          odId: p.odId || p.userId,
+          userId: p.userId || p.odId
+        }));
+        setSelectedPlayers(mapped);
       }
       if (savedTee) {
         setTeeColor(savedTee);
@@ -130,25 +150,57 @@ export default function ManagePlayers() {
   };
 
   const addPlayer = (friend: any) => {
-    const isAlreadyAdded = selectedPlayers.some(p => p.userId === friend.id);
+    const isAlreadyAdded = selectedPlayers.some(p => p.odId === friend.id);
     if (isAlreadyAdded) return;
 
     setSelectedPlayers(prev => [...prev, {
+      odId: friend.id,
       userId: friend.id,
       teeColor: availableTees[0] || "White",
       displayName: friend.display_name || friend.username,
       username: friend.username,
-      avatarUrl: friend.avatar_url
+      avatarUrl: friend.avatar_url,
+      isTemporary: false
     }]);
   };
 
-  const removePlayer = (userId: string) => {
-    setSelectedPlayers(prev => prev.filter(p => p.userId !== userId));
+  const addTemporaryPlayer = () => {
+    if (!tempPlayerName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter a name for the player",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const tempId = `temp_${Date.now()}`;
+    setSelectedPlayers(prev => [...prev, {
+      odId: tempId,
+      userId: tempId,
+      teeColor: availableTees[0] || "White",
+      displayName: tempPlayerName.trim(),
+      username: tempPlayerName.trim().toLowerCase().replace(/\s+/g, '_'),
+      isTemporary: true
+    }]);
+
+    setTempPlayerName("");
+    setTempPlayerHandicap("");
+    setShowAddTempPlayer(false);
+    
+    toast({
+      title: "Player added",
+      description: `${tempPlayerName} has been added as a temporary player`
+    });
   };
 
-  const updatePlayerTee = (userId: string, newTee: string) => {
+  const removePlayer = (odId: string) => {
+    setSelectedPlayers(prev => prev.filter(p => p.odId !== odId));
+  };
+
+  const updatePlayerTee = (odId: string, newTee: string) => {
     setSelectedPlayers(prev => prev.map(p => 
-      p.userId === userId ? { ...p, teeColor: newTee } : p
+      p.odId === odId ? { ...p, teeColor: newTee } : p
     ));
   };
 
@@ -238,24 +290,31 @@ export default function ManagePlayers() {
 
         {/* Selected Players */}
         {selectedPlayers.map((player) => (
-          <div key={player.userId} className="p-4 rounded-lg border bg-background space-y-4">
+          <div key={player.odId} className="p-4 rounded-lg border bg-background space-y-4">
             <div className="flex items-start gap-3">
               <Avatar className="w-12 h-12">
                 <AvatarImage src={player.avatarUrl} />
-                <AvatarFallback className="bg-primary/10">
+                <AvatarFallback className={player.isTemporary ? "bg-muted" : "bg-primary/10"}>
                   {player.displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold">{player.displayName}</p>
-                    <p className="text-sm text-muted-foreground">Playing HCP: +2</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{player.displayName}</p>
+                      {player.isTemporary && (
+                        <span className="text-xs bg-muted px-2 py-0.5 rounded">Guest</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {player.isTemporary ? "Temporary player" : "Playing HCP: +2"}
+                    </p>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removePlayer(player.userId)}
+                    onClick={() => removePlayer(player.odId)}
                   >
                     <X className="w-5 h-5" />
                   </Button>
@@ -267,7 +326,7 @@ export default function ManagePlayers() {
               <Label className="text-sm">Tee box</Label>
               <Select
                 value={player.teeColor}
-                onValueChange={(value) => updatePlayerTee(player.userId, value)}
+                onValueChange={(value) => updatePlayerTee(player.odId, value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -291,13 +350,23 @@ export default function ManagePlayers() {
             <span className="font-semibold">Add Players & Groups</span>
           </div>
 
+          {/* Add Temporary Player Button */}
+          <Button
+            variant="outline"
+            onClick={() => setShowAddTempPlayer(true)}
+            className="w-full"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add Temporary Player (Guest)
+          </Button>
+
           {friends.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
+            <p className="text-sm text-muted-foreground text-center py-4">
               No friends available. Add friends to play together!
             </p>
           ) : (
             <div className="space-y-2">
-              {friends.filter(f => !selectedPlayers.some(p => p.userId === f.id)).map((friend) => (
+              {friends.filter(f => !selectedPlayers.some(p => p.odId === f.id)).map((friend) => (
                 <button
                   key={friend.id}
                   onClick={() => addPlayer(friend)}
@@ -327,6 +396,49 @@ export default function ManagePlayers() {
           </Button>
         </div>
       </div>
+
+      {/* Add Temporary Player Dialog */}
+      <Dialog open={showAddTempPlayer} onOpenChange={setShowAddTempPlayer}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" />
+              Add Temporary Player
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="temp-name">Player Name *</Label>
+              <Input
+                id="temp-name"
+                placeholder="e.g. John Doe"
+                value={tempPlayerName}
+                onChange={(e) => setTempPlayerName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="temp-handicap">Handicap (optional)</Label>
+              <Input
+                id="temp-handicap"
+                placeholder="e.g. 15"
+                value={tempPlayerHandicap}
+                onChange={(e) => setTempPlayerHandicap(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowAddTempPlayer(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={addTemporaryPlayer} className="flex-1">
+                Add Player
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
