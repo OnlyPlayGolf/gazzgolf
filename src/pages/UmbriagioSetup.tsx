@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dice5, RefreshCw } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -283,9 +283,32 @@ export default function UmbriagioSetup() {
         {/* Teams */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users size={20} className="text-primary" />
-              Teams (2 vs 2)
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-lg">
+                <Users size={20} className="text-primary" />
+                Teams (2 vs 2)
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2].filter(p => p.trim());
+                  if (players.length < 4) {
+                    toast({ title: "Add all 4 players first", variant: "destructive" });
+                    return;
+                  }
+                  const shuffled = [...players].sort(() => Math.random() - 0.5);
+                  setTeamAPlayer1(shuffled[0]);
+                  setTeamAPlayer2(shuffled[1]);
+                  setTeamBPlayer1(shuffled[2]);
+                  setTeamBPlayer2(shuffled[3]);
+                  toast({ title: "Teams randomized!" });
+                }}
+                className="gap-1"
+              >
+                <Shuffle size={14} />
+                Randomize
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
