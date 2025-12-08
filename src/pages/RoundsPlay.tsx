@@ -1,18 +1,26 @@
 import { useState, useEffect } from "react";
-import { Info, Sparkles } from "lucide-react";
+import { Info, Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Users, ChevronRight, Plus } from "lucide-react";
+import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AISetupAssistant } from "@/components/AISetupAssistant";
 import { GameConfiguration } from "@/types/gameConfig";
 import { CourseSelectionDialog } from "@/components/CourseSelectionDialog";
+import { GroupCard } from "@/components/play/GroupCard";
+import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
+import { AIConfigSummary } from "@/components/play/AIConfigSummary";
+import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
+import { cn } from "@/lib/utils";
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -22,106 +30,123 @@ interface Course {
   location: string;
 }
 
-interface CourseHole {
-  hole_number: number;
-  par: number;
-  stroke_index: number;
-  white_distance: number | null;
-  yellow_distance: number | null;
-  blue_distance: number | null;
-  red_distance: number | null;
-  orange_distance: number | null;
-}
-
 export default function RoundsPlay() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Core state
+  const [setupState, setSetupState] = useState<PlaySetupState>(getInitialPlaySetupState());
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showCourseDialog, setShowCourseDialog] = useState(false);
-  const [selectedHoles, setSelectedHoles] = useState<HoleCount>("18");
-  const [roundName, setRoundName] = useState("");
-  const [datePlayer, setDatePlayed] = useState(new Date().toISOString().split('T')[0]);
-  const [teeColor, setTeeColor] = useState("");
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<string[]>([]);
-  const [selectedPlayersCount, setSelectedPlayersCount] = useState(0);
-  const [gameFormat, setGameFormat] = useState<"stroke_play" | "umbriago" | "wolf">("stroke_play");
-  const [strokePlaySettings, setStrokePlaySettings] = useState({
-    mulligansPerPlayer: 0,
-    handicapEnabled: false,
-    gimmesEnabled: false,
-  });
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [courseHoles, setCourseHoles] = useState<{ holeNumber: number; par: number; strokeIndex: number }[]>([]);
+  
+  // UI state
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [settingsExpanded, setSettingsExpanded] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
+    initializeSetup();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      fetchCourseTees(selectedCourse.id);
+      setSetupState(prev => ({
+        ...prev,
+        selectedCourse: { id: selectedCourse.id, name: selectedCourse.name, location: selectedCourse.location }
+      }));
+    }
+  }, [selectedCourse]);
+
+  const initializeSetup = async () => {
+    // Fetch current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      setCurrentUser(profile);
+      
+      // Add current user to first group
+      if (profile) {
+        const currentUserPlayer: Player = {
+          odId: user.id,
+          teeColor: "",
+          displayName: profile.display_name || profile.username || "You",
+          username: profile.username || "",
+          avatarUrl: profile.avatar_url,
+          handicap: profile.handicap ? parseFloat(profile.handicap) : undefined,
+          isTemporary: false,
+        };
+        
+        setSetupState(prev => ({
+          ...prev,
+          groups: [{
+            ...prev.groups[0],
+            players: [currentUserPlayer]
+          }]
+        }));
+      }
+    }
+
+    // Fetch round count for default name
     fetchRoundCount();
     
-    // Check for saved players on mount
-    const savedPlayers = sessionStorage.getItem('roundPlayers');
-    const savedTee = sessionStorage.getItem('userTeeColor');
-    if (savedPlayers) {
-      const players = JSON.parse(savedPlayers);
-      setSelectedPlayersCount(players.length);
-    }
-    if (savedTee) {
-      setTeeColor(savedTee);
-    }
-
-    // Restore game setup state
-    const savedCourse = sessionStorage.getItem('selectedCourse');
-    const savedHoles = sessionStorage.getItem('selectedHoles');
-    const savedRoundName = sessionStorage.getItem('roundName');
-    const savedDate = sessionStorage.getItem('datePlayer');
-    
-    if (savedCourse) {
-      setSelectedCourse(JSON.parse(savedCourse));
-    }
-    if (savedHoles) {
-      setSelectedHoles(savedHoles as HoleCount);
-    }
-    if (savedRoundName) {
-      setRoundName(savedRoundName);
-    }
-    if (savedDate) {
-      setDatePlayed(savedDate);
-    }
-
-    // Restore stroke play settings
-    const savedStrokePlaySettings = sessionStorage.getItem('strokePlaySettings');
-    if (savedStrokePlaySettings) {
-      setStrokePlaySettings(JSON.parse(savedStrokePlaySettings));
-    }
-  }, []);
+    // Restore saved state
+    restoreSavedState();
+  };
 
   const fetchRoundCount = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { count, error } = await supabase
+      const { count } = await supabase
         .from("rounds")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id);
 
-      if (error) throw error;
-      
-      // Only set default if no saved round name exists
       const savedRoundName = sessionStorage.getItem('roundName');
       if (!savedRoundName) {
-        setRoundName(`Round ${(count || 0) + 1}`);
+        setSetupState(prev => ({ ...prev, roundName: `Round ${(count || 0) + 1}` }));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching round count:", error);
-      setRoundName("Round 1");
     }
   };
 
-  useEffect(() => {
-    if (selectedCourse) {
-      fetchCourseTees(selectedCourse.id);
-    }
-  }, [selectedCourse]);
+  const restoreSavedState = () => {
+    const savedCourse = sessionStorage.getItem('selectedCourse');
+    const savedHoles = sessionStorage.getItem('selectedHoles');
+    const savedRoundName = sessionStorage.getItem('roundName');
+    const savedDate = sessionStorage.getItem('datePlayer');
+    const savedGroups = sessionStorage.getItem('playGroups');
+    const savedAIConfig = sessionStorage.getItem('aiGameConfig');
+
+    if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
+    
+    setSetupState(prev => {
+      const updated = { ...prev };
+      if (savedHoles) updated.selectedHoles = savedHoles as HoleCount;
+      if (savedRoundName) updated.roundName = savedRoundName;
+      if (savedDate) updated.datePlayed = savedDate;
+      if (savedGroups) updated.groups = JSON.parse(savedGroups);
+      if (savedAIConfig) {
+        const config = JSON.parse(savedAIConfig);
+        updated.aiConfigApplied = true;
+        updated.aiAssumptions = config.assumptions;
+        updated.aiConfigSummary = `${config.baseFormat?.replace('_', ' ')} with ${config.totalHoles} holes`;
+      }
+      return updated;
+    });
+  };
 
   const fetchCourseTees = async (courseId: string) => {
     try {
@@ -143,41 +168,127 @@ export default function RoundsPlay() {
         if (firstHole.orange_distance) tees.push("Orange");
 
         setAvailableTees(tees);
-        if (tees.length > 0 && !teeColor) {
-          setTeeColor(tees[0]);
+        
+        // Update default tee for all players
+        if (tees.length > 0 && !setupState.teeColor) {
+          setSetupState(prev => ({
+            ...prev,
+            teeColor: tees[0],
+            groups: prev.groups.map(g => ({
+              ...g,
+              players: g.players.map(p => ({ ...p, teeColor: p.teeColor || tees[0] }))
+            }))
+          }));
         }
 
-        // Store course holes for AI assistant
         setCourseHoles(data.map(h => ({
           holeNumber: h.hole_number,
           par: h.par,
           strokeIndex: h.stroke_index
         })));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching tees:", error);
-      setAvailableTees(["White", "Yellow", "Blue", "Red", "Black"]);
+      setAvailableTees(["White", "Yellow", "Blue", "Red"]);
     }
   };
 
-  const handleApplyAIConfig = (config: GameConfiguration) => {
-    // Apply game format
-    if (config.baseFormat === 'stroke_play' || config.baseFormat === 'stableford') {
-      setGameFormat('stroke_play');
-    } else if (config.baseFormat === 'umbriago') {
-      setGameFormat('umbriago');
-    } else if (config.baseFormat === 'wolf') {
-      setGameFormat('wolf');
-    }
+  // Group management
+  const addGroup = () => {
+    setSetupState(prev => ({
+      ...prev,
+      groups: [...prev.groups, createDefaultGroup(prev.groups.length)]
+    }));
+  };
 
-    // Apply stroke play settings
-    setStrokePlaySettings({
-      mulligansPerPlayer: config.mulligansPerPlayer || 0,
-      handicapEnabled: config.useHandicaps,
-      gimmesEnabled: config.gimmesEnabled || false,
+  const updateGroupName = (groupId: string, name: string) => {
+    setSetupState(prev => ({
+      ...prev,
+      groups: prev.groups.map(g => g.id === groupId ? { ...g, name } : g)
+    }));
+  };
+
+  const deleteGroup = (groupId: string) => {
+    setSetupState(prev => ({
+      ...prev,
+      groups: prev.groups.filter(g => g.id !== groupId)
+    }));
+  };
+
+  const addPlayerToGroup = (groupId: string, player: Player) => {
+    player.teeColor = player.teeColor || setupState.teeColor || availableTees[0] || "White";
+    setSetupState(prev => ({
+      ...prev,
+      groups: prev.groups.map(g =>
+        g.id === groupId ? { ...g, players: [...g.players, player] } : g
+      )
+    }));
+    setAddPlayerDialogOpen(false);
+  };
+
+  const removePlayerFromGroup = (groupId: string, playerId: string) => {
+    setSetupState(prev => ({
+      ...prev,
+      groups: prev.groups.map(g =>
+        g.id === groupId ? { ...g, players: g.players.filter(p => p.odId !== playerId) } : g
+      )
+    }));
+  };
+
+  const updatePlayerTee = (groupId: string, playerId: string, tee: string) => {
+    setSetupState(prev => ({
+      ...prev,
+      groups: prev.groups.map(g =>
+        g.id === groupId
+          ? { ...g, players: g.players.map(p => p.odId === playerId ? { ...p, teeColor: tee } : p) }
+          : g
+      )
+    }));
+  };
+
+  const movePlayerToGroup = (sourceGroupId: string, playerId: string, targetGroupId: string) => {
+    setSetupState(prev => {
+      const player = prev.groups.find(g => g.id === sourceGroupId)?.players.find(p => p.odId === playerId);
+      if (!player) return prev;
+
+      return {
+        ...prev,
+        groups: prev.groups.map(g => {
+          if (g.id === sourceGroupId) {
+            return { ...g, players: g.players.filter(p => p.odId !== playerId) };
+          }
+          if (g.id === targetGroupId) {
+            return { ...g, players: [...g.players, player] };
+          }
+          return g;
+        })
+      };
     });
+  };
 
-    // Store AI config for downstream pages
+  // AI config handler
+  const handleApplyAIConfig = (config: GameConfiguration) => {
+    const format = config.baseFormat === 'stroke_play' || config.baseFormat === 'stableford'
+      ? 'stroke_play'
+      : config.baseFormat === 'umbriago'
+      ? 'umbriago'
+      : config.baseFormat === 'wolf'
+      ? 'wolf'
+      : 'stroke_play';
+
+    setSetupState(prev => ({
+      ...prev,
+      gameFormat: format as any,
+      strokePlaySettings: {
+        mulligansPerPlayer: config.mulligansPerPlayer || 0,
+        handicapEnabled: config.useHandicaps,
+        gimmesEnabled: config.gimmesEnabled || false,
+      },
+      aiConfigApplied: true,
+      aiConfigSummary: `${config.baseFormat?.replace('_', ' ')} with ${config.totalHoles} holes`,
+      aiAssumptions: config.assumptions,
+    }));
+
     sessionStorage.setItem('aiGameConfig', JSON.stringify(config));
     
     toast({
@@ -186,64 +297,59 @@ export default function RoundsPlay() {
     });
   };
 
-
-  const handleCourseSelect = (course: Course) => {
-    setSelectedCourse(course);
-    setShowCourseDialog(false);
+  // Save state before navigation
+  const saveState = () => {
+    if (selectedCourse) sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+    sessionStorage.setItem('selectedHoles', setupState.selectedHoles);
+    sessionStorage.setItem('roundName', setupState.roundName);
+    sessionStorage.setItem('datePlayer', setupState.datePlayed);
+    sessionStorage.setItem('playGroups', JSON.stringify(setupState.groups));
   };
 
   const getHolesPlayed = (holeCount: HoleCount): number => {
     switch (holeCount) {
-      case "front9":
-        return 9;
-      case "back9":
-        return 9;
-      default:
-        return 18;
+      case "front9": return 9;
+      case "back9": return 9;
+      default: return 18;
     }
   };
 
+  const getTotalPlayers = () => setupState.groups.reduce((acc, g) => acc + g.players.length, 0);
+
+  const getAllPlayerIds = () => setupState.groups.flatMap(g => g.players.map(p => p.odId));
+
   const handleStartRound = async () => {
     if (!selectedCourse) {
-      toast({
-        title: "Course required",
-        description: "Please select a course",
-        variant: "destructive",
-      });
+      toast({ title: "Course required", description: "Please select a course", variant: "destructive" });
       return;
     }
 
-    if (!teeColor) {
-      toast({
-        title: "Tee color required",
-        description: "Please select a tee color",
-        variant: "destructive",
-      });
+    if (getTotalPlayers() === 0) {
+      toast({ title: "Players required", description: "Add at least one player", variant: "destructive" });
       return;
     }
 
-    // Save course to sessionStorage for all game formats
-    sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
-    sessionStorage.setItem('selectedHoles', selectedHoles);
+    saveState();
 
-    // If Stroke Play is selected, navigate to Stroke Play setup
-    if (gameFormat === "stroke_play") {
+    // Store players for downstream pages (backwards compatibility)
+    const allPlayers = setupState.groups.flatMap(g => g.players);
+    sessionStorage.setItem('roundPlayers', JSON.stringify(allPlayers.slice(1))); // Exclude current user
+    sessionStorage.setItem('userTeeColor', allPlayers[0]?.teeColor || setupState.teeColor);
+
+    if (setupState.gameFormat === "umbriago") {
+      navigate('/umbriago/setup');
+      return;
+    }
+    if (setupState.gameFormat === "wolf") {
+      navigate('/wolf/setup');
+      return;
+    }
+    if (setupState.gameFormat === "stroke_play") {
       navigate('/stroke-play/setup');
       return;
     }
 
-    // If Umbriago is selected, navigate to Umbriago setup
-    if (gameFormat === "umbriago") {
-      navigate('/umbriago/setup');
-      return;
-    }
-
-    // If Wolf is selected, navigate to Wolf setup
-    if (gameFormat === "wolf") {
-      navigate('/wolf/setup');
-      return;
-    }
-
+    // Default: start tracking
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -254,108 +360,95 @@ export default function RoundsPlay() {
 
       const { data: round, error } = await supabase
         .from("rounds")
-        .insert([
-          {
-            user_id: user.id,
-            course_name: selectedCourse.name,
-            tee_set: teeColor,
-            holes_played: getHolesPlayed(selectedHoles),
-            origin: 'play',
-            date_played: datePlayer,
-          },
-        ])
+        .insert([{
+          user_id: user.id,
+          course_name: selectedCourse.name,
+          tee_set: setupState.teeColor,
+          holes_played: getHolesPlayed(setupState.selectedHoles as HoleCount),
+          origin: 'play',
+          date_played: setupState.datePlayed,
+        }])
         .select()
         .single();
 
       if (error) throw error;
 
-      // Get saved players from sessionStorage
-      const savedPlayers = sessionStorage.getItem('roundPlayers');
-      const savedTee = sessionStorage.getItem('userTeeColor');
-      
-      // Add current user as first player with their tee
-      const playersToAdd = [{
-        round_id: round.id,
-        user_id: user.id,
-        tee_color: savedTee || teeColor
-      }];
+      // Add players
+      const playersToAdd = setupState.groups.flatMap(g =>
+        g.players
+          .filter(p => !p.isTemporary)
+          .map(p => ({ round_id: round.id, user_id: p.odId, tee_color: p.teeColor }))
+      );
 
-      // Add selected friends with their tees
-      if (savedPlayers) {
-        const players = JSON.parse(savedPlayers);
-        players.forEach((player: any) => {
-          playersToAdd.push({
-            round_id: round.id,
-            user_id: player.userId,
-            tee_color: player.teeColor
-          });
-        });
+      if (playersToAdd.length > 0) {
+        await supabase.from('round_players').insert(playersToAdd);
       }
 
-      const { error: playersError } = await supabase
-        .from('round_players')
-        .insert(playersToAdd);
-
-      if (playersError) {
-        console.error("Error adding players:", playersError);
-        // Continue anyway since the round was created
-      }
-
-      // Clear sessionStorage
+      // Clear storage
       sessionStorage.removeItem('roundPlayers');
       sessionStorage.removeItem('userTeeColor');
       sessionStorage.removeItem('selectedCourse');
-      sessionStorage.removeItem('selectedHoles');
-      sessionStorage.removeItem('roundName');
-      sessionStorage.removeItem('datePlayer');
+      sessionStorage.removeItem('playGroups');
+      sessionStorage.removeItem('aiGameConfig');
 
-      toast({
-        title: "Round started!",
-        description: `Good luck at ${selectedCourse.name}`,
-      });
-
+      toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
       navigate(`/rounds/${round.id}/track`);
     } catch (error: any) {
-      toast({
-        title: "Error creating round",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Error creating round", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const openPlayersPage = () => {
-    // Save game setup state before navigating
-    if (selectedCourse) {
-      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
-    }
-    sessionStorage.setItem('selectedHoles', selectedHoles);
-    sessionStorage.setItem('roundName', roundName);
-    sessionStorage.setItem('datePlayer', datePlayer);
-    
-    const tees = availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"];
-    navigate(`/rounds/manage-players?tees=${tees.join(',')}`);
-  };
-
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
-      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-6">
-        {/* Game Setup */}
+      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
+        
+        {/* Header Card - Round Info */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="text-primary" size={20} />
-              Game Setup
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Round Setup</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Round Name & Date Row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Round Name</Label>
+                <Input
+                  value={setupState.roundName}
+                  onChange={(e) => setSetupState(prev => ({ ...prev, roundName: e.target.value }))}
+                  placeholder="Round 1"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {format(new Date(setupState.datePlayed), "MMM d, yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={new Date(setupState.datePlayed)}
+                      onSelect={(date) => date && setSetupState(prev => ({ 
+                        ...prev, 
+                        datePlayed: date.toISOString().split('T')[0] 
+                      }))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
             {/* Course Selection */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MapPin size={16} />
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
                 Course
               </Label>
               {!selectedCourse ? (
@@ -371,14 +464,10 @@ export default function RoundsPlay() {
                 <div className="p-3 rounded-lg border-2 border-primary bg-primary/5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-sm">{selectedCourse.name}</div>
-                      <div className="text-xs text-muted-foreground">{selectedCourse.location}</div>
+                      <p className="font-semibold text-sm">{selectedCourse.name}</p>
+                      <p className="text-xs text-muted-foreground">{selectedCourse.location}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowCourseDialog(true)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setShowCourseDialog(true)}>
                       Change
                     </Button>
                   </div>
@@ -387,192 +476,161 @@ export default function RoundsPlay() {
             </div>
 
             {/* Holes Selection */}
-            <div className="space-y-2">
-              <Label>Holes</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Holes</Label>
               <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => setSelectedHoles("18")}
-                  className={`p-3 rounded-lg border-2 text-center transition-all ${
-                    selectedHoles === "18"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="font-semibold text-sm">Full 18</div>
-                </button>
-                <button
-                  onClick={() => setSelectedHoles("front9")}
-                  className={`p-3 rounded-lg border-2 text-center transition-all ${
-                    selectedHoles === "front9"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="font-semibold text-sm">Front 9</div>
-                </button>
-                <button
-                  onClick={() => setSelectedHoles("back9")}
-                  className={`p-3 rounded-lg border-2 text-center transition-all ${
-                    selectedHoles === "back9"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="font-semibold text-sm">Back 9</div>
-                </button>
+                {(["18", "front9", "back9"] as const).map((holes) => (
+                  <button
+                    key={holes}
+                    onClick={() => setSetupState(prev => ({ ...prev, selectedHoles: holes }))}
+                    className={cn(
+                      "p-2.5 rounded-lg border-2 text-center transition-all text-sm font-medium",
+                      setupState.selectedHoles === holes
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    )}
+                  >
+                    {holes === "18" ? "Full 18" : holes === "front9" ? "Front 9" : "Back 9"}
+                  </button>
+                ))}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="round-name">Round Name</Label>
-              <Input
-                id="round-name"
-                value={roundName}
-                onChange={(e) => setRoundName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tee-color">Tee Color</Label>
-              <Select value={teeColor} onValueChange={setTeeColor}>
-                <SelectTrigger id="tee-color">
-                  <SelectValue placeholder="Select tee color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTees.length > 0 ? (
-                    availableTees.map((tee) => (
-                      <SelectItem key={tee} value={tee}>
-                        {tee}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <>
-                      <SelectItem value="White">White</SelectItem>
-                      <SelectItem value="Yellow">Yellow</SelectItem>
-                      <SelectItem value="Blue">Blue</SelectItem>
-                      <SelectItem value="Red">Red</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Player Management */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Players</Label>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start gap-2"
-                onClick={openPlayersPage}
-              >
-                <Plus className="w-4 h-4" />
-                Add Players
-                {selectedPlayersCount > 0 && (
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    +{selectedPlayersCount} player{selectedPlayersCount !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Game Format</Label>
-              <div className="space-y-2">
-                <div className="relative">
-                  <button
-                    onClick={() => setGameFormat("stroke_play")}
-                    className={`w-full p-3 rounded-lg border-2 text-left transition-all pr-12 ${
-                      gameFormat === "stroke_play"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="font-semibold text-sm">Stroke Play</div>
-                    <div className="text-xs text-muted-foreground">
-                      Standard scoring format
-                      {(strokePlaySettings.mulligansPerPlayer > 0 || strokePlaySettings.handicapEnabled || strokePlaySettings.gimmesEnabled) && (
-                        <span className="ml-1 text-primary">
-                          ({[
-                            strokePlaySettings.mulligansPerPlayer > 0 ? `${strokePlaySettings.mulligansPerPlayer} mulligan${strokePlaySettings.mulligansPerPlayer !== 1 ? 's' : ''}` : '',
-                            strokePlaySettings.handicapEnabled ? 'HCP' : '',
-                            strokePlaySettings.gimmesEnabled ? 'Gimmes' : ''
-                          ].filter(Boolean).join(', ')})
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/stroke-play/settings');
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted transition-colors"
-                  >
-                    <Info size={18} className="text-muted-foreground" />
-                  </button>
-                </div>
-                <div className="relative">
-                  <button
-                    onClick={() => setGameFormat("umbriago")}
-                    className={`w-full p-3 rounded-lg border-2 text-left transition-all pr-12 ${
-                      gameFormat === "umbriago"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="font-semibold text-sm">Umbriago</div>
-                    <div className="text-xs text-muted-foreground">2v2 team game without handicap</div>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/umbriago/how-to-play');
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted transition-colors"
-                  >
-                    <Info size={18} className="text-muted-foreground" />
-                  </button>
-                </div>
-                <div className="relative">
-                  <button
-                    onClick={() => setGameFormat("wolf")}
-                    className={`w-full p-3 rounded-lg border-2 text-left transition-all pr-12 ${
-                      gameFormat === "wolf"
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="font-semibold text-sm">🐺 Wolf</div>
-                    <div className="text-xs text-muted-foreground">3-5 players, Wolf picks partner or goes solo</div>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate('/wolf/how-to-play');
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted transition-colors"
-                  >
-                    <Info size={18} className="text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Button
-                onClick={handleStartRound}
-                disabled={loading || !selectedCourse}
-                className="w-full"
-                size="lg"
-              >
-                {loading ? "Starting..." : "Start Round"}
-              </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* AI Config Summary */}
+        <AIConfigSummary
+          isApplied={setupState.aiConfigApplied}
+          summary={setupState.aiConfigSummary}
+          assumptions={setupState.aiAssumptions}
+        />
+
+        {/* Groups & Players */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Groups & Players
+              </CardTitle>
+              <span className="text-sm text-muted-foreground">
+                {getTotalPlayers()} player{getTotalPlayers() !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {setupState.groups.map((group, index) => (
+              <GroupCard
+                key={group.id}
+                group={group}
+                groupIndex={index}
+                availableTees={availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]}
+                canDelete={setupState.groups.length > 1}
+                onUpdateName={(name) => updateGroupName(group.id, name)}
+                onAddPlayer={() => {
+                  setActiveGroupId(group.id);
+                  setAddPlayerDialogOpen(true);
+                }}
+                onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
+                onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
+                onMovePlayer={(playerId, targetGroupId) => movePlayerToGroup(group.id, playerId, targetGroupId)}
+                onDeleteGroup={() => deleteGroup(group.id)}
+                otherGroups={setupState.groups.filter(g => g.id !== group.id)}
+              />
+            ))}
+            
+            <Button variant="outline" className="w-full" onClick={addGroup}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Group
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Game Settings */}
+        <Collapsible open={settingsExpanded} onOpenChange={setSettingsExpanded}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Game Settings</CardTitle>
+                  {settingsExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4 pt-0">
+                {/* Tee Color */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Default Tee</Label>
+                  <Select
+                    value={setupState.teeColor}
+                    onValueChange={(tee) => setSetupState(prev => ({ ...prev, teeColor: tee }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select tee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]).map((tee) => (
+                        <SelectItem key={tee} value={tee}>{tee}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Game Format */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Game Format</Label>
+                  <div className="space-y-2">
+                    {[
+                      { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
+                      { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
+                      { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
+                    ].map((fmt) => (
+                      <div key={fmt.id} className="relative">
+                        <button
+                          onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
+                          className={cn(
+                            "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
+                            setupState.gameFormat === fmt.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <p className="font-semibold text-sm">{fmt.label}</p>
+                          <p className="text-xs text-muted-foreground">{fmt.desc}</p>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
+                            else if (fmt.id === "umbriago") navigate('/umbriago/how-to-play');
+                            else navigate('/wolf/how-to-play');
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
+                        >
+                          <Info size={16} className="text-muted-foreground" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Start Button */}
+        <Button
+          onClick={handleStartRound}
+          disabled={loading || !selectedCourse}
+          className="w-full h-12 text-base font-semibold"
+          size="lg"
+        >
+          {loading ? "Starting..." : "Start Round"}
+        </Button>
       </div>
 
-      {/* AI Assistant Floating Button */}
+      {/* AI Assistant FAB */}
       <Button
         onClick={() => setShowAIAssistant(true)}
         className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg"
@@ -581,24 +639,34 @@ export default function RoundsPlay() {
         <Sparkles className="w-6 h-6" />
       </Button>
 
-      {/* AI Setup Assistant */}
+      {/* Dialogs */}
       <AISetupAssistant
         isOpen={showAIAssistant}
         onClose={() => setShowAIAssistant(false)}
         courseInfo={selectedCourse ? {
           courseName: selectedCourse.name,
           availableTees,
-          defaultHoles: getHolesPlayed(selectedHoles),
+          defaultHoles: getHolesPlayed(setupState.selectedHoles as HoleCount),
           courseHoles,
         } : undefined}
         onApplyConfig={handleApplyAIConfig}
       />
 
-      {/* Course Selection Dialog */}
       <CourseSelectionDialog
         isOpen={showCourseDialog}
         onClose={() => setShowCourseDialog(false)}
-        onSelectCourse={handleCourseSelect}
+        onSelectCourse={(course) => {
+          setSelectedCourse(course);
+          setShowCourseDialog(false);
+        }}
+      />
+
+      <AddPlayerDialog
+        isOpen={addPlayerDialogOpen}
+        onClose={() => setAddPlayerDialogOpen(false)}
+        onAddPlayer={(player) => activeGroupId && addPlayerToGroup(activeGroupId, player)}
+        existingPlayerIds={getAllPlayerIds()}
+        defaultTee={setupState.teeColor || availableTees[0] || "White"}
       />
     </div>
   );
