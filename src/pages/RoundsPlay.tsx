@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Info, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Search, Calendar, MapPin, Users, ChevronRight, Plus } from "lucide-react";
+import { MapPin, Users, ChevronRight, Plus } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AISetupAssistant } from "@/components/AISetupAssistant";
 import { GameConfiguration } from "@/types/gameConfig";
+import { CourseSelectionDialog } from "@/components/CourseSelectionDialog";
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -35,10 +36,8 @@ interface CourseHole {
 export default function RoundsPlay() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [selectedHoles, setSelectedHoles] = useState<HoleCount>("18");
   const [roundName, setRoundName] = useState("");
   const [datePlayer, setDatePlayed] = useState(new Date().toISOString().split('T')[0]);
@@ -56,7 +55,6 @@ export default function RoundsPlay() {
   const [courseHoles, setCourseHoles] = useState<{ holeNumber: number; par: number; strokeIndex: number }[]>([]);
 
   useEffect(() => {
-    fetchCourses();
     fetchRoundCount();
     
     // Check for saved players on mount
@@ -120,37 +118,10 @@ export default function RoundsPlay() {
   };
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = courses.filter((course) =>
-        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.location.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredCourses(filtered);
-    } else {
-      setFilteredCourses(courses);
-    }
-  }, [searchQuery, courses]);
-
-  useEffect(() => {
     if (selectedCourse) {
       fetchCourseTees(selectedCourse.id);
     }
   }, [selectedCourse]);
-
-  const fetchCourses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setCourses(data || []);
-      setFilteredCourses(data || []);
-    } catch (error: any) {
-      console.error("Error fetching courses:", error);
-    }
-  };
 
   const fetchCourseTees = async (courseId: string) => {
     try {
@@ -218,7 +189,7 @@ export default function RoundsPlay() {
 
   const handleCourseSelect = (course: Course) => {
     setSelectedCourse(course);
-    setSearchQuery("");
+    setShowCourseDialog(false);
   };
 
   const getHolesPlayed = (holeCount: HoleCount): number => {
@@ -388,31 +359,14 @@ export default function RoundsPlay() {
                 Course
               </Label>
               {!selectedCourse ? (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                    <Input
-                      placeholder="Search courses..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                  {filteredCourses.length > 0 && searchQuery && (
-                    <div className="space-y-1 max-h-40 overflow-y-auto border rounded-lg p-2">
-                      {filteredCourses.slice(0, 5).map((course) => (
-                        <button
-                          key={course.id}
-                          onClick={() => handleCourseSelect(course)}
-                          className="w-full p-2 rounded-md hover:bg-muted text-left text-sm"
-                        >
-                          <div className="font-medium">{course.name}</div>
-                          <div className="text-xs text-muted-foreground">{course.location}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setShowCourseDialog(true)}
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Select a course...
+                </Button>
               ) : (
                 <div className="p-3 rounded-lg border-2 border-primary bg-primary/5">
                   <div className="flex items-center justify-between">
@@ -423,10 +377,7 @@ export default function RoundsPlay() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        setSelectedCourse(null);
-                        setTeeColor("");
-                      }}
+                      onClick={() => setShowCourseDialog(true)}
                     >
                       Change
                     </Button>
@@ -641,6 +592,13 @@ export default function RoundsPlay() {
           courseHoles,
         } : undefined}
         onApplyConfig={handleApplyAIConfig}
+      />
+
+      {/* Course Selection Dialog */}
+      <CourseSelectionDialog
+        isOpen={showCourseDialog}
+        onClose={() => setShowCourseDialog(false)}
+        onSelectCourse={handleCourseSelect}
       />
     </div>
   );
