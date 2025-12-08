@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dice5 } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5, RefreshCw } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,57 @@ interface Course {
   id: string;
   name: string;
   location: string | null;
+}
+
+type TeamRotation = "none" | "every9" | "every6";
+
+interface TeamCombination {
+  teamA: [string, string];
+  teamB: [string, string];
+}
+
+// Generate all unique team combinations for 4 players
+function generateTeamCombinations(players: string[]): TeamCombination[] {
+  if (players.length !== 4) return [];
+  const [a, b, c, d] = players;
+  return [
+    { teamA: [a, b], teamB: [c, d] },
+    { teamA: [a, c], teamB: [b, d] },
+    { teamA: [a, d], teamB: [b, c] },
+  ];
+}
+
+// Generate rotation schedule ensuring no repeated teams
+function generateRotationSchedule(
+  players: string[],
+  rotation: TeamRotation,
+  initialTeams: TeamCombination
+): TeamCombination[] {
+  if (rotation === "none") {
+    return [initialTeams];
+  }
+
+  const allCombinations = generateTeamCombinations(players);
+  const numSegments = rotation === "every9" ? 2 : 3;
+  
+  // Find the index of the initial combination
+  const initialIndex = allCombinations.findIndex(
+    c => c.teamA.sort().join() === initialTeams.teamA.sort().join()
+  );
+
+  // Shuffle remaining combinations
+  const remaining = allCombinations.filter((_, i) => i !== initialIndex);
+  const shuffled = [...remaining].sort(() => Math.random() - 0.5);
+
+  const schedule: TeamCombination[] = [initialTeams];
+  
+  for (let i = 1; i < numSegments; i++) {
+    if (shuffled.length > 0) {
+      schedule.push(shuffled[i - 1]);
+    }
+  }
+
+  return schedule;
 }
 
 export default function UmbriagioSetup() {
@@ -33,6 +84,7 @@ export default function UmbriagioSetup() {
   
   // Game settings
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
+  const [teamRotation, setTeamRotation] = useState<TeamRotation>("none");
 
   // Load current user and courses on mount
   useEffect(() => {
@@ -118,6 +170,15 @@ export default function UmbriagioSetup() {
         return;
       }
 
+      // Generate rotation schedule if enabled
+      const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2];
+      const initialTeams: TeamCombination = {
+        teamA: [teamAPlayer1, teamAPlayer2],
+        teamB: [teamBPlayer1, teamBPlayer2]
+      };
+      
+      const rotationSchedule = generateRotationSchedule(players, teamRotation, initialTeams);
+
       const { data: game, error } = await supabase
         .from("umbriago_games")
         .insert({
@@ -138,6 +199,14 @@ export default function UmbriagioSetup() {
 
       if (error) throw error;
 
+      // Store rotation schedule in sessionStorage for gameplay
+      if (teamRotation !== "none") {
+        sessionStorage.setItem(`umbriago_rotation_${game.id}`, JSON.stringify({
+          type: teamRotation,
+          schedule: rotationSchedule
+        }));
+      }
+
       toast({ title: "Umbriago game started!" });
       navigate(`/umbriago/${game.id}/play`);
     } catch (error: any) {
@@ -145,6 +214,35 @@ export default function UmbriagioSetup() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getRotationPreview = () => {
+    if (teamRotation === "none") return null;
+    
+    const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2];
+    if (players.some(p => !p.trim())) return null;
+
+    const initialTeams: TeamCombination = {
+      teamA: [teamAPlayer1, teamAPlayer2],
+      teamB: [teamBPlayer1, teamBPlayer2]
+    };
+
+    const schedule = generateRotationSchedule(players, teamRotation, initialTeams);
+    const holesPerSegment = teamRotation === "every9" ? 9 : 6;
+
+    return (
+      <div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">Rotation Preview:</p>
+        {schedule.map((combo, i) => (
+          <div key={i} className="text-sm">
+            <span className="font-medium">Holes {i * holesPerSegment + 1}-{(i + 1) * holesPerSegment}:</span>
+            <span className="ml-2 text-blue-600">{combo.teamA.join(" & ")}</span>
+            <span className="mx-1">vs</span>
+            <span className="text-red-600">{combo.teamB.join(" & ")}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -238,7 +336,7 @@ export default function UmbriagioSetup() {
               Game Settings
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Rolls per Team</Label>
               <Select value={rollsPerTeam.toString()} onValueChange={(v) => setRollsPerTeam(parseInt(v))}>
@@ -255,6 +353,29 @@ export default function UmbriagioSetup() {
               <p className="text-xs text-muted-foreground">
                 A Roll halves your team's points and doubles the next hole
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <RefreshCw size={14} />
+                Team Rotation
+              </Label>
+              <Select value={teamRotation} onValueChange={(v) => setTeamRotation(v as TeamRotation)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Rotation (Fixed Teams)</SelectItem>
+                  <SelectItem value="every9">Rotate Every 9 Holes</SelectItem>
+                  <SelectItem value="every6">Rotate Every 6 Holes</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {teamRotation === "none" && "Teams stay the same for all 18 holes"}
+                {teamRotation === "every9" && "Teams shuffle randomly after 9 holes (2 different team combinations)"}
+                {teamRotation === "every6" && "Teams shuffle randomly every 6 holes (3 different team combinations)"}
+              </p>
+              {getRotationPreview()}
             </div>
           </CardContent>
         </Card>
