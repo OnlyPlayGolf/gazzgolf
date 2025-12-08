@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlayerGroup, Player } from "@/types/playSetup";
+import { formatHandicapWithLabel } from "@/utils/handicapFormatter";
 
 interface GroupCardProps {
   group: PlayerGroup;
@@ -22,16 +23,11 @@ interface GroupCardProps {
   dragHandleProps?: any;
 }
 
-const formatHandicap = (handicap: number | undefined): string => {
-  if (handicap === undefined) return "";
-  if (handicap > 0) return `+${handicap}`;
-  return `${handicap}`;
-};
-
 const formatPlayerName = (player: Player): string => {
+  // For temporary players, just show their name without "(Guest)" suffix
   if (player.isTemporary) {
     const baseName = player.displayName.replace(" (Guest)", "");
-    return `${baseName || "Guest Player"} (Guest)`;
+    return baseName || "Guest Player";
   }
   return player.displayName;
 };
@@ -159,7 +155,7 @@ export function GroupCard({
                               </p>
                               {player.handicap !== undefined && (
                                 <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                  HCP: {formatHandicap(player.handicap)}
+                                  {formatHandicapWithLabel(player.handicap)}
                                 </p>
                               )}
                             </div>

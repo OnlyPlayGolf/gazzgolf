@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Player } from "@/types/playSetup";
+import { formatHandicap } from "@/utils/handicapFormatter";
 
 interface PlayerEditSheetProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function PlayerEditSheet({
         ? player.displayName.replace(" (Guest)", "") 
         : player.displayName
       );
+      // Display the handicap without any prefix for editing
       setHandicap(player.handicap !== undefined ? String(player.handicap) : "");
       setTeeColor(player.teeColor);
     }
@@ -73,7 +75,7 @@ export function PlayerEditSheet({
             />
             {!player.isTemporary && (
               <p className="text-xs text-muted-foreground">
-                Only guest player names can be edited
+                Only temporary player names can be edited
               </p>
             )}
           </div>
@@ -86,8 +88,11 @@ export function PlayerEditSheet({
               step="0.1"
               value={handicap}
               onChange={(e) => setHandicap(e.target.value)}
-              placeholder="e.g. 15 or -2.4"
+              placeholder="e.g. 15 or -2.4 for plus handicap"
             />
+            <p className="text-xs text-muted-foreground">
+              Enter negative values for plus handicaps (e.g., -2.4 displays as +2.4)
+            </p>
           </div>
 
           <div className="space-y-2">
