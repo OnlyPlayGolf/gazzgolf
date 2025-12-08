@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Info, Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export default function RoundsPlay() {
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [settingsExpanded, setSettingsExpanded] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 
   useEffect(() => {
     initializeSetup();
@@ -246,24 +248,43 @@ export default function RoundsPlay() {
     }));
   };
 
-  const movePlayerToGroup = (sourceGroupId: string, playerId: string, targetGroupId: string) => {
-    setSetupState(prev => {
-      const player = prev.groups.find(g => g.id === sourceGroupId)?.players.find(p => p.odId === playerId);
-      if (!player) return prev;
+  // Drag and drop handler
+  const handleDragEnd = (result: DropResult) => {
+    const { source, destination } = result;
+    
+    // Dropped outside a droppable
+    if (!destination) return;
+    
+    // No movement
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-      return {
-        ...prev,
-        groups: prev.groups.map(g => {
-          if (g.id === sourceGroupId) {
-            return { ...g, players: g.players.filter(p => p.odId !== playerId) };
-          }
-          if (g.id === targetGroupId) {
-            return { ...g, players: [...g.players, player] };
-          }
-          return g;
-        })
-      };
+    setSetupState(prev => {
+      const newGroups = [...prev.groups];
+      const sourceGroup = newGroups.find(g => g.id === source.droppableId);
+      const destGroup = newGroups.find(g => g.id === destination.droppableId);
+      
+      if (!sourceGroup || !destGroup) return prev;
+      
+      // Remove from source
+      const [movedPlayer] = sourceGroup.players.splice(source.index, 1);
+      
+      // Add to destination
+      destGroup.players.splice(destination.index, 0, movedPlayer);
+      
+      return { ...prev, groups: newGroups };
     });
+  };
+
+  // Update all players' tees when default tee changes
+  const handleDefaultTeeChange = (tee: string) => {
+    setSetupState(prev => ({
+      ...prev,
+      teeColor: tee,
+      groups: prev.groups.map(g => ({
+        ...g,
+        players: g.players.map(p => ({ ...p, teeColor: tee }))
+      }))
+    }));
   };
 
   // AI config handler
@@ -423,22 +444,31 @@ export default function RoundsPlay() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Date</Label>
-                <Popover>
+                <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <Calendar className="mr-2 h-4 w-4" />
-                      {format(new Date(setupState.datePlayed), "MMM d, yyyy")}
+                      {format(new Date(setupState.datePlayed + 'T12:00:00'), "MMM d, yyyy")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
-                      selected={new Date(setupState.datePlayed)}
-                      onSelect={(date) => date && setSetupState(prev => ({ 
-                        ...prev, 
-                        datePlayed: date.toISOString().split('T')[0] 
-                      }))}
+                      selected={new Date(setupState.datePlayed + 'T12:00:00')}
+                      onSelect={(date) => {
+                        if (date) {
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          setSetupState(prev => ({ 
+                            ...prev, 
+                            datePlayed: `${year}-${month}-${day}`
+                          }));
+                          setDatePopoverOpen(false);
+                        }
+                      }}
                       initialFocus
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -519,25 +549,25 @@ export default function RoundsPlay() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {setupState.groups.map((group, index) => (
-              <GroupCard
-                key={group.id}
-                group={group}
-                groupIndex={index}
-                availableTees={availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]}
-                canDelete={setupState.groups.length > 1}
-                onUpdateName={(name) => updateGroupName(group.id, name)}
-                onAddPlayer={() => {
-                  setActiveGroupId(group.id);
-                  setAddPlayerDialogOpen(true);
-                }}
-                onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
-                onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
-                onMovePlayer={(playerId, targetGroupId) => movePlayerToGroup(group.id, playerId, targetGroupId)}
-                onDeleteGroup={() => deleteGroup(group.id)}
-                otherGroups={setupState.groups.filter(g => g.id !== group.id)}
-              />
-            ))}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              {setupState.groups.map((group, index) => (
+                <GroupCard
+                  key={group.id}
+                  group={group}
+                  groupIndex={index}
+                  availableTees={availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]}
+                  canDelete={setupState.groups.length > 1}
+                  onUpdateName={(name) => updateGroupName(group.id, name)}
+                  onAddPlayer={() => {
+                    setActiveGroupId(group.id);
+                    setAddPlayerDialogOpen(true);
+                  }}
+                  onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
+                  onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
+                  onDeleteGroup={() => deleteGroup(group.id)}
+                />
+              ))}
+            </DragDropContext>
             
             <Button variant="outline" className="w-full" onClick={addGroup}>
               <Plus className="w-4 h-4 mr-2" />
@@ -564,7 +594,7 @@ export default function RoundsPlay() {
                   <Label className="text-xs">Default Tee</Label>
                   <Select
                     value={setupState.teeColor}
-                    onValueChange={(tee) => setSetupState(prev => ({ ...prev, teeColor: tee }))}
+                    onValueChange={handleDefaultTeeChange}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select tee" />

@@ -152,27 +152,38 @@ export function AddPlayerDialog({
                   {searchQuery ? "No friends found" : "All friends already added"}
                 </p>
               ) : (
-                filteredFriends.map((friend) => (
-                  <button
-                    key={friend.id}
-                    onClick={() => handleAddFriend(friend)}
-                    className="w-full p-3 rounded-lg border hover:bg-accent transition-colors flex items-center gap-3 text-left"
-                  >
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={friend.avatar_url} />
-                      <AvatarFallback className="bg-primary/10 text-xs">
-                        {(friend.display_name || friend.username)?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {friend.display_name || friend.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground">@{friend.username}</p>
-                    </div>
-                    <Plus className="w-5 h-5 text-primary" />
-                  </button>
-                ))
+                filteredFriends.map((friend) => {
+                  const handicap = friend.handicap ? parseFloat(friend.handicap) : undefined;
+                  const formatHandicap = (hcp: number | undefined): string => {
+                    if (hcp === undefined) return "";
+                    if (hcp > 0) return `+${hcp}`;
+                    return `${hcp}`;
+                  };
+                  return (
+                    <button
+                      key={friend.id}
+                      onClick={() => handleAddFriend(friend)}
+                      className="w-full p-3 rounded-lg border hover:bg-accent transition-colors flex items-center gap-3 text-left"
+                    >
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={friend.avatar_url} />
+                        <AvatarFallback className="bg-primary/10 text-xs">
+                          {(friend.display_name || friend.username)?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {friend.display_name || friend.username}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          @{friend.username}
+                          {handicap !== undefined && ` · HCP: ${formatHandicap(handicap)}`}
+                        </p>
+                      </div>
+                      <Plus className="w-5 h-5 text-primary" />
+                    </button>
+                  );
+                })
               )}
             </div>
           </TabsContent>

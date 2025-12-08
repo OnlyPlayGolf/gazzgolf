@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { GripVertical, Pencil, Plus, Trash2, X, Users } from "lucide-react";
+import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,14 @@ interface GroupCardProps {
   onAddPlayer: () => void;
   onRemovePlayer: (playerId: string) => void;
   onUpdatePlayerTee: (playerId: string, tee: string) => void;
-  onMovePlayer: (playerId: string, targetGroupId: string) => void;
   onDeleteGroup: () => void;
-  otherGroups: PlayerGroup[];
 }
+
+const formatHandicap = (handicap: number | undefined): string => {
+  if (handicap === undefined) return "";
+  if (handicap > 0) return `+${handicap}`;
+  return `${handicap}`;
+};
 
 export function GroupCard({
   group,
@@ -30,9 +35,7 @@ export function GroupCard({
   onAddPlayer,
   onRemovePlayer,
   onUpdatePlayerTee,
-  onMovePlayer,
   onDeleteGroup,
-  otherGroups,
 }: GroupCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(group.name);
@@ -47,7 +50,6 @@ export function GroupCard({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
             <Users className="w-4 h-4 text-primary" />
             {isEditingName ? (
               <div className="flex items-center gap-2">
@@ -88,78 +90,89 @@ export function GroupCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {group.players.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No players in this group yet
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {group.players.map((player) => (
-              <div
-                key={player.odId}
-                className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 border border-border/50"
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={player.avatarUrl} />
-                  <AvatarFallback className="text-xs bg-primary/10">
-                    {player.displayName.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <p className="text-sm font-medium truncate">{player.displayName}</p>
-                    {player.isTemporary && (
-                      <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">Guest</span>
-                    )}
-                  </div>
-                  {player.handicap !== undefined && (
-                    <p className="text-xs text-muted-foreground">HCP: {player.handicap}</p>
-                  )}
+        <Droppable droppableId={group.id} type="player">
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`min-h-[60px] rounded-lg transition-colors ${
+                snapshot.isDraggingOver ? "bg-primary/10 border-2 border-dashed border-primary" : ""
+              }`}
+            >
+              {group.players.length === 0 && !snapshot.isDraggingOver ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Drag players here or add new ones
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {group.players.map((player, playerIndex) => (
+                    <Draggable key={player.odId} draggableId={player.odId} index={playerIndex}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`flex items-center gap-3 p-2 rounded-lg bg-muted/30 border border-border/50 ${
+                            snapshot.isDragging ? "shadow-lg ring-2 ring-primary" : ""
+                          }`}
+                        >
+                          <div
+                            {...provided.dragHandleProps}
+                            className="cursor-grab active:cursor-grabbing"
+                          >
+                            <GripVertical className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={player.avatarUrl} />
+                            <AvatarFallback className="text-xs bg-primary/10">
+                              {player.displayName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1">
+                              <p className="text-sm font-medium truncate">{player.displayName}</p>
+                              {player.isTemporary && (
+                                <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">Guest</span>
+                              )}
+                            </div>
+                            {player.handicap !== undefined && (
+                              <p className="text-xs text-muted-foreground">
+                                HCP: {formatHandicap(player.handicap)}
+                              </p>
+                            )}
+                          </div>
+                          <Select
+                            value={player.teeColor}
+                            onValueChange={(tee) => onUpdatePlayerTee(player.odId, tee)}
+                          >
+                            <SelectTrigger className="w-20 h-7 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableTees.map((tee) => (
+                                <SelectItem key={tee} value={tee} className="text-xs">
+                                  {tee}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={() => onRemovePlayer(player.odId)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
                 </div>
-                <Select
-                  value={player.teeColor}
-                  onValueChange={(tee) => onUpdatePlayerTee(player.odId, tee)}
-                >
-                  <SelectTrigger className="w-20 h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTees.map((tee) => (
-                      <SelectItem key={tee} value={tee} className="text-xs">
-                        {tee}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {otherGroups.length > 0 && (
-                  <Select
-                    value=""
-                    onValueChange={(targetGroupId) => onMovePlayer(player.odId, targetGroupId)}
-                  >
-                    <SelectTrigger className="w-16 h-7 text-xs">
-                      <span className="text-muted-foreground">Move</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {otherGroups.map((g) => (
-                        <SelectItem key={g.id} value={g.id} className="text-xs">
-                          {g.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => onRemovePlayer(player.odId)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
         <Button
           variant="outline"
           size="sm"
