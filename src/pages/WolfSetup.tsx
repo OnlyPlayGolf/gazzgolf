@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Settings, Shuffle } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Settings, Shuffle, UserPlus } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { shuffleArray } from "@/utils/wolfScoring";
+import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
+import { Player } from "@/types/playSetup";
 
 interface Course {
   id: string;
@@ -35,11 +37,17 @@ export default function WolfSetup() {
   const [loneWolfLossPoints, setLoneWolfLossPoints] = useState(1);
   const [teamWinPoints, setTeamWinPoints] = useState(1);
   const [wolfPosition, setWolfPosition] = useState<'first' | 'last'>('last');
+  
+  // Add player dialog
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [existingPlayerIds, setExistingPlayerIds] = useState<string[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      
+      setExistingPlayerIds([user.id]);
       
       // Get current user's display name
       const { data: profile } = await supabase
@@ -123,6 +131,27 @@ export default function WolfSetup() {
   
   const getValidPlayerCount = () => {
     return players.filter(p => p.trim() !== '').length;
+  };
+
+  const handleAddPlayer = (player: Player) => {
+    // Find first empty slot
+    const emptyIndex = players.findIndex(p => p.trim() === '');
+    if (emptyIndex === -1) {
+      toast({ title: "All player slots are filled", variant: "destructive" });
+      return;
+    }
+    
+    const newPlayers = [...players];
+    newPlayers[emptyIndex] = player.displayName;
+    setPlayers(newPlayers);
+    setShuffled(false);
+    
+    if (!player.isTemporary && player.odId) {
+      setExistingPlayerIds(prev => [...prev, player.odId]);
+    }
+    
+    setShowAddPlayer(false);
+    toast({ title: `${player.displayName} added!` });
   };
 
   const handleStartGame = async () => {
@@ -215,9 +244,20 @@ export default function WolfSetup() {
         {/* Players */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users size={20} className="text-primary" />
-              Players (3-5)
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-lg">
+                <Users size={20} className="text-primary" />
+                Players (3-5)
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddPlayer(true)}
+                className="gap-1"
+              >
+                <UserPlus size={14} />
+                Add Player
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -346,6 +386,14 @@ export default function WolfSetup() {
           {loading ? "Starting..." : "Start Wolf Game"}
         </Button>
       </div>
+      
+      <AddPlayerDialog
+        isOpen={showAddPlayer}
+        onClose={() => setShowAddPlayer(false)}
+        onAddPlayer={handleAddPlayer}
+        existingPlayerIds={existingPlayerIds}
+        defaultTee="White"
+      />
     </div>
   );
 }
