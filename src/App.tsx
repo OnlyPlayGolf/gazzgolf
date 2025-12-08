@@ -83,6 +83,7 @@ import WolfLeaderboard from "./pages/WolfLeaderboard";
 import WolfSettings from "./pages/WolfSettings";
 import HowToPlayWolf from "./pages/HowToPlayWolf";
 import StrokePlaySettings from "./pages/StrokePlaySettings";
+import StrokePlaySetup from "./pages/StrokePlaySetup";
 import PerformanceStats from "./pages/PerformanceStats";
 
 // Create QueryClient outside component to prevent recreation on every render
@@ -130,6 +131,7 @@ const App = () => {
             <Route path="/rounds" element={<Rounds />} />
             <Route path="/rounds-play" element={<RoundsPlay />} />
             <Route path="/stroke-play/settings" element={<StrokePlaySettings />} />
+            <Route path="/stroke-play/setup" element={<StrokePlaySetup />} />
             <Route path="/played-rounds" element={<PlayedRounds />} />
             <Route path="/rounds/manage-players" element={<ManagePlayers />} />
             <Route path="/rounds/setup" element={<RoundSetup />} />

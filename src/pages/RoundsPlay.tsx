@@ -212,16 +212,24 @@ export default function RoundsPlay() {
       return;
     }
 
+    // Save course to sessionStorage for all game formats
+    sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
+    sessionStorage.setItem('selectedHoles', selectedHoles);
+
+    // If Stroke Play is selected, navigate to Stroke Play setup
+    if (gameFormat === "stroke_play") {
+      navigate('/stroke-play/setup');
+      return;
+    }
+
     // If Umbriago is selected, navigate to Umbriago setup
     if (gameFormat === "umbriago") {
-      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
       navigate('/umbriago/setup');
       return;
     }
 
     // If Wolf is selected, navigate to Wolf setup
     if (gameFormat === "wolf") {
-      sessionStorage.setItem('selectedCourse', JSON.stringify(selectedCourse));
       navigate('/wolf/setup');
       return;
     }
