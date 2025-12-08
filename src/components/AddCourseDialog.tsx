@@ -135,7 +135,7 @@ export function AddCourseDialog({ isOpen, onClose, onCourseAdded }: AddCourseDia
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-lg h-[85vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5 text-primary" />
