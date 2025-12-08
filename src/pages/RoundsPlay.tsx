@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Info } from "lucide-react";
+import { Info, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Search, Calendar, MapPin, Users, ChevronRight, Plus } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AISetupAssistant } from "@/components/AISetupAssistant";
+import { GameConfiguration } from "@/types/gameConfig";
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -50,6 +52,8 @@ export default function RoundsPlay() {
     handicapEnabled: false,
     gimmesEnabled: false,
   });
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [courseHoles, setCourseHoles] = useState<{ holeNumber: number; par: number; strokeIndex: number }[]>([]);
 
   useEffect(() => {
     fetchCourses();
@@ -154,26 +158,61 @@ export default function RoundsPlay() {
         .from("course_holes")
         .select("*")
         .eq("course_id", courseId)
-        .limit(1)
-        .single();
+        .order("hole_number");
 
       if (error) throw error;
 
-      const tees: string[] = [];
-      if (data.white_distance) tees.push("White");
-      if (data.yellow_distance) tees.push("Yellow");
-      if (data.blue_distance) tees.push("Blue");
-      if (data.red_distance) tees.push("Red");
-      if (data.orange_distance) tees.push("Orange");
+      if (data && data.length > 0) {
+        const firstHole = data[0];
+        const tees: string[] = [];
+        if (firstHole.white_distance) tees.push("White");
+        if (firstHole.yellow_distance) tees.push("Yellow");
+        if (firstHole.blue_distance) tees.push("Blue");
+        if (firstHole.red_distance) tees.push("Red");
+        if (firstHole.orange_distance) tees.push("Orange");
 
-      setAvailableTees(tees);
-      if (tees.length > 0 && !teeColor) {
-        setTeeColor(tees[0]);
+        setAvailableTees(tees);
+        if (tees.length > 0 && !teeColor) {
+          setTeeColor(tees[0]);
+        }
+
+        // Store course holes for AI assistant
+        setCourseHoles(data.map(h => ({
+          holeNumber: h.hole_number,
+          par: h.par,
+          strokeIndex: h.stroke_index
+        })));
       }
     } catch (error: any) {
       console.error("Error fetching tees:", error);
       setAvailableTees(["White", "Yellow", "Blue", "Red", "Black"]);
     }
+  };
+
+  const handleApplyAIConfig = (config: GameConfiguration) => {
+    // Apply game format
+    if (config.baseFormat === 'stroke_play' || config.baseFormat === 'stableford') {
+      setGameFormat('stroke_play');
+    } else if (config.baseFormat === 'umbriago') {
+      setGameFormat('umbriago');
+    } else if (config.baseFormat === 'wolf') {
+      setGameFormat('wolf');
+    }
+
+    // Apply stroke play settings
+    setStrokePlaySettings({
+      mulligansPerPlayer: config.mulligansPerPlayer || 0,
+      handicapEnabled: config.useHandicaps,
+      gimmesEnabled: config.gimmesEnabled || false,
+    });
+
+    // Store AI config for downstream pages
+    sessionStorage.setItem('aiGameConfig', JSON.stringify(config));
+    
+    toast({
+      title: "AI Configuration Applied",
+      description: `${config.baseFormat.replace('_', ' ')} with ${config.totalHoles} holes configured!`,
+    });
   };
 
 
@@ -581,6 +620,28 @@ export default function RoundsPlay() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Assistant Floating Button */}
+      <Button
+        onClick={() => setShowAIAssistant(true)}
+        className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg"
+        size="icon"
+      >
+        <Sparkles className="w-6 h-6" />
+      </Button>
+
+      {/* AI Setup Assistant */}
+      <AISetupAssistant
+        isOpen={showAIAssistant}
+        onClose={() => setShowAIAssistant(false)}
+        courseInfo={selectedCourse ? {
+          courseName: selectedCourse.name,
+          availableTees,
+          defaultHoles: getHolesPlayed(selectedHoles),
+          courseHoles,
+        } : undefined}
+        onApplyConfig={handleApplyAIConfig}
+      />
     </div>
   );
 }
