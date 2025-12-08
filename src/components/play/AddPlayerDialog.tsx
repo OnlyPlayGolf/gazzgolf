@@ -98,13 +98,13 @@ export function AddPlayerDialog({
   };
 
   const handleAddTempPlayer = () => {
-    if (!tempName.trim()) return;
+    const baseName = tempName.trim() || "Guest Player";
     
     const player: Player = {
       odId: `temp_${Date.now()}`,
       teeColor: defaultTee,
-      displayName: tempName.trim(),
-      username: tempName.trim().toLowerCase().replace(/\s+/g, '_'),
+      displayName: baseName, // Store base name, formatting happens in display
+      username: baseName.toLowerCase().replace(/\s+/g, '_'),
       isTemporary: true,
       handicap: tempHandicap ? parseFloat(tempHandicap) : undefined,
     };

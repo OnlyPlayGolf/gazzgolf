@@ -18,12 +18,22 @@ interface GroupCardProps {
   onRemovePlayer: (playerId: string) => void;
   onUpdatePlayerTee: (playerId: string, tee: string) => void;
   onDeleteGroup: () => void;
+  onPlayerClick: (player: Player) => void;
+  dragHandleProps?: any;
 }
 
 const formatHandicap = (handicap: number | undefined): string => {
   if (handicap === undefined) return "";
   if (handicap > 0) return `+${handicap}`;
   return `${handicap}`;
+};
+
+const formatPlayerName = (player: Player): string => {
+  if (player.isTemporary) {
+    const baseName = player.displayName.replace(" (Guest)", "");
+    return `${baseName || "Guest Player"} (Guest)`;
+  }
+  return player.displayName;
 };
 
 export function GroupCard({
@@ -36,6 +46,8 @@ export function GroupCard({
   onRemovePlayer,
   onUpdatePlayerTee,
   onDeleteGroup,
+  onPlayerClick,
+  dragHandleProps,
 }: GroupCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(group.name);
@@ -50,6 +62,13 @@ export function GroupCard({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {/* Group drag handle */}
+            <div
+              {...dragHandleProps}
+              className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-muted rounded"
+            >
+              <GripVertical className="w-4 h-4 text-muted-foreground" />
+            </div>
             <Users className="w-4 h-4 text-primary" />
             {isEditingName ? (
               <div className="flex items-center gap-2">
@@ -111,40 +130,47 @@ export function GroupCard({
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className={`flex items-center gap-3 p-2 rounded-lg bg-muted/30 border border-border/50 ${
+                          className={`flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border/50 ${
                             snapshot.isDragging ? "shadow-lg ring-2 ring-primary" : ""
                           }`}
                         >
+                          {/* Player drag handle */}
                           <div
                             {...provided.dragHandleProps}
-                            className="cursor-grab active:cursor-grabbing"
+                            className="cursor-grab active:cursor-grabbing shrink-0"
                           >
                             <GripVertical className="w-4 h-4 text-muted-foreground" />
                           </div>
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={player.avatarUrl} />
-                            <AvatarFallback className="text-xs bg-primary/10">
-                              {player.displayName.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1">
-                              <p className="text-sm font-medium truncate">{player.displayName}</p>
-                              {player.isTemporary && (
-                                <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">Guest</span>
+                          
+                          {/* Player info - clickable for editing */}
+                          <button
+                            onClick={() => onPlayerClick(player)}
+                            className="flex items-center gap-2 flex-1 min-w-0 text-left hover:bg-muted/50 rounded p-1 -m-1 transition-colors"
+                          >
+                            <Avatar className="h-8 w-8 shrink-0">
+                              <AvatarImage src={player.avatarUrl} />
+                              <AvatarFallback className="text-xs bg-primary/10">
+                                {formatPlayerName(player).charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium leading-tight">
+                                {formatPlayerName(player)}
+                              </p>
+                              {player.handicap !== undefined && (
+                                <p className="text-xs text-muted-foreground whitespace-nowrap">
+                                  HCP: {formatHandicap(player.handicap)}
+                                </p>
                               )}
                             </div>
-                            {player.handicap !== undefined && (
-                              <p className="text-xs text-muted-foreground">
-                                HCP: {formatHandicap(player.handicap)}
-                              </p>
-                            )}
-                          </div>
+                          </button>
+                          
+                          {/* Tee selector - compact */}
                           <Select
                             value={player.teeColor}
                             onValueChange={(tee) => onUpdatePlayerTee(player.odId, tee)}
                           >
-                            <SelectTrigger className="w-20 h-7 text-xs">
+                            <SelectTrigger className="w-16 h-7 text-xs shrink-0 px-2">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -155,11 +181,16 @@ export function GroupCard({
                               ))}
                             </SelectContent>
                           </Select>
+                          
+                          {/* Remove button */}
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            onClick={() => onRemovePlayer(player.odId)}
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemovePlayer(player.odId);
+                            }}
                           >
                             <X className="w-4 h-4" />
                           </Button>
