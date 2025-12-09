@@ -36,7 +36,7 @@ export function SetupPlayerCard({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors cursor-pointer hover:bg-accent/50",
+        "flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors cursor-pointer hover:bg-accent/50 flex-1 min-w-0",
         player.isCurrentUser && "border-primary/30 bg-primary/5"
       )}
       onClick={onEdit}

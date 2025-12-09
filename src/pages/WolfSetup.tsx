@@ -250,17 +250,15 @@ export default function WolfSetup() {
             
             {players.map((player, index) => (
               <div key={player.odId} className="flex items-center gap-2">
-                <span className="w-6 text-sm font-medium text-muted-foreground text-center">
+                <span className="w-6 text-sm font-medium text-muted-foreground text-center flex-shrink-0">
                   {shuffled ? `${index + 1}.` : '-'}
                 </span>
-                <div className="flex-1">
-                  <SetupPlayerCard
-                    player={player}
-                    onEdit={() => setEditingPlayer(player)}
-                    onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
-                    showTee={false}
-                  />
-                </div>
+                <SetupPlayerCard
+                  player={player}
+                  onEdit={() => setEditingPlayer(player)}
+                  onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                  showTee={false}
+                />
               </div>
             ))}
 
