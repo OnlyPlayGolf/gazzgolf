@@ -4,16 +4,29 @@ import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle } from "lucide-reac
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
+import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
+import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
+import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
+import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 
 interface Course {
   id: string;
   name: string;
   location: string | null;
+}
+
+interface Player {
+  odId: string;
+  displayName: string;
+  handicap?: number;
+  teeColor?: string;
+  isTemporary?: boolean;
+  isCurrentUser?: boolean;
 }
 
 type TeamRotation = "none" | "every9" | "every6";
@@ -23,7 +36,6 @@ interface TeamCombination {
   teamB: [string, string];
 }
 
-// Generate all unique team combinations for 4 players
 function generateTeamCombinations(players: string[]): TeamCombination[] {
   if (players.length !== 4) return [];
   const [a, b, c, d] = players;
@@ -34,25 +46,20 @@ function generateTeamCombinations(players: string[]): TeamCombination[] {
   ];
 }
 
-// Generate rotation schedule ensuring no repeated teams
 function generateRotationSchedule(
   players: string[],
   rotation: TeamRotation,
   initialTeams: TeamCombination
 ): TeamCombination[] {
-  if (rotation === "none") {
-    return [initialTeams];
-  }
+  if (rotation === "none") return [initialTeams];
 
   const allCombinations = generateTeamCombinations(players);
   const numSegments = rotation === "every9" ? 2 : 3;
   
-  // Find the index of the initial combination
   const initialIndex = allCombinations.findIndex(
     c => c.teamA.sort().join() === initialTeams.teamA.sort().join()
   );
 
-  // Shuffle remaining combinations
   const remaining = allCombinations.filter((_, i) => i !== initialIndex);
   const shuffled = [...remaining].sort(() => Math.random() - 0.5);
 
@@ -76,56 +83,68 @@ export default function UmbriagioSetup() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   
-  // Team players
-  const [teamAPlayer1, setTeamAPlayer1] = useState("");
-  const [teamAPlayer2, setTeamAPlayer2] = useState("");
-  const [teamBPlayer1, setTeamBPlayer1] = useState("");
-  const [teamBPlayer2, setTeamBPlayer2] = useState("");
+  // Players for teams (need exactly 4)
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   
   // Game settings
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
   const [teamRotation, setTeamRotation] = useState<TeamRotation>("none");
 
-  // Load current user and courses on mount
+  // Sheet states
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [showAddGuest, setShowAddGuest] = useState(false);
+
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Get current user's display name
+      setCurrentUserId(user.id);
+      
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, username')
+        .select('display_name, username, handicap')
         .eq('id', user.id)
         .single();
       
-      const currentUserName = profile?.display_name || profile?.username || 'You';
-      setTeamAPlayer1(currentUserName);
+      const userName = profile?.display_name || profile?.username || 'You';
+      const userHandicap = profile?.handicap ? parseFloat(profile.handicap) : undefined;
+      
+      const currentUserPlayer: Player = {
+        odId: user.id,
+        displayName: userName,
+        handicap: userHandicap,
+        isTemporary: false,
+        isCurrentUser: true,
+      };
       
       // Load added players from sessionStorage
       const savedPlayers = sessionStorage.getItem('roundPlayers');
+      let additionalPlayers: Player[] = [];
       if (savedPlayers) {
-        const players = JSON.parse(savedPlayers);
-        // Fill in team slots with added players
-        if (players.length >= 1) setTeamAPlayer2(players[0].displayName || '');
-        if (players.length >= 2) setTeamBPlayer1(players[1].displayName || '');
-        if (players.length >= 3) setTeamBPlayer2(players[2].displayName || '');
+        const parsed = JSON.parse(savedPlayers);
+        additionalPlayers = parsed.slice(0, 3).map((p: any) => ({
+          odId: p.odId || p.userId || `temp_${Date.now()}`,
+          displayName: p.displayName,
+          handicap: p.handicap,
+          isTemporary: p.isTemporary || false,
+          isCurrentUser: false,
+        }));
       }
       
-      // Check for course from sessionStorage first
+      setPlayers([currentUserPlayer, ...additionalPlayers]);
+      
       const savedCourse = sessionStorage.getItem('selectedCourse');
       
-      // Fetch available courses
       const { data: coursesData } = await supabase
         .from('courses')
         .select('id, name, location')
         .order('name');
       
-      if (coursesData) {
-        setCourses(coursesData);
-      }
+      if (coursesData) setCourses(coursesData);
       
-      // Set course from sessionStorage if available
       if (savedCourse) {
         const course = JSON.parse(savedCourse);
         const matchingCourse = coursesData?.find(c => c.name === course.name);
@@ -135,7 +154,6 @@ export default function UmbriagioSetup() {
         }
       }
       
-      // Otherwise get last used course from previous umbriago games
       const { data: lastGame } = await supabase
         .from('umbriago_games')
         .select('course_id')
@@ -156,9 +174,35 @@ export default function UmbriagioSetup() {
 
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
+  const handleAddPlayer = (player: Player) => {
+    if (players.length >= 4) {
+      toast({ title: "Maximum 4 players", description: "Remove a player to add another", variant: "destructive" });
+      return;
+    }
+    setPlayers(prev => [...prev, player]);
+  };
+
+  const handleUpdatePlayer = (updatedPlayer: Player) => {
+    setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
+  };
+
+  const handleRemovePlayer = (odId: string) => {
+    setPlayers(prev => prev.filter(p => p.odId !== odId));
+  };
+
+  const handleRandomizeTeams = () => {
+    if (players.length !== 4) {
+      toast({ title: "Need exactly 4 players", variant: "destructive" });
+      return;
+    }
+    const shuffled = [...players].sort(() => Math.random() - 0.5);
+    setPlayers(shuffled);
+    toast({ title: "Teams randomized!" });
+  };
+
   const handleStartGame = async () => {
-    if (!teamAPlayer1.trim() || !teamAPlayer2.trim() || !teamBPlayer1.trim() || !teamBPlayer2.trim()) {
-      toast({ title: "All player names required", variant: "destructive" });
+    if (players.length !== 4) {
+      toast({ title: "Need exactly 4 players", variant: "destructive" });
       return;
     }
 
@@ -170,14 +214,13 @@ export default function UmbriagioSetup() {
         return;
       }
 
-      // Generate rotation schedule if enabled
-      const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2];
+      const playerNames = players.map(p => p.displayName);
       const initialTeams: TeamCombination = {
-        teamA: [teamAPlayer1, teamAPlayer2],
-        teamB: [teamBPlayer1, teamBPlayer2]
+        teamA: [playerNames[0], playerNames[1]],
+        teamB: [playerNames[2], playerNames[3]]
       };
       
-      const rotationSchedule = generateRotationSchedule(players, teamRotation, initialTeams);
+      const rotationSchedule = generateRotationSchedule(playerNames, teamRotation, initialTeams);
 
       const { data: game, error } = await supabase
         .from("umbriago_games")
@@ -186,10 +229,10 @@ export default function UmbriagioSetup() {
           course_name: selectedCourse?.name || "Umbriago Game",
           course_id: selectedCourseId || null,
           holes_played: 18,
-          team_a_player_1: teamAPlayer1,
-          team_a_player_2: teamAPlayer2,
-          team_b_player_1: teamBPlayer1,
-          team_b_player_2: teamBPlayer2,
+          team_a_player_1: players[0].displayName,
+          team_a_player_2: players[1].displayName,
+          team_b_player_1: players[2].displayName,
+          team_b_player_2: players[3].displayName,
           stake_per_point: 0,
           payout_mode: "difference",
           rolls_per_team: rollsPerTeam,
@@ -199,7 +242,6 @@ export default function UmbriagioSetup() {
 
       if (error) throw error;
 
-      // Store rotation schedule in sessionStorage for gameplay
       if (teamRotation !== "none") {
         sessionStorage.setItem(`umbriago_rotation_${game.id}`, JSON.stringify({
           type: teamRotation,
@@ -217,17 +259,15 @@ export default function UmbriagioSetup() {
   };
 
   const getRotationPreview = () => {
-    if (teamRotation === "none") return null;
-    
-    const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2];
-    if (players.some(p => !p.trim())) return null;
+    if (teamRotation === "none" || players.length !== 4) return null;
 
+    const playerNames = players.map(p => p.displayName);
     const initialTeams: TeamCombination = {
-      teamA: [teamAPlayer1, teamAPlayer2],
-      teamB: [teamBPlayer1, teamBPlayer2]
+      teamA: [playerNames[0], playerNames[1]],
+      teamB: [playerNames[2], playerNames[3]]
     };
 
-    const schedule = generateRotationSchedule(players, teamRotation, initialTeams);
+    const schedule = generateRotationSchedule(playerNames, teamRotation, initialTeams);
     const holesPerSegment = teamRotation === "every9" ? 9 : 6;
 
     return (
@@ -245,10 +285,16 @@ export default function UmbriagioSetup() {
     );
   };
 
+  const existingPlayerIds = players.map(p => p.odId);
+
+  // Split players into teams for display
+  const teamA = players.slice(0, 2);
+  const teamB = players.slice(2, 4);
+
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
-      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-6">
+      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')} className="p-2">
             <ArrowLeft size={20} />
@@ -256,104 +302,107 @@ export default function UmbriagioSetup() {
           <h1 className="text-2xl font-bold text-foreground">Umbriago Setup</h1>
         </div>
 
-        {/* Course Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MapPin size={20} className="text-primary" />
-              Course
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a course" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {course.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
+        {/* Course Selection - Compact */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <MapPin size={16} className="text-primary" />
+            Course
+          </Label>
+          <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a course" />
+            </SelectTrigger>
+            <SelectContent>
+              {courses.map((course) => (
+                <SelectItem key={course.id} value={course.id}>
+                  {course.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Teams */}
+        {/* Teams Section */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-lg">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Users size={20} className="text-primary" />
                 Teams (2 vs 2)
-              </div>
+              </CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  const players = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2].filter(p => p.trim());
-                  if (players.length < 4) {
-                    toast({ title: "Add all 4 players first", variant: "destructive" });
-                    return;
-                  }
-                  const shuffled = [...players].sort(() => Math.random() - 0.5);
-                  setTeamAPlayer1(shuffled[0]);
-                  setTeamAPlayer2(shuffled[1]);
-                  setTeamBPlayer1(shuffled[2]);
-                  setTeamBPlayer2(shuffled[3]);
-                  toast({ title: "Teams randomized!" });
-                }}
+                onClick={handleRandomizeTeams}
+                disabled={players.length !== 4}
                 className="gap-1"
               >
                 <Shuffle size={14} />
                 Randomize
               </Button>
-            </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
+          <CardContent className="space-y-4">
+            {/* Team A */}
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-blue-500" />
                 <Label className="font-semibold">Team A</Label>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  value={teamAPlayer1}
-                  onChange={(e) => setTeamAPlayer1(e.target.value)}
-                  placeholder="Player 1"
-                />
-                <Input
-                  value={teamAPlayer2}
-                  onChange={(e) => setTeamAPlayer2(e.target.value)}
-                  placeholder="Player 2"
-                />
+              <div className="space-y-2">
+                {teamA.map((player) => (
+                  <SetupPlayerCard
+                    key={player.odId}
+                    player={player}
+                    onEdit={() => setEditingPlayer(player)}
+                    onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                    showTee={false}
+                  />
+                ))}
+                {teamA.length < 2 && (
+                  <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
+                    Add {2 - teamA.length} more player{teamA.length === 1 ? '' : 's'}
+                  </div>
+                )}
               </div>
             </div>
-            <div className="space-y-3">
+
+            {/* Team B */}
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-500" />
                 <Label className="font-semibold">Team B</Label>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  value={teamBPlayer1}
-                  onChange={(e) => setTeamBPlayer1(e.target.value)}
-                  placeholder="Player 1"
-                />
-                <Input
-                  value={teamBPlayer2}
-                  onChange={(e) => setTeamBPlayer2(e.target.value)}
-                  placeholder="Player 2"
-                />
+              <div className="space-y-2">
+                {teamB.map((player) => (
+                  <SetupPlayerCard
+                    key={player.odId}
+                    player={player}
+                    onEdit={() => setEditingPlayer(player)}
+                    onRemove={() => handleRemovePlayer(player.odId)}
+                    showTee={false}
+                  />
+                ))}
+                {teamB.length < 2 && (
+                  <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
+                    Add {2 - teamB.length} more player{teamB.length === 1 ? '' : 's'}
+                  </div>
+                )}
               </div>
             </div>
+
+            {players.length < 4 && (
+              <SetupAddPlayerButtons
+                onAddFriend={() => setShowAddFriend(true)}
+                onAddGuest={() => setShowAddGuest(true)}
+              />
+            )}
           </CardContent>
         </Card>
 
         {/* Game Settings */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Dice5 size={20} className="text-primary" />
               Game Settings
@@ -395,18 +444,41 @@ export default function UmbriagioSetup() {
               </Select>
               <p className="text-xs text-muted-foreground">
                 {teamRotation === "none" && "Teams stay the same for all 18 holes"}
-                {teamRotation === "every9" && "Teams shuffle randomly after 9 holes (2 different team combinations)"}
-                {teamRotation === "every6" && "Teams shuffle randomly every 6 holes (3 different team combinations)"}
+                {teamRotation === "every9" && "Teams shuffle randomly after 9 holes"}
+                {teamRotation === "every6" && "Teams shuffle randomly every 6 holes"}
               </p>
               {getRotationPreview()}
             </div>
           </CardContent>
         </Card>
 
-        <Button onClick={handleStartGame} disabled={loading} className="w-full" size="lg">
+        <Button onClick={handleStartGame} disabled={loading || players.length !== 4} className="w-full" size="lg">
           {loading ? "Starting..." : "Start Umbriago"}
         </Button>
       </div>
+
+      {/* Edit Player Sheet */}
+      <SetupPlayerEditSheet
+        isOpen={!!editingPlayer}
+        onClose={() => setEditingPlayer(null)}
+        player={editingPlayer}
+        onSave={handleUpdatePlayer}
+      />
+
+      {/* Add Friend Sheet */}
+      <SetupAddFriendSheet
+        isOpen={showAddFriend}
+        onClose={() => setShowAddFriend(false)}
+        onAddPlayer={handleAddPlayer}
+        existingPlayerIds={existingPlayerIds}
+      />
+
+      {/* Add Guest Sheet */}
+      <SetupAddGuestSheet
+        isOpen={showAddGuest}
+        onClose={() => setShowAddGuest(false)}
+        onAddPlayer={handleAddPlayer}
+      />
     </div>
   );
 }
