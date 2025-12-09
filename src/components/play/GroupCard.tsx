@@ -29,11 +29,7 @@ const formatHandicap = (handicap: number | undefined): string => {
 };
 
 const formatPlayerName = (player: Player): string => {
-  if (player.isTemporary) {
-    const baseName = player.displayName.replace(" (Guest)", "");
-    return `${baseName || "Guest Player"} (Guest)`;
-  }
-  return player.displayName;
+  return player.displayName || "Guest Player";
 };
 
 export function GroupCard({

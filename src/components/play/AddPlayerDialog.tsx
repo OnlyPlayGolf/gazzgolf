@@ -99,14 +99,15 @@ export function AddPlayerDialog({
 
   const handleAddTempPlayer = () => {
     const baseName = tempName.trim() || "Guest Player";
+    const normalizedHandicap = tempHandicap.replace(',', '.');
     
     const player: Player = {
       odId: `temp_${Date.now()}`,
       teeColor: defaultTee,
-      displayName: baseName, // Store base name, formatting happens in display
+      displayName: baseName,
       username: baseName.toLowerCase().replace(/\s+/g, '_'),
       isTemporary: true,
-      handicap: tempHandicap ? parseFloat(tempHandicap) : undefined,
+      handicap: normalizedHandicap ? parseFloat(normalizedHandicap) : undefined,
     };
     onAddPlayer(player);
     setTempName("");
@@ -202,8 +203,7 @@ export function AddPlayerDialog({
               <Label htmlFor="guest-handicap">Handicap (optional)</Label>
               <Input
                 id="guest-handicap"
-                placeholder="e.g. 15"
-                type="number"
+                placeholder="e.g. 15 or 2,4"
                 value={tempHandicap}
                 onChange={(e) => setTempHandicap(e.target.value)}
               />

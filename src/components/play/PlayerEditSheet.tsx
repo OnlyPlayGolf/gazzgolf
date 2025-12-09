@@ -39,12 +39,13 @@ export function PlayerEditSheet({
   const handleSave = () => {
     if (!player) return;
 
+    const normalizedHandicap = handicap.replace(',', '.');
     const updatedPlayer: Player = {
       ...player,
       displayName: player.isTemporary 
         ? (displayName.trim() || "Guest Player")
         : displayName.trim() || player.displayName,
-      handicap: handicap ? parseFloat(handicap) : undefined,
+      handicap: normalizedHandicap ? parseFloat(normalizedHandicap) : undefined,
       teeColor: teeColor || player.teeColor,
     };
     
