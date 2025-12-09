@@ -1,5 +1,11 @@
-import { UserPlus, Users } from "lucide-react";
+import { UserPlus, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SetupAddPlayerButtonsProps {
   onAddFriend: () => void;
@@ -8,23 +14,23 @@ interface SetupAddPlayerButtonsProps {
 
 export function SetupAddPlayerButtons({ onAddFriend, onAddGuest }: SetupAddPlayerButtonsProps) {
   return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        className="flex-1 gap-2"
-        onClick={onAddFriend}
-      >
-        <Users size={16} />
-        Add Friend
-      </Button>
-      <Button
-        variant="outline"
-        className="flex-1 gap-2"
-        onClick={onAddGuest}
-      >
-        <UserPlus size={16} />
-        Add Guest
-      </Button>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-full gap-2">
+          <Plus size={16} />
+          Add Player
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" className="w-48">
+        <DropdownMenuItem onClick={onAddFriend} className="gap-2 cursor-pointer">
+          <Users size={16} />
+          Add Friend
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onAddGuest} className="gap-2 cursor-pointer">
+          <UserPlus size={16} />
+          Add Guest
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
