@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Settings, Shuffle } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Settings, Shuffle, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -139,6 +140,21 @@ export default function WolfSetup() {
     setPlayers(prev => prev.filter(p => p.odId !== odId));
     setShuffled(false);
   };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+    
+    if (sourceIndex === destIndex) return;
+    
+    const newPlayers = [...players];
+    const [removed] = newPlayers.splice(sourceIndex, 1);
+    newPlayers.splice(destIndex, 0, removed);
+    setPlayers(newPlayers);
+    setShuffled(true); // Mark as shuffled since order changed
+  };
   
   const handleShuffle = () => {
     if (players.length < 3) {
@@ -245,22 +261,48 @@ export default function WolfSetup() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Add players then shuffle to randomize tee-off order.
+              Drag to reorder or shuffle to randomize tee-off order.
             </p>
             
-            {players.map((player, index) => (
-              <div key={player.odId} className="flex items-center gap-2">
-                <span className="w-6 text-sm font-medium text-muted-foreground text-center flex-shrink-0">
-                  {shuffled ? `${index + 1}.` : '-'}
-                </span>
-                <SetupPlayerCard
-                  player={player}
-                  onEdit={() => setEditingPlayer(player)}
-                  onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
-                  showTee={false}
-                />
-              </div>
-            ))}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="wolfPlayers">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="space-y-2"
+                  >
+                    {players.map((player, index) => (
+                      <Draggable key={player.odId} draggableId={player.odId} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={snapshot.isDragging ? "opacity-90" : ""}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 text-sm font-medium text-muted-foreground text-center flex-shrink-0">
+                                {shuffled ? `${index + 1}.` : '-'}
+                              </span>
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 flex-shrink-0">
+                                <GripVertical size={16} className="text-muted-foreground" />
+                              </div>
+                              <SetupPlayerCard
+                                player={player}
+                                onEdit={() => setEditingPlayer(player)}
+                                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                                showTee={false}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
 
             {players.length < 5 && (
               <SetupAddPlayerButtons
@@ -281,7 +323,7 @@ export default function WolfSetup() {
             
             {shuffled && (
               <p className="text-sm text-green-600 text-center">
-                ✓ Order randomized! Player 1 tees off first on Hole 1.
+                ✓ Order set! Player 1 tees off first on Hole 1.
               </p>
             )}
           </CardContent>
