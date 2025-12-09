@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -291,6 +292,29 @@ export default function UmbriagioSetup() {
   const teamA = players.slice(0, 2);
   const teamB = players.slice(2, 4);
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const sourceTeam = result.source.droppableId;
+    const destTeam = result.destination.droppableId;
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+
+    // Convert to absolute indices in the players array
+    const getAbsoluteIndex = (team: string, index: number) => {
+      if (team === "teamA") return index;
+      return 2 + index;
+    };
+
+    const sourceAbsolute = getAbsoluteIndex(sourceTeam, sourceIndex);
+    const destAbsolute = getAbsoluteIndex(destTeam, destIndex);
+
+    const newPlayers = [...players];
+    const [removed] = newPlayers.splice(sourceAbsolute, 1);
+    newPlayers.splice(destAbsolute, 0, removed);
+    setPlayers(newPlayers);
+  };
+
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
@@ -343,53 +367,101 @@ export default function UmbriagioSetup() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Team A */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <Label className="font-semibold">Team A</Label>
-              </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              {/* Team A */}
               <div className="space-y-2">
-                {teamA.map((player) => (
-                  <SetupPlayerCard
-                    key={player.odId}
-                    player={player}
-                    onEdit={() => setEditingPlayer(player)}
-                    onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
-                    showTee={false}
-                  />
-                ))}
-                {teamA.length < 2 && (
-                  <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
-                    Add {2 - teamA.length} more player{teamA.length === 1 ? '' : 's'}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <Label className="font-semibold">Team A</Label>
+                </div>
+                <Droppable droppableId="teamA">
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="space-y-2 min-h-[60px]"
+                    >
+                      {teamA.map((player, index) => (
+                        <Draggable key={player.odId} draggableId={player.odId} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={snapshot.isDragging ? "opacity-90" : ""}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1">
+                                  <GripVertical size={16} className="text-muted-foreground" />
+                                </div>
+                                <SetupPlayerCard
+                                  player={player}
+                                  onEdit={() => setEditingPlayer(player)}
+                                  onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                                  showTee={false}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                      {teamA.length < 2 && (
+                        <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
+                          Add {2 - teamA.length} more player{teamA.length === 1 ? '' : 's'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Droppable>
               </div>
-            </div>
 
-            {/* Team B */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <Label className="font-semibold">Team B</Label>
-              </div>
+              {/* Team B */}
               <div className="space-y-2">
-                {teamB.map((player) => (
-                  <SetupPlayerCard
-                    key={player.odId}
-                    player={player}
-                    onEdit={() => setEditingPlayer(player)}
-                    onRemove={() => handleRemovePlayer(player.odId)}
-                    showTee={false}
-                  />
-                ))}
-                {teamB.length < 2 && (
-                  <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
-                    Add {2 - teamB.length} more player{teamB.length === 1 ? '' : 's'}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <Label className="font-semibold">Team B</Label>
+                </div>
+                <Droppable droppableId="teamB">
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="space-y-2 min-h-[60px]"
+                    >
+                      {teamB.map((player, index) => (
+                        <Draggable key={player.odId} draggableId={player.odId} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={snapshot.isDragging ? "opacity-90" : ""}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1">
+                                  <GripVertical size={16} className="text-muted-foreground" />
+                                </div>
+                                <SetupPlayerCard
+                                  player={player}
+                                  onEdit={() => setEditingPlayer(player)}
+                                  onRemove={() => handleRemovePlayer(player.odId)}
+                                  showTee={false}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                      {teamB.length < 2 && (
+                        <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
+                          Add {2 - teamB.length} more player{teamB.length === 1 ? '' : 's'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Droppable>
               </div>
-            </div>
+            </DragDropContext>
 
             {players.length < 4 && (
               <SetupAddPlayerButtons
