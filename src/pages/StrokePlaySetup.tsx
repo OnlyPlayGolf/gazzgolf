@@ -9,6 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
+import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
+import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
+import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
+import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 
 interface Course {
   id: string;
@@ -17,9 +22,12 @@ interface Course {
 }
 
 interface Player {
-  userId: string;
+  odId: string;
   displayName: string;
-  teeColor: string;
+  handicap?: number;
+  teeColor?: string;
+  isTemporary?: boolean;
+  isCurrentUser?: boolean;
 }
 
 export default function StrokePlaySetup() {
@@ -32,28 +40,38 @@ export default function StrokePlaySetup() {
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
   const [teeColor, setTeeColor] = useState("");
   
-  // Players
-  const [currentUserName, setCurrentUserName] = useState("");
+  // Players (including current user)
   const [players, setPlayers] = useState<Player[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   
   // Game settings
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
 
+  // Sheet states
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [showAddGuest, setShowAddGuest] = useState(false);
+
+  const availableTees = ["White", "Yellow", "Blue", "Red", "Orange"];
+
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Get current user's display name
+      setCurrentUserId(user.id);
+      
+      // Get current user's profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('display_name, username')
+        .select('display_name, username, handicap')
         .eq('id', user.id)
         .single();
       
-      setCurrentUserName(profile?.display_name || profile?.username || 'You');
+      const userName = profile?.display_name || profile?.username || 'You';
+      const userHandicap = profile?.handicap ? parseFloat(profile.handicap) : undefined;
       
       // Load course from sessionStorage
       const savedCourse = sessionStorage.getItem('selectedCourse');
@@ -73,11 +91,32 @@ export default function StrokePlaySetup() {
         setTeeColor(savedTee);
       }
       
+      // Initialize with current user
+      const currentUserPlayer: Player = {
+        odId: user.id,
+        displayName: userName,
+        handicap: userHandicap,
+        teeColor: savedTee || "",
+        isTemporary: false,
+        isCurrentUser: true,
+      };
+      
       // Load added players
       const savedPlayers = sessionStorage.getItem('roundPlayers');
+      let additionalPlayers: Player[] = [];
       if (savedPlayers) {
-        setPlayers(JSON.parse(savedPlayers));
+        const parsed = JSON.parse(savedPlayers);
+        additionalPlayers = parsed.map((p: any) => ({
+          odId: p.odId || p.userId || `temp_${Date.now()}`,
+          displayName: p.displayName,
+          handicap: p.handicap,
+          teeColor: p.teeColor || savedTee || "",
+          isTemporary: p.isTemporary || false,
+          isCurrentUser: false,
+        }));
       }
+      
+      setPlayers([currentUserPlayer, ...additionalPlayers]);
       
       // Load stroke play settings
       const savedSettings = sessionStorage.getItem('strokePlaySettings');
@@ -99,6 +138,18 @@ export default function StrokePlaySetup() {
       default:
         return 18;
     }
+  };
+
+  const handleAddPlayer = (player: Player) => {
+    setPlayers(prev => [...prev, { ...player, teeColor: player.teeColor || teeColor }]);
+  };
+
+  const handleUpdatePlayer = (updatedPlayer: Player) => {
+    setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
+  };
+
+  const handleRemovePlayer = (odId: string) => {
+    setPlayers(prev => prev.filter(p => p.odId !== odId));
   };
 
   const handleStartRound = async () => {
@@ -130,31 +181,27 @@ export default function StrokePlaySetup() {
 
       if (error) throw error;
 
-      // Add current user as first player
-      const playersToAdd = [{
-        round_id: round.id,
-        user_id: user.id,
-        tee_color: teeColor
-      }];
-
-      // Add selected friends
-      players.forEach((player) => {
-        playersToAdd.push({
+      // Add all players (filter out temp players for database, keep for session)
+      const playersToAdd = players
+        .filter(p => !p.isTemporary)
+        .map(p => ({
           round_id: round.id,
-          user_id: player.userId,
-          tee_color: player.teeColor
-        });
-      });
+          user_id: p.odId,
+          tee_color: p.teeColor || teeColor,
+          handicap: p.handicap,
+        }));
 
-      const { error: playersError } = await supabase
-        .from('round_players')
-        .insert(playersToAdd);
+      if (playersToAdd.length > 0) {
+        const { error: playersError } = await supabase
+          .from('round_players')
+          .insert(playersToAdd);
 
-      if (playersError) {
-        console.error("Error adding players:", playersError);
+        if (playersError) {
+          console.error("Error adding players:", playersError);
+        }
       }
 
-      // Save stroke play settings to sessionStorage for use during round
+      // Save settings
       sessionStorage.setItem('strokePlaySettings', JSON.stringify({
         mulligansPerPlayer,
         handicapEnabled,
@@ -178,10 +225,12 @@ export default function StrokePlaySetup() {
     }
   };
 
+  const existingPlayerIds = players.map(p => p.odId);
+
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
-      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-6">
+      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')} className="p-2">
             <ArrowLeft size={20} />
@@ -189,66 +238,75 @@ export default function StrokePlaySetup() {
           <h1 className="text-2xl font-bold text-foreground">Stroke Play Setup</h1>
         </div>
 
-        {/* Course Info */}
+        {/* Course Info - Compact */}
         {selectedCourse && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MapPin size={20} className="text-primary" />
-                Course
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-3 rounded-lg border bg-muted/30">
-                <div className="font-semibold">{selectedCourse.name}</div>
-                {selectedCourse.location && (
-                  <div className="text-sm text-muted-foreground">{selectedCourse.location}</div>
-                )}
-                <div className="text-sm text-muted-foreground mt-1">
+          <div className="p-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium">{selectedCourse.name}</span>
+                <span className="text-muted-foreground text-sm ml-2">
                   {selectedHoles === "18" ? "18 holes" : selectedHoles === "front9" ? "Front 9" : "Back 9"}
-                  {teeColor && ` • ${teeColor} tees`}
-                </div>
+                </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {/* Players */}
+        {/* Players Section */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users size={20} className="text-primary" />
               Players
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="p-3 rounded-lg border bg-primary/5 border-primary/20">
-              <div className="font-medium">{currentUserName}</div>
-              <div className="text-sm text-muted-foreground">{teeColor || "No tee selected"}</div>
-            </div>
-            {players.map((player, index) => (
-              <div key={index} className="p-3 rounded-lg border bg-muted/30">
-                <div className="font-medium">{player.displayName}</div>
-                <div className="text-sm text-muted-foreground">{player.teeColor}</div>
-              </div>
+            {players.map((player) => (
+              <SetupPlayerCard
+                key={player.odId}
+                player={player}
+                onEdit={() => setEditingPlayer(player)}
+                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                showTee={true}
+              />
             ))}
-            {players.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-2">
-                No additional players added
-              </p>
-            )}
+            
+            <SetupAddPlayerButtons
+              onAddFriend={() => setShowAddFriend(true)}
+              onAddGuest={() => setShowAddGuest(true)}
+            />
           </CardContent>
         </Card>
 
         {/* Game Settings */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Settings size={20} className="text-primary" />
               Game Settings
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Default Tee */}
+            <div className="space-y-2">
+              <Label>Default Tee Box</Label>
+              <Select value={teeColor} onValueChange={(v) => {
+                setTeeColor(v);
+                // Update all players to new tee
+                setPlayers(prev => prev.map(p => ({ ...p, teeColor: v })));
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select tee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTees.map(tee => (
+                    <SelectItem key={tee} value={tee}>{tee}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Handicap toggle */}
             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
               <div className="space-y-0.5">
@@ -264,14 +322,14 @@ export default function StrokePlaySetup() {
               />
             </div>
 
-            {/* Mulligans per player */}
+            {/* Mulligans */}
             <div className="space-y-2">
-              <Label htmlFor="mulligans">Mulligans per Player</Label>
+              <Label>Mulligans per Player</Label>
               <Select 
                 value={mulligansPerPlayer.toString()} 
                 onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
               >
-                <SelectTrigger id="mulligans">
+                <SelectTrigger>
                   <SelectValue placeholder="Select mulligans" />
                 </SelectTrigger>
                 <SelectContent>
@@ -284,9 +342,6 @@ export default function StrokePlaySetup() {
                   <SelectItem value="18">18 (1 per hole on 18)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Number of allowed do-overs per player
-              </p>
             </div>
 
             {/* Gimmes toggle */}
@@ -310,6 +365,32 @@ export default function StrokePlaySetup() {
           {loading ? "Starting..." : "Start Round"}
         </Button>
       </div>
+
+      {/* Edit Player Sheet */}
+      <SetupPlayerEditSheet
+        isOpen={!!editingPlayer}
+        onClose={() => setEditingPlayer(null)}
+        player={editingPlayer}
+        availableTees={availableTees}
+        onSave={handleUpdatePlayer}
+      />
+
+      {/* Add Friend Sheet */}
+      <SetupAddFriendSheet
+        isOpen={showAddFriend}
+        onClose={() => setShowAddFriend(false)}
+        onAddPlayer={handleAddPlayer}
+        existingPlayerIds={existingPlayerIds}
+        defaultTee={teeColor}
+      />
+
+      {/* Add Guest Sheet */}
+      <SetupAddGuestSheet
+        isOpen={showAddGuest}
+        onClose={() => setShowAddGuest(false)}
+        onAddPlayer={handleAddPlayer}
+        defaultTee={teeColor}
+      />
     </div>
   );
 }
