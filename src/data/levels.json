@@ -3422,7 +3422,7 @@
   {
     "Level": 81,
     "Title": "Lag Putt 12m",
-    "Description": "Stop 6 putts inside 1m of the from 12 meters",
+    "Description": "Stop 6 putts within 1 meter of the hole from 12 meters.",
     "Distance": "12m",
     "Target": "6 out of 10",
     "Type": "Putt",
