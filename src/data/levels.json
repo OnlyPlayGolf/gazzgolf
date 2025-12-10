@@ -3431,7 +3431,7 @@
   {
     "Level": 82,
     "Title": "12m Putting Test",
-    "Description": "Hit 9 different putts from 12 meters and hole out every putt wih a total of 18 putts or less",
+    "Description": "Hit 9 different putts from 12 meters and hole out every putt. The target is a total of 18 putts or less (2 putts per hole on average).",
     "Distance": "12m",
     "Target": "18 or less",
     "Type": "Putt",
