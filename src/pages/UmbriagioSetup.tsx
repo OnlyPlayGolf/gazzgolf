@@ -356,24 +356,22 @@ export default function UmbriagioSetup() {
                 <Users size={20} className="text-primary" />
                 Teams (2 vs 2)
               </CardTitle>
-              <div className="flex items-center gap-3">
-                {teamsConfirmed && (
-                  <span className="text-sm font-medium text-green-600">Teams confirmed!</span>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRandomizeTeams}
-                  disabled={players.length !== 4}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRandomizeTeams}
+                disabled={players.length !== 4}
                 className="gap-1"
-                >
-                  <Shuffle size={14} />
-                  Randomize
-                </Button>
-              </div>
+              >
+                <Shuffle size={14} />
+                Randomize
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {teamsConfirmed && (
+              <p className="text-sm font-medium text-green-600 text-center">Teams confirmed!</p>
+            )}
             <DragDropContext onDragEnd={handleDragEnd}>
               {/* Team A */}
               <div className="space-y-2">
