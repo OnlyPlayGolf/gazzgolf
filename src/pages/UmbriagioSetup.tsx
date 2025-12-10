@@ -91,6 +91,7 @@ export default function UmbriagioSetup() {
   // Game settings
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
   const [teamRotation, setTeamRotation] = useState<TeamRotation>("none");
+  const [teamsConfirmed, setTeamsConfirmed] = useState(false);
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -198,6 +199,7 @@ export default function UmbriagioSetup() {
     }
     const shuffled = [...players].sort(() => Math.random() - 0.5);
     setPlayers(shuffled);
+    setTeamsConfirmed(true);
     toast({ title: "Teams randomized!" });
   };
 
@@ -354,16 +356,21 @@ export default function UmbriagioSetup() {
                 <Users size={20} className="text-primary" />
                 Teams (2 vs 2)
               </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRandomizeTeams}
-                disabled={players.length !== 4}
+              <div className="flex items-center gap-3">
+                {teamsConfirmed && (
+                  <span className="text-sm font-medium text-green-600">Teams confirmed!</span>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRandomizeTeams}
+                  disabled={players.length !== 4}
                 className="gap-1"
-              >
-                <Shuffle size={14} />
-                Randomize
-              </Button>
+                >
+                  <Shuffle size={14} />
+                  Randomize
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
