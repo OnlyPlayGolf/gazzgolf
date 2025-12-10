@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target } from "lucide-react";
+import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
@@ -20,27 +20,23 @@ interface Station {
 const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponentProps) => {
   const STORAGE_KEY = '18-up-downs-test-state';
   const [stations, setStations] = useState<Station[]>([]);
-  const [currentStationIndex, setCurrentStationIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
-  const [currentScore, setCurrentScore] = useState(0);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
   const { toast } = useToast();
 
-  // Initialize stations with randomized order
   const initializeStations = () => {
     const baseStations = [
-      // Bunker shots (2 of each)
       { lie: 'Bunker', distance: 10 },
       { lie: 'Bunker', distance: 10 },
       { lie: 'Bunker', distance: 20 },
       { lie: 'Bunker', distance: 20 },
-      // Rough chips (2 of each)
       { lie: 'Rough', distance: 10 },
       { lie: 'Rough', distance: 10 },
       { lie: 'Rough', distance: 20 },
       { lie: 'Rough', distance: 20 },
-      // Fairway chips
       { lie: 'Fairway', distance: 10 },
       { lie: 'Fairway', distance: 10 },
       { lie: 'Fairway', distance: 15 },
@@ -53,7 +49,6 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
       { lie: 'Fairway', distance: 30 },
     ];
 
-    // Randomize the order
     const shuffled = [...baseStations].sort(() => Math.random() - 0.5);
     
     return shuffled.map(station => ({
@@ -62,16 +57,14 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     }));
   };
 
-  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const state = JSON.parse(saved);
         setStations(state.stations || []);
-        setCurrentStationIndex(state.currentStationIndex || 0);
+        setCurrentIndex(state.currentIndex || 0);
         setDrillStarted(state.drillStarted || false);
-        setCurrentScore(0); // Always reset current score on load
       } catch (e) {
         console.error('Failed to restore drill state:', e);
         startDrill();
@@ -81,16 +74,15 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
   useEffect(() => {
     if (stations.length > 0 && drillStarted) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         stations,
-        currentStationIndex,
+        currentIndex,
         drillStarted
       }));
     }
-  }, [stations, currentStationIndex, drillStarted]);
+  }, [stations, currentIndex, drillStarted]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -102,42 +94,43 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     localStorage.removeItem(STORAGE_KEY);
     const newStations = initializeStations();
     setStations(newStations);
-    setCurrentStationIndex(0);
-    setCurrentScore(0);
+    setCurrentIndex(0);
     setDrillStarted(true);
   };
 
-  const addToScore = (value: number) => {
-    setCurrentScore(prev => prev + value);
+  const submitScore = (score: number) => {
+    const updatedStations = [...stations];
+    updatedStations[currentIndex].shots = score;
+    setStations(updatedStations);
+
+    // Check if all 18 are complete
+    const allComplete = updatedStations.every(s => s.shots !== null);
+    if (allComplete) {
+      // Drill complete - show summary
+    } else if (currentIndex < stations.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
   };
 
-  const submitScore = (score?: number) => {
-    const scoreToSubmit = score ?? currentScore;
-    
-    if (scoreToSubmit === 0) {
-      toast({
-        title: "Invalid score",
-        description: "Please enter a score greater than 0",
-        variant: "destructive",
-      });
-      return;
+  const currentStation = stations[currentIndex];
+  const canGoBack = currentIndex > 0;
+  const canGoForward = currentIndex < 17 && currentStation?.shots !== null;
+
+  const handleBack = () => {
+    if (canGoBack) {
+      setCurrentIndex(currentIndex - 1);
     }
+  };
 
-    const updatedStations = [...stations];
-    updatedStations[currentStationIndex].shots = scoreToSubmit;
-    setStations(updatedStations);
-    setCurrentScore(0);
-
-    if (currentStationIndex < stations.length - 1) {
-      setCurrentStationIndex(currentStationIndex + 1);
+  const handleForward = () => {
+    if (canGoForward) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
   const isComplete = drillStarted && stations.every(s => s.shots !== null);
   const totalShots = stations.reduce((sum, s) => sum + (s.shots || 0), 0);
   const upAndDowns = stations.filter(s => s.shots === 1).length;
-
-  const [finalScore, setFinalScore] = useState(0);
 
   const saveScore = async () => {
     if (!userId) {
@@ -149,7 +142,6 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
       return;
     }
 
-    // Capture the score before any state changes
     const scoreToSave = totalShots;
 
     try {
@@ -182,7 +174,6 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         description: `${scoreToSave} total shots recorded.`,
       });
 
-      // Set the final score before clearing localStorage
       setFinalScore(scoreToSave);
       localStorage.removeItem(STORAGE_KEY);
       setShowCompletionDialog(true);
@@ -227,7 +218,8 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
               {stations.map((station, idx) => (
                 <div 
                   key={idx} 
-                  className="bg-muted/50 rounded p-2 text-sm flex justify-between items-center"
+                  className="bg-muted/50 rounded p-2 text-sm flex justify-between items-center cursor-pointer hover:bg-muted"
+                  onClick={() => setCurrentIndex(idx)}
                 >
                   <span>
                     {station.lie} {station.distance}m
@@ -257,30 +249,63 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
             Start New Drill
           </Button>
         </CardContent>
+
+        <DrillCompletionDialog
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          drillTitle="18 Up & Downs"
+          score={finalScore}
+          unit="shots"
+          onContinue={() => {
+            onScoreSaved?.();
+          }}
+        />
       </Card>
     );
   }
 
-  const currentStation = stations[currentStationIndex];
-
   return (
     <div className="space-y-6">
-      {/* Active Drill */}
       <Card>
         <CardHeader>
-          <CardTitle>Station {currentStationIndex + 1} of 18</CardTitle>
+          <CardTitle>Station {currentIndex + 1} of 18</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Navigation Arrows */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleBack}
+              disabled={!canGoBack}
+              className="h-10 w-10"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentIndex + 1} / 18
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleForward}
+              disabled={!canGoForward}
+              className="h-10 w-10"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+
           <div className="p-3 bg-primary/10 rounded-md text-center">
             <div className="text-sm text-muted-foreground">Current Station</div>
             <div className="text-2xl font-bold text-primary">
-              {currentStation.lie} - {currentStation.distance}m
+              {currentStation?.lie} - {currentStation?.distance}m
             </div>
           </div>
 
           <div className="text-center">
             <div className="text-lg font-medium">
-              Current Score: {currentScore || 0}
+              Current Total: {totalShots} shots
             </div>
           </div>
 
@@ -291,7 +316,9 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
                 <Button
                   key={num}
                   onClick={() => submitScore(num)}
-                  className="h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className={`h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground ${
+                    currentStation?.shots === num ? 'ring-2 ring-offset-2 ring-primary' : ''
+                  }`}
                 >
                   {num}
                 </Button>
@@ -310,19 +337,25 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
       </Card>
 
       {/* Station History */}
-      {currentStationIndex > 0 && (
+      {stations.filter(s => s.shots !== null).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Station History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {stations.slice(0, currentStationIndex).reverse().map((station, index) => {
-                const actualIndex = currentStationIndex - 1 - index;
+              {stations.map((station, index) => {
+                if (station.shots === null) return null;
                 return (
-                  <div key={actualIndex} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                  <div 
+                    key={index} 
+                    className={`flex justify-between items-center p-2 rounded-md bg-muted/50 cursor-pointer hover:bg-muted/80 ${
+                      currentIndex === index ? 'ring-2 ring-primary' : ''
+                    }`}
+                    onClick={() => setCurrentIndex(index)}
+                  >
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">Station #{actualIndex + 1}</span>
+                      <span className="text-sm font-medium">Station #{index + 1}</span>
                       <span className="text-xs text-muted-foreground">{station.lie} - {station.distance}m</span>
                     </div>
                     <div className="text-right">
@@ -337,7 +370,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
                     </div>
                   </div>
                 );
-              })}
+              }).filter(Boolean)}
             </div>
           </CardContent>
         </Card>

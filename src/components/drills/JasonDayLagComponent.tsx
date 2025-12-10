@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target } from "lucide-react";
+import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,21 +13,17 @@ interface JasonDayLagComponentProps {
 interface PuttAttempt {
   puttNumber: number;
   distance: number;
-  outcome: string;
+  outcome: string | null;
   points: number;
   bonusPoints?: number;
 }
 
 const generateRandomDistances = (): number[] => {
-  // Fixed set of 18 distances between 8 and 20 meters
   const distances: number[] = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 9, 11, 13, 15, 17];
-  
-  // Fisher-Yates shuffle to randomize order
   for (let i = distances.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [distances[i], distances[j]] = [distances[j], distances[i]];
   }
-  
   return distances;
 };
 
@@ -43,24 +39,21 @@ const outcomes = [
 const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponentProps) => {
   const STORAGE_KEY = 'jason-day-lag-drill-state';
   const [attempts, setAttempts] = useState<PuttAttempt[]>([]);
-  const [currentPutt, setCurrentPutt] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<number[]>([]);
-  const [bonusStreak, setBonusStreak] = useState(0);
   const { toast } = useToast();
 
-  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const state = JSON.parse(saved);
         setAttempts(state.attempts || []);
-        setCurrentPutt(state.currentPutt || 1);
+        setCurrentIndex(state.currentIndex || 0);
         setIsActive(state.isActive || false);
         setDistanceSequence(state.distanceSequence || []);
-        setBonusStreak(state.bonusStreak || 0);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
         handleStartDrill();
@@ -70,18 +63,16 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
   useEffect(() => {
     if (isActive) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         attempts,
-        currentPutt,
+        currentIndex,
         isActive,
-        distanceSequence,
-        bonusStreak
+        distanceSequence
       }));
     }
-  }, [attempts, currentPutt, isActive, distanceSequence, bonusStreak]);
+  }, [attempts, currentIndex, isActive, distanceSequence]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -89,16 +80,41 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     });
   }, []);
 
-  const totalPoints = attempts.reduce((sum, att) => sum + att.points + (att.bonusPoints || 0), 0);
-  const currentDistance = distanceSequence[currentPutt - 1];
+  // Calculate bonus streak based on completed attempts up to current position
+  const calculateBonusStreak = (attemptsUpTo: PuttAttempt[]): number => {
+    let streak = 0;
+    for (let i = attemptsUpTo.length - 1; i >= 0; i--) {
+      if (attemptsUpTo[i].outcome && attemptsUpTo[i].points >= 3) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  };
+
+  const totalPoints = attempts.reduce((sum, att) => sum + (att.outcome ? att.points + (att.bonusPoints || 0) : 0), 0);
+  const currentDistance = distanceSequence[currentIndex];
+  const currentAttempt = attempts[currentIndex];
+  const completedCount = attempts.filter(a => a.outcome !== null).length;
+
+  // Calculate current bonus streak from completed attempts before current
+  const previousAttempts = attempts.slice(0, currentIndex).filter(a => a.outcome !== null);
+  const bonusStreak = calculateBonusStreak(previousAttempts);
 
   const handleStartDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
+    const distances = generateRandomDistances();
+    setDistanceSequence(distances);
     setIsActive(true);
-    setAttempts([]);
-    setCurrentPutt(1);
-    setDistanceSequence(generateRandomDistances());
-    setBonusStreak(0);
+    setAttempts(distances.map((d, i) => ({
+      puttNumber: i + 1,
+      distance: d,
+      outcome: null,
+      points: 0,
+      bonusPoints: 0
+    })));
+    setCurrentIndex(0);
     onTabChange?.('score');
   };
 
@@ -107,39 +123,42 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   };
 
   const handleOutcome = (outcome: string, points: number) => {
-    // Calculate bonus
+    // Calculate bonus points
     let bonusPoints = 0;
-    let newBonusStreak = bonusStreak;
-    
-    if (points >= 3) {
-      // Increment streak
-      newBonusStreak = bonusStreak + 1;
-      // Apply bonus if streak is 4 or more (3+ consecutive then bonus starts)
-      if (newBonusStreak >= 4) {
-        bonusPoints = 1;
-      }
-    } else {
-      // Reset streak if points < 3
-      newBonusStreak = 0;
+    if (points >= 3 && bonusStreak >= 3) {
+      bonusPoints = 1;
     }
-    
-    setBonusStreak(newBonusStreak);
 
-    const newAttempt: PuttAttempt = {
-      puttNumber: currentPutt,
-      distance: currentDistance,
+    const updatedAttempts = [...attempts];
+    updatedAttempts[currentIndex] = {
+      ...updatedAttempts[currentIndex],
       outcome,
       points,
       bonusPoints,
     };
+    setAttempts(updatedAttempts);
 
-    const newAttempts = [...attempts, newAttempt];
-    setAttempts(newAttempts);
+    // Check if all 18 are complete
+    const allComplete = updatedAttempts.every(a => a.outcome !== null);
+    if (allComplete) {
+      handleSaveScore(updatedAttempts);
+    } else if (currentIndex < 17) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
 
-    if (currentPutt === 18) {
-      handleSaveScore(newAttempts);
-    } else {
-      setCurrentPutt(currentPutt + 1);
+  const canGoBack = currentIndex > 0;
+  const canGoForward = currentIndex < 17 && currentAttempt?.outcome !== null;
+
+  const handleBack = () => {
+    if (canGoBack) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleForward = () => {
+    if (canGoForward) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
@@ -211,7 +230,6 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     }
   };
 
-
   if (!isActive || !currentDistance) {
     return null;
   }
@@ -223,7 +241,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Target className="text-primary" />
-              Putt {currentPutt} of 18
+              Putt {currentIndex + 1} of 18
             </span>
             <div className="flex flex-col items-end">
               <span className="text-lg">Score: {totalPoints}</span>
@@ -237,6 +255,31 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Navigation Arrows */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleBack}
+              disabled={!canGoBack}
+              className="h-10 w-10"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentIndex + 1} / 18
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleForward}
+              disabled={!canGoForward}
+              className="h-10 w-10"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+
           <div className="text-center p-6 bg-muted rounded-lg">
             <div className="text-sm text-muted-foreground mb-2">Distance</div>
             <div className="text-4xl font-bold text-foreground">
@@ -252,7 +295,11 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
                 <Button
                   key={outcome.label}
                   onClick={() => handleOutcome(outcome.label, outcome.points)}
-                  className="w-full"
+                  className={`w-full ${
+                    currentAttempt?.outcome === outcome.label 
+                      ? 'ring-2 ring-primary ring-offset-2' 
+                      : ''
+                  }`}
                   variant="outline"
                   size="lg"
                 >
@@ -272,17 +319,20 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
         </CardContent>
       </Card>
 
-      {attempts.length > 0 && (
+      {attempts.filter(a => a.outcome !== null).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Attempt History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {[...attempts].reverse().map((attempt) => (
+              {[...attempts].filter(a => a.outcome !== null).reverse().map((attempt) => (
                 <div 
                   key={attempt.puttNumber}
-                  className="flex justify-between items-center p-2 bg-muted rounded"
+                  className={`flex justify-between items-center p-2 bg-muted rounded cursor-pointer hover:bg-muted/80 ${
+                    currentIndex === attempt.puttNumber - 1 ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => setCurrentIndex(attempt.puttNumber - 1)}
                 >
                   <span className="text-sm">
                     Putt {attempt.puttNumber}: {attempt.distance}m

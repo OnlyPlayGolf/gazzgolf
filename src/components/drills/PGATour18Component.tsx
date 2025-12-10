@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target } from "lucide-react";
+import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
@@ -14,7 +14,7 @@ interface PGATour18ComponentProps {
 interface PuttAttempt {
   puttNumber: number;
   distance: string;
-  putts: number;
+  putts: number | null;
 }
 
 const baseDistances = [
@@ -40,7 +40,6 @@ const baseDistances = [
 
 const generateRandomSequence = (): string[] => {
   const shuffled = [...baseDistances];
-  // Fisher-Yates shuffle
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -51,7 +50,7 @@ const generateRandomSequence = (): string[] => {
 const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentProps) => {
   const STORAGE_KEY = 'pga-tour-18-drill-state';
   const [attempts, setAttempts] = useState<PuttAttempt[]>([]);
-  const [currentPutt, setCurrentPutt] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<string[]>([]);
@@ -59,14 +58,13 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   const [finalScore, setFinalScore] = useState(0);
   const { toast } = useToast();
 
-  // Load state from localStorage on mount or auto-start
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const state = JSON.parse(saved);
         setAttempts(state.attempts || []);
-        setCurrentPutt(state.currentPutt || 1);
+        setCurrentIndex(state.currentIndex || 0);
         setIsActive(state.isActive || false);
         setDistanceSequence(state.distanceSequence || []);
       } catch (e) {
@@ -78,17 +76,16 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
   useEffect(() => {
     if (isActive) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         attempts,
-        currentPutt,
+        currentIndex,
         isActive,
         distanceSequence
       }));
     }
-  }, [attempts, currentPutt, isActive, distanceSequence]);
+  }, [attempts, currentIndex, isActive, distanceSequence]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -96,15 +93,22 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
     });
   }, []);
 
-  const totalPuttsCount = attempts.reduce((sum, att) => sum + att.putts, 0);
-  const currentDistance = distanceSequence[currentPutt - 1];
+  const totalPuttsCount = attempts.reduce((sum, att) => sum + (att.putts || 0), 0);
+  const currentDistance = distanceSequence[currentIndex];
+  const currentAttempt = attempts[currentIndex];
+  const completedCount = attempts.filter(a => a.putts !== null).length;
 
   const handleStartDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
+    const distances = generateRandomSequence();
+    setDistanceSequence(distances);
     setIsActive(true);
-    setAttempts([]);
-    setCurrentPutt(1);
-    setDistanceSequence(generateRandomSequence());
+    setAttempts(distances.map((d, i) => ({
+      puttNumber: i + 1,
+      distance: d,
+      putts: null
+    })));
+    setCurrentIndex(0);
     onTabChange?.('score');
   };
 
@@ -112,25 +116,39 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
     localStorage.removeItem(STORAGE_KEY);
     setIsActive(false);
     setAttempts([]);
-    setCurrentPutt(1);
+    setCurrentIndex(0);
     setDistanceSequence([]);
   };
 
   const handlePuttSelection = (numPutts: number) => {
-    const newAttempt: PuttAttempt = {
-      puttNumber: currentPutt,
-      distance: currentDistance,
+    const updatedAttempts = [...attempts];
+    updatedAttempts[currentIndex] = {
+      ...updatedAttempts[currentIndex],
       putts: numPutts,
     };
+    setAttempts(updatedAttempts);
 
-    const newAttempts = [...attempts, newAttempt];
-    setAttempts(newAttempts);
+    // Check if all 18 are complete
+    const allComplete = updatedAttempts.every(a => a.putts !== null);
+    if (allComplete) {
+      handleSaveScore(updatedAttempts);
+    } else if (currentIndex < 17) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
 
-    if (currentPutt === 18) {
-      // Drill completed
-      handleSaveScore(newAttempts);
-    } else {
-      setCurrentPutt(currentPutt + 1);
+  const canGoBack = currentIndex > 0;
+  const canGoForward = currentIndex < 17 && currentAttempt?.putts !== null;
+
+  const handleBack = () => {
+    if (canGoBack) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleForward = () => {
+    if (canGoForward) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
@@ -145,7 +163,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       return;
     }
 
-    const totalPutts = finalAttempts.reduce((sum, att) => sum + att.putts, 0);
+    const totalPutts = finalAttempts.reduce((sum, att) => sum + (att.putts || 0), 0);
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
@@ -199,10 +217,15 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
 
   const resetDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
+    const distances = generateRandomSequence();
+    setDistanceSequence(distances);
     setIsActive(true);
-    setAttempts([]);
-    setCurrentPutt(1);
-    setDistanceSequence(generateRandomSequence());
+    setAttempts(distances.map((d, i) => ({
+      puttNumber: i + 1,
+      distance: d,
+      putts: null
+    })));
+    setCurrentIndex(0);
   };
 
   return (
@@ -211,9 +234,34 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       {isActive && currentDistance && (
         <Card>
           <CardHeader>
-            <CardTitle>Putt #{currentPutt} of 18</CardTitle>
+            <CardTitle>Putt #{currentIndex + 1} of 18</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Navigation Arrows */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleBack}
+                disabled={!canGoBack}
+                className="h-10 w-10"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {currentIndex + 1} / 18
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleForward}
+                disabled={!canGoForward}
+                className="h-10 w-10"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+
             <div className="p-3 bg-primary/10 rounded-md text-center">
               <div className="text-sm text-muted-foreground">Distance</div>
               <div className="text-2xl font-bold text-primary">{currentDistance}</div>
@@ -231,7 +279,9 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
                   <Button
                     key={num}
                     onClick={() => handlePuttSelection(num)}
-                    className="h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className={`h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground ${
+                      currentAttempt?.putts === num ? 'ring-2 ring-offset-2 ring-primary' : ''
+                    }`}
                   >
                     {num}
                   </Button>
@@ -251,15 +301,21 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       )}
 
       {/* Shot History */}
-      {attempts.length > 0 && (
+      {attempts.filter(a => a.putts !== null).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Putt History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {[...attempts].reverse().map((attempt, index) => (
-                <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+              {[...attempts].filter(a => a.putts !== null).reverse().map((attempt, index) => (
+                <div 
+                  key={attempt.puttNumber} 
+                  className={`flex justify-between items-center p-2 rounded-md bg-muted/50 cursor-pointer hover:bg-muted/80 ${
+                    currentIndex === attempt.puttNumber - 1 ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => setCurrentIndex(attempt.puttNumber - 1)}
+                >
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">Putt #{attempt.puttNumber}</span>
                     <span className="text-xs text-muted-foreground">{attempt.distance}</span>
