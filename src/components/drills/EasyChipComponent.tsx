@@ -180,7 +180,7 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
             </div>
 
             <div className="space-y-2">
-              <div className="text-sm font-medium text-center mb-3">Did you land within one wedge length?</div>
+              <div className="text-sm font-medium text-center mb-3">Did your ball stop within one wedge length of the hole?</div>
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   onClick={handleMake}
