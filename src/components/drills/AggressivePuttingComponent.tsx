@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Target } from "lucide-react";
+import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +13,7 @@ interface AggressivePuttingComponentProps {
 interface Attempt {
   attemptNumber: number;
   distance: number;
-  outcome: string;
+  outcome: string | null;
   points: number;
 }
 
@@ -29,7 +29,7 @@ const outcomes = [
 const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePuttingComponentProps) => {
   const STORAGE_KEY = 'aggressive-putting-drill-state';
   const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [currentAttempt, setCurrentAttempt] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -41,7 +41,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
       try {
         const state = JSON.parse(saved);
         setAttempts(state.attempts || []);
-        setCurrentAttempt(state.currentAttempt || 1);
+        setCurrentIndex(state.currentIndex || 0);
         setIsActive(state.isActive || false);
       } catch (e) {
         console.error('Failed to restore drill state:', e);
@@ -57,11 +57,11 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     if (isActive) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         attempts,
-        currentAttempt,
+        currentIndex,
         isActive
       }));
     }
-  }, [attempts, currentAttempt, isActive]);
+  }, [attempts, currentIndex, isActive]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -69,15 +69,17 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     });
   }, []);
 
-  const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
-  const currentDistanceIndex = (attempts.length) % distances.length;
+  const totalPoints = attempts.reduce((sum, attempt) => sum + (attempt.outcome ? attempt.points : 0), 0);
+  const currentDistanceIndex = currentIndex % distances.length;
   const currentDistance = distances[currentDistanceIndex];
+  const currentAttempt = attempts[currentIndex];
+  const completedCount = attempts.filter(a => a.outcome !== null).length;
 
   const handleStartDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
     setIsActive(true);
-    setAttempts([]);
-    setCurrentAttempt(1);
+    setAttempts([{ attemptNumber: 1, distance: distances[0], outcome: null, points: 0 }]);
+    setCurrentIndex(0);
     onTabChange?.('score');
   };
 
@@ -86,22 +88,48 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
   };
 
   const handleOutcome = (outcome: string, points: number) => {
-    const newAttempt: Attempt = {
-      attemptNumber: currentAttempt,
-      distance: currentDistance,
+    const updatedAttempts = [...attempts];
+    updatedAttempts[currentIndex] = {
+      ...updatedAttempts[currentIndex],
       outcome,
       points,
     };
+    setAttempts(updatedAttempts);
 
-    const newAttempts = [...attempts, newAttempt];
-    setAttempts(newAttempts);
-    setCurrentAttempt(currentAttempt + 1);
-
-    const newTotalPoints = newAttempts.reduce((sum, att) => sum + att.points, 0);
+    const newTotalPoints = updatedAttempts.reduce((sum, att) => sum + (att.outcome ? att.points : 0), 0);
     
     if (newTotalPoints >= 15) {
       // Drill completed
-      handleSaveScore(newTotalPoints, newAttempts.length);
+      handleSaveScore(newTotalPoints, updatedAttempts.filter(a => a.outcome !== null).length);
+    } else {
+      // Move to next attempt
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= updatedAttempts.length) {
+        // Add new attempt slot
+        const newAttempt: Attempt = {
+          attemptNumber: nextIndex + 1,
+          distance: distances[nextIndex % distances.length],
+          outcome: null,
+          points: 0,
+        };
+        setAttempts([...updatedAttempts, newAttempt]);
+      }
+      setCurrentIndex(nextIndex);
+    }
+  };
+
+  const canGoBack = currentIndex > 0;
+  const canGoForward = currentIndex < attempts.length - 1 && currentAttempt?.outcome !== null;
+
+  const handleBack = () => {
+    if (canGoBack) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleForward = () => {
+    if (canGoForward) {
+      setCurrentIndex(currentIndex + 1);
     }
   };
 
@@ -117,7 +145,6 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     }
 
     try {
-      // Ensure drill exists and get its UUID by title
       const { data: drillId, error: drillError } = await (supabase as any)
         .rpc('get_or_create_drill_by_title', { p_title: 'Aggressive Putting' });
 
@@ -138,7 +165,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
           drill_id: drillId,
           user_id: userId,
           total_points: totalAttempts,
-          attempts_json: attempts,
+          attempts_json: attempts.filter(a => a.outcome !== null),
         });
 
       if (saveError) {
@@ -183,7 +210,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Target className="text-primary" />
-              Putt {currentAttempt}
+              Putt {currentIndex + 1}
             </span>
             <div className="flex flex-col items-end">
               <span className="text-lg">Score: {totalPoints}/15</span>
@@ -191,6 +218,31 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Navigation Arrows */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleBack}
+              disabled={!canGoBack}
+              className="h-10 w-10"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentIndex + 1} / {attempts.length}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleForward}
+              disabled={!canGoForward}
+              className="h-10 w-10"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+
           <div className="text-center p-6 bg-muted rounded-lg">
             <div className="text-sm text-muted-foreground mb-2">Distance</div>
             <div className="text-4xl font-bold text-foreground">
@@ -206,7 +258,11 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
               <Button
                 key={outcome.label}
                 onClick={() => handleOutcome(outcome.label, outcome.points)}
-                className="w-full h-auto py-3 flex flex-col gap-1"
+                className={`w-full h-auto py-3 flex flex-col gap-1 ${
+                  currentAttempt?.outcome === outcome.label 
+                    ? 'ring-2 ring-primary ring-offset-2' 
+                    : ''
+                }`}
                 variant={outcome.points > 0 ? "default" : outcome.points === 0 ? "secondary" : "destructive"}
               >
                 <span className="font-semibold">{outcome.label}</span>
@@ -228,17 +284,20 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
       </Card>
 
       {/* Attempts History */}
-      {attempts.length > 0 && (
+      {attempts.filter(a => a.outcome !== null).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Attempt History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {attempts.map((attempt, index) => (
+              {attempts.filter(a => a.outcome !== null).map((attempt, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
+                  className={`flex items-center justify-between p-3 bg-muted/50 rounded-md cursor-pointer hover:bg-muted ${
+                    currentIndex === index ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => setCurrentIndex(index)}
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-medium">#{attempt.attemptNumber}</span>
