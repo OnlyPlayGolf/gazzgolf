@@ -2234,7 +2234,7 @@
   {
     "Level": 49,
     "Title": "Wedge Approach 80m",
-    "Description": "Pick a target 80m away. Hit a ball left of the target, and make sure it finishes no more than 15 meters left of the target.",
+    "Description": "Pick a target 80m away. Hit a ball left of the target, and make sure it finishes no more than 15 meters left of the target. The shot must carry over 70 meters.",
     "Distance": "80m",
     "Target": "1 out of 10",
     "Type": "Wedge",
@@ -2243,7 +2243,7 @@
   {
     "Level": 50,
     "Title": "Approach 80m Right",
-    "Description": "Pick a target 80m away. Hit a ball right of the target, and make sure it finishes no more than 15 meters right of the target",
+    "Description": "Pick a target 80m away. Hit a ball right of the target, and make sure it finishes no more than 15 meters right of the target. The shot must carry over 70 meters.",
     "Distance": "80m",
     "Target": "1 out of 10",
     "Type": "Wedge",
