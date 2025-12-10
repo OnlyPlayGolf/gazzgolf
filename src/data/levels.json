@@ -3503,7 +3503,7 @@
   {
     "Level": 90,
     "Title": "Pro Flop Shots",
-    "Description": "Hit 5 flop over a bunker that stop inside 1.5 meters of the hole",
+    "Description": "Hit 5 flop shots over a bunker that stop within 1.5 meters of the hole.",
     "Distance": "10-20m",
     "Target": "5 out of 10",
     "Type": "Chip",
