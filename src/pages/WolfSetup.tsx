@@ -290,7 +290,6 @@ export default function WolfSetup() {
                               onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                               showTee={false}
                               dragHandleProps={provided.dragHandleProps}
-                              showDragHandle={true}
                             />
                           </div>
                         )}

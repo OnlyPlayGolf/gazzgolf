@@ -400,7 +400,6 @@ export default function UmbriagioSetup() {
                                 onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                                 showTee={false}
                                 dragHandleProps={provided.dragHandleProps}
-                                showDragHandle={true}
                               />
                             </div>
                           )}
@@ -444,7 +443,6 @@ export default function UmbriagioSetup() {
                                 onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                                 showTee={false}
                                 dragHandleProps={provided.dragHandleProps}
-                                showDragHandle={true}
                               />
                             </div>
                           )}
