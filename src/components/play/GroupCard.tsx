@@ -24,8 +24,8 @@ interface GroupCardProps {
 
 const formatHandicap = (handicap: number | undefined): string => {
   if (handicap === undefined) return "";
-  if (handicap > 0) return `+${handicap}`;
-  return `${handicap}`;
+  if (handicap < 0) return `+${Math.abs(handicap)}`;
+  return handicap.toString();
 };
 
 const formatPlayerName = (player: Player): string => {
