@@ -30,7 +30,7 @@ export default function HowToPlayCopenhagen() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Basic Scoring (6 Points Per Hole)</CardTitle>
+            <CardTitle>Scoring Rules (6 Points Per Hole)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="space-y-2">
@@ -41,15 +41,8 @@ export default function HowToPlayCopenhagen() {
                 <li>Highest score: <span className="font-semibold">0 points</span></li>
               </ul>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tie Rules</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="space-y-2">
+            <div className="space-y-2 pt-2 border-t">
+              <p className="font-medium">Tie Rules:</p>
               <p><span className="font-medium">Tie for lowest (2 players):</span> 3-3-0</p>
               <p><span className="font-medium">Three-way tie:</span> 2-2-2</p>
               <p><span className="font-medium">Tie for second (2 players):</span> 4-1-1</p>
