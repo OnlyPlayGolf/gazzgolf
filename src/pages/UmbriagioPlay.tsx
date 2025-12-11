@@ -31,6 +31,16 @@ interface CourseHole {
   stroke_index: number;
 }
 
+interface TeamCombination {
+  teamA: [string, string];
+  teamB: [string, string];
+}
+
+interface RotationData {
+  type: "none" | "every9" | "every6";
+  schedule: TeamCombination[];
+}
+
 export default function UmbriagioPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
@@ -43,6 +53,7 @@ export default function UmbriagioPlay() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [rotationData, setRotationData] = useState<RotationData | null>(null);
   
   // Current hole state
   const [par, setPar] = useState(4);
@@ -59,6 +70,34 @@ export default function UmbriagioPlay() {
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+
+  // Get current team players based on rotation schedule
+  const getCurrentTeams = () => {
+    if (!game) return null;
+    
+    if (!rotationData || rotationData.type === "none" || rotationData.schedule.length === 0) {
+      return {
+        teamAPlayer1: game.team_a_player_1,
+        teamAPlayer2: game.team_a_player_2,
+        teamBPlayer1: game.team_b_player_1,
+        teamBPlayer2: game.team_b_player_2,
+      };
+    }
+
+    const holesPerSegment = rotationData.type === "every9" ? 9 : 6;
+    const segmentIndex = Math.floor((currentHole - 1) / holesPerSegment);
+    const activeScheduleIndex = Math.min(segmentIndex, rotationData.schedule.length - 1);
+    const activeTeams = rotationData.schedule[activeScheduleIndex];
+
+    return {
+      teamAPlayer1: activeTeams.teamA[0],
+      teamAPlayer2: activeTeams.teamA[1],
+      teamBPlayer1: activeTeams.teamB[0],
+      teamBPlayer2: activeTeams.teamB[1],
+    };
+  };
+
+  const currentTeams = getCurrentTeams();
 
   useEffect(() => {
     if (gameId) {
@@ -98,6 +137,18 @@ export default function UmbriagioPlay() {
       };
       
       setGame(typedGame);
+
+      // Load rotation data from sessionStorage
+      const rotationKey = `umbriago_rotation_${gameId}`;
+      const storedRotation = sessionStorage.getItem(rotationKey);
+      if (storedRotation) {
+        try {
+          const parsed = JSON.parse(storedRotation) as RotationData;
+          setRotationData(parsed);
+        } catch (e) {
+          console.error("Failed to parse rotation data:", e);
+        }
+      }
 
       // Fetch course holes if course_id exists
       if (gameData.course_id) {
@@ -476,13 +527,13 @@ export default function UmbriagioPlay() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <ScoreInput
-              label={game.team_a_player_1}
+              label={currentTeams?.teamAPlayer1 || game.team_a_player_1}
               value={scores.teamAPlayer1}
               onChange={(delta) => updateScore('teamAPlayer1', delta)}
               labelColor="text-blue-500"
             />
             <ScoreInput
-              label={game.team_a_player_2}
+              label={currentTeams?.teamAPlayer2 || game.team_a_player_2}
               value={scores.teamAPlayer2}
               onChange={(delta) => updateScore('teamAPlayer2', delta)}
               labelColor="text-blue-500"
@@ -497,13 +548,13 @@ export default function UmbriagioPlay() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <ScoreInput
-              label={game.team_b_player_1}
+              label={currentTeams?.teamBPlayer1 || game.team_b_player_1}
               value={scores.teamBPlayer1}
               onChange={(delta) => updateScore('teamBPlayer1', delta)}
               labelColor="text-red-500"
             />
             <ScoreInput
-              label={game.team_b_player_2}
+              label={currentTeams?.teamBPlayer2 || game.team_b_player_2}
               value={scores.teamBPlayer2}
               onChange={(delta) => updateScore('teamBPlayer2', delta)}
               labelColor="text-red-500"
