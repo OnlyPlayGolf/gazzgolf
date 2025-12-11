@@ -375,9 +375,6 @@ export const ProStatsAverages = () => {
             <StatRow label="Holes" value={scoringStats.holesCount} />
             <StatRow label="Score" value={scoringStats.avgScore.toFixed(1)} />
             <StatRow label="Score/par" value={`${scoringStats.avgScoreVsPar >= 0 ? '+' : ''}${scoringStats.avgScoreVsPar.toFixed(1)}`} />
-            <StatRow label="Score 1-6" value={scoringStats.scoreHoles1to6.toFixed(1)} />
-            <StatRow label="Score 7-12" value={scoringStats.scoreHoles7to12.toFixed(1)} />
-            <StatRow label="Score 13-18" value={scoringStats.scoreHoles13to18.toFixed(1)} />
             <StatRow label="Score par 3" value={scoringStats.scorePar3.toFixed(1)} />
             <StatRow label="Score par 4" value={scoringStats.scorePar4.toFixed(1)} />
             <StatRow label="Score par 5" value={scoringStats.scorePar5.toFixed(1)} />
