@@ -157,8 +157,8 @@ export function AddPlayerDialog({
                   const handicap = friend.handicap ? parseFloat(friend.handicap) : undefined;
                   const formatHandicap = (hcp: number | undefined): string => {
                     if (hcp === undefined) return "";
-                    if (hcp > 0) return `+${hcp}`;
-                    return `${hcp}`;
+                    if (hcp < 0) return `+${Math.abs(hcp)}`;
+                    return hcp.toString();
                   };
                   return (
                     <button
