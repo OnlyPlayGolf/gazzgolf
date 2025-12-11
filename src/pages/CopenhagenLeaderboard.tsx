@@ -72,26 +72,18 @@ export default function CopenhagenLeaderboard() {
             <CardTitle className="text-lg">Standings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {players.map((player, i) => {
-              const winnings = (player.points - averagePoints) * game.stake_per_point;
-              return (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="flex-shrink-0">{getMedalIcon(i)}</div>
-                  <div className="flex-1">
-                    <div className={`font-medium ${player.color}`}>{player.name}</div>
-                    {game.stake_per_point > 0 && (
-                      <div className={`text-sm ${winnings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {winnings >= 0 ? '+' : ''}${winnings.toFixed(2)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">{player.points}</div>
-                    <div className="text-xs text-muted-foreground">points</div>
-                  </div>
+            {players.map((player, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="flex-shrink-0">{getMedalIcon(i)}</div>
+                <div className="flex-1">
+                  <div className={`font-medium ${player.color}`}>{player.name}</div>
                 </div>
-              );
-            })}
+                <div className="text-right">
+                  <div className="text-2xl font-bold">{player.points}</div>
+                  <div className="text-xs text-muted-foreground">points</div>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 

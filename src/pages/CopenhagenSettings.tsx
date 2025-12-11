@@ -148,10 +148,6 @@ export default function CopenhagenSettings() {
               <span>{game.holes_played}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Stake</span>
-              <span>${game.stake_per_point}/point</span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-muted-foreground">Handicaps</span>
               <span>{game.use_handicaps ? "Enabled" : "Disabled"}</span>
             </div>
