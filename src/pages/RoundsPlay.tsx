@@ -363,6 +363,10 @@ export default function RoundsPlay() {
       navigate('/wolf/setup');
       return;
     }
+    if (setupState.gameFormat === "copenhagen") {
+      navigate('/copenhagen/setup');
+      return;
+    }
     if (setupState.gameFormat === "stroke_play") {
       navigate('/stroke-play/setup');
       return;
@@ -614,6 +618,7 @@ export default function RoundsPlay() {
                       { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
                       { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
                       { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
+                      { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
                     ].map((fmt) => (
                       <div key={fmt.id} className="relative">
                         <button
@@ -633,6 +638,7 @@ export default function RoundsPlay() {
                             e.stopPropagation();
                             if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
                             else if (fmt.id === "umbriago") navigate('/umbriago/how-to-play');
+                            else if (fmt.id === "copenhagen") navigate('/copenhagen/how-to-play');
                             else navigate('/wolf/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
