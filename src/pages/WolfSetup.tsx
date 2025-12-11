@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Settings, Shuffle, GripVertical } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Settings, Shuffle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -278,22 +279,19 @@ export default function WolfSetup() {
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            className={snapshot.isDragging ? "opacity-90" : ""}
+                            className={cn("flex items-center gap-2", snapshot.isDragging ? "opacity-90" : "")}
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 text-sm font-medium text-muted-foreground text-center flex-shrink-0">
-                                {shuffled ? `${index + 1}.` : '-'}
-                              </span>
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 flex-shrink-0">
-                                <GripVertical size={16} className="text-muted-foreground" />
-                              </div>
-                              <SetupPlayerCard
-                                player={player}
-                                onEdit={() => setEditingPlayer(player)}
-                                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
-                                showTee={false}
-                              />
-                            </div>
+                            <span className="w-6 text-sm font-medium text-muted-foreground text-center flex-shrink-0">
+                              {shuffled ? `${index + 1}.` : '-'}
+                            </span>
+                            <SetupPlayerCard
+                              player={player}
+                              onEdit={() => setEditingPlayer(player)}
+                              onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                              showTee={false}
+                              dragHandleProps={provided.dragHandleProps}
+                              showDragHandle={true}
+                            />
                           </div>
                         )}
                       </Draggable>
