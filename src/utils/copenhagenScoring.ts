@@ -142,21 +142,20 @@ export function calculateNetScore(
 }
 
 /**
- * Calculate total winnings/losses for each player
+ * Calculate point differentials for each player
  */
-export function calculateWinnings(
+export function calculatePointDifferentials(
   player1Points: number,
   player2Points: number,
-  player3Points: number,
-  stakePerPoint: number
+  player3Points: number
 ): { player1: number; player2: number; player3: number } {
   const totalPoints = player1Points + player2Points + player3Points;
   const averagePoints = totalPoints / 3;
   
   return {
-    player1: (player1Points - averagePoints) * stakePerPoint,
-    player2: (player2Points - averagePoints) * stakePerPoint,
-    player3: (player3Points - averagePoints) * stakePerPoint,
+    player1: player1Points - averagePoints,
+    player2: player2Points - averagePoints,
+    player3: player3Points - averagePoints,
   };
 }
 

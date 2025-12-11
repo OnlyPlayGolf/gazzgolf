@@ -23,7 +23,6 @@ export interface CopenhagenGame {
   player_3_tee: string | null;
   
   use_handicaps: boolean;
-  stake_per_point: number;
   
   player_1_total_points: number;
   player_2_total_points: number;
@@ -91,7 +90,6 @@ export interface CopenhagenSetupData {
   player_2_tee?: string;
   player_3_tee?: string;
   use_handicaps: boolean;
-  stake_per_point: number;
 }
 
 export interface PlayerScore {

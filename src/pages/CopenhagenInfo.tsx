@@ -83,10 +83,6 @@ export default function CopenhagenInfo() {
               <span className="font-medium">{game.holes_played}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Stake</span>
-              <span className="font-medium">${game.stake_per_point}/point</span>
-            </div>
-            <div className="flex justify-between">
               <span className="text-muted-foreground">Handicaps</span>
               <span className="font-medium">{game.use_handicaps ? "Yes" : "No"}</span>
             </div>

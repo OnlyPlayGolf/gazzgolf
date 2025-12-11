@@ -88,11 +88,6 @@ export default function CopenhagenSummary() {
             <Trophy className="mx-auto text-yellow-500 mb-2" size={48} />
             <h2 className="text-2xl font-bold">{players[0].name}</h2>
             <p className="text-4xl font-bold text-yellow-600 mt-2">{players[0].points} pts</p>
-            {game.stake_per_point > 0 && (
-              <p className="text-green-600 font-medium mt-1">
-                +${((players[0].points - averagePoints) * game.stake_per_point).toFixed(2)}
-              </p>
-            )}
           </CardContent>
         </Card>
 
@@ -102,27 +97,19 @@ export default function CopenhagenSummary() {
             <CardTitle className="text-lg">Final Standings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {players.map((player, i) => {
-              const winnings = (player.points - averagePoints) * game.stake_per_point;
-              return (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-3">
-                    <span className={`w-8 h-8 rounded-full ${player.bg} flex items-center justify-center text-white font-bold`}>
-                      {i + 1}
-                    </span>
-                    <span className={`font-medium ${player.color}`}>{player.name}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold">{player.points}</div>
-                    {game.stake_per_point > 0 && (
-                      <div className={`text-sm ${winnings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {winnings >= 0 ? '+' : ''}${winnings.toFixed(2)}
-                      </div>
-                    )}
-                  </div>
+            {players.map((player, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <span className={`w-8 h-8 rounded-full ${player.bg} flex items-center justify-center text-white font-bold`}>
+                    {i + 1}
+                  </span>
+                  <span className={`font-medium ${player.color}`}>{player.name}</span>
                 </div>
-              );
-            })}
+                <div className="text-right">
+                  <div className="text-xl font-bold">{player.points}</div>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
