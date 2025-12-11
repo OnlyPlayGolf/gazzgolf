@@ -19,9 +19,6 @@ interface ScoringStats {
   holesCount: number;
   avgScore: number;
   avgScoreVsPar: number;
-  scoreHoles1to6: number;
-  scoreHoles7to12: number;
-  scoreHoles13to18: number;
   scorePar3: number;
   scorePar4: number;
   scorePar5: number;
@@ -33,22 +30,71 @@ interface ScoringStats {
   tripleOrWorse: number;
 }
 
-interface SGStats {
+interface DetailedSGStats {
   roundsCount: number;
   holesCount: number;
   avgScoreVsPar: number;
-  sgTeeTotal: number;
-  sgApproachTotal: number;
-  sgApproach200Plus: number;
-  sgApproach120to200: number;
-  sgApproach40to120: number;
+  
+  // Long Game - Tee Shots
+  sgTeePar45Total: number;
+  sgDrivePar45: number;
+  sgOtherPar45: number;
+  
+  // Long Game - Shots 40m+
+  sgLongGame40Plus: number;
+  sgLongGame200Plus: number;
+  sgLongGame160to200: number;
+  sgLongGame120to160: number;
+  sgLongGame80to120: number;
+  sgLongGame40to80: number;
+  
+  // Approach from Fairway
+  sgApproachFw40Plus: number;
+  sgApproachFw200Plus: number;
+  sgApproachFw160to200: number;
+  sgApproachFw120to160: number;
+  sgApproachFw80to120: number;
+  sgApproachFw40to80: number;
+  
+  // Approach from Rough
+  sgApproachRough40Plus: number;
+  sgApproachRough200Plus: number;
+  sgApproachRough160to200: number;
+  sgApproachRough120to160: number;
+  sgApproachRough80to120: number;
+  sgApproachRough40to80: number;
+  
+  // Short Game 0-20m
+  sgShortGame0to20Total: number;
+  sgShortGame0to20Fairway: number;
+  sgShortGame0to20Rough: number;
+  sgShortGame0to20Bunker: number;
+  
+  // Short Game 20-40m
+  sgShortGame20to40Total: number;
+  sgShortGame20to40Fairway: number;
+  sgShortGame20to40Bunker: number;
   sgShortGameTotal: number;
-  sgShortGameFwRough: number;
-  sgShortGameBunker: number;
+  
+  // Putting
   sgPuttingTotal: number;
-  sgPutting0to2: number;
-  sgPutting2to7: number;
-  sgPutting7Plus: number;
+  sgPutting0to1: number;
+  sgPutting1to2: number;
+  sgPutting2to4: number;
+  sgPutting4to6: number;
+  sgPutting6to8: number;
+  sgPutting8to10: number;
+  sgPutting10to14: number;
+  sgPutting14to18: number;
+  sgPutting18Plus: number;
+  
+  // Other
+  sgBunker40to120: number;
+  sgBunker120to200: number;
+  sgRecovery40to120: number;
+  sgRecovery120to240: number;
+  sgLayup40Plus: number;
+  
   sgTotal: number;
 }
 
@@ -59,7 +105,7 @@ export const ProStatsAverages = () => {
   const [filter, setFilter] = useState<TimeFilter>('all');
   const [view, setView] = useState<StatsView>('scoring');
   const [scoringStats, setScoringStats] = useState<ScoringStats | null>(null);
-  const [sgStats, setSgStats] = useState<SGStats | null>(null);
+  const [sgStats, setSgStats] = useState<DetailedSGStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -122,9 +168,6 @@ export const ProStatsAverages = () => {
       let totalScore = 0;
       let totalPar = 0;
       let totalHoles = 0;
-      let scoreHoles1to6 = 0;
-      let scoreHoles7to12 = 0;
-      let scoreHoles13to18 = 0;
       let scorePar3 = 0;
       let scorePar4 = 0;
       let scorePar5 = 0;
@@ -135,103 +178,164 @@ export const ProStatsAverages = () => {
       let doubleBogeys = 0;
       let tripleOrWorse = 0;
 
-      // Initialize SG stats
-      let sgTeeTotal = 0;
-      let sgApproachTotal = 0;
-      let sgApproach200Plus = 0;
-      let sgApproach120to200 = 0;
-      let sgApproach40to120 = 0;
+      // Initialize detailed SG stats
+      let sgTeePar45Total = 0;
+      let sgDrivePar45 = 0;
+      let sgOtherPar45 = 0;
+      let sgLongGame40Plus = 0;
+      let sgLongGame200Plus = 0;
+      let sgLongGame160to200 = 0;
+      let sgLongGame120to160 = 0;
+      let sgLongGame80to120 = 0;
+      let sgLongGame40to80 = 0;
+      let sgApproachFw40Plus = 0;
+      let sgApproachFw200Plus = 0;
+      let sgApproachFw160to200 = 0;
+      let sgApproachFw120to160 = 0;
+      let sgApproachFw80to120 = 0;
+      let sgApproachFw40to80 = 0;
+      let sgApproachRough40Plus = 0;
+      let sgApproachRough200Plus = 0;
+      let sgApproachRough160to200 = 0;
+      let sgApproachRough120to160 = 0;
+      let sgApproachRough80to120 = 0;
+      let sgApproachRough40to80 = 0;
+      let sgShortGame0to20Total = 0;
+      let sgShortGame0to20Fairway = 0;
+      let sgShortGame0to20Rough = 0;
+      let sgShortGame0to20Bunker = 0;
+      let sgShortGame20to40Total = 0;
+      let sgShortGame20to40Fairway = 0;
+      let sgShortGame20to40Bunker = 0;
       let sgShortGameTotal = 0;
-      let sgShortGameFwRough = 0;
-      let sgShortGameBunker = 0;
       let sgPuttingTotal = 0;
-      let sgPutting0to2 = 0;
-      let sgPutting2to7 = 0;
-      let sgPutting7Plus = 0;
+      let sgPutting0to1 = 0;
+      let sgPutting1to2 = 0;
+      let sgPutting2to4 = 0;
+      let sgPutting4to6 = 0;
+      let sgPutting6to8 = 0;
+      let sgPutting8to10 = 0;
+      let sgPutting10to14 = 0;
+      let sgPutting14to18 = 0;
+      let sgPutting18Plus = 0;
+      let sgBunker40to120 = 0;
+      let sgBunker120to200 = 0;
+      let sgRecovery40to120 = 0;
+      let sgRecovery120to240 = 0;
+      let sgLayup40Plus = 0;
 
       holesData?.forEach(hole => {
         const score = hole.score || 0;
         const par = hole.par || 0;
-        const holeNum = hole.hole_number || 0;
         const diff = score - par;
 
         totalScore += score;
         totalPar += par;
         totalHoles++;
 
-        // Score by hole range
-        if (holeNum >= 1 && holeNum <= 6) {
-          scoreHoles1to6 += score;
-        } else if (holeNum >= 7 && holeNum <= 12) {
-          scoreHoles7to12 += score;
-        } else if (holeNum >= 13 && holeNum <= 18) {
-          scoreHoles13to18 += score;
-        }
-
         // Score by par
-        if (par === 3) {
-          scorePar3 += score;
-        } else if (par === 4) {
-          scorePar4 += score;
-        } else if (par === 5) {
-          scorePar5 += score;
-        }
+        if (par === 3) scorePar3 += score;
+        else if (par === 4) scorePar4 += score;
+        else if (par === 5) scorePar5 += score;
 
         // Score distribution
-        if (diff <= -2) {
-          eagles++;
-        } else if (diff === -1) {
-          birdies++;
-        } else if (diff === 0) {
-          pars++;
-        } else if (diff === 1) {
-          bogeys++;
-        } else if (diff === 2) {
-          doubleBogeys++;
-        } else if (diff >= 3) {
-          tripleOrWorse++;
-        }
+        if (diff <= -2) eagles++;
+        else if (diff === -1) birdies++;
+        else if (diff === 0) pars++;
+        else if (diff === 1) bogeys++;
+        else if (diff === 2) doubleBogeys++;
+        else if (diff >= 3) tripleOrWorse++;
 
         // Strokes gained by category
         if (hole.pro_shot_data) {
           const shots = hole.pro_shot_data as unknown as Shot[];
           
-          shots.forEach(shot => {
+          shots.forEach((shot, idx) => {
             const sg = shot.strokesGained || 0;
             const dist = shot.startDistance || 0;
-            const lie = shot.startLie || '';
+            const lie = (shot.startLie || '').toLowerCase();
             const shotType = shot.type;
+            const isTeeShot = idx === 0;
+            const isFairway = lie === 'fairway' || lie === 'tee';
+            const isRough = lie === 'rough' || lie === 'first_cut';
+            const isBunker = lie === 'bunker' || lie === 'sand';
+            const isRecovery = lie === 'recovery' || lie === 'trees' || lie === 'penalty';
 
             if (shotType === 'putt') {
-              // Putting
+              // Putting with detailed distance breakdown
               sgPuttingTotal += sg;
-              if (dist <= 2) {
-                sgPutting0to2 += sg;
-              } else if (dist <= 7) {
-                sgPutting2to7 += sg;
-              } else {
-                sgPutting7Plus += sg;
-              }
-            } else if (shotType === 'tee' && par >= 4) {
+              if (dist <= 1) sgPutting0to1 += sg;
+              else if (dist <= 2) sgPutting1to2 += sg;
+              else if (dist <= 4) sgPutting2to4 += sg;
+              else if (dist <= 6) sgPutting4to6 += sg;
+              else if (dist <= 8) sgPutting6to8 += sg;
+              else if (dist <= 10) sgPutting8to10 += sg;
+              else if (dist <= 14) sgPutting10to14 += sg;
+              else if (dist <= 18) sgPutting14to18 += sg;
+              else sgPutting18Plus += sg;
+            } else if (isTeeShot && par >= 4) {
               // Tee shots on par 4/5
-              sgTeeTotal += sg;
+              sgTeePar45Total += sg;
+              if (shotType === 'tee') sgDrivePar45 += sg;
+              else sgOtherPar45 += sg;
             } else if (dist >= 40) {
-              // Approach shots (40m+)
-              sgApproachTotal += sg;
-              if (dist >= 200) {
-                sgApproach200Plus += sg;
-              } else if (dist >= 120) {
-                sgApproach120to200 += sg;
-              } else {
-                sgApproach40to120 += sg;
+              // Long game shots 40m+
+              sgLongGame40Plus += sg;
+              
+              // Categorize by distance
+              if (dist >= 200) sgLongGame200Plus += sg;
+              else if (dist >= 160) sgLongGame160to200 += sg;
+              else if (dist >= 120) sgLongGame120to160 += sg;
+              else if (dist >= 80) sgLongGame80to120 += sg;
+              else sgLongGame40to80 += sg;
+              
+              // Bunker shots from distance
+              if (isBunker) {
+                if (dist >= 120) sgBunker120to200 += sg;
+                else sgBunker40to120 += sg;
               }
-            } else {
+              // Recovery shots
+              else if (isRecovery) {
+                if (dist >= 120) sgRecovery120to240 += sg;
+                else sgRecovery40to120 += sg;
+              }
+              // Layup shots (approach shots that don't target the green)
+              else if (lie === 'layup') {
+                sgLayup40Plus += sg;
+              }
+              // Approach from fairway
+              else if (isFairway) {
+                sgApproachFw40Plus += sg;
+                if (dist >= 200) sgApproachFw200Plus += sg;
+                else if (dist >= 160) sgApproachFw160to200 += sg;
+                else if (dist >= 120) sgApproachFw120to160 += sg;
+                else if (dist >= 80) sgApproachFw80to120 += sg;
+                else sgApproachFw40to80 += sg;
+              }
+              // Approach from rough
+              else if (isRough) {
+                sgApproachRough40Plus += sg;
+                if (dist >= 200) sgApproachRough200Plus += sg;
+                else if (dist >= 160) sgApproachRough160to200 += sg;
+                else if (dist >= 120) sgApproachRough120to160 += sg;
+                else if (dist >= 80) sgApproachRough80to120 += sg;
+                else sgApproachRough40to80 += sg;
+              }
+            } else if (dist > 0 && dist < 40) {
               // Short game (under 40m, not putting)
               sgShortGameTotal += sg;
-              if (lie === 'bunker' || lie === 'sand') {
-                sgShortGameBunker += sg;
+              
+              if (dist <= 20) {
+                // Short game 0-20m
+                sgShortGame0to20Total += sg;
+                if (isBunker) sgShortGame0to20Bunker += sg;
+                else if (isRough) sgShortGame0to20Rough += sg;
+                else sgShortGame0to20Fairway += sg;
               } else {
-                sgShortGameFwRough += sg;
+                // Short game 20-40m
+                sgShortGame20to40Total += sg;
+                if (isBunker) sgShortGame20to40Bunker += sg;
+                else sgShortGame20to40Fairway += sg;
               }
             }
           });
@@ -252,9 +356,6 @@ export const ProStatsAverages = () => {
         holesCount: totalHoles,
         avgScore: totalScore / validRounds,
         avgScoreVsPar: (totalScore - totalPar) / validRounds,
-        scoreHoles1to6: scoreHoles1to6 / validRounds,
-        scoreHoles7to12: scoreHoles7to12 / validRounds,
-        scoreHoles13to18: scoreHoles13to18 / validRounds,
         scorePar3: scorePar3 / validRounds,
         scorePar4: scorePar4 / validRounds,
         scorePar5: scorePar5 / validRounds,
@@ -270,19 +371,51 @@ export const ProStatsAverages = () => {
         roundsCount: validRounds,
         holesCount: totalHoles,
         avgScoreVsPar: (totalScore - totalPar) / validRounds,
-        sgTeeTotal: sgTeeTotal / validRounds,
-        sgApproachTotal: sgApproachTotal / validRounds,
-        sgApproach200Plus: sgApproach200Plus / validRounds,
-        sgApproach120to200: sgApproach120to200 / validRounds,
-        sgApproach40to120: sgApproach40to120 / validRounds,
+        sgTeePar45Total: sgTeePar45Total / validRounds,
+        sgDrivePar45: sgDrivePar45 / validRounds,
+        sgOtherPar45: sgOtherPar45 / validRounds,
+        sgLongGame40Plus: sgLongGame40Plus / validRounds,
+        sgLongGame200Plus: sgLongGame200Plus / validRounds,
+        sgLongGame160to200: sgLongGame160to200 / validRounds,
+        sgLongGame120to160: sgLongGame120to160 / validRounds,
+        sgLongGame80to120: sgLongGame80to120 / validRounds,
+        sgLongGame40to80: sgLongGame40to80 / validRounds,
+        sgApproachFw40Plus: sgApproachFw40Plus / validRounds,
+        sgApproachFw200Plus: sgApproachFw200Plus / validRounds,
+        sgApproachFw160to200: sgApproachFw160to200 / validRounds,
+        sgApproachFw120to160: sgApproachFw120to160 / validRounds,
+        sgApproachFw80to120: sgApproachFw80to120 / validRounds,
+        sgApproachFw40to80: sgApproachFw40to80 / validRounds,
+        sgApproachRough40Plus: sgApproachRough40Plus / validRounds,
+        sgApproachRough200Plus: sgApproachRough200Plus / validRounds,
+        sgApproachRough160to200: sgApproachRough160to200 / validRounds,
+        sgApproachRough120to160: sgApproachRough120to160 / validRounds,
+        sgApproachRough80to120: sgApproachRough80to120 / validRounds,
+        sgApproachRough40to80: sgApproachRough40to80 / validRounds,
+        sgShortGame0to20Total: sgShortGame0to20Total / validRounds,
+        sgShortGame0to20Fairway: sgShortGame0to20Fairway / validRounds,
+        sgShortGame0to20Rough: sgShortGame0to20Rough / validRounds,
+        sgShortGame0to20Bunker: sgShortGame0to20Bunker / validRounds,
+        sgShortGame20to40Total: sgShortGame20to40Total / validRounds,
+        sgShortGame20to40Fairway: sgShortGame20to40Fairway / validRounds,
+        sgShortGame20to40Bunker: sgShortGame20to40Bunker / validRounds,
         sgShortGameTotal: sgShortGameTotal / validRounds,
-        sgShortGameFwRough: sgShortGameFwRough / validRounds,
-        sgShortGameBunker: sgShortGameBunker / validRounds,
         sgPuttingTotal: sgPuttingTotal / validRounds,
-        sgPutting0to2: sgPutting0to2 / validRounds,
-        sgPutting2to7: sgPutting2to7 / validRounds,
-        sgPutting7Plus: sgPutting7Plus / validRounds,
-        sgTotal: (sgTeeTotal + sgApproachTotal + sgShortGameTotal + sgPuttingTotal) / validRounds,
+        sgPutting0to1: sgPutting0to1 / validRounds,
+        sgPutting1to2: sgPutting1to2 / validRounds,
+        sgPutting2to4: sgPutting2to4 / validRounds,
+        sgPutting4to6: sgPutting4to6 / validRounds,
+        sgPutting6to8: sgPutting6to8 / validRounds,
+        sgPutting8to10: sgPutting8to10 / validRounds,
+        sgPutting10to14: sgPutting10to14 / validRounds,
+        sgPutting14to18: sgPutting14to18 / validRounds,
+        sgPutting18Plus: sgPutting18Plus / validRounds,
+        sgBunker40to120: sgBunker40to120 / validRounds,
+        sgBunker120to200: sgBunker120to200 / validRounds,
+        sgRecovery40to120: sgRecovery40to120 / validRounds,
+        sgRecovery120to240: sgRecovery120to240 / validRounds,
+        sgLayup40Plus: sgLayup40Plus / validRounds,
+        sgTotal: (sgTeePar45Total + sgLongGame40Plus + sgShortGameTotal + sgPuttingTotal) / validRounds,
       });
 
     } catch (error) {
@@ -295,34 +428,36 @@ export const ProStatsAverages = () => {
   };
 
   const getSGColor = (value: number) => {
-    if (value > 0) return "text-green-500";
-    if (value < 0) return "text-red-500";
+    if (value > 0.01) return "text-green-500";
+    if (value < -0.01) return "text-red-500";
     return "text-muted-foreground";
   };
 
   const formatSG = (value: number) => {
+    if (Math.abs(value) < 0.005) return "0.00";
     return value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
   };
 
-  const getScoreColor = (diff: number) => {
-    if (diff <= 0) return "text-green-500";
-    if (diff <= 5) return "text-yellow-500";
-    return "text-red-500";
-  };
-
-  const StatRow = ({ label, value, isSubcategory = false, isBold = false }: { label: string; value: string | number; isSubcategory?: boolean; isBold?: boolean }) => (
-    <div className={`flex justify-between py-1.5 border-b ${isSubcategory ? 'pl-4' : ''}`}>
+  const StatRow = ({ label, value, isBold = false }: { label: string; value: string | number; isBold?: boolean }) => (
+    <div className={`flex justify-between py-1.5 border-b border-border/50`}>
       <span className={`text-sm ${isBold ? 'font-semibold' : ''}`}>{label}</span>
       <span className={`text-sm ${isBold ? 'font-semibold' : 'font-medium'}`}>{value}</span>
     </div>
   );
 
-  const SGRow = ({ label, value, isSubcategory = false, isBold = false }: { label: string; value: number; isSubcategory?: boolean; isBold?: boolean }) => (
-    <div className={`flex justify-between py-1.5 border-b ${isSubcategory ? 'pl-4' : ''}`}>
-      <span className={`text-sm ${isBold ? 'font-semibold' : ''}`}>{label}</span>
-      <span className={`text-sm ${isBold ? 'font-semibold' : 'font-medium'} ${getSGColor(value)}`}>
+  const SGRow = ({ label, value, isBold = false, indent = false }: { label: string; value: number; isBold?: boolean; indent?: boolean }) => (
+    <div className={`flex justify-between py-1 ${indent ? 'pl-3' : ''}`}>
+      <span className={`text-sm ${isBold ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+      <span className={`text-sm font-medium ${getSGColor(value)}`}>
         {formatSG(value)}
       </span>
+    </div>
+  );
+
+  const SGSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+      <h4 className="text-sm font-semibold text-foreground mb-2">{title}</h4>
+      {children}
     </div>
   );
 
@@ -386,33 +521,85 @@ export const ProStatsAverages = () => {
             <StatRow label="Triple or worse" value={scoringStats.tripleOrWorse.toFixed(1)} />
           </div>
         ) : (
-          <div className="space-y-1">
-            <StatRow label="Rounds" value={sgStats.roundsCount} />
-            <StatRow label="Holes" value={sgStats.holesCount} />
-            <StatRow label="Score/par" value={`${sgStats.avgScoreVsPar >= 0 ? '+' : ''}${sgStats.avgScoreVsPar.toFixed(1)}`} />
-            
-            <SGRow label="Tee shots par 4/5 tot." value={sgStats.sgTeeTotal} isBold />
-            
-            <SGRow label="Approach 40-240m tot." value={sgStats.sgApproachTotal} isBold />
-            <SGRow label="200+" value={sgStats.sgApproach200Plus} isSubcategory />
-            <SGRow label="120-200m" value={sgStats.sgApproach120to200} isSubcategory />
-            <SGRow label="40-120m" value={sgStats.sgApproach40to120} isSubcategory />
-            
-            <SGRow label="Short game tot." value={sgStats.sgShortGameTotal} isBold />
-            <SGRow label="Short game fw & rough" value={sgStats.sgShortGameFwRough} isSubcategory />
-            <SGRow label="Short game bunker" value={sgStats.sgShortGameBunker} isSubcategory />
-            
-            <SGRow label="Putting tot." value={sgStats.sgPuttingTotal} isBold />
-            <SGRow label="0-2m" value={sgStats.sgPutting0to2} isSubcategory />
-            <SGRow label="2-7m" value={sgStats.sgPutting2to7} isSubcategory />
-            <SGRow label="7+m" value={sgStats.sgPutting7Plus} isSubcategory />
-            
-            <div className="flex justify-between py-2 border-t-2 border-primary mt-2">
-              <span className="text-sm font-bold">Strokes Gained tot.</span>
-              <span className={`text-sm font-bold ${getSGColor(sgStats.sgTotal)}`}>
+          <div className="space-y-3">
+            {/* Summary */}
+            <div className="flex justify-between items-center py-2 px-3 bg-primary/10 rounded-lg">
+              <span className="font-semibold">Total Strokes Gained</span>
+              <span className={`font-bold text-lg ${getSGColor(sgStats.sgTotal)}`}>
                 {formatSG(sgStats.sgTotal)}
               </span>
             </div>
+            
+            {/* Long Game */}
+            <SGSection title="Long Game">
+              <SGRow label="Tee shots par 4/5" value={sgStats.sgTeePar45Total} isBold />
+              <SGRow label="Drive par 4/5" value={sgStats.sgDrivePar45} indent />
+              <SGRow label="Other par 4/5" value={sgStats.sgOtherPar45} indent />
+              <div className="border-t border-border/30 my-1" />
+              <SGRow label="Shots 40m+" value={sgStats.sgLongGame40Plus} isBold />
+              <SGRow label="200+ m" value={sgStats.sgLongGame200Plus} indent />
+              <SGRow label="160-200 m" value={sgStats.sgLongGame160to200} indent />
+              <SGRow label="120-160 m" value={sgStats.sgLongGame120to160} indent />
+              <SGRow label="80-120 m" value={sgStats.sgLongGame80to120} indent />
+              <SGRow label="40-80 m" value={sgStats.sgLongGame40to80} indent />
+            </SGSection>
+
+            {/* Approach from Fairway */}
+            <SGSection title="Approach from Fairway">
+              <SGRow label="Shots 40m+" value={sgStats.sgApproachFw40Plus} isBold />
+              <SGRow label="200+ m" value={sgStats.sgApproachFw200Plus} indent />
+              <SGRow label="160-200 m" value={sgStats.sgApproachFw160to200} indent />
+              <SGRow label="120-160 m" value={sgStats.sgApproachFw120to160} indent />
+              <SGRow label="80-120 m" value={sgStats.sgApproachFw80to120} indent />
+              <SGRow label="40-80 m" value={sgStats.sgApproachFw40to80} indent />
+            </SGSection>
+
+            {/* Approach from Rough */}
+            <SGSection title="Approach from Rough">
+              <SGRow label="Shots 40m+" value={sgStats.sgApproachRough40Plus} isBold />
+              <SGRow label="200+ m" value={sgStats.sgApproachRough200Plus} indent />
+              <SGRow label="160-200 m" value={sgStats.sgApproachRough160to200} indent />
+              <SGRow label="120-160 m" value={sgStats.sgApproachRough120to160} indent />
+              <SGRow label="80-120 m" value={sgStats.sgApproachRough80to120} indent />
+              <SGRow label="40-80 m" value={sgStats.sgApproachRough40to80} indent />
+            </SGSection>
+
+            {/* Short Game */}
+            <SGSection title="Short Game">
+              <SGRow label="Short game 0-20m" value={sgStats.sgShortGame0to20Total} isBold />
+              <SGRow label="Fairway" value={sgStats.sgShortGame0to20Fairway} indent />
+              <SGRow label="Rough" value={sgStats.sgShortGame0to20Rough} indent />
+              <SGRow label="Bunker" value={sgStats.sgShortGame0to20Bunker} indent />
+              <div className="border-t border-border/30 my-1" />
+              <SGRow label="Short game 20-40m" value={sgStats.sgShortGame20to40Total} isBold />
+              <SGRow label="Fairway" value={sgStats.sgShortGame20to40Fairway} indent />
+              <SGRow label="Bunker" value={sgStats.sgShortGame20to40Bunker} indent />
+              <div className="border-t border-border/30 my-1" />
+              <SGRow label="Total" value={sgStats.sgShortGameTotal} isBold />
+            </SGSection>
+
+            {/* Putting */}
+            <SGSection title="Putting">
+              <SGRow label="All putts" value={sgStats.sgPuttingTotal} isBold />
+              <SGRow label="0-1 m" value={sgStats.sgPutting0to1} indent />
+              <SGRow label="1-2 m" value={sgStats.sgPutting1to2} indent />
+              <SGRow label="2-4 m" value={sgStats.sgPutting2to4} indent />
+              <SGRow label="4-6 m" value={sgStats.sgPutting4to6} indent />
+              <SGRow label="6-8 m" value={sgStats.sgPutting6to8} indent />
+              <SGRow label="8-10 m" value={sgStats.sgPutting8to10} indent />
+              <SGRow label="10-14 m" value={sgStats.sgPutting10to14} indent />
+              <SGRow label="14-18 m" value={sgStats.sgPutting14to18} indent />
+              <SGRow label="18+ m" value={sgStats.sgPutting18Plus} indent />
+            </SGSection>
+
+            {/* Other */}
+            <SGSection title="Other">
+              <SGRow label="Bunker 40-120m" value={sgStats.sgBunker40to120} />
+              <SGRow label="Bunker 120-200m" value={sgStats.sgBunker120to200} />
+              <SGRow label="Recovery 40-120m" value={sgStats.sgRecovery40to120} />
+              <SGRow label="Recovery 120-240m" value={sgStats.sgRecovery120to240} />
+              <SGRow label="Layup 40+" value={sgStats.sgLayup40Plus} />
+            </SGSection>
           </div>
         )}
       </CardContent>
