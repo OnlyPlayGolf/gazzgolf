@@ -28,13 +28,23 @@ export function SetupAddGuestSheet({
   const [name, setName] = useState("");
   const [handicap, setHandicap] = useState("");
 
+  const parseHandicapInput = (input: string): number | undefined => {
+    if (!input) return undefined;
+    const normalized = input.replace(',', '.').trim();
+    // If input starts with "+", it's a plus handicap - store as negative
+    if (normalized.startsWith('+')) {
+      const value = parseFloat(normalized.substring(1));
+      return isNaN(value) ? undefined : -value;
+    }
+    const value = parseFloat(normalized);
+    return isNaN(value) ? undefined : value;
+  };
+
   const handleAdd = () => {
-    const normalizedHandicap = handicap.replace(',', '.');
-    
     const player: Player = {
       odId: `temp_${Date.now()}`,
       displayName: name.trim() || "Guest Player",
-      handicap: normalizedHandicap ? parseFloat(normalizedHandicap) : undefined,
+      handicap: parseHandicapInput(handicap),
       teeColor: defaultTee,
       isTemporary: true,
     };
