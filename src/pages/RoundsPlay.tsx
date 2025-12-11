@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Info, Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -252,45 +251,6 @@ export default function RoundsPlay() {
           : g
       )
     }));
-  };
-
-  // Drag and drop handler for both groups and players
-  const handleDragEnd = (result: DropResult) => {
-    const { source, destination, type } = result;
-    
-    // Dropped outside a droppable
-    if (!destination) return;
-    
-    // No movement
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-
-    // Handle group reordering
-    if (type === "group") {
-      setSetupState(prev => {
-        const newGroups = [...prev.groups];
-        const [movedGroup] = newGroups.splice(source.index, 1);
-        newGroups.splice(destination.index, 0, movedGroup);
-        return { ...prev, groups: newGroups };
-      });
-      return;
-    }
-
-    // Handle player reordering/moving between groups
-    setSetupState(prev => {
-      const newGroups = [...prev.groups];
-      const sourceGroup = newGroups.find(g => g.id === source.droppableId);
-      const destGroup = newGroups.find(g => g.id === destination.droppableId);
-      
-      if (!sourceGroup || !destGroup) return prev;
-      
-      // Remove from source
-      const [movedPlayer] = sourceGroup.players.splice(source.index, 1);
-      
-      // Add to destination
-      destGroup.players.splice(destination.index, 0, movedPlayer);
-      
-      return { ...prev, groups: newGroups };
-    });
   };
 
   // Player edit handlers
@@ -587,46 +547,26 @@ export default function RoundsPlay() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="groups" type="group">
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="space-y-3"
-                  >
-                    {setupState.groups.map((group, index) => (
-                      <Draggable key={group.id} draggableId={group.id} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                          >
-                            <GroupCard
-                              group={group}
-                              groupIndex={index}
-                              availableTees={availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]}
-                              canDelete={setupState.groups.length > 1}
-                              onUpdateName={(name) => updateGroupName(group.id, name)}
-                              onAddPlayer={() => {
-                                setActiveGroupId(group.id);
-                                setAddPlayerDialogOpen(true);
-                              }}
-                              onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
-                              onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
-                              onDeleteGroup={() => deleteGroup(group.id)}
-                              onPlayerClick={(player) => handlePlayerClick(group.id, player)}
-                              dragHandleProps={provided.dragHandleProps}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+            <div className="space-y-3">
+              {setupState.groups.map((group, index) => (
+                <GroupCard
+                  key={group.id}
+                  group={group}
+                  groupIndex={index}
+                  availableTees={availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]}
+                  canDelete={setupState.groups.length > 1}
+                  onUpdateName={(name) => updateGroupName(group.id, name)}
+                  onAddPlayer={() => {
+                    setActiveGroupId(group.id);
+                    setAddPlayerDialogOpen(true);
+                  }}
+                  onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
+                  onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
+                  onDeleteGroup={() => deleteGroup(group.id)}
+                  onPlayerClick={(player) => handlePlayerClick(group.id, player)}
+                />
+              ))}
+            </div>
             
             <Button variant="outline" className="w-full" onClick={addGroup}>
               <Plus className="w-4 h-4 mr-2" />
