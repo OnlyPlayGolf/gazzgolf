@@ -174,7 +174,6 @@ export default function CopenhagenPlay() {
     const runningP2 = prevP2 + result.player2Points;
     const runningP3 = prevP3 + result.player3Points;
 
-    // Calculate press points for active presses
     const pressPoints: Record<string, any> = {};
     game.presses.forEach(press => {
       if (press.is_active && currentHole >= press.start_hole) {
@@ -223,7 +222,6 @@ export default function CopenhagenPlay() {
         if (error) throw error;
       }
 
-      // Update game totals and press totals
       const futureHoles = holes.filter(h => h.hole_number > currentHole);
       const futureP1 = futureHoles.reduce((sum, h) => sum + h.player_1_hole_points, 0);
       const futureP2 = futureHoles.reduce((sum, h) => sum + h.player_2_hole_points, 0);
@@ -233,7 +231,6 @@ export default function CopenhagenPlay() {
       const totalP2 = prevP2 + result.player2Points + futureP2;
       const totalP3 = prevP3 + result.player3Points + futureP3;
 
-      // Update press totals
       const updatedPresses = game.presses.map(press => {
         if (press.is_active && currentHole >= press.start_hole) {
           return {
@@ -352,197 +349,255 @@ export default function CopenhagenPlay() {
 
   const activePresses = game.presses.filter(p => p.is_active);
 
-  const ScoreInput = ({ label, value, onChange, playerPoints, color }: { 
-    label: string; 
-    value: number; 
-    onChange: (delta: number) => void;
-    playerPoints: number;
-    color: string;
-  }) => (
-    <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-muted/50">
-      <Label className={`text-sm font-medium truncate max-w-full ${color}`}>{label}</Label>
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => onChange(-1)}>
-          <Minus size={16} />
-        </Button>
-        <span className="text-2xl font-bold w-12 text-center">{value}</span>
-        <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => onChange(1)}>
-          <Plus size={16} />
-        </Button>
-      </div>
-      <span className="text-xs text-muted-foreground">{playerPoints} pts</span>
-    </div>
-  );
-
   return (
     <div className="min-h-screen pb-44 bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-bold text-lg">Copenhagen</h1>
-              <p className="text-xs text-muted-foreground">{game.course_name}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {activePresses.length > 0 && (
-                <Badge variant="secondary" className="gap-1">
-                  <Zap size={12} />
-                  {activePresses.length} Press{activePresses.length > 1 ? 'es' : ''}
-                </Badge>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => setShowExitDialog(true)}>
-                Exit
-              </Button>
-            </div>
+      {/* Game Info Bar - Matches Umbriago */}
+      <div className="bg-primary text-primary-foreground py-2 px-4">
+        <div className="max-w-2xl mx-auto flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowExitDialog(true)}
+            className="rounded-full text-primary-foreground hover:bg-primary-foreground/20"
+          >
+            <ChevronLeft size={20} />
+          </Button>
+          <div className="flex-1 text-center">
+            <div className="text-base font-bold">Copenhagen</div>
+            <div className="text-xs opacity-80">{game.course_name}</div>
           </div>
+          {activePresses.length > 0 ? (
+            <Badge variant="secondary" className="gap-1">
+              <Zap size={12} />
+              {activePresses.length}
+            </Badge>
+          ) : (
+            <div className="w-8" />
+          )}
         </div>
       </div>
 
-      <div className="p-4 space-y-4 max-w-2xl mx-auto">
-        {/* Hole Navigation */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("prev")}
-              disabled={currentHoleIndex === 0}
-            >
-              <ChevronLeft size={24} />
-            </Button>
-            <div className="text-center">
-              <div className="text-3xl font-bold">Hole {currentHole}</div>
-              <div className="text-sm text-muted-foreground">Par {par} • SI {strokeIndex}</div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("next")}
-              disabled={saving}
-            >
-              <ChevronRight size={24} />
-            </Button>
-          </div>
-        </Card>
-
-        {/* Standings */}
+      {/* Score Entry */}
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        {/* Player 1 Card */}
         <Card className="p-3">
-          <div className="flex items-center justify-around text-center">
-            <div>
-              <div className="text-xs text-emerald-600 font-medium truncate max-w-[80px]">{game.player_1}</div>
-              <div className="text-xl font-bold">{game.player_1_total_points}</div>
-            </div>
-            <div>
-              <div className="text-xs text-blue-600 font-medium truncate max-w-[80px]">{game.player_2}</div>
-              <div className="text-xl font-bold">{game.player_2_total_points}</div>
-            </div>
-            <div>
-              <div className="text-xs text-amber-600 font-medium truncate max-w-[80px]">{game.player_3}</div>
-              <div className="text-xl font-bold">{game.player_3_total_points}</div>
-            </div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-emerald-600 truncate max-w-[120px]">{game.player_1}</span>
+            <span className="text-xl font-bold text-emerald-600">{game.player_1_total_points} pts</span>
           </div>
+          <ScoreInput
+            label={game.player_1}
+            value={scores.player1}
+            onChange={(delta) => updateScore('player1', delta)}
+            labelColor="text-emerald-600"
+            handicap={game.use_handicaps ? game.player_1_handicap : null}
+            tee={game.player_1_tee}
+          />
         </Card>
 
-        {/* Score Entry */}
-        <Card className="p-4 space-y-4">
-          <div className="text-center">
-            <Label className="text-sm font-medium">Enter Gross Scores</Label>
-            {game.use_handicaps && (
-              <p className="text-xs text-muted-foreground">Net scores calculated automatically</p>
-            )}
+        {/* Player 2 Card */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-blue-600 truncate max-w-[120px]">{game.player_2}</span>
+            <span className="text-xl font-bold text-blue-600">{game.player_2_total_points} pts</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <ScoreInput
-              label={game.player_1}
-              value={scores.player1}
-              onChange={(delta) => updateScore('player1', delta)}
-              playerPoints={game.player_1_total_points}
-              color="text-emerald-600"
-            />
-            <ScoreInput
-              label={game.player_2}
-              value={scores.player2}
-              onChange={(delta) => updateScore('player2', delta)}
-              playerPoints={game.player_2_total_points}
-              color="text-blue-600"
-            />
-            <ScoreInput
-              label={game.player_3}
-              value={scores.player3}
-              onChange={(delta) => updateScore('player3', delta)}
-              playerPoints={game.player_3_total_points}
-              color="text-amber-600"
-            />
-          </div>
+          <ScoreInput
+            label={game.player_2}
+            value={scores.player2}
+            onChange={(delta) => updateScore('player2', delta)}
+            labelColor="text-blue-600"
+            handicap={game.use_handicaps ? game.player_2_handicap : null}
+            tee={game.player_2_tee}
+          />
         </Card>
 
-        {/* Press Buttons */}
-        <Card className="p-4">
-          <Label className="text-sm font-medium mb-3 block">Start a Press</Label>
-          <div className="grid grid-cols-3 gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleStartPress(1)} className="text-xs">
-              <Zap size={14} className="mr-1" />
-              {game.player_1}
+        {/* Player 3 Card */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-amber-600 truncate max-w-[120px]">{game.player_3}</span>
+            <span className="text-xl font-bold text-amber-600">{game.player_3_total_points} pts</span>
+          </div>
+          <ScoreInput
+            label={game.player_3}
+            value={scores.player3}
+            onChange={(delta) => updateScore('player3', delta)}
+            labelColor="text-amber-600"
+            handicap={game.use_handicaps ? game.player_3_handicap : null}
+            tee={game.player_3_tee}
+          />
+        </Card>
+
+        {/* Presses */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="font-semibold text-sm flex items-center gap-1">
+              <Zap size={14} />
+              Presses
+            </Label>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleStartPress(1)}
+              size="sm"
+              className="flex-1 text-emerald-600"
+            >
+              {game.player_1}: Press
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleStartPress(2)} className="text-xs">
-              <Zap size={14} className="mr-1" />
-              {game.player_2}
+            <Button
+              variant="outline"
+              onClick={() => handleStartPress(2)}
+              size="sm"
+              className="flex-1 text-blue-600"
+            >
+              {game.player_2}: Press
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleStartPress(3)} className="text-xs">
-              <Zap size={14} className="mr-1" />
-              {game.player_3}
+            <Button
+              variant="outline"
+              onClick={() => handleStartPress(3)}
+              size="sm"
+              className="flex-1 text-amber-600"
+            >
+              {game.player_3}: Press
             </Button>
           </div>
         </Card>
 
         {/* Active Presses */}
         {activePresses.length > 0 && (
-          <Card className="p-4">
+          <Card className="p-3">
             <Label className="text-sm font-medium mb-2 block">Active Presses</Label>
             <div className="space-y-2">
               {activePresses.map((press, i) => (
                 <div key={press.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
-                  <span>Press #{i + 1} (from hole {press.start_hole})</span>
-                  <span className="font-medium">
-                    {press.player_1_points} - {press.player_2_points} - {press.player_3_points}
-                  </span>
+                  <span>Press #{i + 1} (hole {press.start_hole})</span>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-600 font-medium">{press.player_1_points}</span>
+                    <span className="text-muted-foreground">-</span>
+                    <span className="text-blue-600 font-medium">{press.player_2_points}</span>
+                    <span className="text-muted-foreground">-</span>
+                    <span className="text-amber-600 font-medium">{press.player_3_points}</span>
+                  </div>
                 </div>
               ))}
             </div>
           </Card>
         )}
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button
-            onClick={saveHole}
-            disabled={saving}
-            className="flex-1 h-12"
-          >
-            {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Game" : "Next Hole"}
-          </Button>
+      {/* Hole Navigation - Matches Umbriago */}
+      <div className="fixed bottom-10 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-2">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateHole("prev")}
+              disabled={currentHoleIndex === 0}
+            >
+              <ChevronLeft size={20} />
+            </Button>
+
+            <div className="flex items-center justify-center gap-6">
+              <div className="text-sm text-muted-foreground">Par {par}</div>
+              <div className="text-lg font-bold">Hole {currentHole}</div>
+              <div className="text-sm text-muted-foreground">SI {strokeIndex}</div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigateHole("next")}
+              disabled={saving}
+            >
+              <ChevronRight size={20} />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Exit Dialog */}
+      <CopenhagenBottomTabBar gameId={gameId!} />
+
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>What would you like to do with this game?</AlertDialogDescription>
+            <AlertDialogDescription>
+              What would you like to do with this game?
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <AlertDialogAction onClick={handleFinishGame}>Save and Exit</AlertDialogAction>
-            <AlertDialogAction onClick={handleDeleteGame} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                navigate("/rounds-play");
+              }}
+              className="w-full m-0"
+            >
+              Save and Exit
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                handleDeleteGame();
+              }}
+              className="w-full m-0 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete Game
             </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="w-full m-0">Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
 
-      {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+function ScoreInput({ 
+  label, 
+  value, 
+  onChange,
+  labelColor = "text-muted-foreground",
+  handicap,
+  tee
+}: { 
+  label: string; 
+  value: number; 
+  onChange: (delta: number) => void;
+  labelColor?: string;
+  handicap?: number | null;
+  tee?: string | null;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex flex-col">
+        {(handicap !== null && handicap !== undefined) && (
+          <span className="text-xs text-muted-foreground">HCP: {handicap}</span>
+        )}
+        {tee && (
+          <span className="text-xs text-muted-foreground capitalize">{tee} tee</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => onChange(-1)}
+          disabled={value <= 1}
+          className="h-10 w-10 rounded-full"
+        >
+          <Minus size={16} />
+        </Button>
+        <div className="text-3xl font-bold w-14 text-center">{value || '-'}</div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => onChange(1)}
+          className="h-10 w-10 rounded-full"
+        >
+          <Plus size={16} />
+        </Button>
+      </div>
     </div>
   );
 }
