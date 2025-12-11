@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
@@ -71,7 +72,7 @@ export default function StrokePlaySetup() {
         .single();
       
       const userName = profile?.display_name || profile?.username || 'You';
-      const userHandicap = profile?.handicap ? parseFloat(profile.handicap) : undefined;
+      const userHandicap = parseHandicap(profile?.handicap);
       
       // Load course from sessionStorage
       const savedCourse = sessionStorage.getItem('selectedCourse');

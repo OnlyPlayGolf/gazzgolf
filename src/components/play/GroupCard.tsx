@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlayerGroup, Player } from "@/types/playSetup";
+import { formatHandicap } from "@/lib/utils";
 
 interface GroupCardProps {
   group: PlayerGroup;
@@ -21,12 +22,6 @@ interface GroupCardProps {
   onPlayerClick: (player: Player) => void;
   dragHandleProps?: any;
 }
-
-const formatHandicap = (handicap: number | undefined): string => {
-  if (handicap === undefined) return "";
-  if (handicap < 0) return `+${Math.abs(handicap)}`;
-  return handicap.toString();
-};
 
 const formatPlayerName = (player: Player): string => {
   return player.displayName || "Guest Player";
