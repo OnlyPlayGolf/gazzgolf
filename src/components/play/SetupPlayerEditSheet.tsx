@@ -33,24 +33,41 @@ export function SetupPlayerEditSheet({
   const [handicap, setHandicap] = useState("");
   const [teeColor, setTeeColor] = useState("");
 
+  const formatHandicapForInput = (hcp: number | undefined): string => {
+    if (hcp === undefined) return "";
+    if (hcp < 0) return `+${Math.abs(hcp)}`;
+    return String(hcp);
+  };
+
   useEffect(() => {
     if (player) {
       setDisplayName(player.displayName);
-      setHandicap(player.handicap !== undefined ? String(player.handicap) : "");
+      setHandicap(formatHandicapForInput(player.handicap));
       setTeeColor(player.teeColor || "");
     }
   }, [player]);
 
+  const parseHandicapInput = (input: string): number | undefined => {
+    if (!input) return undefined;
+    const normalized = input.replace(',', '.').trim();
+    // If input starts with "+", it's a plus handicap - store as negative
+    if (normalized.startsWith('+')) {
+      const value = parseFloat(normalized.substring(1));
+      return isNaN(value) ? undefined : -value;
+    }
+    const value = parseFloat(normalized);
+    return isNaN(value) ? undefined : value;
+  };
+
   const handleSave = () => {
     if (!player) return;
 
-    const normalizedHandicap = handicap.replace(',', '.');
     const updatedPlayer: Player = {
       ...player,
       displayName: player.isTemporary || player.isCurrentUser
         ? (displayName.trim() || player.displayName)
         : player.displayName,
-      handicap: normalizedHandicap ? parseFloat(normalizedHandicap) : undefined,
+      handicap: parseHandicapInput(handicap),
       teeColor: teeColor || player.teeColor,
     };
     
