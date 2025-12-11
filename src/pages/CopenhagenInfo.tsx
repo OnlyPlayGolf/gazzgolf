@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
-import { Trophy, Target, Zap } from "lucide-react";
+import { Trophy, Target, Zap, Info } from "lucide-react";
 import { formatHandicap } from "@/lib/utils";
 
 export default function CopenhagenInfo() {
@@ -64,10 +64,8 @@ export default function CopenhagenInfo() {
   const sweeps = holes.filter(h => h.is_sweep);
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Info</h1>
-
         {/* Game Details */}
         <Card>
           <CardHeader className="pb-2">
@@ -163,15 +161,69 @@ export default function CopenhagenInfo() {
                       <span className="font-medium">Press #{i + 1}</span>
                       <span className="text-xs text-muted-foreground ml-2">from hole {press.start_hole}</span>
                     </div>
-                    <span className="font-medium">
-                      {press.player_1_points} - {press.player_2_points} - {press.player_3_points}
-                    </span>
+                    <div className="flex gap-2">
+                      <span className="text-emerald-600 font-medium">{press.player_1_points}</span>
+                      <span className="text-muted-foreground">-</span>
+                      <span className="text-blue-600 font-medium">{press.player_2_points}</span>
+                      <span className="text-muted-foreground">-</span>
+                      <span className="text-amber-600 font-medium">{press.player_3_points}</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Scoring Rules */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="text-primary" />
+              Scoring Rules (6 Points Per Hole)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Overview</h3>
+              <p className="text-sm text-muted-foreground">
+                A 3-player game where 6 points are distributed each hole based on net scores. The player with the most points at the end wins.
+              </p>
+            </div>
+            
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Basic Scoring (4–2–0)</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• <strong>Lowest net score:</strong> 4 points</li>
+                <li>• <strong>Second lowest:</strong> 2 points</li>
+                <li>• <strong>Highest net score:</strong> 0 points</li>
+              </ul>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Tie Rules</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• <strong>Tie for lowest:</strong> 3–3–0</li>
+                <li>• <strong>Three-way tie:</strong> 2–2–2</li>
+                <li>• <strong>Tie for second:</strong> 4–1–1</li>
+              </ul>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Sweep (6–0–0)</h3>
+              <p className="text-sm text-muted-foreground">
+                A sweep occurs when one player makes birdie or better <strong>AND</strong> beats both other players by at least 2 strokes. The winner takes all 6 points.
+              </p>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Presses</h3>
+              <p className="text-sm text-muted-foreground">
+                Any player can start a press to begin a new side game from the next hole. Press points are tracked separately and can be used for additional competition.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
