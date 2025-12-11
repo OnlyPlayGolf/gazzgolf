@@ -175,52 +175,73 @@ export default function CopenhagenInfo() {
           </Card>
         )}
 
-        {/* Scoring Rules */}
+        {/* Copenhagen Rules */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="text-primary" />
-              Scoring Rules (6 Points Per Hole)
+              Copenhagen Rules
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Overview</h3>
-              <p className="text-sm text-muted-foreground">
-                A 3-player game where 6 points are distributed each hole based on net scores. The player with the most points at the end wins.
-              </p>
+            <div className="space-y-3 text-sm">
+              <p>Copenhagen (6-Point) is a 3-player golf betting game where 6 points are awarded on every hole.</p>
+              <p>Points are distributed based on net scores, with special rules for ties and sweeps.</p>
             </div>
-            
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Basic Scoring (4–2–0)</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• <strong>Lowest net score:</strong> 4 points</li>
-                <li>• <strong>Second lowest:</strong> 2 points</li>
-                <li>• <strong>Highest net score:</strong> 0 points</li>
+
+            <div className="space-y-2 pt-2 border-t">
+              <p className="font-medium">Scoring Rules (6 Points Per Hole)</p>
+              <div className="space-y-2">
+                <p className="font-medium text-muted-foreground">Normal Scoring:</p>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  <li>Lowest score: <span className="font-semibold">4 points</span></li>
+                  <li>Second lowest: <span className="font-semibold">2 points</span></li>
+                  <li>Highest score: <span className="font-semibold">0 points</span></li>
+                </ul>
+              </div>
+              <div className="space-y-2 pt-2">
+                <p className="font-medium text-muted-foreground">Tie Rules:</p>
+                <p className="text-sm"><span className="font-medium">Tie for lowest (2 players):</span> 3-3-0</p>
+                <p className="text-sm"><span className="font-medium">Three-way tie:</span> 2-2-2</p>
+                <p className="text-sm"><span className="font-medium">Tie for second (2 players):</span> 4-1-1</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t">
+              <p className="font-medium">Sweep Rule (6-0-0)</p>
+              <p className="text-sm">A sweep awards ALL 6 points to one player. Both conditions must be met:</p>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li>Player makes <span className="font-semibold">birdie or better</span></li>
+                <li>Player beats <span className="font-semibold">both opponents by 2+ strokes</span></li>
+              </ul>
+              <p className="text-sm text-muted-foreground italic">If either condition is not met, normal scoring applies.</p>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t">
+              <p className="font-medium">Presses</p>
+              <p className="text-sm">Any player can start a press at any time during the round.</p>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li>Press creates a separate side bet</li>
+                <li>Press begins on the next hole</li>
+                <li>Points are tracked separately for each press</li>
+                <li>Multiple presses can be active simultaneously</li>
               </ul>
             </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Tie Rules</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• <strong>Tie for lowest:</strong> 3–3–0</li>
-                <li>• <strong>Three-way tie:</strong> 2–2–2</li>
-                <li>• <strong>Tie for second:</strong> 4–1–1</li>
+            <div className="space-y-2 pt-2 border-t">
+              <p className="font-medium">Handicaps</p>
+              <p className="text-sm">Copenhagen can be played scratch or with handicaps:</p>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li><span className="font-medium">Scratch:</span> Gross scores compared directly</li>
+                <li><span className="font-medium">Net:</span> Strokes applied based on handicap and stroke index</li>
+                <li>Strokes are distributed using the course stroke index</li>
+                <li>Different tees can be accommodated with handicap adjustments</li>
               </ul>
             </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Sweep (6–0–0)</h3>
-              <p className="text-sm text-muted-foreground">
-                A sweep occurs when one player makes birdie or better <strong>AND</strong> beats both other players by at least 2 strokes. The winner takes all 6 points.
-              </p>
-            </div>
-
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Presses</h3>
-              <p className="text-sm text-muted-foreground">
-                Any player can start a press to begin a new side game from the next hole. Press points are tracked separately and can be used for additional competition.
-              </p>
+            <div className="space-y-2 pt-2 border-t">
+              <p className="font-medium">Winning</p>
+              <p className="text-sm">After 18 holes, the player with the most total points wins.</p>
             </div>
           </CardContent>
         </Card>
