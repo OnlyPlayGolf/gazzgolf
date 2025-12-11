@@ -85,6 +85,14 @@ import HowToPlayWolf from "./pages/HowToPlayWolf";
 import StrokePlaySettings from "./pages/StrokePlaySettings";
 import StrokePlaySetup from "./pages/StrokePlaySetup";
 import PerformanceStats from "./pages/PerformanceStats";
+import CopenhagenSetup from "./pages/CopenhagenSetup";
+import CopenhagenPlay from "./pages/CopenhagenPlay";
+import CopenhagenInfo from "./pages/CopenhagenInfo";
+import CopenhagenFeed from "./pages/CopenhagenFeed";
+import CopenhagenLeaderboard from "./pages/CopenhagenLeaderboard";
+import CopenhagenSettings from "./pages/CopenhagenSettings";
+import CopenhagenSummary from "./pages/CopenhagenSummary";
+import HowToPlayCopenhagen from "./pages/HowToPlayCopenhagen";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -162,6 +170,14 @@ const App = () => {
             <Route path="/wolf/:gameId/leaderboard" element={<WolfLeaderboard />} />
             <Route path="/wolf/:gameId/settings" element={<WolfSettings />} />
             <Route path="/wolf/:gameId/summary" element={<WolfSummary />} />
+            <Route path="/copenhagen/how-to-play" element={<HowToPlayCopenhagen />} />
+            <Route path="/copenhagen/setup" element={<CopenhagenSetup />} />
+            <Route path="/copenhagen/:gameId/play" element={<CopenhagenPlay />} />
+            <Route path="/copenhagen/:gameId/info" element={<CopenhagenInfo />} />
+            <Route path="/copenhagen/:gameId/feed" element={<CopenhagenFeed />} />
+            <Route path="/copenhagen/:gameId/leaderboard" element={<CopenhagenLeaderboard />} />
+            <Route path="/copenhagen/:gameId/settings" element={<CopenhagenSettings />} />
+            <Route path="/copenhagen/:gameId/summary" element={<CopenhagenSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />

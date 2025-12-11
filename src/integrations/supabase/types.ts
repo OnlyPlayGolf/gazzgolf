@@ -72,6 +72,178 @@ export type Database = {
           },
         ]
       }
+      copenhagen_games: {
+        Row: {
+          course_id: string | null
+          course_name: string
+          created_at: string | null
+          date_played: string
+          holes_played: number
+          id: string
+          is_finished: boolean
+          player_1: string
+          player_1_handicap: number | null
+          player_1_tee: string | null
+          player_1_total_points: number
+          player_2: string
+          player_2_handicap: number | null
+          player_2_tee: string | null
+          player_2_total_points: number
+          player_3: string
+          player_3_handicap: number | null
+          player_3_tee: string | null
+          player_3_total_points: number
+          presses: Json | null
+          stake_per_point: number
+          tee_set: string | null
+          use_handicaps: boolean
+          user_id: string
+          winner_player: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          player_1: string
+          player_1_handicap?: number | null
+          player_1_tee?: string | null
+          player_1_total_points?: number
+          player_2: string
+          player_2_handicap?: number | null
+          player_2_tee?: string | null
+          player_2_total_points?: number
+          player_3: string
+          player_3_handicap?: number | null
+          player_3_tee?: string | null
+          player_3_total_points?: number
+          presses?: Json | null
+          stake_per_point?: number
+          tee_set?: string | null
+          use_handicaps?: boolean
+          user_id: string
+          winner_player?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          player_1?: string
+          player_1_handicap?: number | null
+          player_1_tee?: string | null
+          player_1_total_points?: number
+          player_2?: string
+          player_2_handicap?: number | null
+          player_2_tee?: string | null
+          player_2_total_points?: number
+          player_3?: string
+          player_3_handicap?: number | null
+          player_3_tee?: string | null
+          player_3_total_points?: number
+          presses?: Json | null
+          stake_per_point?: number
+          tee_set?: string | null
+          use_handicaps?: boolean
+          user_id?: string
+          winner_player?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copenhagen_games_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copenhagen_holes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          hole_number: number
+          id: string
+          is_sweep: boolean
+          par: number
+          player_1_gross_score: number | null
+          player_1_hole_points: number
+          player_1_net_score: number | null
+          player_1_running_total: number
+          player_2_gross_score: number | null
+          player_2_hole_points: number
+          player_2_net_score: number | null
+          player_2_running_total: number
+          player_3_gross_score: number | null
+          player_3_hole_points: number
+          player_3_net_score: number | null
+          player_3_running_total: number
+          press_points: Json | null
+          stroke_index: number | null
+          sweep_winner: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          hole_number: number
+          id?: string
+          is_sweep?: boolean
+          par?: number
+          player_1_gross_score?: number | null
+          player_1_hole_points?: number
+          player_1_net_score?: number | null
+          player_1_running_total?: number
+          player_2_gross_score?: number | null
+          player_2_hole_points?: number
+          player_2_net_score?: number | null
+          player_2_running_total?: number
+          player_3_gross_score?: number | null
+          player_3_hole_points?: number
+          player_3_net_score?: number | null
+          player_3_running_total?: number
+          press_points?: Json | null
+          stroke_index?: number | null
+          sweep_winner?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          hole_number?: number
+          id?: string
+          is_sweep?: boolean
+          par?: number
+          player_1_gross_score?: number | null
+          player_1_hole_points?: number
+          player_1_net_score?: number | null
+          player_1_running_total?: number
+          player_2_gross_score?: number | null
+          player_2_hole_points?: number
+          player_2_net_score?: number | null
+          player_2_running_total?: number
+          player_3_gross_score?: number | null
+          player_3_hole_points?: number
+          player_3_net_score?: number | null
+          player_3_running_total?: number
+          press_points?: Json | null
+          stroke_index?: number | null
+          sweep_winner?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copenhagen_holes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "copenhagen_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_holes: {
         Row: {
           blue_distance: number | null
