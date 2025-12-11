@@ -1,6 +1,6 @@
 import { User, X, Pencil, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatHandicap } from "@/lib/utils";
 import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 
 interface Player {
@@ -21,12 +21,6 @@ interface SetupPlayerCardProps {
   dragHandleProps?: DraggableProvidedDragHandleProps | null;
   showDragHandle?: boolean;
 }
-
-const formatHandicap = (handicap: number | undefined): string => {
-  if (handicap === undefined) return "";
-  if (handicap < 0) return `+${Math.abs(handicap)}`;
-  return handicap.toString();
-};
 
 export function SetupPlayerCard({
   player,

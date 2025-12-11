@@ -22,7 +22,7 @@ import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
 import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
-import { cn } from "@/lib/utils";
+import { cn, parseHandicap } from "@/lib/utils";
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -90,7 +90,7 @@ export default function RoundsPlay() {
           displayName: profile.display_name || profile.username || "You",
           username: profile.username || "",
           avatarUrl: profile.avatar_url,
-          handicap: profile.handicap ? parseFloat(profile.handicap) : undefined,
+          handicap: parseHandicap(profile.handicap),
           isTemporary: false,
         };
         

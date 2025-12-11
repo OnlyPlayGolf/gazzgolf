@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, Search, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, parseHandicap, formatHandicap } from "@/lib/utils";
 
 interface Friend {
   id: string;
@@ -31,12 +31,6 @@ interface SetupAddFriendSheetProps {
   existingPlayerIds: string[];
   defaultTee?: string;
 }
-
-const formatHandicap = (handicap: number | undefined): string => {
-  if (handicap === undefined) return "";
-  if (handicap < 0) return `+${Math.abs(handicap)}`;
-  return handicap.toString();
-};
 
 export function SetupAddFriendSheet({
   isOpen,
@@ -95,7 +89,7 @@ export function SetupAddFriendSheet({
   });
 
   const handleSelectFriend = (friend: Friend) => {
-    const handicapValue = friend.handicap ? parseFloat(friend.handicap) : undefined;
+    const handicapValue = parseHandicap(friend.handicap);
     
     const player: Player = {
       odId: friend.id,
@@ -142,7 +136,7 @@ export function SetupAddFriendSheet({
             ) : (
               <div className="space-y-2">
                 {filteredFriends.map((friend) => {
-                  const handicapValue = friend.handicap ? parseFloat(friend.handicap) : undefined;
+                  const handicapValue = parseHandicap(friend.handicap);
                   return (
                     <div
                       key={friend.id}

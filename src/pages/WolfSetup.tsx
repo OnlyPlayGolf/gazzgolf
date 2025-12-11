@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, MapPin, Settings, Shuffle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, parseHandicap } from "@/lib/utils";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +71,7 @@ export default function WolfSetup() {
         .single();
       
       const userName = profile?.display_name || profile?.username || 'You';
-      const userHandicap = profile?.handicap ? parseFloat(profile.handicap) : undefined;
+      const userHandicap = parseHandicap(profile?.handicap);
       
       const currentUserPlayer: Player = {
         odId: user.id,
