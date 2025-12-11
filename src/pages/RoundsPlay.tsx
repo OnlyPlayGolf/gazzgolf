@@ -136,6 +136,7 @@ export default function RoundsPlay() {
     const savedDate = sessionStorage.getItem('datePlayer');
     const savedGroups = sessionStorage.getItem('playGroups');
     const savedAIConfig = sessionStorage.getItem('aiGameConfig');
+    const savedGameFormat = sessionStorage.getItem('gameFormat');
 
     if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
     
@@ -145,6 +146,7 @@ export default function RoundsPlay() {
       if (savedRoundName) updated.roundName = savedRoundName;
       if (savedDate) updated.datePlayed = savedDate;
       if (savedGroups) updated.groups = JSON.parse(savedGroups);
+      if (savedGameFormat) updated.gameFormat = savedGameFormat as any;
       if (savedAIConfig) {
         const config = JSON.parse(savedAIConfig);
         updated.aiConfigApplied = true;
@@ -323,6 +325,7 @@ export default function RoundsPlay() {
     sessionStorage.setItem('roundName', setupState.roundName);
     sessionStorage.setItem('datePlayer', setupState.datePlayed);
     sessionStorage.setItem('playGroups', JSON.stringify(setupState.groups));
+    sessionStorage.setItem('gameFormat', setupState.gameFormat);
   };
 
   const getHolesPlayed = (holeCount: HoleCount): number => {
@@ -636,6 +639,7 @@ export default function RoundsPlay() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
+                            saveState();
                             if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
                             else if (fmt.id === "umbriago") navigate('/umbriago/how-to-play');
                             else if (fmt.id === "copenhagen") navigate('/copenhagen/how-to-play');
