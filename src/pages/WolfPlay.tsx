@@ -300,6 +300,17 @@ export default function WolfPlay() {
     }
   };
 
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("wolf_holes").delete().eq("game_id", gameId);
+      await supabase.from("wolf_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/rounds-play");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
@@ -498,16 +509,31 @@ export default function WolfPlay() {
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game?</AlertDialogTitle>
+            <AlertDialogTitle>Exit Game</AlertDialogTitle>
             <AlertDialogDescription>
-              Your progress is saved. You can continue this game later.
+              What would you like to do with this game?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate('/rounds-play')}>
-              Exit
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                navigate("/rounds-play");
+              }}
+              className="w-full m-0"
+            >
+              Save and Exit
             </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                setShowExitDialog(false);
+                handleDeleteGame();
+              }}
+              className="w-full m-0 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Game
+            </AlertDialogAction>
+            <AlertDialogCancel className="w-full m-0">Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
