@@ -686,13 +686,13 @@ export default function UmbriagioPlay() {
               What would you like to do with this game?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
             <AlertDialogAction
               onClick={() => {
                 setShowExitDialog(false);
                 navigate("/rounds-play");
               }}
-              className="w-full"
+              className="w-full m-0"
             >
               Save and Exit
             </AlertDialogAction>
@@ -701,11 +701,11 @@ export default function UmbriagioPlay() {
                 setShowExitDialog(false);
                 handleDeleteGame();
               }}
-              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="w-full m-0 bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete Game
             </AlertDialogAction>
-            <AlertDialogCancel className="w-full mt-0">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="w-full m-0">Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
