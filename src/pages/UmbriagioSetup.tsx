@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle, GripVertical } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -394,17 +394,14 @@ export default function UmbriagioSetup() {
                               {...provided.draggableProps}
                               className={snapshot.isDragging ? "opacity-90" : ""}
                             >
-                              <div className="flex items-center gap-2">
-                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1">
-                                  <GripVertical size={16} className="text-muted-foreground" />
-                                </div>
-                                <SetupPlayerCard
-                                  player={player}
-                                  onEdit={() => setEditingPlayer(player)}
-                                  onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
-                                  showTee={false}
-                                />
-                              </div>
+                              <SetupPlayerCard
+                                player={player}
+                                onEdit={() => setEditingPlayer(player)}
+                                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                                showTee={false}
+                                dragHandleProps={provided.dragHandleProps}
+                                showDragHandle={true}
+                              />
                             </div>
                           )}
                         </Draggable>
@@ -441,17 +438,14 @@ export default function UmbriagioSetup() {
                               {...provided.draggableProps}
                               className={snapshot.isDragging ? "opacity-90" : ""}
                             >
-                              <div className="flex items-center gap-2">
-                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1">
-                                  <GripVertical size={16} className="text-muted-foreground" />
-                                </div>
-                                <SetupPlayerCard
-                                  player={player}
-                                  onEdit={() => setEditingPlayer(player)}
-                                  onRemove={() => handleRemovePlayer(player.odId)}
-                                  showTee={false}
-                                />
-                              </div>
+                              <SetupPlayerCard
+                                player={player}
+                                onEdit={() => setEditingPlayer(player)}
+                                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
+                                showTee={false}
+                                dragHandleProps={provided.dragHandleProps}
+                                showDragHandle={true}
+                              />
                             </div>
                           )}
                         </Draggable>

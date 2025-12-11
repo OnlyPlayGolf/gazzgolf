@@ -1,6 +1,7 @@
-import { User, X, Pencil } from "lucide-react";
+import { User, X, Pencil, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 
 interface Player {
   odId: string;
@@ -17,6 +18,8 @@ interface SetupPlayerCardProps {
   onRemove?: () => void;
   showTee?: boolean;
   availableTees?: string[];
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
+  showDragHandle?: boolean;
 }
 
 const formatHandicap = (handicap: number | undefined): string => {
@@ -30,17 +33,27 @@ export function SetupPlayerCard({
   onEdit,
   onRemove,
   showTee = true,
+  dragHandleProps,
+  showDragHandle = false,
 }: SetupPlayerCardProps) {
   const hasHandicap = player.handicap !== undefined;
 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors cursor-pointer hover:bg-accent/50 flex-1 min-w-0",
-        player.isCurrentUser && "border-primary/30 bg-primary/5"
+        "flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors flex-1 min-w-0",
+        player.isCurrentUser && "border-primary/30 bg-primary/5",
+        dragHandleProps && "cursor-grab active:cursor-grabbing"
       )}
-      onClick={onEdit}
+      {...(dragHandleProps || {})}
     >
+      {/* Drag Handle Icon */}
+      {showDragHandle && (
+        <div className="flex-shrink-0">
+          <GripVertical size={16} className="text-muted-foreground" />
+        </div>
+      )}
+
       {/* Avatar */}
       <div className={cn(
         "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
