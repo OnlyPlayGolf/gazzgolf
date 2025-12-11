@@ -2,36 +2,64 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, TrendingUp } from "lucide-react";
+import { Loader2, TrendingUp, Target } from "lucide-react";
 import { subDays, subMonths, subYears, startOfDay } from "date-fns";
 
 interface Shot {
   type: 'tee' | 'approach' | 'putt';
   startDistance: number;
+  startLie?: string;
   holed: boolean;
   endDistance?: number;
   strokesGained: number;
 }
 
-interface SGAverages {
+interface ScoringStats {
   roundsCount: number;
+  holesCount: number;
   avgScore: number;
   avgScoreVsPar: number;
-  avgOffTheTee: number;
-  avgApproach: number;
-  avgShortGame: number;
-  avgPutting: number;
-  avgTotal: number;
-  avgFairwayPct: number;
-  avgGirPct: number;
-  avgPuttsPerHole: number;
+  scoreHoles1to6: number;
+  scoreHoles7to12: number;
+  scoreHoles13to18: number;
+  scorePar3: number;
+  scorePar4: number;
+  scorePar5: number;
+  eagles: number;
+  birdies: number;
+  pars: number;
+  bogeys: number;
+  doubleBogeys: number;
+  tripleOrWorse: number;
+}
+
+interface SGStats {
+  roundsCount: number;
+  holesCount: number;
+  avgScoreVsPar: number;
+  sgTeeTotal: number;
+  sgApproachTotal: number;
+  sgApproach200Plus: number;
+  sgApproach120to200: number;
+  sgApproach40to120: number;
+  sgShortGameTotal: number;
+  sgShortGameFwRough: number;
+  sgShortGameBunker: number;
+  sgPuttingTotal: number;
+  sgPutting0to2: number;
+  sgPutting2to7: number;
+  sgPutting7Plus: number;
+  sgTotal: number;
 }
 
 type TimeFilter = 'week' | 'month' | 'year' | 'all';
+type StatsView = 'scoring' | 'strokes-gained';
 
 export const ProStatsAverages = () => {
   const [filter, setFilter] = useState<TimeFilter>('all');
-  const [averages, setAverages] = useState<SGAverages | null>(null);
+  const [view, setView] = useState<StatsView>('scoring');
+  const [scoringStats, setScoringStats] = useState<ScoringStats | null>(null);
+  const [sgStats, setSgStats] = useState<SGStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,7 +87,6 @@ export const ProStatsAverages = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get pro stats rounds
       let query = supabase
         .from('pro_stats_rounds')
         .select('id, created_at')
@@ -76,123 +103,192 @@ export const ProStatsAverages = () => {
       if (roundsError) throw roundsError;
       
       if (!proRounds || proRounds.length === 0) {
-        setAverages(null);
+        setScoringStats(null);
+        setSgStats(null);
         setLoading(false);
         return;
       }
 
       const roundIds = proRounds.map(r => r.id);
 
-      // Get all holes for these rounds
       const { data: holesData, error: holesError } = await supabase
         .from('pro_stats_holes')
-        .select('pro_round_id, par, score, pro_shot_data')
+        .select('pro_round_id, hole_number, par, score, pro_shot_data')
         .in('pro_round_id', roundIds);
 
       if (holesError) throw holesError;
 
-      // Group holes by round
-      const roundsData: Map<string, any[]> = new Map();
-      holesData?.forEach(hole => {
-        const existing = roundsData.get(hole.pro_round_id) || [];
-        existing.push(hole);
-        roundsData.set(hole.pro_round_id, existing);
-      });
-
-      // Calculate averages across all rounds
+      // Initialize scoring stats
       let totalScore = 0;
       let totalPar = 0;
-      let totalOffTheTee = 0;
-      let totalApproach = 0;
-      let totalShortGame = 0;
-      let totalPutting = 0;
-      let totalFairwaysHit = 0;
-      let totalFairways = 0;
-      let totalGir = 0;
-      let totalGreens = 0;
-      let totalPutts = 0;
       let totalHoles = 0;
-      let validRounds = 0;
+      let scoreHoles1to6 = 0;
+      let scoreHoles7to12 = 0;
+      let scoreHoles13to18 = 0;
+      let scorePar3 = 0;
+      let scorePar4 = 0;
+      let scorePar5 = 0;
+      let eagles = 0;
+      let birdies = 0;
+      let pars = 0;
+      let bogeys = 0;
+      let doubleBogeys = 0;
+      let tripleOrWorse = 0;
 
-      roundsData.forEach((holes) => {
-        if (holes.length === 0) return;
-        validRounds++;
+      // Initialize SG stats
+      let sgTeeTotal = 0;
+      let sgApproachTotal = 0;
+      let sgApproach200Plus = 0;
+      let sgApproach120to200 = 0;
+      let sgApproach40to120 = 0;
+      let sgShortGameTotal = 0;
+      let sgShortGameFwRough = 0;
+      let sgShortGameBunker = 0;
+      let sgPuttingTotal = 0;
+      let sgPutting0to2 = 0;
+      let sgPutting2to7 = 0;
+      let sgPutting7Plus = 0;
 
-        holes.forEach(hole => {
-          totalScore += hole.score || 0;
-          totalPar += hole.par || 0;
-          totalHoles++;
-          totalGreens++;
+      holesData?.forEach(hole => {
+        const score = hole.score || 0;
+        const par = hole.par || 0;
+        const holeNum = hole.hole_number || 0;
+        const diff = score - par;
 
-          if (!hole.pro_shot_data) return;
+        totalScore += score;
+        totalPar += par;
+        totalHoles++;
+
+        // Score by hole range
+        if (holeNum >= 1 && holeNum <= 6) {
+          scoreHoles1to6 += score;
+        } else if (holeNum >= 7 && holeNum <= 12) {
+          scoreHoles7to12 += score;
+        } else if (holeNum >= 13 && holeNum <= 18) {
+          scoreHoles13to18 += score;
+        }
+
+        // Score by par
+        if (par === 3) {
+          scorePar3 += score;
+        } else if (par === 4) {
+          scorePar4 += score;
+        } else if (par === 5) {
+          scorePar5 += score;
+        }
+
+        // Score distribution
+        if (diff <= -2) {
+          eagles++;
+        } else if (diff === -1) {
+          birdies++;
+        } else if (diff === 0) {
+          pars++;
+        } else if (diff === 1) {
+          bogeys++;
+        } else if (diff === 2) {
+          doubleBogeys++;
+        } else if (diff >= 3) {
+          tripleOrWorse++;
+        }
+
+        // Strokes gained by category
+        if (hole.pro_shot_data) {
+          const shots = hole.pro_shot_data as unknown as Shot[];
           
-          const shots = hole.pro_shot_data as Shot[];
-          const puttCount = shots.filter(s => s.type === 'putt').length;
-          totalPutts += puttCount;
-
-          // Count fairways (par 4 and 5 only)
-          if (hole.par >= 4) {
-            totalFairways++;
-            const teeShot = shots.find(s => s.type === 'tee');
-            if (teeShot && !teeShot.holed) {
-              totalFairwaysHit++;
-            }
-          }
-
-          // GIR
-          let strokesBeforeGreen = 0;
-          const regulationStrokes = hole.par - 2;
-          for (const shot of shots) {
-            strokesBeforeGreen++;
-            if (shot.type === 'putt' || shot.holed) {
-              if (strokesBeforeGreen <= regulationStrokes) {
-                totalGir++;
-              }
-              break;
-            }
-          }
-
-          // Strokes gained by category
           shots.forEach(shot => {
-            const sg = shot.strokesGained;
-            if (shot.type === 'tee' && hole.par >= 4) {
-              totalOffTheTee += sg;
-            } else if (shot.type === 'approach') {
-              const dist = shot.startDistance;
-              if (dist >= 40) {
-                totalApproach += sg;
+            const sg = shot.strokesGained || 0;
+            const dist = shot.startDistance || 0;
+            const lie = shot.startLie || '';
+            const shotType = shot.type;
+
+            if (shotType === 'putt') {
+              // Putting
+              sgPuttingTotal += sg;
+              if (dist <= 2) {
+                sgPutting0to2 += sg;
+              } else if (dist <= 7) {
+                sgPutting2to7 += sg;
               } else {
-                totalShortGame += sg;
+                sgPutting7Plus += sg;
               }
-            } else if (shot.type === 'putt') {
-              totalPutting += sg;
+            } else if (shotType === 'tee' && par >= 4) {
+              // Tee shots on par 4/5
+              sgTeeTotal += sg;
+            } else if (dist >= 40) {
+              // Approach shots (40m+)
+              sgApproachTotal += sg;
+              if (dist >= 200) {
+                sgApproach200Plus += sg;
+              } else if (dist >= 120) {
+                sgApproach120to200 += sg;
+              } else {
+                sgApproach40to120 += sg;
+              }
+            } else {
+              // Short game (under 40m, not putting)
+              sgShortGameTotal += sg;
+              if (lie === 'bunker' || lie === 'sand') {
+                sgShortGameBunker += sg;
+              } else {
+                sgShortGameFwRough += sg;
+              }
             }
           });
-        });
+        }
       });
 
-      if (validRounds === 0) {
-        setAverages(null);
+      const validRounds = proRounds.length;
+
+      if (validRounds === 0 || totalHoles === 0) {
+        setScoringStats(null);
+        setSgStats(null);
         setLoading(false);
         return;
       }
 
-      setAverages({
+      setScoringStats({
         roundsCount: validRounds,
+        holesCount: totalHoles,
         avgScore: totalScore / validRounds,
         avgScoreVsPar: (totalScore - totalPar) / validRounds,
-        avgOffTheTee: totalOffTheTee / validRounds,
-        avgApproach: totalApproach / validRounds,
-        avgShortGame: totalShortGame / validRounds,
-        avgPutting: totalPutting / validRounds,
-        avgTotal: (totalOffTheTee + totalApproach + totalShortGame + totalPutting) / validRounds,
-        avgFairwayPct: totalFairways > 0 ? (totalFairwaysHit / totalFairways) * 100 : 0,
-        avgGirPct: totalGreens > 0 ? (totalGir / totalGreens) * 100 : 0,
-        avgPuttsPerHole: totalHoles > 0 ? totalPutts / totalHoles : 0,
+        scoreHoles1to6: scoreHoles1to6 / validRounds,
+        scoreHoles7to12: scoreHoles7to12 / validRounds,
+        scoreHoles13to18: scoreHoles13to18 / validRounds,
+        scorePar3: scorePar3 / validRounds,
+        scorePar4: scorePar4 / validRounds,
+        scorePar5: scorePar5 / validRounds,
+        eagles: eagles / validRounds,
+        birdies: birdies / validRounds,
+        pars: pars / validRounds,
+        bogeys: bogeys / validRounds,
+        doubleBogeys: doubleBogeys / validRounds,
+        tripleOrWorse: tripleOrWorse / validRounds,
       });
+
+      setSgStats({
+        roundsCount: validRounds,
+        holesCount: totalHoles,
+        avgScoreVsPar: (totalScore - totalPar) / validRounds,
+        sgTeeTotal: sgTeeTotal / validRounds,
+        sgApproachTotal: sgApproachTotal / validRounds,
+        sgApproach200Plus: sgApproach200Plus / validRounds,
+        sgApproach120to200: sgApproach120to200 / validRounds,
+        sgApproach40to120: sgApproach40to120 / validRounds,
+        sgShortGameTotal: sgShortGameTotal / validRounds,
+        sgShortGameFwRough: sgShortGameFwRough / validRounds,
+        sgShortGameBunker: sgShortGameBunker / validRounds,
+        sgPuttingTotal: sgPuttingTotal / validRounds,
+        sgPutting0to2: sgPutting0to2 / validRounds,
+        sgPutting2to7: sgPutting2to7 / validRounds,
+        sgPutting7Plus: sgPutting7Plus / validRounds,
+        sgTotal: (sgTeeTotal + sgApproachTotal + sgShortGameTotal + sgPuttingTotal) / validRounds,
+      });
+
     } catch (error) {
       console.error('Error fetching averages:', error);
-      setAverages(null);
+      setScoringStats(null);
+      setSgStats(null);
     } finally {
       setLoading(false);
     }
@@ -214,6 +310,22 @@ export const ProStatsAverages = () => {
     return "text-red-500";
   };
 
+  const StatRow = ({ label, value, isSubcategory = false, isBold = false }: { label: string; value: string | number; isSubcategory?: boolean; isBold?: boolean }) => (
+    <div className={`flex justify-between py-1.5 border-b ${isSubcategory ? 'pl-4' : ''}`}>
+      <span className={`text-sm ${isBold ? 'font-semibold' : ''}`}>{label}</span>
+      <span className={`text-sm ${isBold ? 'font-semibold' : 'font-medium'}`}>{value}</span>
+    </div>
+  );
+
+  const SGRow = ({ label, value, isSubcategory = false, isBold = false }: { label: string; value: number; isSubcategory?: boolean; isBold?: boolean }) => (
+    <div className={`flex justify-between py-1.5 border-b ${isSubcategory ? 'pl-4' : ''}`}>
+      <span className={`text-sm ${isBold ? 'font-semibold' : ''}`}>{label}</span>
+      <span className={`text-sm ${isBold ? 'font-semibold' : 'font-medium'} ${getSGColor(value)}`}>
+        {formatSG(value)}
+      </span>
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -223,6 +335,22 @@ export const ProStatsAverages = () => {
             Performance Averages
           </CardTitle>
         </div>
+        
+        {/* Stats View Toggle */}
+        <Tabs value={view} onValueChange={(v) => setView(v as StatsView)} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="scoring" className="flex items-center gap-1">
+              <Target className="h-4 w-4" />
+              Scoring
+            </TabsTrigger>
+            <TabsTrigger value="strokes-gained" className="flex items-center gap-1">
+              <TrendingUp className="h-4 w-4" />
+              Strokes Gained
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {/* Time Filter */}
         <Tabs value={filter} onValueChange={(v) => setFilter(v as TimeFilter)} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="week">Week</TabsTrigger>
@@ -237,81 +365,56 @@ export const ProStatsAverages = () => {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
-        ) : !averages ? (
+        ) : (!scoringStats || !sgStats) ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             No Pro Stats rounds found for this period
           </p>
+        ) : view === 'scoring' ? (
+          <div className="space-y-1">
+            <StatRow label="Rounds" value={scoringStats.roundsCount} />
+            <StatRow label="Holes" value={scoringStats.holesCount} />
+            <StatRow label="Score" value={scoringStats.avgScore.toFixed(1)} />
+            <StatRow label="Score/par" value={`${scoringStats.avgScoreVsPar >= 0 ? '+' : ''}${scoringStats.avgScoreVsPar.toFixed(1)}`} />
+            <StatRow label="Score 1-6" value={scoringStats.scoreHoles1to6.toFixed(1)} />
+            <StatRow label="Score 7-12" value={scoringStats.scoreHoles7to12.toFixed(1)} />
+            <StatRow label="Score 13-18" value={scoringStats.scoreHoles13to18.toFixed(1)} />
+            <StatRow label="Score par 3" value={scoringStats.scorePar3.toFixed(1)} />
+            <StatRow label="Score par 4" value={scoringStats.scorePar4.toFixed(1)} />
+            <StatRow label="Score par 5" value={scoringStats.scorePar5.toFixed(1)} />
+            <StatRow label="Eagles" value={scoringStats.eagles.toFixed(1)} />
+            <StatRow label="Birdies" value={scoringStats.birdies.toFixed(1)} />
+            <StatRow label="Par" value={scoringStats.pars.toFixed(1)} />
+            <StatRow label="Bogey" value={scoringStats.bogeys.toFixed(1)} />
+            <StatRow label="Double" value={scoringStats.doubleBogeys.toFixed(1)} />
+            <StatRow label="Triple or worse" value={scoringStats.tripleOrWorse.toFixed(1)} />
+          </div>
         ) : (
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground text-center pb-2 border-b">
-              Based on {averages.roundsCount} round{averages.roundsCount !== 1 ? 's' : ''}
-            </div>
-
-            {/* Score averages */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold">{averages.avgScore.toFixed(1)}</div>
-                <div className="text-xs text-muted-foreground">Avg Score</div>
-              </div>
-              <div className="text-center p-3 bg-muted/50 rounded-lg">
-                <div className={`text-2xl font-bold ${getScoreColor(averages.avgScoreVsPar)}`}>
-                  {averages.avgScoreVsPar >= 0 ? '+' : ''}{averages.avgScoreVsPar.toFixed(1)}
-                </div>
-                <div className="text-xs text-muted-foreground">Avg vs Par</div>
-              </div>
-            </div>
-
-            {/* Traditional stats */}
-            <div className="space-y-2">
-              <div className="flex justify-between py-1.5 border-b">
-                <span className="text-sm">Fairways</span>
-                <span className="text-sm font-medium">{averages.avgFairwayPct.toFixed(1)}%</span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b">
-                <span className="text-sm">Greens in Reg</span>
-                <span className="text-sm font-medium">{averages.avgGirPct.toFixed(1)}%</span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b">
-                <span className="text-sm">Putts/Hole</span>
-                <span className="text-sm font-medium">{averages.avgPuttsPerHole.toFixed(2)}</span>
-              </div>
-            </div>
-
-            {/* Strokes Gained averages */}
-            <div className="pt-2">
-              <div className="text-sm font-semibold mb-2">Strokes Gained Averages</div>
-              <div className="space-y-2">
-                <div className="flex justify-between py-1.5 border-b">
-                  <span className="text-sm">Off the Tee</span>
-                  <span className={`text-sm font-medium ${getSGColor(averages.avgOffTheTee)}`}>
-                    {formatSG(averages.avgOffTheTee)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b">
-                  <span className="text-sm">Approach</span>
-                  <span className={`text-sm font-medium ${getSGColor(averages.avgApproach)}`}>
-                    {formatSG(averages.avgApproach)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b">
-                  <span className="text-sm">Short Game</span>
-                  <span className={`text-sm font-medium ${getSGColor(averages.avgShortGame)}`}>
-                    {formatSG(averages.avgShortGame)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b">
-                  <span className="text-sm">Putting</span>
-                  <span className={`text-sm font-medium ${getSGColor(averages.avgPutting)}`}>
-                    {formatSG(averages.avgPutting)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2 border-t-2 border-primary">
-                  <span className="text-sm font-bold">Total SG/Round</span>
-                  <span className={`text-sm font-bold ${getSGColor(averages.avgTotal)}`}>
-                    {formatSG(averages.avgTotal)}
-                  </span>
-                </div>
-              </div>
+          <div className="space-y-1">
+            <StatRow label="Rounds" value={sgStats.roundsCount} />
+            <StatRow label="Holes" value={sgStats.holesCount} />
+            <StatRow label="Score/par" value={`${sgStats.avgScoreVsPar >= 0 ? '+' : ''}${sgStats.avgScoreVsPar.toFixed(1)}`} />
+            
+            <SGRow label="Tee shots par 4/5 tot." value={sgStats.sgTeeTotal} isBold />
+            
+            <SGRow label="Approach 40-240m tot." value={sgStats.sgApproachTotal} isBold />
+            <SGRow label="200+" value={sgStats.sgApproach200Plus} isSubcategory />
+            <SGRow label="120-200m" value={sgStats.sgApproach120to200} isSubcategory />
+            <SGRow label="40-120m" value={sgStats.sgApproach40to120} isSubcategory />
+            
+            <SGRow label="Short game tot." value={sgStats.sgShortGameTotal} isBold />
+            <SGRow label="Short game fw & rough" value={sgStats.sgShortGameFwRough} isSubcategory />
+            <SGRow label="Short game bunker" value={sgStats.sgShortGameBunker} isSubcategory />
+            
+            <SGRow label="Putting tot." value={sgStats.sgPuttingTotal} isBold />
+            <SGRow label="0-2m" value={sgStats.sgPutting0to2} isSubcategory />
+            <SGRow label="2-7m" value={sgStats.sgPutting2to7} isSubcategory />
+            <SGRow label="7+m" value={sgStats.sgPutting7Plus} isSubcategory />
+            
+            <div className="flex justify-between py-2 border-t-2 border-primary mt-2">
+              <span className="text-sm font-bold">Strokes Gained tot.</span>
+              <span className={`text-sm font-bold ${getSGColor(sgStats.sgTotal)}`}>
+                {formatSG(sgStats.sgTotal)}
+              </span>
             </div>
           </div>
         )}
