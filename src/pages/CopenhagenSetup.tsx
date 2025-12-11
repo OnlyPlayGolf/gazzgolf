@@ -41,7 +41,6 @@ export default function CopenhagenSetup() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [useHandicaps, setUseHandicaps] = useState(false);
-  const [stakePerPoint, setStakePerPoint] = useState(1);
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
@@ -161,7 +160,6 @@ export default function CopenhagenSetup() {
           player_2_tee: players[1].teeColor || null,
           player_3_tee: players[2].teeColor || null,
           use_handicaps: useHandicaps,
-          stake_per_point: stakePerPoint,
         })
         .select()
         .single();
@@ -260,21 +258,6 @@ export default function CopenhagenSetup() {
               <Switch checked={useHandicaps} onCheckedChange={setUseHandicaps} />
             </div>
 
-            <div className="space-y-2">
-              <Label>Stake per Point</Label>
-              <Select value={stakePerPoint.toString()} onValueChange={(v) => setStakePerPoint(Number(v))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[0, 1, 2, 5, 10, 20, 50].map((stake) => (
-                    <SelectItem key={stake} value={stake.toString()}>
-                      ${stake} per point
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </CardContent>
         </Card>
 
