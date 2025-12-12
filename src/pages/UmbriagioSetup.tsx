@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle, Plus } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
-import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
-import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
-import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
+import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
+import { Player as PlaySetupPlayer } from "@/types/playSetup";
 
 interface Course {
   id: string;
@@ -96,8 +95,7 @@ export default function UmbriagioSetup() {
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
-  const [showAddFriend, setShowAddFriend] = useState(false);
-  const [showAddGuest, setShowAddGuest] = useState(false);
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -452,10 +450,14 @@ export default function UmbriagioSetup() {
             </DragDropContext>
 
             {players.length < 4 && (
-              <SetupAddPlayerButtons
-                onAddFriend={() => setShowAddFriend(true)}
-                onAddGuest={() => setShowAddGuest(true)}
-              />
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowAddPlayer(true)}
+              >
+                <Plus size={16} className="mr-2" />
+                Add Player
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -525,19 +527,22 @@ export default function UmbriagioSetup() {
         onSave={handleUpdatePlayer}
       />
 
-      {/* Add Friend Sheet */}
-      <SetupAddFriendSheet
-        isOpen={showAddFriend}
-        onClose={() => setShowAddFriend(false)}
-        onAddPlayer={handleAddPlayer}
+      {/* Add Player Dialog */}
+      <AddPlayerDialog
+        isOpen={showAddPlayer}
+        onClose={() => setShowAddPlayer(false)}
+        onAddPlayer={(player: PlaySetupPlayer) => {
+          handleAddPlayer({
+            odId: player.odId,
+            displayName: player.displayName,
+            handicap: player.handicap,
+            isTemporary: player.isTemporary,
+            isCurrentUser: false,
+          });
+          setShowAddPlayer(false);
+        }}
         existingPlayerIds={existingPlayerIds}
-      />
-
-      {/* Add Guest Sheet */}
-      <SetupAddGuestSheet
-        isOpen={showAddGuest}
-        onClose={() => setShowAddGuest(false)}
-        onAddPlayer={handleAddPlayer}
+        defaultTee="white"
       />
     </div>
   );
