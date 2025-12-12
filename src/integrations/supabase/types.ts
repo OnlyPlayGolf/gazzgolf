@@ -673,6 +673,139 @@ export type Database = {
         }
         Relationships: []
       }
+      match_play_games: {
+        Row: {
+          course_id: string | null
+          course_name: string
+          created_at: string | null
+          date_played: string
+          final_result: string | null
+          holes_played: number
+          holes_remaining: number
+          id: string
+          is_finished: boolean
+          match_status: number
+          player_1: string
+          player_1_handicap: number | null
+          player_1_tee: string | null
+          player_2: string
+          player_2_handicap: number | null
+          player_2_tee: string | null
+          tee_set: string | null
+          use_handicaps: boolean
+          user_id: string
+          winner_player: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          final_result?: string | null
+          holes_played?: number
+          holes_remaining?: number
+          id?: string
+          is_finished?: boolean
+          match_status?: number
+          player_1: string
+          player_1_handicap?: number | null
+          player_1_tee?: string | null
+          player_2: string
+          player_2_handicap?: number | null
+          player_2_tee?: string | null
+          tee_set?: string | null
+          use_handicaps?: boolean
+          user_id: string
+          winner_player?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          final_result?: string | null
+          holes_played?: number
+          holes_remaining?: number
+          id?: string
+          is_finished?: boolean
+          match_status?: number
+          player_1?: string
+          player_1_handicap?: number | null
+          player_1_tee?: string | null
+          player_2?: string
+          player_2_handicap?: number | null
+          player_2_tee?: string | null
+          tee_set?: string | null
+          use_handicaps?: boolean
+          user_id?: string
+          winner_player?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_play_games_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_play_holes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          hole_number: number
+          hole_result: number
+          holes_remaining_after: number
+          id: string
+          match_status_after: number
+          par: number
+          player_1_gross_score: number | null
+          player_1_net_score: number | null
+          player_2_gross_score: number | null
+          player_2_net_score: number | null
+          stroke_index: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          hole_number: number
+          hole_result?: number
+          holes_remaining_after?: number
+          id?: string
+          match_status_after?: number
+          par?: number
+          player_1_gross_score?: number | null
+          player_1_net_score?: number | null
+          player_2_gross_score?: number | null
+          player_2_net_score?: number | null
+          stroke_index?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          hole_number?: number
+          hole_result?: number
+          holes_remaining_after?: number
+          id?: string
+          match_status_after?: number
+          par?: number
+          player_1_gross_score?: number | null
+          player_1_net_score?: number | null
+          player_2_gross_score?: number | null
+          player_2_net_score?: number | null
+          stroke_index?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_play_holes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "match_play_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
