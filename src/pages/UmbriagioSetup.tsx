@@ -407,11 +407,6 @@ export default function UmbriagioSetup() {
                         </Draggable>
                       ))}
                       {provided.placeholder}
-                      {teamA.length < 2 && (
-                        <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
-                          Add {2 - teamA.length} more player{teamA.length === 1 ? '' : 's'}
-                        </div>
-                      )}
                     </div>
                   )}
                 </Droppable>
@@ -450,11 +445,6 @@ export default function UmbriagioSetup() {
                         </Draggable>
                       ))}
                       {provided.placeholder}
-                      {teamB.length < 2 && (
-                        <div className="p-3 rounded-lg border border-dashed text-center text-muted-foreground text-sm">
-                          Add {2 - teamB.length} more player{teamB.length === 1 ? '' : 's'}
-                        </div>
-                      )}
                     </div>
                   )}
                 </Droppable>
