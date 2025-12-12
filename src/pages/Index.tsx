@@ -15,6 +15,19 @@ import {
 import { TopNavBar } from "@/components/TopNavBar";
 import { PostBox } from "@/components/PostBox";
 import { FeedPost } from "@/components/FeedPost";
+import { LiveRoundCard } from "@/components/LiveRoundCard";
+
+interface LiveGame {
+  id: string;
+  gameType: 'round' | 'match_play' | 'umbriago' | 'wolf' | 'copenhagen';
+  ownerProfile: any;
+  courseName: string;
+  holesPlayed: number;
+  totalHoles: number;
+  status?: string;
+  createdAt: string;
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -25,6 +38,7 @@ const Index = () => {
   const [friendsCount, setFriendsCount] = useState(0);
   const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
   const [friendsOnCourse, setFriendsOnCourse] = useState<any[]>([]);
+  const [liveGames, setLiveGames] = useState<LiveGame[]>([]);
   const [friendsActivity, setFriendsActivity] = useState<any[]>([]);
   const [friendsPosts, setFriendsPosts] = useState<any[]>([]);
 
@@ -166,28 +180,90 @@ const Index = () => {
           );
 
           setFriendsActivity(activityWithDetails);
-
-          // Filter friends "on the course" - those with rounds in the last 24 hours
-          const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-          const activeFriendIds = new Set(
-            friendRounds
-              .filter(r => new Date(r.created_at) >= twentyFourHoursAgo)
-              .map(r => r.user_id)
-          );
-
-          if (activeFriendIds.size > 0) {
-            const { data: activeProfiles } = await supabase
-              .from('profiles')
-              .select('id, avatar_url, display_name, username')
-              .in('id', Array.from(activeFriendIds));
-            
-            setFriendsOnCourse(activeProfiles || []);
-          } else {
-            setFriendsOnCourse([]);
-          }
-        } else {
-          setFriendsOnCourse([]);
         }
+
+        // Fetch live games from friends (last 6 hours, not finished)
+        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+        const allLiveGames: LiveGame[] = [];
+
+        // Fetch live rounds
+        const { data: liveRounds } = await supabase
+          .from('rounds')
+          .select('id, user_id, course_name, holes_played, created_at')
+          .in('user_id', friendIds)
+          .gte('created_at', sixHoursAgo)
+          .order('created_at', { ascending: false });
+
+        if (liveRounds) {
+          for (const round of liveRounds) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, display_name, username, avatar_url')
+              .eq('id', round.user_id)
+              .single();
+
+            // Count completed holes
+            const { count } = await supabase
+              .from('holes')
+              .select('*', { count: 'exact', head: true })
+              .eq('round_id', round.id);
+
+            allLiveGames.push({
+              id: round.id,
+              gameType: 'round',
+              ownerProfile: profile,
+              courseName: round.course_name,
+              holesPlayed: count || 0,
+              totalHoles: round.holes_played,
+              createdAt: round.created_at,
+            });
+          }
+        }
+
+        // Fetch live match play games
+        const { data: liveMatchPlay } = await supabase
+          .from('match_play_games')
+          .select('*')
+          .in('user_id', friendIds)
+          .eq('is_finished', false)
+          .gte('created_at', sixHoursAgo);
+
+        if (liveMatchPlay) {
+          for (const game of liveMatchPlay) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, display_name, username, avatar_url')
+              .eq('id', game.user_id)
+              .single();
+
+            const holesPlayed = game.holes_played - game.holes_remaining;
+            const status = game.match_status === 0 ? 'All Square' : 
+              game.match_status > 0 ? `${game.player_1} ${Math.abs(game.match_status)} Up` :
+              `${game.player_2} ${Math.abs(game.match_status)} Up`;
+
+            allLiveGames.push({
+              id: game.id,
+              gameType: 'match_play',
+              ownerProfile: profile,
+              courseName: game.course_name,
+              holesPlayed,
+              totalHoles: game.holes_played,
+              status,
+              createdAt: game.created_at,
+            });
+          }
+        }
+
+        // Sort by most recent
+        allLiveGames.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setLiveGames(allLiveGames);
+        
+        // Set friends on course based on live games
+        const activeProfiles = allLiveGames.map(g => g.ownerProfile).filter(Boolean);
+        const uniqueProfiles = activeProfiles.filter((p, i, arr) => 
+          arr.findIndex(x => x.id === p.id) === i
+        );
+        setFriendsOnCourse(uniqueProfiles);
       }
 
       // Load recent activity (rounds)
@@ -276,41 +352,24 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
-        {/* Friends on the Course Section - Only show if there are active friends */}
-        {friendsOnCourse.length > 0 && (
-          <>
+        {/* Live Friends Games Section */}
+        {liveGames.length > 0 && (
+          <div className="space-y-3">
             <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
-            <Card
-              className="cursor-pointer hover:border-primary transition-colors" 
-              onClick={() => navigate('/friends', { state: { from: 'home' } })}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex -space-x-2">
-                      {friendsOnCourse.map((friend) => (
-                        <Avatar key={friend.id} className="h-12 w-12 border-2 border-background">
-                          {friend.avatar_url ? (
-                            <img src={friend.avatar_url} alt={friend.display_name || friend.username} className="object-cover" />
-                          ) : (
-                            <AvatarFallback className="bg-primary text-primary-foreground">
-                              {friend.display_name ? friend.display_name.charAt(0).toUpperCase() : 
-                               friend.username ? friend.username.charAt(0).toUpperCase() : "?"}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{friendsOnCourse.length}</p>
-                      <p className="text-sm text-muted-foreground">Playing now</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={20} className="text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          </>
+            {liveGames.map((game) => (
+              <LiveRoundCard
+                key={`${game.gameType}-${game.id}`}
+                gameId={game.id}
+                gameType={game.gameType}
+                ownerProfile={game.ownerProfile}
+                courseName={game.courseName}
+                holesPlayed={game.holesPlayed}
+                totalHoles={game.totalHoles}
+                status={game.status}
+                createdAt={game.createdAt}
+              />
+            ))}
+          </div>
         )}
 
         {/* Post Box */}

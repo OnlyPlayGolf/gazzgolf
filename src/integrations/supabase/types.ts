@@ -1083,6 +1083,36 @@ export type Database = {
         }
         Relationships: []
       }
+      round_comments: {
+        Row: {
+          content: string
+          created_at: string
+          game_id: string | null
+          game_type: string
+          id: string
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          game_id?: string | null
+          game_type?: string
+          id?: string
+          round_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          game_id?: string | null
+          game_type?: string
+          id?: string
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       round_players: {
         Row: {
           created_at: string
