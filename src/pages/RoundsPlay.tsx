@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Info, Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -20,9 +20,7 @@ import { GroupCard } from "@/components/play/GroupCard";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
-import { FormatMultiSelect } from "@/components/play/FormatMultiSelect";
-import { FormatSettingsSheet } from "@/components/play/FormatSettingsSheet";
-import { PlaySetupState, PlayerGroup, Player, GameFormatId, FormatSettings, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
+import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
 import { cn, parseHandicap } from "@/lib/utils";
 
 type HoleCount = "18" | "front9" | "back9";
@@ -57,10 +55,6 @@ export default function RoundsPlay() {
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [editingPlayerGroupId, setEditingPlayerGroupId] = useState<string | null>(null);
   const [playerEditSheetOpen, setPlayerEditSheetOpen] = useState(false);
-  
-  // Format settings state
-  const [formatSettingsOpen, setFormatSettingsOpen] = useState(false);
-  const [editingFormatId, setEditingFormatId] = useState<GameFormatId | null>(null);
 
   useEffect(() => {
     initializeSetup();
@@ -142,9 +136,7 @@ export default function RoundsPlay() {
     const savedDate = sessionStorage.getItem('datePlayer');
     const savedGroups = sessionStorage.getItem('playGroups');
     const savedAIConfig = sessionStorage.getItem('aiGameConfig');
-    const savedGameFormats = sessionStorage.getItem('gameFormats');
-    const savedFormatSettings = sessionStorage.getItem('formatSettings');
-    const savedPrimaryFormat = sessionStorage.getItem('primaryFormat');
+    const savedGameFormat = sessionStorage.getItem('gameFormat');
 
     if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
     
@@ -154,12 +146,7 @@ export default function RoundsPlay() {
       if (savedRoundName) updated.roundName = savedRoundName;
       if (savedDate) updated.datePlayed = savedDate;
       if (savedGroups) updated.groups = JSON.parse(savedGroups);
-      if (savedGameFormats) {
-        updated.gameFormats = JSON.parse(savedGameFormats);
-        updated.gameFormat = updated.gameFormats[0] || "stroke_play";
-      }
-      if (savedFormatSettings) updated.formatSettings = JSON.parse(savedFormatSettings);
-      if (savedPrimaryFormat) updated.primaryFormat = savedPrimaryFormat as GameFormatId;
+      if (savedGameFormat) updated.gameFormat = savedGameFormat as any;
       if (savedAIConfig) {
         const config = JSON.parse(savedAIConfig);
         updated.aiConfigApplied = true;
@@ -338,89 +325,7 @@ export default function RoundsPlay() {
     sessionStorage.setItem('roundName', setupState.roundName);
     sessionStorage.setItem('datePlayer', setupState.datePlayed);
     sessionStorage.setItem('playGroups', JSON.stringify(setupState.groups));
-    sessionStorage.setItem('gameFormats', JSON.stringify(setupState.gameFormats));
-    sessionStorage.setItem('formatSettings', JSON.stringify(setupState.formatSettings));
-    if (setupState.primaryFormat) sessionStorage.setItem('primaryFormat', setupState.primaryFormat);
-    // Legacy support
-    sessionStorage.setItem('gameFormat', setupState.gameFormats[0] || "stroke_play");
-  };
-
-  // Format management handlers
-  const handleToggleFormat = (formatId: GameFormatId) => {
-    setSetupState(prev => {
-      const isSelected = prev.gameFormats.includes(formatId);
-      let newFormats: GameFormatId[];
-      let newSettings: FormatSettings[];
-      let newPrimary = prev.primaryFormat;
-
-      if (isSelected) {
-        // Remove format
-        newFormats = prev.gameFormats.filter(f => f !== formatId);
-        newSettings = prev.formatSettings.filter(s => s.formatId !== formatId);
-        // If removing primary, set new primary
-        if (newPrimary === formatId && newFormats.length > 0) {
-          newPrimary = newFormats[0];
-          newSettings = newSettings.map(s => ({ ...s, isPrimary: s.formatId === newPrimary }));
-        }
-        if (newFormats.length === 0) {
-          // Keep at least one format
-          newFormats = ["stroke_play"];
-          newSettings = [{ formatId: "stroke_play", isPrimary: true }];
-          newPrimary = "stroke_play";
-        }
-      } else {
-        // Add format
-        newFormats = [...prev.gameFormats, formatId];
-        newSettings = [...prev.formatSettings, { formatId, isPrimary: false }];
-        // If first format, make it primary
-        if (newFormats.length === 1) {
-          newPrimary = formatId;
-          newSettings = [{ formatId, isPrimary: true }];
-        }
-      }
-
-      return {
-        ...prev,
-        gameFormats: newFormats,
-        formatSettings: newSettings,
-        primaryFormat: newPrimary,
-        gameFormat: newFormats[0] || "stroke_play",
-      };
-    });
-  };
-
-  const handleSetPrimaryFormat = (formatId: GameFormatId) => {
-    setSetupState(prev => ({
-      ...prev,
-      primaryFormat: formatId,
-      formatSettings: prev.formatSettings.map(s => ({ ...s, isPrimary: s.formatId === formatId })),
-    }));
-  };
-
-  const handleOpenFormatSettings = (formatId: GameFormatId) => {
-    setEditingFormatId(formatId);
-    setFormatSettingsOpen(true);
-  };
-
-  const handleSaveFormatSettings = (settings: FormatSettings) => {
-    setSetupState(prev => ({
-      ...prev,
-      formatSettings: prev.formatSettings.map(s => 
-        s.formatId === settings.formatId ? settings : s
-      ),
-    }));
-  };
-
-  const getFormatSettings = (formatId: GameFormatId): FormatSettings | null => {
-    return setupState.formatSettings.find(s => s.formatId === formatId) || null;
-  };
-
-  const handleOpenFormatInfo = (formatId: GameFormatId) => {
-    saveState();
-    if (formatId === "stroke_play" || formatId === "stableford") navigate('/stroke-play/settings');
-    else if (formatId === "umbriago") navigate('/umbriago/how-to-play');
-    else if (formatId === "copenhagen") navigate('/copenhagen/how-to-play');
-    else if (formatId === "wolf") navigate('/wolf/how-to-play');
+    sessionStorage.setItem('gameFormat', setupState.gameFormat);
   };
 
   const getHolesPlayed = (holeCount: HoleCount): number => {
@@ -708,17 +613,45 @@ export default function RoundsPlay() {
                   </Select>
                 </div>
 
-                {/* Game Format - Multi-select */}
+                {/* Game Format */}
                 <div className="space-y-2">
-                  <Label className="text-xs">Game Formats (select one or more)</Label>
-                  <FormatMultiSelect
-                    selectedFormats={setupState.gameFormats}
-                    primaryFormat={setupState.primaryFormat}
-                    onToggleFormat={handleToggleFormat}
-                    onSetPrimary={handleSetPrimaryFormat}
-                    onOpenSettings={handleOpenFormatSettings}
-                    onOpenInfo={handleOpenFormatInfo}
-                  />
+                  <Label className="text-xs">Game Format</Label>
+                  <div className="space-y-2">
+                    {[
+                      { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
+                      { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
+                      { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
+                      { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
+                    ].map((fmt) => (
+                      <div key={fmt.id} className="relative">
+                        <button
+                          onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
+                          className={cn(
+                            "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
+                            setupState.gameFormat === fmt.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <p className="font-semibold text-sm">{fmt.label}</p>
+                          <p className="text-xs text-muted-foreground">{fmt.desc}</p>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveState();
+                            if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
+                            else if (fmt.id === "umbriago") navigate('/umbriago/how-to-play');
+                            else if (fmt.id === "copenhagen") navigate('/copenhagen/how-to-play');
+                            else navigate('/wolf/how-to-play');
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
+                        >
+                          <Info size={16} className="text-muted-foreground" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </CollapsibleContent>
@@ -756,17 +689,6 @@ export default function RoundsPlay() {
           courseHoles,
         } : undefined}
         onApplyConfig={handleApplyAIConfig}
-      />
-
-      <FormatSettingsSheet
-        isOpen={formatSettingsOpen}
-        onClose={() => {
-          setFormatSettingsOpen(false);
-          setEditingFormatId(null);
-        }}
-        formatId={editingFormatId}
-        settings={editingFormatId ? getFormatSettings(editingFormatId) : null}
-        onSave={handleSaveFormatSettings}
       />
 
       <CourseSelectionDialog
