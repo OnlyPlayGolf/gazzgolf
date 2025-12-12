@@ -93,6 +93,14 @@ import CopenhagenLeaderboard from "./pages/CopenhagenLeaderboard";
 import CopenhagenSettings from "./pages/CopenhagenSettings";
 import CopenhagenSummary from "./pages/CopenhagenSummary";
 import HowToPlayCopenhagen from "./pages/HowToPlayCopenhagen";
+import MatchPlaySetup from "./pages/MatchPlaySetup";
+import MatchPlayPlay from "./pages/MatchPlayPlay";
+import MatchPlayInfo from "./pages/MatchPlayInfo";
+import MatchPlayFeed from "./pages/MatchPlayFeed";
+import MatchPlayLeaderboard from "./pages/MatchPlayLeaderboard";
+import MatchPlaySettings from "./pages/MatchPlaySettings";
+import MatchPlaySummary from "./pages/MatchPlaySummary";
+import HowToPlayMatchPlay from "./pages/HowToPlayMatchPlay";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -178,6 +186,14 @@ const App = () => {
             <Route path="/copenhagen/:gameId/leaderboard" element={<CopenhagenLeaderboard />} />
             <Route path="/copenhagen/:gameId/settings" element={<CopenhagenSettings />} />
             <Route path="/copenhagen/:gameId/summary" element={<CopenhagenSummary />} />
+            <Route path="/match-play/how-to-play" element={<HowToPlayMatchPlay />} />
+            <Route path="/match-play/setup" element={<MatchPlaySetup />} />
+            <Route path="/match-play/:gameId/play" element={<MatchPlayPlay />} />
+            <Route path="/match-play/:gameId/info" element={<MatchPlayInfo />} />
+            <Route path="/match-play/:gameId/feed" element={<MatchPlayFeed />} />
+            <Route path="/match-play/:gameId/leaderboard" element={<MatchPlayLeaderboard />} />
+            <Route path="/match-play/:gameId/settings" element={<MatchPlaySettings />} />
+            <Route path="/match-play/:gameId/summary" element={<MatchPlaySummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />
