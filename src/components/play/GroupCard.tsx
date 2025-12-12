@@ -259,7 +259,7 @@ export function GroupCard({
           onClick={onAddPlayer}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Player to {group.name}
+          Add Player
         </Button>
       </CardContent>
     </Card>
