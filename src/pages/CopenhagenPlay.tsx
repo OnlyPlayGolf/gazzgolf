@@ -391,7 +391,6 @@ export default function CopenhagenPlay() {
             onChange={(delta) => updateScore('player1', delta)}
             labelColor="text-emerald-600"
             handicap={game.use_handicaps ? game.player_1_handicap : null}
-            tee={game.player_1_tee}
           />
         </Card>
 
@@ -407,7 +406,6 @@ export default function CopenhagenPlay() {
             onChange={(delta) => updateScore('player2', delta)}
             labelColor="text-blue-600"
             handicap={game.use_handicaps ? game.player_2_handicap : null}
-            tee={game.player_2_tee}
           />
         </Card>
 
@@ -423,7 +421,6 @@ export default function CopenhagenPlay() {
             onChange={(delta) => updateScore('player3', delta)}
             labelColor="text-amber-600"
             handicap={game.use_handicaps ? game.player_3_handicap : null}
-            tee={game.player_3_tee}
           />
         </Card>
 
@@ -558,24 +555,19 @@ function ScoreInput({
   value, 
   onChange,
   labelColor = "text-muted-foreground",
-  handicap,
-  tee
+  handicap
 }: { 
   label: string; 
   value: number; 
   onChange: (delta: number) => void;
   labelColor?: string;
   handicap?: number | null;
-  tee?: string | null;
 }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col">
         {(handicap !== null && handicap !== undefined) && (
           <span className="text-xs text-muted-foreground">HCP: {handicap}</span>
-        )}
-        {tee && (
-          <span className="text-xs text-muted-foreground capitalize">{tee} tee</span>
         )}
       </div>
       <div className="flex items-center gap-2">
