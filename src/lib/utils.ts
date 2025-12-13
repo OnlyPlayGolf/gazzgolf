@@ -28,8 +28,8 @@ export function parseHandicap(input: string | null | undefined): number | undefi
  * -10 (internal storage for plus handicap) -> "+10"
  * 10 (regular handicap) -> "10"
  */
-export function formatHandicap(handicap: number | undefined): string {
-  if (handicap === undefined) return "";
+export function formatHandicap(handicap: number | null | undefined): string {
+  if (handicap === undefined || handicap === null) return "";
   if (handicap < 0) return `+${Math.abs(handicap)}`;
   return handicap.toString();
 }
