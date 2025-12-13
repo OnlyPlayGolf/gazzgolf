@@ -26,16 +26,18 @@ interface Round {
   tee_set: string | null;
 }
 
+interface HoleData {
+  hole_number: number;
+  score: number;
+  par: number;
+  player_id: string | null;
+}
+
 interface PlayerData {
   id: string;
   user_id: string;
   display_name: string;
-  scores: Map<number, number>;
-}
-
-interface CourseHole {
-  hole_number: number;
-  par: number;
+  holes: HoleData[];
 }
 
 interface Comment {
@@ -59,7 +61,6 @@ export default function SpectateRound() {
   const [round, setRound] = useState<Round | null>(null);
   const [ownerProfile, setOwnerProfile] = useState<any>(null);
   const [players, setPlayers] = useState<PlayerData[]>([]);
-  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
@@ -76,7 +77,8 @@ export default function SpectateRound() {
   useEffect(() => {
     if (roundId) {
       fetchData();
-      setupRealtimeSubscription();
+      const cleanup = setupRealtimeSubscription();
+      return cleanup;
     }
   }, [roundId]);
 
@@ -103,60 +105,46 @@ export default function SpectateRound() {
         .single();
       setOwnerProfile(ownerData);
 
-      // Fetch course holes
-      const { data: courseData } = await supabase
-        .from("courses")
-        .select("id")
-        .eq("name", roundData.course_name)
-        .single();
+      // Fetch all holes for this round with par included
+      const { data: holesData } = await supabase
+        .from("holes")
+        .select("hole_number, score, par, player_id")
+        .eq("round_id", roundId)
+        .order("hole_number");
 
-      if (courseData) {
-        const { data: holesData } = await supabase
-          .from("course_holes")
-          .select("hole_number, par")
-          .eq("course_id", courseData.id)
-          .order("hole_number");
-        setCourseHoles(holesData || []);
-      }
-
-      // Fetch players and scores
+      // Fetch players from round_players
       const { data: playersData } = await supabase
         .from("round_players")
         .select("id, user_id")
         .eq("round_id", roundId);
 
-      if (playersData) {
+      if (playersData && playersData.length > 0) {
         const userIds = playersData.map(p => p.user_id);
         const { data: profilesData } = await supabase
           .from("profiles")
           .select("id, display_name, username")
           .in("id", userIds);
 
-        const { data: scoresData } = await supabase
-          .from("holes")
-          .select("hole_number, score, player_id")
-          .eq("round_id", roundId);
-
-        const scoresMap = new Map<string, Map<number, number>>();
-        scoresData?.forEach((hole) => {
-          if (hole.player_id) {
-            if (!scoresMap.has(hole.player_id)) {
-              scoresMap.set(hole.player_id, new Map());
-            }
-            scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
-          }
-        });
-
-        const playersWithScores: PlayerData[] = playersData.map(player => {
+        const playersWithHoles: PlayerData[] = playersData.map(player => {
           const profile = profilesData?.find(p => p.id === player.user_id);
+          const playerHoles = holesData?.filter(h => h.player_id === player.id) || [];
           return {
             id: player.id,
             user_id: player.user_id,
             display_name: profile?.display_name || profile?.username || "Player",
-            scores: scoresMap.get(player.id) || new Map(),
+            holes: playerHoles,
           };
         });
-        setPlayers(playersWithScores);
+        setPlayers(playersWithHoles);
+      } else if (holesData && holesData.length > 0) {
+        // Fallback: if no round_players, show round owner with their holes
+        const ownerPlayer: PlayerData = {
+          id: roundData.user_id,
+          user_id: roundData.user_id,
+          display_name: ownerData?.display_name || ownerData?.username || "Player",
+          holes: holesData,
+        };
+        setPlayers([ownerPlayer]);
       }
 
       // Fetch comments
@@ -168,7 +156,6 @@ export default function SpectateRound() {
         .order("created_at", { ascending: false });
 
       if (commentsData) {
-        // Fetch profiles for comments
         const commentUserIds = [...new Set(commentsData.map(c => c.user_id))];
         const { data: commentProfiles } = await supabase
           .from("profiles")
@@ -233,18 +220,26 @@ export default function SpectateRound() {
   const calculateTotals = (player: PlayerData) => {
     let totalScore = 0;
     let totalPar = 0;
-    let holesCompleted = 0;
+    const holesCompleted = player.holes.length;
 
-    courseHoles.forEach(hole => {
-      const score = player.scores.get(hole.hole_number);
-      if (score && score > 0) {
-        totalScore += score;
-        totalPar += hole.par;
-        holesCompleted++;
-      }
+    player.holes.forEach(hole => {
+      totalScore += hole.score;
+      totalPar += hole.par;
     });
 
     return { totalScore, totalPar, holesCompleted };
+  };
+
+  // Generate hole numbers for scorecard (1-9 or 1-18)
+  const getHoleNumbers = () => {
+    const maxHole = round?.holes_played || 18;
+    return Array.from({ length: Math.min(maxHole, 9) }, (_, i) => i + 1);
+  };
+
+  const getBackNineHoles = () => {
+    const maxHole = round?.holes_played || 18;
+    if (maxHole <= 9) return [];
+    return Array.from({ length: Math.min(maxHole - 9, 9) }, (_, i) => i + 10);
   };
 
   if (loading) {
@@ -264,6 +259,8 @@ export default function SpectateRound() {
   }
 
   const ownerName = ownerProfile?.display_name || ownerProfile?.username || "Friend";
+  const frontNine = getHoleNumbers();
+  const backNine = getBackNineHoles();
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -288,10 +285,6 @@ export default function SpectateRound() {
                 <p className="font-semibold text-sm">{ownerName}'s Round</p>
                 <p className="text-xs text-muted-foreground">{round.course_name}</p>
               </div>
-            </div>
-            <div className="ml-auto flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs font-medium text-green-600">LIVE</span>
             </div>
           </div>
         </div>
@@ -321,62 +314,123 @@ export default function SpectateRound() {
 
           {/* Leaderboard Tab */}
           <TabsContent value="leaderboard" className="mt-4 space-y-4">
-            {players.map((player) => {
-              const totals = calculateTotals(player);
-              const scoreToPar = totals.totalScore - totals.totalPar;
-              const scoreDisplay = scoreToPar === 0 ? "E" : scoreToPar > 0 ? `+${scoreToPar}` : scoreToPar;
+            {players.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">No scores recorded yet</p>
+              </Card>
+            ) : (
+              players.map((player) => {
+                const totals = calculateTotals(player);
+                const scoreToPar = totals.totalScore - totals.totalPar;
+                const scoreDisplay = totals.holesCompleted === 0 ? "-" : 
+                  scoreToPar === 0 ? "E" : scoreToPar > 0 ? `+${scoreToPar}` : scoreToPar;
 
-              return (
-                <Card key={player.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{player.display_name}</CardTitle>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold">{scoreDisplay}</p>
-                        <p className="text-xs text-muted-foreground">Thru {totals.holesCompleted}</p>
+                return (
+                  <Card key={player.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{player.display_name}</CardTitle>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold">{scoreDisplay}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {totals.holesCompleted > 0 ? `Thru ${totals.holesCompleted}` : "Not started"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs w-12">Hole</TableHead>
-                            {courseHoles.slice(0, 9).map(h => (
-                              <TableHead key={h.hole_number} className="text-center text-xs px-1 w-8">
-                                {h.hole_number}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="text-xs">Par</TableCell>
-                            {courseHoles.slice(0, 9).map(h => (
-                              <TableCell key={h.hole_number} className="text-center text-xs px-1">
-                                {h.par}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="text-xs font-semibold">Score</TableCell>
-                            {courseHoles.slice(0, 9).map(h => {
-                              const score = player.scores.get(h.hole_number);
-                              return (
-                                <TableCell key={h.hole_number} className="text-center text-xs font-semibold px-1">
-                                  {score || "-"}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardHeader>
+                    <CardContent>
+                      {player.holes.length > 0 ? (
+                        <div className="space-y-4">
+                          {/* Front 9 */}
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-xs w-12">Hole</TableHead>
+                                  {frontNine.map(h => (
+                                    <TableHead key={h} className="text-center text-xs px-1 w-8">
+                                      {h}
+                                    </TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                <TableRow>
+                                  <TableCell className="text-xs">Par</TableCell>
+                                  {frontNine.map(h => {
+                                    const hole = player.holes.find(hole => hole.hole_number === h);
+                                    return (
+                                      <TableCell key={h} className="text-center text-xs px-1">
+                                        {hole?.par || "-"}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="text-xs font-semibold">Score</TableCell>
+                                  {frontNine.map(h => {
+                                    const hole = player.holes.find(hole => hole.hole_number === h);
+                                    return (
+                                      <TableCell key={h} className="text-center text-xs font-semibold px-1">
+                                        {hole?.score || "-"}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </div>
+
+                          {/* Back 9 */}
+                          {backNine.length > 0 && (
+                            <div className="overflow-x-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs w-12">Hole</TableHead>
+                                    {backNine.map(h => (
+                                      <TableHead key={h} className="text-center text-xs px-1 w-8">
+                                        {h}
+                                      </TableHead>
+                                    ))}
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  <TableRow>
+                                    <TableCell className="text-xs">Par</TableCell>
+                                    {backNine.map(h => {
+                                      const hole = player.holes.find(hole => hole.hole_number === h);
+                                      return (
+                                        <TableCell key={h} className="text-center text-xs px-1">
+                                          {hole?.par || "-"}
+                                        </TableCell>
+                                      );
+                                    })}
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell className="text-xs font-semibold">Score</TableCell>
+                                    {backNine.map(h => {
+                                      const hole = player.holes.find(hole => hole.hole_number === h);
+                                      return (
+                                        <TableCell key={h} className="text-center text-xs font-semibold px-1">
+                                          {hole?.score || "-"}
+                                        </TableCell>
+                                      );
+                                    })}
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-2">No holes recorded</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </TabsContent>
 
           {/* Info Tab */}
