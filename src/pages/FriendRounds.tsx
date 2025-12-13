@@ -136,7 +136,11 @@ export default function FriendRounds() {
         {rounds.length > 0 ? (
           <div className="space-y-3">
             {rounds.map((round) => (
-              <Card key={round.id} className="bg-[hsl(120,30%,95%)] border-[hsl(120,30%,85%)]">
+              <Card 
+                key={round.id} 
+                className="bg-[hsl(120,30%,95%)] border-[hsl(120,30%,85%)] cursor-pointer hover:bg-[hsl(120,30%,90%)] transition-colors"
+                onClick={() => navigate(`/spectate/round/${round.id}`)}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div>
