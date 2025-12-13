@@ -289,17 +289,77 @@ export default function RoundsPlay() {
 
   // AI config handler
   const handleApplyAIConfig = (config: GameConfiguration) => {
+    // Map base format to our supported formats
     const format = config.baseFormat === 'stroke_play' || config.baseFormat === 'stableford'
       ? 'stroke_play'
       : config.baseFormat === 'umbriago'
       ? 'umbriago'
       : config.baseFormat === 'wolf'
       ? 'wolf'
+      : config.baseFormat === 'custom'
+      ? 'stroke_play'
       : 'stroke_play';
+
+    // Map hole count
+    let selectedHoles: HoleCount = '18';
+    if (config.totalHoles === 9) {
+      // Check if it's front or back 9 based on hole numbers
+      if (config.holes.length > 0) {
+        const firstHole = config.holes[0].holeNumber;
+        selectedHoles = firstHole <= 9 ? 'front9' : 'back9';
+      } else {
+        selectedHoles = 'front9';
+      }
+    }
+
+    // Build players from AI config if provided
+    let updatedGroups = setupState.groups;
+    if (config.playerNames && config.playerNames.length > 0) {
+      const aiPlayers: Player[] = config.playerNames.map((name, idx) => {
+        const teeAssignment = config.teeAssignments?.find(t => t.playerIndex === idx);
+        const handicapAdjustment = config.handicapAdjustments?.find(h => h.playerIndex === idx);
+        
+        return {
+          odId: `ai-player-${idx}-${Date.now()}`,
+          displayName: name,
+          username: '',
+          teeColor: teeAssignment?.defaultTee || setupState.teeColor || 'White',
+          handicap: handicapAdjustment?.adjustedStrokes ?? null,
+          isTemporary: true,
+          avatarUrl: undefined,
+        };
+      });
+
+      // Keep current user if exists, add AI players
+      const currentUserPlayer = setupState.groups[0]?.players?.[0];
+      const playersToAdd = currentUserPlayer 
+        ? [currentUserPlayer, ...aiPlayers.filter(p => p.displayName.toLowerCase() !== currentUserPlayer.displayName?.toLowerCase())]
+        : aiPlayers;
+
+      updatedGroups = [{
+        ...setupState.groups[0],
+        players: playersToAdd.slice(0, config.playerCount || playersToAdd.length)
+      }];
+    }
+
+    // Apply tee assignments to existing players if no new players provided
+    if (!config.playerNames?.length && config.teeAssignments?.length > 0) {
+      updatedGroups = setupState.groups.map(group => ({
+        ...group,
+        players: group.players.map((player, idx) => {
+          const teeAssignment = config.teeAssignments?.find(t => 
+            t.playerName?.toLowerCase() === player.displayName?.toLowerCase() || t.playerIndex === idx
+          );
+          return teeAssignment ? { ...player, teeColor: teeAssignment.defaultTee } : player;
+        })
+      }));
+    }
 
     setSetupState(prev => ({
       ...prev,
       gameFormat: format as any,
+      selectedHoles,
+      groups: updatedGroups,
       strokePlaySettings: {
         mulligansPerPlayer: config.mulligansPerPlayer || 0,
         handicapEnabled: config.useHandicaps,
