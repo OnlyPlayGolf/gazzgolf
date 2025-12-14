@@ -103,6 +103,8 @@ import MatchPlaySummary from "./pages/MatchPlaySummary";
 import HowToPlayMatchPlay from "./pages/HowToPlayMatchPlay";
 import SpectateRound from "./pages/SpectateRound";
 import SpectateMatchPlay from "./pages/SpectateMatchPlay";
+import BestBallSetup from "./pages/BestBallSetup";
+import BestBallPlay from "./pages/BestBallPlay";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -198,6 +200,8 @@ const App = () => {
             <Route path="/match-play/:gameId/summary" element={<MatchPlaySummary />} />
             <Route path="/spectate/round/:roundId" element={<SpectateRound />} />
             <Route path="/spectate/match-play/:gameId" element={<SpectateMatchPlay />} />
+            <Route path="/best-ball/setup" element={<BestBallSetup />} />
+            <Route path="/best-ball/:gameId/play" element={<BestBallPlay />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />

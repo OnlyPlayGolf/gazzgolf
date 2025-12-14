@@ -434,6 +434,11 @@ export default function RoundsPlay() {
       navigate('/match-play/setup');
       return;
     }
+    if (setupState.gameFormat === "best_ball_stroke" || setupState.gameFormat === "best_ball_match") {
+      sessionStorage.setItem('bestBallType', setupState.gameFormat === "best_ball_stroke" ? 'stroke' : 'match');
+      navigate('/best-ball/setup');
+      return;
+    }
     if (setupState.gameFormat === "stroke_play") {
       navigate('/stroke-play/setup');
       return;
@@ -684,6 +689,8 @@ export default function RoundsPlay() {
                     {[
                       { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
                       { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
+                      { id: "best_ball_stroke", label: "Best Ball (Stroke)", desc: "Team best score per hole" },
+                      { id: "best_ball_match", label: "Best Ball (Match)", desc: "Team match play" },
                       { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
                       { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
                       { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
@@ -707,6 +714,7 @@ export default function RoundsPlay() {
                             saveState();
                             if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
                             else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
+                            else if (fmt.id === "best_ball_stroke" || fmt.id === "best_ball_match") navigate('/best-ball/how-to-play');
                             else if (fmt.id === "umbriago") navigate('/umbriago/how-to-play');
                             else if (fmt.id === "copenhagen") navigate('/copenhagen/how-to-play');
                             else navigate('/wolf/how-to-play');
