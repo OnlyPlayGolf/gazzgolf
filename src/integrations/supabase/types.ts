@@ -14,6 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
+      best_ball_games: {
+        Row: {
+          course_id: string | null
+          course_name: string
+          created_at: string | null
+          date_played: string
+          final_result: string | null
+          game_type: string
+          holes_played: number
+          holes_remaining: number
+          id: string
+          is_finished: boolean
+          match_status: number
+          team_a_name: string
+          team_a_players: Json
+          team_a_total: number
+          team_b_name: string
+          team_b_players: Json
+          team_b_total: number
+          use_handicaps: boolean
+          user_id: string
+          winner_team: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          final_result?: string | null
+          game_type?: string
+          holes_played?: number
+          holes_remaining?: number
+          id?: string
+          is_finished?: boolean
+          match_status?: number
+          team_a_name?: string
+          team_a_players?: Json
+          team_a_total?: number
+          team_b_name?: string
+          team_b_players?: Json
+          team_b_total?: number
+          use_handicaps?: boolean
+          user_id: string
+          winner_team?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          final_result?: string | null
+          game_type?: string
+          holes_played?: number
+          holes_remaining?: number
+          id?: string
+          is_finished?: boolean
+          match_status?: number
+          team_a_name?: string
+          team_a_players?: Json
+          team_a_total?: number
+          team_b_name?: string
+          team_b_players?: Json
+          team_b_total?: number
+          use_handicaps?: boolean
+          user_id?: string
+          winner_team?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "best_ball_games_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      best_ball_holes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          hole_number: number
+          hole_result: number
+          holes_remaining_after: number
+          id: string
+          match_status_after: number
+          par: number
+          stroke_index: number | null
+          team_a_best_gross: number | null
+          team_a_best_net: number | null
+          team_a_counting_player: string | null
+          team_a_running_total: number
+          team_a_scores: Json
+          team_b_best_gross: number | null
+          team_b_best_net: number | null
+          team_b_counting_player: string | null
+          team_b_running_total: number
+          team_b_scores: Json
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          hole_number: number
+          hole_result?: number
+          holes_remaining_after?: number
+          id?: string
+          match_status_after?: number
+          par?: number
+          stroke_index?: number | null
+          team_a_best_gross?: number | null
+          team_a_best_net?: number | null
+          team_a_counting_player?: string | null
+          team_a_running_total?: number
+          team_a_scores?: Json
+          team_b_best_gross?: number | null
+          team_b_best_net?: number | null
+          team_b_counting_player?: string | null
+          team_b_running_total?: number
+          team_b_scores?: Json
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          hole_number?: number
+          hole_result?: number
+          holes_remaining_after?: number
+          id?: string
+          match_status_after?: number
+          par?: number
+          stroke_index?: number | null
+          team_a_best_gross?: number | null
+          team_a_best_net?: number | null
+          team_a_counting_player?: string | null
+          team_a_running_total?: number
+          team_a_scores?: Json
+          team_b_best_gross?: number | null
+          team_b_best_net?: number | null
+          team_b_counting_player?: string | null
+          team_b_running_total?: number
+          team_b_scores?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "best_ball_holes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "best_ball_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
