@@ -21,7 +21,8 @@ export const BottomTabBar = () => {
     location.pathname.startsWith('/umbriago/') ||
     location.pathname.startsWith('/wolf/') ||
     location.pathname.startsWith('/copenhagen/') ||
-    location.pathname.startsWith('/match-play/')
+    location.pathname.startsWith('/match-play/') ||
+    location.pathname.startsWith('/best-ball/')
   );
   if (hideTabBar) return null;
 
