@@ -278,7 +278,6 @@ export default function BestBallSetup() {
                       player={{
                         odId: player.odId,
                         displayName: player.displayName,
-                        username: '',
                         teeColor: player.teeColor || '',
                         handicap: player.handicap,
                         isTemporary: player.isTemporary,
@@ -425,12 +424,11 @@ export default function BestBallSetup() {
       {/* Edit Sheet */}
       {editingPlayer && (
         <SetupPlayerEditSheet
-          open={!!editingPlayer}
-          onOpenChange={(open) => !open && setEditingPlayer(null)}
+          isOpen={!!editingPlayer}
+          onClose={() => setEditingPlayer(null)}
           player={{
             odId: editingPlayer.odId,
             displayName: editingPlayer.displayName,
-            username: '',
             teeColor: editingPlayer.teeColor || '',
             handicap: editingPlayer.handicap,
             isTemporary: editingPlayer.isTemporary,
