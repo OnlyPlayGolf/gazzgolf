@@ -518,7 +518,11 @@ export default function UserProfile() {
             <Card className="bg-[hsl(120,30%,95%)] border-[hsl(120,30%,85%)]">
               <CardContent className="p-4">
                 {recentRounds.map((round) => (
-                  <div key={round.id} className="mb-3 last:mb-0">
+                  <button
+                    key={round.id}
+                    onClick={() => navigate(`/rounds/${round.id}/summary`)}
+                    className="w-full text-left mb-3 last:mb-0 p-3 -m-3 last:m-0 last:p-0 rounded-lg hover:bg-[hsl(120,30%,90%)] transition-colors cursor-pointer"
+                  >
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-foreground">
@@ -527,16 +531,14 @@ export default function UserProfile() {
                         <p className="text-sm text-muted-foreground">{round.course_name}</p>
                         <p className="text-xs text-muted-foreground">{round.date}</p>
                       </div>
-                      <div className="text-3xl font-bold text-foreground">
-                        {round.score > 0 ? '+' : ''}{round.score}
+                      <div className="flex items-center gap-2">
+                        <div className="text-3xl font-bold text-foreground">
+                          {round.score > 0 ? '+' : ''}{round.score}
+                        </div>
+                        <ChevronRight size={20} className="text-muted-foreground" />
                       </div>
                     </div>
-                    <div className="flex -space-x-2 mt-2">
-                      <div className="h-6 w-6 rounded-full bg-primary/30 border border-background" />
-                      <div className="h-6 w-6 rounded-full bg-primary/50 border border-background" />
-                      <div className="h-6 w-6 rounded-full bg-primary/70 border border-background" />
-                    </div>
-                  </div>
+                  </button>
                 ))}
               </CardContent>
             </Card>
