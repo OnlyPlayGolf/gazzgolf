@@ -750,7 +750,8 @@ export default function RoundsPlay() {
                           onClick={(e) => {
                             e.stopPropagation();
                             saveState();
-                            if (fmt.id === "best_ball_stroke" || fmt.id === "best_ball_match") navigate('/best-ball/how-to-play');
+                            if (fmt.id === "best_ball_stroke") navigate('/best-ball/stroke/how-to-play');
+                            else if (fmt.id === "best_ball_match") navigate('/best-ball/match/how-to-play');
                             else navigate('/umbriago/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
