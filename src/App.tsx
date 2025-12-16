@@ -107,6 +107,14 @@ import BestBallSetup from "./pages/BestBallSetup";
 import BestBallPlay from "./pages/BestBallPlay";
 import HowToPlayBestBallStroke from "./pages/HowToPlayBestBallStroke";
 import HowToPlayBestBallMatch from "./pages/HowToPlayBestBallMatch";
+import ScrambleSetup from "./pages/ScrambleSetup";
+import ScramblePlay from "./pages/ScramblePlay";
+import ScrambleInfo from "./pages/ScrambleInfo";
+import ScrambleFeed from "./pages/ScrambleFeed";
+import ScrambleLeaderboard from "./pages/ScrambleLeaderboard";
+import ScrambleSettings from "./pages/ScrambleSettings";
+import ScrambleSummary from "./pages/ScrambleSummary";
+import HowToPlayScramble from "./pages/HowToPlayScramble";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -206,6 +214,14 @@ const App = () => {
             <Route path="/best-ball/match/how-to-play" element={<HowToPlayBestBallMatch />} />
             <Route path="/best-ball/setup" element={<BestBallSetup />} />
             <Route path="/best-ball/:gameId/play" element={<BestBallPlay />} />
+            <Route path="/scramble/how-to-play" element={<HowToPlayScramble />} />
+            <Route path="/scramble/setup" element={<ScrambleSetup />} />
+            <Route path="/scramble/:gameId/play" element={<ScramblePlay />} />
+            <Route path="/scramble/:gameId/info" element={<ScrambleInfo />} />
+            <Route path="/scramble/:gameId/feed" element={<ScrambleFeed />} />
+            <Route path="/scramble/:gameId/leaderboard" element={<ScrambleLeaderboard />} />
+            <Route path="/scramble/:gameId/settings" element={<ScrambleSettings />} />
+            <Route path="/scramble/:gameId/summary" element={<ScrambleSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />
