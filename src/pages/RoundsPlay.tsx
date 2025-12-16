@@ -462,6 +462,7 @@ export default function RoundsPlay() {
         .insert([{
           user_id: user.id,
           course_name: selectedCourse.name,
+          round_name: setupState.roundName || `Round at ${selectedCourse.name}`,
           tee_set: setupState.teeColor,
           holes_played: getHolesPlayed(setupState.selectedHoles as HoleCount),
           origin: 'play',

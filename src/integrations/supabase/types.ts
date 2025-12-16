@@ -1317,6 +1317,7 @@ export type Database = {
           holes_played: number
           id: string
           origin: string | null
+          round_name: string | null
           tee_set: string | null
           user_id: string
         }
@@ -1327,6 +1328,7 @@ export type Database = {
           holes_played?: number
           id?: string
           origin?: string | null
+          round_name?: string | null
           tee_set?: string | null
           user_id: string
         }
@@ -1337,6 +1339,7 @@ export type Database = {
           holes_played?: number
           id?: string
           origin?: string | null
+          round_name?: string | null
           tee_set?: string | null
           user_id?: string
         }
