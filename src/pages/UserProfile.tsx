@@ -508,7 +508,7 @@ export default function UserProfile() {
             <Button
               variant="link"
               className="text-primary"
-              onClick={() => navigate('/rounds', { state: { from: 'profile' } })}
+              onClick={() => navigate('/played-rounds')}
             >
               View all
             </Button>
