@@ -1,25 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, GripVertical, Info, Users } from "lucide-react";
+import { ArrowLeft, Info, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrambleTeam, ScramblePlayer } from "@/types/scramble";
-import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
-import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { formatHandicap } from "@/lib/utils";
 
 export default function ScrambleSetup() {
   const navigate = useNavigate();
-  const [teams, setTeams] = useState<ScrambleTeam[]>([
-    { id: '1', name: 'Team 1', players: [] },
-    { id: '2', name: 'Team 2', players: [] },
-  ]);
+  const [teams, setTeams] = useState<ScrambleTeam[]>([]);
   const [courseName, setCourseName] = useState("");
   const [courseId, setCourseId] = useState<string | undefined>();
   const [teeSet, setTeeSet] = useState("white");
@@ -27,12 +21,12 @@ export default function ScrambleSetup() {
   const [minDrivesPerPlayer, setMinDrivesPerPlayer] = useState<number | null>(null);
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [scoringType, setScoringType] = useState<'gross' | 'net'>('gross');
-  
-  const [addFriendOpen, setAddFriendOpen] = useState(false);
-  const [addGuestOpen, setAddGuestOpen] = useState(false);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   useEffect(() => {
+    loadSetupFromSession();
+  }, []);
+
+  const loadSetupFromSession = () => {
     const roundSetup = sessionStorage.getItem('roundSetupState');
     if (roundSetup) {
       const setup = JSON.parse(roundSetup);
@@ -40,96 +34,29 @@ export default function ScrambleSetup() {
       if (setup.courseId) setCourseId(setup.courseId);
       if (setup.selectedTee) setTeeSet(setup.selectedTee);
       if (setup.holesPlayed) setHolesPlayed(setup.holesPlayed);
-    }
-    loadCurrentUser();
-  }, []);
-
-  const loadCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    if (profile && teams[0].players.length === 0) {
-      const currentPlayer: ScramblePlayer = {
-        id: user.id,
-        name: profile.display_name || profile.username || 'You',
-        handicap: profile.handicap ? parseFloat(profile.handicap) : null,
-        tee: teeSet,
-        isGuest: false,
-        userId: user.id
-      };
-      setTeams(prev => {
-        const newTeams = [...prev];
-        newTeams[0] = { ...newTeams[0], players: [currentPlayer] };
-        return newTeams;
-      });
-    }
-  };
-
-  const addTeam = () => {
-    const newTeam: ScrambleTeam = {
-      id: `${Date.now()}`,
-      name: `Team ${teams.length + 1}`,
-      players: []
-    };
-    setTeams([...teams, newTeam]);
-  };
-
-  const removeTeam = (teamId: string) => {
-    if (teams.length <= 2) {
-      toast.error("Minimum 2 teams required");
-      return;
-    }
-    setTeams(teams.filter(t => t.id !== teamId));
-  };
-
-  const updateTeamName = (teamId: string, name: string) => {
-    setTeams(teams.map(t => t.id === teamId ? { ...t, name } : t));
-  };
-
-  const openAddFriend = (teamId: string) => {
-    setSelectedTeamId(teamId);
-    setAddFriendOpen(true);
-  };
-
-  const openAddGuest = (teamId: string) => {
-    setSelectedTeamId(teamId);
-    setAddGuestOpen(true);
-  };
-
-  const getExistingPlayerIds = (): string[] => {
-    return teams.flatMap(t => t.players.map(p => p.id));
-  };
-
-  const addPlayerToTeam = (player: { odId: string; displayName: string; handicap?: number; teeColor?: string; isTemporary?: boolean }) => {
-    if (!selectedTeamId) return;
-    const newPlayer: ScramblePlayer = {
-      id: player.odId,
-      name: player.displayName,
-      handicap: player.handicap ?? null,
-      tee: player.teeColor || teeSet,
-      isGuest: player.isTemporary || false
-    };
-    setTeams(teams.map(t => {
-      if (t.id === selectedTeamId) {
-        return { ...t, players: [...t.players, newPlayer] };
+      
+      // Convert groups to teams
+      if (setup.groups && Array.isArray(setup.groups)) {
+        const convertedTeams: ScrambleTeam[] = setup.groups.map((group: any, index: number) => {
+          const players: ScramblePlayer[] = (group.players || []).map((player: any) => ({
+            id: player.odId || player.id,
+            name: player.displayName || player.name,
+            handicap: player.handicap ?? null,
+            tee: player.teeColor || setup.selectedTee || 'white',
+            isGuest: player.isTemporary || false,
+            userId: player.isTemporary ? undefined : player.odId || player.id
+          }));
+          
+          return {
+            id: group.id || `team-${index + 1}`,
+            name: group.name || `Team ${index + 1}`,
+            players
+          };
+        });
+        
+        setTeams(convertedTeams);
       }
-      return t;
-    }));
-  };
-
-  const removePlayer = (teamId: string, playerId: string) => {
-    setTeams(teams.map(t => {
-      if (t.id === teamId) {
-        return { ...t, players: t.players.filter(p => p.id !== playerId) };
-      }
-      return t;
-    }));
+    }
   };
 
   const startGame = async () => {
@@ -146,13 +73,13 @@ export default function ScrambleSetup() {
 
     const totalPlayers = teams.reduce((sum, t) => sum + t.players.length, 0);
     if (totalPlayers < 2) {
-      toast.error("Please add at least 2 players");
+      toast.error("Please add at least 2 players in groups");
       return;
     }
 
     const teamsWithPlayers = teams.filter(t => t.players.length > 0);
-    if (teamsWithPlayers.length < 2) {
-      toast.error("At least 2 teams must have players");
+    if (teamsWithPlayers.length < 1) {
+      toast.error("At least 1 team must have players");
       return;
     }
 
@@ -231,48 +158,45 @@ export default function ScrambleSetup() {
         </Card>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold flex items-center gap-2"><Users size={20} />Teams</h2>
-            <Button variant="outline" size="sm" onClick={addTeam}><Plus size={16} className="mr-1" />Add Team</Button>
-          </div>
-
-          {teams.map((team) => (
-            <Card key={team.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <GripVertical size={16} className="text-muted-foreground" />
-                  <Input value={team.name} onChange={(e) => updateTeamName(team.id, e.target.value)} className="flex-1 font-semibold" />
-                  {teams.length > 2 && (
-                    <Button variant="ghost" size="icon" onClick={() => removeTeam(team.id)}><Trash2 size={16} className="text-destructive" /></Button>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  {team.players.map((player) => (
-                    <div key={player.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium">
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium">{player.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {player.handicap !== null && player.handicap !== undefined && `HCP: ${formatHandicap(player.handicap)}`}
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => removePlayer(team.id, player.id)}>
-                        <Trash2 size={14} className="text-muted-foreground" />
-                      </Button>
-                    </div>
-                  ))}
-                  <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => openAddFriend(team.id)}>Add Friend</Button>
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => openAddGuest(team.id)}>Add Guest</Button>
-                  </div>
-                </div>
+          <h2 className="text-lg font-semibold flex items-center gap-2"><Users size={20} />Teams (from Groups)</h2>
+          
+          {teams.length === 0 ? (
+            <Card>
+              <CardContent className="p-4 text-center text-muted-foreground">
+                <p>No groups found. Please add players to groups on the Play page first.</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            teams.map((team) => (
+              <Card key={team.id}>
+                <CardContent className="p-4">
+                  <h3 className="font-semibold mb-3">{team.name}</h3>
+                  <div className="space-y-2">
+                    {team.players.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No players in this team</p>
+                    ) : (
+                      team.players.map((player) => (
+                        <div key={player.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm font-medium">
+                              {player.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-medium">{player.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {player.handicap !== null && player.handicap !== undefined && `HCP: ${formatHandicap(player.handicap)}`}
+                                {player.tee && <span className="ml-2">Tee: {player.tee}</span>}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
 
         <Card>
@@ -311,9 +235,6 @@ export default function ScrambleSetup() {
 
         <Button onClick={startGame} className="w-full" size="lg">Start Scramble</Button>
       </div>
-
-      <SetupAddFriendSheet isOpen={addFriendOpen} onClose={() => setAddFriendOpen(false)} onAddPlayer={addPlayerToTeam} existingPlayerIds={getExistingPlayerIds()} defaultTee={teeSet} />
-      <SetupAddGuestSheet isOpen={addGuestOpen} onClose={() => setAddGuestOpen(false)} onAddPlayer={addPlayerToTeam} defaultTee={teeSet} />
     </div>
   );
 }
