@@ -1342,6 +1342,103 @@ export type Database = {
         }
         Relationships: []
       }
+      scramble_games: {
+        Row: {
+          course_id: string | null
+          course_name: string
+          created_at: string | null
+          date_played: string
+          holes_played: number
+          id: string
+          is_finished: boolean
+          min_drives_per_player: number | null
+          scoring_type: string
+          teams: Json
+          tee_set: string | null
+          use_handicaps: boolean
+          user_id: string
+          winning_team: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          min_drives_per_player?: number | null
+          scoring_type?: string
+          teams?: Json
+          tee_set?: string | null
+          use_handicaps?: boolean
+          user_id: string
+          winning_team?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          min_drives_per_player?: number | null
+          scoring_type?: string
+          teams?: Json
+          tee_set?: string | null
+          use_handicaps?: boolean
+          user_id?: string
+          winning_team?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scramble_games_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scramble_holes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          hole_number: number
+          id: string
+          par: number
+          stroke_index: number | null
+          team_scores: Json
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          hole_number: number
+          id?: string
+          par?: number
+          stroke_index?: number | null
+          team_scores?: Json
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          hole_number?: number
+          id?: string
+          par?: number
+          stroke_index?: number | null
+          team_scores?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scramble_holes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "scramble_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       umbriago_games: {
         Row: {
           course_id: string | null
