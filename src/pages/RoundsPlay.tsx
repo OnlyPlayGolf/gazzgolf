@@ -457,12 +457,22 @@ export default function RoundsPlay() {
         return;
       }
 
+      // Get the round name - if empty, generate "Round X" based on count
+      let roundName = setupState.roundName;
+      if (!roundName) {
+        const { count } = await supabase
+          .from("rounds")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        roundName = `Round ${(count || 0) + 1}`;
+      }
+
       const { data: round, error } = await supabase
         .from("rounds")
         .insert([{
           user_id: user.id,
           course_name: selectedCourse.name,
-          round_name: setupState.roundName || `Round at ${selectedCourse.name}`,
+          round_name: roundName,
           tee_set: setupState.teeColor,
           holes_played: getHolesPlayed(setupState.selectedHoles as HoleCount),
           origin: 'play',
