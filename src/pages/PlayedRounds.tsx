@@ -20,6 +20,7 @@ import {
 interface Round {
   id: string;
   course_name: string;
+  round_name?: string;
   date_played: string;
   tee_set: string;
   holes_played: number;
@@ -73,6 +74,7 @@ const PlayedRounds = () => {
           return {
             id: round.id,
             course_name: round.course_name,
+            round_name: round.round_name,
             date_played: round.date_played,
             tee_set: round.tee_set,
             holes_played: round.holes_played,
@@ -195,11 +197,12 @@ const PlayedRounds = () => {
                   </div>
                 </div>
 
-                {/* Course & Details */}
+                {/* Round Name & Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{round.course_name}</div>
+                  <div className="font-medium truncate">{round.round_name || round.course_name}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span>{round.holes_played}H</span>
+                    <span>{round.course_name}</span>
+                    <span>• {round.holes_played}H</span>
                     {round.tee_set && <span>• {round.tee_set}</span>}
                     {round.player_count > 1 && <span>• {round.player_count} players</span>}
                   </div>

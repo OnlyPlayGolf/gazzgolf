@@ -43,6 +43,7 @@ const RoundSetup = () => {
           {
             user_id: user.id,
             course_name: courseName,
+            round_name: courseName,
             tee_set: teeSet,
             holes_played: holesPlayed,
             origin: 'tracker',

@@ -26,6 +26,7 @@ interface Profile {
 interface RecentRound {
   id: string;
   course_name: string;
+  round_name?: string;
   date: string;
   score: number;
 }
@@ -114,7 +115,7 @@ export default function UserProfile() {
     // Load recent rounds with scores from holes (exclude pro_stats rounds)
     const { data: roundsData } = await supabase
       .from('rounds')
-      .select('id, course_name, date_played')
+      .select('id, course_name, round_name, date_played')
       .eq('user_id', user.id)
       .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false })
@@ -136,6 +137,7 @@ export default function UserProfile() {
           return {
             id: round.id,
             course_name: round.course_name || 'Unknown Course',
+            round_name: round.round_name,
             date: round.date_played,
             score: scoreToPar
           };
@@ -526,7 +528,7 @@ export default function UserProfile() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-foreground">
-                          Game {new Date(round.date).toLocaleDateString()}
+                          {round.round_name || round.course_name}
                         </h3>
                         <p className="text-sm text-muted-foreground">{round.course_name}</p>
                         <p className="text-xs text-muted-foreground">{round.date}</p>
