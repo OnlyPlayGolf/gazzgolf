@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, MapPin, Trophy, Users, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -49,12 +48,11 @@ const PlayedRounds = () => {
         return;
       }
 
-      // Fetch rounds created with the Play flow
       const { data: roundsData, error: roundsError } = await supabase
         .from("rounds")
         .select("*")
         .eq("user_id", user.id)
-        .eq("origin", "play")
+        .or("origin.eq.play,origin.is.null,origin.eq.tracker")
         .order("date_played", { ascending: false });
 
       if (roundsError) throw roundsError;
@@ -98,7 +96,7 @@ const PlayedRounds = () => {
   };
 
   const getScoreDisplay = (round: Round) => {
-    if (!round.total_score || !round.total_par) return "In Progress";
+    if (!round.total_score || !round.total_par) return "-";
     const diff = round.total_score - round.total_par;
     if (diff === 0) return "E";
     return diff > 0 ? `+${diff}` : `${diff}`;
@@ -108,7 +106,6 @@ const PlayedRounds = () => {
     if (!roundToDelete) return;
 
     try {
-      // Delete all holes for this round
       const { error: holesError } = await supabase
         .from("holes")
         .delete()
@@ -116,7 +113,6 @@ const PlayedRounds = () => {
 
       if (holesError) throw holesError;
 
-      // Delete all round players
       const { error: playersError } = await supabase
         .from("round_players")
         .delete()
@@ -124,7 +120,6 @@ const PlayedRounds = () => {
 
       if (playersError) throw playersError;
 
-      // Delete the round
       const { error: roundError } = await supabase
         .from("rounds")
         .delete()
@@ -137,7 +132,6 @@ const PlayedRounds = () => {
         description: "The round has been deleted successfully.",
       });
 
-      // Refresh the rounds list
       fetchPlayedRounds();
     } catch (error: any) {
       console.error("Error deleting round:", error);
@@ -155,110 +149,94 @@ const PlayedRounds = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <TopNavBar />
-      <div className="p-4 pt-20">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => navigate("/menu")}
-                  className="rounded-full flex-shrink-0"
-                >
-                  <ArrowLeft size={20} />
-                </Button>
-                <h1 className="text-2xl font-bold text-foreground">Played Rounds</h1>
-              </div>
-              <p className="text-muted-foreground">Rounds played with friends</p>
-            </div>
-          </div>
-          <Button onClick={() => navigate("/rounds-play")} size="lg" className="w-full">
-            <Plus className="mr-2" size={20} />
-            New Round
+      <div className="px-4 pt-20">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="rounded-full"
+          >
+            <ArrowLeft size={20} />
           </Button>
+          <h1 className="text-xl font-semibold text-foreground">All Rounds</h1>
         </div>
 
+        {/* New Round Button */}
+        <Button onClick={() => navigate("/rounds-play")} className="w-full mb-4">
+          <Plus className="mr-2" size={18} />
+          New Round
+        </Button>
+
+        {/* Rounds List */}
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading rounds...</div>
+          <div className="text-center py-8 text-muted-foreground text-sm">Loading...</div>
         ) : rounds.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
-              <Trophy className="mx-auto mb-4 text-muted-foreground" size={48} />
-              <h3 className="text-lg font-semibold mb-2">No played rounds yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Start playing rounds with friends
-              </p>
-              <Button onClick={() => navigate("/rounds-play")}>
-                <Plus className="mr-2" size={20} />
-                Play Your First Round
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12 text-muted-foreground">
+            <p className="mb-2">No rounds yet</p>
+            <p className="text-sm">Start playing to track your scores</p>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y divide-border rounded-lg border bg-card overflow-hidden">
             {rounds.map((round) => (
-              <Card
+              <div
                 key={round.id}
-                className="cursor-pointer hover:border-primary transition-colors"
+                className="flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
                 onClick={() => navigate(`/rounds/${round.id}/summary`)}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div 
-                      className="flex-1 cursor-pointer"
-                      onClick={() => navigate(`/rounds/${round.id}/summary`)}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <MapPin size={16} className="text-primary" />
-                        <h3 className="font-semibold text-foreground">{round.course_name}</h3>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar size={14} />
-                          <span>{format(new Date(round.date_played), "MMM d, yyyy")}</span>
-                        </div>
-                        {round.tee_set && (
-                          <span className="px-2 py-0.5 bg-muted rounded text-xs">
-                            {round.tee_set}
-                          </span>
-                        )}
-                        <span>{round.holes_played} holes</span>
-                        {round.player_count > 1 && (
-                          <div className="flex items-center gap-1">
-                            <Users size={14} />
-                            <span>{round.player_count}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          {getScoreDisplay(round)}
-                        </div>
-                        {round.total_score && (
-                          <div className="text-sm text-muted-foreground">
-                            {round.total_score}
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRoundToDelete(round.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 size={18} />
-                      </Button>
-                    </div>
+                {/* Date */}
+                <div className="w-12 text-center flex-shrink-0">
+                  <div className="text-xs text-muted-foreground uppercase">
+                    {format(new Date(round.date_played), "MMM")}
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="text-lg font-semibold">
+                    {format(new Date(round.date_played), "d")}
+                  </div>
+                </div>
+
+                {/* Course & Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{round.course_name}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <span>{round.holes_played}H</span>
+                    {round.tee_set && <span>• {round.tee_set}</span>}
+                    {round.player_count > 1 && <span>• {round.player_count} players</span>}
+                  </div>
+                </div>
+
+                {/* Score */}
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <div className={`font-bold ${
+                      getScoreDisplay(round) === '-' ? 'text-muted-foreground' :
+                      getScoreDisplay(round).startsWith('+') ? 'text-destructive' :
+                      getScoreDisplay(round) === 'E' ? 'text-foreground' : 'text-green-600'
+                    }`}>
+                      {getScoreDisplay(round)}
+                    </div>
+                    {round.total_score && (
+                      <div className="text-xs text-muted-foreground">{round.total_score}</div>
+                    )}
+                  </div>
+
+                  {/* Delete Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRoundToDelete(round.id);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </div>
+              </div>
             ))}
           </div>
         )}
