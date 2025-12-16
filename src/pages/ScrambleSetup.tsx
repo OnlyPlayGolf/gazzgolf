@@ -27,22 +27,31 @@ export default function ScrambleSetup() {
   }, []);
 
   const loadSetupFromSession = () => {
-    const roundSetup = sessionStorage.getItem('roundSetupState');
-    if (roundSetup) {
-      const setup = JSON.parse(roundSetup);
-      if (setup.courseName) setCourseName(setup.courseName);
-      if (setup.courseId) setCourseId(setup.courseId);
-      if (setup.selectedTee) setTeeSet(setup.selectedTee);
-      if (setup.holesPlayed) setHolesPlayed(setup.holesPlayed);
-      
-      // Convert groups to teams
-      if (setup.groups && Array.isArray(setup.groups)) {
-        const convertedTeams: ScrambleTeam[] = setup.groups.map((group: any, index: number) => {
+    // Load course info from selectedCourse
+    const savedCourse = sessionStorage.getItem('selectedCourse');
+    if (savedCourse) {
+      const course = JSON.parse(savedCourse);
+      setCourseName(course.name || '');
+      setCourseId(course.id);
+    }
+
+    const savedHoles = sessionStorage.getItem('selectedHoles');
+    if (savedHoles) {
+      const holes = savedHoles === 'front9' || savedHoles === 'back9' ? 9 : 18;
+      setHolesPlayed(holes);
+    }
+
+    // Load groups from playGroups
+    const savedGroups = sessionStorage.getItem('playGroups');
+    if (savedGroups) {
+      const groups = JSON.parse(savedGroups);
+      if (Array.isArray(groups) && groups.length > 0) {
+        const convertedTeams: ScrambleTeam[] = groups.map((group: any, index: number) => {
           const players: ScramblePlayer[] = (group.players || []).map((player: any) => ({
             id: player.odId || player.id,
             name: player.displayName || player.name,
             handicap: player.handicap ?? null,
-            tee: player.teeColor || setup.selectedTee || 'white',
+            tee: player.teeColor || teeSet,
             isGuest: player.isTemporary || false,
             userId: player.isTemporary ? undefined : player.odId || player.id
           }));
