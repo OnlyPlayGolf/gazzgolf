@@ -439,6 +439,10 @@ export default function RoundsPlay() {
       navigate('/best-ball/setup');
       return;
     }
+    if (setupState.gameFormat === "scramble") {
+      navigate('/scramble/setup');
+      return;
+    }
     if (setupState.gameFormat === "stroke_play") {
       navigate('/stroke-play/setup');
       return;
@@ -693,7 +697,6 @@ export default function RoundsPlay() {
                       { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
                       { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
                       { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
-                      { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
                     ].map((fmt) => (
                       <div key={fmt.id} className="relative">
                         <button
@@ -714,8 +717,7 @@ export default function RoundsPlay() {
                             saveState();
                             if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
                             else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
-                            else if (fmt.id === "copenhagen") navigate('/copenhagen/how-to-play');
-                            else navigate('/wolf/how-to-play');
+                            else navigate('/copenhagen/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
                         >
@@ -731,7 +733,9 @@ export default function RoundsPlay() {
                     {[
                       { id: "best_ball_stroke", label: "Best Ball (Stroke)", desc: "Team best score per hole" },
                       { id: "best_ball_match", label: "Best Ball (Match)", desc: "Team match play" },
+                      { id: "scramble", label: "Scramble", desc: "Team plays best shot" },
                       { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
+                      { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
                     ].map((fmt) => (
                       <div key={fmt.id} className="relative">
                         <button
@@ -752,6 +756,8 @@ export default function RoundsPlay() {
                             saveState();
                             if (fmt.id === "best_ball_stroke") navigate('/best-ball/stroke/how-to-play');
                             else if (fmt.id === "best_ball_match") navigate('/best-ball/match/how-to-play');
+                            else if (fmt.id === "scramble") navigate('/scramble/how-to-play');
+                            else if (fmt.id === "wolf") navigate('/wolf/how-to-play');
                             else navigate('/umbriago/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
