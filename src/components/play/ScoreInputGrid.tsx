@@ -21,6 +21,11 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onEnter }: Sc
   const [showHighScores, setShowHighScores] = useState(false);
   const scores = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const highScores = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+
+  const handleScoreAndAdvance = (score: number) => {
+    onScoreSelect(score);
+    onEnter?.();
+  };
   
   if (showHighScores) {
     return (
@@ -41,7 +46,7 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onEnter }: Sc
                 key={score}
                 variant="secondary"
                 onClick={() => {
-                  onScoreSelect(score);
+                  handleScoreAndAdvance(score);
                   setShowHighScores(false);
                 }}
                 className={`h-16 flex flex-col items-center justify-center rounded-lg ${
@@ -68,7 +73,7 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onEnter }: Sc
           <Button
             key={score}
             variant="secondary"
-            onClick={() => onScoreSelect(score)}
+            onClick={() => handleScoreAndAdvance(score)}
             className={`h-20 flex flex-col items-center justify-center rounded-lg ${
               isPar 
                 ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
