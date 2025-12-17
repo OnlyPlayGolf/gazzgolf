@@ -42,6 +42,7 @@ const RoundSummary = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [roundName, setRoundName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [roundOrigin, setRoundOrigin] = useState<string | null>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
@@ -61,12 +62,14 @@ const RoundSummary = () => {
       if (error) throw error;
       setSummary(data);
 
-      // Also fetch the round's origin, with fallback to pro_stats mapping
+      // Also fetch the round's origin and round_name, with fallback to pro_stats mapping
       const { data: roundData } = await supabase
         .from('rounds')
-        .select('origin')
+        .select('origin, round_name')
         .eq('id', roundId)
         .maybeSingle();
+
+      setRoundName(roundData?.round_name || data.course_name);
 
       let origin = roundData?.origin || null;
 
@@ -281,6 +284,7 @@ const RoundSummary = () => {
       <RoundShareDialog
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
+        roundName={roundName}
         courseName={summary.course_name}
         score={summary.total_score}
         scoreVsPar={summary.score_vs_par}
