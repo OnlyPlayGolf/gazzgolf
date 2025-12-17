@@ -25,6 +25,7 @@ interface Round {
   tee_set: string;
   holes_played: number;
   date_played: string;
+  round_name?: string | null;
   origin?: string | null;
 }
 
@@ -341,7 +342,7 @@ export default function RoundTracker() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Round {round.date_played}</h1>
+              <h1 className="text-xl font-bold">{round.round_name || `Round ${round.date_played}`}</h1>
               <p className="text-sm text-muted-foreground">{round.course_name}</p>
             </div>
             <div className="w-10" />
