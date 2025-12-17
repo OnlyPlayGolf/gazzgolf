@@ -22,6 +22,8 @@ import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
 import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
 import { cn, parseHandicap } from "@/lib/utils";
+import { TeeSelector } from "@/components/TeeSelector";
+import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -40,7 +42,7 @@ export default function RoundsPlay() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [availableTees, setAvailableTees] = useState<string[]>([]);
+  const [teeCount, setTeeCount] = useState(5);
   const [courseHoles, setCourseHoles] = useState<{ holeNumber: number; par: number; strokeIndex: number }[]>([]);
   
   // UI state
@@ -85,7 +87,7 @@ export default function RoundsPlay() {
       if (profile) {
         const currentUserPlayer: Player = {
           odId: user.id,
-          teeColor: "",
+          teeColor: "medium",
           displayName: profile.display_name || profile.username || "You",
           username: profile.username || "",
           avatarUrl: profile.avatar_url,
@@ -176,16 +178,16 @@ export default function RoundsPlay() {
         if (firstHole.red_distance) tees.push("Red");
         if (firstHole.orange_distance) tees.push("Orange");
 
-        setAvailableTees(tees);
+        setTeeCount(tees.length || 5);
         
-        // Update default tee for all players
-        if (tees.length > 0 && !setupState.teeColor) {
+        // Update default tee for all players if not set
+        if (!setupState.teeColor) {
           setSetupState(prev => ({
             ...prev,
-            teeColor: tees[0],
+            teeColor: "medium",
             groups: prev.groups.map(g => ({
               ...g,
-              players: g.players.map(p => ({ ...p, teeColor: p.teeColor || tees[0] }))
+              players: g.players.map(p => ({ ...p, teeColor: p.teeColor || "medium" }))
             }))
           }));
         }
@@ -198,7 +200,7 @@ export default function RoundsPlay() {
       }
     } catch (error) {
       console.error("Error fetching tees:", error);
-      setAvailableTees(["White", "Yellow", "Blue", "Red"]);
+      setTeeCount(5);
     }
   };
 
@@ -225,7 +227,7 @@ export default function RoundsPlay() {
   };
 
   const addPlayerToGroup = (groupId: string, player: Player) => {
-    player.teeColor = player.teeColor || setupState.teeColor || availableTees[0] || "White";
+    player.teeColor = player.teeColor || setupState.teeColor || "medium";
     setSetupState(prev => ({
       ...prev,
       groups: prev.groups.map(g =>
@@ -323,7 +325,7 @@ export default function RoundsPlay() {
           odId: `ai-player-${idx}-${Date.now()}`,
           displayName: name,
           username: '',
-          teeColor: teeAssignment?.defaultTee || setupState.teeColor || 'White',
+          teeColor: teeAssignment?.defaultTee || setupState.teeColor || 'medium',
           handicap: handicapAdjustment?.adjustedStrokes ?? null,
           isTemporary: true,
           avatarUrl: undefined,
@@ -644,7 +646,7 @@ export default function RoundsPlay() {
                   key={group.id}
                   group={group}
                   groupIndex={index}
-                  availableTees={availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]}
+                  availableTees={DEFAULT_TEE_OPTIONS.map(t => t.value)}
                   canDelete={setupState.groups.length > 1}
                   onUpdateName={(name) => updateGroupName(group.id, name)}
                   onAddPlayer={() => {
@@ -682,19 +684,11 @@ export default function RoundsPlay() {
                 {/* Tee Color */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Default Tee</Label>
-                  <Select
+                  <TeeSelector
                     value={setupState.teeColor}
                     onValueChange={handleDefaultTeeChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]).map((tee) => (
-                        <SelectItem key={tee} value={tee}>{tee}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    teeCount={teeCount}
+                  />
                 </div>
 
                 {/* Game Format */}
@@ -810,7 +804,7 @@ export default function RoundsPlay() {
         onClose={() => setShowAIAssistant(false)}
         courseInfo={selectedCourse ? {
           courseName: selectedCourse.name,
-          availableTees,
+          availableTees: DEFAULT_TEE_OPTIONS.map(t => t.label),
           defaultHoles: getHolesPlayed(setupState.selectedHoles as HoleCount),
           courseHoles,
         } : undefined}
@@ -831,7 +825,7 @@ export default function RoundsPlay() {
         onClose={() => setAddPlayerDialogOpen(false)}
         onAddPlayer={(player) => activeGroupId && addPlayerToGroup(activeGroupId, player)}
         existingPlayerIds={getAllPlayerIds()}
-        defaultTee={setupState.teeColor || availableTees[0] || "White"}
+        defaultTee={setupState.teeColor || "medium"}
       />
 
       <PlayerEditSheet
@@ -842,7 +836,7 @@ export default function RoundsPlay() {
           setEditingPlayerGroupId(null);
         }}
         player={editingPlayer}
-        availableTees={availableTees.length > 0 ? availableTees : ["White", "Yellow", "Blue", "Red"]}
+        availableTees={DEFAULT_TEE_OPTIONS.map(t => t.value)}
         onSave={handleSavePlayer}
       />
     </div>

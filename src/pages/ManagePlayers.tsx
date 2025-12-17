@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, X, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TeeSelector, getTeeDisplayName } from "@/components/TeeSelector";
+import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
 
 interface Player {
   odId: string;
@@ -32,8 +33,8 @@ export default function ManagePlayers() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [friends, setFriends] = useState<any[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<PlayerWithUserId[]>([]);
-  const [availableTees, setAvailableTees] = useState<string[]>([]);
-  const [teeColor, setTeeColor] = useState("");
+  const [teeCount, setTeeCount] = useState(5);
+  const [teeColor, setTeeColor] = useState("medium");
   const [loading, setLoading] = useState(true);
   
   // Temporary player dialog
@@ -46,12 +47,11 @@ export default function ManagePlayers() {
       await fetchCurrentUser();
       await fetchFriends();
       
-      // Get tees from URL params
+      // Get tee count from URL params
       const teesParam = searchParams.get('tees');
       if (teesParam) {
         const tees = teesParam.split(',');
-        setAvailableTees(tees);
-        setTeeColor(tees[0] || 'White');
+        setTeeCount(tees.length || 5);
       }
       
       // Load existing players from sessionStorage if any
@@ -156,7 +156,7 @@ export default function ManagePlayers() {
     setSelectedPlayers(prev => [...prev, {
       odId: friend.id,
       userId: friend.id,
-      teeColor: availableTees[0] || "White",
+      teeColor: "medium",
       displayName: friend.display_name || friend.username,
       username: friend.username,
       avatarUrl: friend.avatar_url,
@@ -178,7 +178,7 @@ export default function ManagePlayers() {
     setSelectedPlayers(prev => [...prev, {
       odId: tempId,
       userId: tempId,
-      teeColor: availableTees[0] || "White",
+      teeColor: "medium",
       displayName: tempPlayerName.trim(),
       username: tempPlayerName.trim().toLowerCase().replace(/\s+/g, '_'),
       isTemporary: true
@@ -274,16 +274,12 @@ export default function ManagePlayers() {
 
             <div className="space-y-2">
               <Label className="text-sm">Tee box</Label>
-              <Select value={teeColor} onValueChange={setTeeColor}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTees.map((tee) => (
-                    <SelectItem key={tee} value={tee}>{tee}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <TeeSelector
+                value={teeColor}
+                onValueChange={setTeeColor}
+                teeCount={teeCount}
+                triggerClassName="bg-background"
+              />
             </div>
           </div>
         )}
@@ -324,19 +320,11 @@ export default function ManagePlayers() {
 
             <div className="space-y-2">
               <Label className="text-sm">Tee box</Label>
-              <Select
+              <TeeSelector
                 value={player.teeColor}
                 onValueChange={(value) => updatePlayerTee(player.odId, value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTees.map((tee) => (
-                    <SelectItem key={tee} value={tee}>{tee}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                teeCount={teeCount}
+              />
             </div>
           </div>
         ))}
