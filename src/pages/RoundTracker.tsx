@@ -417,6 +417,16 @@ export default function RoundTracker() {
               updateScore(selectedPlayer.id, score);
             }
           }}
+          onEnterAndNext={() => {
+            const currentPlayerIndex = players.findIndex(p => p.id === selectedPlayer.id);
+            if (currentPlayerIndex < players.length - 1) {
+              // Move to next player
+              setSelectedPlayer(players[currentPlayerIndex + 1]);
+            } else {
+              // Last player, close the sheet
+              setShowScoreSheet(false);
+            }
+          }}
         />
       )}
 

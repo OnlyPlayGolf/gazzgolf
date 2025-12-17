@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { ChevronLeft } from "lucide-react";
 
 interface ScoreInputGridProps {
   par: number;
   currentScore: number | null;
   onScoreSelect: (score: number | null) => void;
+  onEnter?: () => void;
 }
 
 const getScoreLabel = (score: number, par: number): string | null => {
@@ -14,8 +17,45 @@ const getScoreLabel = (score: number, par: number): string | null => {
   return null;
 };
 
-export function ScoreInputGrid({ par, currentScore, onScoreSelect }: ScoreInputGridProps) {
+export function ScoreInputGrid({ par, currentScore, onScoreSelect, onEnter }: ScoreInputGridProps) {
+  const [showHighScores, setShowHighScores] = useState(false);
   const scores = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const highScores = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+  
+  if (showHighScores) {
+    return (
+      <div className="p-2">
+        <Button
+          variant="ghost"
+          onClick={() => setShowHighScores(false)}
+          className="mb-2 flex items-center gap-1"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <div className="grid grid-cols-5 gap-2">
+          {highScores.map((score) => {
+            const isSelected = currentScore === score;
+            return (
+              <Button
+                key={score}
+                variant="secondary"
+                onClick={() => {
+                  onScoreSelect(score);
+                  setShowHighScores(false);
+                }}
+                className={`h-16 flex flex-col items-center justify-center rounded-lg ${
+                  isSelected ? "ring-2 ring-primary bg-primary text-primary-foreground hover:bg-primary/90" : ""
+                }`}
+              >
+                <span className="text-2xl font-bold">{score}</span>
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="grid grid-cols-3 gap-2 p-2">
@@ -43,13 +83,15 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect }: ScoreInputG
         );
       })}
       
-      {/* Bottom row: Clear, -, 10+ */}
+      {/* Bottom row: 10+, -, Enter */}
       <Button
         variant="secondary"
-        onClick={() => onScoreSelect(null)}
-        className="h-20 flex flex-col items-center justify-center rounded-lg"
+        onClick={() => setShowHighScores(true)}
+        className={`h-20 flex flex-col items-center justify-center rounded-lg ${
+          currentScore !== null && currentScore >= 10 ? "ring-2 ring-primary bg-primary text-primary-foreground" : ""
+        }`}
       >
-        <span className="text-lg font-semibold">Clear</span>
+        <span className="text-3xl font-bold">10+</span>
       </Button>
       
       <Button
@@ -63,13 +105,11 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect }: ScoreInputG
       </Button>
       
       <Button
-        variant="secondary"
-        onClick={() => onScoreSelect(10)}
-        className={`h-20 flex flex-col items-center justify-center rounded-lg ${
-          currentScore !== null && currentScore >= 10 ? "ring-2 ring-primary bg-primary text-primary-foreground" : ""
-        }`}
+        variant="default"
+        onClick={onEnter}
+        className="h-20 flex flex-col items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
       >
-        <span className="text-3xl font-bold">10+</span>
+        <span className="text-lg font-bold">Enter</span>
       </Button>
     </div>
   );
