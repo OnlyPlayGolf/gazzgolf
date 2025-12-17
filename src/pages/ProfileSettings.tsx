@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, ArrowLeft } from "lucide-react";
+import { Camera, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,7 +68,6 @@ const ProfileSettings = () => {
       
       setProfile(profileData);
       
-      // Split display_name into first and last name for editing
       const nameParts = (profileData?.display_name || '').split(' ');
       setFormData({
         firstName: nameParts[0] || '',
@@ -171,12 +170,13 @@ const ProfileSettings = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
+        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/menu")}
               className="rounded-full flex-shrink-0"
             >
               <ArrowLeft size={20} />
@@ -185,21 +185,25 @@ const ProfileSettings = () => {
           </div>
         </div>
 
-        <Card>
+        {/* Avatar Section */}
+        <Card className="mb-4">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Avatar className="h-16 w-16">
+            <div className="flex flex-col items-center">
+              <div className="relative mb-4">
+                <Avatar className="h-24 w-24">
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} alt="Profile" className="object-cover" />
                   ) : (
-                    <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                       {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() : 
                        profile?.email ? profile.email.charAt(0).toUpperCase() : "?"}
                     </AvatarFallback>
                   )}
                 </Avatar>
-                <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 p-1 bg-primary rounded-full cursor-pointer hover:bg-primary/90">
+                <label 
+                  htmlFor="avatar-upload" 
+                  className="absolute bottom-0 right-0 p-2 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors"
+                >
                   <input
                     id="avatar-upload"
                     type="file"
@@ -208,82 +212,104 @@ const ProfileSettings = () => {
                     disabled={uploadingAvatar}
                     className="hidden"
                   />
-                  <Plus size={12} className="text-primary-foreground" />
+                  <Camera size={14} className="text-primary-foreground" />
                 </label>
               </div>
-              <div className="flex-1">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="first-name">First Name</Label>
-                    <Input
-                      id="first-name"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                      placeholder="Enter your first name"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input
-                      id="last-name"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                      placeholder="Enter your last name"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      value={user?.email || ""}
-                      disabled
-                      className="mt-1 opacity-60 cursor-not-allowed"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      value={formData.country}
-                      onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                      placeholder="Enter your country"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="handicap">Handicap</Label>
-                    <Input
-                      id="handicap"
-                      value={formData.handicap}
-                      onChange={(e) => setFormData(prev => ({ ...prev, handicap: e.target.value }))}
-                      placeholder="e.g. +10 to 54"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="home-club">Home Club</Label>
-                    <Input
-                      id="home-club"
-                      value={formData.homeClub}
-                      onChange={(e) => setFormData(prev => ({ ...prev, homeClub: e.target.value }))}
-                      placeholder="Enter your golf club"
-                      className="mt-1"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleSaveProfile} 
-                    disabled={isSaving}
-                    className="w-full"
-                  >
-                    {isSaving ? "Saving..." : "Save"}
-                  </Button>
-                </div>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                {uploadingAvatar ? "Uploading..." : "Tap to change photo"}
+              </p>
             </div>
           </CardContent>
         </Card>
+
+        {/* Form Fields */}
+        <Card className="mb-4">
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="first-name" className="text-sm font-medium">First Name</Label>
+                <Input
+                  id="first-name"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                  placeholder="First name"
+                  className="mt-1.5"
+                />
+              </div>
+              <div>
+                <Label htmlFor="last-name" className="text-sm font-medium">Last Name</Label>
+                <Input
+                  id="last-name"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                  placeholder="Last name"
+                  className="mt-1.5"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+              <Input
+                id="email"
+                value={user?.email || ""}
+                disabled
+                className="mt-1.5 bg-muted/50"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Golf Details */}
+        <Card className="mb-4">
+          <CardContent className="pt-6 space-y-4">
+            <h3 className="font-semibold text-foreground mb-2">Golf Details</h3>
+            
+            <div>
+              <Label htmlFor="handicap" className="text-sm font-medium">Handicap</Label>
+              <Input
+                id="handicap"
+                value={formData.handicap}
+                onChange={(e) => setFormData(prev => ({ ...prev, handicap: e.target.value }))}
+                placeholder="e.g. 12.4"
+                className="mt-1.5"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="home-club" className="text-sm font-medium">Home Club</Label>
+              <Input
+                id="home-club"
+                value={formData.homeClub}
+                onChange={(e) => setFormData(prev => ({ ...prev, homeClub: e.target.value }))}
+                placeholder="Your golf club"
+                className="mt-1.5"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="country" className="text-sm font-medium">Country</Label>
+              <Input
+                id="country"
+                value={formData.country}
+                onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                placeholder="Your country"
+                className="mt-1.5"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Save Button */}
+        <Button 
+          onClick={handleSaveProfile} 
+          disabled={isSaving}
+          className="w-full"
+          size="lg"
+        >
+          {isSaving ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
     </div>
   );
