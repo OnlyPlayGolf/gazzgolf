@@ -203,6 +203,14 @@ export default function RoundLeaderboard() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
+      {/* Single Header */}
+      <div className="bg-primary text-primary-foreground p-4">
+        <div className="text-center">
+          <h2 className="text-lg font-bold">{round.course_name}</h2>
+          <p className="text-sm opacity-90">Stroke Play NET</p>
+        </div>
+      </div>
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {players.map((player) => {
           const isExpanded = expandedPlayerId === player.id;
@@ -212,13 +220,6 @@ export default function RoundLeaderboard() {
 
           return (
             <Card key={player.id} className="overflow-hidden">
-              {/* Header */}
-              <div className="bg-primary text-primary-foreground p-4">
-                <div className="text-center">
-                  <h2 className="text-lg font-bold">{round.course_name}</h2>
-                  <p className="text-sm opacity-90">Stroke Play NET</p>
-                </div>
-              </div>
 
               {/* Player Info Bar - Clickable */}
               <div 
