@@ -199,7 +199,7 @@ const PlayedRounds = () => {
 
                 {/* Round Name & Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{round.round_name || round.course_name}</div>
+                  <div className="font-medium truncate">{round.round_name || 'Untitled Round'}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
                     <span>{round.course_name}</span>
                     <span>• {round.holes_played}H</span>

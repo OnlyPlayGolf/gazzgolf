@@ -528,7 +528,7 @@ export default function UserProfile() {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-foreground">
-                          {round.round_name || round.course_name}
+                          {round.round_name || 'Untitled Round'}
                         </h3>
                         <p className="text-sm text-muted-foreground">{round.course_name}</p>
                         <p className="text-xs text-muted-foreground">{round.date}</p>
