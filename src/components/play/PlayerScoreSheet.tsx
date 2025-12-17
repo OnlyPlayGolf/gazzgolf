@@ -10,6 +10,7 @@ interface PlayerScoreSheetProps {
   holeNumber: number;
   currentScore: number | null;
   onScoreSelect: (score: number | null) => void;
+  onEnterAndNext?: () => void;
 }
 
 export function PlayerScoreSheet({
@@ -21,6 +22,7 @@ export function PlayerScoreSheet({
   holeNumber,
   currentScore,
   onScoreSelect,
+  onEnterAndNext,
 }: PlayerScoreSheetProps) {
   const formatHandicap = (hcp: number | string | null | undefined): string => {
     if (hcp === null || hcp === undefined) return "";
@@ -33,7 +35,12 @@ export function PlayerScoreSheet({
 
   const handleScoreSelect = (score: number | null) => {
     onScoreSelect(score);
-    if (score !== null) {
+  };
+
+  const handleEnter = () => {
+    if (onEnterAndNext) {
+      onEnterAndNext();
+    } else {
       onOpenChange(false);
     }
   };
@@ -64,6 +71,7 @@ export function PlayerScoreSheet({
           par={par}
           currentScore={currentScore}
           onScoreSelect={handleScoreSelect}
+          onEnter={handleEnter}
         />
       </SheetContent>
     </Sheet>

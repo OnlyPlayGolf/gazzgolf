@@ -400,6 +400,13 @@ export default function MatchPlayPlay() {
               updateScore(selectedPlayer === 1 ? 'player1' : 'player2', score);
             }
           }}
+          onEnterAndNext={() => {
+            if (selectedPlayer === 1) {
+              setSelectedPlayer(2);
+            } else {
+              setShowScoreSheet(false);
+            }
+          }}
         />
 
         {/* Preview Result */}
