@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TeeSelector } from "@/components/TeeSelector";
 
 interface Player {
   odId: string;
@@ -113,23 +113,14 @@ export function SetupPlayerEditSheet({
             />
           </div>
 
-          {availableTees.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="player-tee">Tee Box</Label>
-              <Select value={teeColor} onValueChange={setTeeColor}>
-                <SelectTrigger id="player-tee">
-                  <SelectValue placeholder="Select tee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTees.map((tee) => (
-                    <SelectItem key={tee} value={tee}>
-                      {tee}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="player-tee">Tee Box</Label>
+            <TeeSelector
+              value={teeColor}
+              onValueChange={setTeeColor}
+              teeCount={availableTees.length || 5}
+            />
+          </div>
 
           <Button onClick={handleSave} className="w-full">
             Save Changes

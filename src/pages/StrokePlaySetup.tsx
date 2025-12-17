@@ -15,6 +15,8 @@ import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
+import { TeeSelector } from "@/components/TeeSelector";
+import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
 
 interface Course {
   id: string;
@@ -39,7 +41,7 @@ export default function StrokePlaySetup() {
   // Course from sessionStorage
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
-  const [teeColor, setTeeColor] = useState("");
+  const [teeColor, setTeeColor] = useState("medium");
   
   // Players (including current user)
   const [players, setPlayers] = useState<Player[]>([]);
@@ -55,7 +57,7 @@ export default function StrokePlaySetup() {
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [showAddGuest, setShowAddGuest] = useState(false);
 
-  const availableTees = ["White", "Yellow", "Blue", "Red", "Orange"];
+  const teeCount = 5; // Standard tee options
 
   useEffect(() => {
     const loadData = async () => {
@@ -97,7 +99,7 @@ export default function StrokePlaySetup() {
         odId: user.id,
         displayName: userName,
         handicap: userHandicap,
-        teeColor: savedTee || "",
+        teeColor: savedTee || "medium",
         isTemporary: false,
         isCurrentUser: true,
       };
@@ -111,7 +113,7 @@ export default function StrokePlaySetup() {
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,
-          teeColor: p.teeColor || savedTee || "",
+          teeColor: p.teeColor || savedTee || "medium",
           isTemporary: p.isTemporary || false,
           isCurrentUser: false,
         }));
@@ -292,20 +294,15 @@ export default function StrokePlaySetup() {
             {/* Default Tee */}
             <div className="space-y-2">
               <Label>Default Tee Box</Label>
-              <Select value={teeColor} onValueChange={(v) => {
-                setTeeColor(v);
-                // Update all players to new tee
-                setPlayers(prev => prev.map(p => ({ ...p, teeColor: v })));
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select tee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTees.map(tee => (
-                    <SelectItem key={tee} value={tee}>{tee}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <TeeSelector
+                value={teeColor}
+                onValueChange={(v) => {
+                  setTeeColor(v);
+                  // Update all players to new tee
+                  setPlayers(prev => prev.map(p => ({ ...p, teeColor: v })));
+                }}
+                teeCount={teeCount}
+              />
             </div>
 
             {/* Handicap toggle */}
@@ -372,7 +369,7 @@ export default function StrokePlaySetup() {
         isOpen={!!editingPlayer}
         onClose={() => setEditingPlayer(null)}
         player={editingPlayer}
-        availableTees={availableTees}
+        availableTees={DEFAULT_TEE_OPTIONS.map(t => t.value)}
         onSave={handleUpdatePlayer}
       />
 

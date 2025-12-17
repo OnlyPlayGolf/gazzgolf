@@ -2,6 +2,7 @@ import { User, X, Pencil, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatHandicap } from "@/lib/utils";
 import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 interface Player {
   odId: string;
@@ -68,7 +69,7 @@ export function SetupPlayerCard({
           )}
           {hasHandicap && showTee && player.teeColor && <span>•</span>}
           {showTee && player.teeColor && (
-            <span className="truncate">{player.teeColor}</span>
+            <span className="truncate">{getTeeDisplayName(player.teeColor)}</span>
           )}
           {!hasHandicap && !player.teeColor && <span>Tap to edit</span>}
         </div>

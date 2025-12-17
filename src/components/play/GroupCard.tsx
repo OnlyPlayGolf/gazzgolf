@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlayerGroup, Player } from "@/types/playSetup";
 import { formatHandicap } from "@/lib/utils";
-
+import { TeeSelector, getTeeDisplayName } from "@/components/TeeSelector";
 interface GroupCardProps {
   group: PlayerGroup;
   groupIndex: number;
@@ -80,21 +79,12 @@ function PlayerRow({
         </div>
       </button>
       
-      <Select
+      <TeeSelector
         value={player.teeColor}
         onValueChange={(tee) => onUpdatePlayerTee(player.odId, tee)}
-      >
-        <SelectTrigger className="w-16 h-7 text-xs shrink-0 px-2">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {availableTees.map((tee) => (
-            <SelectItem key={tee} value={tee} className="text-xs">
-              {tee}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        teeCount={availableTees.length || 5}
+        triggerClassName="w-20 h-7 text-xs shrink-0 px-2"
+      />
       
       <Button
         variant="ghost"
