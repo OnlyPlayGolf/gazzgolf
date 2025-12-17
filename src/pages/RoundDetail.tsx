@@ -211,13 +211,8 @@ export default function RoundDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="max-w-2xl mx-auto p-4">
+      <div className="max-w-2xl mx-auto p-4 pb-24">
         <Tabs defaultValue="leaderboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-            <TabsTrigger value="settings">Game Settings</TabsTrigger>
-            <TabsTrigger value="info">Game Info</TabsTrigger>
-          </TabsList>
 
           {/* Leaderboard Tab */}
           <TabsContent value="leaderboard" className="space-y-2">
@@ -448,6 +443,23 @@ export default function RoundDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+          
+          {/* Fixed Bottom Tab Bar */}
+          <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+            <div className="max-w-2xl mx-auto">
+              <TabsList className="grid w-full grid-cols-3 h-14 rounded-none bg-transparent">
+                <TabsTrigger value="leaderboard" className="data-[state=active]:bg-muted rounded-none h-full">
+                  Leaderboard
+                </TabsTrigger>
+                <TabsTrigger value="info" className="data-[state=active]:bg-muted rounded-none h-full">
+                  Game Info
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:bg-muted rounded-none h-full">
+                  Settings
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
         </Tabs>
       </div>
     </div>
