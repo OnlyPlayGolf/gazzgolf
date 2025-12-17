@@ -404,7 +404,9 @@ export default function MatchPlayPlay() {
             if (selectedPlayer === 1) {
               setSelectedPlayer(2);
             } else {
+              // Last player - close sheet and save hole, then go to next
               setShowScoreSheet(false);
+              saveHole();
             }
           }}
         />
