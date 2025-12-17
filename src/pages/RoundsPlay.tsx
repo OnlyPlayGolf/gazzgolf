@@ -85,9 +85,23 @@ export default function RoundsPlay() {
       
       // Add current user to first group
       if (profile) {
+        // Get default tee from app preferences
+        let defaultTee = "medium";
+        try {
+          const savedPrefs = localStorage.getItem('appPreferences');
+          if (savedPrefs) {
+            const prefs = JSON.parse(savedPrefs);
+            if (prefs.defaultTee) {
+              defaultTee = prefs.defaultTee;
+            }
+          }
+        } catch (e) {
+          console.error("Error reading app preferences:", e);
+        }
+
         const currentUserPlayer: Player = {
           odId: user.id,
-          teeColor: "medium",
+          teeColor: defaultTee,
           displayName: profile.display_name || profile.username || "You",
           username: profile.username || "",
           avatarUrl: profile.avatar_url,
@@ -97,6 +111,7 @@ export default function RoundsPlay() {
         
         setSetupState(prev => ({
           ...prev,
+          teeColor: defaultTee,
           groups: [{
             ...prev.groups[0],
             players: [currentUserPlayer]

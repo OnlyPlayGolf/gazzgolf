@@ -47,18 +47,34 @@ export const createDefaultGroup = (index: number): PlayerGroup => ({
   players: [],
 });
 
-export const getInitialPlaySetupState = (): PlaySetupState => ({
-  roundName: "",
-  datePlayed: new Date().toISOString().split('T')[0],
-  selectedCourse: null,
-  selectedHoles: "18",
-  teeColor: "",
-  gameFormat: "stroke_play",
-  groups: [createDefaultGroup(0)],
-  strokePlaySettings: {
-    mulligansPerPlayer: 0,
-    handicapEnabled: false,
-    gimmesEnabled: false,
-  },
-  aiConfigApplied: false,
-});
+export const getInitialPlaySetupState = (): PlaySetupState => {
+  // Read default tee from app preferences
+  let defaultTee = "medium";
+  try {
+    const savedPrefs = localStorage.getItem('appPreferences');
+    if (savedPrefs) {
+      const prefs = JSON.parse(savedPrefs);
+      if (prefs.defaultTee) {
+        defaultTee = prefs.defaultTee;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading app preferences:", e);
+  }
+
+  return {
+    roundName: "",
+    datePlayed: new Date().toISOString().split('T')[0],
+    selectedCourse: null,
+    selectedHoles: "18",
+    teeColor: defaultTee,
+    gameFormat: "stroke_play",
+    groups: [createDefaultGroup(0)],
+    strokePlaySettings: {
+      mulligansPerPlayer: 0,
+      handicapEnabled: false,
+      gimmesEnabled: false,
+    },
+    aiConfigApplied: false,
+  };
+};
