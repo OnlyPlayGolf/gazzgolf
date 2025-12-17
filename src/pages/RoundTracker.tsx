@@ -348,21 +348,34 @@ export default function RoundTracker() {
           </div>
         </div>
 
-        {/* Game Info Bar */}
-        <div className="bg-primary text-primary-foreground py-4 px-4">
+        {/* Hole Navigation Bar */}
+        <div className="bg-[hsl(120,20%,85%)] py-4 px-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div>
-              <div className="text-lg font-bold">STROKE PLAY</div>
-              <div className="text-sm opacity-90">NET</div>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("prev")}
+              disabled={currentHoleIndex === 0}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+
             <div className="text-center">
-              <div className="text-2xl font-bold">{courseHoles.length}</div>
-              <div className="text-xs opacity-90">Par {courseHoles.reduce((sum, h) => sum + h.par, 0)}</div>
+              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {currentHole.par}</div>
+              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole.hole_number}</div>
+              <div className="text-sm text-[hsl(120,20%,40%)]">HCP {currentHole.stroke_index}</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{currentHole.hole_number}</div>
-              <div className="text-xs opacity-90">Par {currentHole.par}</div>
-            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("next")}
+              disabled={currentHoleIndex === courseHoles.length - 1}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronRight size={24} />
+            </Button>
           </div>
         </div>
       </div>
@@ -401,6 +414,17 @@ export default function RoundTracker() {
             </Card>
           );
         })}
+        
+        {currentHoleIndex === courseHoles.length - 1 && (
+          <Button
+            onClick={handleFinishRound}
+            className="w-full bg-[hsl(120,20%,35%)] hover:bg-[hsl(120,20%,30%)] text-white"
+            size="lg"
+          >
+            <Check size={20} className="mr-2" />
+            Finish Round
+          </Button>
+        )}
       </div>
 
       {/* Score Input Sheet */}
@@ -432,50 +456,6 @@ export default function RoundTracker() {
           }}
         />
       )}
-
-      {/* Hole Navigation */}
-      <div className="fixed bottom-16 left-0 right-0 bg-[hsl(120,20%,85%)] py-4">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("prev")}
-              disabled={currentHoleIndex === 0}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
-            >
-              <ChevronLeft size={24} />
-            </Button>
-
-            <div className="text-center">
-              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {currentHole.par}</div>
-              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole.hole_number}</div>
-              <div className="text-sm text-[hsl(120,20%,40%)]">HCP {currentHole.stroke_index}</div>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("next")}
-              disabled={currentHoleIndex === courseHoles.length - 1}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
-            >
-              <ChevronRight size={24} />
-            </Button>
-          </div>
-          
-          {currentHoleIndex === courseHoles.length - 1 && (
-            <Button
-              onClick={handleFinishRound}
-              className="w-full bg-[hsl(120,20%,35%)] hover:bg-[hsl(120,20%,30%)] text-white"
-              size="lg"
-            >
-              <Check size={20} className="mr-2" />
-              Finish Round
-            </Button>
-          )}
-        </div>
-      </div>
 
       <RoundBottomTabBar roundId={roundId!} />
 
