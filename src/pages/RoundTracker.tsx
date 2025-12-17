@@ -342,8 +342,8 @@ export default function RoundTracker() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">{round.round_name || `Round ${round.date_played}`}</h1>
-              <p className="text-sm text-muted-foreground">{round.course_name}</p>
+              <h1 className="text-xl font-bold">{round.course_name}</h1>
+              <p className="text-sm text-muted-foreground">{round.round_name || `Round ${round.date_played}`}</p>
             </div>
             <div className="w-10" />
           </div>
