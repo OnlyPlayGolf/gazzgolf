@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,27 @@ const RoundSetup = () => {
   const { toast } = useToast();
   const fromPage = (location.state as any)?.from;
   const [courseName, setCourseName] = useState("");
+  const [roundName, setRoundName] = useState("");
   const [teeSet, setTeeSet] = useState("");
   const [holesPlayed, setHolesPlayed] = useState<9 | 18>(18);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchRoundCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { count } = await supabase
+        .from('rounds')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      
+      const nextRoundNumber = (count || 0) + 1;
+      setRoundName(`Round ${nextRoundNumber}`);
+    };
+    
+    fetchRoundCount();
+  }, []);
 
   const handleStartRound = async () => {
     if (!courseName.trim()) {
@@ -43,7 +61,7 @@ const RoundSetup = () => {
           {
             user_id: user.id,
             course_name: courseName,
-            round_name: courseName,
+            round_name: roundName,
             tee_set: teeSet,
             holes_played: holesPlayed,
             origin: 'tracker',
@@ -82,6 +100,16 @@ const RoundSetup = () => {
             <CardTitle>Start New Round</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="roundName">Round Name</Label>
+              <Input
+                id="roundName"
+                placeholder="Enter round name"
+                value={roundName}
+                onChange={(e) => setRoundName(e.target.value)}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="course">Course Name</Label>
               <Input
