@@ -25,6 +25,16 @@ import Leaderboards from "./pages/Leaderboards";
 import Menu from "./pages/Menu";
 import Friends from "./pages/Friends";
 import NotFound from "./pages/NotFound";
+import AccountMembership from "./pages/AccountMembership";
+import Settings from "./pages/Settings";
+import SettingsMetrics from "./pages/SettingsMetrics";
+import SettingsLanguage from "./pages/SettingsLanguage";
+import SettingsNotifications from "./pages/SettingsNotifications";
+import SettingsPrivacy from "./pages/SettingsPrivacy";
+import SettingsAppPreferences from "./pages/SettingsAppPreferences";
+import About from "./pages/About";
+import Feedback from "./pages/Feedback";
+import Support from "./pages/Support";
 import UserDrills from "./pages/UserDrills";
 import CreateDrill from "./pages/CreateDrill";
 import RunDrill from "./pages/RunDrill";
@@ -152,6 +162,16 @@ const App = () => {
             <Route path="/messages" element={<Messages />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/menu" element={<Menu />} />
+            <Route path="/account-membership" element={<AccountMembership />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/metrics" element={<SettingsMetrics />} />
+            <Route path="/settings/language" element={<SettingsLanguage />} />
+            <Route path="/settings/notifications" element={<SettingsNotifications />} />
+            <Route path="/settings/privacy" element={<SettingsPrivacy />} />
+            <Route path="/settings/preferences" element={<SettingsAppPreferences />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/support" element={<Support />} />
             <Route path="/friends" element={<Friends />} />
             <Route path="/user-drills" element={<UserDrills />} />
             <Route path="/create-drill" element={<CreateDrill />} />

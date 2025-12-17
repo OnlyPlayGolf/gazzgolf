@@ -1,21 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Users, Settings, Info, MessageSquare, ChevronRight, Zap, TrendingUp, Trophy, Mail } from "lucide-react";
+import { User, Settings, Info, MessageSquare, ChevronRight, Crown, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Menu = () => {
   const navigate = useNavigate();
   
   const menuItems = [
-    { id: 'profile', label: 'Personal Information', icon: User, available: true, path: '/profile-settings' },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, available: true, path: '/messages' },
-    { id: 'leaderboards', label: 'Leaderboards', icon: Trophy, available: true, path: '/leaderboards' },
-    { id: 'rounds', label: 'Round Stats', icon: TrendingUp, available: true, path: '/rounds' },
-    { id: 'played-rounds', label: 'Played Rounds', icon: Users, available: true, path: '/played-rounds' },
-    { id: 'user-drills', label: 'User Drills', icon: Zap, available: true, path: '/user-drills' },
-    { id: 'friends', label: 'Friends', icon: Users, available: true, path: '/friends' },
-    { id: 'settings', label: 'Settings', icon: Settings, available: false },
-    { id: 'about', label: 'About', icon: Info, available: false },
+    { id: 'profile', label: 'Personal Information', description: 'Edit your profile details', icon: User, path: '/profile-settings' },
+    { id: 'membership', label: 'Account Membership', description: 'View plans and benefits', icon: Crown, path: '/account-membership' },
+    { id: 'settings', label: 'Settings', description: 'Metrics, notifications, privacy', icon: Settings, path: '/settings' },
+    { id: 'about', label: 'About', description: 'App info and legal', icon: Info, path: '/about' },
+    { id: 'feedback', label: 'Feedback', description: 'Share your thoughts', icon: MessageSquare, path: '/feedback' },
+    { id: 'support', label: 'Support', description: 'FAQ and help', icon: HelpCircle, path: '/support' },
   ];
 
   return (
@@ -26,7 +23,7 @@ const Menu = () => {
           <p className="text-muted-foreground">Account and app settings</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {menuItems.map((item) => {
             const Icon = item.icon;
             
@@ -35,57 +32,26 @@ const Menu = () => {
                 <CardContent className="p-0">
                   <Button
                     variant="ghost"
-                    disabled={!item.available}
-                    onClick={item.available && item.path ? () => navigate(item.path) : undefined}
-                    className="w-full h-auto p-4 justify-start text-left disabled:opacity-60"
+                    onClick={() => navigate(item.path)}
+                    className="w-full h-auto p-4 justify-start text-left"
                   >
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-3">
-                        <Icon 
-                          size={20} 
-                          className={item.available ? "text-primary" : "text-locked"} 
-                        />
+                        <div className="p-2 rounded-lg bg-muted">
+                          <Icon size={18} className="text-primary" />
+                        </div>
                         <div>
-                          <div className={`font-medium ${item.available ? "text-foreground" : "text-locked"}`}>
-                            {item.label}
-                          </div>
-                          {!item.available && (
-                            <div className="text-xs text-locked">Coming soon</div>
-                          )}
+                          <div className="font-medium text-foreground">{item.label}</div>
+                          <div className="text-xs text-muted-foreground">{item.description}</div>
                         </div>
                       </div>
-                      <ChevronRight 
-                        size={16} 
-                        className={item.available ? "text-muted-foreground" : "text-locked"} 
-                      />
+                      <ChevronRight size={16} className="text-muted-foreground" />
                     </div>
                   </Button>
                 </CardContent>
               </Card>
             );
           })}
-
-          {/* Feedback Link */}
-          <Card className="border-golf-light">
-            <CardContent className="p-0">
-              <Button
-                variant="ghost"
-                asChild
-                className="w-full h-auto p-4 justify-start text-left hover:bg-golf-light/10"
-              >
-                <a href="mailto:feedback@golftraining.app" className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-3">
-                    <Mail size={20} className="text-primary" />
-                    <div>
-                      <div className="font-medium text-foreground">Feedback</div>
-                      <div className="text-xs text-muted-foreground">Send us your thoughts</div>
-                    </div>
-                  </div>
-                  <ChevronRight size={16} className="text-muted-foreground" />
-                </a>
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
