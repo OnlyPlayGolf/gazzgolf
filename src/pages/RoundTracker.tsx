@@ -434,7 +434,7 @@ export default function RoundTracker() {
       )}
 
       {/* Hole Navigation */}
-      <div className="fixed bottom-16 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-4">
+      <div className="fixed bottom-16 left-0 right-0 bg-[hsl(120,20%,85%)] py-4">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center justify-between mb-3">
             <Button
@@ -442,14 +442,15 @@ export default function RoundTracker() {
               size="icon"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronLeft size={24} />
             </Button>
 
             <div className="text-center">
-              <div className="text-sm text-muted-foreground">PAR {currentHole.par}</div>
-              <div className="text-2xl font-bold">Hole {currentHole.hole_number}</div>
-              <div className="text-sm text-muted-foreground">HCP {currentHole.stroke_index}</div>
+              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {currentHole.par}</div>
+              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole.hole_number}</div>
+              <div className="text-sm text-[hsl(120,20%,40%)]">HCP {currentHole.stroke_index}</div>
             </div>
 
             <Button
@@ -457,6 +458,7 @@ export default function RoundTracker() {
               size="icon"
               onClick={() => navigateHole("next")}
               disabled={currentHoleIndex === courseHoles.length - 1}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronRight size={24} />
             </Button>
@@ -465,7 +467,7 @@ export default function RoundTracker() {
           {currentHoleIndex === courseHoles.length - 1 && (
             <Button
               onClick={handleFinishRound}
-              className="w-full"
+              className="w-full bg-[hsl(120,20%,35%)] hover:bg-[hsl(120,20%,30%)] text-white"
               size="lg"
             >
               <Check size={20} className="mr-2" />
