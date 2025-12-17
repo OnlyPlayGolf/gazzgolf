@@ -423,8 +423,11 @@ export default function RoundTracker() {
               // Move to next player
               setSelectedPlayer(players[currentPlayerIndex + 1]);
             } else {
-              // Last player, close the sheet
+              // Last player - close sheet and go to next hole
               setShowScoreSheet(false);
+              if (currentHoleIndex < courseHoles.length - 1) {
+                setCurrentHoleIndex(currentHoleIndex + 1);
+              }
             }
           }}
         />
