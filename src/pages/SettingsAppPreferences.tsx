@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Target, Flag, Users } from "lucide-react";
+import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,7 +16,7 @@ const SettingsAppPreferences = () => {
     const saved = localStorage.getItem('appPreferences');
     return saved ? JSON.parse(saved) : {
       defaultGameFormat: 'stroke-play',
-      defaultTee: 'white',
+      defaultTee: 'medium',
       defaultHoles: '18',
       defaultScoring: 'gross'
     };
@@ -112,7 +113,7 @@ const SettingsAppPreferences = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Default Tee Color</Label>
+                <Label>Default Tee Box</Label>
                 <Select 
                   value={preferences.defaultTee} 
                   onValueChange={(v) => handleChange('defaultTee', v)}
@@ -121,11 +122,11 @@ const SettingsAppPreferences = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="white">White</SelectItem>
-                    <SelectItem value="yellow">Yellow</SelectItem>
-                    <SelectItem value="blue">Blue</SelectItem>
-                    <SelectItem value="red">Red</SelectItem>
-                    <SelectItem value="orange">Orange</SelectItem>
+                    {DEFAULT_TEE_OPTIONS.map((tee) => (
+                      <SelectItem key={tee.value} value={tee.value}>
+                        {tee.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
