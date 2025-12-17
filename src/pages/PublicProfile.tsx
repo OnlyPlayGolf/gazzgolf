@@ -10,6 +10,9 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { FeedPost } from "@/components/FeedPost";
 import QRCode from "react-qr-code";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
+import { RoundCardData } from "@/components/RoundCard";
+
 interface Profile {
   id: string;
   display_name: string | null;
@@ -27,13 +30,6 @@ interface Friend {
   avatar_url: string | null;
 }
 
-interface RecentRound {
-  id: string;
-  course_name: string;
-  date: string;
-  score: number;
-}
-
 type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'accepted';
 
 export default function PublicProfile() {
@@ -46,7 +42,7 @@ export default function PublicProfile() {
   const [friendsCount, setFriendsCount] = useState(0);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [roundsCount, setRoundsCount] = useState(0);
-  const [recentRounds, setRecentRounds] = useState<RecentRound[]>([]);
+  const [recentRounds, setRecentRounds] = useState<RoundCardData[]>([]);
   const [averageScore, setAverageScore] = useState<number | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,7 +173,7 @@ export default function PublicProfile() {
     // Load recent rounds with scores
     const { data: roundsData } = await supabase
       .from('rounds')
-      .select('id, course_name, date_played')
+      .select('id, course_name, round_name, date_played')
       .eq('user_id', targetUserId)
       .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false })
@@ -191,6 +187,11 @@ export default function PublicProfile() {
             .select('score, par')
             .eq('round_id', round.id);
 
+          const { count: playerCount } = await supabase
+            .from('round_players')
+            .select('*', { count: 'exact', head: true })
+            .eq('round_id', round.id);
+
           const totalScore = holesData?.reduce((sum, hole) => sum + hole.score, 0) || 0;
           const totalPar = holesData?.reduce((sum, hole) => sum + hole.par, 0) || 0;
           const scoreToPar = totalScore - totalPar;
@@ -198,8 +199,11 @@ export default function PublicProfile() {
           return {
             id: round.id,
             course_name: round.course_name || 'Unknown Course',
+            round_name: round.round_name,
             date: round.date_played,
-            score: scoreToPar
+            score: scoreToPar,
+            playerCount: playerCount || 1,
+            gameMode: 'Stroke Play'
           };
         })
       );
@@ -502,59 +506,15 @@ export default function PublicProfile() {
           </div>
         )}
 
-        {/* Rounds section - locked if not friends */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-foreground">Rounds ({roundsCount})</h2>
-            {isFriend && recentRounds.length > 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-primary"
-                onClick={() => navigate(`/user/${userId}/rounds`)}
-              >
-                View all
-              </Button>
-            )}
-          </div>
-
-          {isFriend ? (
-            recentRounds.length > 0 ? (
-              <Card className="bg-[hsl(120,30%,95%)] border-[hsl(120,30%,85%)]">
-                <CardContent className="p-4">
-                  {recentRounds.map((round) => (
-                    <div key={round.id} className="mb-3 last:mb-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            Game {new Date(round.date).toLocaleDateString()}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">{round.course_name}</p>
-                        </div>
-                        <div className="text-3xl font-bold text-foreground">
-                          {round.score > 0 ? '+' : ''}{round.score}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">No rounds played yet</p>
-                </CardContent>
-              </Card>
-            )
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Lock size={24} className="mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground">Add {displayName} as a friend to see their rounds</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Rounds section */}
+        <ProfileRoundsSection
+          rounds={recentRounds}
+          totalCount={roundsCount}
+          userId={userId || ''}
+          isOwnProfile={false}
+          isFriend={isFriend}
+          displayName={displayName}
+        />
 
         {/* Statistics section - locked if not friends */}
         <div className="mb-6">

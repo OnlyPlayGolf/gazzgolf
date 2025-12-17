@@ -12,6 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QRCode from "react-qr-code";
 import { FeedPost } from "@/components/FeedPost";
+import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
+import { RoundCardData } from "@/components/RoundCard";
 
 interface Profile {
   id: string;
@@ -21,16 +23,6 @@ interface Profile {
   country: string | null;
   handicap: string | null;
   home_club: string | null;
-}
-
-interface RecentRound {
-  id: string;
-  course_name: string;
-  round_name?: string;
-  date: string;
-  score: number;
-  playerCount: number;
-  gameMode: string;
 }
 
 interface Friend {
@@ -47,7 +39,7 @@ export default function UserProfile() {
   const [friendsCount, setFriendsCount] = useState(0);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [roundsCount, setRoundsCount] = useState(0);
-  const [recentRounds, setRecentRounds] = useState<RecentRound[]>([]);
+  const [recentRounds, setRecentRounds] = useState<RoundCardData[]>([]);
   const [averageScore, setAverageScore] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -513,67 +505,13 @@ export default function UserProfile() {
         </Dialog>
 
         {/* Rounds section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-foreground">Rounds ({roundsCount})</h2>
-            <Button
-              variant="link"
-              className="text-primary"
-              onClick={() => navigate('/played-rounds')}
-            >
-              View all
-            </Button>
-          </div>
-
-          {recentRounds.length > 0 ? (
-            <div className="space-y-3">
-              {recentRounds.map((round) => (
-                <Card 
-                  key={round.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/rounds/${round.id}/detail`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground">
-                          {round.round_name || 'Untitled Round'}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">{round.course_name}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                          <span>{new Date(round.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                          <span>•</span>
-                          <span>{round.gameMode}</span>
-                          <span>•</span>
-                          <span>{round.playerCount} player{round.playerCount !== 1 ? 's' : ''}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className={`text-2xl font-bold ${round.score <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
-                          {round.score > 0 ? '+' : ''}{round.score === 0 ? 'E' : round.score}
-                        </div>
-                        <ChevronRight size={20} className="text-muted-foreground" />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-muted-foreground">No rounds played yet</p>
-                <Button
-                  variant="link"
-                  className="text-primary mt-2"
-                  onClick={() => navigate('/rounds/play')}
-                >
-                  Start your first round
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        <ProfileRoundsSection
+          rounds={recentRounds}
+          totalCount={roundsCount}
+          userId={profile.id}
+          isOwnProfile={true}
+          isFriend={true}
+        />
 
         {/* Statistics section */}
         <div className="mb-6">

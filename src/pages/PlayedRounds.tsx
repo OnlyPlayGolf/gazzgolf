@@ -185,7 +185,7 @@ const PlayedRounds = () => {
               <div
                 key={round.id}
                 className="flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/rounds/${round.id}/summary`)}
+                onClick={() => navigate(`/rounds/${round.id}/detail`)}
               >
                 {/* Date */}
                 <div className="w-12 text-center flex-shrink-0">

@@ -2,74 +2,65 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundCard, RoundCardData } from "@/components/RoundCard";
 
-export default function FriendRounds() {
+export default function AllRoundsPage() {
   const navigate = useNavigate();
   const { userId } = useParams<{ userId: string }>();
-  const { toast } = useToast();
   const [rounds, setRounds] = useState<RoundCardData[]>([]);
-  const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [profileName, setProfileName] = useState<string>("");
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   useEffect(() => {
     loadRounds();
   }, [userId]);
 
   const loadRounds = async () => {
-    if (!userId) return;
-
     setLoading(true);
 
-    // Get current user to check friendship
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    
+    // Determine which user's rounds to load
+    const targetUserId = userId || user?.id;
+    
+    if (!targetUserId) {
       navigate('/auth');
       return;
     }
 
-    // Check if they are friends
-    const { data: friendship } = await supabase
-      .from('friendships')
-      .select('status')
-      .or(`and(requester.eq.${user.id},addressee.eq.${userId}),and(requester.eq.${userId},addressee.eq.${user.id})`)
-      .eq('status', 'accepted')
-      .single();
+    setIsOwnProfile(!userId || userId === user?.id);
 
-    if (!friendship) {
-      toast({
-        title: "Access denied",
-        description: "You can only view rounds of friends",
-        variant: "destructive"
-      });
-      navigate(-1);
-      return;
-    }
-
-    // Get profile name
-    const { data: profile } = await supabase
+    // Load profile name
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('display_name, username')
-      .eq('id', userId)
+      .eq('id', targetUserId)
       .single();
 
-    if (profile) {
-      setDisplayName(profile.display_name || profile.username || 'User');
+    if (profileData) {
+      setProfileName(profileData.display_name || profileData.username || 'User');
     }
 
-    // Load all rounds
-    const { data: roundsData } = await supabase
+    // Load all rounds (exclude pro_stats)
+    const { data: roundsData, error } = await supabase
       .from('rounds')
-      .select('id, course_name, round_name, date_played, holes_played')
-      .eq('user_id', userId)
+      .select('id, course_name, round_name, date_played, origin')
+      .eq('user_id', targetUserId)
       .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false });
 
+    if (error) {
+      console.error('Error loading rounds:', error);
+      setLoading(false);
+      return;
+    }
+
     if (roundsData && roundsData.length > 0) {
-      const roundsWithScores = await Promise.all(
+      // Get scores and player counts for each round
+      const roundsWithDetails = await Promise.all(
         roundsData.map(async (round) => {
           const { data: holesData } = await supabase
             .from('holes')
@@ -97,7 +88,7 @@ export default function FriendRounds() {
         })
       );
 
-      setRounds(roundsWithScores);
+      setRounds(roundsWithDetails);
     }
 
     setLoading(false);
@@ -120,7 +111,9 @@ export default function FriendRounds() {
             Back
           </Button>
           
-          <h1 className="text-2xl font-bold">{displayName}'s Rounds</h1>
+          <h1 className="text-2xl font-bold">
+            {isOwnProfile ? 'My Rounds' : `${profileName}'s Rounds`}
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {rounds.length} round{rounds.length !== 1 ? 's' : ''} played
           </p>
