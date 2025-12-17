@@ -37,6 +37,7 @@ import PlayedRounds from "./pages/PlayedRounds";
 import RoundSetup from "./pages/RoundSetup";
 import HoleTracker from "./pages/HoleTracker";
 import RoundTracker from "./pages/RoundTracker";
+import RoundDetail from "./pages/RoundDetail";
 import RoundSummary from "./pages/RoundSummary";
 import ProRoundSetup from "./pages/ProRoundSetup";
 import ProHoleTracker from "./pages/ProHoleTracker";
@@ -172,6 +173,7 @@ const App = () => {
             <Route path="/rounds/:roundId/settings" element={<RoundSettings />} />
             <Route path="/rounds/:roundId/stats" element={<HoleTracker />} />
             <Route path="/rounds/:roundId/summary" element={<RoundSummary />} />
+            <Route path="/rounds/:roundId/detail" element={<RoundDetail />} />
             <Route path="/rounds/:roundId" element={<RoundSummary />} />
             <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
             <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />

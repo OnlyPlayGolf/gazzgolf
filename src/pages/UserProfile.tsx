@@ -29,6 +29,8 @@ interface RecentRound {
   round_name?: string;
   date: string;
   score: number;
+  playerCount: number;
+  gameMode: string;
 }
 
 interface Friend {
@@ -115,19 +117,24 @@ export default function UserProfile() {
     // Load recent rounds with scores from holes (exclude pro_stats rounds)
     const { data: roundsData } = await supabase
       .from('rounds')
-      .select('id, course_name, round_name, date_played')
+      .select('id, course_name, round_name, date_played, origin')
       .eq('user_id', user.id)
       .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false })
       .limit(3);
 
     if (roundsData && roundsData.length > 0) {
-      // Get holes data for each round to calculate scores
+      // Get holes data and player counts for each round
       const roundsWithScores = await Promise.all(
         roundsData.map(async (round) => {
           const { data: holesData } = await supabase
             .from('holes')
             .select('score, par')
+            .eq('round_id', round.id);
+
+          const { count: playerCount } = await supabase
+            .from('round_players')
+            .select('*', { count: 'exact', head: true })
             .eq('round_id', round.id);
 
           const totalScore = holesData?.reduce((sum, hole) => sum + hole.score, 0) || 0;
@@ -139,7 +146,9 @@ export default function UserProfile() {
             course_name: round.course_name || 'Unknown Course',
             round_name: round.round_name,
             date: round.date_played,
-            score: scoreToPar
+            score: scoreToPar,
+            playerCount: playerCount || 1,
+            gameMode: 'Stroke Play'
           };
         })
       );
@@ -517,33 +526,39 @@ export default function UserProfile() {
           </div>
 
           {recentRounds.length > 0 ? (
-            <Card className="bg-[hsl(120,30%,95%)] border-[hsl(120,30%,85%)]">
-              <CardContent className="p-4">
-                {recentRounds.map((round) => (
-                  <button
-                    key={round.id}
-                    onClick={() => navigate(`/rounds/${round.id}/summary`)}
-                    className="w-full text-left mb-3 last:mb-0 p-3 -m-3 last:m-0 last:p-0 rounded-lg hover:bg-[hsl(120,30%,90%)] transition-colors cursor-pointer"
-                  >
+            <div className="space-y-3">
+              {recentRounds.map((round) => (
+                <Card 
+                  key={round.id}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => navigate(`/rounds/${round.id}/detail`)}
+                >
+                  <CardContent className="p-4">
                     <div className="flex items-start justify-between">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-semibold text-foreground">
                           {round.round_name || 'Untitled Round'}
                         </h3>
                         <p className="text-sm text-muted-foreground">{round.course_name}</p>
-                        <p className="text-xs text-muted-foreground">{round.date}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          <span>{new Date(round.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                          <span>•</span>
+                          <span>{round.gameMode}</span>
+                          <span>•</span>
+                          <span>{round.playerCount} player{round.playerCount !== 1 ? 's' : ''}</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="text-3xl font-bold text-foreground">
-                          {round.score > 0 ? '+' : ''}{round.score}
+                        <div className={`text-2xl font-bold ${round.score <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
+                          {round.score > 0 ? '+' : ''}{round.score === 0 ? 'E' : round.score}
                         </div>
                         <ChevronRight size={20} className="text-muted-foreground" />
                       </div>
                     </div>
-                  </button>
-                ))}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : (
             <Card>
               <CardContent className="p-6 text-center">
