@@ -214,21 +214,9 @@ export default function RoundLeaderboard() {
             <Card key={player.id} className="overflow-hidden">
               {/* Header */}
               <div className="bg-primary text-primary-foreground p-4">
-                <div className="flex items-center justify-center mb-2">
-                  <div className="flex-1 text-center">
-                    <h2 className="text-lg font-bold">
-                      Game {new Date(round.date_played).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: '2-digit', 
-                        day: '2-digit' 
-                      }).replace(/\//g, '-')}
-                    </h2>
-                    <p className="text-sm opacity-90">{round.course_name}</p>
-                  </div>
-                </div>
-
-                <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
-                  <div className="text-xl font-bold">Stroke Play NET</div>
+                <div className="text-center">
+                  <h2 className="text-lg font-bold">{round.course_name}</h2>
+                  <p className="text-sm opacity-90">Stroke Play NET</p>
                 </div>
               </div>
 
