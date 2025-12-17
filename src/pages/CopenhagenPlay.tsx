@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Zap, Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { calculateCopenhagenPoints, calculateNetScore, createPress } from "@/utils/copenhagenScoring";
+import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ export default function CopenhagenPlay() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);
   
   const [par, setPar] = useState(4);
   const [strokeIndex, setStrokeIndex] = useState(1);
@@ -291,11 +293,26 @@ export default function CopenhagenPlay() {
     setScores({ player1: nextPar, player2: nextPar, player3: nextPar });
   };
 
-  const updateScore = (player: keyof typeof scores, delta: number) => {
+  const updateScore = (player: 'player1' | 'player2' | 'player3', score: number | null) => {
     setScores(prev => ({
       ...prev,
-      [player]: Math.max(1, prev[player] + delta),
+      [player]: score ?? prev[player],
     }));
+  };
+
+  const handlePlayerScoreSelect = (playerNum: 1 | 2 | 3, score: number | null) => {
+    const playerKey = `player${playerNum}` as 'player1' | 'player2' | 'player3';
+    updateScore(playerKey, score);
+  };
+
+  const handleEnterAndNext = () => {
+    if (activePlayerSheet === 1) {
+      setActivePlayerSheet(2);
+    } else if (activePlayerSheet === 2) {
+      setActivePlayerSheet(3);
+    } else {
+      setActivePlayerSheet(null);
+    }
   };
 
   const navigateHole = async (direction: "prev" | "next") => {
@@ -380,48 +397,66 @@ export default function CopenhagenPlay() {
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         {/* Player 1 Card */}
-        <Card className="p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-emerald-600 truncate max-w-[120px]">{game.player_1}</span>
-            <span className="text-xl font-bold text-emerald-600">{game.player_1_total_points} pts</span>
+        <Card 
+          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setActivePlayerSheet(1)}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-emerald-600 truncate max-w-[180px]">{game.player_1}</div>
+              {game.use_handicaps && game.player_1_handicap !== null && (
+                <div className="text-xs text-muted-foreground">HCP: {game.player_1_handicap}</div>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="bg-secondary text-secondary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold">
+                {scores.player1 || '-'}
+              </div>
+              <div className="text-lg font-bold text-emerald-600">{game.player_1_total_points} pts</div>
+            </div>
           </div>
-          <ScoreInput
-            label={game.player_1}
-            value={scores.player1}
-            onChange={(delta) => updateScore('player1', delta)}
-            labelColor="text-emerald-600"
-            handicap={game.use_handicaps ? game.player_1_handicap : null}
-          />
         </Card>
 
         {/* Player 2 Card */}
-        <Card className="p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-blue-600 truncate max-w-[120px]">{game.player_2}</span>
-            <span className="text-xl font-bold text-blue-600">{game.player_2_total_points} pts</span>
+        <Card 
+          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setActivePlayerSheet(2)}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-blue-600 truncate max-w-[180px]">{game.player_2}</div>
+              {game.use_handicaps && game.player_2_handicap !== null && (
+                <div className="text-xs text-muted-foreground">HCP: {game.player_2_handicap}</div>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="bg-secondary text-secondary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold">
+                {scores.player2 || '-'}
+              </div>
+              <div className="text-lg font-bold text-blue-600">{game.player_2_total_points} pts</div>
+            </div>
           </div>
-          <ScoreInput
-            label={game.player_2}
-            value={scores.player2}
-            onChange={(delta) => updateScore('player2', delta)}
-            labelColor="text-blue-600"
-            handicap={game.use_handicaps ? game.player_2_handicap : null}
-          />
         </Card>
 
         {/* Player 3 Card */}
-        <Card className="p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-amber-600 truncate max-w-[120px]">{game.player_3}</span>
-            <span className="text-xl font-bold text-amber-600">{game.player_3_total_points} pts</span>
+        <Card 
+          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setActivePlayerSheet(3)}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-amber-600 truncate max-w-[180px]">{game.player_3}</div>
+              {game.use_handicaps && game.player_3_handicap !== null && (
+                <div className="text-xs text-muted-foreground">HCP: {game.player_3_handicap}</div>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="bg-secondary text-secondary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold">
+                {scores.player3 || '-'}
+              </div>
+              <div className="text-lg font-bold text-amber-600">{game.player_3_total_points} pts</div>
+            </div>
           </div>
-          <ScoreInput
-            label={game.player_3}
-            value={scores.player3}
-            onChange={(delta) => updateScore('player3', delta)}
-            labelColor="text-amber-600"
-            handicap={game.use_handicaps ? game.player_3_handicap : null}
-          />
         </Card>
 
         {/* Presses */}
@@ -546,50 +581,41 @@ export default function CopenhagenPlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
 
-function ScoreInput({ 
-  label, 
-  value, 
-  onChange,
-  labelColor = "text-muted-foreground",
-  handicap
-}: { 
-  label: string; 
-  value: number; 
-  onChange: (delta: number) => void;
-  labelColor?: string;
-  handicap?: number | null;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-col">
-        {(handicap !== null && handicap !== undefined) && (
-          <span className="text-xs text-muted-foreground">HCP: {handicap}</span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onChange(-1)}
-          disabled={value <= 1}
-          className="h-10 w-10 rounded-full"
-        >
-          <Minus size={16} />
-        </Button>
-        <div className="text-3xl font-bold w-14 text-center">{value || '-'}</div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onChange(1)}
-          className="h-10 w-10 rounded-full"
-        >
-          <Plus size={16} />
-        </Button>
-      </div>
+      {/* Player Score Sheets */}
+      <PlayerScoreSheet
+        open={activePlayerSheet === 1}
+        onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+        playerName={game.player_1}
+        handicap={game.use_handicaps ? game.player_1_handicap : null}
+        par={par}
+        holeNumber={currentHole}
+        currentScore={scores.player1 || null}
+        onScoreSelect={(score) => handlePlayerScoreSelect(1, score)}
+        onEnterAndNext={handleEnterAndNext}
+      />
+      <PlayerScoreSheet
+        open={activePlayerSheet === 2}
+        onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+        playerName={game.player_2}
+        handicap={game.use_handicaps ? game.player_2_handicap : null}
+        par={par}
+        holeNumber={currentHole}
+        currentScore={scores.player2 || null}
+        onScoreSelect={(score) => handlePlayerScoreSelect(2, score)}
+        onEnterAndNext={handleEnterAndNext}
+      />
+      <PlayerScoreSheet
+        open={activePlayerSheet === 3}
+        onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+        playerName={game.player_3}
+        handicap={game.use_handicaps ? game.player_3_handicap : null}
+        par={par}
+        holeNumber={currentHole}
+        currentScore={scores.player3 || null}
+        onScoreSelect={(score) => handlePlayerScoreSelect(3, score)}
+        onEnterAndNext={handleEnterAndNext}
+      />
     </div>
   );
 }
