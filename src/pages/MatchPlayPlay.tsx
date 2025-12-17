@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
+import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import {
   calculateHoleResult,
   formatMatchStatusWithHoles,
@@ -48,6 +49,8 @@ export default function MatchPlayPlay() {
     player1: 0,
     player2: 0,
   });
+  const [selectedPlayer, setSelectedPlayer] = useState<1 | 2 | null>(null);
+  const [showScoreSheet, setShowScoreSheet] = useState(false);
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -231,10 +234,11 @@ export default function MatchPlayPlay() {
     setScores({ player1: nextPar, player2: nextPar });
   };
 
-  const updateScore = (player: 'player1' | 'player2', delta: number) => {
+  const updateScore = (player: 'player1' | 'player2', newScore: number) => {
+    if (newScore < 1) return;
     setScores(prev => ({
       ...prev,
-      [player]: Math.max(1, prev[player] + delta),
+      [player]: newScore,
     }));
   };
 
@@ -345,64 +349,58 @@ export default function MatchPlayPlay() {
       {/* Score Entry */}
       <div className="p-4 max-w-2xl mx-auto space-y-4">
         {/* Player 1 */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
+        <Card 
+          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => {
+            setSelectedPlayer(1);
+            setShowScoreSheet(true);
+          }}
+        >
+          <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-blue-600">{game.player_1}</p>
               {game.use_handicaps && game.player_1_handicap && (
                 <span className="text-xs text-muted-foreground">HCP: {game.player_1_handicap}</span>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => updateScore('player1', -1)}
-                disabled={scores.player1 <= 1}
-              >
-                <Minus size={16} />
-              </Button>
-              <span className="text-2xl font-bold w-10 text-center">{scores.player1}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => updateScore('player1', 1)}
-              >
-                <Plus size={16} />
-              </Button>
-            </div>
+            <span className="text-3xl font-bold">{scores.player1}</span>
           </div>
         </Card>
 
         {/* Player 2 */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
+        <Card 
+          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => {
+            setSelectedPlayer(2);
+            setShowScoreSheet(true);
+          }}
+        >
+          <div className="flex items-center justify-between">
             <div>
               <p className="font-semibold text-red-600">{game.player_2}</p>
               {game.use_handicaps && game.player_2_handicap && (
                 <span className="text-xs text-muted-foreground">HCP: {game.player_2_handicap}</span>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => updateScore('player2', -1)}
-                disabled={scores.player2 <= 1}
-              >
-                <Minus size={16} />
-              </Button>
-              <span className="text-2xl font-bold w-10 text-center">{scores.player2}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => updateScore('player2', 1)}
-              >
-                <Plus size={16} />
-              </Button>
-            </div>
+            <span className="text-3xl font-bold">{scores.player2}</span>
           </div>
         </Card>
+
+        {/* Score Sheet */}
+        <PlayerScoreSheet
+          open={showScoreSheet}
+          onOpenChange={setShowScoreSheet}
+          playerName={selectedPlayer === 1 ? game.player_1 : game.player_2}
+          handicap={selectedPlayer === 1 ? game.player_1_handicap : game.player_2_handicap}
+          par={par}
+          holeNumber={currentHole}
+          currentScore={selectedPlayer === 1 ? scores.player1 : scores.player2}
+          onScoreSelect={(score) => {
+            if (score !== null && selectedPlayer) {
+              updateScore(selectedPlayer === 1 ? 'player1' : 'player2', score);
+            }
+          }}
+        />
 
         {/* Preview Result */}
         <Card className="p-4 bg-muted/50">

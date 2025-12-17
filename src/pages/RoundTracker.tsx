@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +64,8 @@ export default function RoundTracker() {
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
+  const [showScoreSheet, setShowScoreSheet] = useState(false);
 
   useEffect(() => {
     if (roundId) {
@@ -369,48 +372,53 @@ export default function RoundTracker() {
         {players.map((player) => {
           const playerScore = getPlayerScore(player.id);
           return (
-            <Card key={player.id} className="p-6">
-              <div className="flex items-center justify-between mb-4">
+            <Card 
+              key={player.id} 
+              className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => {
+                setSelectedPlayer(player);
+                setShowScoreSheet(true);
+              }}
+            >
+              <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xl font-bold mb-1">{getPlayerName(player)}</div>
                   <div className="text-sm text-muted-foreground">
                     Tee: {player.tee_color || round.tee_set}
                   </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
-                  <div className="text-xs text-muted-foreground">To Par</div>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold">{playerScore}</div>
+                    <div className="text-xs text-muted-foreground">Strokes</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
+                    <div className="text-xs text-muted-foreground">To Par</div>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 rounded-full"
-                  onClick={() => updateScore(player.id, Math.max(1, playerScore - 1))}
-                >
-                  <Minus size={20} />
-                </Button>
-                
-                <div className="text-center min-w-[80px]">
-                  <div className="text-3xl font-bold mb-1">{playerScore}</div>
-                  <div className="text-sm text-muted-foreground">Strokes</div>
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 rounded-full"
-                  onClick={() => updateScore(player.id, playerScore + 1)}
-                >
-                  <Plus size={20} />
-                </Button>
               </div>
             </Card>
           );
         })}
       </div>
+
+      {/* Score Input Sheet */}
+      {selectedPlayer && currentHole && (
+        <PlayerScoreSheet
+          open={showScoreSheet}
+          onOpenChange={setShowScoreSheet}
+          playerName={getPlayerName(selectedPlayer)}
+          par={currentHole.par}
+          holeNumber={currentHole.hole_number}
+          currentScore={getPlayerScore(selectedPlayer.id)}
+          onScoreSelect={(score) => {
+            if (score !== null) {
+              updateScore(selectedPlayer.id, score);
+            }
+          }}
+        />
+      )}
 
       {/* Hole Navigation */}
       <div className="fixed bottom-16 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-4">
