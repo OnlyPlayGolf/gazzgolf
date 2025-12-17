@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Settings, Info, MessageSquare, ChevronRight, Crown, HelpCircle } from "lucide-react";
+import { User, Settings, Info, MessageSquare, ChevronRight, Crown, HelpCircle, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Menu = () => {
@@ -19,8 +19,18 @@ const Menu = () => {
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Menu</h1>
-          <p className="text-muted-foreground">Account and app settings</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/profile")}
+              className="rounded-full flex-shrink-0"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-2xl font-bold text-foreground">Menu</h1>
+          </div>
+          <p className="text-muted-foreground ml-12">Account and app settings</p>
         </div>
 
         <div className="space-y-3">
