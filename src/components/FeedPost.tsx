@@ -32,13 +32,14 @@ const parseDrillResult = (content: string) => {
 
 // Parse round result from post content
 const parseRoundResult = (content: string) => {
-  const match = content?.match(/\[ROUND_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_RESULT\]/);
+  const match = content?.match(/\[ROUND_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_RESULT\]/);
   if (match) {
     return {
-      courseName: match[1],
-      score: parseInt(match[2]),
-      scoreVsPar: parseInt(match[3]),
-      holesPlayed: parseInt(match[4]),
+      roundName: match[1],
+      courseName: match[2],
+      score: parseInt(match[3]),
+      scoreVsPar: parseInt(match[4]),
+      holesPlayed: parseInt(match[5]),
       textContent: content.replace(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/, '').trim()
     };
   }
@@ -89,7 +90,8 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest }: {
 );
 
 // Round Result Card Component
-const RoundResultCard = ({ courseName, score, scoreVsPar, holesPlayed }: { 
+const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed }: { 
+  roundName: string;
   courseName: string; 
   score: number; 
   scoreVsPar: number; 
@@ -113,7 +115,8 @@ const RoundResultCard = ({ courseName, score, scoreVsPar, holesPlayed }: {
         <span className="text-sm font-medium text-muted-foreground">Round Completed</span>
         <span className="text-xs text-muted-foreground ml-auto">{holesPlayed} holes</span>
       </div>
-      <div className="text-lg font-semibold text-foreground">{courseName}</div>
+      <div className="text-lg font-semibold text-foreground">{roundName}</div>
+      <div className="text-sm text-muted-foreground">{courseName}</div>
       <div className="flex items-baseline gap-4 mt-2">
         <div>
           <span className="text-3xl font-bold text-primary">{score}</span>
@@ -386,6 +389,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               <p className="text-foreground whitespace-pre-wrap">{roundResult.textContent}</p>
             )}
             <RoundResultCard 
+              roundName={roundResult.roundName}
               courseName={roundResult.courseName}
               score={roundResult.score}
               scoreVsPar={roundResult.scoreVsPar}

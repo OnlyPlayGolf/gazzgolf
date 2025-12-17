@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 interface RoundShareDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  roundName: string;
   courseName: string;
   score: number;
   scoreVsPar: number;
@@ -19,6 +20,7 @@ interface RoundShareDialogProps {
 export function RoundShareDialog({
   open,
   onOpenChange,
+  roundName,
   courseName,
   score,
   scoreVsPar,
@@ -44,7 +46,7 @@ export function RoundShareDialog({
       }
 
       // Create structured post content with round result marker
-      const roundResult = `[ROUND_RESULT]${courseName}|${score}|${scoreVsPar}|${holesPlayed}[/ROUND_RESULT]`;
+      const roundResult = `[ROUND_RESULT]${roundName}|${courseName}|${score}|${scoreVsPar}|${holesPlayed}[/ROUND_RESULT]`;
       const postContent = comment.trim()
         ? `${comment}\n\n${roundResult}`
         : roundResult;
