@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Check, Zap, Dices } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap, Dices } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
+import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import {
   calculateTeamLow,
   calculateIndividualLow,
@@ -67,6 +68,7 @@ export default function UmbriagioPlay() {
   const [multiplier, setMultiplier] = useState<1 | 2 | 4>(1);
   const [doubleCalledBy, setDoubleCalledBy] = useState<'A' | 'B' | null>(null);
   const [doubleBackCalled, setDoubleBackCalled] = useState(false);
+  const [activeScoreSheet, setActiveScoreSheet] = useState<keyof typeof scores | null>(null);
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -432,11 +434,14 @@ export default function UmbriagioPlay() {
     setDoubleBackCalled(false);
   };
 
-  const updateScore = (player: keyof typeof scores, delta: number) => {
-    setScores(prev => ({
-      ...prev,
-      [player]: Math.max(1, prev[player] + delta),
-    }));
+  const handleScoreSelect = (player: keyof typeof scores, score: number | null) => {
+    if (score !== null) {
+      setScores(prev => ({
+        ...prev,
+        [player]: score,
+      }));
+    }
+    setActiveScoreSheet(null);
   };
 
   const navigateHole = async (direction: "prev" | "next") => {
@@ -526,16 +531,16 @@ export default function UmbriagioPlay() {
             <span className="text-xl font-bold text-blue-500">{game.team_a_total_points}</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <ScoreInput
+            <PlayerScoreCard
               label={currentTeams?.teamAPlayer1 || game.team_a_player_1}
               value={scores.teamAPlayer1}
-              onChange={(delta) => updateScore('teamAPlayer1', delta)}
+              onClick={() => setActiveScoreSheet('teamAPlayer1')}
               labelColor="text-blue-500"
             />
-            <ScoreInput
+            <PlayerScoreCard
               label={currentTeams?.teamAPlayer2 || game.team_a_player_2}
               value={scores.teamAPlayer2}
-              onChange={(delta) => updateScore('teamAPlayer2', delta)}
+              onClick={() => setActiveScoreSheet('teamAPlayer2')}
               labelColor="text-blue-500"
             />
           </div>
@@ -547,16 +552,16 @@ export default function UmbriagioPlay() {
             <span className="text-xl font-bold text-red-500">{game.team_b_total_points}</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <ScoreInput
+            <PlayerScoreCard
               label={currentTeams?.teamBPlayer1 || game.team_b_player_1}
               value={scores.teamBPlayer1}
-              onChange={(delta) => updateScore('teamBPlayer1', delta)}
+              onClick={() => setActiveScoreSheet('teamBPlayer1')}
               labelColor="text-red-500"
             />
-            <ScoreInput
+            <PlayerScoreCard
               label={currentTeams?.teamBPlayer2 || game.team_b_player_2}
               value={scores.teamBPlayer2}
-              onChange={(delta) => updateScore('teamBPlayer2', delta)}
+              onClick={() => setActiveScoreSheet('teamBPlayer2')}
               labelColor="text-red-500"
             />
           </div>
@@ -760,43 +765,67 @@ export default function UmbriagioPlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Score Entry Sheets */}
+      <PlayerScoreSheet
+        open={activeScoreSheet === 'teamAPlayer1'}
+        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        playerName={currentTeams?.teamAPlayer1 || game.team_a_player_1}
+        par={par}
+        holeNumber={currentHole}
+        currentScore={scores.teamAPlayer1}
+        onScoreSelect={(score) => handleScoreSelect('teamAPlayer1', score)}
+      />
+      <PlayerScoreSheet
+        open={activeScoreSheet === 'teamAPlayer2'}
+        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        playerName={currentTeams?.teamAPlayer2 || game.team_a_player_2}
+        par={par}
+        holeNumber={currentHole}
+        currentScore={scores.teamAPlayer2}
+        onScoreSelect={(score) => handleScoreSelect('teamAPlayer2', score)}
+      />
+      <PlayerScoreSheet
+        open={activeScoreSheet === 'teamBPlayer1'}
+        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        playerName={currentTeams?.teamBPlayer1 || game.team_b_player_1}
+        par={par}
+        holeNumber={currentHole}
+        currentScore={scores.teamBPlayer1}
+        onScoreSelect={(score) => handleScoreSelect('teamBPlayer1', score)}
+      />
+      <PlayerScoreSheet
+        open={activeScoreSheet === 'teamBPlayer2'}
+        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        playerName={currentTeams?.teamBPlayer2 || game.team_b_player_2}
+        par={par}
+        holeNumber={currentHole}
+        currentScore={scores.teamBPlayer2}
+        onScoreSelect={(score) => handleScoreSelect('teamBPlayer2', score)}
+      />
     </div>
   );
 }
 
-function ScoreInput({ 
+function PlayerScoreCard({ 
   label, 
   value, 
-  onChange,
+  onClick,
   labelColor = "text-muted-foreground"
 }: { 
   label: string; 
   value: number; 
-  onChange: (delta: number) => void;
+  onClick: () => void;
   labelColor?: string;
 }) {
   return (
-    <div className="space-y-0.5">
+    <div 
+      className="space-y-0.5 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors"
+      onClick={onClick}
+    >
       <span className={`text-sm font-medium truncate block ${labelColor}`}>{label}</span>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onChange(-1)}
-          disabled={value <= 1}
-          className="h-8 w-8 rounded-full"
-        >
-          <Minus size={14} />
-        </Button>
-        <div className="flex-1 text-center text-xl font-bold">{value || '-'}</div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => onChange(1)}
-          className="h-8 w-8 rounded-full"
-        >
-          <Plus size={14} />
-        </Button>
+      <div className="flex items-center justify-center">
+        <div className="text-2xl font-bold">{value || '-'}</div>
       </div>
     </div>
   );
