@@ -436,20 +436,21 @@ export default function UmbriagioPlay() {
 
   const playerOrder: (keyof typeof scores)[] = ['teamAPlayer1', 'teamAPlayer2', 'teamBPlayer1', 'teamBPlayer2'];
 
-  const handleScoreSelect = (player: keyof typeof scores, score: number | null) => {
-    if (score !== null) {
-      setScores(prev => ({
-        ...prev,
-        [player]: score,
-      }));
-    }
-    // Auto-advance to next player
+  const advanceToNextPlayerSheet = (player: keyof typeof scores) => {
     const currentIndex = playerOrder.indexOf(player);
     if (currentIndex < playerOrder.length - 1) {
       setActiveScoreSheet(playerOrder[currentIndex + 1]);
     } else {
       setActiveScoreSheet(null);
     }
+  };
+
+  const handleScoreSelect = (player: keyof typeof scores, score: number | null) => {
+    if (score === null) return;
+    setScores(prev => ({
+      ...prev,
+      [player]: score,
+    }));
   };
 
   const navigateHole = async (direction: "prev" | "next") => {
@@ -777,39 +778,59 @@ export default function UmbriagioPlay() {
       {/* Score Entry Sheets */}
       <PlayerScoreSheet
         open={activeScoreSheet === 'teamAPlayer1'}
-        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveScoreSheet((prev) => (prev === 'teamAPlayer1' ? null : prev));
+          }
+        }}
         playerName={currentTeams?.teamAPlayer1 || game.team_a_player_1}
         par={par}
         holeNumber={currentHole}
         currentScore={scores.teamAPlayer1}
         onScoreSelect={(score) => handleScoreSelect('teamAPlayer1', score)}
+        onEnterAndNext={() => advanceToNextPlayerSheet('teamAPlayer1')}
       />
       <PlayerScoreSheet
         open={activeScoreSheet === 'teamAPlayer2'}
-        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveScoreSheet((prev) => (prev === 'teamAPlayer2' ? null : prev));
+          }
+        }}
         playerName={currentTeams?.teamAPlayer2 || game.team_a_player_2}
         par={par}
         holeNumber={currentHole}
         currentScore={scores.teamAPlayer2}
         onScoreSelect={(score) => handleScoreSelect('teamAPlayer2', score)}
+        onEnterAndNext={() => advanceToNextPlayerSheet('teamAPlayer2')}
       />
       <PlayerScoreSheet
         open={activeScoreSheet === 'teamBPlayer1'}
-        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveScoreSheet((prev) => (prev === 'teamBPlayer1' ? null : prev));
+          }
+        }}
         playerName={currentTeams?.teamBPlayer1 || game.team_b_player_1}
         par={par}
         holeNumber={currentHole}
         currentScore={scores.teamBPlayer1}
         onScoreSelect={(score) => handleScoreSelect('teamBPlayer1', score)}
+        onEnterAndNext={() => advanceToNextPlayerSheet('teamBPlayer1')}
       />
       <PlayerScoreSheet
         open={activeScoreSheet === 'teamBPlayer2'}
-        onOpenChange={(open) => !open && setActiveScoreSheet(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveScoreSheet((prev) => (prev === 'teamBPlayer2' ? null : prev));
+          }
+        }}
         playerName={currentTeams?.teamBPlayer2 || game.team_b_player_2}
         par={par}
         holeNumber={currentHole}
         currentScore={scores.teamBPlayer2}
         onScoreSelect={(score) => handleScoreSelect('teamBPlayer2', score)}
+        onEnterAndNext={() => advanceToNextPlayerSheet('teamBPlayer2')}
       />
     </div>
   );

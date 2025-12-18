@@ -137,21 +137,22 @@ export default function WolfPlay() {
     }
   };
 
-  const handleScoreSelect = (playerIndex: number, score: number | null) => {
-    if (score !== null) {
-      setScores(prev => {
-        const newScores = [...prev];
-        newScores[playerIndex] = score;
-        return newScores;
-      });
-    }
-    // Auto-advance to next player
+  const advanceToNextPlayerSheet = (playerIndex: number) => {
     const playerCount = getPlayerCount();
     if (playerIndex < playerCount - 1) {
       setActivePlayerSheet(playerIndex + 1);
     } else {
       setActivePlayerSheet(null);
     }
+  };
+
+  const handleScoreSelect = (playerIndex: number, score: number | null) => {
+    if (score === null) return;
+    setScores(prev => {
+      const newScores = [...prev];
+      newScores[playerIndex] = score;
+      return newScores;
+    });
   };
 
   const handleChoosePartner = (playerIndex: number) => {
@@ -538,12 +539,17 @@ export default function WolfPlay() {
         <PlayerScoreSheet
           key={i}
           open={activePlayerSheet === i}
-          onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setActivePlayerSheet((prev) => (prev === i ? null : prev));
+            }
+          }}
           playerName={getPlayerName(i)}
           par={par}
           holeNumber={currentHole}
           currentScore={scores[i] || par}
           onScoreSelect={(score) => handleScoreSelect(i, score)}
+          onEnterAndNext={() => advanceToNextPlayerSheet(i)}
         />
       ))}
     </div>
