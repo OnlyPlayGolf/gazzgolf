@@ -305,25 +305,35 @@ export default function BestBallPlay() {
     }
   };
 
-  const handleScoreSelect = (team: 'A' | 'B', playerId: string, score: number | null) => {
-    if (score !== null) {
-      if (team === 'A') {
-        setTeamAScores(prev => ({ ...prev, [playerId]: score }));
-      } else {
-        setTeamBScores(prev => ({ ...prev, [playerId]: score }));
-      }
-    }
-    // Auto-advance to next player
+  const advanceToNextPlayerSheet = (team: 'A' | 'B', playerId: string) => {
+    if (!game) return;
+
     const allPlayers = [
-      ...game!.team_a_players.map(p => ({ ...p, team: 'A' as const })),
-      ...game!.team_b_players.map(p => ({ ...p, team: 'B' as const })),
+      ...game.team_a_players.map(p => ({ ...p, team: 'A' as const })),
+      ...game.team_b_players.map(p => ({ ...p, team: 'B' as const })),
     ];
+
     const currentIndex = allPlayers.findIndex(p => p.team === team && p.odId === playerId);
+    if (currentIndex < 0) {
+      setActivePlayerSheet(null);
+      return;
+    }
+
     if (currentIndex < allPlayers.length - 1) {
       const nextPlayer = allPlayers[currentIndex + 1];
       setActivePlayerSheet({ team: nextPlayer.team, playerId: nextPlayer.odId });
     } else {
       setActivePlayerSheet(null);
+    }
+  };
+
+  const handleScoreSelect = (team: 'A' | 'B', playerId: string, score: number | null) => {
+    if (score === null) return;
+
+    if (team === 'A') {
+      setTeamAScores(prev => ({ ...prev, [playerId]: score }));
+    } else {
+      setTeamBScores(prev => ({ ...prev, [playerId]: score }));
     }
   };
 
@@ -579,26 +589,40 @@ export default function BestBallPlay() {
         <PlayerScoreSheet
           key={`A-${player.odId}`}
           open={activePlayerSheet?.team === 'A' && activePlayerSheet?.playerId === player.odId}
-          onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setActivePlayerSheet((prev) =>
+                prev?.team === 'A' && prev?.playerId === player.odId ? null : prev
+              );
+            }
+          }}
           playerName={player.displayName}
           handicap={player.handicap}
           par={par}
           holeNumber={currentHole}
           currentScore={teamAScores[player.odId] || par}
           onScoreSelect={(score) => handleScoreSelect('A', player.odId, score)}
+          onEnterAndNext={() => advanceToNextPlayerSheet('A', player.odId)}
         />
       ))}
       {game.team_b_players.map(player => (
         <PlayerScoreSheet
           key={`B-${player.odId}`}
           open={activePlayerSheet?.team === 'B' && activePlayerSheet?.playerId === player.odId}
-          onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setActivePlayerSheet((prev) =>
+                prev?.team === 'B' && prev?.playerId === player.odId ? null : prev
+              );
+            }
+          }}
           playerName={player.displayName}
           handicap={player.handicap}
           par={par}
           holeNumber={currentHole}
           currentScore={teamBScores[player.odId] || par}
           onScoreSelect={(score) => handleScoreSelect('B', player.odId, score)}
+          onEnterAndNext={() => advanceToNextPlayerSheet('B', player.odId)}
         />
       ))}
     </div>
