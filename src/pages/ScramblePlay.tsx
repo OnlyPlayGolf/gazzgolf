@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
+import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,7 @@ export default function ScramblePlay() {
   const [teamScores, setTeamScores] = useState<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+  const [activeTeamSheet, setActiveTeamSheet] = useState<string | null>(null);
 
   useEffect(() => {
     if (gameId) {
@@ -126,7 +128,7 @@ export default function ScramblePlay() {
     return hole?.stroke_index || currentHole;
   };
 
-  const setScore = async (teamId: string, score: number | null) => {
+  const handleScoreSelect = async (teamId: string, score: number | null) => {
     const newScores = { ...teamScores, [teamId]: score };
     setTeamScores(newScores);
 
@@ -169,6 +171,19 @@ export default function ScramblePlay() {
         }];
       }
     });
+  };
+
+  const advanceToNextTeamSheet = () => {
+    if (!activeTeamSheet) return;
+    
+    const currentIndex = teams.findIndex(t => t.id === activeTeamSheet);
+    if (currentIndex < teams.length - 1) {
+      // Move to next team
+      setActiveTeamSheet(teams[currentIndex + 1].id);
+    } else {
+      // All teams done, close sheet
+      setActiveTeamSheet(null);
+    }
   };
 
   const navigateHole = (direction: 'prev' | 'next') => {
@@ -311,51 +326,49 @@ export default function ScramblePlay() {
       {/* Team Scores */}
       <div className="p-4 space-y-4">
         {teams.map((team) => (
-          <Card key={team.id}>
+          <Card 
+            key={team.id} 
+            className="cursor-pointer hover:bg-accent/50 transition-colors"
+            onClick={() => setActiveTeamSheet(team.id)}
+          >
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold">{team.name}</h3>
                   <p className="text-xs text-muted-foreground">
                     {team.players.map(p => p.name).join(', ')}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-lg font-bold">{calculateTeamTotal(team.id)}</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Hole</p>
+                    <p className="text-xl font-bold">{teamScores[team.id] ?? '-'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Total</p>
+                    <p className="text-lg font-semibold text-muted-foreground">{calculateTeamTotal(team.id)}</p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Calculator-style score input */}
-              <div className="grid grid-cols-5 gap-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                  <Button
-                    key={num}
-                    variant={teamScores[team.id] === num ? "default" : "outline"}
-                    className={`h-12 text-lg font-semibold ${
-                      teamScores[team.id] === num 
-                        ? "bg-primary text-primary-foreground" 
-                        : ""
-                    }`}
-                    onClick={() => setScore(team.id, num)}
-                  >
-                    {num}
-                  </Button>
-                ))}
-                <Button
-                  variant={teamScores[team.id] === null ? "default" : "outline"}
-                  className={`h-12 text-lg font-semibold ${
-                    teamScores[team.id] === null 
-                      ? "bg-destructive text-destructive-foreground" 
-                      : ""
-                  }`}
-                  onClick={() => setScore(team.id, null)}
-                >
-                  –
-                </Button>
               </div>
             </CardContent>
           </Card>
+        ))}
+
+        {/* PlayerScoreSheets for each team */}
+        {teams.map((team) => (
+          <PlayerScoreSheet
+            key={`sheet-${team.id}`}
+            open={activeTeamSheet === team.id}
+            onOpenChange={(open) => {
+              if (!open) setActiveTeamSheet(null);
+            }}
+            playerName={team.name}
+            par={par}
+            holeNumber={currentHole}
+            currentScore={teamScores[team.id] ?? null}
+            onScoreSelect={(score) => handleScoreSelect(team.id, score)}
+            onEnterAndNext={advanceToNextTeamSheet}
+          />
         ))}
 
         {/* Navigation buttons */}
