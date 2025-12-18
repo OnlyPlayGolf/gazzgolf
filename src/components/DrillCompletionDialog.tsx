@@ -12,6 +12,7 @@ interface DrillCompletionDialogProps {
   drillTitle: string;
   score: number;
   unit?: string;
+  resultId?: string;
   onContinue: () => void;
 }
 
@@ -21,6 +22,7 @@ export function DrillCompletionDialog({
   drillTitle,
   score,
   unit = "points",
+  resultId,
   onContinue,
 }: DrillCompletionDialogProps) {
   const [isPersonalBest, setIsPersonalBest] = useState(false);
@@ -98,8 +100,10 @@ export function DrillCompletionDialog({
         return;
       }
 
-      // Create structured post content with drill result marker
-      const drillResult = `[DRILL_RESULT]${drillTitle}|${score}|${unit}|${isPersonalBest}[/DRILL_RESULT]`;
+      // Create structured post content with drill result marker (include resultId if available)
+      const drillResult = resultId
+        ? `[DRILL_RESULT]${drillTitle}|${score}|${unit}|${isPersonalBest}|${resultId}[/DRILL_RESULT]`
+        : `[DRILL_RESULT]${drillTitle}|${score}|${unit}|${isPersonalBest}[/DRILL_RESULT]`;
       const postContent = comment.trim()
         ? `${comment}\n\n${drillResult}`
         : drillResult;
