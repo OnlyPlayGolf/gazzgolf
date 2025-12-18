@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Send, Trophy, Target, MapPin, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Send, Trophy, Target, MapPin, MoreHorizontal, Pencil, Trash2, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,19 @@ import { formatDistanceToNow } from "date-fns";
 
 // Parse drill result from post content
 const parseDrillResult = (content: string) => {
+  // Extended format with resultId: [DRILL_RESULT]title|score|unit|isPB|resultId[/DRILL_RESULT]
+  const extendedMatch = content?.match(/\[DRILL_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/DRILL_RESULT\]/);
+  if (extendedMatch) {
+    return {
+      drillTitle: extendedMatch[1],
+      score: extendedMatch[2],
+      unit: extendedMatch[3],
+      isPersonalBest: extendedMatch[4] === 'true',
+      resultId: extendedMatch[5],
+      textContent: content.replace(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/, '').trim()
+    };
+  }
+  // Original format without resultId
   const match = content?.match(/\[DRILL_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\[\/DRILL_RESULT\]/);
   if (match) {
     return {
@@ -24,6 +37,7 @@ const parseDrillResult = (content: string) => {
       score: match[2],
       unit: match[3],
       isPersonalBest: match[4] === 'true',
+      resultId: null,
       textContent: content.replace(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/, '').trim()
     };
   }
@@ -32,6 +46,20 @@ const parseDrillResult = (content: string) => {
 
 // Parse round result from post content
 const parseRoundResult = (content: string) => {
+  // Extended format with roundId: [ROUND_RESULT]name|course|score|vspar|holes|roundId[/ROUND_RESULT]
+  const extendedMatch = content?.match(/\[ROUND_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_RESULT\]/);
+  if (extendedMatch) {
+    return {
+      roundName: extendedMatch[1],
+      courseName: extendedMatch[2],
+      score: parseInt(extendedMatch[3]),
+      scoreVsPar: parseInt(extendedMatch[4]),
+      holesPlayed: parseInt(extendedMatch[5]),
+      roundId: extendedMatch[6],
+      textContent: content.replace(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/, '').trim()
+    };
+  }
+  // Original format without roundId
   const match = content?.match(/\[ROUND_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_RESULT\]/);
   if (match) {
     return {
@@ -40,6 +68,7 @@ const parseRoundResult = (content: string) => {
       score: parseInt(match[3]),
       scoreVsPar: parseInt(match[4]),
       holesPlayed: parseInt(match[5]),
+      roundId: null,
       textContent: content.replace(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/, '').trim()
     };
   }
@@ -48,6 +77,21 @@ const parseRoundResult = (content: string) => {
 
 // Parse Umbriago result from post content
 const parseUmbriagioResult = (content: string) => {
+  // Extended format with gameId
+  const extendedMatch = content?.match(/\[UMBRIAGO_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/UMBRIAGO_RESULT\]/);
+  if (extendedMatch) {
+    return {
+      courseName: extendedMatch[1],
+      teamAPoints: parseInt(extendedMatch[2]),
+      teamBPoints: parseInt(extendedMatch[3]),
+      winningTeam: extendedMatch[4] as 'A' | 'B' | 'TIE' | 'null',
+      teamAPlayers: extendedMatch[5],
+      teamBPlayers: extendedMatch[6],
+      gameId: extendedMatch[7],
+      textContent: content.replace(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/, '').trim()
+    };
+  }
+  // Original format without gameId
   const match = content?.match(/\[UMBRIAGO_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/UMBRIAGO_RESULT\]/);
   if (match) {
     return {
@@ -57,6 +101,7 @@ const parseUmbriagioResult = (content: string) => {
       winningTeam: match[4] as 'A' | 'B' | 'TIE' | 'null',
       teamAPlayers: match[5],
       teamBPlayers: match[6],
+      gameId: null,
       textContent: content.replace(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/, '').trim()
     };
   }
@@ -64,13 +109,20 @@ const parseUmbriagioResult = (content: string) => {
 };
 
 // Drill Result Card Component
-const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest }: { 
+const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick, isClickable }: { 
   drillTitle: string; 
   score: string; 
   unit: string; 
   isPersonalBest: boolean;
+  onClick?: () => void;
+  isClickable?: boolean;
 }) => (
-  <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2">
+  <div 
+    className={`bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all ${
+      isClickable ? 'cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]' : ''
+    }`}
+    onClick={onClick}
+  >
     <div className="flex items-center gap-2 mb-2">
       <Target className="h-5 w-5 text-primary" />
       <span className="text-sm font-medium text-muted-foreground">Drill Completed</span>
@@ -79,6 +131,9 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest }: {
           <Trophy className="h-3 w-3" />
           Personal Best!
         </span>
+      )}
+      {isClickable && !isPersonalBest && (
+        <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
       )}
     </div>
     <div className="text-lg font-semibold text-foreground">{drillTitle}</div>
@@ -90,12 +145,14 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest }: {
 );
 
 // Round Result Card Component
-const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed }: { 
+const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed, onClick, isClickable }: { 
   roundName: string;
   courseName: string; 
   score: number; 
   scoreVsPar: number; 
   holesPlayed: number;
+  onClick?: () => void;
+  isClickable?: boolean;
 }) => {
   const formatScoreVsPar = (diff: number) => {
     if (diff === 0) return "E";
@@ -109,11 +166,17 @@ const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed
   };
 
   return (
-    <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2">
+    <div 
+      className={`bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all ${
+        isClickable ? 'cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]' : ''
+      }`}
+      onClick={onClick}
+    >
       <div className="flex items-center gap-2 mb-2">
         <MapPin className="h-5 w-5 text-primary" />
         <span className="text-sm font-medium text-muted-foreground">Round Completed</span>
         <span className="text-xs text-muted-foreground ml-auto">{holesPlayed} holes</span>
+        {isClickable && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
       </div>
       <div className="text-lg font-semibold text-foreground">{roundName}</div>
       <div className="text-sm text-muted-foreground">{courseName}</div>
@@ -134,13 +197,15 @@ const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed
 };
 
 // Umbriago Result Card Component
-const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam, teamAPlayers, teamBPlayers }: { 
+const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam, teamAPlayers, teamBPlayers, onClick, isClickable }: { 
   courseName: string; 
   teamAPoints: number; 
   teamBPoints: number; 
   winningTeam: string;
   teamAPlayers: string;
   teamBPlayers: string;
+  onClick?: () => void;
+  isClickable?: boolean;
 }) => {
   const getWinnerNames = () => {
     if (winningTeam === 'TIE') return 'Tie Game';
@@ -150,10 +215,16 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
   };
 
   return (
-    <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-2">
+    <div 
+      className={`bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-2 transition-all ${
+        isClickable ? 'cursor-pointer hover:border-yellow-500/40 hover:shadow-md active:scale-[0.98]' : ''
+      }`}
+      onClick={onClick}
+    >
       <div className="flex items-center gap-2 mb-2">
         <Trophy className="h-5 w-5 text-yellow-500" />
         <span className="text-sm font-medium text-muted-foreground">Umbriago Complete</span>
+        {isClickable && <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />}
       </div>
       <div className="text-lg font-semibold text-foreground">{courseName}</div>
       {winningTeam !== 'null' && winningTeam !== 'TIE' && (
@@ -381,6 +452,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               score={drillResult.score}
               unit={drillResult.unit}
               isPersonalBest={drillResult.isPersonalBest}
+              isClickable={!!drillResult.resultId}
+              onClick={drillResult.resultId ? () => navigate(`/drill-result/${drillResult.resultId}`) : undefined}
             />
           </>
         ) : roundResult ? (
@@ -394,6 +467,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               score={roundResult.score}
               scoreVsPar={roundResult.scoreVsPar}
               holesPlayed={roundResult.holesPlayed}
+              isClickable={!!roundResult.roundId}
+              onClick={roundResult.roundId ? () => navigate(`/rounds/${roundResult.roundId}/detail`) : undefined}
             />
           </>
         ) : umbriagioResult ? (
@@ -408,6 +483,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               winningTeam={umbriagioResult.winningTeam}
               teamAPlayers={umbriagioResult.teamAPlayers}
               teamBPlayers={umbriagioResult.teamBPlayers}
+              isClickable={!!umbriagioResult.gameId}
+              onClick={umbriagioResult.gameId ? () => navigate(`/umbriago/${umbriagioResult.gameId}/summary`) : undefined}
             />
           </>
         ) : post.content && (
