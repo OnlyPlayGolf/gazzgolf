@@ -118,6 +118,12 @@ export default function RoundsPlay() {
           }]
         }));
       }
+
+      // Pre-select recently played course (only if no saved course in session)
+      const savedCourse = sessionStorage.getItem('selectedCourse');
+      if (!savedCourse) {
+        await fetchRecentCourse(user.id);
+      }
     }
 
     // Fetch round count for default name
@@ -125,6 +131,34 @@ export default function RoundsPlay() {
     
     // Restore saved state
     restoreSavedState();
+  };
+
+  const fetchRecentCourse = async (userId: string) => {
+    try {
+      // Fetch most recent round with a course
+      const { data: recentRound } = await supabase
+        .from("rounds")
+        .select("course_name")
+        .eq("user_id", userId)
+        .order("date_played", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (recentRound?.course_name) {
+        // Find the course in database
+        const { data: course } = await supabase
+          .from("courses")
+          .select("id, name, location")
+          .eq("name", recentRound.course_name)
+          .maybeSingle();
+
+        if (course) {
+          setSelectedCourse({ id: course.id, name: course.name, location: course.location || "" });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching recent course:", error);
+    }
   };
 
   const fetchRoundCount = async () => {
