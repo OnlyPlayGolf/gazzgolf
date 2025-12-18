@@ -109,18 +109,15 @@ const parseUmbriagioResult = (content: string) => {
 };
 
 // Drill Result Card Component
-const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick, isClickable }: { 
+const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick }: { 
   drillTitle: string; 
   score: string; 
   unit: string; 
   isPersonalBest: boolean;
   onClick?: () => void;
-  isClickable?: boolean;
 }) => (
   <div 
-    className={`bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all ${
-      isClickable ? 'cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]' : ''
-    }`}
+    className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]"
     onClick={onClick}
   >
     <div className="flex items-center gap-2 mb-2">
@@ -132,7 +129,7 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick, isC
           Personal Best!
         </span>
       )}
-      {isClickable && !isPersonalBest && (
+      {!isPersonalBest && (
         <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
       )}
     </div>
@@ -145,14 +142,13 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick, isC
 );
 
 // Round Result Card Component
-const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed, onClick, isClickable }: { 
+const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed, onClick }: { 
   roundName: string;
   courseName: string; 
   score: number; 
   scoreVsPar: number; 
   holesPlayed: number;
   onClick?: () => void;
-  isClickable?: boolean;
 }) => {
   const formatScoreVsPar = (diff: number) => {
     if (diff === 0) return "E";
@@ -167,16 +163,14 @@ const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed
 
   return (
     <div 
-      className={`bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all ${
-        isClickable ? 'cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]' : ''
-      }`}
+      className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]"
       onClick={onClick}
     >
       <div className="flex items-center gap-2 mb-2">
         <MapPin className="h-5 w-5 text-primary" />
         <span className="text-sm font-medium text-muted-foreground">Round Completed</span>
         <span className="text-xs text-muted-foreground ml-auto">{holesPlayed} holes</span>
-        {isClickable && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="text-lg font-semibold text-foreground">{roundName}</div>
       <div className="text-sm text-muted-foreground">{courseName}</div>
@@ -197,7 +191,7 @@ const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed
 };
 
 // Umbriago Result Card Component
-const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam, teamAPlayers, teamBPlayers, onClick, isClickable }: { 
+const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam, teamAPlayers, teamBPlayers, onClick }: { 
   courseName: string; 
   teamAPoints: number; 
   teamBPoints: number; 
@@ -205,7 +199,6 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
   teamAPlayers: string;
   teamBPlayers: string;
   onClick?: () => void;
-  isClickable?: boolean;
 }) => {
   const getWinnerNames = () => {
     if (winningTeam === 'TIE') return 'Tie Game';
@@ -216,15 +209,13 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
 
   return (
     <div 
-      className={`bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-2 transition-all ${
-        isClickable ? 'cursor-pointer hover:border-yellow-500/40 hover:shadow-md active:scale-[0.98]' : ''
-      }`}
+      className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-2 transition-all cursor-pointer hover:border-yellow-500/40 hover:shadow-md active:scale-[0.98]"
       onClick={onClick}
     >
       <div className="flex items-center gap-2 mb-2">
         <Trophy className="h-5 w-5 text-yellow-500" />
         <span className="text-sm font-medium text-muted-foreground">Umbriago Complete</span>
-        {isClickable && <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />}
+        <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
       </div>
       <div className="text-lg font-semibold text-foreground">{courseName}</div>
       {winningTeam !== 'null' && winningTeam !== 'TIE' && (
@@ -452,8 +443,30 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               score={drillResult.score}
               unit={drillResult.unit}
               isPersonalBest={drillResult.isPersonalBest}
-              isClickable={!!drillResult.resultId}
-              onClick={drillResult.resultId ? () => navigate(`/drill-result/${drillResult.resultId}`) : undefined}
+              onClick={async () => {
+                if (drillResult.resultId) {
+                  navigate(`/drill-result/${drillResult.resultId}`);
+                } else {
+                  // Try to find the result by matching drill title, user, and score
+                  const { data: drillData } = await supabase
+                    .rpc('get_or_create_drill_by_title', { p_title: drillResult.drillTitle });
+                  if (drillData) {
+                    const { data: results } = await supabase
+                      .from('drill_results')
+                      .select('id')
+                      .eq('drill_id', drillData)
+                      .eq('user_id', post.user_id)
+                      .eq('total_points', parseInt(drillResult.score))
+                      .order('created_at', { ascending: false })
+                      .limit(1);
+                    if (results && results.length > 0) {
+                      navigate(`/drill-result/${results[0].id}`);
+                      return;
+                    }
+                  }
+                  toast.error("Result details not found");
+                }
+              }}
             />
           </>
         ) : roundResult ? (
@@ -467,8 +480,26 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               score={roundResult.score}
               scoreVsPar={roundResult.scoreVsPar}
               holesPlayed={roundResult.holesPlayed}
-              isClickable={!!roundResult.roundId}
-              onClick={roundResult.roundId ? () => navigate(`/rounds/${roundResult.roundId}/detail`) : undefined}
+              onClick={async () => {
+                if (roundResult.roundId) {
+                  navigate(`/round/${roundResult.roundId}/detail`);
+                } else {
+                  // Try to find the round by matching course, user, and score
+                  const { data: rounds } = await supabase
+                    .from('round_summaries')
+                    .select('round_id')
+                    .eq('user_id', post.user_id)
+                    .eq('course_name', roundResult.courseName)
+                    .eq('total_score', roundResult.score)
+                    .order('date_played', { ascending: false })
+                    .limit(1);
+                  if (rounds && rounds.length > 0) {
+                    navigate(`/round/${rounds[0].round_id}/detail`);
+                    return;
+                  }
+                  toast.error("Round details not found");
+                }
+              }}
             />
           </>
         ) : umbriagioResult ? (
@@ -483,8 +514,25 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               winningTeam={umbriagioResult.winningTeam}
               teamAPlayers={umbriagioResult.teamAPlayers}
               teamBPlayers={umbriagioResult.teamBPlayers}
-              isClickable={!!umbriagioResult.gameId}
-              onClick={umbriagioResult.gameId ? () => navigate(`/umbriago/${umbriagioResult.gameId}/summary`) : undefined}
+              onClick={async () => {
+                if (umbriagioResult.gameId) {
+                  navigate(`/umbriago/${umbriagioResult.gameId}/summary`);
+                } else {
+                  // Try to find the game by matching course and user
+                  const { data: games } = await supabase
+                    .from('umbriago_games')
+                    .select('id')
+                    .eq('user_id', post.user_id)
+                    .eq('course_name', umbriagioResult.courseName)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                  if (games && games.length > 0) {
+                    navigate(`/umbriago/${games[0].id}/summary`);
+                    return;
+                  }
+                  toast.error("Game details not found");
+                }
+              }}
             />
           </>
         ) : post.content && (
