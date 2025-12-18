@@ -39,6 +39,7 @@ import UserDrills from "./pages/UserDrills";
 import CreateDrill from "./pages/CreateDrill";
 import RunDrill from "./pages/RunDrill";
 import DrillResults from "./pages/DrillResults";
+import DrillResultDetail from "./pages/DrillResultDetail";
 import GroupDetail from "./pages/GroupDetail";
 import AcceptInvite from "./pages/AcceptInvite";
 import Rounds from "./pages/Rounds";
@@ -177,6 +178,7 @@ const App = () => {
             <Route path="/create-drill" element={<CreateDrill />} />
             <Route path="/run-drill/:drillId" element={<RunDrill />} />
             <Route path="/drill-results/:drillId" element={<DrillResults />} />
+            <Route path="/drill-result/:resultId" element={<DrillResultDetail />} />
             <Route path="/group/:groupId" element={<GroupDetail />} />
             <Route path="/invite/:code" element={<AcceptInvite />} />
             <Route path="/rounds" element={<Rounds />} />
