@@ -482,7 +482,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               holesPlayed={roundResult.holesPlayed}
               onClick={async () => {
                 if (roundResult.roundId) {
-                  navigate(`/round/${roundResult.roundId}/detail`);
+                  navigate(`/rounds/${roundResult.roundId}/detail`);
                 } else {
                   // Try to find the round by matching course, user, and score
                   const { data: rounds } = await supabase
@@ -494,7 +494,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                     .order('date_played', { ascending: false })
                     .limit(1);
                   if (rounds && rounds.length > 0) {
-                    navigate(`/round/${rounds[0].round_id}/detail`);
+                    navigate(`/rounds/${rounds[0].round_id}/detail`);
                     return;
                   }
                   toast.error("Round details not found");
