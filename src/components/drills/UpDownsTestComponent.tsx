@@ -25,6 +25,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
   const [drillStarted, setDrillStarted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const initializeStations = () => {
@@ -158,14 +159,16 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         return;
       }
 
-      const { error: resultError } = await (supabase as any)
+      const { data: insertedResult, error: resultError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
           user_id: userId,
           total_points: scoreToSave,
           attempts_json: stations,
-        });
+        })
+        .select('id')
+        .single();
 
       if (resultError) throw resultError;
 
@@ -175,6 +178,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
       });
 
       setFinalScore(scoreToSave);
+      setSavedResultId(insertedResult?.id || null);
       localStorage.removeItem(STORAGE_KEY);
       setShowCompletionDialog(true);
     } catch (error) {
@@ -382,6 +386,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         drillTitle="18 Up & Downs"
         score={finalScore}
         unit="shots"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

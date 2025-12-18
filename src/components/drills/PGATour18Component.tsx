@@ -56,6 +56,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   const [distanceSequence, setDistanceSequence] = useState<string[]>([]);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -180,14 +181,16 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
         return;
       }
 
-      const { error: saveError } = await (supabase as any)
+      const { data: insertedResult, error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
           user_id: userId,
           total_points: totalPutts,
           attempts_json: finalAttempts
-        });
+        })
+        .select('id')
+        .single();
 
       if (saveError) {
         console.error('Error saving score:', saveError);
@@ -202,6 +205,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
 
       setIsActive(false);
       setFinalScore(totalPutts);
+      setSavedResultId(insertedResult?.id || null);
       setShowCompletionDialog(true);
       localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
@@ -343,6 +347,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
         drillTitle="PGA Tour 18 Holes"
         score={finalScore}
         unit="putts"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

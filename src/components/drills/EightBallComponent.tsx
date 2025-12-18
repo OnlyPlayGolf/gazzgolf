@@ -53,6 +53,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
   const [userId, setUserId] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(0);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -165,8 +166,8 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
         return;
       }
 
-      // Save drill result to Supabase
-      const { error: saveError } = await (supabase as any)
+      // Save drill result to Supabase and get the result ID
+      const { data: insertedResult, error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
@@ -178,7 +179,9 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
             outcome: a.outcome,
             points: a.points,
           }))
-        });
+        })
+        .select('id')
+        .single();
 
       if (saveError) {
         console.error('Error saving score:', saveError);
@@ -196,6 +199,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
       });
 
       localStorage.removeItem(STORAGE_KEY);
+      setSavedResultId(insertedResult?.id || null);
       setShowCompletionDialog(true);
     } catch (error) {
       console.error('Error:', error);
@@ -306,6 +310,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
         drillTitle="8-Ball Drill"
         score={totalPoints}
         unit="points"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

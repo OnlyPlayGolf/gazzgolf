@@ -289,6 +289,7 @@ const RoundSummary = () => {
         score={summary.total_score}
         scoreVsPar={summary.score_vs_par}
         holesPlayed={summary.holes_played}
+        roundId={roundId}
         onContinue={() => navigate("/rounds")}
       />
     </div>

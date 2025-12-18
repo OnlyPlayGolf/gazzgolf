@@ -30,6 +30,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
   const [drillEnded, setDrillEnded] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -120,7 +121,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
 
       if (drillError) throw drillError;
 
-      const { error: insertError } = await supabase
+      const { data: insertedResult, error: insertError } = await supabase
         .from('drill_results')
         .insert([{
           drill_id: drillData,
@@ -130,7 +131,9 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
             consecutive_makes: consecutiveMakes,
             final_distances: teePositions,
           } as any,
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
 
@@ -138,6 +141,8 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
         title: "Score saved!",
         description: `You made ${consecutiveMakes} consecutive putts!`,
       });
+
+      setSavedResultId(insertedResult?.id || null);
 
       localStorage.removeItem(STORAGE_KEY);
       setShowCompletionDialog(true);
@@ -294,6 +299,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
         drillTitle="Short Putting Test"
         score={consecutiveMakes}
         unit="putts"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

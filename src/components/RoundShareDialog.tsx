@@ -14,6 +14,7 @@ interface RoundShareDialogProps {
   score: number;
   scoreVsPar: number;
   holesPlayed: number;
+  roundId?: string;
   onContinue: () => void;
 }
 
@@ -25,6 +26,7 @@ export function RoundShareDialog({
   score,
   scoreVsPar,
   holesPlayed,
+  roundId,
   onContinue,
 }: RoundShareDialogProps) {
   const [showShareForm, setShowShareForm] = useState(false);
@@ -45,8 +47,10 @@ export function RoundShareDialog({
         return;
       }
 
-      // Create structured post content with round result marker
-      const roundResult = `[ROUND_RESULT]${roundName}|${courseName}|${score}|${scoreVsPar}|${holesPlayed}[/ROUND_RESULT]`;
+      // Create structured post content with round result marker (include roundId if available)
+      const roundResult = roundId 
+        ? `[ROUND_RESULT]${roundName}|${courseName}|${score}|${scoreVsPar}|${holesPlayed}|${roundId}[/ROUND_RESULT]`
+        : `[ROUND_RESULT]${roundName}|${courseName}|${score}|${scoreVsPar}|${holesPlayed}[/ROUND_RESULT]`;
       const postContent = comment.trim()
         ? `${comment}\n\n${roundResult}`
         : roundResult;
