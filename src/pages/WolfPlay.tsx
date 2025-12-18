@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, User, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WolfGame, WolfHole } from "@/types/wolf";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
+import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { calculateWolfHoleScore, getWolfPlayerForHole } from "@/utils/wolfScoring";
 import {
   AlertDialog,
@@ -36,6 +37,7 @@ export default function WolfPlay() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [activePlayerSheet, setActivePlayerSheet] = useState<number | null>(null);
   
   // Current hole state
   const [par, setPar] = useState(4);
@@ -135,13 +137,21 @@ export default function WolfPlay() {
     }
   };
 
-  const updateScore = (playerIndex: number, delta: number) => {
-    setScores(prev => {
-      const newScores = [...prev];
-      const currentScore = newScores[playerIndex] || par;
-      newScores[playerIndex] = Math.max(1, currentScore + delta);
-      return newScores;
-    });
+  const handleScoreSelect = (playerIndex: number, score: number | null) => {
+    if (score !== null) {
+      setScores(prev => {
+        const newScores = [...prev];
+        newScores[playerIndex] = score;
+        return newScores;
+      });
+    }
+    // Auto-advance to next player
+    const playerCount = getPlayerCount();
+    if (playerIndex < playerCount - 1) {
+      setActivePlayerSheet(playerIndex + 1);
+    } else {
+      setActivePlayerSheet(null);
+    }
   };
 
   const handleChoosePartner = (playerIndex: number) => {
@@ -434,33 +444,18 @@ export default function WolfPlay() {
               return (
                 <div 
                   key={i} 
-                  className={`flex items-center justify-between p-2 rounded ${
-                    isWolf ? 'bg-amber-500/10' : isPartner ? 'bg-primary/10' : ''
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
+                    isWolf ? 'bg-amber-500/10' : isPartner ? 'bg-primary/10' : 'bg-muted/30'
                   }`}
+                  onClick={() => setActivePlayerSheet(i)}
                 >
                   <span className="font-medium flex items-center gap-2">
                     {isWolf && <span>🐺</span>}
                     {isPartner && <span>🤝</span>}
                     {getPlayerName(i)}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => updateScore(i, -1)}
-                    >
-                      <Minus size={16} />
-                    </Button>
-                    <span className="w-8 text-center font-bold text-lg">
-                      {scores[i] || par}
-                    </span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => updateScore(i, 1)}
-                    >
-                      <Plus size={16} />
-                    </Button>
+                  <div className="text-2xl font-bold">
+                    {scores[i] || par}
                   </div>
                 </div>
               );
@@ -537,6 +532,20 @@ export default function WolfPlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Score Entry Sheets */}
+      {[...Array(getPlayerCount())].map((_, i) => (
+        <PlayerScoreSheet
+          key={i}
+          open={activePlayerSheet === i}
+          onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+          playerName={getPlayerName(i)}
+          par={par}
+          holeNumber={currentHole}
+          currentScore={scores[i] || par}
+          onScoreSelect={(score) => handleScoreSelect(i, score)}
+        />
+      ))}
     </div>
   );
 }

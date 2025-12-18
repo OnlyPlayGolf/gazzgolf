@@ -434,6 +434,8 @@ export default function UmbriagioPlay() {
     setDoubleBackCalled(false);
   };
 
+  const playerOrder: (keyof typeof scores)[] = ['teamAPlayer1', 'teamAPlayer2', 'teamBPlayer1', 'teamBPlayer2'];
+
   const handleScoreSelect = (player: keyof typeof scores, score: number | null) => {
     if (score !== null) {
       setScores(prev => ({
@@ -441,7 +443,13 @@ export default function UmbriagioPlay() {
         [player]: score,
       }));
     }
-    setActiveScoreSheet(null);
+    // Auto-advance to next player
+    const currentIndex = playerOrder.indexOf(player);
+    if (currentIndex < playerOrder.length - 1) {
+      setActiveScoreSheet(playerOrder[currentIndex + 1]);
+    } else {
+      setActiveScoreSheet(null);
+    }
   };
 
   const navigateHole = async (direction: "prev" | "next") => {

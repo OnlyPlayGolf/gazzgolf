@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Minus, Plus, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore } from "@/types/bestBall";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
+import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import {
   calculateBestBall,
   calculateHoleResult,
@@ -50,6 +51,7 @@ export default function BestBallPlay() {
   const [strokeIndex, setStrokeIndex] = useState<number | null>(null);
   const [teamAScores, setTeamAScores] = useState<Record<string, number>>({});
   const [teamBScores, setTeamBScores] = useState<Record<string, number>>({});
+  const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -303,17 +305,25 @@ export default function BestBallPlay() {
     }
   };
 
-  const updateScore = (team: 'A' | 'B', playerId: string, delta: number) => {
-    if (team === 'A') {
-      setTeamAScores(prev => ({
-        ...prev,
-        [playerId]: Math.max(1, (prev[playerId] || par) + delta),
-      }));
+  const handleScoreSelect = (team: 'A' | 'B', playerId: string, score: number | null) => {
+    if (score !== null) {
+      if (team === 'A') {
+        setTeamAScores(prev => ({ ...prev, [playerId]: score }));
+      } else {
+        setTeamBScores(prev => ({ ...prev, [playerId]: score }));
+      }
+    }
+    // Auto-advance to next player
+    const allPlayers = [
+      ...game!.team_a_players.map(p => ({ ...p, team: 'A' as const })),
+      ...game!.team_b_players.map(p => ({ ...p, team: 'B' as const })),
+    ];
+    const currentIndex = allPlayers.findIndex(p => p.team === team && p.odId === playerId);
+    if (currentIndex < allPlayers.length - 1) {
+      const nextPlayer = allPlayers[currentIndex + 1];
+      setActivePlayerSheet({ team: nextPlayer.team, playerId: nextPlayer.odId });
     } else {
-      setTeamBScores(prev => ({
-        ...prev,
-        [playerId]: Math.max(1, (prev[playerId] || par) + delta),
-      }));
+      setActivePlayerSheet(null);
     }
   };
 
@@ -395,9 +405,10 @@ export default function BestBallPlay() {
     return (
       <div
         key={player.odId}
-        className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+        className={`flex items-center justify-between p-3 rounded-lg transition-all cursor-pointer hover:bg-muted/70 ${
           isCounting ? 'bg-primary/10 ring-2 ring-primary/30' : 'bg-muted/50'
         }`}
+        onClick={() => setActivePlayerSheet({ team, playerId: player.odId })}
       >
         <div className="flex items-center gap-2">
           {isCounting && <Star size={14} className="text-primary fill-primary" />}
@@ -409,26 +420,8 @@ export default function BestBallPlay() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => updateScore(team, player.odId, -1)}
-          >
-            <Minus size={14} />
-          </Button>
-          <div className={`w-10 text-center text-lg font-bold ${getScoreColorClass(score, par)}`}>
-            {score}
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => updateScore(team, player.odId, 1)}
-          >
-            <Plus size={14} />
-          </Button>
+        <div className={`text-2xl font-bold ${getScoreColorClass(score, par)}`}>
+          {score}
         </div>
       </div>
     );
@@ -580,6 +573,34 @@ export default function BestBallPlay() {
       </AlertDialog>
 
       {gameId && <BestBallBottomTabBar gameId={gameId} />}
+
+      {/* Score Entry Sheets */}
+      {game.team_a_players.map(player => (
+        <PlayerScoreSheet
+          key={`A-${player.odId}`}
+          open={activePlayerSheet?.team === 'A' && activePlayerSheet?.playerId === player.odId}
+          onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+          playerName={player.displayName}
+          handicap={player.handicap}
+          par={par}
+          holeNumber={currentHole}
+          currentScore={teamAScores[player.odId] || par}
+          onScoreSelect={(score) => handleScoreSelect('A', player.odId, score)}
+        />
+      ))}
+      {game.team_b_players.map(player => (
+        <PlayerScoreSheet
+          key={`B-${player.odId}`}
+          open={activePlayerSheet?.team === 'B' && activePlayerSheet?.playerId === player.odId}
+          onOpenChange={(open) => !open && setActivePlayerSheet(null)}
+          playerName={player.displayName}
+          handicap={player.handicap}
+          par={par}
+          holeNumber={currentHole}
+          currentScore={teamBScores[player.odId] || par}
+          onScoreSelect={(score) => handleScoreSelect('B', player.odId, score)}
+        />
+      ))}
     </div>
   );
 }
