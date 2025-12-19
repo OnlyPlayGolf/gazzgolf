@@ -37,11 +37,46 @@ export default function SkinsSetup() {
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Get course from location state if passed
+  // Load course and players from session storage (from RoundsPlay page)
   useEffect(() => {
-    if (location.state?.courseName) {
+    // Load course
+    const savedCourse = sessionStorage.getItem('selectedCourse');
+    if (savedCourse) {
+      try {
+        const course = JSON.parse(savedCourse);
+        setCourseName(course.name);
+        setCourseId(course.id || null);
+      } catch (e) {
+        console.error("Error parsing saved course:", e);
+      }
+    } else if (location.state?.courseName) {
       setCourseName(location.state.courseName);
       setCourseId(location.state.courseId || null);
+    }
+
+    // Load players from groups
+    const savedGroups = sessionStorage.getItem('playGroups');
+    if (savedGroups) {
+      try {
+        const playGroups = JSON.parse(savedGroups);
+        const convertedGroups: Group[] = playGroups.map((pg: any, idx: number) => ({
+          id: String(idx + 1),
+          name: pg.name || `Group ${idx + 1}`,
+          players: pg.players.map((p: any) => ({
+            name: p.displayName || p.username || 'Player',
+            handicap: p.handicap ?? null,
+            tee: p.teeColor || null,
+            group_name: pg.name || `Group ${idx + 1}`,
+          }))
+        }));
+        
+        // Only set if we have players
+        if (convertedGroups.some(g => g.players.length > 0)) {
+          setGroups(convertedGroups);
+        }
+      } catch (e) {
+        console.error("Error parsing saved groups:", e);
+      }
     }
   }, [location.state]);
 
