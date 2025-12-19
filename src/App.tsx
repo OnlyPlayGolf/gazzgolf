@@ -130,6 +130,7 @@ import HowToPlayScramble from "./pages/HowToPlayScramble";
 import SkinsSetup from "./pages/SkinsSetup";
 import SkinsPlay from "./pages/SkinsPlay";
 import SkinsSummary from "./pages/SkinsSummary";
+import HowToPlaySkins from "./pages/HowToPlaySkins";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -249,6 +250,7 @@ const App = () => {
             <Route path="/scramble/:gameId/leaderboard" element={<ScrambleLeaderboard />} />
             <Route path="/scramble/:gameId/settings" element={<ScrambleSettings />} />
             <Route path="/scramble/:gameId/summary" element={<ScrambleSummary />} />
+            <Route path="/skins/how-to-play" element={<HowToPlaySkins />} />
             <Route path="/skins/setup" element={<SkinsSetup />} />
             <Route path="/skins/:gameId/play" element={<SkinsPlay />} />
             <Route path="/skins/:gameId/summary" element={<SkinsSummary />} />
