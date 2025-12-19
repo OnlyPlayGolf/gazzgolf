@@ -308,13 +308,6 @@ export default function MatchPlayPlay() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">{game.course_name}</p>
-          
-          {/* Match Status */}
-          <div className="mt-3 p-3 bg-primary/10 rounded-lg text-center">
-            <p className="text-lg font-bold text-primary">
-              {formatMatchStatusWithHoles(currentMatchStatus, currentHolesRemaining, game.player_1, game.player_2)}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -410,6 +403,13 @@ export default function MatchPlayPlay() {
             }
           }}
         />
+
+        {/* Match Status */}
+        <div className="p-3 bg-primary/10 rounded-lg text-center">
+          <p className="text-lg font-bold text-primary">
+            {formatMatchStatusWithHoles(currentMatchStatus, currentHolesRemaining, game.player_1, game.player_2)}
+          </p>
+        </div>
 
         {/* Preview Result */}
         <Card className="p-4 bg-muted/50">
