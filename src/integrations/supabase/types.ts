@@ -1442,6 +1442,112 @@ export type Database = {
           },
         ]
       }
+      skins_games: {
+        Row: {
+          carryover_enabled: boolean
+          course_id: string | null
+          course_name: string
+          created_at: string | null
+          date_played: string
+          handicap_mode: string
+          holes_played: number
+          id: string
+          is_finished: boolean
+          players: Json
+          skin_value: number
+          use_handicaps: boolean
+          user_id: string
+          winner_player: string | null
+        }
+        Insert: {
+          carryover_enabled?: boolean
+          course_id?: string | null
+          course_name: string
+          created_at?: string | null
+          date_played?: string
+          handicap_mode?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          players?: Json
+          skin_value?: number
+          use_handicaps?: boolean
+          user_id: string
+          winner_player?: string | null
+        }
+        Update: {
+          carryover_enabled?: boolean
+          course_id?: string | null
+          course_name?: string
+          created_at?: string | null
+          date_played?: string
+          handicap_mode?: string
+          holes_played?: number
+          id?: string
+          is_finished?: boolean
+          players?: Json
+          skin_value?: number
+          use_handicaps?: boolean
+          user_id?: string
+          winner_player?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skins_games_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skins_holes: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          hole_number: number
+          id: string
+          is_carryover: boolean
+          par: number
+          player_scores: Json
+          skins_available: number
+          stroke_index: number | null
+          winner_player: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          hole_number: number
+          id?: string
+          is_carryover?: boolean
+          par?: number
+          player_scores?: Json
+          skins_available?: number
+          stroke_index?: number | null
+          winner_player?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          hole_number?: number
+          id?: string
+          is_carryover?: boolean
+          par?: number
+          player_scores?: Json
+          skins_available?: number
+          stroke_index?: number | null
+          winner_player?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skins_holes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "skins_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       umbriago_games: {
         Row: {
           course_id: string | null
