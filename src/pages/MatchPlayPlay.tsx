@@ -206,8 +206,6 @@ export default function MatchPlayPlay() {
         toast({ title: `${game.player_1} wins the hole!` });
       } else if (holeResult === -1) {
         toast({ title: `${game.player_2} wins the hole!` });
-      } else {
-        toast({ title: "Hole halved" });
       }
 
       if (matchFinished) {
@@ -422,19 +420,18 @@ export default function MatchPlayPlay() {
         </div>
 
         {/* Preview Result */}
-        <Card className="p-4 bg-muted/50">
-          <p className="text-center text-sm">
-            {scores.player1 < scores.player2 && (
-              <span className="text-blue-600 font-medium">{game.player_1} wins this hole</span>
-            )}
-            {scores.player2 < scores.player1 && (
-              <span className="text-red-600 font-medium">{game.player_2} wins this hole</span>
-            )}
-            {scores.player1 === scores.player2 && (
-              <span className="text-muted-foreground">Hole halved</span>
-            )}
-          </p>
-        </Card>
+        {scores.player1 !== scores.player2 && (
+          <Card className="p-4 bg-muted/50">
+            <p className="text-center text-sm">
+              {scores.player1 < scores.player2 && (
+                <span className="text-blue-600 font-medium">{game.player_1} wins this hole</span>
+              )}
+              {scores.player2 < scores.player1 && (
+                <span className="text-red-600 font-medium">{game.player_2} wins this hole</span>
+              )}
+            </p>
+          </Card>
+        )}
 
         {/* Hole History */}
         {holes.length > 0 && (
