@@ -317,6 +317,61 @@ export default function SkinsSetup() {
           </CardContent>
         </Card>
 
+        {/* Groups with Player Cards */}
+        {groups.map((group) => (
+          <Card key={group.id}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <Input
+                  value={group.name}
+                  onChange={(e) => updateGroupName(group.id, e.target.value)}
+                  className="font-semibold text-lg border-0 p-0 h-auto focus-visible:ring-0 bg-transparent"
+                />
+                {groups.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeGroup(group.id)}
+                    className="text-destructive"
+                  >
+                    <Trash2 size={18} />
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Player Cards */}
+              <div className="space-y-2">
+                {group.players.map((player) => (
+                  <SetupPlayerCard
+                    key={player.odId}
+                    player={player}
+                    onEdit={() => handleEditPlayer(group.id, player)}
+                    onRemove={!player.isCurrentUser ? () => removePlayerFromGroup(group.id, player.odId) : undefined}
+                    showTee={true}
+                  />
+                ))}
+              </div>
+
+              {/* Add Player Buttons */}
+              <SetupAddPlayerButtons
+                onAddFriend={() => openAddFriend(group.id)}
+                onAddGuest={() => openAddGuest(group.id)}
+              />
+            </CardContent>
+          </Card>
+        ))}
+
+        {/* Add Group Button */}
+        <Button
+          variant="outline"
+          onClick={addGroup}
+          className="w-full"
+        >
+          <Plus size={16} className="mr-2" />
+          Add Another Group
+        </Button>
+
         {/* Game Settings */}
         <Card>
           <CardHeader className="pb-3">
@@ -399,61 +454,6 @@ export default function SkinsSetup() {
             )}
           </CardContent>
         </Card>
-
-        {/* Groups with Player Cards */}
-        {groups.map((group) => (
-          <Card key={group.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <Input
-                  value={group.name}
-                  onChange={(e) => updateGroupName(group.id, e.target.value)}
-                  className="font-semibold text-lg border-0 p-0 h-auto focus-visible:ring-0 bg-transparent"
-                />
-                {groups.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeGroup(group.id)}
-                    className="text-destructive"
-                  >
-                    <Trash2 size={18} />
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Player Cards */}
-              <div className="space-y-2">
-                {group.players.map((player) => (
-                  <SetupPlayerCard
-                    key={player.odId}
-                    player={player}
-                    onEdit={() => handleEditPlayer(group.id, player)}
-                    onRemove={!player.isCurrentUser ? () => removePlayerFromGroup(group.id, player.odId) : undefined}
-                    showTee={true}
-                  />
-                ))}
-              </div>
-
-              {/* Add Player Buttons */}
-              <SetupAddPlayerButtons
-                onAddFriend={() => openAddFriend(group.id)}
-                onAddGuest={() => openAddGuest(group.id)}
-              />
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Add Group Button */}
-        <Button
-          variant="outline"
-          onClick={addGroup}
-          className="w-full"
-        >
-          <Plus size={16} className="mr-2" />
-          Add Another Group
-        </Button>
 
         {/* Summary */}
         <Card className="bg-muted/50">
