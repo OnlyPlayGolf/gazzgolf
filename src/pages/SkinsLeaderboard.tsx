@@ -62,7 +62,7 @@ export default function SkinsLeaderboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pb-16">
+      <div className="min-h-screen flex items-center justify-center pb-32">
         <div className="text-muted-foreground">Loading scorecard...</div>
       </div>
     );
@@ -70,7 +70,7 @@ export default function SkinsLeaderboard() {
 
   if (!game) {
     return (
-      <div className="min-h-screen flex items-center justify-center pb-16">
+      <div className="min-h-screen flex items-center justify-center pb-32">
         <div className="text-muted-foreground">Game not found</div>
       </div>
     );
@@ -304,7 +304,7 @@ export default function SkinsLeaderboard() {
   };
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-32 bg-background">
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {sortedPlayers.map((player, idx) => renderPlayerCard(player, idx))}
       </div>
