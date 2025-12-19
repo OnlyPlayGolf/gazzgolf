@@ -494,6 +494,10 @@ export default function RoundsPlay() {
       navigate('/scramble/setup');
       return;
     }
+    if (setupState.gameFormat === "skins") {
+      navigate('/skins/setup');
+      return;
+    }
     if (setupState.gameFormat === "stroke_play") {
       navigate('/stroke-play/setup');
       return;
@@ -750,6 +754,7 @@ export default function RoundsPlay() {
                     {[
                       { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
                       { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
+                      { id: "skins", label: "Skins", desc: "Win holes for skins" },
                       { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
                     ].map((fmt) => (
                       <div key={fmt.id} className="relative">
@@ -771,6 +776,7 @@ export default function RoundsPlay() {
                             saveState();
                             if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
                             else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
+                            else if (fmt.id === "skins") navigate('/skins/setup');
                             else navigate('/copenhagen/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
