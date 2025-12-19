@@ -1,21 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeft, Plus, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Users, MapPin } from "lucide-react";
+import { TopNavBar } from "@/components/TopNavBar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CourseSelectionDialog } from "@/components/CourseSelectionDialog";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SkinsPlayer } from "@/types/skins";
+
+interface Course {
+  id: string;
+  name: string;
+  location: string | null;
+}
 
 interface Player {
   odId: string;
@@ -37,8 +44,8 @@ export default function SkinsSetup() {
   const location = useLocation();
   const { toast } = useToast();
 
-  const [courseName, setCourseName] = useState("");
-  const [courseId, setCourseId] = useState<string | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [holesPlayed, setHolesPlayed] = useState(18);
   const [skinValue, setSkinValue] = useState(1);
   const [carryoverEnabled, setCarryoverEnabled] = useState(true);
@@ -47,7 +54,6 @@ export default function SkinsSetup() {
   const [groups, setGroups] = useState<Group[]>([
     { id: '1', name: 'Group 1', players: [] }
   ]);
-  const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Sheet states
@@ -59,63 +65,81 @@ export default function SkinsSetup() {
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [defaultTee, setDefaultTee] = useState("medium");
 
-  // Load course and players from session storage (from RoundsPlay page)
   useEffect(() => {
-    // Get default tee from app preferences
-    try {
-      const savedPrefs = localStorage.getItem('appPreferences');
-      if (savedPrefs) {
-        const prefs = JSON.parse(savedPrefs);
-        if (prefs.defaultTee) {
-          setDefaultTee(prefs.defaultTee);
-        }
-      }
-    } catch (e) {
-      console.error("Error reading app preferences:", e);
-    }
-
-    // Load course
-    const savedCourse = sessionStorage.getItem('selectedCourse');
-    if (savedCourse) {
+    const loadData = async () => {
+      // Get default tee from app preferences
       try {
-        const course = JSON.parse(savedCourse);
-        setCourseName(course.name);
-        setCourseId(course.id || null);
-      } catch (e) {
-        console.error("Error parsing saved course:", e);
-      }
-    } else if (location.state?.courseName) {
-      setCourseName(location.state.courseName);
-      setCourseId(location.state.courseId || null);
-    }
-
-    // Load players from groups
-    const savedGroups = sessionStorage.getItem('playGroups');
-    if (savedGroups) {
-      try {
-        const playGroups = JSON.parse(savedGroups);
-        const convertedGroups: Group[] = playGroups.map((pg: any, idx: number) => ({
-          id: String(idx + 1),
-          name: pg.name || `Group ${idx + 1}`,
-          players: pg.players.map((p: any, playerIdx: number) => ({
-            odId: p.odId || `player-${idx}-${playerIdx}-${Date.now()}`,
-            displayName: p.displayName || p.username || 'Player',
-            handicap: p.handicap ?? undefined,
-            teeColor: p.teeColor || 'medium',
-            isTemporary: p.isTemporary ?? true,
-            isCurrentUser: playerIdx === 0 && idx === 0, // First player in first group is current user
-          }))
-        }));
-        
-        // Only set if we have players
-        if (convertedGroups.some(g => g.players.length > 0)) {
-          setGroups(convertedGroups);
+        const savedPrefs = localStorage.getItem('appPreferences');
+        if (savedPrefs) {
+          const prefs = JSON.parse(savedPrefs);
+          if (prefs.defaultTee) {
+            setDefaultTee(prefs.defaultTee);
+          }
         }
       } catch (e) {
-        console.error("Error parsing saved groups:", e);
+        console.error("Error reading app preferences:", e);
       }
-    }
+
+      // Fetch courses
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select('id, name, location')
+        .order('name');
+      
+      if (coursesData) setCourses(coursesData);
+
+      // Load course from session storage
+      const savedCourse = sessionStorage.getItem('selectedCourse');
+      if (savedCourse) {
+        try {
+          const course = JSON.parse(savedCourse);
+          const matchingCourse = coursesData?.find(c => c.name === course.name);
+          if (matchingCourse) {
+            setSelectedCourseId(matchingCourse.id);
+          }
+        } catch (e) {
+          console.error("Error parsing saved course:", e);
+        }
+      } else if (location.state?.courseName) {
+        const matchingCourse = coursesData?.find(c => c.name === location.state.courseName);
+        if (matchingCourse) {
+          setSelectedCourseId(matchingCourse.id);
+        }
+      } else if (coursesData && coursesData.length > 0) {
+        setSelectedCourseId(coursesData[0].id);
+      }
+
+      // Load players from groups
+      const savedGroups = sessionStorage.getItem('playGroups');
+      if (savedGroups) {
+        try {
+          const playGroups = JSON.parse(savedGroups);
+          const convertedGroups: Group[] = playGroups.map((pg: any, idx: number) => ({
+            id: String(idx + 1),
+            name: pg.name || `Group ${idx + 1}`,
+            players: pg.players.map((p: any, playerIdx: number) => ({
+              odId: p.odId || `player-${idx}-${playerIdx}-${Date.now()}`,
+              displayName: p.displayName || p.username || 'Player',
+              handicap: p.handicap ?? undefined,
+              teeColor: p.teeColor || 'medium',
+              isTemporary: p.isTemporary ?? true,
+              isCurrentUser: playerIdx === 0 && idx === 0,
+            }))
+          }));
+          
+          if (convertedGroups.some(g => g.players.length > 0)) {
+            setGroups(convertedGroups);
+          }
+        } catch (e) {
+          console.error("Error parsing saved groups:", e);
+        }
+      }
+    };
+    
+    loadData();
   }, [location.state]);
+
+  const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
   const addGroup = () => {
     const newId = String(groups.length + 1);
@@ -200,7 +224,7 @@ export default function SkinsSetup() {
   const handleStartGame = async () => {
     const allPlayers = convertToSkinsPlayers();
     
-    if (!courseName) {
+    if (!selectedCourse) {
       toast({ title: "Please select a course", variant: "destructive" });
       return;
     }
@@ -222,8 +246,8 @@ export default function SkinsSetup() {
         .from("skins_games")
         .insert({
           user_id: user.id,
-          course_id: courseId,
-          course_name: courseName,
+          course_id: selectedCourseId,
+          course_name: selectedCourse.name,
           holes_played: holesPlayed,
           skin_value: skinValue,
           carryover_enabled: carryoverEnabled,
@@ -248,173 +272,176 @@ export default function SkinsSetup() {
   const totalPlayers = getAllPlayers().length;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="p-4 max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="rounded-full"
-            >
-              <ChevronLeft size={24} />
-            </Button>
-            <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Skins Setup</h1>
-              <p className="text-sm text-muted-foreground">Individual vs Individual</p>
-            </div>
-            <div className="w-10" />
-          </div>
+    <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
+      <TopNavBar />
+      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')} className="p-2">
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-2xl font-bold text-foreground">Skins Setup</h1>
         </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
-        {/* Multi-Group Info Banner */}
-        <Card className="p-4 bg-primary/10 border-primary/20">
-          <div className="flex items-start gap-3">
-            <Users className="h-5 w-5 text-primary mt-0.5" />
-            <div>
-              <p className="font-medium text-primary">Skins Across All Groups</p>
-              <p className="text-sm text-muted-foreground">
-                All {totalPlayers} players compete for skins together, regardless of which group they play in.
-              </p>
-            </div>
-          </div>
-        </Card>
 
         {/* Course Selection */}
-        <Card className="p-4">
-          <Label className="font-semibold mb-2 block">Course</Label>
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => setShowCourseDialog(true)}
-          >
-            {courseName || "Select a course..."}
-          </Button>
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <MapPin size={16} className="text-primary" />
+            Course
+          </Label>
+          <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a course" />
+            </SelectTrigger>
+            <SelectContent>
+              {courses.map((course) => (
+                <SelectItem key={course.id} value={course.id}>
+                  {course.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Multi-Group Info Banner */}
+        <Card className="bg-primary/10 border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Users className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <p className="font-medium text-primary">Skins Across All Groups</p>
+                <p className="text-sm text-muted-foreground">
+                  All {totalPlayers} players compete for skins together, regardless of which group they play in.
+                </p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Game Settings */}
-        <Card className="p-4 space-y-4">
-          <h3 className="font-semibold">Game Settings</h3>
-          
-          <div className="flex items-center justify-between">
-            <Label>Holes</Label>
-            <div className="flex gap-2">
-              <Button
-                variant={holesPlayed === 9 ? "default" : "outline"}
-                size="sm"
-                onClick={() => setHolesPlayed(9)}
-              >
-                9
-              </Button>
-              <Button
-                variant={holesPlayed === 18 ? "default" : "outline"}
-                size="sm"
-                onClick={() => setHolesPlayed(18)}
-              >
-                18
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label>Skin Value</Label>
-            <Input
-              type="number"
-              value={skinValue}
-              onChange={(e) => setSkinValue(Number(e.target.value) || 1)}
-              className="w-24 text-right"
-              min={1}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Carryover</Label>
-              <p className="text-xs text-muted-foreground">Ties carry skin to next hole</p>
-            </div>
-            <Switch
-              checked={carryoverEnabled}
-              onCheckedChange={setCarryoverEnabled}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Use Handicaps</Label>
-              <p className="text-xs text-muted-foreground">Apply net scoring</p>
-            </div>
-            <Switch
-              checked={useHandicaps}
-              onCheckedChange={setUseHandicaps}
-            />
-          </div>
-
-          {useHandicaps && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Game Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Scoring Mode</Label>
+              <Label>Holes</Label>
               <div className="flex gap-2">
                 <Button
-                  variant={handicapMode === 'net' ? "default" : "outline"}
+                  variant={holesPlayed === 9 ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setHandicapMode('net')}
+                  onClick={() => setHolesPlayed(9)}
                 >
-                  Net
+                  9
                 </Button>
                 <Button
-                  variant={handicapMode === 'gross' ? "default" : "outline"}
+                  variant={holesPlayed === 18 ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setHandicapMode('gross')}
+                  onClick={() => setHolesPlayed(18)}
                 >
-                  Gross
+                  18
                 </Button>
               </div>
             </div>
-          )}
+
+            <div className="flex items-center justify-between">
+              <Label>Skin Value</Label>
+              <Input
+                type="number"
+                value={skinValue}
+                onChange={(e) => setSkinValue(Number(e.target.value) || 1)}
+                className="w-24 text-right"
+                min={1}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Carryover</Label>
+                <p className="text-xs text-muted-foreground">Ties carry skin to next hole</p>
+              </div>
+              <Switch
+                checked={carryoverEnabled}
+                onCheckedChange={setCarryoverEnabled}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Use Handicaps</Label>
+                <p className="text-xs text-muted-foreground">Apply net scoring</p>
+              </div>
+              <Switch
+                checked={useHandicaps}
+                onCheckedChange={setUseHandicaps}
+              />
+            </div>
+
+            {useHandicaps && (
+              <div className="flex items-center justify-between">
+                <Label>Scoring Mode</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={handicapMode === 'net' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setHandicapMode('net')}
+                  >
+                    Net
+                  </Button>
+                  <Button
+                    variant={handicapMode === 'gross' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setHandicapMode('gross')}
+                  >
+                    Gross
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
 
         {/* Groups with Player Cards */}
         {groups.map((group) => (
-          <Card key={group.id} className="p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <Input
-                value={group.name}
-                onChange={(e) => updateGroupName(group.id, e.target.value)}
-                className="font-semibold text-lg border-0 p-0 h-auto focus-visible:ring-0"
-              />
-              {groups.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeGroup(group.id)}
-                  className="text-destructive"
-                >
-                  <Trash2 size={18} />
-                </Button>
-              )}
-            </div>
-
-            {/* Player Cards */}
-            <div className="space-y-2">
-              {group.players.map((player) => (
-                <SetupPlayerCard
-                  key={player.odId}
-                  player={player}
-                  onEdit={() => handleEditPlayer(group.id, player)}
-                  onRemove={!player.isCurrentUser ? () => removePlayerFromGroup(group.id, player.odId) : undefined}
-                  showTee={true}
+          <Card key={group.id}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <Input
+                  value={group.name}
+                  onChange={(e) => updateGroupName(group.id, e.target.value)}
+                  className="font-semibold text-lg border-0 p-0 h-auto focus-visible:ring-0 bg-transparent"
                 />
-              ))}
-            </div>
+                {groups.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeGroup(group.id)}
+                    className="text-destructive"
+                  >
+                    <Trash2 size={18} />
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Player Cards */}
+              <div className="space-y-2">
+                {group.players.map((player) => (
+                  <SetupPlayerCard
+                    key={player.odId}
+                    player={player}
+                    onEdit={() => handleEditPlayer(group.id, player)}
+                    onRemove={!player.isCurrentUser ? () => removePlayerFromGroup(group.id, player.odId) : undefined}
+                    showTee={true}
+                  />
+                ))}
+              </div>
 
-            {/* Add Player Buttons */}
-            <SetupAddPlayerButtons
-              onAddFriend={() => openAddFriend(group.id)}
-              onAddGuest={() => openAddGuest(group.id)}
-            />
+              {/* Add Player Buttons */}
+              <SetupAddPlayerButtons
+                onAddFriend={() => openAddFriend(group.id)}
+                onAddGuest={() => openAddGuest(group.id)}
+              />
+            </CardContent>
           </Card>
         ))}
 
@@ -429,42 +456,33 @@ export default function SkinsSetup() {
         </Button>
 
         {/* Summary */}
-        <Card className="p-4 bg-muted/50">
-          <div className="flex items-center justify-between text-sm">
-            <span>Total Players</span>
-            <Badge variant="secondary">{totalPlayers}</Badge>
-          </div>
-          <div className="flex items-center justify-between text-sm mt-2">
-            <span>Groups</span>
-            <Badge variant="secondary">{groups.length}</Badge>
-          </div>
-          <div className="flex items-center justify-between text-sm mt-2">
-            <span>Total Skins Available</span>
-            <Badge variant="secondary">{holesPlayed}</Badge>
-          </div>
+        <Card className="bg-muted/50">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Total Players</span>
+              <Badge variant="secondary">{totalPlayers}</Badge>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Groups</span>
+              <Badge variant="secondary">{groups.length}</Badge>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Total Skins Available</span>
+              <Badge variant="secondary">{holesPlayed}</Badge>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Start Game */}
         <Button
           onClick={handleStartGame}
-          disabled={loading || totalPlayers < 2 || !courseName}
+          disabled={loading || totalPlayers < 2 || !selectedCourse}
           className="w-full"
           size="lg"
         >
           {loading ? "Creating..." : "Start Skins Game"}
         </Button>
       </div>
-
-      {/* Course Selection Dialog */}
-      <CourseSelectionDialog
-        isOpen={showCourseDialog}
-        onClose={() => setShowCourseDialog(false)}
-        onSelectCourse={(course) => {
-          setCourseName(course.name);
-          setCourseId(course.id);
-          setShowCourseDialog(false);
-        }}
-      />
 
       {/* Add Friend Sheet */}
       <SetupAddFriendSheet
