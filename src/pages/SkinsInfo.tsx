@@ -55,7 +55,7 @@ export default function SkinsInfo() {
 
   if (loading || !game) {
     return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
+      <div className="min-h-screen pb-32 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
         {gameId && <SkinsBottomTabBar gameId={gameId} />}
       </div>
@@ -82,7 +82,7 @@ export default function SkinsInfo() {
   const sortedPlayers = [...game.players].sort((a, b) => (skinsWon[b.name] || 0) - (skinsWon[a.name] || 0));
 
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen pb-32 bg-gradient-to-b from-background to-muted/20">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
         {/* Game Details */}
         <Card>

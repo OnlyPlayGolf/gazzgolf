@@ -81,7 +81,7 @@ export default function SkinsSettings() {
 
   if (loading || !game) {
     return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
+      <div className="min-h-screen pb-32 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
         {gameId && <SkinsBottomTabBar gameId={gameId} />}
       </div>
@@ -89,7 +89,7 @@ export default function SkinsSettings() {
   }
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-32 bg-background">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
         <h1 className="text-2xl font-bold">Settings</h1>
 

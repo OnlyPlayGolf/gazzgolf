@@ -62,7 +62,7 @@ export default function SkinsSummary() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
+      <div className="min-h-screen pb-32 flex items-center justify-center">
         <div className="text-muted-foreground">Loading summary...</div>
         {gameId && <SkinsBottomTabBar gameId={gameId} />}
       </div>
@@ -71,7 +71,7 @@ export default function SkinsSummary() {
 
   if (!game) {
     return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
+      <div className="min-h-screen pb-32 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
         {gameId && <SkinsBottomTabBar gameId={gameId} />}
       </div>
@@ -93,7 +93,7 @@ export default function SkinsSummary() {
   const skinsCarriedOver = holes.filter(h => h.is_carryover).length;
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-32 bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="p-4 max-w-2xl mx-auto">
