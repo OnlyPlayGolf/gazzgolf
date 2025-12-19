@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, QrCode, Users, Target, TrendingUp, BarChart3, Menu, ChevronRight, User as UserIcon, Settings as SettingsIcon, Info, MessageSquare, Crown, LogOut, HelpCircle } from "lucide-react";
+import { Camera, QrCode, Users, Menu, ChevronRight, User as UserIcon, Settings as SettingsIcon, Info, MessageSquare, Crown, LogOut, HelpCircle } from "lucide-react";
+import { StatisticsOverview } from "@/components/statistics/StatisticsOverview";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -535,43 +536,7 @@ export default function UserProfile() {
         />
 
         {/* Statistics section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-foreground">Statistics</h2>
-            <Button variant="link" className="text-primary">
-              View all
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Card className="bg-card hover:bg-accent/50 transition-colors cursor-pointer">
-              <CardContent className="p-4 text-center">
-                <Target className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs text-muted-foreground mb-1">Goals</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card hover:bg-accent/50 transition-colors cursor-pointer">
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs text-muted-foreground mb-1">Overview</p>
-                {averageScore !== null && (
-                  <p className="text-2xl font-bold text-foreground">{averageScore}</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-              onClick={() => navigate('/performance-stats')}
-            >
-              <CardContent className="p-4 text-center">
-                <BarChart3 className="h-6 w-6 mx-auto mb-2 text-primary" />
-                <p className="text-xs text-muted-foreground mb-1">Performance Stats</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        <StatisticsOverview userId={profile.id} />
 
         {/* Posts Section */}
         <div className="mb-6">
