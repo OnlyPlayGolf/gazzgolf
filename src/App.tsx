@@ -135,6 +135,8 @@ import SkinsLeaderboard from "./pages/SkinsLeaderboard";
 import SkinsSettings from "./pages/SkinsSettings";
 import SkinsSummary from "./pages/SkinsSummary";
 import HowToPlaySkins from "./pages/HowToPlaySkins";
+import Statistics from "./pages/Statistics";
+import StatDetail from "./pages/StatDetail";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -168,6 +170,8 @@ const App = () => {
             <Route path="/groups" element={<Groups />} />
             <Route path="/profile-settings" element={<ProfileSettings />} />
             <Route path="/performance-stats" element={<PerformanceStats />} />
+            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/statistics/:category" element={<StatDetail />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/menu" element={<Menu />} />
