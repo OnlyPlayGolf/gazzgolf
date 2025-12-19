@@ -14,7 +14,7 @@ export const BottomTabBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, umbriago, wolf, copenhagen, match play, and scramble
+  // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, umbriago, wolf, copenhagen, match play, scramble, and skins
   const hideTabBar = (
     (location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds') ||
     location.pathname.startsWith('/drill/') ||
@@ -23,7 +23,8 @@ export const BottomTabBar = () => {
     location.pathname.startsWith('/copenhagen/') ||
     location.pathname.startsWith('/match-play/') ||
     location.pathname.startsWith('/best-ball/') ||
-    location.pathname.startsWith('/scramble/')
+    location.pathname.startsWith('/scramble/') ||
+    location.pathname.startsWith('/skins/')
   );
   if (hideTabBar) return null;
 
