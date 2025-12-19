@@ -1,6 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { FileText, Info, Users, Trophy, Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface MatchPlayBottomTabBarProps {
   gameId: string;
@@ -9,36 +8,38 @@ interface MatchPlayBottomTabBarProps {
 export function MatchPlayBottomTabBar({ gameId }: MatchPlayBottomTabBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const currentPath = location.pathname;
 
   const tabs = [
-    { id: "play", label: "Enter Score", icon: FileText, path: `/match-play/${gameId}/play` },
-    { id: "info", label: "Game Info", icon: Info, path: `/match-play/${gameId}/info` },
-    { id: "feed", label: "Game Feed", icon: Users, path: `/match-play/${gameId}/feed` },
-    { id: "leaderboard", label: "Leaderboards", icon: Trophy, path: `/match-play/${gameId}/leaderboard` },
+    { id: "play", label: "Enter score", icon: Pencil, path: `/match-play/${gameId}/play` },
+    { id: "info", label: "Game info", icon: Info, path: `/match-play/${gameId}/info` },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/match-play/${gameId}/feed` },
+    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/match-play/${gameId}/leaderboard` },
     { id: "settings", label: "Settings", icon: Settings, path: `/match-play/${gameId}/settings` },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-      <div className="flex justify-around items-center h-16 max-w-2xl mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+      <div className="flex items-center justify-around max-w-2xl mx-auto">
         {tabs.map((tab) => {
-          const isActive = currentPath === tab.path;
+          const Icon = tab.icon;
+          const isActive = location.pathname === tab.path;
+          
           return (
             <button
               key={tab.id}
               onClick={() => navigate(tab.path)}
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              )}
+              className={`flex flex-col items-center gap-1 py-3 px-4 flex-1 transition-colors ${
+                isActive 
+                  ? "text-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <tab.icon size={20} />
-              <span className="text-[10px] mt-1">{tab.label}</span>
+              <Icon size={20} />
+              <span className="text-xs font-medium">{tab.label}</span>
             </button>
           );
         })}
       </div>
-    </nav>
+    </div>
   );
 }

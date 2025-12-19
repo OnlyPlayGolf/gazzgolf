@@ -297,45 +297,55 @@ export default function MatchPlayPlay() {
   const currentHolesRemaining = totalHoles - (holes.length);
 
   return (
-    <div className="min-h-screen pb-44 bg-background">
+    <div className="min-h-screen pb-24 bg-background">
       {/* Header */}
-      <div className="bg-card border-b border-border p-4">
-        <div className="max-w-2xl mx-auto">
+      <div className="bg-card border-b border-border">
+        <div className="p-4 max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl font-bold">Match Play</h1>
-            <Button variant="ghost" size="sm" onClick={() => setShowExitDialog(true)}>
-              Exit
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowExitDialog(true)}
+              className="rounded-full"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+            <div className="flex-1 text-center">
+              <h1 className="text-xl font-bold">Match Play</h1>
+              <p className="text-sm text-muted-foreground">{game.course_name}</p>
+            </div>
+            <div className="w-10" />
+          </div>
+        </div>
+
+        {/* Hole Navigation Bar */}
+        <div className="bg-[hsl(120,20%,85%)] py-4 px-4">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("prev")}
+              disabled={currentHoleIndex === 0}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+
+            <div className="text-center">
+              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
+              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("next")}
+              disabled={saving}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronRight size={24} />
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">{game.course_name}</p>
-        </div>
-      </div>
-
-      {/* Hole Navigation */}
-      <div className="bg-muted/50 p-3 border-b border-border">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigateHole("prev")}
-            disabled={currentHoleIndex === 0}
-          >
-            <ChevronLeft size={20} />
-            Prev
-          </Button>
-          <div className="text-center">
-            <p className="text-lg font-bold">Hole {currentHole}</p>
-            <p className="text-sm text-muted-foreground">Par {par}</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigateHole("next")}
-            disabled={saving}
-          >
-            {currentHole >= totalHoles ? "Finish" : "Next"}
-            <ChevronRight size={20} />
-          </Button>
         </div>
       </div>
 
