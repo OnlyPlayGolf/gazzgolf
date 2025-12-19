@@ -74,20 +74,38 @@ export default function SkinsPlay() {
 
   useEffect(() => {
     // Calculate carryover count from previous holes
-    if (holes.length > 0 && game?.carryover_enabled) {
-      let carry = 1;
-      for (let i = holes.length - 1; i >= 0; i--) {
-        if (holes[i].is_carryover) {
-          carry++;
-        } else {
-          break;
-        }
-      }
-      setCarryoverCount(carry);
-    } else {
+    // For hole N, we look at all completed holes (1 to N-1) and count consecutive carryovers from the end
+    if (!game) {
       setCarryoverCount(1);
+      return;
     }
-  }, [holes, game?.carryover_enabled]);
+    
+    if (holes.length === 0) {
+      // First hole always starts with 1 skin
+      setCarryoverCount(1);
+      return;
+    }
+    
+    if (!game.carryover_enabled) {
+      // Carryovers disabled - always 1 skin per hole
+      setCarryoverCount(1);
+      return;
+    }
+    
+    // Count consecutive carryovers from the most recent hole backwards
+    let consecutiveCarryovers = 0;
+    for (let i = holes.length - 1; i >= 0; i--) {
+      if (holes[i].is_carryover) {
+        consecutiveCarryovers++;
+      } else {
+        // Found a hole where someone won - stop counting
+        break;
+      }
+    }
+    
+    // Skins available = 1 (for this hole) + number of previous carryovers
+    setCarryoverCount(1 + consecutiveCarryovers);
+  }, [holes, game]);
 
   const fetchGame = async () => {
     try {
@@ -174,12 +192,23 @@ export default function SkinsPlay() {
 
     // Calculate skins result
     const useNet = game.use_handicaps && game.handicap_mode === 'net';
+    
+    console.log('Skins calculation:', {
+      hole: currentHole,
+      carryoverEnabled: game.carryover_enabled,
+      carryoverCount,
+      playerScores,
+      useNet,
+    });
+    
     const result = calculateSkinsHoleResult(
       playerScores,
       useNet,
       game.carryover_enabled,
       carryoverCount
     );
+    
+    console.log('Skins result:', result);
 
     const existingHole = holes.find(h => h.hole_number === currentHole);
 
