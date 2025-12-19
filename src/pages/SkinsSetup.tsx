@@ -10,13 +10,26 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CourseSelectionDialog } from "@/components/CourseSelectionDialog";
+import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
+import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
+import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
+import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
+import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SkinsPlayer } from "@/types/skins";
-import { formatHandicap } from "@/utils/skinsScoring";
+
+interface Player {
+  odId: string;
+  displayName: string;
+  handicap?: number;
+  teeColor?: string;
+  isTemporary?: boolean;
+  isCurrentUser?: boolean;
+}
 
 interface Group {
   id: string;
   name: string;
-  players: SkinsPlayer[];
+  players: Player[];
 }
 
 export default function SkinsSetup() {
@@ -37,8 +50,30 @@ export default function SkinsSetup() {
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Sheet states
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [showAddFriendSheet, setShowAddFriendSheet] = useState(false);
+  const [showAddGuestSheet, setShowAddGuestSheet] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [showEditSheet, setShowEditSheet] = useState(false);
+  const [defaultTee, setDefaultTee] = useState("medium");
+
   // Load course and players from session storage (from RoundsPlay page)
   useEffect(() => {
+    // Get default tee from app preferences
+    try {
+      const savedPrefs = localStorage.getItem('appPreferences');
+      if (savedPrefs) {
+        const prefs = JSON.parse(savedPrefs);
+        if (prefs.defaultTee) {
+          setDefaultTee(prefs.defaultTee);
+        }
+      }
+    } catch (e) {
+      console.error("Error reading app preferences:", e);
+    }
+
     // Load course
     const savedCourse = sessionStorage.getItem('selectedCourse');
     if (savedCourse) {
@@ -62,11 +97,13 @@ export default function SkinsSetup() {
         const convertedGroups: Group[] = playGroups.map((pg: any, idx: number) => ({
           id: String(idx + 1),
           name: pg.name || `Group ${idx + 1}`,
-          players: pg.players.map((p: any) => ({
-            name: p.displayName || p.username || 'Player',
-            handicap: p.handicap ?? null,
-            tee: p.teeColor || null,
-            group_name: pg.name || `Group ${idx + 1}`,
+          players: pg.players.map((p: any, playerIdx: number) => ({
+            odId: p.odId || `player-${idx}-${playerIdx}-${Date.now()}`,
+            displayName: p.displayName || p.username || 'Player',
+            handicap: p.handicap ?? undefined,
+            teeColor: p.teeColor || 'medium',
+            isTemporary: p.isTemporary ?? true,
+            isCurrentUser: playerIdx === 0 && idx === 0, // First player in first group is current user
           }))
         }));
         
@@ -90,70 +127,78 @@ export default function SkinsSetup() {
     setGroups(groups.filter(g => g.id !== groupId));
   };
 
-  const addPlayerToGroup = (groupId: string) => {
-    setGroups(groups.map(g => {
-      if (g.id === groupId) {
-        const playerNum = g.players.length + 1;
-        return {
-          ...g,
-          players: [...g.players, {
-            name: `Player ${playerNum}`,
-            handicap: null,
-            tee: null,
-            group_name: g.name,
-          }]
-        };
-      }
-      return g;
-    }));
-  };
-
-  const removePlayerFromGroup = (groupId: string, playerIndex: number) => {
-    setGroups(groups.map(g => {
-      if (g.id === groupId) {
-        return {
-          ...g,
-          players: g.players.filter((_, i) => i !== playerIndex)
-        };
-      }
-      return g;
-    }));
-  };
-
-  const updatePlayer = (groupId: string, playerIndex: number, updates: Partial<SkinsPlayer>) => {
-    setGroups(groups.map(g => {
-      if (g.id === groupId) {
-        return {
-          ...g,
-          players: g.players.map((p, i) => 
-            i === playerIndex ? { ...p, ...updates } : p
-          )
-        };
-      }
-      return g;
-    }));
-  };
-
   const updateGroupName = (groupId: string, name: string) => {
+    setGroups(groups.map(g => g.id === groupId ? { ...g, name } : g));
+  };
+
+  const handleAddPlayerToGroup = (groupId: string, player: Player) => {
     setGroups(groups.map(g => {
       if (g.id === groupId) {
-        // Also update group_name for all players in this group
+        return { ...g, players: [...g.players, player] };
+      }
+      return g;
+    }));
+    setShowAddFriendSheet(false);
+    setShowAddGuestSheet(false);
+  };
+
+  const removePlayerFromGroup = (groupId: string, playerId: string) => {
+    setGroups(groups.map(g => {
+      if (g.id === groupId) {
+        return { ...g, players: g.players.filter(p => p.odId !== playerId) };
+      }
+      return g;
+    }));
+  };
+
+  const handleEditPlayer = (groupId: string, player: Player) => {
+    setEditingPlayer(player);
+    setEditingGroupId(groupId);
+    setShowEditSheet(true);
+  };
+
+  const handleSavePlayer = (updatedPlayer: Player) => {
+    if (!editingGroupId) return;
+    setGroups(groups.map(g => {
+      if (g.id === editingGroupId) {
         return {
           ...g,
-          name,
-          players: g.players.map(p => ({ ...p, group_name: name }))
+          players: g.players.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p)
         };
       }
       return g;
     }));
   };
 
-  const getAllPlayers = (): SkinsPlayer[] => {
+  const openAddFriend = (groupId: string) => {
+    setActiveGroupId(groupId);
+    setShowAddFriendSheet(true);
+  };
+
+  const openAddGuest = (groupId: string) => {
+    setActiveGroupId(groupId);
+    setShowAddGuestSheet(true);
+  };
+
+  const getAllPlayers = (): Player[] => {
     return groups.flatMap(g => g.players);
   };
 
+  const getAllPlayerIds = (): string[] => {
+    return groups.flatMap(g => g.players.map(p => p.odId));
+  };
+
+  const convertToSkinsPlayers = (): SkinsPlayer[] => {
+    return groups.flatMap(g => g.players.map(p => ({
+      name: p.displayName,
+      handicap: p.handicap ?? null,
+      tee: p.teeColor || null,
+      group_name: g.name,
+    })));
+  };
+
   const handleStartGame = async () => {
-    const allPlayers = getAllPlayers();
+    const allPlayers = convertToSkinsPlayers();
     
     if (!courseName) {
       toast({ title: "Please select a course", variant: "destructive" });
@@ -331,7 +376,7 @@ export default function SkinsSetup() {
           )}
         </Card>
 
-        {/* Groups */}
+        {/* Groups with Player Cards */}
         {groups.map((group) => (
           <Card key={group.id} className="p-4 space-y-4">
             <div className="flex items-center justify-between">
@@ -352,50 +397,24 @@ export default function SkinsSetup() {
               )}
             </div>
 
-            {group.players.map((player, index) => (
-              <div key={index} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    value={player.name}
-                    onChange={(e) => updatePlayer(group.id, index, { name: e.target.value })}
-                    placeholder="Player name"
-                    className="h-9"
-                  />
-                  {useHandicaps && (
-                    <div className="flex items-center gap-2">
-                      <Label className="text-xs">HCP:</Label>
-                      <Input
-                        type="number"
-                        value={player.handicap ?? ''}
-                        onChange={(e) => updatePlayer(group.id, index, { 
-                          handicap: e.target.value ? Number(e.target.value) : null 
-                        })}
-                        className="h-8 w-20"
-                        step="0.1"
-                      />
-                    </div>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removePlayerFromGroup(group.id, index)}
-                  className="text-destructive"
-                >
-                  <Trash2 size={16} />
-                </Button>
-              </div>
-            ))}
+            {/* Player Cards */}
+            <div className="space-y-2">
+              {group.players.map((player) => (
+                <SetupPlayerCard
+                  key={player.odId}
+                  player={player}
+                  onEdit={() => handleEditPlayer(group.id, player)}
+                  onRemove={!player.isCurrentUser ? () => removePlayerFromGroup(group.id, player.odId) : undefined}
+                  showTee={true}
+                />
+              ))}
+            </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addPlayerToGroup(group.id)}
-              className="w-full"
-            >
-              <Plus size={16} className="mr-1" />
-              Add Player to {group.name}
-            </Button>
+            {/* Add Player Buttons */}
+            <SetupAddPlayerButtons
+              onAddFriend={() => openAddFriend(group.id)}
+              onAddGuest={() => openAddGuest(group.id)}
+            />
           </Card>
         ))}
 
@@ -436,6 +455,7 @@ export default function SkinsSetup() {
         </Button>
       </div>
 
+      {/* Course Selection Dialog */}
       <CourseSelectionDialog
         isOpen={showCourseDialog}
         onClose={() => setShowCourseDialog(false)}
@@ -444,6 +464,31 @@ export default function SkinsSetup() {
           setCourseId(course.id);
           setShowCourseDialog(false);
         }}
+      />
+
+      {/* Add Friend Sheet */}
+      <SetupAddFriendSheet
+        isOpen={showAddFriendSheet}
+        onClose={() => setShowAddFriendSheet(false)}
+        onAddPlayer={(player) => activeGroupId && handleAddPlayerToGroup(activeGroupId, player)}
+        existingPlayerIds={getAllPlayerIds()}
+        defaultTee={defaultTee}
+      />
+
+      {/* Add Guest Sheet */}
+      <SetupAddGuestSheet
+        isOpen={showAddGuestSheet}
+        onClose={() => setShowAddGuestSheet(false)}
+        onAddPlayer={(player) => activeGroupId && handleAddPlayerToGroup(activeGroupId, player)}
+        defaultTee={defaultTee}
+      />
+
+      {/* Edit Player Sheet */}
+      <SetupPlayerEditSheet
+        isOpen={showEditSheet}
+        onClose={() => setShowEditSheet(false)}
+        player={editingPlayer}
+        onSave={handleSavePlayer}
       />
     </div>
   );
