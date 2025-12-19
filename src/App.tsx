@@ -129,6 +129,10 @@ import ScrambleSummary from "./pages/ScrambleSummary";
 import HowToPlayScramble from "./pages/HowToPlayScramble";
 import SkinsSetup from "./pages/SkinsSetup";
 import SkinsPlay from "./pages/SkinsPlay";
+import SkinsInfo from "./pages/SkinsInfo";
+import SkinsFeed from "./pages/SkinsFeed";
+import SkinsLeaderboard from "./pages/SkinsLeaderboard";
+import SkinsSettings from "./pages/SkinsSettings";
 import SkinsSummary from "./pages/SkinsSummary";
 import HowToPlaySkins from "./pages/HowToPlaySkins";
 
@@ -253,6 +257,10 @@ const App = () => {
             <Route path="/skins/how-to-play" element={<HowToPlaySkins />} />
             <Route path="/skins/setup" element={<SkinsSetup />} />
             <Route path="/skins/:gameId/play" element={<SkinsPlay />} />
+            <Route path="/skins/:gameId/info" element={<SkinsInfo />} />
+            <Route path="/skins/:gameId/feed" element={<SkinsFeed />} />
+            <Route path="/skins/:gameId/leaderboard" element={<SkinsLeaderboard />} />
+            <Route path="/skins/:gameId/settings" element={<SkinsSettings />} />
             <Route path="/skins/:gameId/summary" element={<SkinsSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
