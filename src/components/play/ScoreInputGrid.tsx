@@ -10,10 +10,15 @@ interface ScoreInputGridProps {
 }
 
 const getScoreLabel = (score: number, par: number): string | null => {
+  if (score === 1) return "Hole in One";
   const diff = score - par;
+  if (diff === -3) return "Albatross";
+  if (diff === -2) return "Eagle";
+  if (diff === -1) return "Birdie";
   if (diff === 0) return "Par";
   if (diff === 1) return "Bogey";
   if (diff === 2) return "Double Bogey";
+  if (diff === 3) return "Triple Bogey";
   return null;
 };
 
