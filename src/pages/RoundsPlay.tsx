@@ -776,7 +776,7 @@ export default function RoundsPlay() {
                             saveState();
                             if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
                             else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
-                            else if (fmt.id === "skins") navigate('/skins/setup');
+                            else if (fmt.id === "skins") navigate('/skins/how-to-play');
                             else navigate('/copenhagen/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
