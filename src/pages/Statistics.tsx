@@ -23,7 +23,7 @@ import {
 } from "@/utils/statisticsCalculations";
 import { cn } from "@/lib/utils";
 
-type TimeFilter = 'all' | 'year' | 'month';
+type TimeFilter = 'all' | 'year' | 'last5' | 'last10' | 'last20' | 'last50';
 
 const StatLevelBadge = ({ level }: { level: StatLevel }) => {
   if (level === 'strength') {
@@ -226,7 +226,10 @@ export default function Statistics() {
             <SelectContent className="bg-card">
               <SelectItem value="all">All Time</SelectItem>
               <SelectItem value="year">This Year</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="last50">Last 50 Rounds</SelectItem>
+              <SelectItem value="last20">Last 20 Rounds</SelectItem>
+              <SelectItem value="last10">Last 10 Rounds</SelectItem>
+              <SelectItem value="last5">Last 5 Rounds</SelectItem>
             </SelectContent>
           </Select>
         </div>
