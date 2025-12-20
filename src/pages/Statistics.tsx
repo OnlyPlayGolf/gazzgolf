@@ -19,11 +19,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   fetchUserStats, formatScore, formatSG, formatPercentage, 
   getSGLevel, getStatInsights, getDrillRecommendations,
-  AllStats, StatLevel, StatInsight, DrillRecommendation 
+  AllStats, StatLevel, StatInsight, DrillRecommendation, StatsFilter
 } from "@/utils/statisticsCalculations";
 import { cn } from "@/lib/utils";
 
-type TimeFilter = 'all' | 'year' | 'last5' | 'last10' | 'last20' | 'last50';
+type TimeFilter = StatsFilter;
 
 const StatLevelBadge = ({ level }: { level: StatLevel }) => {
   if (level === 'strength') {
@@ -168,6 +168,7 @@ export default function Statistics() {
 
   useEffect(() => {
     const loadStats = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         navigate('/auth');
@@ -175,7 +176,7 @@ export default function Statistics() {
       }
 
       try {
-        const data = await fetchUserStats(user.id);
+        const data = await fetchUserStats(user.id, timeFilter);
         setStats(data);
         setInsights(getStatInsights(data));
         setDrillRecs(getDrillRecommendations(data));
@@ -188,6 +189,17 @@ export default function Statistics() {
 
     loadStats();
   }, [navigate, timeFilter]);
+
+  const getFilterLabel = () => {
+    switch (timeFilter) {
+      case 'last5': return 'Last 5 Rounds';
+      case 'last10': return 'Last 10 Rounds';
+      case 'last20': return 'Last 20 Rounds';
+      case 'last50': return 'Last 50 Rounds';
+      case 'year': return 'This Year';
+      default: return 'All Time';
+    }
+  };
 
   if (loading) {
     return (
@@ -212,7 +224,7 @@ export default function Statistics() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Statistics</h1>
             <p className="text-sm text-muted-foreground">
-              {stats?.roundsPlayed || 0} rounds analyzed
+              {stats?.roundsPlayed || 0} {stats?.roundsPlayed === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
             </p>
           </div>
         </div>
