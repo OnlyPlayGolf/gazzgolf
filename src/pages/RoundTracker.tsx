@@ -209,10 +209,14 @@ export default function RoundTracker() {
           par: currentHole.par,
           score: newScore,
         }, {
-          onConflict: 'round_id,player_id,hole_number'
+          onConflict: 'round_id,player_id,hole_number',
+          ignoreDuplicates: false
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Upsert error:", error);
+        throw error;
+      }
     } catch (error: any) {
       console.error("Error saving score:", error);
       toast({
@@ -259,12 +263,8 @@ export default function RoundTracker() {
   };
 
   const handleFinishRound = () => {
-    // Navigate based on round origin
-    if (round?.origin === 'play') {
-      navigate('/played-rounds');
-    } else {
-      navigate('/rounds');
-    }
+    // Navigate to round summary to show results and share option
+    navigate(`/rounds/${roundId}/summary`);
   };
 
   const handleDeleteRound = async () => {
