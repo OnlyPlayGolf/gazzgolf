@@ -401,6 +401,12 @@ export default function WolfSetup() {
           </CardContent>
         </Card>
 
+        {!shuffled && players.length >= 3 && (
+          <p className="text-sm text-muted-foreground text-center">
+            Tap "Randomize Order" above to set the tee-off order before starting
+          </p>
+        )}
+        
         <Button 
           onClick={handleStartGame} 
           disabled={loading || players.length < 3 || !shuffled} 
