@@ -32,7 +32,7 @@ export function AddCourseDialog({ isOpen, onClose, onCourseAdded }: AddCourseDia
   const [courseName, setCourseName] = useState("");
   const [courseLocation, setCourseLocation] = useState("");
   const [holeCount, setHoleCount] = useState<9 | 18>(18);
-  const [teeColor, setTeeColor] = useState("White");
+  const [selectedTee, setSelectedTee] = useState("white_distance");
   const [holes, setHoles] = useState<HoleData[]>(() => 
     Array.from({ length: 18 }, (_, i) => ({
       hole_number: i + 1,
@@ -81,16 +81,13 @@ export function AddCourseDialog({ isOpen, onClose, onCourseAdded }: AddCourseDia
 
       if (courseError) throw courseError;
 
-      // Prepare hole data with the selected tee color
-      const teeColorKey = `${teeColor.toLowerCase()}_distance` as 
-        "white_distance" | "yellow_distance" | "blue_distance" | "red_distance" | "orange_distance";
-
+      // Prepare hole data with the selected tee
       const holesData = holes.slice(0, holeCount).map(hole => ({
         course_id: courseData.id,
         hole_number: hole.hole_number,
         par: hole.par,
         stroke_index: hole.stroke_index,
-        [teeColorKey]: hole.distance || null
+        [selectedTee]: hole.distance || null
       }));
 
       const { error: holesError } = await supabase
@@ -131,7 +128,14 @@ export function AddCourseDialog({ isOpen, onClose, onCourseAdded }: AddCourseDia
     }
   };
 
-  const teeColors = ["White", "Yellow", "Blue", "Red", "Orange"];
+  // Map difficulty names to database column names
+  const teeOptions = [
+    { label: "Longest", dbColumn: "orange_distance" },
+    { label: "Long", dbColumn: "blue_distance" },
+    { label: "Medium", dbColumn: "white_distance" },
+    { label: "Short", dbColumn: "yellow_distance" },
+    { label: "Shortest", dbColumn: "red_distance" },
+  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -195,21 +199,21 @@ export function AddCourseDialog({ isOpen, onClose, onCourseAdded }: AddCourseDia
               </div>
             </div>
 
-            {/* Tee Color Selection */}
+            {/* Tee Selection */}
             <div className="space-y-2">
-              <Label>Tee Color for Distances</Label>
+              <Label>Tee Box for Distances</Label>
               <div className="flex flex-wrap gap-2">
-                {teeColors.map((color) => (
+                {teeOptions.map((tee) => (
                   <button
-                    key={color}
-                    onClick={() => setTeeColor(color)}
+                    key={tee.dbColumn}
+                    onClick={() => setSelectedTee(tee.dbColumn)}
                     className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                      teeColor === color
+                      selectedTee === tee.dbColumn
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    {color}
+                    {tee.label}
                   </button>
                 ))}
               </div>
