@@ -14,6 +14,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
+
 interface TeamScore {
   team: ScrambleTeam;
   total: number;
@@ -26,6 +32,7 @@ export default function ScrambleLeaderboard() {
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,6 +54,22 @@ export default function ScrambleLeaderboard() {
       // Auto-expand first team
       if (teamsData.length > 0) {
         setExpandedTeam(teamsData[0].id);
+      }
+
+      // Fetch course holes for scorecard structure
+      if (gameData.course_id) {
+        const { data: courseHolesData } = await supabase
+          .from('course_holes')
+          .select('hole_number, par, stroke_index')
+          .eq('course_id', gameData.course_id)
+          .order('hole_number');
+
+        if (courseHolesData) {
+          const filteredHoles = gameData.holes_played === 9 
+            ? courseHolesData.slice(0, 9) 
+            : courseHolesData;
+          setCourseHoles(filteredHoles);
+        }
       }
     }
 
@@ -101,8 +124,19 @@ export default function ScrambleLeaderboard() {
   };
 
   const teamScores = calculateTeamScores();
-  const frontNine = holes.filter(h => h.hole_number <= 9);
-  const backNine = holes.filter(h => h.hole_number > 9);
+
+  // Create a map for quick hole data lookup
+  const holesMap = new Map(holes.map(h => [h.hole_number, h]));
+
+  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
+  const backNine = courseHoles.filter(h => h.hole_number > 9);
+
+  const getTeamScore = (holeNumber: number, teamId: string) => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
+    const score = hole.team_scores[teamId];
+    return score !== null && score !== undefined ? score : null;
+  };
 
   if (!game) {
     return (
@@ -153,7 +187,7 @@ export default function ScrambleLeaderboard() {
         </div>
 
         {/* Scorecard Table - Only shown when expanded */}
-        {isExpanded && holes.length > 0 && (
+        {isExpanded && courseHoles.length > 0 && (
           <>
             {/* Front 9 */}
             <div className="overflow-x-auto">
@@ -171,6 +205,15 @@ export default function ScrambleLeaderboard() {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                        {hole.stroke_index}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                     {frontNine.map(hole => (
                       <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -184,18 +227,18 @@ export default function ScrambleLeaderboard() {
                   <TableRow className="font-bold">
                     <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                     {frontNine.map(hole => {
-                      const score = hole.team_scores[ts.team.id];
+                      const score = getTeamScore(hole.hole_number, ts.team.id);
                       return (
                         <TableCell 
                           key={hole.hole_number} 
                           className="text-center font-bold text-xs px-1 py-1.5"
                         >
-                          {score !== null && score !== undefined ? score : '-'}
+                          {score !== null ? score : ''}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                      {frontNine.reduce((sum, h) => sum + (h.team_scores[ts.team.id] || 0), 0) || '-'}
+                      {frontNine.reduce((sum, h) => sum + (getTeamScore(h.hole_number, ts.team.id) || 0), 0) || ''}
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -219,6 +262,15 @@ export default function ScrambleLeaderboard() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                          {hole.stroke_index}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                       {backNine.map(hole => (
                         <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -232,18 +284,18 @@ export default function ScrambleLeaderboard() {
                     <TableRow className="font-bold">
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                       {backNine.map(hole => {
-                        const score = hole.team_scores[ts.team.id];
+                        const score = getTeamScore(hole.hole_number, ts.team.id);
                         return (
                           <TableCell 
                             key={hole.hole_number} 
                             className="text-center font-bold text-xs px-1 py-1.5"
                           >
-                            {score !== null && score !== undefined ? score : '-'}
+                            {score !== null ? score : ''}
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                        {backNine.reduce((sum, h) => sum + (h.team_scores[ts.team.id] || 0), 0) || '-'}
+                        {backNine.reduce((sum, h) => sum + (getTeamScore(h.hole_number, ts.team.id) || 0), 0) || ''}
                       </TableCell>
                     </TableRow>
                   </TableBody>

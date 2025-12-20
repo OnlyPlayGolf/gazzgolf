@@ -14,10 +14,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
+
 export default function SkinsLeaderboard() {
   const { gameId } = useParams();
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [holes, setHoles] = useState<SkinsHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,6 +50,22 @@ export default function SkinsLeaderboard() {
         const players = (gameData.players as unknown as SkinsPlayer[]) || [];
         if (players.length > 0) {
           setExpandedPlayer(players[0].name);
+        }
+
+        // Fetch course holes for scorecard structure
+        if (gameData.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
         }
       }
 
@@ -98,20 +121,23 @@ export default function SkinsLeaderboard() {
   const sortedPlayers = [...game.players].sort((a, b) => (skinsWon[b.name] || 0) - (skinsWon[a.name] || 0));
   const leader = sortedPlayers[0]?.name;
 
-  const frontNine = holes.filter(h => h.hole_number <= 9);
-  const backNine = holes.filter(h => h.hole_number > 9);
+  // Create a map for quick hole data lookup
+  const holesMap = new Map(holes.map(h => [h.hole_number, h]));
 
-  const getPlayerScore = (hole: SkinsHole, playerName: string) => {
+  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
+  const backNine = courseHoles.filter(h => h.hole_number > 9);
+
+  const getPlayerScore = (holeNumber: number, playerName: string) => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
     const score = hole.player_scores[playerName];
     if (!score) return null;
     return game.use_handicaps && game.handicap_mode === 'net' ? score.net : score.gross;
   };
 
-  const calculateNineTotal = (holesSubset: SkinsHole[], playerName: string) => {
-    return holesSubset.reduce((sum, h) => {
-      const score = getPlayerScore(h, playerName);
-      return sum + (score || 0);
-    }, 0);
+  const getHoleWinner = (holeNumber: number) => {
+    const hole = holesMap.get(holeNumber);
+    return hole?.winner_player || null;
   };
 
   const renderPlayerCard = (player: SkinsPlayer, index: number) => {
@@ -157,7 +183,7 @@ export default function SkinsLeaderboard() {
         </div>
 
         {/* Scorecard Table - Only shown when expanded */}
-        {isExpanded && holes.length > 0 && (
+        {isExpanded && courseHoles.length > 0 && (
           <>
             {/* Front 9 */}
             <div className="overflow-x-auto">
@@ -175,6 +201,15 @@ export default function SkinsLeaderboard() {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                        {hole.stroke_index}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                     {frontNine.map(hole => (
                       <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -188,8 +223,8 @@ export default function SkinsLeaderboard() {
                   <TableRow className="font-bold">
                     <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                     {frontNine.map(hole => {
-                      const score = getPlayerScore(hole, player.name);
-                      const isWinner = hole.winner_player === player.name;
+                      const score = getPlayerScore(hole.hole_number, player.name);
+                      const isWinner = getHoleWinner(hole.hole_number) === player.name;
                       return (
                         <TableCell 
                           key={hole.hole_number} 
@@ -197,20 +232,20 @@ export default function SkinsLeaderboard() {
                             isWinner ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : ''
                           }`}
                         >
-                          {score || '-'}
+                          {score || ''}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                      {calculateNineTotal(frontNine, player.name) || '-'}
+                      {frontNine.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, player.name) || 0), 0) || ''}
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </div>
 
-            {/* Back 9 - Only show if 18 holes */}
-            {game.holes_played === 18 && backNine.length > 0 && (
+            {/* Back 9 */}
+            {backNine.length > 0 && (
               <div className="overflow-x-auto border-t">
                 <Table>
                   <TableHeader>
@@ -226,6 +261,15 @@ export default function SkinsLeaderboard() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                          {hole.stroke_index}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                       {backNine.map(hole => (
                         <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -239,8 +283,8 @@ export default function SkinsLeaderboard() {
                     <TableRow className="font-bold">
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                       {backNine.map(hole => {
-                        const score = getPlayerScore(hole, player.name);
-                        const isWinner = hole.winner_player === player.name;
+                        const score = getPlayerScore(hole.hole_number, player.name);
+                        const isWinner = getHoleWinner(hole.hole_number) === player.name;
                         return (
                           <TableCell 
                             key={hole.hole_number} 
@@ -248,12 +292,12 @@ export default function SkinsLeaderboard() {
                               isWinner ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : ''
                             }`}
                           >
-                            {score || '-'}
+                            {score || ''}
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                        {calculateNineTotal(backNine, player.name) || '-'}
+                        {backNine.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, player.name) || 0), 0) || ''}
                       </TableCell>
                     </TableRow>
                   </TableBody>
