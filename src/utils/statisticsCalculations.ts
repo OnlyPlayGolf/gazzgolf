@@ -117,18 +117,40 @@ export const formatPercentage = (value: number | null): string => {
   return `${value.toFixed(0)}%`;
 };
 
-export async function fetchUserStats(userId: string): Promise<AllStats> {
+export type StatsFilter = 'all' | 'year' | 'last5' | 'last10' | 'last20' | 'last50';
+
+export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'): Promise<AllStats> {
   // Fetch rounds from round_summaries view
-  const { data: summaries, error: summariesError } = await supabase
+  let query = supabase
     .from('round_summaries')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .order('date_played', { ascending: false });
+
+  // Apply year filter
+  if (filter === 'year') {
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
+    query = query.gte('date_played', startOfYear);
+  }
+
+  const { data: summaries, error: summariesError } = await query;
 
   if (summariesError) {
     console.error('Error fetching round summaries:', summariesError);
   }
 
-  const validSummaries = summaries?.filter(s => s.total_score && s.total_score > 0) || [];
+  let validSummaries = summaries?.filter(s => s.total_score && s.total_score > 0) || [];
+  
+  // Apply round count filters
+  if (filter === 'last5') {
+    validSummaries = validSummaries.slice(0, 5);
+  } else if (filter === 'last10') {
+    validSummaries = validSummaries.slice(0, 10);
+  } else if (filter === 'last20') {
+    validSummaries = validSummaries.slice(0, 20);
+  } else if (filter === 'last50') {
+    validSummaries = validSummaries.slice(0, 50);
+  }
   const roundsPlayed = validSummaries.length;
 
   // Calculate scoring stats
