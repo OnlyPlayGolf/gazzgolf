@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Settings } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dices } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { parseHandicap, formatHandicap } from "@/lib/utils";
@@ -245,19 +245,26 @@ export default function CopenhagenSetup() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Settings size={20} className="text-primary" />
+              <Dices size={20} className="text-primary" />
               Game Settings
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">Apply net scoring</p>
-              </div>
-              <Switch checked={useHandicaps} onCheckedChange={setUseHandicaps} />
+            <div className="space-y-2">
+              <Label>Handicaps</Label>
+              <Select value={useHandicaps ? "yes" : "no"} onValueChange={(v) => setUseHandicaps(v === "yes")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">Off</SelectItem>
+                  <SelectItem value="yes">On</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Apply net scoring based on player handicaps
+              </p>
             </div>
-
           </CardContent>
         </Card>
 
