@@ -24,6 +24,7 @@ import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlay
 import { cn, parseHandicap } from "@/lib/utils";
 import { TeeSelector } from "@/components/TeeSelector";
 import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
+import { CourseScorecard } from "@/components/CourseScorecard";
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -671,6 +672,15 @@ export default function RoundsPlay() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Course Scorecard */}
+        {selectedCourse && (
+          <CourseScorecard
+            courseId={selectedCourse.id}
+            selectedTee={setupState.teeColor}
+            selectedHoles={setupState.selectedHoles === "custom" ? "18" : setupState.selectedHoles}
+          />
+        )}
 
         {/* AI Config Summary */}
         <AIConfigSummary
