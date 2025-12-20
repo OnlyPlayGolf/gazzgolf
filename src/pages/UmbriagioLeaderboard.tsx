@@ -95,33 +95,12 @@ export default function UmbriagioLeaderboard() {
   const renderTeamCard = (team: 'A' | 'B') => {
     const isExpanded = expandedTeam === team;
     const isLeader = leader === team;
-    const teamColor = team === 'A' ? 'blue' : 'red';
     const totalPoints = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
     const player1 = team === 'A' ? game.team_a_player_1 : game.team_b_player_1;
     const player2 = team === 'A' ? game.team_a_player_2 : game.team_b_player_2;
 
     return (
       <Card key={team} className="overflow-hidden">
-        {/* Header */}
-        <div className="bg-primary text-primary-foreground p-4">
-          <div className="flex items-center justify-center mb-2">
-            <div className="flex-1 text-center">
-              <h2 className="text-lg font-bold">
-                Game {new Date(game.date_played).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: '2-digit', 
-                  day: '2-digit' 
-                }).replace(/\//g, '-')}
-              </h2>
-              <p className="text-sm opacity-90">{game.course_name}</p>
-            </div>
-          </div>
-
-          <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
-            <div className="text-xl font-bold">Umbriago</div>
-          </div>
-        </div>
-
         {/* Team Info Bar - Clickable */}
         <div 
           className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
@@ -133,7 +112,11 @@ export default function UmbriagioLeaderboard() {
                 size={20} 
                 className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
               />
-              <div className={`w-4 h-4 rounded-full ${team === 'A' ? 'bg-blue-500' : 'bg-red-500'}`} />
+              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
+                isLeader ? 'bg-amber-500/20 text-amber-600' : ''
+              }`}>
+                {holes.length || "-"}
+              </div>
               <div>
                 <div className="text-xl font-bold">Team {team}</div>
                 <div className="text-sm text-muted-foreground">
@@ -142,7 +125,7 @@ export default function UmbriagioLeaderboard() {
               </div>
             </div>
             <div className="text-right">
-              <div className={`text-3xl font-bold ${team === 'A' ? 'text-blue-500' : 'text-red-500'}`}>
+              <div className="text-3xl font-bold">
                 {totalPoints}
               </div>
               <div className="text-sm text-muted-foreground">
@@ -255,18 +238,18 @@ export default function UmbriagioLeaderboard() {
             <div className="border-t bg-muted/30 p-4">
               <div className="flex items-center justify-around text-center">
                 <div>
+                  <div className="text-sm text-muted-foreground">Total</div>
                   <div className="text-2xl font-bold">{totalPoints}</div>
-                  <div className="text-xs text-muted-foreground">Total Points</div>
                 </div>
                 <div>
+                  <div className="text-sm text-muted-foreground">Holes</div>
                   <div className="text-2xl font-bold">{holes.length}</div>
-                  <div className="text-xs text-muted-foreground">Holes Played</div>
                 </div>
                 <div>
-                  <div className={`text-2xl font-bold ${isLeader ? 'text-green-600' : ''}`}>
+                  <div className="text-sm text-muted-foreground">Position</div>
+                  <div className="text-2xl font-bold">
                     {isLeader ? '1st' : '2nd'}
                   </div>
-                  <div className="text-xs text-muted-foreground">Position</div>
                 </div>
               </div>
             </div>
@@ -278,6 +261,14 @@ export default function UmbriagioLeaderboard() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
+      {/* Single Header */}
+      <div className="bg-primary text-primary-foreground p-4">
+        <div className="text-center">
+          <h2 className="text-lg font-bold">{game.course_name}</h2>
+          <p className="text-sm opacity-90">Umbriago</p>
+        </div>
+      </div>
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {renderTeamCard('A')}
         {renderTeamCard('B')}

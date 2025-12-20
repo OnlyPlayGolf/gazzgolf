@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { SkinsGame, SkinsHole, SkinsPlayer, SkinsPlayerScore } from "@/types/skins";
-import { ChevronDown, Trophy } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -39,6 +39,11 @@ export default function SkinsLeaderboard() {
           players: (gameData.players as unknown as SkinsPlayer[]) || [],
           handicap_mode: (gameData.handicap_mode as 'gross' | 'net') || 'net',
         });
+        // Auto-expand first player
+        const players = (gameData.players as unknown as SkinsPlayer[]) || [];
+        if (players.length > 0) {
+          setExpandedPlayer(players[0].name);
+        }
       }
 
       const { data: holesData } = await supabase
@@ -117,26 +122,6 @@ export default function SkinsLeaderboard() {
 
     return (
       <Card key={player.name} className="overflow-hidden">
-        {/* Header */}
-        <div className="bg-primary text-primary-foreground p-4">
-          <div className="flex items-center justify-center mb-2">
-            <div className="flex-1 text-center">
-              <h2 className="text-lg font-bold">
-                Game {new Date(game.date_played).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: '2-digit', 
-                  day: '2-digit' 
-                }).replace(/\//g, '-')}
-              </h2>
-              <p className="text-sm opacity-90">{game.course_name}</p>
-            </div>
-          </div>
-
-          <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
-            <div className="text-xl font-bold">Skins</div>
-          </div>
-        </div>
-
         {/* Player Info Bar - Clickable */}
         <div 
           className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
@@ -148,23 +133,24 @@ export default function SkinsLeaderboard() {
                 size={20} 
                 className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
               />
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                isLeader ? 'bg-amber-500 text-white' : 'bg-muted'
+              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
+                isLeader ? 'bg-amber-500/20 text-amber-600' : ''
               }`}>
-                {index + 1}
+                {holes.length || "-"}
               </div>
               <div>
                 <div className="text-xl font-bold">{player.name}</div>
-                <div className="text-xs text-muted-foreground">{player.group_name}</div>
+                <div className="text-sm text-muted-foreground">
+                  HCP {player.handicap ? `+${player.handicap}` : "+0"}
+                </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="flex items-center gap-2 justify-end">
-                {isLeader && <Trophy size={20} className="text-amber-500" />}
-                <span className="text-3xl font-bold">{skins}</span>
+              <div className="text-3xl font-bold">
+                {skins}
               </div>
               <div className="text-sm text-muted-foreground">
-                {value > 0 ? `$${value}` : 'skins'}
+                {isLeader ? 'LEADING' : 'SKINS'}
               </div>
             </div>
           </div>
@@ -279,16 +265,18 @@ export default function SkinsLeaderboard() {
             <div className="border-t bg-muted/30 p-4">
               <div className="flex items-center justify-around text-center">
                 <div>
+                  <div className="text-sm text-muted-foreground">Skins</div>
                   <div className="text-2xl font-bold">{skins}</div>
-                  <div className="text-xs text-muted-foreground">Skins Won</div>
                 </div>
                 <div>
+                  <div className="text-sm text-muted-foreground">Holes Won</div>
                   <div className="text-2xl font-bold">{holesWon[player.name]?.length || 0}</div>
-                  <div className="text-xs text-muted-foreground">Holes Won</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">${value}</div>
-                  <div className="text-xs text-muted-foreground">Winnings</div>
+                  <div className="text-sm text-muted-foreground">Position</div>
+                  <div className="text-2xl font-bold">
+                    {index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}
+                  </div>
                 </div>
               </div>
               {holesWon[player.name]?.length > 0 && (
@@ -305,6 +293,14 @@ export default function SkinsLeaderboard() {
 
   return (
     <div className="min-h-screen pb-32 bg-background">
+      {/* Single Header */}
+      <div className="bg-primary text-primary-foreground p-4">
+        <div className="text-center">
+          <h2 className="text-lg font-bold">{game.course_name}</h2>
+          <p className="text-sm opacity-90">Skins</p>
+        </div>
+      </div>
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {sortedPlayers.map((player, idx) => renderPlayerCard(player, idx))}
       </div>

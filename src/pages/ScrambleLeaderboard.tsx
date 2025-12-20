@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
-import { Trophy } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface TeamScore {
   team: ScrambleTeam;
@@ -18,7 +26,7 @@ export default function ScrambleLeaderboard() {
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
-  const [courseHoles, setCourseHoles] = useState<{ hole_number: number; par: number }[]>([]);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   useEffect(() => {
     if (gameId) fetchData();
@@ -34,17 +42,11 @@ export default function ScrambleLeaderboard() {
 
     if (gameData) {
       setGame(gameData as unknown as ScrambleGame);
-      setTeams((gameData.teams as unknown as ScrambleTeam[]) || []);
-
-      // Fetch course holes for par
-      if (gameData.course_id) {
-        const { data: holesData } = await supabase
-          .from('course_holes')
-          .select('hole_number, par')
-          .eq('course_id', gameData.course_id)
-          .order('hole_number');
-
-        if (holesData) setCourseHoles(holesData);
+      const teamsData = (gameData.teams as unknown as ScrambleTeam[]) || [];
+      setTeams(teamsData);
+      // Auto-expand first team
+      if (teamsData.length > 0) {
+        setExpandedTeam(teamsData[0].id);
       }
     }
 
@@ -99,6 +101,8 @@ export default function ScrambleLeaderboard() {
   };
 
   const teamScores = calculateTeamScores();
+  const frontNine = holes.filter(h => h.hole_number <= 9);
+  const backNine = holes.filter(h => h.hole_number > 9);
 
   if (!game) {
     return (
@@ -108,108 +112,182 @@ export default function ScrambleLeaderboard() {
     );
   }
 
+  const renderTeamCard = (ts: TeamScore, index: number) => {
+    const isExpanded = expandedTeam === ts.team.id;
+    const isLeader = index === 0 && ts.total > 0;
+
+    return (
+      <Card key={ts.team.id} className="overflow-hidden">
+        {/* Team Info Bar - Clickable */}
+        <div 
+          className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => setExpandedTeam(isExpanded ? null : ts.team.id)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ChevronDown 
+                size={20} 
+                className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+              />
+              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
+                isLeader ? 'bg-amber-500/20 text-amber-600' : ''
+              }`}>
+                {ts.thru || "-"}
+              </div>
+              <div>
+                <div className="text-xl font-bold">{ts.team.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {ts.team.players.map(p => p.name).join(', ')}
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold">
+                {ts.thru > 0 ? formatToPar(ts.toPar) : 'E'}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {isLeader ? 'LEADING' : 'TO PAR'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scorecard Table - Only shown when expanded */}
+        {isExpanded && holes.length > 0 && (
+          <>
+            {/* Front 9 */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-primary/5">
+                    <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                    {frontNine.map(hole => (
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                        {hole.hole_number}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                        {hole.par}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      {frontNine.reduce((sum, h) => sum + h.par, 0)}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="font-bold">
+                    <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                    {frontNine.map(hole => {
+                      const score = hole.team_scores[ts.team.id];
+                      return (
+                        <TableCell 
+                          key={hole.hole_number} 
+                          className="text-center font-bold text-xs px-1 py-1.5"
+                        >
+                          {score !== null && score !== undefined ? score : '-'}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      {frontNine.reduce((sum, h) => sum + (h.team_scores[ts.team.id] || 0), 0) || '-'}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Back 9 */}
+            {backNine.length > 0 && (
+              <div className="overflow-x-auto border-t">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-primary/5">
+                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                      {backNine.map(hole => (
+                        <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                          {hole.hole_number}
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                          {hole.par}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                        {backNine.reduce((sum, h) => sum + h.par, 0)}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="font-bold">
+                      <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                      {backNine.map(hole => {
+                        const score = hole.team_scores[ts.team.id];
+                        return (
+                          <TableCell 
+                            key={hole.hole_number} 
+                            className="text-center font-bold text-xs px-1 py-1.5"
+                          >
+                            {score !== null && score !== undefined ? score : '-'}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                        {backNine.reduce((sum, h) => sum + (h.team_scores[ts.team.id] || 0), 0) || '-'}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Summary */}
+            <div className="border-t bg-muted/30 p-4">
+              <div className="flex items-center justify-around text-center">
+                <div>
+                  <div className="text-sm text-muted-foreground">Score</div>
+                  <div className="text-2xl font-bold">{ts.total || '-'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">To Par</div>
+                  <div className="text-2xl font-bold">{ts.thru > 0 ? formatToPar(ts.toPar) : '-'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Position</div>
+                  <div className="text-2xl font-bold">
+                    {index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </Card>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Single Header */}
       <div className="bg-primary text-primary-foreground p-4">
-        <h1 className="text-xl font-bold text-center">Leaderboard</h1>
+        <div className="text-center">
+          <h2 className="text-lg font-bold">{game.course_name}</h2>
+          <p className="text-sm opacity-90">Scramble</p>
+        </div>
       </div>
 
-      <div className="p-4">
-        <Card>
-          <CardContent className="p-0">
-            {teamScores.map((ts, index) => (
-              <div
-                key={ts.team.id}
-                className={`flex items-center justify-between p-4 ${
-                  index !== teamScores.length - 1 ? 'border-b border-border' : ''
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    index === 0 && ts.total > 0 ? 'bg-yellow-500 text-white' : 'bg-muted'
-                  }`}>
-                    {index === 0 && ts.total > 0 ? <Trophy size={16} /> : index + 1}
-                  </div>
-                  <div>
-                    <p className="font-semibold">{ts.team.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {ts.team.players.map(p => p.name).join(', ')}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold">{ts.total || '-'}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {ts.thru > 0 ? `${formatToPar(ts.toPar)} (Thru ${ts.thru})` : 'Not started'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Hole-by-hole scores */}
-        {holes.length > 0 && (
-          <Card className="mt-4">
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-3">Scorecard</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 pr-4">Team</th>
-                      {holes.map(h => (
-                        <th key={h.hole_number} className="text-center px-2 py-2">
-                          {h.hole_number}
-                        </th>
-                      ))}
-                      <th className="text-center px-2 py-2 font-bold">Tot</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b bg-muted/50">
-                      <td className="py-2 pr-4 text-muted-foreground">Par</td>
-                      {holes.map(h => (
-                        <td key={h.hole_number} className="text-center px-2 py-2 text-muted-foreground">
-                          {h.par}
-                        </td>
-                      ))}
-                      <td className="text-center px-2 py-2 text-muted-foreground font-bold">
-                        {holes.reduce((sum, h) => sum + h.par, 0)}
-                      </td>
-                    </tr>
-                    {teams.map(team => (
-                      <tr key={team.id} className="border-b last:border-b-0">
-                        <td className="py-2 pr-4 font-medium">{team.name}</td>
-                        {holes.map(h => {
-                          const score = h.team_scores[team.id];
-                          const diff = score !== null && score !== undefined ? score - h.par : null;
-                          return (
-                            <td key={h.hole_number} className="text-center px-2 py-2">
-                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded ${
-                                diff === null ? '' :
-                                diff <= -2 ? 'bg-yellow-500 text-white' :
-                                diff === -1 ? 'bg-red-500 text-white' :
-                                diff === 0 ? '' :
-                                diff === 1 ? 'bg-blue-500/20' :
-                                'bg-blue-500/40'
-                              }`}>
-                                {score !== null && score !== undefined ? score : '-'}
-                              </span>
-                            </td>
-                          );
-                        })}
-                        <td className="text-center px-2 py-2 font-bold">
-                          {holes.reduce((sum, h) => sum + (h.team_scores[team.id] || 0), 0) || '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      <div className="max-w-4xl mx-auto p-4 space-y-4">
+        {teamScores.map((ts, index) => renderTeamCard(ts, index))}
       </div>
 
       <ScrambleBottomTabBar gameId={gameId!} />
