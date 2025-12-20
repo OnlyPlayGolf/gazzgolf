@@ -1,0 +1,19 @@
+-- Add orange_distance (Longest tee) data for Aviara Golf Club
+UPDATE course_holes SET orange_distance = 410 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 1;
+UPDATE course_holes SET orange_distance = 415 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 2;
+UPDATE course_holes SET orange_distance = 200 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 3;
+UPDATE course_holes SET orange_distance = 555 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 4;
+UPDATE course_holes SET orange_distance = 425 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 5;
+UPDATE course_holes SET orange_distance = 190 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 6;
+UPDATE course_holes SET orange_distance = 445 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 7;
+UPDATE course_holes SET orange_distance = 575 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 8;
+UPDATE course_holes SET orange_distance = 430 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 9;
+UPDATE course_holes SET orange_distance = 420 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 10;
+UPDATE course_holes SET orange_distance = 560 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 11;
+UPDATE course_holes SET orange_distance = 205 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 12;
+UPDATE course_holes SET orange_distance = 435 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 13;
+UPDATE course_holes SET orange_distance = 450 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 14;
+UPDATE course_holes SET orange_distance = 180 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 15;
+UPDATE course_holes SET orange_distance = 570 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 16;
+UPDATE course_holes SET orange_distance = 405 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 17;
+UPDATE course_holes SET orange_distance = 455 WHERE course_id = 'b5a3c2d1-e4f5-6789-abcd-ef1234567891' AND hole_number = 18;
