@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function HowToPlayBestBallMatch() {
+export default function HowToPlayBestBall() {
   const navigate = useNavigate();
 
   return (
@@ -13,7 +13,7 @@ export default function HowToPlayBestBallMatch() {
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="p-2">
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-2xl font-bold">Best Ball (Match Play)</h1>
+          <h1 className="text-2xl font-bold">Best Ball</h1>
         </div>
 
         <div className="space-y-4">
