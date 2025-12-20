@@ -45,31 +45,9 @@ export function TeeSelector({
 }
 
 function getOptionsForCount(teeCount: number): { value: string; label: string }[] {
-  if (teeCount <= 1) {
-    return [{ value: "medium", label: "Medium" }];
-  }
-  if (teeCount === 2) {
-    return [
-      { value: "long", label: "Long" },
-      { value: "short", label: "Short" },
-    ];
-  }
-  if (teeCount === 3) {
-    return [
-      { value: "long", label: "Long" },
-      { value: "medium", label: "Medium" },
-      { value: "short", label: "Short" },
-    ];
-  }
-  if (teeCount === 4) {
-    return [
-      { value: "longest", label: "Longest" },
-      { value: "long", label: "Long" },
-      { value: "short", label: "Short" },
-      { value: "shortest", label: "Shortest" },
-    ];
-  }
-  // 5 or more
+  // Always show all 5 tee options to ensure users can select any tee
+  // Even if a course doesn't have all tee distances, users may want to select
+  // a specific difficulty level
   return DEFAULT_TEE_OPTIONS;
 }
 
