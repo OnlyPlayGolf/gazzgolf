@@ -23,7 +23,7 @@ interface Course {
   location: string | null;
 }
 
-type GameType = 'stroke' | 'match';
+type GameType = 'match';
 
 export default function BestBallSetup() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function BestBallSetup() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   
   // Game settings
-  const [gameType, setGameType] = useState<GameType>('stroke');
+  const [gameType] = useState<GameType>('match');
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [teamAName, setTeamAName] = useState("Team A");
   const [teamBName, setTeamBName] = useState("Team B");
@@ -238,7 +238,7 @@ export default function BestBallSetup() {
 
       if (error) throw error;
 
-      toast({ title: `Best Ball ${gameType === 'stroke' ? 'Stroke Play' : 'Match Play'} started!` });
+      toast({ title: "Best Ball game started!" });
       navigate(`/best-ball/${game.id}/play`);
     } catch (error: any) {
       toast({ title: "Error creating game", description: error.message, variant: "destructive" });
@@ -324,34 +324,9 @@ export default function BestBallSetup() {
           <h1 className="text-2xl font-bold text-foreground">Best Ball Setup</h1>
         </div>
 
-        {/* Game Type Selection */}
+        {/* Handicaps Toggle */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Trophy size={20} className="text-primary" />
-              Game Type
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={gameType === 'stroke' ? 'default' : 'outline'}
-                onClick={() => setGameType('stroke')}
-                className="h-auto py-3 flex-col"
-              >
-                <span className="font-semibold">Stroke Play</span>
-                <span className="text-xs opacity-80">Total strokes</span>
-              </Button>
-              <Button
-                variant={gameType === 'match' ? 'default' : 'outline'}
-                onClick={() => setGameType('match')}
-                className="h-auto py-3 flex-col"
-              >
-                <span className="font-semibold">Match Play</span>
-                <span className="text-xs opacity-80">Hole by hole</span>
-              </Button>
-            </div>
-            
+          <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label>Use Handicaps (Net)</Label>
@@ -417,7 +392,7 @@ export default function BestBallSetup() {
           onClick={handleStartGame}
           disabled={loading || teamA.length === 0 || teamB.length === 0}
         >
-          {loading ? "Starting..." : `Start Best Ball ${gameType === 'stroke' ? 'Stroke Play' : 'Match Play'}`}
+          {loading ? "Starting..." : "Start Best Ball"}
         </Button>
       </div>
 

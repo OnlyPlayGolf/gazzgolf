@@ -24,7 +24,7 @@ export interface BestBallGame {
   date_played: string;
   holes_played: number;
   created_at: string;
-  game_type: 'stroke' | 'match';
+  game_type: 'match';
   team_a_name: string;
   team_a_players: BestBallPlayer[];
   team_b_name: string;

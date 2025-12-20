@@ -94,7 +94,7 @@ export default function BestBallPlay() {
       
       const typedGame: BestBallGame = {
         ...gameData,
-        game_type: gameData.game_type as 'stroke' | 'match',
+        game_type: 'match',
         team_a_players: gameData.team_a_players as unknown as BestBallPlayer[],
         team_b_players: gameData.team_b_players as unknown as BestBallPlayer[],
         winner_team: gameData.winner_team as 'A' | 'B' | 'TIE' | null,
@@ -443,14 +443,10 @@ export default function BestBallPlay() {
       <div className="bg-primary text-primary-foreground p-4 sticky top-0 z-40">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-80">
-              {game.game_type === 'stroke' ? 'Best Ball Stroke Play' : 'Best Ball Match Play'}
+            <div className="text-sm opacity-80">Best Ball</div>
+            <div className="text-sm font-semibold">
+              {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
             </div>
-            {game.game_type === 'match' && (
-              <div className="text-sm font-semibold">
-                {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
-              </div>
-            )}
           </div>
           
           {/* Hole Navigation */}
@@ -480,14 +476,6 @@ export default function BestBallPlay() {
               <ChevronRight size={24} />
             </Button>
           </div>
-          
-          {/* Score Summary */}
-          {game.game_type === 'stroke' && (
-            <div className="flex items-center justify-center gap-6 mt-2 text-sm">
-              <div>{game.team_a_name}: {game.team_a_total}</div>
-              <div>{game.team_b_name}: {game.team_b_total}</div>
-            </div>
-          )}
         </div>
       </div>
 

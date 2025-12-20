@@ -486,8 +486,7 @@ export default function RoundsPlay() {
       navigate('/match-play/setup');
       return;
     }
-    if (setupState.gameFormat === "best_ball_stroke" || setupState.gameFormat === "best_ball_match") {
-      sessionStorage.setItem('bestBallType', setupState.gameFormat === "best_ball_stroke" ? 'stroke' : 'match');
+    if (setupState.gameFormat === "best_ball") {
       navigate('/best-ball/setup');
       return;
     }
@@ -801,8 +800,7 @@ export default function RoundsPlay() {
                   <div className="space-y-2 pt-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Teams</p>
                     {[
-                      { id: "best_ball_stroke", label: "Best Ball (Stroke)", desc: "Team best score per hole" },
-                      { id: "best_ball_match", label: "Best Ball (Match)", desc: "Team match play" },
+                      { id: "best_ball", label: "Best Ball", desc: "Team match play" },
                       { id: "scramble", label: "Scramble", desc: "Team plays best shot" },
                       { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
                       { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
@@ -824,8 +822,7 @@ export default function RoundsPlay() {
                           onClick={(e) => {
                             e.stopPropagation();
                             saveState();
-                            if (fmt.id === "best_ball_stroke") navigate('/best-ball/stroke/how-to-play');
-                            else if (fmt.id === "best_ball_match") navigate('/best-ball/match/how-to-play');
+                            if (fmt.id === "best_ball") navigate('/best-ball/how-to-play');
                             else if (fmt.id === "scramble") navigate('/scramble/how-to-play');
                             else if (fmt.id === "wolf") navigate('/wolf/how-to-play');
                             else navigate('/umbriago/how-to-play');
