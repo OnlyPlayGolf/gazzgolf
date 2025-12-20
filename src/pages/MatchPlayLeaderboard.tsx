@@ -15,10 +15,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
+
 export default function MatchPlayLeaderboard() {
   const { gameId } = useParams();
   const [game, setGame] = useState<MatchPlayGame | null>(null);
   const [holes, setHoles] = useState<MatchPlayHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
 
@@ -38,6 +45,23 @@ export default function MatchPlayLeaderboard() {
 
       if (gameData) {
         setGame(gameData as MatchPlayGame);
+
+        // Fetch course holes for scorecard structure
+        if (gameData.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            // Filter based on holes_played
+            const filteredHoles = gameData.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
       }
 
       const { data: holesData } = await supabase
@@ -77,8 +101,11 @@ export default function MatchPlayLeaderboard() {
   const player1HolesWon = holes.filter(h => h.hole_result === 1).length;
   const player2HolesWon = holes.filter(h => h.hole_result === -1).length;
 
-  const frontNine = holes.filter(h => h.hole_number <= 9);
-  const backNine = holes.filter(h => h.hole_number > 9);
+  // Create a map for quick hole data lookup
+  const holesMap = new Map(holes.map(h => [h.hole_number, h]));
+
+  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
+  const backNine = courseHoles.filter(h => h.hole_number > 9);
 
   const players = [
     { num: 1, name: game.player_1, holesWon: player1HolesWon },
@@ -86,6 +113,17 @@ export default function MatchPlayLeaderboard() {
   ];
 
   const leader = game.match_status > 0 ? 1 : game.match_status < 0 ? 2 : null;
+
+  const getPlayerScore = (holeNumber: number, playerNum: number) => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
+    return playerNum === 1 ? hole.player_1_gross_score : hole.player_2_gross_score;
+  };
+
+  const getHoleResult = (holeNumber: number) => {
+    const hole = holesMap.get(holeNumber);
+    return hole?.hole_result || 0;
+  };
 
   const renderPlayerCard = (player: { num: number; name: string; holesWon: number }, rank: number) => {
     const isExpanded = expandedPlayer === player.num;
@@ -128,7 +166,7 @@ export default function MatchPlayLeaderboard() {
         </div>
 
         {/* Scorecard Table - Only shown when expanded */}
-        {isExpanded && holes.length > 0 && (
+        {isExpanded && courseHoles.length > 0 && (
           <>
             {/* Front 9 */}
             <div className="overflow-x-auto">
@@ -146,6 +184,15 @@ export default function MatchPlayLeaderboard() {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                        {hole.stroke_index}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                     {frontNine.map(hole => (
                       <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -159,8 +206,9 @@ export default function MatchPlayLeaderboard() {
                   <TableRow className="font-bold">
                     <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                     {frontNine.map(hole => {
-                      const score = player.num === 1 ? hole.player_1_gross_score : hole.player_2_gross_score;
-                      const won = (player.num === 1 && hole.hole_result === 1) || (player.num === 2 && hole.hole_result === -1);
+                      const score = getPlayerScore(hole.hole_number, player.num);
+                      const result = getHoleResult(hole.hole_number);
+                      const won = (player.num === 1 && result === 1) || (player.num === 2 && result === -1);
                       return (
                         <TableCell 
                           key={hole.hole_number} 
@@ -168,15 +216,12 @@ export default function MatchPlayLeaderboard() {
                             won ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : ''
                           }`}
                         >
-                          {score || '-'}
+                          {score || ''}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                      {frontNine.reduce((sum, h) => {
-                        const score = player.num === 1 ? h.player_1_gross_score : h.player_2_gross_score;
-                        return sum + (score || 0);
-                      }, 0) || '-'}
+                      {frontNine.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, player.num) || 0), 0) || ''}
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -200,6 +245,15 @@ export default function MatchPlayLeaderboard() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                          {hole.stroke_index}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                       {backNine.map(hole => (
                         <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -213,8 +267,9 @@ export default function MatchPlayLeaderboard() {
                     <TableRow className="font-bold">
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                       {backNine.map(hole => {
-                        const score = player.num === 1 ? hole.player_1_gross_score : hole.player_2_gross_score;
-                        const won = (player.num === 1 && hole.hole_result === 1) || (player.num === 2 && hole.hole_result === -1);
+                        const score = getPlayerScore(hole.hole_number, player.num);
+                        const result = getHoleResult(hole.hole_number);
+                        const won = (player.num === 1 && result === 1) || (player.num === 2 && result === -1);
                         return (
                           <TableCell 
                             key={hole.hole_number} 
@@ -222,15 +277,12 @@ export default function MatchPlayLeaderboard() {
                               won ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : ''
                             }`}
                           >
-                            {score || '-'}
+                            {score || ''}
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                        {backNine.reduce((sum, h) => {
-                          const score = player.num === 1 ? h.player_1_gross_score : h.player_2_gross_score;
-                          return sum + (score || 0);
-                        }, 0) || '-'}
+                        {backNine.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, player.num) || 0), 0) || ''}
                       </TableCell>
                     </TableRow>
                   </TableBody>

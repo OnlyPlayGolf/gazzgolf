@@ -14,10 +14,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
+
 export default function CopenhagenLeaderboard() {
   const { gameId } = useParams();
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
 
@@ -38,6 +45,22 @@ export default function CopenhagenLeaderboard() {
           ...gameData,
           presses: (gameData.presses as unknown as Press[]) || [],
         });
+
+        // Fetch course holes for scorecard structure
+        if (gameData.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
       }
 
       const { data: holesData } = await supabase
@@ -84,17 +107,18 @@ export default function CopenhagenLeaderboard() {
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
   const leader = sortedPlayers[0]?.index;
 
-  const frontNine = holes.filter(h => h.hole_number <= 9);
-  const backNine = holes.filter(h => h.hole_number > 9);
+  // Create a map for quick hole data lookup
+  const holesMap = new Map(holes.map(h => [h.hole_number, h]));
 
-  const getPlayerPoints = (hole: CopenhagenHole, playerIndex: number) => {
+  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
+  const backNine = courseHoles.filter(h => h.hole_number > 9);
+
+  const getPlayerPoints = (holeNumber: number, playerIndex: number) => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
     if (playerIndex === 1) return hole.player_1_hole_points;
     if (playerIndex === 2) return hole.player_2_hole_points;
     return hole.player_3_hole_points;
-  };
-
-  const calculateNineTotal = (holesSubset: CopenhagenHole[], playerIndex: number) => {
-    return holesSubset.reduce((sum, h) => sum + getPlayerPoints(h, playerIndex), 0);
   };
 
   const renderPlayerCard = (player: { index: number; name: string; points: number }, rank: number) => {
@@ -138,7 +162,7 @@ export default function CopenhagenLeaderboard() {
         </div>
 
         {/* Scorecard Table - Only shown when expanded */}
-        {isExpanded && holes.length > 0 && (
+        {isExpanded && courseHoles.length > 0 && (
           <>
             {/* Front 9 */}
             <div className="overflow-x-auto">
@@ -156,6 +180,15 @@ export default function CopenhagenLeaderboard() {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                        {hole.stroke_index}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                     {frontNine.map(hole => (
                       <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -169,30 +202,30 @@ export default function CopenhagenLeaderboard() {
                   <TableRow className="font-bold">
                     <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
                     {frontNine.map(hole => {
-                      const points = getPlayerPoints(hole, player.index);
+                      const points = getPlayerPoints(hole.hole_number, player.index);
                       return (
                         <TableCell 
                           key={hole.hole_number} 
                           className={`text-center font-bold text-xs px-1 py-1.5 ${
-                            points >= 6 ? 'text-emerald-600' : 
-                            points >= 4 ? 'text-blue-600' : 
+                            points !== null && points >= 6 ? 'text-emerald-600' : 
+                            points !== null && points >= 4 ? 'text-blue-600' : 
                             points === 0 ? 'text-red-600' : ''
                           }`}
                         >
-                          {points}
+                          {points !== null ? points : ''}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                      {calculateNineTotal(frontNine, player.index)}
+                      {frontNine.reduce((sum, h) => sum + (getPlayerPoints(h.hole_number, player.index) || 0), 0) || ''}
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </div>
 
-            {/* Back 9 - Only show if 18 holes */}
-            {game.holes_played === 18 && backNine.length > 0 && (
+            {/* Back 9 */}
+            {backNine.length > 0 && (
               <div className="overflow-x-auto border-t">
                 <Table>
                   <TableHeader>
@@ -208,6 +241,15 @@ export default function CopenhagenLeaderboard() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                          {hole.stroke_index}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                       {backNine.map(hole => (
                         <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -221,22 +263,22 @@ export default function CopenhagenLeaderboard() {
                     <TableRow className="font-bold">
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
                       {backNine.map(hole => {
-                        const points = getPlayerPoints(hole, player.index);
+                        const points = getPlayerPoints(hole.hole_number, player.index);
                         return (
                           <TableCell 
                             key={hole.hole_number} 
                             className={`text-center font-bold text-xs px-1 py-1.5 ${
-                              points >= 6 ? 'text-emerald-600' : 
-                              points >= 4 ? 'text-blue-600' : 
+                              points !== null && points >= 6 ? 'text-emerald-600' : 
+                              points !== null && points >= 4 ? 'text-blue-600' : 
                               points === 0 ? 'text-red-600' : ''
                             }`}
                           >
-                            {points}
+                            {points !== null ? points : ''}
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                        {calculateNineTotal(backNine, player.index)}
+                        {backNine.reduce((sum, h) => sum + (getPlayerPoints(h.hole_number, player.index) || 0), 0) || ''}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -254,7 +296,12 @@ export default function CopenhagenLeaderboard() {
                 <div>
                   <div className="text-sm text-muted-foreground">Sweeps</div>
                   <div className="text-2xl font-bold">
-                    {holes.filter(h => getPlayerPoints(h, player.index) === 6).length}
+                    {holes.filter(h => {
+                      const pts = player.index === 1 ? h.player_1_hole_points : 
+                                  player.index === 2 ? h.player_2_hole_points : 
+                                  h.player_3_hole_points;
+                      return pts === 6;
+                    }).length}
                   </div>
                 </div>
                 <div>

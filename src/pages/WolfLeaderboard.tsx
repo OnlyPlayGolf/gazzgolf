@@ -14,10 +14,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
+
 export default function WolfLeaderboard() {
   const { gameId } = useParams();
   const [game, setGame] = useState<WolfGame | null>(null);
   const [holes, setHoles] = useState<WolfHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +41,24 @@ export default function WolfLeaderboard() {
         .single();
       
       if (gameData) {
-        setGame(gameData as unknown as WolfGame);
+        const typedGameData = gameData as unknown as WolfGame;
+        setGame(typedGameData);
+
+        // Fetch course holes for scorecard structure
+        if (typedGameData.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", typedGameData.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            const filteredHoles = typedGameData.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
       }
 
       const { data: holesData } = await supabase
@@ -83,7 +107,12 @@ export default function WolfLeaderboard() {
     }
   };
 
-  const getHolePoints = (hole: WolfHole, playerNum: number) => {
+  // Create a map for quick hole data lookup
+  const holesMap = new Map(holes.map(h => [h.hole_number, h]));
+
+  const getHolePoints = (holeNumber: number, playerNum: number) => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
     switch (playerNum) {
       case 1: return hole.player_1_hole_points;
       case 2: return hole.player_2_hole_points;
@@ -102,12 +131,8 @@ export default function WolfLeaderboard() {
     points: getPlayerPoints(i + 1),
   })).sort((a, b) => b.points - a.points) : [];
 
-  const frontNine = holes.filter(h => h.hole_number <= 9);
-  const backNine = holes.filter(h => h.hole_number > 9);
-
-  const calculateNineTotal = (holesSubset: WolfHole[], playerNum: number) => {
-    return holesSubset.reduce((sum, h) => sum + getHolePoints(h, playerNum), 0);
-  };
+  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
+  const backNine = courseHoles.filter(h => h.hole_number > 9);
 
   if (loading) {
     return (
@@ -166,7 +191,7 @@ export default function WolfLeaderboard() {
         </div>
 
         {/* Scorecard Table - Only shown when expanded */}
-        {isExpanded && holes.length > 0 && (
+        {isExpanded && courseHoles.length > 0 && (
           <>
             {/* Front 9 */}
             <div className="overflow-x-auto">
@@ -184,6 +209,15 @@ export default function WolfLeaderboard() {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                        {hole.stroke_index}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                     {frontNine.map(hole => (
                       <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -197,26 +231,29 @@ export default function WolfLeaderboard() {
                   <TableRow className="font-bold">
                     <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
                     {frontNine.map(hole => {
-                      const points = getHolePoints(hole, player.num);
+                      const points = getHolePoints(hole.hole_number, player.num);
                       return (
                         <TableCell 
                           key={hole.hole_number} 
-                          className={`text-center font-bold text-xs px-1 py-1.5 ${points > 0 ? 'text-green-600' : points < 0 ? 'text-red-600' : ''}`}
+                          className={`text-center font-bold text-xs px-1 py-1.5 ${
+                            points !== null && points > 0 ? 'text-green-600' : 
+                            points !== null && points < 0 ? 'text-red-600' : ''
+                          }`}
                         >
-                          {points !== 0 ? (points > 0 ? `+${points}` : points) : '-'}
+                          {points !== null ? (points !== 0 ? (points > 0 ? `+${points}` : points) : '-') : ''}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                      {calculateNineTotal(frontNine, player.num)}
+                      {frontNine.reduce((sum, h) => sum + (getHolePoints(h.hole_number, player.num) || 0), 0) || ''}
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </div>
 
-            {/* Back 9 - Only show if 18 holes */}
-            {game.holes_played === 18 && backNine.length > 0 && (
+            {/* Back 9 */}
+            {backNine.length > 0 && (
               <div className="overflow-x-auto border-t">
                 <Table>
                   <TableHeader>
@@ -232,6 +269,15 @@ export default function WolfLeaderboard() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                          {hole.stroke_index}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                       {backNine.map(hole => (
                         <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
@@ -245,18 +291,21 @@ export default function WolfLeaderboard() {
                     <TableRow className="font-bold">
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
                       {backNine.map(hole => {
-                        const points = getHolePoints(hole, player.num);
+                        const points = getHolePoints(hole.hole_number, player.num);
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className={`text-center font-bold text-xs px-1 py-1.5 ${points > 0 ? 'text-green-600' : points < 0 ? 'text-red-600' : ''}`}
+                            className={`text-center font-bold text-xs px-1 py-1.5 ${
+                              points !== null && points > 0 ? 'text-green-600' : 
+                              points !== null && points < 0 ? 'text-red-600' : ''
+                            }`}
                           >
-                            {points !== 0 ? (points > 0 ? `+${points}` : points) : '-'}
+                            {points !== null ? (points !== 0 ? (points > 0 ? `+${points}` : points) : '-') : ''}
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                        {calculateNineTotal(backNine, player.num)}
+                        {backNine.reduce((sum, h) => sum + (getHolePoints(h.hole_number, player.num) || 0), 0) || ''}
                       </TableCell>
                     </TableRow>
                   </TableBody>
