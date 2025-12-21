@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -449,6 +449,14 @@ export default function BestBallPlay() {
       <div className="bg-primary text-primary-foreground p-4 sticky top-0 z-40">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowExitDialog(true)}
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+            >
+              <X size={24} />
+            </Button>
             <div className="text-sm opacity-80">
               Best Ball {game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}
             </div>

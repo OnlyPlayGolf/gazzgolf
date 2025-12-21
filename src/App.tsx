@@ -117,6 +117,11 @@ import SpectateRound from "./pages/SpectateRound";
 import SpectateMatchPlay from "./pages/SpectateMatchPlay";
 import BestBallSetup from "./pages/BestBallSetup";
 import BestBallPlay from "./pages/BestBallPlay";
+import BestBallInfo from "./pages/BestBallInfo";
+import BestBallFeed from "./pages/BestBallFeed";
+import BestBallLeaderboard from "./pages/BestBallLeaderboard";
+import BestBallSettings from "./pages/BestBallSettings";
+import BestBallSummary from "./pages/BestBallSummary";
 import HowToPlayBestBall from "./pages/HowToPlayBestBall";
 import ScrambleSetup from "./pages/ScrambleSetup";
 import ScramblePlay from "./pages/ScramblePlay";
@@ -248,6 +253,11 @@ const App = () => {
             <Route path="/best-ball/how-to-play" element={<HowToPlayBestBall />} />
             <Route path="/best-ball/setup" element={<BestBallSetup />} />
             <Route path="/best-ball/:gameId/play" element={<BestBallPlay />} />
+            <Route path="/best-ball/:gameId/info" element={<BestBallInfo />} />
+            <Route path="/best-ball/:gameId/feed" element={<BestBallFeed />} />
+            <Route path="/best-ball/:gameId/leaderboard" element={<BestBallLeaderboard />} />
+            <Route path="/best-ball/:gameId/settings" element={<BestBallSettings />} />
+            <Route path="/best-ball/:gameId/summary" element={<BestBallSummary />} />
             <Route path="/scramble/how-to-play" element={<HowToPlayScramble />} />
             <Route path="/scramble/setup" element={<ScrambleSetup />} />
             <Route path="/scramble/:gameId/play" element={<ScramblePlay />} />
