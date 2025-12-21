@@ -16,23 +16,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-interface Round {
-  id: string;
-  course_name: string;
-  round_name?: string;
-  date_played: string;
-  tee_set: string;
-  holes_played: number;
-  total_score?: number;
-  total_par?: number;
-  player_count?: number;
-}
+import { getGameRoute, loadUnifiedRounds, type UnifiedRound } from "@/utils/unifiedRoundsLoader";
 
 const PlayedRounds = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [rounds, setRounds] = useState<Round[]>([]);
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [rounds, setRounds] = useState<UnifiedRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [roundToDelete, setRoundToDelete] = useState<string | null>(null);
@@ -41,51 +32,27 @@ const PlayedRounds = () => {
     fetchPlayedRounds();
   }, []);
 
+  const isStrokeRound = (r: UnifiedRound) => r.gameType === "round" || !r.gameType;
+  const canDeleteRound = (r: UnifiedRound) =>
+    isStrokeRound(r) && !!currentUserId && r.ownerUserId === currentUserId;
+
   const fetchPlayedRounds = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      setLoading(true);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         navigate("/auth");
         return;
       }
 
-      const { data: roundsData, error: roundsError } = await supabase
-        .from("rounds")
-        .select("*")
-        .eq("user_id", user.id)
-        .or("origin.eq.play,origin.is.null,origin.eq.tracker")
-        .order("date_played", { ascending: false });
+      setCurrentUserId(user.id);
 
-      if (roundsError) throw roundsError;
-
-      const roundsWithScores = await Promise.all(
-        (roundsData || []).map(async (round) => {
-          const { data: summaryData } = await supabase
-            .from("round_summaries")
-            .select("total_score, total_par")
-            .eq("round_id", round.id)
-            .maybeSingle();
-
-          const { count: playerCount } = await supabase
-            .from("round_players")
-            .select("*", { count: 'exact', head: true })
-            .eq("round_id", round.id);
-
-          return {
-            id: round.id,
-            course_name: round.course_name,
-            round_name: round.round_name,
-            date_played: round.date_played,
-            tee_set: round.tee_set,
-            holes_played: round.holes_played,
-            total_score: summaryData?.total_score,
-            total_par: summaryData?.total_par,
-            player_count: playerCount || 0,
-          };
-        })
-      );
-
-      setRounds(roundsWithScores as Round[]);
+      const unified = await loadUnifiedRounds(user.id);
+      setRounds(unified);
     } catch (error: any) {
       toast({
         title: "Error loading rounds",
@@ -97,9 +64,9 @@ const PlayedRounds = () => {
     }
   };
 
-  const getScoreDisplay = (round: Round) => {
-    if (!round.total_score || !round.total_par) return "-";
-    const diff = round.total_score - round.total_par;
+  const getScoreDisplay = (round: UnifiedRound) => {
+    if (!isStrokeRound(round)) return "-";
+    const diff = round.score;
     if (diff === 0) return "E";
     return diff > 0 ? `+${diff}` : `${diff}`;
   };
@@ -153,17 +120,18 @@ const PlayedRounds = () => {
       <TopNavBar />
       <div className="px-4 pt-20">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <Button 
-            variant="ghost" 
+        <header className="flex items-center gap-3 mb-4">
+          <Button
+            variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
             className="rounded-full"
+            aria-label="Back"
           >
             <ArrowLeft size={20} />
           </Button>
           <h1 className="text-xl font-semibold text-foreground">All Rounds</h1>
-        </div>
+        </header>
 
         {/* New Round Button */}
         <Button onClick={() => navigate("/rounds-play")} className="w-full mb-4">
@@ -173,75 +141,101 @@ const PlayedRounds = () => {
 
         {/* Rounds List */}
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">Loading...</div>
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            Loading...
+          </div>
         ) : rounds.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="mb-2">No rounds yet</p>
             <p className="text-sm">Start playing to track your scores</p>
           </div>
         ) : (
-          <div className="divide-y divide-border rounded-lg border bg-card overflow-hidden">
-            {rounds.map((round) => (
-              <div
-                key={round.id}
-                className="flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/rounds/${round.id}/detail`)}
-              >
-                {/* Date */}
-                <div className="w-12 text-center flex-shrink-0">
-                  <div className="text-xs text-muted-foreground uppercase">
-                    {format(new Date(round.date_played), "MMM")}
-                  </div>
-                  <div className="text-lg font-semibold">
-                    {format(new Date(round.date_played), "d")}
-                  </div>
-                </div>
+          <main className="divide-y divide-border rounded-lg border bg-card overflow-hidden">
+            {rounds.map((round) => {
+              const scoreText = getScoreDisplay(round);
+              const showStrokeScore = isStrokeRound(round);
+              const canDelete = canDeleteRound(round);
 
-                {/* Round Name & Details */}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{round.round_name || 'Untitled Round'}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span>{round.course_name}</span>
-                    <span>• {round.holes_played}H</span>
-                    {round.tee_set && <span>• {round.tee_set}</span>}
-                    {round.player_count > 1 && <span>• {round.player_count} players</span>}
-                  </div>
-                </div>
-
-                {/* Score */}
-                <div className="flex items-center gap-2">
-                  <div className="text-right">
-                    <div className={`font-bold ${
-                      getScoreDisplay(round) === '-' ? 'text-muted-foreground' :
-                      getScoreDisplay(round).startsWith('+') ? 'text-destructive' :
-                      getScoreDisplay(round) === 'E' ? 'text-foreground' : 'text-green-600'
-                    }`}>
-                      {getScoreDisplay(round)}
+              return (
+                <article
+                  key={`${round.gameType}-${round.id}`}
+                  className="flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() =>
+                    navigate(getGameRoute(round.gameType || "round", round.id))
+                  }
+                >
+                  {/* Date */}
+                  <div className="w-12 text-center flex-shrink-0">
+                    <div className="text-xs text-muted-foreground uppercase">
+                      {format(new Date(round.date), "MMM")}
                     </div>
-                    {round.total_score && (
-                      <div className="text-xs text-muted-foreground">{round.total_score}</div>
-                    )}
+                    <div className="text-lg font-semibold">
+                      {format(new Date(round.date), "d")}
+                    </div>
                   </div>
 
-                  {/* Delete Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setRoundToDelete(round.id);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                  {/* Round Name & Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">
+                      {round.round_name || round.gameMode}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                      <span className="truncate">{round.course_name}</span>
+                      {typeof round.holesPlayed === "number" && (
+                        <span>• {round.holesPlayed}H</span>
+                      )}
+                      {round.teeSet && <span>• {round.teeSet}</span>}
+                      {round.playerCount > 1 && <span>• {round.playerCount} players</span>}
+                      <span>• {round.gameMode}</span>
+                    </div>
+                  </div>
 
-                  <ChevronRight size={16} className="text-muted-foreground" />
-                </div>
-              </div>
-            ))}
-          </div>
+                  {/* Score / Action */}
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <div
+                        className={`font-bold ${
+                          !showStrokeScore || scoreText === "-"
+                            ? "text-muted-foreground"
+                            : scoreText.startsWith("+")
+                              ? "text-destructive"
+                              : scoreText === "E"
+                                ? "text-foreground"
+                                : "text-green-600"
+                        }`}
+                      >
+                        {showStrokeScore ? scoreText : "View"}
+                      </div>
+                      {showStrokeScore && typeof round.totalScore === "number" && (
+                        <div className="text-xs text-muted-foreground">
+                          {round.totalScore}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Delete Button (only if user owns the round) */}
+                    {canDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRoundToDelete(round.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                        aria-label="Delete round"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    )}
+
+                    <ChevronRight size={16} className="text-muted-foreground" />
+                  </div>
+                </article>
+              );
+            })}
+          </main>
         )}
       </div>
 
@@ -254,7 +248,9 @@ const PlayedRounds = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRoundToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setRoundToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteRound}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
