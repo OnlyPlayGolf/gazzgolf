@@ -161,27 +161,35 @@ export default function PublicProfile() {
       setFriends(friendsProfiles || []);
     }
 
-    // Load rounds count
-    const { count: roundsCount } = await supabase
-      .from('rounds')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', targetUserId)
-      .or('origin.is.null,origin.eq.tracker,origin.eq.play');
-
-    setRoundsCount(roundsCount || 0);
+    // Load rounds where user is owner OR participant
+    const { data: participantRounds } = await supabase
+      .from('round_players')
+      .select('round_id')
+      .eq('user_id', targetUserId);
     
-    // Load recent rounds with scores
-    const { data: roundsData } = await supabase
+    const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
+    
+    // Fetch all rounds (RLS handles visibility)
+    const { data: allRoundsData } = await supabase
       .from('rounds')
-      .select('id, course_name, round_name, date_played')
-      .eq('user_id', targetUserId)
-      .or('origin.is.null,origin.eq.tracker,origin.eq.play')
-      .order('date_played', { ascending: false })
-      .limit(3);
+      .select('id, course_name, round_name, date_played, origin, user_id')
+      .order('date_played', { ascending: false });
+    
+    // Filter to only include owned/participated rounds with valid origin
+    const userRounds = (allRoundsData || []).filter(round => {
+      const isParticipant = round.user_id === targetUserId || participantRoundIds.includes(round.id);
+      const isPlayRound = !round.origin || round.origin === 'tracker' || round.origin === 'play';
+      return isParticipant && isPlayRound;
+    });
 
-    if (roundsData && roundsData.length > 0) {
+    setRoundsCount(userRounds.length);
+    
+    // Get recent 3 rounds
+    const recentRoundsData = userRounds.slice(0, 3);
+
+    if (recentRoundsData.length > 0) {
       const roundsWithScores = await Promise.all(
-        roundsData.map(async (round) => {
+        recentRoundsData.map(async (round) => {
           const { data: holesData } = await supabase
             .from('holes')
             .select('score, par')
