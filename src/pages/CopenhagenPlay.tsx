@@ -546,36 +546,6 @@ export default function CopenhagenPlay() {
         )}
       </div>
 
-      {/* Hole Navigation - Matches Umbriago */}
-      <div className="fixed bottom-10 left-0 right-0 bg-muted/50 backdrop-blur-sm border-t border-border py-2">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigateHole("prev")}
-              disabled={currentHoleIndex === 0}
-            >
-              <ChevronLeft size={20} />
-            </Button>
-
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-sm text-muted-foreground">Par {par}</div>
-              <div className="text-lg font-bold">Hole {currentHole}</div>
-              <div className="text-sm text-muted-foreground">SI {strokeIndex}</div>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigateHole("next")}
-              disabled={saving}
-            >
-              <ChevronRight size={20} />
-            </Button>
-          </div>
-        </div>
-      </div>
 
       <CopenhagenBottomTabBar gameId={gameId!} />
 
