@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -287,42 +287,53 @@ export default function ScramblePlay() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => setExitDialogOpen(true)} className="text-primary-foreground">
-            <LogOut size={20} />
-          </Button>
-          <div className="text-center">
-            <h1 className="text-lg font-bold">Scramble</h1>
-            <p className="text-sm opacity-80">{game.course_name}</p>
+      <div className="bg-card border-b border-border">
+        <div className="p-4 max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setExitDialogOpen(true)}
+              className="rounded-full"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+            <div className="flex-1 text-center">
+              <h1 className="text-xl font-bold">Scramble</h1>
+              <p className="text-sm text-muted-foreground">{game.course_name}</p>
+            </div>
+            <div className="w-10" />
           </div>
-          <div className="w-10" />
         </div>
-      </div>
 
-      {/* Hole Navigation */}
-      <div className="bg-primary/10 p-4">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateHole('prev')}
-            disabled={currentHole === 1}
-          >
-            <ChevronLeft size={24} />
-          </Button>
-          <div className="text-center">
-            <p className="text-2xl font-bold">Hole {currentHole}</p>
-            <p className="text-sm text-muted-foreground">Par {par}</p>
+        {/* Hole Navigation Bar */}
+        <div className="bg-[hsl(120,20%,85%)] py-4 px-4">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole('prev')}
+              disabled={currentHole === 1}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+
+            <div className="text-center">
+              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
+              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole('next')}
+              disabled={currentHole === game.holes_played}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronRight size={24} />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigateHole('next')}
-            disabled={currentHole === game.holes_played}
-          >
-            <ChevronRight size={24} />
-          </Button>
         </div>
       </div>
 

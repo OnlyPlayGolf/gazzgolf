@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Star, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -446,51 +446,49 @@ export default function BestBallPlay() {
   return (
     <div className="min-h-screen pb-44 bg-background">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto">
+      <div className="bg-card border-b border-border">
+        <div className="p-4 max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowExitDialog(true)}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
+              className="rounded-full"
             >
-              <X size={24} />
+              <ChevronLeft size={24} />
             </Button>
-            <div className="text-sm opacity-80">
-              Best Ball {game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}
+            <div className="flex-1 text-center">
+              <h1 className="text-xl font-bold">Best Ball {game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}</h1>
+              <p className="text-sm text-muted-foreground">{game.course_name}</p>
             </div>
-            <div className="text-sm font-semibold">
-              {game.game_type === 'match' 
-                ? formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)
-                : formatStrokePlayLeader(game.team_a_total, game.team_b_total, game.team_a_name, game.team_b_name)
-              }
-            </div>
+            <div className="w-10" />
           </div>
-          
-          {/* Hole Navigation */}
-          <div className="flex items-center justify-between">
+        </div>
+
+        {/* Hole Navigation Bar */}
+        <div className="bg-[hsl(120,20%,85%)] py-4 px-4">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronLeft size={24} />
             </Button>
-            
+
             <div className="text-center">
-              <div className="text-3xl font-bold">Hole {currentHole}</div>
-              <div className="text-sm opacity-80">Par {par}</div>
+              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
+              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
             </div>
-            
+
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("next")}
               disabled={saving}
-              className="text-primary-foreground hover:bg-primary-foreground/20"
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronRight size={24} />
             </Button>
