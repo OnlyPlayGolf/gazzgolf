@@ -2049,6 +2049,10 @@ export type Database = {
           username: string
         }[]
       }
+      is_friend_of_round_participant: {
+        Args: { _round_id: string }
+        Returns: boolean
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
