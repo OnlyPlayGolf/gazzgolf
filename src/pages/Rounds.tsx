@@ -57,19 +57,21 @@ const Rounds = () => {
       
       const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
 
-      // Load all rounds (RLS handles access) - exclude pro_stats  
+      // Load all rounds (RLS handles access)
       const { data: roundsData, error: roundsError } = await supabase
         .from("rounds")
         .select("*, user_id")
-        .or('origin.is.null,origin.eq.tracker,origin.eq.pro_stats')
         .order("date_played", { ascending: false });
 
       if (roundsError) throw roundsError;
       
       // Filter to only include rounds where user is owner OR participant
-      const filteredRounds = (roundsData || []).filter(round => 
-        round.user_id === user.id || participantRoundIds.includes(round.id)
-      );
+      const filteredRounds = (roundsData || []).filter(round => {
+        const isParticipant = round.user_id === user.id || participantRoundIds.includes(round.id);
+        // Include tracker, play, and pro_stats origins for the Rounds page
+        const isValidRound = !round.origin || round.origin === 'tracker' || round.origin === 'pro_stats' || round.origin === 'play';
+        return isParticipant && isValidRound;
+      });
 
       const roundIds = filteredRounds.map(r => r.id);
       const { data: proLinks } = await supabase
