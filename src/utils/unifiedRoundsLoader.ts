@@ -35,27 +35,27 @@ const toSortTime = (isoLike: string) => {
 export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRound[]> {
   const allRounds: UnifiedRoundWithSort[] = [];
 
-  // 1) Participant round ids first (used to narrow the rounds query)
-  const { data: participantRounds } = await supabase
-    .from("round_players")
-    .select("round_id")
-    .eq("user_id", targetUserId);
+  // 1) Participant round ids + participant name(s) (used for shared games)
+  const [{ data: participantRounds }, { data: targetProfile }] = await Promise.all([
+    supabase.from("round_players").select("round_id").eq("user_id", targetUserId),
+    supabase
+      .from("profiles")
+      .select("display_name, username")
+      .eq("id", targetUserId)
+      .maybeSingle(),
+  ]);
 
   const participantRoundIds = participantRounds?.map((rp) => rp.round_id) || [];
   const participantRoundIdSet = new Set(participantRoundIds);
 
+  const participantNamesRaw = [targetProfile?.display_name, targetProfile?.username]
+    .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+    .map((v) => v.trim());
+
+  const participantNames = Array.from(new Set(participantNamesRaw));
+
   // 2) Fetch the rest in parallel
-  const [
-    ownedRoundsRes,
-    roundSummariesRes,
-    copenhagenGamesRes,
-    skinsGamesRes,
-    bestBallGamesRes,
-    scrambleGamesRes,
-    wolfGamesRes,
-    umbriagioGamesRes,
-    matchPlayGamesRes,
-  ] = await Promise.all([
+  const corePromises = [
     supabase
       .from("rounds")
       .select(
@@ -65,46 +65,90 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       .or("origin.eq.play,origin.is.null,origin.eq.tracker")
       .order("date_played", { ascending: false }),
 
-    supabase
-      .from("round_summaries")
-      .select("round_id, total_score, total_par")
-      .eq("user_id", targetUserId),
+    supabase.from("round_summaries").select("round_id, total_score, total_par").eq("user_id", targetUserId),
 
     supabase
       .from("copenhagen_games")
       .select("id, course_name, date_played, created_at, holes_played, tee_set")
       .eq("user_id", targetUserId),
+
+    // Skins owned by the user
     supabase
       .from("skins_games")
-      .select("id, course_name, date_played, created_at, holes_played, players")
+      .select("id, user_id, course_name, date_played, created_at, holes_played, players")
       .eq("user_id", targetUserId),
+
     supabase
       .from("best_ball_games")
       .select(
         "id, course_name, date_played, created_at, holes_played, team_a_players, team_b_players"
       )
       .eq("user_id", targetUserId),
+
     supabase
       .from("scramble_games")
       .select("id, course_name, date_played, created_at, holes_played, tee_set, teams")
       .eq("user_id", targetUserId),
+
     supabase
       .from("wolf_games")
       .select(
         "id, course_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5"
       )
       .eq("user_id", targetUserId),
+
     supabase
       .from("umbriago_games")
       .select("id, course_name, date_played, created_at, holes_played, tee_set")
       .eq("user_id", targetUserId),
+
     supabase
       .from("match_play_games")
-      .select(
-        "id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2"
-      )
+      .select("id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
       .eq("user_id", targetUserId),
-  ]);
+  ];
+
+  // Skins shared with the user (by name in players[]). Uses RLS, so it will only return games the viewer can access.
+  const skinsParticipantPromises = participantNames.map((name) =>
+    supabase
+      .from("skins_games")
+      .select("id, user_id, course_name, date_played, created_at, holes_played, players")
+      .contains("players", [{ name }])
+  );
+
+  const results = (await Promise.all([
+    ...corePromises,
+    ...skinsParticipantPromises,
+  ])) as any[];
+
+  const [
+    ownedRoundsRes,
+    roundSummariesRes,
+    copenhagenGamesRes,
+    skinsOwnedGamesRes,
+    bestBallGamesRes,
+    scrambleGamesRes,
+    wolfGamesRes,
+    umbriagioGamesRes,
+    matchPlayGamesRes,
+    ...skinsParticipantResArr
+  ] = results;
+
+  const skinsGames = (() => {
+    const map = new Map<string, any>();
+
+    for (const g of (skinsOwnedGamesRes as any).data || []) {
+      map.set((g as any).id, g);
+    }
+
+    for (const res of skinsParticipantResArr as any[]) {
+      for (const g of (res as any)?.data || []) {
+        map.set((g as any).id, g);
+      }
+    }
+
+    return Array.from(map.values());
+  })();
 
   const ownedRounds = ownedRoundsRes.data || [];
   const ownedRoundIdSet = new Set(ownedRounds.map((r) => r.id));
@@ -127,8 +171,11 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const roundsData = [...ownedRounds, ...participantRoundsData];
 
   // Summaries map (only available for the user's own rounds via view)
-  const roundSummaries = roundSummariesRes.data || [];
-  const summaryMap = new Map(roundSummaries.map((s: any) => [s.round_id, s]));
+  const roundSummaries = (roundSummariesRes as any).data || [];
+  const summaryMap = new Map<string, any>();
+  for (const s of roundSummaries as any[]) {
+    summaryMap.set((s as any).round_id, s);
+  }
 
   // Filter to just the target user's rounds (owned or participated) and allowed origins
   const userRounds = roundsData.filter((round) => {
@@ -197,19 +244,19 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   }
 
   // Skins
-  for (const game of skinsGamesRes.data || []) {
+  for (const game of skinsGames as any[]) {
     const players = Array.isArray((game as any).players) ? (game as any).players : [];
     allRounds.push({
-      id: game.id,
-      course_name: game.course_name,
-      date: game.date_played,
+      id: (game as any).id,
+      course_name: (game as any).course_name,
+      date: (game as any).date_played,
       score: 0,
       playerCount: players.length || 2,
       gameMode: "Skins",
       gameType: "skins",
       holesPlayed: (game as any).holes_played,
-      ownerUserId: targetUserId,
-      _sortCreatedAt: (game as any).created_at || `${game.date_played}T00:00:00Z`,
+      ownerUserId: (game as any).user_id || targetUserId,
+      _sortCreatedAt: (game as any).created_at || `${(game as any).date_played}T00:00:00Z`,
     });
   }
 
