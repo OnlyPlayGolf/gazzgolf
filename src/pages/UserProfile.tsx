@@ -98,28 +98,36 @@ export default function UserProfile() {
 
     setFriendsCount(totalFriendsCount || 0);
 
-    // Load rounds count (exclude pro_stats rounds - only count "play" rounds)
-    const { count: roundsCount } = await supabase
-      .from('rounds')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .or('origin.is.null,origin.eq.tracker,origin.eq.play');
-
-    setRoundsCount(roundsCount || 0);
+    // Load rounds where user is owner OR participant (exclude pro_stats rounds)
+    // First get round IDs where user is a participant
+    const { data: participantRounds } = await supabase
+      .from('round_players')
+      .select('round_id')
+      .eq('user_id', user.id);
     
-    // Load recent rounds with scores from holes (exclude pro_stats rounds)
+    const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
+    
+    // Fetch all rounds (owned + participated) - RLS handles the filtering
     const { data: roundsData } = await supabase
       .from('rounds')
-      .select('id, course_name, round_name, date_played, origin')
-      .eq('user_id', user.id)
+      .select('id, course_name, round_name, date_played, origin, user_id')
       .or('origin.is.null,origin.eq.tracker,origin.eq.play')
-      .order('date_played', { ascending: false })
-      .limit(3);
+      .order('date_played', { ascending: false });
+    
+    // Filter to only include rounds where user is owner OR participant
+    const userRounds = (roundsData || []).filter(round => 
+      round.user_id === user.id || participantRoundIds.includes(round.id)
+    );
+    
+    setRoundsCount(userRounds.length);
+    
+    // Get recent 3 rounds
+    const recentRoundsData = userRounds.slice(0, 3);
 
-    if (roundsData && roundsData.length > 0) {
+    if (recentRoundsData.length > 0) {
       // Get holes data and player counts for each round
       const roundsWithScores = await Promise.all(
-        roundsData.map(async (round) => {
+        recentRoundsData.map(async (round) => {
           const { data: holesData } = await supabase
             .from('holes')
             .select('score, par')

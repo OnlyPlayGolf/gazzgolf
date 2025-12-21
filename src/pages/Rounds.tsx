@@ -49,16 +49,29 @@ const Rounds = () => {
         return;
       }
 
+      // Get round IDs where user is a participant
+      const { data: participantRounds } = await supabase
+        .from('round_players')
+        .select('round_id')
+        .eq('user_id', user.id);
+      
+      const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
+
+      // Load all rounds (RLS handles access) - exclude pro_stats  
       const { data: roundsData, error: roundsError } = await supabase
         .from("rounds")
-        .select("*")
-        .eq("user_id", user.id)
+        .select("*, user_id")
         .or('origin.is.null,origin.eq.tracker,origin.eq.pro_stats')
         .order("date_played", { ascending: false });
 
       if (roundsError) throw roundsError;
+      
+      // Filter to only include rounds where user is owner OR participant
+      const filteredRounds = (roundsData || []).filter(round => 
+        round.user_id === user.id || participantRoundIds.includes(round.id)
+      );
 
-      const roundIds = (roundsData || []).map(r => r.id);
+      const roundIds = filteredRounds.map(r => r.id);
       const { data: proLinks } = await supabase
         .from('pro_stats_rounds')
         .select('external_round_id')
@@ -66,7 +79,7 @@ const Rounds = () => {
       const proSet = new Set((proLinks || []).map((r: any) => r.external_round_id));
 
       const roundsWithScores = await Promise.all(
-        (roundsData || []).map(async (round) => {
+        filteredRounds.map(async (round) => {
           const { data: summaryData } = await supabase
             .from('round_summaries')
             .select('total_score, total_par')
