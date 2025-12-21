@@ -503,7 +503,7 @@ export default function CopenhagenPlay() {
               size="sm"
               className="flex-1 text-emerald-600"
             >
-              {game.player_1}: Press
+              {game.player_1.split(' ')[0]}: Press
             </Button>
             <Button
               variant="outline"
@@ -511,7 +511,7 @@ export default function CopenhagenPlay() {
               size="sm"
               className="flex-1 text-blue-600"
             >
-              {game.player_2}: Press
+              {game.player_2.split(' ')[0]}: Press
             </Button>
             <Button
               variant="outline"
@@ -519,7 +519,7 @@ export default function CopenhagenPlay() {
               size="sm"
               className="flex-1 text-amber-600"
             >
-              {game.player_3}: Press
+              {game.player_3.split(' ')[0]}: Press
             </Button>
           </div>
         </Card>
