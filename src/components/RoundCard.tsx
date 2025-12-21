@@ -14,6 +14,13 @@ export interface RoundCardData {
   playerCount: number;
   gameMode: string;
   gameType?: GameType;
+
+  // Optional metadata (used by some pages)
+  holesPlayed?: number;
+  teeSet?: string | null;
+  totalScore?: number | null;
+  totalPar?: number | null;
+  ownerUserId?: string;
 }
 
 interface RoundCardProps {
