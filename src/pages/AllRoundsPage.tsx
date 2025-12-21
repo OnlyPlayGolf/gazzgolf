@@ -44,13 +44,25 @@ export default function AllRoundsPage() {
       setProfileName(profileData.display_name || profileData.username || 'User');
     }
 
-    // Load all rounds (exclude pro_stats)
+    // Get round IDs where user is a participant
+    const { data: participantRounds } = await supabase
+      .from('round_players')
+      .select('round_id')
+      .eq('user_id', targetUserId);
+    
+    const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
+
+    // Load all rounds (RLS handles access) - exclude pro_stats
     const { data: roundsData, error } = await supabase
       .from('rounds')
-      .select('id, course_name, round_name, date_played, origin')
-      .eq('user_id', targetUserId)
+      .select('id, course_name, round_name, date_played, origin, user_id')
       .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false });
+    
+    // Filter to only include rounds where user is owner OR participant
+    const filteredRounds = (roundsData || []).filter(round => 
+      round.user_id === targetUserId || participantRoundIds.includes(round.id)
+    );
 
     if (error) {
       console.error('Error loading rounds:', error);
@@ -58,10 +70,10 @@ export default function AllRoundsPage() {
       return;
     }
 
-    if (roundsData && roundsData.length > 0) {
+    if (filteredRounds.length > 0) {
       // Get scores and player counts for each round
       const roundsWithDetails = await Promise.all(
-        roundsData.map(async (round) => {
+        filteredRounds.map(async (round) => {
           const { data: holesData } = await supabase
             .from('holes')
             .select('score, par')
