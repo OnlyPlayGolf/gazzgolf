@@ -325,7 +325,9 @@ export default function BestBallPlay() {
       const nextPlayer = allPlayers[currentIndex + 1];
       setActivePlayerSheet({ team: nextPlayer.team, playerId: nextPlayer.odId });
     } else {
+      // Last player - close sheet and auto-save/advance
       setActivePlayerSheet(null);
+      saveHole();
     }
   };
 

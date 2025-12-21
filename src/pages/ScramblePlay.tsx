@@ -181,8 +181,11 @@ export default function ScramblePlay() {
       // Move to next team
       setActiveTeamSheet(teams[currentIndex + 1].id);
     } else {
-      // All teams done, close sheet
+      // All teams done - close sheet and auto-advance to next hole
       setActiveTeamSheet(null);
+      if (game && currentHole < game.holes_played) {
+        setCurrentHole(currentHole + 1);
+      }
     }
   };
 
