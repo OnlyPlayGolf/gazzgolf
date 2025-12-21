@@ -311,7 +311,9 @@ export default function CopenhagenPlay() {
     } else if (activePlayerSheet === 2) {
       setActivePlayerSheet(3);
     } else {
+      // Last player - close sheet and auto-save/advance
       setActivePlayerSheet(null);
+      saveHole();
     }
   };
 

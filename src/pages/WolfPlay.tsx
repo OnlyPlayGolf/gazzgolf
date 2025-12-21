@@ -142,6 +142,7 @@ export default function WolfPlay() {
     if (playerIndex < playerCount - 1) {
       setActivePlayerSheet(playerIndex + 1);
     } else {
+      // Last player - close sheet (Wolf requires wolf choice before save, so don't auto-save)
       setActivePlayerSheet(null);
     }
   };

@@ -291,7 +291,9 @@ export default function SkinsPlay() {
     if (activePlayerIndex !== null && activePlayerIndex < players.length - 1) {
       setActivePlayerIndex(activePlayerIndex + 1);
     } else {
+      // Last player - close sheet and auto-save/advance
       setActivePlayerIndex(null);
+      saveHole();
     }
   };
 
