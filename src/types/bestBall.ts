@@ -16,6 +16,8 @@ export interface BestBallPlayerScore {
   handicapStrokes: number;
 }
 
+export type BestBallGameType = 'match' | 'stroke';
+
 export interface BestBallGame {
   id: string;
   user_id: string;
@@ -24,7 +26,7 @@ export interface BestBallGame {
   date_played: string;
   holes_played: number;
   created_at: string;
-  game_type: 'match';
+  game_type: BestBallGameType;
   team_a_name: string;
   team_a_players: BestBallPlayer[];
   team_b_name: string;

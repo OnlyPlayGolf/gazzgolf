@@ -75,7 +75,7 @@ const About = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Game Formats</p>
-                  <p className="text-sm text-muted-foreground">Stroke Play, Match Play, Best Ball, Scramble, Umbriago, Wolf, and more</p>
+                  <p className="text-sm text-muted-foreground">Stroke Play, Match Play, Best Ball (Match or Stroke), Scramble, Umbriago, Wolf, and more</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">

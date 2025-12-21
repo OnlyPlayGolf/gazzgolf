@@ -800,7 +800,7 @@ export default function RoundsPlay() {
                   <div className="space-y-2 pt-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Teams</p>
                     {[
-                      { id: "best_ball", label: "Best Ball", desc: "Team match play" },
+                      { id: "best_ball", label: "Best Ball", desc: "Team match play or stroke play" },
                       { id: "scramble", label: "Scramble", desc: "Team plays best shot" },
                       { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
                       { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },

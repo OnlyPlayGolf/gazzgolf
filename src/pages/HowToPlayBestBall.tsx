@@ -23,12 +23,12 @@ export default function HowToPlayBestBall() {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>
-                Best Ball Match Play is a team format where each player plays their own ball, 
-                and teams compete <strong>hole-by-hole</strong>.
+                Best Ball is a team format where each player plays their own ball, 
+                and the <strong>best score</strong> from each team counts on every hole.
               </p>
               <p>
-                The team with the lowest best score wins each hole. Unlike stroke play, 
-                total strokes don't matter — only holes won count.
+                Best Ball supports <strong>two game types</strong>: Match Play and Stroke Play. 
+                Choose your format during game setup.
               </p>
             </CardContent>
           </Card>
@@ -44,14 +44,46 @@ export default function HowToPlayBestBall() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-blue-500/30 bg-blue-500/5">
             <CardHeader>
-              <CardTitle className="text-lg">Hole Scoring</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500" />
+                Match Play Mode
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>
+                Teams compete <strong>hole-by-hole</strong>. The team with the lowest 
+                best ball score wins each hole.
+              </p>
               <p><strong>Win a hole:</strong> Team goes "1 Up"</p>
               <p><strong>Lose a hole:</strong> Team goes "1 Down"</p>
               <p><strong>Tie (halve):</strong> No change in match status</p>
+              <p className="pt-2">
+                <strong>Winning:</strong> The match ends when one team is up more holes 
+                than there are remaining (e.g., 4 & 3 means 4 up with 3 to play).
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-500/30 bg-green-500/5">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                Stroke Play Mode
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>
+                Teams compete on <strong>total strokes</strong>. The team with the 
+                lowest combined best ball score wins.
+              </p>
+              <p><strong>Each hole:</strong> The best score from each team is added to their running total</p>
+              <p><strong>Leaderboard:</strong> Ranked by total team score (lowest wins)</p>
+              <p className="pt-2">
+                <strong>Winning:</strong> After all holes, the team with the lowest 
+                total score wins.
+              </p>
             </CardContent>
           </Card>
 
@@ -61,34 +93,16 @@ export default function HowToPlayBestBall() {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p><strong>Hole 1 (Par 4):</strong></p>
-              <p>• Team A best: 4 (par)</p>
-              <p>• Team B best: 5 (bogey)</p>
-              <p>• Result: Team A wins the hole → <strong>Team A 1 Up</strong></p>
+              <p>• Team A: Player 1 scores 4, Player 2 scores 5 → Best: 4</p>
+              <p>• Team B: Player 1 scores 5, Player 2 scores 4 → Best: 4</p>
+              <p className="pt-2"><strong>Match Play:</strong> Hole is halved (tied)</p>
+              <p><strong>Stroke Play:</strong> Both teams add 4 to their total</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Winning the Match</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>
-                The match ends when one team is up more holes than there are remaining.
-              </p>
-              <p>
-                <strong>Example:</strong> Team A is 4 Up with 3 holes to play → 
-                Team A wins "4 & 3"
-              </p>
-              <p>
-                If tied after 18 holes, the match ends "All Square" or continues 
-                with extra holes.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Common Terms</CardTitle>
+              <CardTitle className="text-lg">Match Play Terms</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p><strong>All Square:</strong> Match is tied</p>
@@ -109,6 +123,9 @@ export default function HowToPlayBestBall() {
               </p>
               <p>
                 The team's best <strong>net score</strong> counts for each hole.
+              </p>
+              <p>
+                This applies to both Match Play and Stroke Play modes.
               </p>
             </CardContent>
           </Card>

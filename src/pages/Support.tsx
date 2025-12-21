@@ -45,7 +45,7 @@ const Support = () => {
     {
       id: '7',
       question: 'What game formats are available?',
-      answer: 'We support Stroke Play, Match Play, Best Ball (Stroke & Match), Scramble, Umbriago, Wolf, and Copenhagen. Each format has its own rules and scoring system.'
+      answer: 'We support Stroke Play, Match Play, Best Ball (Match Play or Stroke Play), Scramble, Umbriago, Wolf, and Copenhagen. Each format has its own rules and scoring system.'
     },
     {
       id: '8',

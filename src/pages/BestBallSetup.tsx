@@ -15,7 +15,7 @@ import { parseHandicap, formatHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
-import { BestBallPlayer } from "@/types/bestBall";
+import { BestBallPlayer, BestBallGameType } from "@/types/bestBall";
 
 interface Course {
   id: string;
@@ -23,8 +23,7 @@ interface Course {
   location: string | null;
 }
 
-type GameType = 'match';
-
+type GameType = BestBallGameType;
 export default function BestBallSetup() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,7 +34,7 @@ export default function BestBallSetup() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   
   // Game settings
-  const [gameType] = useState<GameType>('match');
+  const [gameType, setGameType] = useState<GameType>('match');
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [teamAName, setTeamAName] = useState("Team A");
   const [teamBName, setTeamBName] = useState("Team B");
@@ -323,6 +322,42 @@ export default function BestBallSetup() {
           </Button>
           <h1 className="text-2xl font-bold text-foreground">Best Ball Setup</h1>
         </div>
+
+        {/* Game Type Selection */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Trophy size={20} className="text-primary" />
+              Game Type
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setGameType('match')}
+                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                  gameType === 'match'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <p className="font-semibold">Match Play</p>
+                <p className="text-xs text-muted-foreground">Hole-by-hole wins</p>
+              </button>
+              <button
+                onClick={() => setGameType('stroke')}
+                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                  gameType === 'stroke'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <p className="font-semibold">Stroke Play</p>
+                <p className="text-xs text-muted-foreground">Total team score</p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Handicaps Toggle */}
         <Card>

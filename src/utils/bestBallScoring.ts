@@ -161,3 +161,46 @@ export function getScoreColorClass(score: number, par: number): string {
   if (diff === 1) return "text-orange-500"; // Bogey
   return "text-red-500"; // Double or worse
 }
+
+/**
+ * Format stroke play status (total score relative to par)
+ */
+export function formatStrokePlayStatus(
+  teamATotal: number,
+  teamBTotal: number,
+  holesPlayed: number,
+  coursePar: number,
+  teamAName: string = "Team A",
+  teamBName: string = "Team B"
+): string {
+  const parForHoles = coursePar * (holesPlayed / 18); // Approximate par for holes played
+  const teamADiff = teamATotal - Math.round(parForHoles);
+  const teamBDiff = teamBTotal - Math.round(parForHoles);
+  
+  const formatDiff = (diff: number) => {
+    if (diff === 0) return "E";
+    if (diff > 0) return `+${diff}`;
+    return `${diff}`;
+  };
+  
+  return `${teamAName}: ${formatDiff(teamADiff)} | ${teamBName}: ${formatDiff(teamBDiff)}`;
+}
+
+/**
+ * Format stroke play leader
+ */
+export function formatStrokePlayLeader(
+  teamATotal: number,
+  teamBTotal: number,
+  teamAName: string = "Team A",
+  teamBName: string = "Team B"
+): string {
+  if (teamATotal === teamBTotal) {
+    return "Tied";
+  }
+  
+  const leader = teamATotal < teamBTotal ? teamAName : teamBName;
+  const margin = Math.abs(teamATotal - teamBTotal);
+  
+  return `${leader} leads by ${margin}`;
+}
