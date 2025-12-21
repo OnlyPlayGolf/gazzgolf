@@ -1,5 +1,17 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DEFAULT_TEE_OPTIONS, teeIdToDisplay } from "@/utils/teeSystem";
+import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
+
+// Default tee names mapping (used when no course-specific names available)
+const DEFAULT_TEE_NAMES: Record<string, string> = {
+  black: "Black",
+  blue: "Blue",
+  white: "White",
+  yellow: "Yellow",
+  red: "Red",
+};
+
+// Standard tee options in order from longest to shortest
+const STANDARD_TEE_ORDER = ["black", "blue", "white", "yellow", "red"];
 
 interface TeeSelectorProps {
   value: string;
@@ -9,6 +21,8 @@ interface TeeSelectorProps {
   triggerClassName?: string;
   placeholder?: string;
   disabled?: boolean;
+  /** Course-specific tee names from database, e.g., {"black": "Black", "blue": "Blue", "white": "Combo"} */
+  courseTeeNames?: Record<string, string> | null;
 }
 
 export function TeeSelector({
@@ -19,18 +33,22 @@ export function TeeSelector({
   triggerClassName,
   placeholder = "Select tee",
   disabled = false,
+  courseTeeNames,
 }: TeeSelectorProps) {
-  // Get appropriate options based on tee count
-  const options = getOptionsForCount(teeCount);
+  // Get appropriate options based on course tee names or default
+  const options = getOptions(courseTeeNames);
   
-  // Normalize value to new system if needed
-  const normalizedValue = normalizeValue(value, teeCount);
+  // Normalize value to ensure it matches an option
+  const normalizedValue = normalizeValue(value);
+  
+  // Get display name for current value
+  const displayName = getDisplayName(normalizedValue, courseTeeNames);
   
   return (
     <Select value={normalizedValue} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger className={triggerClassName}>
         <SelectValue placeholder={placeholder}>
-          {normalizedValue ? teeIdToDisplay(normalizedValue) : placeholder}
+          {normalizedValue ? displayName : placeholder}
         </SelectValue>
       </SelectTrigger>
       <SelectContent className={className}>
@@ -44,40 +62,50 @@ export function TeeSelector({
   );
 }
 
-function getOptionsForCount(teeCount: number): { value: string; label: string }[] {
-  // Always show all 5 tee options to ensure users can select any tee
-  // Even if a course doesn't have all tee distances, users may want to select
-  // a specific difficulty level
-  return DEFAULT_TEE_OPTIONS;
+function getOptions(courseTeeNames?: Record<string, string> | null): { value: string; label: string }[] {
+  const names = courseTeeNames || DEFAULT_TEE_NAMES;
+  
+  // Return options in standard order, using course-specific names
+  return STANDARD_TEE_ORDER
+    .filter(key => names[key]) // Only include tees that have names
+    .map(key => ({
+      value: key,
+      label: names[key] || DEFAULT_TEE_NAMES[key] || key,
+    }));
 }
 
-// Normalize legacy color values to new system
-function normalizeValue(value: string, teeCount: number): string {
+// Normalize legacy values (difficulty-based) to color-based system
+function normalizeValue(value: string): string {
   if (!value) return "";
   
   const lower = value.toLowerCase();
   
-  // Already in new format
-  if (["longest", "long", "medium", "short", "shortest"].includes(lower)) {
+  // Already in color format
+  if (STANDARD_TEE_ORDER.includes(lower)) {
     return lower;
   }
   
-  // Map legacy colors to new system
-  const colorMap: Record<string, string> = {
-    "black": "longest",
-    "gold": "longest", 
-    "blue": "long",
-    "white": "medium",
-    "yellow": "short",
-    "red": "shortest",
-    "orange": "shortest",
+  // Map legacy difficulty names to colors
+  const difficultyMap: Record<string, string> = {
+    "longest": "black",
+    "long": "blue",
+    "medium": "white",
+    "short": "yellow",
+    "shortest": "red",
   };
   
-  return colorMap[lower] || "medium";
+  return difficultyMap[lower] || "white";
+}
+
+function getDisplayName(value: string, courseTeeNames?: Record<string, string> | null): string {
+  if (!value) return "";
+  const names = courseTeeNames || DEFAULT_TEE_NAMES;
+  return names[value] || DEFAULT_TEE_NAMES[value] || value;
 }
 
 // Export for use in display contexts
-export function getTeeDisplayName(teeValue: string): string {
-  if (!teeValue) return "Medium";
-  return teeIdToDisplay(teeValue);
+export function getTeeDisplayName(teeValue: string, courseTeeNames?: Record<string, string> | null): string {
+  if (!teeValue) return "White";
+  const normalized = normalizeValue(teeValue);
+  return getDisplayName(normalized, courseTeeNames);
 }

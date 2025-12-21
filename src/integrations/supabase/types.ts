@@ -451,18 +451,21 @@ export type Database = {
           id: string
           location: string | null
           name: string
+          tee_names: Json | null
         }
         Insert: {
           created_at?: string
           id?: string
           location?: string | null
           name: string
+          tee_names?: Json | null
         }
         Update: {
           created_at?: string
           id?: string
           location?: string | null
           name?: string
+          tee_names?: Json | null
         }
         Relationships: []
       }

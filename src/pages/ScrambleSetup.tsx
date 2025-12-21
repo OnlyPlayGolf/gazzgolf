@@ -17,6 +17,7 @@ interface Course {
   id: string;
   name: string;
   location: string | null;
+  tee_names?: Record<string, string> | null;
 }
 
 export default function ScrambleSetup() {
@@ -26,8 +27,9 @@ export default function ScrambleSetup() {
   
   // Course from sessionStorage
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
-  const [teeColor, setTeeColor] = useState("medium");
+  const [teeColor, setTeeColor] = useState("white");
   
   // Teams
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);
@@ -47,7 +49,11 @@ export default function ScrambleSetup() {
     // Load course info
     const savedCourse = sessionStorage.getItem('selectedCourse');
     if (savedCourse) {
-      setSelectedCourse(JSON.parse(savedCourse));
+      const course = JSON.parse(savedCourse);
+      setSelectedCourse(course);
+      if (course.tee_names) {
+        setCourseTeeNames(course.tee_names);
+      }
     }
 
     const savedHoles = sessionStorage.getItem('selectedHoles');
@@ -235,6 +241,7 @@ export default function ScrambleSetup() {
                 value={teeColor}
                 onValueChange={setTeeColor}
                 teeCount={teeCount}
+                courseTeeNames={courseTeeNames}
               />
             </div>
 
