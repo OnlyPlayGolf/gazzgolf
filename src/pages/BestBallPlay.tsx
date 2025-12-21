@@ -68,16 +68,16 @@ export default function BestBallPlay() {
         setPar(holeData.par);
         setStrokeIndex(holeData.stroke_index);
         
-        // Initialize scores if empty
+        // Initialize scores if empty (use null for no pre-set score)
         if (Object.keys(teamAScores).length === 0) {
-          const aScores: Record<string, number> = {};
-          game.team_a_players.forEach(p => { aScores[p.odId] = holeData.par; });
-          setTeamAScores(aScores);
+          const aScores: Record<string, number | null> = {};
+          game.team_a_players.forEach(p => { aScores[p.odId] = null; });
+          setTeamAScores(aScores as Record<string, number>);
         }
         if (Object.keys(teamBScores).length === 0) {
-          const bScores: Record<string, number> = {};
-          game.team_b_players.forEach(p => { bScores[p.odId] = holeData.par; });
-          setTeamBScores(bScores);
+          const bScores: Record<string, number | null> = {};
+          game.team_b_players.forEach(p => { bScores[p.odId] = null; });
+          setTeamBScores(bScores as Record<string, number>);
         }
       }
     }
@@ -118,14 +118,14 @@ export default function BestBallPlay() {
             setPar(hole1.par);
             setStrokeIndex(hole1.stroke_index);
             
-            // Initialize scores
-            const aScores: Record<string, number> = {};
-            typedGame.team_a_players.forEach(p => { aScores[p.odId] = hole1.par; });
-            setTeamAScores(aScores);
+            // Initialize scores (use null for no pre-set score)
+            const aScores: Record<string, number | null> = {};
+            typedGame.team_a_players.forEach(p => { aScores[p.odId] = null; });
+            setTeamAScores(aScores as Record<string, number>);
             
-            const bScores: Record<string, number> = {};
-            typedGame.team_b_players.forEach(p => { bScores[p.odId] = hole1.par; });
-            setTeamBScores(bScores);
+            const bScores: Record<string, number | null> = {};
+            typedGame.team_b_players.forEach(p => { bScores[p.odId] = null; });
+            setTeamBScores(bScores as Record<string, number>);
           }
         }
       }
@@ -297,13 +297,14 @@ export default function BestBallPlay() {
     setStrokeIndex(nextHoleData?.stroke_index || null);
     
     if (game) {
-      const aScores: Record<string, number> = {};
-      game.team_a_players.forEach(p => { aScores[p.odId] = nextPar; });
-      setTeamAScores(aScores);
+      // Reset to null for no pre-set score
+      const aScores: Record<string, number | null> = {};
+      game.team_a_players.forEach(p => { aScores[p.odId] = null; });
+      setTeamAScores(aScores as Record<string, number>);
       
-      const bScores: Record<string, number> = {};
-      game.team_b_players.forEach(p => { bScores[p.odId] = nextPar; });
-      setTeamBScores(bScores);
+      const bScores: Record<string, number | null> = {};
+      game.team_b_players.forEach(p => { bScores[p.odId] = null; });
+      setTeamBScores(bScores as Record<string, number>);
     }
   };
 
@@ -412,7 +413,8 @@ export default function BestBallPlay() {
     scores: Record<string, number>,
     countingPlayer: string | null
   ) => {
-    const score = scores[player.odId] || par;
+    const score = scores[player.odId];
+    const hasScore = score !== undefined && score !== null && score !== 0;
     const isCounting = countingPlayer === player.displayName;
     const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
     
@@ -434,8 +436,8 @@ export default function BestBallPlay() {
           </div>
         </div>
         
-        <div className={`text-2xl font-bold ${getScoreColorClass(score, par)}`}>
-          {score}
+        <div className={`text-2xl font-bold ${hasScore ? getScoreColorClass(score, par) : 'text-muted-foreground'}`}>
+          {hasScore ? score : '–'}
         </div>
       </div>
     );

@@ -66,8 +66,9 @@ export default function MatchPlayPlay() {
       const holeData = courseHoles.find(h => h.hole_number === currentHole);
       if (holeData) {
         setPar(holeData.par);
+        // Don't pre-set scores - keep null until entered
         if (scores.player1 === 0 && scores.player2 === 0) {
-          setScores({ player1: holeData.par, player2: holeData.par });
+          setScores({ player1: 0, player2: 0 });
         }
       }
     }
@@ -229,7 +230,7 @@ export default function MatchPlayPlay() {
     const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
     const nextPar = nextHoleData?.par || 4;
     setPar(nextPar);
-    setScores({ player1: nextPar, player2: nextPar });
+    setScores({ player1: 0, player2: 0 }); // Reset to 0 for no pre-set score
   };
 
   const updateScore = (player: 'player1' | 'player2', newScore: number) => {
@@ -364,7 +365,9 @@ export default function MatchPlayPlay() {
                 <span className="text-xs text-muted-foreground">HCP: {game.player_1_handicap}</span>
               )}
             </div>
-            <span className="text-3xl font-bold">{scores.player1}</span>
+            <span className={`text-3xl font-bold ${scores.player1 > 0 ? '' : 'text-muted-foreground'}`}>
+              {scores.player1 > 0 ? scores.player1 : '–'}
+            </span>
           </div>
         </Card>
 
@@ -383,7 +386,9 @@ export default function MatchPlayPlay() {
                 <span className="text-xs text-muted-foreground">HCP: {game.player_2_handicap}</span>
               )}
             </div>
-            <span className="text-3xl font-bold">{scores.player2}</span>
+            <span className={`text-3xl font-bold ${scores.player2 > 0 ? '' : 'text-muted-foreground'}`}>
+              {scores.player2 > 0 ? scores.player2 : '–'}
+            </span>
           </div>
         </Card>
 

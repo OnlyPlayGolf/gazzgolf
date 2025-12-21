@@ -113,9 +113,9 @@ export default function UmbriagioPlay() {
       const holeData = courseHoles.find(h => h.hole_number === currentHole);
       if (holeData) {
         setPar(holeData.par);
-        // Only set default scores if all scores are 0 (new hole, not loaded from DB)
+        // Don't pre-set scores - start with 0 (no score)
         if (scores.teamAPlayer1 === 0 && scores.teamAPlayer2 === 0 && scores.teamBPlayer1 === 0 && scores.teamBPlayer2 === 0) {
-          setScores({ teamAPlayer1: holeData.par, teamAPlayer2: holeData.par, teamBPlayer1: holeData.par, teamBPlayer2: holeData.par });
+          setScores({ teamAPlayer1: 0, teamAPlayer2: 0, teamBPlayer1: 0, teamBPlayer2: 0 });
         }
       }
     }
@@ -426,8 +426,8 @@ export default function UmbriagioPlay() {
     const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
     const nextPar = nextHoleData?.par || 4;
     setPar(nextPar);
-    // Default scores to par
-    setScores({ teamAPlayer1: nextPar, teamAPlayer2: nextPar, teamBPlayer1: nextPar, teamBPlayer2: nextPar });
+    // Reset to 0 for no pre-set score
+    setScores({ teamAPlayer1: 0, teamAPlayer2: 0, teamBPlayer1: 0, teamBPlayer2: 0 });
     setClosestToPinWinner(null);
     setMultiplier(1);
     setDoubleCalledBy(null);
@@ -849,6 +849,7 @@ function PlayerScoreCard({
   onClick: () => void;
   labelColor?: string;
 }) {
+  const hasScore = value !== undefined && value !== null && value > 0;
   return (
     <div 
       className="space-y-0.5 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors"
@@ -856,7 +857,7 @@ function PlayerScoreCard({
     >
       <span className={`text-sm font-medium truncate block ${labelColor}`}>{label}</span>
       <div className="flex items-center justify-center">
-        <div className="text-2xl font-bold">{value || '-'}</div>
+        <div className={`text-2xl font-bold ${!hasScore ? 'text-muted-foreground' : ''}`}>{hasScore ? value : '–'}</div>
       </div>
     </div>
   );

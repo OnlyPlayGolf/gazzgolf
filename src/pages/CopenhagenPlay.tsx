@@ -63,8 +63,9 @@ export default function CopenhagenPlay() {
       if (holeData) {
         setPar(holeData.par);
         setStrokeIndex(holeData.stroke_index);
+        // Don't pre-set scores to par - start with 0 (no score)
         if (scores.player1 === 0 && scores.player2 === 0 && scores.player3 === 0) {
-          setScores({ player1: holeData.par, player2: holeData.par, player3: holeData.par });
+          setScores({ player1: 0, player2: 0, player3: 0 });
         }
       }
     }
@@ -290,7 +291,7 @@ export default function CopenhagenPlay() {
     const nextSI = nextHoleData?.stroke_index || 1;
     setPar(nextPar);
     setStrokeIndex(nextSI);
-    setScores({ player1: nextPar, player2: nextPar, player3: nextPar });
+    setScores({ player1: 0, player2: 0, player3: 0 }); // Reset to 0 for no pre-set score
   };
 
   const updateScore = (player: 'player1' | 'player2' | 'player3', score: number | null) => {
