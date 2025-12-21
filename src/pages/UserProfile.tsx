@@ -108,16 +108,21 @@ export default function UserProfile() {
     const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
     
     // Fetch all rounds (owned + participated) - RLS handles the filtering
-    const { data: roundsData } = await supabase
+    const { data: roundsData, error: roundsError } = await supabase
       .from('rounds')
       .select('id, course_name, round_name, date_played, origin, user_id')
-      .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false });
     
-    // Filter to only include rounds where user is owner OR participant
-    const userRounds = (roundsData || []).filter(round => 
-      round.user_id === user.id || participantRoundIds.includes(round.id)
-    );
+    if (roundsError) {
+      console.error('Error fetching rounds:', roundsError);
+    }
+    
+    // Filter out pro_stats rounds client-side and only include owned/participated rounds
+    const userRounds = (roundsData || []).filter(round => {
+      const isParticipant = round.user_id === user.id || participantRoundIds.includes(round.id);
+      const isPlayRound = !round.origin || round.origin === 'tracker' || round.origin === 'play';
+      return isParticipant && isPlayRound;
+    });
     
     setRoundsCount(userRounds.length);
     

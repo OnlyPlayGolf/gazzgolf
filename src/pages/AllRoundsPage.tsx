@@ -52,17 +52,18 @@ export default function AllRoundsPage() {
     
     const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
 
-    // Load all rounds (RLS handles access) - exclude pro_stats
+    // Load all rounds (RLS handles access)
     const { data: roundsData, error } = await supabase
       .from('rounds')
       .select('id, course_name, round_name, date_played, origin, user_id')
-      .or('origin.is.null,origin.eq.tracker,origin.eq.play')
       .order('date_played', { ascending: false });
     
-    // Filter to only include rounds where user is owner OR participant
-    const filteredRounds = (roundsData || []).filter(round => 
-      round.user_id === targetUserId || participantRoundIds.includes(round.id)
-    );
+    // Filter to only include rounds where user is owner OR participant, excluding pro_stats
+    const filteredRounds = (roundsData || []).filter(round => {
+      const isParticipant = round.user_id === targetUserId || participantRoundIds.includes(round.id);
+      const isPlayRound = !round.origin || round.origin === 'tracker' || round.origin === 'play';
+      return isParticipant && isPlayRound;
+    });
 
     if (error) {
       console.error('Error loading rounds:', error);
