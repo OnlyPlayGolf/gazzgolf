@@ -22,6 +22,7 @@ interface Course {
   id: string;
   name: string;
   location: string | null;
+  tee_names?: Record<string, string> | null;
 }
 
 interface Player {
@@ -40,8 +41,9 @@ export default function StrokePlaySetup() {
   
   // Course from sessionStorage
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
-  const [teeColor, setTeeColor] = useState("medium");
+  const [teeColor, setTeeColor] = useState("white");
   
   // Players (including current user)
   const [players, setPlayers] = useState<Player[]>([]);
@@ -79,7 +81,11 @@ export default function StrokePlaySetup() {
       // Load course from sessionStorage
       const savedCourse = sessionStorage.getItem('selectedCourse');
       if (savedCourse) {
-        setSelectedCourse(JSON.parse(savedCourse));
+        const course = JSON.parse(savedCourse);
+        setSelectedCourse(course);
+        if (course.tee_names) {
+          setCourseTeeNames(course.tee_names);
+        }
       }
       
       // Load holes selection
@@ -302,6 +308,7 @@ export default function StrokePlaySetup() {
                   setPlayers(prev => prev.map(p => ({ ...p, teeColor: v })));
                 }}
                 teeCount={teeCount}
+                courseTeeNames={courseTeeNames}
               />
             </div>
 

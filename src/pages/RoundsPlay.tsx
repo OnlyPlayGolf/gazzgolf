@@ -32,6 +32,7 @@ interface Course {
   id: string;
   name: string;
   location: string;
+  tee_names?: Record<string, string> | null;
 }
 
 export default function RoundsPlay() {
@@ -44,6 +45,7 @@ export default function RoundsPlay() {
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [teeCount, setTeeCount] = useState(5);
+  const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [courseHoles, setCourseHoles] = useState<{ holeNumber: number; par: number; strokeIndex: number }[]>([]);
   
   // UI state
@@ -211,6 +213,19 @@ export default function RoundsPlay() {
 
   const fetchCourseTees = async (courseId: string) => {
     try {
+      // Fetch course for tee names
+      const { data: courseData } = await supabase
+        .from("courses")
+        .select("tee_names")
+        .eq("id", courseId)
+        .single();
+      
+      if (courseData?.tee_names) {
+        setCourseTeeNames(courseData.tee_names as Record<string, string>);
+      } else {
+        setCourseTeeNames(null);
+      }
+
       const { data, error } = await supabase
         .from("course_holes")
         .select("*")
@@ -222,11 +237,11 @@ export default function RoundsPlay() {
       if (data && data.length > 0) {
         const firstHole = data[0];
         const tees: string[] = [];
-        if (firstHole.white_distance) tees.push("White");
-        if (firstHole.yellow_distance) tees.push("Yellow");
-        if (firstHole.blue_distance) tees.push("Blue");
-        if (firstHole.red_distance) tees.push("Red");
-        if (firstHole.orange_distance) tees.push("Orange");
+        if (firstHole.white_distance) tees.push("white");
+        if (firstHole.yellow_distance) tees.push("yellow");
+        if (firstHole.blue_distance) tees.push("blue");
+        if (firstHole.red_distance) tees.push("red");
+        if (firstHole.orange_distance) tees.push("orange");
 
         setTeeCount(tees.length || 5);
         
@@ -234,10 +249,10 @@ export default function RoundsPlay() {
         if (!setupState.teeColor) {
           setSetupState(prev => ({
             ...prev,
-            teeColor: "medium",
+            teeColor: "white",
             groups: prev.groups.map(g => ({
               ...g,
-              players: g.players.map(p => ({ ...p, teeColor: p.teeColor || "medium" }))
+              players: g.players.map(p => ({ ...p, teeColor: p.teeColor || "white" }))
             }))
           }));
         }
@@ -251,6 +266,7 @@ export default function RoundsPlay() {
     } catch (error) {
       console.error("Error fetching tees:", error);
       setTeeCount(5);
+      setCourseTeeNames(null);
     }
   };
 
@@ -750,6 +766,7 @@ export default function RoundsPlay() {
                     value={setupState.teeColor}
                     onValueChange={handleDefaultTeeChange}
                     teeCount={teeCount}
+                    courseTeeNames={courseTeeNames}
                   />
                 </div>
 

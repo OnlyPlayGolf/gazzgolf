@@ -12,6 +12,7 @@ interface Course {
   id: string;
   name: string;
   location: string;
+  tee_names?: Record<string, string> | null;
 }
 
 interface CourseSelectionDialogProps {
@@ -54,12 +55,17 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
     try {
       const { data, error } = await supabase
         .from("courses")
-        .select("*")
+        .select("id, name, location, tee_names")
         .order("name");
 
       if (error) throw error;
-      setAllCourses(data || []);
-      setFilteredCourses(data || []);
+      const coursesWithTees = (data || []).map(c => ({
+        ...c,
+        location: c.location || "",
+        tee_names: c.tee_names as Record<string, string> | null
+      }));
+      setAllCourses(coursesWithTees);
+      setFilteredCourses(coursesWithTees);
     } catch (error) {
       console.error("Error fetching courses:", error);
     }
