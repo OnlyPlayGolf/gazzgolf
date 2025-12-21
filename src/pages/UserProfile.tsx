@@ -15,6 +15,7 @@ import QRCode from "react-qr-code";
 import { FeedPost } from "@/components/FeedPost";
 import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
 import { RoundCardData } from "@/components/RoundCard";
+import { loadUnifiedRounds } from "@/utils/unifiedRoundsLoader";
 
 interface Profile {
   id: string;
@@ -98,75 +99,18 @@ export default function UserProfile() {
 
     setFriendsCount(totalFriendsCount || 0);
 
-    // Load rounds where user is owner OR participant (exclude pro_stats rounds)
-    // First get round IDs where user is a participant
-    const { data: participantRounds } = await supabase
-      .from('round_players')
-      .select('round_id')
-      .eq('user_id', user.id);
+    // Load unified rounds (includes all game types)
+    const allRounds = await loadUnifiedRounds(user.id);
     
-    const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
-    
-    // Fetch all rounds (owned + participated) - RLS handles the filtering
-    const { data: roundsData, error: roundsError } = await supabase
-      .from('rounds')
-      .select('id, course_name, round_name, date_played, origin, user_id')
-      .order('date_played', { ascending: false });
-    
-    if (roundsError) {
-      console.error('Error fetching rounds:', roundsError);
-    }
-    
-    // Filter out pro_stats rounds client-side and only include owned/participated rounds
-    const userRounds = (roundsData || []).filter(round => {
-      const isParticipant = round.user_id === user.id || participantRoundIds.includes(round.id);
-      const isPlayRound = !round.origin || round.origin === 'tracker' || round.origin === 'play';
-      return isParticipant && isPlayRound;
-    });
-    
-    setRoundsCount(userRounds.length);
-    
-    // Get recent 3 rounds
-    const recentRoundsData = userRounds.slice(0, 3);
+    setRoundsCount(allRounds.length);
+    setRecentRounds(allRounds.slice(0, 3));
 
-    if (recentRoundsData.length > 0) {
-      // Get holes data and player counts for each round
-      const roundsWithScores = await Promise.all(
-        recentRoundsData.map(async (round) => {
-          const { data: holesData } = await supabase
-            .from('holes')
-            .select('score, par')
-            .eq('round_id', round.id);
-
-          const { count: playerCount } = await supabase
-            .from('round_players')
-            .select('*', { count: 'exact', head: true })
-            .eq('round_id', round.id);
-
-          const totalScore = holesData?.reduce((sum, hole) => sum + hole.score, 0) || 0;
-          const totalPar = holesData?.reduce((sum, hole) => sum + hole.par, 0) || 0;
-          const scoreToPar = totalScore - totalPar;
-
-          return {
-            id: round.id,
-            course_name: round.course_name || 'Unknown Course',
-            round_name: round.round_name,
-            date: round.date_played,
-            score: scoreToPar,
-            playerCount: playerCount || 1,
-            gameMode: 'Stroke Play'
-          };
-        })
-      );
-
-      setRecentRounds(roundsWithScores);
-
-      // Calculate average score to par
-      const scores = roundsWithScores.map(r => r.score);
-      if (scores.length > 0) {
-        const total = scores.reduce((sum, score) => sum + score, 0);
-        setAverageScore(Math.round((total / scores.length) * 10) / 10);
-      }
+    // Calculate average score from stroke play rounds only
+    const strokePlayRounds = allRounds.filter(r => r.gameType === 'round' || !r.gameType);
+    if (strokePlayRounds.length > 0) {
+      const scores = strokePlayRounds.map(r => r.score);
+      const total = scores.reduce((sum, score) => sum + score, 0);
+      setAverageScore(Math.round((total / scores.length) * 10) / 10);
     }
 
     // Load user's posts
