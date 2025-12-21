@@ -2057,6 +2057,10 @@ export type Database = {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
       }
+      is_round_participant: {
+        Args: { _round_id: string; _user_id: string }
+        Returns: boolean
+      }
       top3_favourite_group_for_drill: {
         Args: { p_drill: string }
         Returns: {
