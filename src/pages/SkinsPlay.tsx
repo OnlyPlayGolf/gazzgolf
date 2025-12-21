@@ -60,10 +60,10 @@ export default function SkinsPlay() {
       if (holeData) {
         setPar(holeData.par);
         setStrokeIndex(holeData.stroke_index);
-        // Initialize scores to par if not set
+        // Initialize scores to 0 (no pre-set score) if not set
         const initialScores: Record<string, number> = {};
         players.forEach(p => {
-          initialScores[p.name] = holeData.par;
+          initialScores[p.name] = 0;
         });
         if (Object.keys(scores).length === 0) {
           setScores(initialScores);
@@ -125,10 +125,10 @@ export default function SkinsPlay() {
       
       setGame(typedGame);
 
-      // Initialize scores
+      // Initialize scores to 0 (no pre-set score)
       const initialScores: Record<string, number> = {};
       typedGame.players.forEach(p => {
-        initialScores[p.name] = 4;
+        initialScores[p.name] = 0;
       });
       setScores(initialScores);
 
@@ -145,9 +145,9 @@ export default function SkinsPlay() {
           if (hole1) {
             setPar(hole1.par);
             setStrokeIndex(hole1.stroke_index);
-            // Update initial scores with actual par
+            // Update initial scores with 0 (no pre-set)
             typedGame.players.forEach(p => {
-              initialScores[p.name] = hole1.par;
+              initialScores[p.name] = 0;
             });
             setScores(initialScores);
           }
@@ -275,9 +275,10 @@ export default function SkinsPlay() {
     const nextSI = nextHoleData?.stroke_index || 1;
     setPar(nextPar);
     setStrokeIndex(nextSI);
+    // Reset to 0 for no pre-set score
     const newScores: Record<string, number> = {};
     players.forEach(p => {
-      newScores[p.name] = nextPar;
+      newScores[p.name] = 0;
     });
     setScores(newScores);
   };
@@ -441,8 +442,10 @@ export default function SkinsPlay() {
             <div className="space-y-2">
               {groupPlayers.map((player, idx) => {
                 const globalIndex = players.findIndex(p => p.name === player.name);
-                const playerScore = scores[player.name] || par;
-                const netScore = game.use_handicaps 
+                const rawScore = scores[player.name];
+                const hasScore = rawScore !== undefined && rawScore !== null && rawScore > 0;
+                const playerScore = hasScore ? rawScore : 0;
+                const netScore = game.use_handicaps && hasScore
                   ? calculateNetScore(playerScore, player.handicap, strokeIndex, game.holes_played)
                   : playerScore;
                 
@@ -462,8 +465,8 @@ export default function SkinsPlay() {
                         )}
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="bg-secondary text-secondary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold">
-                          {playerScore}
+                        <div className={`bg-secondary text-secondary-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${!hasScore ? 'text-muted-foreground' : ''}`}>
+                          {hasScore ? playerScore : '–'}
                         </div>
                         {game.use_handicaps && (
                           <div className="text-sm text-muted-foreground">

@@ -79,8 +79,8 @@ export default function WolfPlay() {
       const holeData = courseHoles.find(h => h.hole_number === currentHole);
       if (holeData) {
         setPar(holeData.par);
-        // Initialize scores to par if null
-        const newScores = scores.map(s => s === null ? holeData.par : s);
+        // Don't pre-set scores - keep null until entered
+        const newScores = scores.map(s => s === null ? null : s);
         setScores(newScores);
       }
     }
@@ -110,9 +110,10 @@ export default function WolfPlay() {
         if (!courseHolesError && courseHolesData) {
           setCourseHoles(courseHolesData);
           const hole1 = courseHolesData.find(h => h.hole_number === 1);
-          if (hole1) {
+        if (hole1) {
             setPar(hole1.par);
-            setScores([hole1.par, hole1.par, hole1.par, hole1.par, hole1.par]);
+            // Initialize with null (no pre-set scores)
+            setScores([null, null, null, null, null]);
           }
         }
       }
@@ -286,7 +287,8 @@ export default function WolfPlay() {
     const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
     const nextPar = nextHoleData?.par || 4;
     setPar(nextPar);
-    setScores([nextPar, nextPar, nextPar, nextPar, nextPar]);
+    // Reset to null for no pre-set scores
+    setScores([null, null, null, null, null]);
     setWolfChoice(null);
     setPartnerPlayer(null);
   };
@@ -456,8 +458,8 @@ export default function WolfPlay() {
                     {isPartner && <span>🤝</span>}
                     {getPlayerName(i)}
                   </span>
-                  <div className="text-2xl font-bold">
-                    {scores[i] || par}
+                  <div className={`text-2xl font-bold ${scores[i] !== null && scores[i] !== undefined ? '' : 'text-muted-foreground'}`}>
+                    {scores[i] !== null && scores[i] !== undefined ? scores[i] : '–'}
                   </div>
                 </div>
               );
