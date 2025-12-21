@@ -347,49 +347,58 @@ export default function WolfPlay() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {/* Game Info Bar */}
-      <div className="bg-primary text-primary-foreground py-2 px-4">
-        <div className="max-w-2xl mx-auto flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowExitDialog(true)}
-            className="rounded-full text-primary-foreground hover:bg-primary-foreground/20"
-          >
-            <ChevronLeft size={20} />
-          </Button>
-          <div className="flex-1 text-center">
-            <div className="text-base font-bold">Wolf Game</div>
-            <div className="text-xs opacity-80">{game.course_name}</div>
+      {/* Header */}
+      <div className="bg-card border-b border-border">
+        <div className="p-4 max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowExitDialog(true)}
+              className="rounded-full"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+            <div className="flex-1 text-center">
+              <h1 className="text-xl font-bold">Wolf</h1>
+              <p className="text-sm text-muted-foreground">{game.course_name}</p>
+            </div>
+            <div className="w-10" />
           </div>
-          <div className="w-8" />
+        </div>
+
+        {/* Hole Navigation Bar */}
+        <div className="bg-[hsl(120,20%,85%)] py-4 px-4">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("prev")}
+              disabled={currentHoleIndex === 0}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronLeft size={24} />
+            </Button>
+
+            <div className="text-center">
+              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
+              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateHole("next")}
+              disabled={saving}
+              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+            >
+              <ChevronRight size={24} />
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Hole Navigation */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigateHole("prev")}
-            disabled={currentHoleIndex === 0}
-          >
-            <ChevronLeft size={18} />
-          </Button>
-          <div className="text-center">
-            <div className="text-2xl font-bold">Hole {currentHole}</div>
-            <div className="text-sm text-muted-foreground">Par {par}</div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigateHole("next")}
-            disabled={saving}
-          >
-            <ChevronRight size={18} />
-          </Button>
-        </div>
 
         {/* Wolf indicator */}
         <Card className="p-3 bg-amber-500/10 border-amber-500">
