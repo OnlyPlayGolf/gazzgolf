@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +29,12 @@ interface Round {
   date_played: string;
   round_name?: string | null;
   origin?: string | null;
+}
+
+// Track original planned holes vs actual holes played
+interface RoundState {
+  plannedHoles: number;
+  currentTotalHoles: number;
 }
 
 interface CourseHole {
@@ -65,8 +73,10 @@ export default function RoundTracker() {
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
+  const [roundState, setRoundState] = useState<RoundState>({ plannedHoles: 18, currentTotalHoles: 18 });
 
   useEffect(() => {
     if (roundId) {
@@ -149,6 +159,13 @@ export default function RoundTracker() {
           stroke_index: i + 1,
         }));
       }
+      
+      // Track planned holes from round data
+      const plannedHoles = roundData.holes_played || 18;
+      setRoundState({ 
+        plannedHoles, 
+        currentTotalHoles: holesArray.length 
+      });
       
       setCourseHoles(holesArray);
 
@@ -262,9 +279,58 @@ export default function RoundTracker() {
     return player.profiles?.display_name || player.profiles?.username || "Player";
   };
 
+  // Check if we've reached the end of planned holes
+  const isAtLastPlannedHole = currentHoleIndex === roundState.plannedHoles - 1;
+  const isAtLastCurrentHole = currentHoleIndex === courseHoles.length - 1;
+  const isExtraHoles = courseHoles.length > roundState.plannedHoles;
+
+  const handleShowCompletionDialog = () => {
+    setShowCompletionDialog(true);
+  };
+
   const handleFinishRound = () => {
+    setShowCompletionDialog(false);
     // Navigate to round summary to show results and share option
     navigate(`/rounds/${roundId}/summary`);
+  };
+
+  const handleContinuePlaying = async () => {
+    setShowCompletionDialog(false);
+    
+    // Add one more hole to the round
+    const nextHoleNumber = courseHoles.length + 1;
+    const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5];
+    
+    const newHole: CourseHole = {
+      hole_number: nextHoleNumber,
+      par: defaultPar[(nextHoleNumber - 1) % 9],
+      stroke_index: nextHoleNumber,
+    };
+    
+    setCourseHoles([...courseHoles, newHole]);
+    setRoundState(prev => ({ ...prev, currentTotalHoles: prev.currentTotalHoles + 1 }));
+    
+    // Move to the new hole
+    setCurrentHoleIndex(courseHoles.length);
+    
+    // Update the round's holes_played count in the database
+    try {
+      await supabase
+        .from("rounds")
+        .update({ holes_played: nextHoleNumber })
+        .eq("id", roundId);
+    } catch (error) {
+      console.error("Error updating holes_played:", error);
+    }
+    
+    toast({
+      title: "Extra hole added",
+      description: `Hole ${nextHoleNumber} added to your round`,
+    });
+  };
+
+  const handleGoBack = () => {
+    setShowCompletionDialog(false);
   };
 
   const handleDeleteRound = async () => {
@@ -364,7 +430,14 @@ export default function RoundTracker() {
 
             <div className="text-center">
               <div className="text-sm text-[hsl(120,20%,40%)]">PAR {currentHole.par}</div>
-              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole.hole_number}</div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole.hole_number}</span>
+                {currentHole.hole_number > roundState.plannedHoles && (
+                  <Badge variant="secondary" className="text-xs bg-[hsl(120,20%,80%)] text-[hsl(120,20%,30%)]">
+                    Extra
+                  </Badge>
+                )}
+              </div>
               <div className="text-sm text-[hsl(120,20%,40%)]">HCP {currentHole.stroke_index}</div>
             </div>
 
@@ -416,17 +489,29 @@ export default function RoundTracker() {
           );
         })}
         
-        {currentHoleIndex === courseHoles.length - 1 && (
+        {/* Show completion button when at the last planned hole or beyond */}
+        {isAtLastCurrentHole && (
           <Button
-            onClick={handleFinishRound}
+            onClick={handleShowCompletionDialog}
             className="w-full bg-[hsl(120,20%,35%)] hover:bg-[hsl(120,20%,30%)] text-white"
             size="lg"
           >
             <Check size={20} className="mr-2" />
-            Finish Round
+            {isExtraHoles ? "Finish Extra Holes" : "Complete Round"}
           </Button>
         )}
       </div>
+
+      {/* Round Completion Dialog */}
+      <RoundCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        holesPlayed={courseHoles.length}
+        plannedHoles={roundState.plannedHoles}
+        onFinishRound={handleFinishRound}
+        onContinuePlaying={handleContinuePlaying}
+        onGoBack={handleGoBack}
+      />
 
       {/* Score Input Sheet */}
       {selectedPlayer && currentHole && (
@@ -448,9 +533,15 @@ export default function RoundTracker() {
               // Move to next player
               setSelectedPlayer(players[currentPlayerIndex + 1]);
             } else {
-              // Last player - close sheet and go to next hole
+              // Last player on this hole
               setShowScoreSheet(false);
-              if (currentHoleIndex < courseHoles.length - 1) {
+              
+              // Check if we're at the last hole (planned or extended)
+              if (currentHoleIndex >= courseHoles.length - 1) {
+                // Show completion dialog when all players finished the last hole
+                setShowCompletionDialog(true);
+              } else {
+                // Move to next hole
                 setCurrentHoleIndex(currentHoleIndex + 1);
               }
             }
