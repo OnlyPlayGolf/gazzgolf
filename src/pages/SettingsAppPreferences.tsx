@@ -14,7 +14,26 @@ const SettingsAppPreferences = () => {
   
   const [preferences, setPreferences] = useState(() => {
     const saved = localStorage.getItem('appPreferences');
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Ensure all expected keys exist with fallbacks
+        return {
+          defaultGameFormat: parsed.defaultGameFormat || 'stroke-play',
+          defaultTee: parsed.defaultTee || 'medium',
+          defaultHoles: parsed.defaultHoles || '18',
+          defaultScoring: parsed.defaultScoring || 'gross'
+        };
+      } catch {
+        return {
+          defaultGameFormat: 'stroke-play',
+          defaultTee: 'medium',
+          defaultHoles: '18',
+          defaultScoring: 'gross'
+        };
+      }
+    }
+    return {
       defaultGameFormat: 'stroke-play',
       defaultTee: 'medium',
       defaultHoles: '18',
