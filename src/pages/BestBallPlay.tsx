@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore } from "@/types/bestBall";
+import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import {
@@ -13,6 +13,7 @@ import {
   calculateHoleResult,
   calculateHandicapStrokes,
   formatMatchStatus,
+  formatStrokePlayLeader,
   isMatchFinished,
   getScoreColorClass,
 } from "@/utils/bestBallScoring";
@@ -94,7 +95,7 @@ export default function BestBallPlay() {
       
       const typedGame: BestBallGame = {
         ...gameData,
-        game_type: 'match',
+        game_type: (gameData.game_type as BestBallGameType) || 'match',
         team_a_players: gameData.team_a_players as unknown as BestBallPlayer[],
         team_b_players: gameData.team_b_players as unknown as BestBallPlayer[],
         winner_team: gameData.winner_team as 'A' | 'B' | 'TIE' | null,
@@ -272,8 +273,9 @@ export default function BestBallPlay() {
         holes_remaining: holesRemaining,
       });
 
-      // Navigate
-      if (currentHole >= totalHoles || (game.game_type === 'match' && isMatchFinished(newMatchStatus, holesRemaining))) {
+      // Navigate - check for match finish only in match play
+      const isMatchOver = game.game_type === 'match' && isMatchFinished(newMatchStatus, holesRemaining);
+      if (currentHole >= totalHoles || isMatchOver) {
         navigate(`/best-ball/${game.id}/summary`);
       } else {
         setCurrentHoleIndex(currentHoleIndex + 1);
@@ -443,9 +445,14 @@ export default function BestBallPlay() {
       <div className="bg-primary text-primary-foreground p-4 sticky top-0 z-40">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm opacity-80">Best Ball</div>
+            <div className="text-sm opacity-80">
+              Best Ball {game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}
+            </div>
             <div className="text-sm font-semibold">
-              {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
+              {game.game_type === 'match' 
+                ? formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)
+                : formatStrokePlayLeader(game.team_a_total, game.team_b_total, game.team_a_name, game.team_b_name)
+              }
             </div>
           </div>
           
@@ -525,18 +532,27 @@ export default function BestBallPlay() {
         {bestBalls.teamA.bestScore !== null && bestBalls.teamB.bestScore !== null && (
           <Card className="p-4 bg-muted/50">
             <div className="text-center">
-              <div className="text-sm text-muted-foreground mb-1">Hole Result</div>
-              <div className="text-lg font-bold">
-                {bestBalls.teamA.bestScore < bestBalls.teamB.bestScore && (
-                  <span className="text-blue-500">{game.team_a_name} wins</span>
-                )}
-                {bestBalls.teamB.bestScore < bestBalls.teamA.bestScore && (
-                  <span className="text-red-500">{game.team_b_name} wins</span>
-                )}
-                {bestBalls.teamA.bestScore === bestBalls.teamB.bestScore && (
-                  <span className="text-muted-foreground">Halved</span>
-                )}
+              <div className="text-sm text-muted-foreground mb-1">
+                {game.game_type === 'match' ? 'Hole Result' : 'Current Best Balls'}
               </div>
+              {game.game_type === 'match' ? (
+                <div className="text-lg font-bold">
+                  {bestBalls.teamA.bestScore < bestBalls.teamB.bestScore && (
+                    <span className="text-blue-500">{game.team_a_name} wins</span>
+                  )}
+                  {bestBalls.teamB.bestScore < bestBalls.teamA.bestScore && (
+                    <span className="text-red-500">{game.team_b_name} wins</span>
+                  )}
+                  {bestBalls.teamA.bestScore === bestBalls.teamB.bestScore && (
+                    <span className="text-muted-foreground">Halved</span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex justify-center gap-6 text-lg font-bold">
+                  <span className="text-blue-500">{game.team_a_name}: {bestBalls.teamA.bestScore}</span>
+                  <span className="text-red-500">{game.team_b_name}: {bestBalls.teamB.bestScore}</span>
+                </div>
+              )}
             </div>
           </Card>
         )}
