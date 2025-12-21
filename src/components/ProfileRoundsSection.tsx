@@ -54,7 +54,7 @@ export function ProfileRoundsSection({
         rounds.length > 0 ? (
           <div className="space-y-3">
             {rounds.map((round) => (
-              <RoundCard key={round.id} round={round} />
+              <RoundCard key={`${round.gameType || 'round'}-${round.id}`} round={round} />
             ))}
           </div>
         ) : (

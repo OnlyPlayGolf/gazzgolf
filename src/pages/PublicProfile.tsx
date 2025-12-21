@@ -161,68 +161,19 @@ export default function PublicProfile() {
       setFriends(friendsProfiles || []);
     }
 
-    // Load rounds where user is owner OR participant
-    const { data: participantRounds } = await supabase
-      .from('round_players')
-      .select('round_id')
-      .eq('user_id', targetUserId);
+    // Load unified rounds (includes all game types)
+    const { loadUnifiedRounds } = await import('@/utils/unifiedRoundsLoader');
+    const allRounds = await loadUnifiedRounds(targetUserId);
     
-    const participantRoundIds = participantRounds?.map(rp => rp.round_id) || [];
-    
-    // Fetch all rounds (RLS handles visibility)
-    const { data: allRoundsData } = await supabase
-      .from('rounds')
-      .select('id, course_name, round_name, date_played, origin, user_id')
-      .order('date_played', { ascending: false });
-    
-    // Filter to only include owned/participated rounds with valid origin
-    const userRounds = (allRoundsData || []).filter(round => {
-      const isParticipant = round.user_id === targetUserId || participantRoundIds.includes(round.id);
-      const isPlayRound = !round.origin || round.origin === 'tracker' || round.origin === 'play';
-      return isParticipant && isPlayRound;
-    });
+    setRoundsCount(allRounds.length);
+    setRecentRounds(allRounds.slice(0, 3));
 
-    setRoundsCount(userRounds.length);
-    
-    // Get recent 3 rounds
-    const recentRoundsData = userRounds.slice(0, 3);
-
-    if (recentRoundsData.length > 0) {
-      const roundsWithScores = await Promise.all(
-        recentRoundsData.map(async (round) => {
-          const { data: holesData } = await supabase
-            .from('holes')
-            .select('score, par')
-            .eq('round_id', round.id);
-
-          const { count: playerCount } = await supabase
-            .from('round_players')
-            .select('*', { count: 'exact', head: true })
-            .eq('round_id', round.id);
-
-          const totalScore = holesData?.reduce((sum, hole) => sum + hole.score, 0) || 0;
-          const totalPar = holesData?.reduce((sum, hole) => sum + hole.par, 0) || 0;
-          const scoreToPar = totalScore - totalPar;
-
-          return {
-            id: round.id,
-            course_name: round.course_name || 'Unknown Course',
-            round_name: round.round_name,
-            date: round.date_played,
-            score: scoreToPar,
-            playerCount: playerCount || 1,
-            gameMode: 'Stroke Play'
-          };
-        })
-      );
-
-      setRecentRounds(roundsWithScores);
-
-      const scores = roundsWithScores.map(r => r.score);
-      if (scores.length > 0) {
-        const total = scores.reduce((sum, score) => sum + score, 0);
-        setAverageScore(Math.round((total / scores.length) * 10) / 10);
-      }
+    // Calculate average score from stroke play rounds only
+    const strokePlayRounds = allRounds.filter(r => r.gameType === 'round' || !r.gameType);
+    if (strokePlayRounds.length > 0) {
+      const scores = strokePlayRounds.map(r => r.score);
+      const total = scores.reduce((sum, score) => sum + score, 0);
+      setAverageScore(Math.round((total / scores.length) * 10) / 10);
     }
 
     // Load user's posts

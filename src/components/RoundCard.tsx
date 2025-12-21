@@ -1,6 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight, MapPin, Calendar, Users, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getGameRoute } from "@/utils/unifiedRoundsLoader";
+
+type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
 export interface RoundCardData {
   id: string;
@@ -10,6 +13,7 @@ export interface RoundCardData {
   score: number;
   playerCount: number;
   gameMode: string;
+  gameType?: GameType;
 }
 
 interface RoundCardProps {
@@ -32,10 +36,18 @@ export function RoundCard({ round }: RoundCardProps) {
     return score > 0 ? `+${score}` : `${score}`;
   };
 
+  const handleClick = () => {
+    const gameType = round.gameType || 'round';
+    navigate(getGameRoute(gameType, round.id));
+  };
+
+  // Only show score for regular stroke play rounds
+  const showScore = round.gameType === 'round' || !round.gameType;
+
   return (
     <Card 
       className="cursor-pointer hover:bg-muted/50 transition-colors border-border"
-      onClick={() => navigate(`/rounds/${round.id}/detail`)}
+      onClick={handleClick}
     >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
@@ -63,9 +75,15 @@ export function RoundCard({ round }: RoundCardProps) {
             </div>
           </div>
           <div className="flex items-center gap-2 ml-3">
-            <div className={`text-2xl font-bold ${round.score <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
-              {formatScore(round.score)}
-            </div>
+            {showScore ? (
+              <div className={`text-2xl font-bold ${round.score <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
+                {formatScore(round.score)}
+              </div>
+            ) : (
+              <div className="text-sm font-medium text-muted-foreground">
+                View
+              </div>
+            )}
             <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
           </div>
         </div>
