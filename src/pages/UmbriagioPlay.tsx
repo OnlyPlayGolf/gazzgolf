@@ -458,8 +458,8 @@ export default function UmbriagioPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      // Load previous hole data
-      const prevHole = holes[currentHoleIndex - 1];
+      const targetHoleNumber = currentHole - 1;
+      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole) {
         setPar(prevHole.par);
         setScores({
@@ -475,8 +475,43 @@ export default function UmbriagioPlay() {
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
-      // Save current hole before moving to next (saveHole handles last hole → summary)
+      // Check if we're editing a previous hole (not the latest)
+      const isEditingPreviousHole = holes.some(h => h.hole_number === currentHole);
+      const nextHoleNumber = currentHole + 1;
+      const nextHoleExists = holes.some(h => h.hole_number === nextHoleNumber);
+      
+      // Save current hole first
       await saveHole();
+      
+      // If we were editing a previous hole, manually advance
+      if (isEditingPreviousHole) {
+        if (nextHoleExists) {
+          const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+          if (nextHole) {
+            const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+            setPar(nextHoleData?.par || nextHole.par);
+            setScores({
+              teamAPlayer1: nextHole.team_a_player_1_score || 0,
+              teamAPlayer2: nextHole.team_a_player_2_score || 0,
+              teamBPlayer1: nextHole.team_b_player_1_score || 0,
+              teamBPlayer2: nextHole.team_b_player_2_score || 0,
+            });
+            setClosestToPinWinner(nextHole.closest_to_pin_winner);
+            setMultiplier(nextHole.multiplier);
+            setDoubleCalledBy(nextHole.double_called_by);
+            setDoubleBackCalled(nextHole.double_back_called || false);
+          }
+        } else {
+          const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+          setPar(nextHoleData?.par || 4);
+          setScores({ teamAPlayer1: 0, teamAPlayer2: 0, teamBPlayer1: 0, teamBPlayer2: 0 });
+          setClosestToPinWinner(null);
+          setMultiplier(1);
+          setDoubleCalledBy(null);
+          setDoubleBackCalled(false);
+        }
+        setCurrentHoleIndex(currentHoleIndex + 1);
+      }
     }
   };
 

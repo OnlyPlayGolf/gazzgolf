@@ -339,7 +339,6 @@ export default function CopenhagenPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      // Find hole by hole_number, not array index
       const targetHoleNumber = currentHole - 1;
       const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole) {
@@ -353,19 +352,34 @@ export default function CopenhagenPlay() {
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
+      // Check if we're editing a previous hole (not the latest)
+      const isEditingPreviousHole = holes.some(h => h.hole_number === currentHole);
+      const nextHoleNumber = currentHole + 1;
+      const nextHoleExists = holes.some(h => h.hole_number === nextHoleNumber);
+      
       // Save current hole first
       await saveHole();
-      // If we were editing a previous hole, load the next hole data
-      const nextHoleNumber = currentHole + 1;
-      const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
-      if (nextHole) {
-        setPar(nextHole.par);
-        setStrokeIndex(nextHole.stroke_index || 1);
-        setScores({
-          player1: nextHole.player_1_gross_score || 0,
-          player2: nextHole.player_2_gross_score || 0,
-          player3: nextHole.player_3_gross_score || 0,
-        });
+      
+      // If we were editing a previous hole, manually advance
+      if (isEditingPreviousHole) {
+        if (nextHoleExists) {
+          const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+          if (nextHole) {
+            const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+            setPar(nextHoleData?.par || nextHole.par);
+            setStrokeIndex(nextHoleData?.stroke_index || nextHole.stroke_index || 1);
+            setScores({
+              player1: nextHole.player_1_gross_score || 0,
+              player2: nextHole.player_2_gross_score || 0,
+              player3: nextHole.player_3_gross_score || 0,
+            });
+          }
+        } else {
+          const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+          setPar(nextHoleData?.par || 4);
+          setStrokeIndex(nextHoleData?.stroke_index || 1);
+          setScores({ player1: 0, player2: 0, player3: 0 });
+        }
         setCurrentHoleIndex(currentHoleIndex + 1);
       }
     }

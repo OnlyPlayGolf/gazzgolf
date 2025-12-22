@@ -326,7 +326,40 @@ export default function WolfPlay() {
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
+      // Check if we're editing a previous hole (not the latest)
+      const isEditingPreviousHole = holes.some(h => h.hole_number === currentHole);
+      const nextHoleNumber = currentHole + 1;
+      const nextHoleExists = holes.some(h => h.hole_number === nextHoleNumber);
+      
+      // Save current hole first
       await saveHole();
+      
+      // If we were editing a previous hole, manually advance
+      if (isEditingPreviousHole) {
+        if (nextHoleExists) {
+          const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+          if (nextHole) {
+            const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+            setPar(nextHoleData?.par || nextHole.par);
+            setScores([
+              nextHole.player_1_score,
+              nextHole.player_2_score,
+              nextHole.player_3_score,
+              nextHole.player_4_score,
+              nextHole.player_5_score,
+            ]);
+            setWolfChoice(nextHole.wolf_choice as 'lone' | 'partner' | null);
+            setPartnerPlayer(nextHole.partner_player);
+          }
+        } else {
+          const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+          setPar(nextHoleData?.par || 4);
+          setScores([null, null, null, null, null]);
+          setWolfChoice(null);
+          setPartnerPlayer(null);
+        }
+        setCurrentHoleIndex(currentHoleIndex + 1);
+      }
     }
   };
 
