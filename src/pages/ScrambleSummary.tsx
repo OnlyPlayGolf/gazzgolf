@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
-import { Trophy, Share2, ArrowLeft } from "lucide-react";
+import { Trophy, ArrowLeft } from "lucide-react";
+import { GameShareDialog } from "@/components/GameShareDialog";
 
 export default function ScrambleSummary() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -12,6 +13,7 @@ export default function ScrambleSummary() {
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
+  const [showShareDialog, setShowShareDialog] = useState(true);
 
   useEffect(() => {
     if (gameId) fetchData();
@@ -84,9 +86,20 @@ export default function ScrambleSummary() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
+      <GameShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        gameType="Scramble"
+        courseName={game.course_name}
+        winner={winner?.name}
+        resultText={winnerTotal > 0 ? `${winnerTotal} (${formatToPar(winnerTotal, totalPar)})` : undefined}
+        additionalInfo={winner?.players.map(p => p.name).join(', ')}
+        onContinue={() => navigate("/rounds-play")}
+      />
+
       <div className="bg-primary text-primary-foreground p-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/rounds')} className="text-primary-foreground">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/rounds-play')} className="text-primary-foreground">
             <ArrowLeft size={24} />
           </Button>
           <h1 className="text-xl font-bold">Game Summary</h1>
@@ -179,16 +192,6 @@ export default function ScrambleSummary() {
             </div>
           </CardContent>
         </Card>
-
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => navigate('/rounds')}>
-            Back to Rounds
-          </Button>
-          <Button className="flex-1">
-            <Share2 size={16} className="mr-2" />
-            Share
-          </Button>
-        </div>
       </div>
     </div>
   );

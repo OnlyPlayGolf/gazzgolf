@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Trophy, Users, Share2 } from "lucide-react";
+import { ChevronLeft, Trophy, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SkinsGame, SkinsHole, SkinsPlayer, SkinsPlayerScore } from "@/types/skins";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { calculateSkinsLeaderboard } from "@/utils/skinsScoring";
+import { GameShareDialog } from "@/components/GameShareDialog";
 
 export default function SkinsSummary() {
   const { gameId } = useParams();
@@ -18,6 +19,7 @@ export default function SkinsSummary() {
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [holes, setHoles] = useState<SkinsHole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(true);
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -94,6 +96,17 @@ export default function SkinsSummary() {
 
   return (
     <div className="min-h-screen pb-32 bg-background">
+      <GameShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        gameType="Skins"
+        courseName={game.course_name}
+        winner={winner?.skinsWon > 0 ? winner.playerName : undefined}
+        resultText={winner?.skinsWon > 0 ? `${winner.skinsWon} skin${winner.skinsWon > 1 ? 's' : ''} won` : undefined}
+        additionalInfo={`${game.players.length} players`}
+        onContinue={() => navigate("/rounds-play")}
+      />
+
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="p-4 max-w-2xl mx-auto">
@@ -110,9 +123,7 @@ export default function SkinsSummary() {
               <h1 className="text-xl font-bold">Skins Summary</h1>
               <p className="text-sm text-muted-foreground">{game.course_name}</p>
             </div>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Share2 size={20} />
-            </Button>
+            <div className="w-10" />
           </div>
         </div>
       </div>
@@ -243,15 +254,6 @@ export default function SkinsSummary() {
             ))}
           </div>
         </Card>
-
-        {/* Play Again */}
-        <Button
-          onClick={() => navigate("/skins/setup")}
-          variant="outline"
-          className="w-full"
-        >
-          Play Another Skins Game
-        </Button>
       </div>
 
       {gameId && <SkinsBottomTabBar gameId={gameId} />}

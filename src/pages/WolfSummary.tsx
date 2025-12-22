@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WolfGame, WolfHole } from "@/types/wolf";
+import { GameShareDialog } from "@/components/GameShareDialog";
 
 export default function WolfSummary() {
   const { gameId } = useParams();
@@ -15,6 +16,7 @@ export default function WolfSummary() {
   const [game, setGame] = useState<WolfGame | null>(null);
   const [holes, setHoles] = useState<WolfHole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(true);
 
   useEffect(() => {
     if (gameId) {
@@ -45,7 +47,6 @@ export default function WolfSummary() {
 
       // Mark game as finished
       if (!typedGame.is_finished) {
-        // Find winner
         const points = [
           typedGame.player_1_points,
           typedGame.player_2_points,
@@ -103,6 +104,17 @@ export default function WolfSummary() {
 
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
+      <GameShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        gameType="Wolf"
+        courseName={game.course_name}
+        winner={winner.name}
+        resultText={`${winner.points} points`}
+        additionalInfo={`${playerCount} players`}
+        onContinue={() => navigate("/rounds-play")}
+      />
+
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')} className="p-2">
@@ -115,7 +127,7 @@ export default function WolfSummary() {
         <Card className="p-6 bg-gradient-to-br from-amber-500/20 to-yellow-500/10 border-amber-500/30">
           <div className="text-center">
             <Trophy className="w-12 h-12 mx-auto text-amber-500 mb-2" />
-            <h2 className="text-2xl font-bold text-amber-600">🏆 Winner: {winner.name}</h2>
+            <h2 className="text-2xl font-bold text-amber-600">Winner: {winner.name}</h2>
             <p className="text-3xl font-bold mt-2">{winner.points} points</p>
           </div>
         </Card>
@@ -133,7 +145,6 @@ export default function WolfSummary() {
               >
                 <span className="font-medium">
                   {index + 1}. {player.name}
-                  {index === 0 && ' 🏆'}
                 </span>
                 <span className="font-bold text-lg">{player.points} pts</span>
               </div>
@@ -159,14 +170,6 @@ export default function WolfSummary() {
             </div>
           </div>
         </Card>
-
-        <Button 
-          onClick={() => navigate('/rounds-play')} 
-          className="w-full" 
-          size="lg"
-        >
-          Back to Play
-        </Button>
       </div>
     </div>
   );
