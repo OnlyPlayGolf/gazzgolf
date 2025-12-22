@@ -90,6 +90,7 @@ export interface AIMessage {
   role: 'user' | 'assistant';
   content: string;
   gameConfig?: GameConfiguration;
+  configApplied?: boolean;
 }
 
 export interface AISetupState {
