@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
-import { Trophy, Share2, Home, Zap, Target } from "lucide-react";
-import { CopenhagenShareDialog } from "@/components/CopenhagenShareDialog";
+import { Trophy, Zap, Target } from "lucide-react";
+import { GameShareDialog } from "@/components/GameShareDialog";
 
 export default function CopenhagenSummary() {
   const { gameId } = useParams();
@@ -14,7 +13,7 @@ export default function CopenhagenSummary() {
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(true);
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -69,11 +68,20 @@ export default function CopenhagenSummary() {
   ].sort((a, b) => b.points - a.points);
 
   const sweeps = holes.filter(h => h.is_sweep);
-  const totalPoints = players.reduce((sum, p) => sum + p.points, 0);
-  const averagePoints = totalPoints / 3;
 
   return (
     <div className="min-h-screen pb-8 bg-background">
+      <GameShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        gameType="Copenhagen"
+        courseName={game.course_name}
+        winner={players[0].name}
+        resultText={`${players[0].points} points`}
+        additionalInfo={`${game.player_1}, ${game.player_2}, ${game.player_3}`}
+        onContinue={() => navigate("/rounds-play")}
+      />
+
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -156,27 +164,7 @@ export default function CopenhagenSummary() {
             </CardContent>
           </Card>
         )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button onClick={() => setShowShareDialog(true)} variant="outline" className="flex-1">
-            <Share2 size={16} className="mr-2" />
-            Share
-          </Button>
-          <Button onClick={() => navigate("/rounds-play")} className="flex-1">
-            <Home size={16} className="mr-2" />
-            Done
-          </Button>
-        </div>
       </div>
-
-      {game && (
-        <CopenhagenShareDialog
-          open={showShareDialog}
-          onOpenChange={setShowShareDialog}
-          game={game}
-        />
-      )}
     </div>
   );
 }

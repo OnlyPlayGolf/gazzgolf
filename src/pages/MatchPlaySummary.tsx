@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Trophy, Share2 } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
-import { formatMatchStatus } from "@/utils/matchPlayScoring";
+import { GameShareDialog } from "@/components/GameShareDialog";
 
 export default function MatchPlaySummary() {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [game, setGame] = useState<MatchPlayGame | null>(null);
   const [holes, setHoles] = useState<MatchPlayHole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(true);
 
   useEffect(() => {
     if (gameId) {
@@ -75,6 +73,17 @@ export default function MatchPlaySummary() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-8">
+      <GameShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        gameType="Match Play"
+        courseName={game.course_name}
+        winner={game.winner_player || undefined}
+        resultText={game.final_result || `${player1HolesWon}-${player2HolesWon}`}
+        additionalInfo={`${game.player_1} vs ${game.player_2}`}
+        onContinue={() => navigate("/rounds-play")}
+      />
+
       <div className="p-4 pt-8 max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">
@@ -162,17 +171,6 @@ export default function MatchPlaySummary() {
             </table>
           </div>
         </Card>
-
-        {/* Actions */}
-        <div className="space-y-3">
-          <Button className="w-full" variant="outline" onClick={() => toast({ title: "Share feature coming soon!" })}>
-            <Share2 size={16} className="mr-2" />
-            Share Result
-          </Button>
-          <Button className="w-full" onClick={() => navigate("/rounds-play")}>
-            Back to Games
-          </Button>
-        </div>
       </div>
     </div>
   );

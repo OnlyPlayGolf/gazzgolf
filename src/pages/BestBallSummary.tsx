@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { formatMatchStatus } from "@/utils/bestBallScoring";
 import { Trophy, Users } from "lucide-react";
+import { GameShareDialog } from "@/components/GameShareDialog";
 
 export default function BestBallSummary() {
   const { gameId } = useParams();
@@ -13,6 +14,7 @@ export default function BestBallSummary() {
   const [game, setGame] = useState<BestBallGame | null>(null);
   const [holes, setHoles] = useState<BestBallHole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(true);
 
   useEffect(() => {
     if (gameId) {
@@ -81,7 +83,6 @@ export default function BestBallSummary() {
   const teamBHolesWon = holes.filter(h => h.hole_result === -1).length;
   const halvesCount = holes.filter(h => h.hole_result === 0).length;
 
-  // Determine winner
   let winner: 'A' | 'B' | 'TIE' | null = null;
   let resultText = '';
   
@@ -109,10 +110,21 @@ export default function BestBallSummary() {
     }
   }
 
-  const winnerName = winner === 'A' ? game.team_a_name : winner === 'B' ? game.team_b_name : null;
+  const winnerName = winner === 'A' ? game.team_a_name : winner === 'B' ? game.team_b_name : undefined;
 
   return (
     <div className="min-h-screen bg-background">
+      <GameShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        gameType="Best Ball"
+        courseName={game.course_name}
+        winner={winnerName}
+        resultText={resultText}
+        additionalInfo={`${game.team_a_name} vs ${game.team_b_name}`}
+        onContinue={() => navigate("/rounds-play")}
+      />
+
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-6 text-center">
         <Trophy className="w-12 h-12 mx-auto mb-2" />
@@ -206,21 +218,12 @@ export default function BestBallSummary() {
         </Card>
 
         {/* Actions */}
-        <div className="space-y-2">
-          <Button 
-            className="w-full"
-            onClick={() => navigate(`/best-ball/${gameId}/leaderboard`)}
-          >
-            View Full Scorecard
-          </Button>
-          <Button 
-            variant="outline"
-            className="w-full"
-            onClick={() => navigate('/rounds-play')}
-          >
-            Back to Games
-          </Button>
-        </div>
+        <Button 
+          className="w-full"
+          onClick={() => navigate(`/best-ball/${gameId}/leaderboard`)}
+        >
+          View Full Scorecard
+        </Button>
       </div>
     </div>
   );
