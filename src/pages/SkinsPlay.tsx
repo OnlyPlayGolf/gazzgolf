@@ -319,7 +319,6 @@ export default function SkinsPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      // Find hole by hole_number, not array index
       const targetHoleNumber = currentHole - 1;
       const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole) {
@@ -333,19 +332,36 @@ export default function SkinsPlay() {
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
+      // Check if we're editing a previous hole (not the latest)
+      const isEditingPreviousHole = holes.some(h => h.hole_number === currentHole);
+      const nextHoleNumber = currentHole + 1;
+      const nextHoleExists = holes.some(h => h.hole_number === nextHoleNumber);
+      
       // Save current hole first
       await saveHole();
-      // If we were editing a previous hole, load the next hole data
-      const nextHoleNumber = currentHole + 1;
-      const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
-      if (nextHole) {
-        setPar(nextHole.par);
-        setStrokeIndex(nextHole.stroke_index || 1);
-        const nextScores: Record<string, number> = {};
-        Object.entries(nextHole.player_scores).forEach(([name, score]) => {
-          nextScores[name] = score.gross;
-        });
-        setScores(nextScores);
+      
+      // If we were editing a previous hole, manually advance
+      if (isEditingPreviousHole) {
+        if (nextHoleExists) {
+          const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+          if (nextHole) {
+            const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+            setPar(nextHoleData?.par || nextHole.par);
+            setStrokeIndex(nextHoleData?.stroke_index || nextHole.stroke_index || 1);
+            const nextScores: Record<string, number> = {};
+            Object.entries(nextHole.player_scores).forEach(([name, score]) => {
+              nextScores[name] = score.gross;
+            });
+            setScores(nextScores);
+          }
+        } else {
+          const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
+          setPar(nextHoleData?.par || 4);
+          setStrokeIndex(nextHoleData?.stroke_index || 1);
+          const newScores: Record<string, number> = {};
+          players.forEach(p => { newScores[p.name] = 0; });
+          setScores(newScores);
+        }
         setCurrentHoleIndex(currentHoleIndex + 1);
       }
     }
