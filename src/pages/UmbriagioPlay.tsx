@@ -190,7 +190,8 @@ export default function UmbriagioPlay() {
       
       setHoles(typedHoles);
 
-      if (typedHoles.length > 0) {
+      // Only set to next hole on initial load, not when refreshing
+      if (typedHoles.length > 0 && currentHoleIndex === 0) {
         setCurrentHoleIndex(typedHoles.length);
       }
     } catch (error: any) {

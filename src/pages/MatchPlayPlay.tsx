@@ -112,7 +112,8 @@ export default function MatchPlayPlay() {
       
       setHoles((holesData || []) as MatchPlayHole[]);
 
-      if (holesData && holesData.length > 0) {
+      // Only set to next hole on initial load, not when refreshing
+      if (holesData && holesData.length > 0 && currentHoleIndex === 0) {
         setCurrentHoleIndex(holesData.length);
       }
     } catch (error: any) {
@@ -209,14 +210,28 @@ export default function MatchPlayPlay() {
         toast({ title: `${game.player_2} wins the hole!` });
       }
 
+      // Refresh holes data after save
+      const { data: updatedHolesData } = await supabase
+        .from("match_play_holes")
+        .select("*")
+        .eq("game_id", game.id)
+        .order("hole_number");
+
+      if (updatedHolesData) {
+        setHoles(updatedHolesData as MatchPlayHole[]);
+      }
+
       if (matchFinished) {
         navigate(`/match-play/${game.id}/summary`);
       } else if (currentHole >= game.holes_played) {
         navigate(`/match-play/${game.id}/summary`);
       } else {
-        setCurrentHoleIndex(currentHoleIndex + 1);
-        resetHoleState();
-        await fetchGame();
+        // Only advance if we were on the latest hole
+        const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
+        if (wasOnLatestHole) {
+          setCurrentHoleIndex(currentHoleIndex + 1);
+          resetHoleState();
+        }
       }
     } catch (error: any) {
       toast({ title: "Error saving hole", description: error.message, variant: "destructive" });
@@ -243,7 +258,9 @@ export default function MatchPlayPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      const prevHole = holes[currentHoleIndex - 1];
+      // Find hole by hole_number, not array index
+      const targetHoleNumber = currentHole - 1;
+      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole) {
         setPar(prevHole.par);
         setScores({
@@ -253,7 +270,19 @@ export default function MatchPlayPlay() {
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
+      // Save current hole first
       await saveHole();
+      // If we were editing a previous hole, load the next hole data
+      const nextHoleNumber = currentHole + 1;
+      const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+      if (nextHole) {
+        setPar(nextHole.par);
+        setScores({
+          player1: nextHole.player_1_gross_score || 0,
+          player2: nextHole.player_2_gross_score || 0,
+        });
+        setCurrentHoleIndex(currentHoleIndex + 1);
+      }
     }
   };
 

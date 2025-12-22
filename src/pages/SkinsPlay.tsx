@@ -167,7 +167,8 @@ export default function SkinsPlay() {
       
       setHoles(typedHoles);
 
-      if (typedHoles.length > 0) {
+      // Only set to next hole on initial load, not when refreshing
+      if (typedHoles.length > 0 && currentHoleIndex === 0) {
         setCurrentHoleIndex(typedHoles.length);
       }
     } catch (error: any) {
@@ -249,6 +250,21 @@ export default function SkinsPlay() {
         toast({ title: "Tie - no skin awarded." });
       }
 
+      // Refresh holes data after save
+      const { data: updatedHolesData } = await supabase
+        .from("skins_holes")
+        .select("*")
+        .eq("game_id", game.id)
+        .order("hole_number");
+
+      if (updatedHolesData) {
+        const typedUpdatedHoles: SkinsHole[] = updatedHolesData.map(h => ({
+          ...h,
+          player_scores: (h.player_scores as unknown as Record<string, SkinsPlayerScore>) || {},
+        }));
+        setHoles(typedUpdatedHoles);
+      }
+
       if (currentHole >= game.holes_played) {
         // Mark game as finished
         await supabase
@@ -257,9 +273,12 @@ export default function SkinsPlay() {
           .eq("id", game.id);
         navigate(`/skins/${game.id}/summary`);
       } else {
-        setCurrentHoleIndex(currentHoleIndex + 1);
-        resetHoleState();
-        await fetchGame();
+        // Only advance if we were on the latest hole
+        const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
+        if (wasOnLatestHole) {
+          setCurrentHoleIndex(currentHoleIndex + 1);
+          resetHoleState();
+        }
       }
     } catch (error: any) {
       toast({ title: "Error saving hole", description: error.message, variant: "destructive" });
@@ -300,7 +319,9 @@ export default function SkinsPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      const prevHole = holes[currentHoleIndex - 1];
+      // Find hole by hole_number, not array index
+      const targetHoleNumber = currentHole - 1;
+      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole) {
         setPar(prevHole.par);
         setStrokeIndex(prevHole.stroke_index || 1);
@@ -312,7 +333,21 @@ export default function SkinsPlay() {
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
+      // Save current hole first
       await saveHole();
+      // If we were editing a previous hole, load the next hole data
+      const nextHoleNumber = currentHole + 1;
+      const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+      if (nextHole) {
+        setPar(nextHole.par);
+        setStrokeIndex(nextHole.stroke_index || 1);
+        const nextScores: Record<string, number> = {};
+        Object.entries(nextHole.player_scores).forEach(([name, score]) => {
+          nextScores[name] = score.gross;
+        });
+        setScores(nextScores);
+        setCurrentHoleIndex(currentHoleIndex + 1);
+      }
     }
   };
 
