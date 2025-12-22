@@ -362,65 +362,49 @@ export default function BestBallPlay() {
     }
   };
 
-  const navigateHole = async (direction: "prev" | "next") => {
+  const loadHoleData = (holeNumber: number, holesData?: BestBallHole[]) => {
+    const holesSource = holesData || holes;
+    const holeData = holesSource.find(h => h.hole_number === holeNumber);
+    const courseHoleData = courseHoles.find(h => h.hole_number === holeNumber);
+    
+    if (holeData && game) {
+      // Load existing hole scores
+      setPar(courseHoleData?.par || holeData.par);
+      setStrokeIndex(courseHoleData?.stroke_index || holeData.stroke_index);
+      
+      const aScores: Record<string, number> = {};
+      holeData.team_a_scores.forEach(s => { aScores[s.playerId] = s.grossScore ?? holeData.par; });
+      setTeamAScores(aScores);
+      
+      const bScores: Record<string, number> = {};
+      holeData.team_b_scores.forEach(s => { bScores[s.playerId] = s.grossScore ?? holeData.par; });
+      setTeamBScores(bScores);
+    } else if (game) {
+      // Initialize new hole
+      setPar(courseHoleData?.par || 4);
+      setStrokeIndex(courseHoleData?.stroke_index || null);
+      
+      const aScores: Record<string, number | null> = {};
+      game.team_a_players.forEach(p => { aScores[p.odId] = null; });
+      setTeamAScores(aScores as Record<string, number>);
+      
+      const bScores: Record<string, number | null> = {};
+      game.team_b_players.forEach(p => { bScores[p.odId] = null; });
+      setTeamBScores(bScores as Record<string, number>);
+    }
+  };
+
+  const navigateHole = (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
       const targetHoleNumber = currentHole - 1;
-      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
-      if (prevHole && game) {
-        setPar(prevHole.par);
-        setStrokeIndex(prevHole.stroke_index);
-        
-        const aScores: Record<string, number> = {};
-        prevHole.team_a_scores.forEach(s => { aScores[s.playerId] = s.grossScore ?? prevHole.par; });
-        setTeamAScores(aScores);
-        
-        const bScores: Record<string, number> = {};
-        prevHole.team_b_scores.forEach(s => { bScores[s.playerId] = s.grossScore ?? prevHole.par; });
-        setTeamBScores(bScores);
-      }
+      loadHoleData(targetHoleNumber);
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
-      // Check if we're editing a previous hole (not the latest)
-      const isEditingPreviousHole = holes.some(h => h.hole_number === currentHole);
       const nextHoleNumber = currentHole + 1;
-      const nextHoleExists = holes.some(h => h.hole_number === nextHoleNumber);
+      const maxAllowedHole = holes.length + 1; // Can go up to the next unplayed hole
       
-      // Save current hole first
-      await saveHole();
-      
-      // If we were editing a previous hole, manually advance
-      if (isEditingPreviousHole && game) {
-        if (nextHoleExists) {
-          const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
-          if (nextHole) {
-            const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
-            setPar(nextHoleData?.par || nextHole.par);
-            setStrokeIndex(nextHoleData?.stroke_index || nextHole.stroke_index);
-            
-            const aScores: Record<string, number> = {};
-            nextHole.team_a_scores.forEach(s => { aScores[s.playerId] = s.grossScore ?? nextHole.par; });
-            setTeamAScores(aScores);
-            
-            const bScores: Record<string, number> = {};
-            nextHole.team_b_scores.forEach(s => { bScores[s.playerId] = s.grossScore ?? nextHole.par; });
-            setTeamBScores(bScores);
-          }
-        } else {
-          const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
-          setPar(nextHoleData?.par || 4);
-          setStrokeIndex(nextHoleData?.stroke_index || 1);
-          
-          const teamAPlayers = (game.team_a_players as any[]) || [];
-          const teamBPlayers = (game.team_b_players as any[]) || [];
-          
-          const newAScores: Record<string, number> = {};
-          teamAPlayers.forEach(p => { newAScores[p.odId || p.odId] = 0; });
-          setTeamAScores(newAScores);
-          
-          const newBScores: Record<string, number> = {};
-          teamBPlayers.forEach(p => { newBScores[p.odId || p.odId] = 0; });
-          setTeamBScores(newBScores);
-        }
+      if (nextHoleNumber <= maxAllowedHole && nextHoleNumber <= totalHoles) {
+        loadHoleData(nextHoleNumber);
         setCurrentHoleIndex(currentHoleIndex + 1);
       }
     }
@@ -550,7 +534,7 @@ export default function BestBallPlay() {
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("next")}
-              disabled={saving}
+              disabled={saving || currentHole >= holes.length + 1 || currentHole >= totalHoles}
               className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronRight size={24} />
