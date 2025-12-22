@@ -128,7 +128,8 @@ export default function WolfPlay() {
       
       setHoles((holesData || []) as unknown as WolfHole[]);
 
-      if (holesData && holesData.length > 0) {
+      // Only set to next hole on initial load, not when refreshing
+      if (holesData && holesData.length > 0 && currentHoleIndex === 0) {
         setCurrentHoleIndex(holesData.length);
       }
     } catch (error: any) {
@@ -268,12 +269,26 @@ export default function WolfPlay() {
         player_5_points: runningTotals[4],
       });
 
+      // Refresh holes data after save
+      const { data: updatedHolesData } = await supabase
+        .from("wolf_holes" as any)
+        .select("*")
+        .eq("game_id", game.id)
+        .order("hole_number");
+
+      if (updatedHolesData) {
+        setHoles(updatedHolesData as unknown as WolfHole[]);
+      }
+
       if (currentHole >= totalHoles) {
         navigate(`/wolf/${game.id}/summary`);
       } else {
-        setCurrentHoleIndex(currentHoleIndex + 1);
-        resetHoleState();
-        await fetchGame();
+        // Only advance if we were on the latest hole
+        const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
+        if (wasOnLatestHole) {
+          setCurrentHoleIndex(currentHoleIndex + 1);
+          resetHoleState();
+        }
       }
     } catch (error: any) {
       toast({ title: "Error saving hole", description: error.message, variant: "destructive" });
@@ -295,7 +310,8 @@ export default function WolfPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      const prevHole = holes[currentHoleIndex - 1];
+      const targetHoleNumber = currentHole - 1;
+      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole) {
         setPar(prevHole.par);
         setScores([

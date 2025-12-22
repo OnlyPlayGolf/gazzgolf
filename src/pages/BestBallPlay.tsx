@@ -145,7 +145,8 @@ export default function BestBallPlay() {
         }));
         setHoles(typedHoles);
         
-        if (typedHoles.length > 0) {
+        // Only set to next hole on initial load, not when refreshing
+        if (typedHoles.length > 0 && currentHoleIndex === 0) {
           setCurrentHoleIndex(typedHoles.length);
         }
       }
@@ -273,14 +274,33 @@ export default function BestBallPlay() {
         holes_remaining: holesRemaining,
       });
 
+      // Refresh holes data after save
+      const { data: updatedHolesData } = await supabase
+        .from("best_ball_holes")
+        .select("*")
+        .eq("game_id", game.id)
+        .order("hole_number");
+
+      if (updatedHolesData) {
+        const typedHoles: BestBallHole[] = updatedHolesData.map(h => ({
+          ...h,
+          team_a_scores: h.team_a_scores as unknown as BestBallPlayerScore[],
+          team_b_scores: h.team_b_scores as unknown as BestBallPlayerScore[],
+        }));
+        setHoles(typedHoles);
+      }
+
       // Navigate - check for match finish only in match play
       const isMatchOver = game.game_type === 'match' && isMatchFinished(newMatchStatus, holesRemaining);
       if (currentHole >= totalHoles || isMatchOver) {
         navigate(`/best-ball/${game.id}/summary`);
       } else {
-        setCurrentHoleIndex(currentHoleIndex + 1);
-        resetHoleState();
-        await fetchGame();
+        // Only advance if we were on the latest hole
+        const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
+        if (wasOnLatestHole) {
+          setCurrentHoleIndex(currentHoleIndex + 1);
+          resetHoleState();
+        }
       }
     } catch (error: any) {
       toast({ title: "Error saving hole", description: error.message, variant: "destructive" });
@@ -344,22 +364,42 @@ export default function BestBallPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      const prevHole = holes[currentHoleIndex - 1];
+      // Find hole by hole_number, not array index
+      const targetHoleNumber = currentHole - 1;
+      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole && game) {
         setPar(prevHole.par);
         setStrokeIndex(prevHole.stroke_index);
         
         const aScores: Record<string, number> = {};
-        prevHole.team_a_scores.forEach(s => { aScores[s.playerId] = s.grossScore || prevHole.par; });
+        prevHole.team_a_scores.forEach(s => { aScores[s.playerId] = s.grossScore ?? prevHole.par; });
         setTeamAScores(aScores);
         
         const bScores: Record<string, number> = {};
-        prevHole.team_b_scores.forEach(s => { bScores[s.playerId] = s.grossScore || prevHole.par; });
+        prevHole.team_b_scores.forEach(s => { bScores[s.playerId] = s.grossScore ?? prevHole.par; });
         setTeamBScores(bScores);
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
+      // Save current hole first
       await saveHole();
+      // If we were editing a previous hole, load the next hole data
+      const nextHoleNumber = currentHole + 1;
+      const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+      if (nextHole && game) {
+        setPar(nextHole.par);
+        setStrokeIndex(nextHole.stroke_index);
+        
+        const aScores: Record<string, number> = {};
+        nextHole.team_a_scores.forEach(s => { aScores[s.playerId] = s.grossScore ?? nextHole.par; });
+        setTeamAScores(aScores);
+        
+        const bScores: Record<string, number> = {};
+        nextHole.team_b_scores.forEach(s => { bScores[s.playerId] = s.grossScore ?? nextHole.par; });
+        setTeamBScores(bScores);
+        
+        setCurrentHoleIndex(currentHoleIndex + 1);
+      }
     }
   };
 

@@ -118,7 +118,8 @@ export default function CopenhagenPlay() {
       
       setHoles(typedHoles);
 
-      if (typedHoles.length > 0) {
+      // Only set to next hole on initial load, not when refreshing
+      if (typedHoles.length > 0 && currentHoleIndex === 0) {
         setCurrentHoleIndex(typedHoles.length);
       }
     } catch (error: any) {
@@ -270,12 +271,30 @@ export default function CopenhagenPlay() {
         toast({ title: "🎉 SWEEP!", description: `${winnerName} wins all 6 points!` });
       }
 
+      // Refresh holes data after save
+      const { data: updatedHolesData } = await supabase
+        .from("copenhagen_holes")
+        .select("*")
+        .eq("game_id", game.id)
+        .order("hole_number");
+
+      if (updatedHolesData) {
+        const typedUpdatedHoles: CopenhagenHole[] = updatedHolesData.map(h => ({
+          ...h,
+          press_points: (h.press_points as Record<string, any>) || {},
+        }));
+        setHoles(typedUpdatedHoles);
+      }
+
       if (currentHole >= game.holes_played) {
         navigate(`/copenhagen/${game.id}/summary`);
       } else {
-        setCurrentHoleIndex(currentHoleIndex + 1);
-        resetHoleState();
-        await fetchGame();
+        // Only advance if we were on the latest hole
+        const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
+        if (wasOnLatestHole) {
+          setCurrentHoleIndex(currentHoleIndex + 1);
+          resetHoleState();
+        }
       }
     } catch (error: any) {
       toast({ title: "Error saving hole", description: error.message, variant: "destructive" });
@@ -320,7 +339,9 @@ export default function CopenhagenPlay() {
 
   const navigateHole = async (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
-      const prevHole = holes[currentHoleIndex - 1];
+      // Find hole by hole_number, not array index
+      const targetHoleNumber = currentHole - 1;
+      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
       if (prevHole) {
         setPar(prevHole.par);
         setStrokeIndex(prevHole.stroke_index || 1);
@@ -332,7 +353,21 @@ export default function CopenhagenPlay() {
       }
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next") {
+      // Save current hole first
       await saveHole();
+      // If we were editing a previous hole, load the next hole data
+      const nextHoleNumber = currentHole + 1;
+      const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
+      if (nextHole) {
+        setPar(nextHole.par);
+        setStrokeIndex(nextHole.stroke_index || 1);
+        setScores({
+          player1: nextHole.player_1_gross_score || 0,
+          player2: nextHole.player_2_gross_score || 0,
+          player3: nextHole.player_3_gross_score || 0,
+        });
+        setCurrentHoleIndex(currentHoleIndex + 1);
+      }
     }
   };
 
