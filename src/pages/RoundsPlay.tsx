@@ -358,15 +358,19 @@ export default function RoundsPlay() {
   // AI config handler
   const handleApplyAIConfig = (config: GameConfiguration) => {
     // Map base format to our supported formats
-    const format = config.baseFormat === 'stroke_play' || config.baseFormat === 'stableford'
-      ? 'stroke_play'
-      : config.baseFormat === 'umbriago'
-      ? 'umbriago'
-      : config.baseFormat === 'wolf'
-      ? 'wolf'
-      : config.baseFormat === 'custom'
-      ? 'stroke_play'
-      : 'stroke_play';
+    const formatMap: Record<string, typeof setupState.gameFormat> = {
+      'stroke_play': 'stroke_play',
+      'stableford': 'stroke_play',
+      'copenhagen': 'copenhagen',
+      'match_play': 'match_play',
+      'best_ball': 'best_ball',
+      'scramble': 'scramble',
+      'skins': 'skins',
+      'umbriago': 'umbriago',
+      'wolf': 'wolf',
+      'custom': 'stroke_play',
+    };
+    const format = formatMap[config.baseFormat] || 'stroke_play';
 
     // Map hole count
     let selectedHoles: HoleCount = '18';

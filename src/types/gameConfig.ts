@@ -51,7 +51,7 @@ export interface MiniMatch {
 
 export interface GameConfiguration {
   // Base format
-  baseFormat: 'stroke_play' | 'umbriago' | 'wolf' | 'stableford' | 'scramble' | 'best_ball' | 'custom';
+  baseFormat: 'stroke_play' | 'umbriago' | 'wolf' | 'stableford' | 'scramble' | 'best_ball' | 'copenhagen' | 'match_play' | 'skins' | 'custom';
   formatModifications?: string[];
   
   // Holes configuration
