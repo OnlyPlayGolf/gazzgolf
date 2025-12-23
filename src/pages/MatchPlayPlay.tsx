@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { useGameScoring, GameScoringConfig, CourseHoleData } from "@/hooks/useGameScoring";
 import { useToast } from "@/hooks/use-toast";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
@@ -25,296 +25,109 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface CourseHole {
-  hole_number: number;
-  par: number;
-  stroke_index: number;
+interface MatchPlayScores {
+  player1: number;
+  player2: number;
 }
+
+// Configuration for Match Play format
+const createMatchPlayConfig = (gameId: string): GameScoringConfig<MatchPlayGame, MatchPlayHole, MatchPlayScores> => ({
+  gameId,
+  gameTable: "match_play_games",
+  holesTable: "match_play_holes",
+  
+  parseGame: (data): MatchPlayGame => data as MatchPlayGame,
+  parseHole: (data): MatchPlayHole => data as MatchPlayHole,
+  getHoleNumber: (hole) => hole.hole_number,
+  getTotalHoles: (game) => game.holes_played || 18,
+  getCourseId: (game) => game.course_id || null,
+  getSummaryRoute: (id) => `/match-play/${id}/summary`,
+  
+  createEmptyScores: () => ({ player1: 0, player2: 0 }),
+  
+  extractScoresFromHole: (hole) => ({
+    player1: hole.player_1_gross_score || 0,
+    player2: hole.player_2_gross_score || 0,
+  }),
+  
+  buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles }) => {
+    const holeResult = calculateHoleResult(scores.player1, scores.player2);
+    const previousStatus = previousHoles.length > 0 
+      ? previousHoles[previousHoles.length - 1].match_status_after 
+      : 0;
+    const newMatchStatus = previousStatus + holeResult;
+    
+    return {
+      game_id: gameId,
+      hole_number: holeNumber,
+      par,
+      stroke_index: strokeIndex,
+      player_1_gross_score: scores.player1,
+      player_1_net_score: scores.player1,
+      player_2_gross_score: scores.player2,
+      player_2_net_score: scores.player2,
+      hole_result: holeResult,
+      match_status_after: newMatchStatus,
+      holes_remaining_after: 18 - holeNumber, // Will be updated based on actual total
+    };
+  },
+  
+  buildGameUpdate: ({ game, allHoles, newHoleData }) => {
+    const totalHoles = game.holes_played || 18;
+    const holesRemaining = totalHoles - newHoleData.hole_number;
+    const matchFinished = isMatchFinished(newHoleData.match_status_after, holesRemaining);
+    
+    const update: Record<string, any> = {
+      match_status: newHoleData.match_status_after,
+      holes_remaining: holesRemaining,
+    };
+    
+    if (matchFinished) {
+      const { winner, result } = getFinalResult(
+        newHoleData.match_status_after, 
+        holesRemaining, 
+        game.player_1, 
+        game.player_2
+      );
+      update.is_finished = true;
+      update.winner_player = winner;
+      update.final_result = result;
+    }
+    
+    return update;
+  },
+  
+  isGameFinished: (game, holeNumber, totalHoles, holeData) => {
+    const holesRemaining = totalHoles - holeNumber;
+    return isMatchFinished(holeData.match_status_after, holesRemaining) || holeNumber >= totalHoles;
+  },
+});
 
 export default function MatchPlayPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [game, setGame] = useState<MatchPlayGame | null>(null);
-  const [holes, setHoles] = useState<MatchPlayHole[]>([]);
-  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
-  const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
-  
-  const [par, setPar] = useState(4);
-  const [scores, setScores] = useState({
-    player1: 0,
-    player2: 0,
-  });
   const [selectedPlayer, setSelectedPlayer] = useState<1 | 2 | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
+  
+  const config = createMatchPlayConfig(gameId || "");
+  const [state, actions] = useGameScoring(config, navigate);
+  
+  const { game, holes, currentHoleIndex, loading, saving, scores, par } = state;
+  const { setScores, saveHole, navigateHole, deleteGame } = actions;
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
 
-  useEffect(() => {
-    if (gameId) {
-      fetchGame();
-    }
-  }, [gameId]);
-
-  useEffect(() => {
-    if (courseHoles.length > 0) {
-      const holeData = courseHoles.find(h => h.hole_number === currentHole);
-      if (holeData) {
-        setPar(holeData.par);
-        // Don't pre-set scores - keep null until entered
-        if (scores.player1 === 0 && scores.player2 === 0) {
-          setScores({ player1: 0, player2: 0 });
-        }
-      }
-    }
-  }, [currentHoleIndex, courseHoles]);
-
-  const fetchGame = async () => {
-    try {
-      const { data: gameData, error: gameError } = await supabase
-        .from("match_play_games")
-        .select("*")
-        .eq("id", gameId)
-        .single();
-
-      if (gameError) throw gameError;
-      
-      setGame(gameData as MatchPlayGame);
-
-      if (gameData.course_id) {
-        const { data: courseHolesData, error: courseHolesError } = await supabase
-          .from("course_holes")
-          .select("hole_number, par, stroke_index")
-          .eq("course_id", gameData.course_id)
-          .order("hole_number");
-
-        if (!courseHolesError && courseHolesData) {
-          setCourseHoles(courseHolesData);
-          const hole1 = courseHolesData.find(h => h.hole_number === 1);
-          if (hole1) {
-            setPar(hole1.par);
-          }
-        }
-      }
-
-      const { data: holesData, error: holesError } = await supabase
-        .from("match_play_holes")
-        .select("*")
-        .eq("game_id", gameId)
-        .order("hole_number");
-
-      if (holesError) throw holesError;
-      
-      setHoles((holesData || []) as MatchPlayHole[]);
-
-      // Only set to next hole on initial load, not when refreshing
-      if (holesData && holesData.length > 0 && currentHoleIndex === 0) {
-        setCurrentHoleIndex(holesData.length);
-      }
-    } catch (error: any) {
-      toast({ title: "Error loading game", description: error.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveHole = async () => {
-    if (!game) return;
-    
-    const holeResult = calculateHoleResult(scores.player1, scores.player2);
-    
-    const previousStatus = holes.length > 0 
-      ? holes[holes.length - 1].match_status_after 
-      : 0;
-    
-    const newMatchStatus = previousStatus + holeResult;
-    const newHolesRemaining = totalHoles - currentHole;
-    
-    const existingHole = holes.find(h => h.hole_number === currentHole);
-
-    setSaving(true);
-    try {
-      const strokeIndex = courseHoles.find(h => h.hole_number === currentHole)?.stroke_index || null;
-      
-      if (existingHole) {
-        const { error: holeError } = await supabase
-          .from("match_play_holes")
-          .update({
-            par,
-            stroke_index: strokeIndex,
-            player_1_gross_score: scores.player1,
-            player_1_net_score: scores.player1,
-            player_2_gross_score: scores.player2,
-            player_2_net_score: scores.player2,
-            hole_result: holeResult,
-            match_status_after: newMatchStatus,
-            holes_remaining_after: newHolesRemaining,
-          })
-          .eq("id", existingHole.id);
-
-        if (holeError) throw holeError;
-      } else {
-        const { error: holeError } = await supabase
-          .from("match_play_holes")
-          .insert({
-            game_id: game.id,
-            hole_number: currentHole,
-            par,
-            stroke_index: strokeIndex,
-            player_1_gross_score: scores.player1,
-            player_1_net_score: scores.player1,
-            player_2_gross_score: scores.player2,
-            player_2_net_score: scores.player2,
-            hole_result: holeResult,
-            match_status_after: newMatchStatus,
-            holes_remaining_after: newHolesRemaining,
-          });
-
-        if (holeError) throw holeError;
-      }
-
-      const matchFinished = isMatchFinished(newMatchStatus, newHolesRemaining);
-      
-      let updateData: any = {
-        match_status: newMatchStatus,
-        holes_remaining: newHolesRemaining,
-      };
-      
-      if (matchFinished) {
-        const { winner, result } = getFinalResult(newMatchStatus, newHolesRemaining, game.player_1, game.player_2);
-        updateData.is_finished = true;
-        updateData.winner_player = winner;
-        updateData.final_result = result;
-      }
-
-      const { error: gameError } = await supabase
-        .from("match_play_games")
-        .update(updateData)
-        .eq("id", game.id);
-
-      if (gameError) throw gameError;
-
-      setGame({
-        ...game,
-        ...updateData,
-      });
-
-      if (holeResult === 1) {
-        toast({ title: `${game.player_1} wins the hole!` });
-      } else if (holeResult === -1) {
-        toast({ title: `${game.player_2} wins the hole!` });
-      }
-
-      // Refresh holes data after save
-      const { data: updatedHolesData } = await supabase
-        .from("match_play_holes")
-        .select("*")
-        .eq("game_id", game.id)
-        .order("hole_number");
-
-      if (updatedHolesData) {
-        setHoles(updatedHolesData as MatchPlayHole[]);
-      }
-
-      if (matchFinished) {
-        navigate(`/match-play/${game.id}/summary`);
-      } else if (currentHole >= game.holes_played) {
-        navigate(`/match-play/${game.id}/summary`);
-      } else {
-        // Only advance if we were on the latest hole
-        const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
-        if (wasOnLatestHole) {
-          setCurrentHoleIndex(currentHoleIndex + 1);
-          resetHoleState();
-        }
-      }
-    } catch (error: any) {
-      toast({ title: "Error saving hole", description: error.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const resetHoleState = () => {
-    const nextHoleNumber = currentHoleIndex + 2;
-    const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
-    const nextPar = nextHoleData?.par || 4;
-    setPar(nextPar);
-    setScores({ player1: 0, player2: 0 }); // Reset to 0 for no pre-set score
-  };
-
   const updateScore = (player: 'player1' | 'player2', newScore: number) => {
     if (newScore < 1) return;
-    setScores(prev => ({
-      ...prev,
-      [player]: newScore,
-    }));
-  };
-
-  const navigateHole = async (direction: "prev" | "next") => {
-    if (direction === "prev" && currentHoleIndex > 0) {
-      const targetHoleNumber = currentHole - 1;
-      const prevHole = holes.find(h => h.hole_number === targetHoleNumber);
-      if (prevHole) {
-        setPar(prevHole.par);
-        setScores({
-          player1: prevHole.player_1_gross_score || 0,
-          player2: prevHole.player_2_gross_score || 0,
-        });
-      }
-      setCurrentHoleIndex(currentHoleIndex - 1);
-    } else if (direction === "next") {
-      // Check if we're editing a previous hole (not the latest)
-      const isEditingPreviousHole = holes.some(h => h.hole_number === currentHole);
-      const nextHoleNumber = currentHole + 1;
-      const nextHoleExists = holes.some(h => h.hole_number === nextHoleNumber);
-      
-      // Save current hole first
-      await saveHole();
-      
-      // If we were editing a previous hole, manually advance
-      if (isEditingPreviousHole) {
-        if (nextHoleExists) {
-          // Load the next existing hole
-          const nextHole = holes.find(h => h.hole_number === nextHoleNumber);
-          if (nextHole) {
-            const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
-            setPar(nextHoleData?.par || nextHole.par);
-            setScores({
-              player1: nextHole.player_1_gross_score || 0,
-              player2: nextHole.player_2_gross_score || 0,
-            });
-          }
-        } else {
-          // Moving to a new hole after edit
-          const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
-          setPar(nextHoleData?.par || 4);
-          setScores({ player1: 0, player2: 0 });
-        }
-        setCurrentHoleIndex(currentHoleIndex + 1);
-      }
-      // If not editing (on latest hole), saveHole() already advances via its own logic
-    }
-  };
-
-  const handleFinishGame = () => {
-    navigate(`/match-play/${gameId}/summary`);
+    setScores(prev => ({ ...prev, [player]: newScore }));
   };
 
   const handleDeleteGame = async () => {
-    try {
-      await supabase.from("match_play_holes").delete().eq("game_id", gameId);
-      await supabase.from("match_play_games").delete().eq("id", gameId);
-      toast({ title: "Game deleted" });
-      navigate("/rounds-play");
-    } catch (error: any) {
-      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
-    }
+    await deleteGame();
   };
 
   if (loading) {
@@ -338,7 +151,7 @@ export default function MatchPlayPlay() {
   const currentMatchStatus = holes.length > 0 
     ? holes[holes.length - 1].match_status_after 
     : 0;
-  const currentHolesRemaining = totalHoles - (holes.length);
+  const currentHolesRemaining = totalHoles - holes.length;
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -384,7 +197,7 @@ export default function MatchPlayPlay() {
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("next")}
-              disabled={saving}
+              disabled={currentHole > holes.length || currentHole >= totalHoles}
               className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronRight size={24} />
@@ -455,7 +268,6 @@ export default function MatchPlayPlay() {
             if (selectedPlayer === 1) {
               setSelectedPlayer(2);
             } else {
-              // Last player - close sheet and save hole, then go to next
               setShowScoreSheet(false);
               saveHole();
             }
@@ -470,7 +282,7 @@ export default function MatchPlayPlay() {
         </div>
 
         {/* Preview Result */}
-        {scores.player1 !== scores.player2 && (
+        {scores.player1 > 0 && scores.player2 > 0 && scores.player1 !== scores.player2 && (
           <Card className="p-4 bg-muted/50">
             <p className="text-center text-sm">
               {scores.player1 < scores.player2 && (
@@ -519,6 +331,15 @@ export default function MatchPlayPlay() {
             )}
           </Card>
         )}
+
+        {/* Save Button */}
+        <Button 
+          onClick={() => saveHole()} 
+          disabled={saving || scores.player1 === 0 || scores.player2 === 0}
+          className="w-full"
+        >
+          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Match" : "Save & Next Hole"}
+        </Button>
       </div>
 
       {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
@@ -532,11 +353,14 @@ export default function MatchPlayPlay() {
               What would you like to do with this game?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <AlertDialogAction onClick={handleFinishGame}>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <AlertDialogAction onClick={() => {
+              setShowExitDialog(false);
+              navigate("/rounds-play");
+            }}>
               Save and Exit
             </AlertDialogAction>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDeleteGame}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

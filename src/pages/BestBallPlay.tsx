@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
 import { useToast } from "@/hooks/use-toast";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
@@ -13,7 +13,6 @@ import {
   calculateHoleResult,
   calculateHandicapStrokes,
   formatMatchStatus,
-  formatStrokePlayLeader,
   isMatchFinished,
   getScoreColorClass,
 } from "@/utils/bestBallScoring";
@@ -28,303 +27,156 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface CourseHole {
-  hole_number: number;
-  par: number;
-  stroke_index: number;
+interface BestBallScores {
+  teamA: Record<string, number>;
+  teamB: Record<string, number>;
 }
+
+const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, BestBallHole, BestBallScores> => ({
+  gameId,
+  gameTable: "best_ball_games",
+  holesTable: "best_ball_holes",
+  
+  parseGame: (data): BestBallGame => ({
+    ...data,
+    game_type: (data.game_type as BestBallGameType) || 'match',
+    team_a_players: data.team_a_players as unknown as BestBallPlayer[],
+    team_b_players: data.team_b_players as unknown as BestBallPlayer[],
+    winner_team: data.winner_team as 'A' | 'B' | 'TIE' | null,
+  }),
+  parseHole: (data): BestBallHole => ({
+    ...data,
+    team_a_scores: data.team_a_scores as unknown as BestBallPlayerScore[],
+    team_b_scores: data.team_b_scores as unknown as BestBallPlayerScore[],
+  }),
+  getHoleNumber: (hole) => hole.hole_number,
+  getTotalHoles: (game) => game.holes_played || 18,
+  getCourseId: (game) => game.course_id || null,
+  getSummaryRoute: (id) => `/best-ball/${id}/summary`,
+  
+  createEmptyScores: (game) => {
+    const teamA: Record<string, number> = {};
+    const teamB: Record<string, number> = {};
+    game.team_a_players.forEach(p => { teamA[p.odId] = 0; });
+    game.team_b_players.forEach(p => { teamB[p.odId] = 0; });
+    return { teamA, teamB };
+  },
+  
+  extractScoresFromHole: (hole, game) => {
+    const teamA: Record<string, number> = {};
+    const teamB: Record<string, number> = {};
+    hole.team_a_scores.forEach(s => { teamA[s.playerId] = s.grossScore ?? 0; });
+    hole.team_b_scores.forEach(s => { teamB[s.playerId] = s.grossScore ?? 0; });
+    return { teamA, teamB };
+  },
+  
+  buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles, game, courseHoles }) => {
+    const buildPlayerScores = (
+      players: BestBallPlayer[],
+      scoresMap: Record<string, number>,
+      useHandicaps: boolean
+    ): BestBallPlayerScore[] => {
+      return players.map(player => {
+        const grossScore = scoresMap[player.odId] || par;
+        const handicapStrokes = useHandicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
+        const netScore = grossScore - handicapStrokes;
+        return {
+          playerId: player.odId,
+          playerName: player.displayName,
+          grossScore,
+          netScore,
+          handicapStrokes,
+        };
+      });
+    };
+
+    const teamAPlayerScores = buildPlayerScores(game.team_a_players, scores.teamA, game.use_handicaps);
+    const teamBPlayerScores = buildPlayerScores(game.team_b_players, scores.teamB, game.use_handicaps);
+    
+    const teamAResult = calculateBestBall(teamAPlayerScores, game.use_handicaps);
+    const teamBResult = calculateBestBall(teamBPlayerScores, game.use_handicaps);
+    
+    const holeResult = calculateHoleResult(teamAResult.bestScore, teamBResult.bestScore);
+    
+    const prevHole = previousHoles.length > 0 ? previousHoles[previousHoles.length - 1] : null;
+    const prevMatchStatus = prevHole?.match_status_after ?? 0;
+    const newMatchStatus = prevMatchStatus + holeResult;
+    const holesRemaining = (game.holes_played || 18) - holeNumber;
+    
+    const prevTeamATotal = previousHoles.reduce((sum, h) => sum + (h.team_a_best_gross || 0), 0);
+    const prevTeamBTotal = previousHoles.reduce((sum, h) => sum + (h.team_b_best_gross || 0), 0);
+    
+    const teamARunning = prevTeamATotal + (teamAResult.bestScore || 0);
+    const teamBRunning = prevTeamBTotal + (teamBResult.bestScore || 0);
+
+    return {
+      game_id: gameId,
+      hole_number: holeNumber,
+      par,
+      stroke_index: strokeIndex,
+      team_a_scores: teamAPlayerScores as unknown as any,
+      team_b_scores: teamBPlayerScores as unknown as any,
+      team_a_best_gross: game.use_handicaps 
+        ? teamAPlayerScores.reduce((min, s) => Math.min(min, s.grossScore || Infinity), Infinity)
+        : teamAResult.bestScore,
+      team_a_best_net: game.use_handicaps ? teamAResult.bestScore : null,
+      team_a_counting_player: teamAResult.countingPlayer,
+      team_b_best_gross: game.use_handicaps
+        ? teamBPlayerScores.reduce((min, s) => Math.min(min, s.grossScore || Infinity), Infinity)
+        : teamBResult.bestScore,
+      team_b_best_net: game.use_handicaps ? teamBResult.bestScore : null,
+      team_b_counting_player: teamBResult.countingPlayer,
+      team_a_running_total: teamARunning,
+      team_b_running_total: teamBRunning,
+      hole_result: holeResult,
+      match_status_after: newMatchStatus,
+      holes_remaining_after: holesRemaining,
+    };
+  },
+  
+  buildGameUpdate: ({ game, allHoles, newHoleData }) => {
+    const allHolesTeamA = allHoles.reduce((sum, h) => sum + (game.use_handicaps ? (h.team_a_best_net || 0) : (h.team_a_best_gross || 0)), 0);
+    const allHolesTeamB = allHoles.reduce((sum, h) => sum + (game.use_handicaps ? (h.team_b_best_net || 0) : (h.team_b_best_gross || 0)), 0);
+
+    return {
+      team_a_total: allHolesTeamA,
+      team_b_total: allHolesTeamB,
+      match_status: newHoleData.match_status_after,
+      holes_remaining: newHoleData.holes_remaining_after,
+    };
+  },
+  
+  isGameFinished: (game, holeNumber, totalHoles, holeData) => {
+    const holesRemaining = totalHoles - holeNumber;
+    const isMatchOver = game.game_type === 'match' && isMatchFinished(holeData.match_status_after, holesRemaining);
+    return isMatchOver || holeNumber >= totalHoles;
+  },
+});
 
 export default function BestBallPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [game, setGame] = useState<BestBallGame | null>(null);
-  const [holes, setHoles] = useState<BestBallHole[]>([]);
-  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
-  const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
-  
-  // Current hole state
-  const [par, setPar] = useState(4);
-  const [strokeIndex, setStrokeIndex] = useState<number | null>(null);
-  const [teamAScores, setTeamAScores] = useState<Record<string, number>>({});
-  const [teamBScores, setTeamBScores] = useState<Record<string, number>>({});
   const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);
+  
+  const config = createBestBallConfig(gameId || "");
+  const [state, actions] = useGameScoring(config, navigate);
+  
+  const { game, holes, courseHoles, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
+  const { setScores, saveHole, navigateHole, deleteGame } = actions;
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
 
-  useEffect(() => {
-    if (gameId) fetchGame();
-  }, [gameId]);
-
-  useEffect(() => {
-    if (courseHoles.length > 0 && game) {
-      const holeData = courseHoles.find(h => h.hole_number === currentHole);
-      if (holeData) {
-        setPar(holeData.par);
-        setStrokeIndex(holeData.stroke_index);
-        
-        // Initialize scores if empty (use null for no pre-set score)
-        if (Object.keys(teamAScores).length === 0) {
-          const aScores: Record<string, number | null> = {};
-          game.team_a_players.forEach(p => { aScores[p.odId] = null; });
-          setTeamAScores(aScores as Record<string, number>);
-        }
-        if (Object.keys(teamBScores).length === 0) {
-          const bScores: Record<string, number | null> = {};
-          game.team_b_players.forEach(p => { bScores[p.odId] = null; });
-          setTeamBScores(bScores as Record<string, number>);
-        }
-      }
-    }
-  }, [currentHoleIndex, courseHoles, game]);
-
-  const fetchGame = async () => {
-    try {
-      const { data: gameData, error: gameError } = await supabase
-        .from("best_ball_games")
-        .select("*")
-        .eq("id", gameId)
-        .single();
-
-      if (gameError) throw gameError;
-      
-      const typedGame: BestBallGame = {
-        ...gameData,
-        game_type: (gameData.game_type as BestBallGameType) || 'match',
-        team_a_players: gameData.team_a_players as unknown as BestBallPlayer[],
-        team_b_players: gameData.team_b_players as unknown as BestBallPlayer[],
-        winner_team: gameData.winner_team as 'A' | 'B' | 'TIE' | null,
-      };
-      
-      setGame(typedGame);
-
-      // Fetch course holes
-      if (gameData.course_id) {
-        const { data: courseHolesData } = await supabase
-          .from("course_holes")
-          .select("hole_number, par, stroke_index")
-          .eq("course_id", gameData.course_id)
-          .order("hole_number");
-
-        if (courseHolesData) {
-          setCourseHoles(courseHolesData);
-          const hole1 = courseHolesData.find(h => h.hole_number === 1);
-          if (hole1) {
-            setPar(hole1.par);
-            setStrokeIndex(hole1.stroke_index);
-            
-            // Initialize scores (use null for no pre-set score)
-            const aScores: Record<string, number | null> = {};
-            typedGame.team_a_players.forEach(p => { aScores[p.odId] = null; });
-            setTeamAScores(aScores as Record<string, number>);
-            
-            const bScores: Record<string, number | null> = {};
-            typedGame.team_b_players.forEach(p => { bScores[p.odId] = null; });
-            setTeamBScores(bScores as Record<string, number>);
-          }
-        }
-      }
-
-      // Fetch existing holes
-      const { data: holesData } = await supabase
-        .from("best_ball_holes")
-        .select("*")
-        .eq("game_id", gameId)
-        .order("hole_number");
-
-      if (holesData) {
-        const typedHoles: BestBallHole[] = holesData.map(h => ({
-          ...h,
-          team_a_scores: h.team_a_scores as unknown as BestBallPlayerScore[],
-          team_b_scores: h.team_b_scores as unknown as BestBallPlayerScore[],
-        }));
-        setHoles(typedHoles);
-        
-        // Only set to next hole on initial load, not when refreshing
-        if (typedHoles.length > 0 && currentHoleIndex === 0) {
-          setCurrentHoleIndex(typedHoles.length);
-        }
-      }
-    } catch (error: any) {
-      toast({ title: "Error loading game", description: error.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buildPlayerScores = (
-    players: BestBallPlayer[],
-    scores: Record<string, number>,
-    useHandicaps: boolean
-  ): BestBallPlayerScore[] => {
-    return players.map(player => {
-      const grossScore = scores[player.odId] ?? par;
-      const handicapStrokes = useHandicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
-      const netScore = grossScore - handicapStrokes;
-      
-      return {
-        playerId: player.odId,
-        playerName: player.displayName,
-        grossScore,
-        netScore,
-        handicapStrokes,
-      };
-    });
-  };
-
-  const saveHole = async () => {
-    if (!game) return;
+  const handleScoreSelect = (team: 'A' | 'B', playerId: string, score: number | null) => {
+    if (score === null) return;
     
-    const teamAPlayerScores = buildPlayerScores(game.team_a_players, teamAScores, game.use_handicaps);
-    const teamBPlayerScores = buildPlayerScores(game.team_b_players, teamBScores, game.use_handicaps);
-    
-    const teamAResult = calculateBestBall(teamAPlayerScores, game.use_handicaps);
-    const teamBResult = calculateBestBall(teamBPlayerScores, game.use_handicaps);
-    
-    // Calculate hole result for match play
-    const holeResult = calculateHoleResult(teamAResult.bestScore, teamBResult.bestScore);
-    
-    // Get previous match status
-    const prevHole = holes.find(h => h.hole_number === currentHole - 1);
-    const prevMatchStatus = prevHole?.match_status_after ?? 0;
-    const newMatchStatus = prevMatchStatus + holeResult;
-    const holesRemaining = totalHoles - currentHole;
-    
-    // Calculate running totals for stroke play
-    const prevTeamATotal = holes
-      .filter(h => h.hole_number < currentHole)
-      .reduce((sum, h) => sum + (h.team_a_best_gross || 0), 0);
-    const prevTeamBTotal = holes
-      .filter(h => h.hole_number < currentHole)
-      .reduce((sum, h) => sum + (h.team_b_best_gross || 0), 0);
-    
-    const teamARunning = prevTeamATotal + (teamAResult.bestScore || 0);
-    const teamBRunning = prevTeamBTotal + (teamBResult.bestScore || 0);
-    
-    const existingHole = holes.find(h => h.hole_number === currentHole);
-
-    setSaving(true);
-    try {
-      const holeData = {
-        game_id: game.id,
-        hole_number: currentHole,
-        par,
-        stroke_index: strokeIndex,
-        team_a_scores: teamAPlayerScores as unknown as any,
-        team_b_scores: teamBPlayerScores as unknown as any,
-        team_a_best_gross: game.use_handicaps 
-          ? teamAPlayerScores.reduce((min, s) => Math.min(min, s.grossScore || Infinity), Infinity)
-          : teamAResult.bestScore,
-        team_a_best_net: game.use_handicaps ? teamAResult.bestScore : null,
-        team_a_counting_player: teamAResult.countingPlayer,
-        team_b_best_gross: game.use_handicaps
-          ? teamBPlayerScores.reduce((min, s) => Math.min(min, s.grossScore || Infinity), Infinity)
-          : teamBResult.bestScore,
-        team_b_best_net: game.use_handicaps ? teamBResult.bestScore : null,
-        team_b_counting_player: teamBResult.countingPlayer,
-        team_a_running_total: teamARunning,
-        team_b_running_total: teamBRunning,
-        hole_result: holeResult,
-        match_status_after: newMatchStatus,
-        holes_remaining_after: holesRemaining,
-      };
-
-      if (existingHole) {
-        await supabase
-          .from("best_ball_holes")
-          .update(holeData)
-          .eq("id", existingHole.id);
-      } else {
-        await supabase
-          .from("best_ball_holes")
-          .insert(holeData);
-      }
-
-      // Update game totals
-      const allHolesTeamA = holes
-        .filter(h => h.hole_number !== currentHole)
-        .reduce((sum, h) => sum + (game.use_handicaps ? (h.team_a_best_net || 0) : (h.team_a_best_gross || 0)), 0)
-        + (teamAResult.bestScore || 0);
-      
-      const allHolesTeamB = holes
-        .filter(h => h.hole_number !== currentHole)
-        .reduce((sum, h) => sum + (game.use_handicaps ? (h.team_b_best_net || 0) : (h.team_b_best_gross || 0)), 0)
-        + (teamBResult.bestScore || 0);
-
-      await supabase
-        .from("best_ball_games")
-        .update({
-          team_a_total: allHolesTeamA,
-          team_b_total: allHolesTeamB,
-          match_status: newMatchStatus,
-          holes_remaining: holesRemaining,
-        })
-        .eq("id", game.id);
-
-      setGame({
-        ...game,
-        team_a_total: allHolesTeamA,
-        team_b_total: allHolesTeamB,
-        match_status: newMatchStatus,
-        holes_remaining: holesRemaining,
-      });
-
-      // Refresh holes data after save
-      const { data: updatedHolesData } = await supabase
-        .from("best_ball_holes")
-        .select("*")
-        .eq("game_id", game.id)
-        .order("hole_number");
-
-      if (updatedHolesData) {
-        const typedHoles: BestBallHole[] = updatedHolesData.map(h => ({
-          ...h,
-          team_a_scores: h.team_a_scores as unknown as BestBallPlayerScore[],
-          team_b_scores: h.team_b_scores as unknown as BestBallPlayerScore[],
-        }));
-        setHoles(typedHoles);
-      }
-
-      // Navigate - check for match finish only in match play
-      const isMatchOver = game.game_type === 'match' && isMatchFinished(newMatchStatus, holesRemaining);
-      if (currentHole >= totalHoles || isMatchOver) {
-        navigate(`/best-ball/${game.id}/summary`);
-      } else {
-        // Only advance if we were on the latest hole
-        const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
-        if (wasOnLatestHole) {
-          setCurrentHoleIndex(currentHoleIndex + 1);
-          resetHoleState();
-        }
-      }
-    } catch (error: any) {
-      toast({ title: "Error saving hole", description: error.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const resetHoleState = () => {
-    const nextHoleNumber = currentHoleIndex + 2;
-    const nextHoleData = courseHoles.find(h => h.hole_number === nextHoleNumber);
-    const nextPar = nextHoleData?.par || 4;
-    setPar(nextPar);
-    setStrokeIndex(nextHoleData?.stroke_index || null);
-    
-    if (game) {
-      // Reset to null for no pre-set score
-      const aScores: Record<string, number | null> = {};
-      game.team_a_players.forEach(p => { aScores[p.odId] = null; });
-      setTeamAScores(aScores as Record<string, number>);
-      
-      const bScores: Record<string, number | null> = {};
-      game.team_b_players.forEach(p => { bScores[p.odId] = null; });
-      setTeamBScores(bScores as Record<string, number>);
+    if (team === 'A') {
+      setScores(prev => ({ ...prev, teamA: { ...prev.teamA, [playerId]: score } }));
+    } else {
+      setScores(prev => ({ ...prev, teamB: { ...prev.teamB, [playerId]: score } }));
     }
   };
 
@@ -346,78 +198,8 @@ export default function BestBallPlay() {
       const nextPlayer = allPlayers[currentIndex + 1];
       setActivePlayerSheet({ team: nextPlayer.team, playerId: nextPlayer.odId });
     } else {
-      // Last player - close sheet and auto-save/advance
       setActivePlayerSheet(null);
       saveHole();
-    }
-  };
-
-  const handleScoreSelect = (team: 'A' | 'B', playerId: string, score: number | null) => {
-    if (score === null) return;
-
-    if (team === 'A') {
-      setTeamAScores(prev => ({ ...prev, [playerId]: score }));
-    } else {
-      setTeamBScores(prev => ({ ...prev, [playerId]: score }));
-    }
-  };
-
-  const loadHoleData = (holeNumber: number, holesData?: BestBallHole[]) => {
-    const holesSource = holesData || holes;
-    const holeData = holesSource.find(h => h.hole_number === holeNumber);
-    const courseHoleData = courseHoles.find(h => h.hole_number === holeNumber);
-    
-    if (holeData && game) {
-      // Load existing hole scores
-      setPar(courseHoleData?.par || holeData.par);
-      setStrokeIndex(courseHoleData?.stroke_index || holeData.stroke_index);
-      
-      const aScores: Record<string, number> = {};
-      holeData.team_a_scores.forEach(s => { aScores[s.playerId] = s.grossScore ?? holeData.par; });
-      setTeamAScores(aScores);
-      
-      const bScores: Record<string, number> = {};
-      holeData.team_b_scores.forEach(s => { bScores[s.playerId] = s.grossScore ?? holeData.par; });
-      setTeamBScores(bScores);
-    } else if (game) {
-      // Initialize new hole
-      setPar(courseHoleData?.par || 4);
-      setStrokeIndex(courseHoleData?.stroke_index || null);
-      
-      const aScores: Record<string, number | null> = {};
-      game.team_a_players.forEach(p => { aScores[p.odId] = null; });
-      setTeamAScores(aScores as Record<string, number>);
-      
-      const bScores: Record<string, number | null> = {};
-      game.team_b_players.forEach(p => { bScores[p.odId] = null; });
-      setTeamBScores(bScores as Record<string, number>);
-    }
-  };
-
-  const navigateHole = (direction: "prev" | "next") => {
-    if (direction === "prev" && currentHoleIndex > 0) {
-      const targetHoleNumber = currentHole - 1;
-      loadHoleData(targetHoleNumber);
-      setCurrentHoleIndex(currentHoleIndex - 1);
-    } else if (direction === "next") {
-      const nextHoleNumber = currentHole + 1;
-      const maxAllowedHole = holes.length + 1; // Can go up to the next unplayed hole
-      
-      if (nextHoleNumber <= maxAllowedHole && nextHoleNumber <= totalHoles) {
-        loadHoleData(nextHoleNumber);
-        setCurrentHoleIndex(currentHoleIndex + 1);
-      }
-    }
-  };
-
-  const handleDeleteGame = async () => {
-    try {
-      await supabase.from("best_ball_holes").delete().eq("game_id", gameId);
-      await supabase.from("best_ball_games").delete().eq("id", gameId);
-      toast({ title: "Game deleted" });
-      navigate("/rounds-play");
-    } catch (error: any) {
-      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
     }
   };
 
@@ -425,8 +207,22 @@ export default function BestBallPlay() {
   const getCurrentBestBalls = () => {
     if (!game) return { teamA: null, teamB: null };
     
-    const teamAPlayerScores = buildPlayerScores(game.team_a_players, teamAScores, game.use_handicaps);
-    const teamBPlayerScores = buildPlayerScores(game.team_b_players, teamBScores, game.use_handicaps);
+    const buildPlayerScores = (players: BestBallPlayer[], scoresMap: Record<string, number>): BestBallPlayerScore[] => {
+      return players.map(player => {
+        const grossScore = scoresMap[player.odId] || par;
+        const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
+        return {
+          playerId: player.odId,
+          playerName: player.displayName,
+          grossScore,
+          netScore: grossScore - handicapStrokes,
+          handicapStrokes,
+        };
+      });
+    };
+    
+    const teamAPlayerScores = buildPlayerScores(game.team_a_players, scores.teamA);
+    const teamBPlayerScores = buildPlayerScores(game.team_b_players, scores.teamB);
     
     return {
       teamA: calculateBestBall(teamAPlayerScores, game.use_handicaps),
@@ -457,10 +253,10 @@ export default function BestBallPlay() {
   const renderPlayerScoreRow = (
     player: BestBallPlayer,
     team: 'A' | 'B',
-    scores: Record<string, number>,
+    scoresMap: Record<string, number>,
     countingPlayer: string | null
   ) => {
-    const score = scores[player.odId];
+    const score = scoresMap[player.odId];
     const hasScore = score !== undefined && score !== null && score !== 0;
     const isCounting = countingPlayer === player.displayName;
     const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
@@ -474,24 +270,31 @@ export default function BestBallPlay() {
         onClick={() => setActivePlayerSheet({ team, playerId: player.odId })}
       >
         <div className="flex items-center gap-2">
-          {isCounting && <Star size={14} className="text-primary fill-primary" />}
+          {isCounting && <Star size={16} className="text-primary fill-primary" />}
           <div>
-            <div className="font-medium text-sm">{player.displayName}</div>
-            {game.use_handicaps && handicapStrokes > 0 && (
-              <div className="text-xs text-muted-foreground">+{handicapStrokes} stroke{handicapStrokes > 1 ? 's' : ''}</div>
+            <p className="font-medium">{player.displayName}</p>
+            {game.use_handicaps && (
+              <span className="text-xs text-muted-foreground">
+                HCP: {player.handicap ?? 0} {handicapStrokes > 0 && `(+${handicapStrokes})`}
+              </span>
             )}
           </div>
         </div>
-        
-        <div className={`text-2xl font-bold ${hasScore ? getScoreColorClass(score, par) : 'text-muted-foreground'}`}>
+        <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
           {hasScore ? score : '–'}
-        </div>
+        </span>
       </div>
     );
   };
 
+  const allPlayersHaveScores = () => {
+    const teamAHasScores = game.team_a_players.every(p => scores.teamA[p.odId] > 0);
+    const teamBHasScores = game.team_b_players.every(p => scores.teamB[p.odId] > 0);
+    return teamAHasScores && teamBHasScores;
+  };
+
   return (
-    <div className="min-h-screen pb-44 bg-background">
+    <div className="min-h-screen pb-24 bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="p-4 max-w-2xl mx-auto">
@@ -505,7 +308,7 @@ export default function BestBallPlay() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Best Ball {game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}</h1>
+              <h1 className="text-xl font-bold">Best Ball</h1>
               <p className="text-sm text-muted-foreground">{game.course_name}</p>
             </div>
             <div className="w-10" />
@@ -534,7 +337,7 @@ export default function BestBallPlay() {
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("next")}
-              disabled={saving || currentHole >= holes.length + 1 || currentHole >= totalHoles}
+              disabled={currentHole > holes.length || currentHole >= totalHoles}
               className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronRight size={24} />
@@ -543,24 +346,21 @@ export default function BestBallPlay() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-2xl mx-auto p-4 space-y-4">
+      {/* Score Entry */}
+      <div className="p-4 max-w-2xl mx-auto space-y-6">
         {/* Team A */}
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <h3 className="font-bold">{game.team_a_name}</h3>
-            </div>
-            {bestBalls.teamA.bestScore !== null && (
-              <div className={`text-lg font-bold ${getScoreColorClass(bestBalls.teamA.bestScore, par)}`}>
+            <h3 className="font-semibold text-blue-600">{game.team_a_name}</h3>
+            {bestBalls.teamA?.bestScore && (
+              <span className="text-sm font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded">
                 Best: {bestBalls.teamA.bestScore}
-              </div>
+              </span>
             )}
           </div>
           <div className="space-y-2">
-            {game.team_a_players.map(player =>
-              renderPlayerScoreRow(player, 'A', teamAScores, bestBalls.teamA.countingPlayer)
+            {game.team_a_players.map(player => 
+              renderPlayerScoreRow(player, 'A', scores.teamA, bestBalls.teamA?.countingPlayer || null)
             )}
           </div>
         </Card>
@@ -568,124 +368,95 @@ export default function BestBallPlay() {
         {/* Team B */}
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <h3 className="font-bold">{game.team_b_name}</h3>
-            </div>
-            {bestBalls.teamB.bestScore !== null && (
-              <div className={`text-lg font-bold ${getScoreColorClass(bestBalls.teamB.bestScore, par)}`}>
+            <h3 className="font-semibold text-red-600">{game.team_b_name}</h3>
+            {bestBalls.teamB?.bestScore && (
+              <span className="text-sm font-medium bg-red-100 text-red-700 px-2 py-1 rounded">
                 Best: {bestBalls.teamB.bestScore}
-              </div>
+              </span>
             )}
           </div>
           <div className="space-y-2">
-            {game.team_b_players.map(player =>
-              renderPlayerScoreRow(player, 'B', teamBScores, bestBalls.teamB.countingPlayer)
+            {game.team_b_players.map(player => 
+              renderPlayerScoreRow(player, 'B', scores.teamB, bestBalls.teamB?.countingPlayer || null)
             )}
           </div>
         </Card>
 
-        {/* Hole Result Preview */}
-        {bestBalls.teamA.bestScore !== null && bestBalls.teamB.bestScore !== null && (
-          <Card className="p-4 bg-muted/50">
-            <div className="text-center">
-              <div className="text-sm text-muted-foreground mb-1">
-                {game.game_type === 'match' ? 'Hole Result' : 'Current Best Balls'}
-              </div>
-              {game.game_type === 'match' ? (
-                <div className="text-lg font-bold">
-                  {bestBalls.teamA.bestScore < bestBalls.teamB.bestScore && (
-                    <span className="text-blue-500">{game.team_a_name} wins</span>
-                  )}
-                  {bestBalls.teamB.bestScore < bestBalls.teamA.bestScore && (
-                    <span className="text-red-500">{game.team_b_name} wins</span>
-                  )}
-                  {bestBalls.teamA.bestScore === bestBalls.teamB.bestScore && (
-                    <span className="text-muted-foreground">Halved</span>
-                  )}
-                </div>
-              ) : (
-                <div className="flex justify-center gap-6 text-lg font-bold">
-                  <span className="text-blue-500">{game.team_a_name}: {bestBalls.teamA.bestScore}</span>
-                  <span className="text-red-500">{game.team_b_name}: {bestBalls.teamB.bestScore}</span>
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
+        {/* Match Status */}
+        <div className="p-3 bg-primary/10 rounded-lg text-center">
+          <p className="text-lg font-bold text-primary">
+            {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
+          </p>
+        </div>
+
+        {/* Player Score Sheets */}
+        {game.team_a_players.map(player => (
+          <PlayerScoreSheet
+            key={player.odId}
+            open={activePlayerSheet?.team === 'A' && activePlayerSheet.playerId === player.odId}
+            onOpenChange={(open) => { if (!open) setActivePlayerSheet(null); }}
+            playerName={player.displayName}
+            handicap={player.handicap}
+            par={par}
+            holeNumber={currentHole}
+            currentScore={scores.teamA[player.odId] || 0}
+            onScoreSelect={(score) => handleScoreSelect('A', player.odId, score)}
+            onEnterAndNext={() => advanceToNextPlayerSheet('A', player.odId)}
+          />
+        ))}
+        {game.team_b_players.map(player => (
+          <PlayerScoreSheet
+            key={player.odId}
+            open={activePlayerSheet?.team === 'B' && activePlayerSheet.playerId === player.odId}
+            onOpenChange={(open) => { if (!open) setActivePlayerSheet(null); }}
+            playerName={player.displayName}
+            handicap={player.handicap}
+            par={par}
+            holeNumber={currentHole}
+            currentScore={scores.teamB[player.odId] || 0}
+            onScoreSelect={(score) => handleScoreSelect('B', player.odId, score)}
+            onEnterAndNext={() => advanceToNextPlayerSheet('B', player.odId)}
+          />
+        ))}
 
         {/* Save Button */}
-        <Button
-          className="w-full h-12 text-lg font-bold"
-          onClick={saveHole}
-          disabled={saving}
+        <Button 
+          onClick={() => saveHole()} 
+          disabled={saving || !allPlayersHaveScores()}
+          className="w-full"
         >
-          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Game" : "Next Hole"}
+          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Game" : "Save & Next Hole"}
         </Button>
       </div>
+
+      {gameId && <BestBallBottomTabBar gameId={gameId} />}
 
       {/* Exit Dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>What would you like to do with this game?</AlertDialogDescription>
+            <AlertDialogDescription>
+              What would you like to do with this game?
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={() => navigate(`/best-ball/${gameId}/summary`)}>
+            <AlertDialogAction onClick={() => {
+              setShowExitDialog(false);
+              navigate("/rounds-play");
+            }}>
               Save and Exit
             </AlertDialogAction>
-            <AlertDialogAction onClick={handleDeleteGame} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={() => deleteGame()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete Game
             </AlertDialogAction>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {gameId && <BestBallBottomTabBar gameId={gameId} />}
-
-      {/* Score Entry Sheets */}
-      {game.team_a_players.map(player => (
-        <PlayerScoreSheet
-          key={`A-${player.odId}`}
-          open={activePlayerSheet?.team === 'A' && activePlayerSheet?.playerId === player.odId}
-          onOpenChange={(open) => {
-            if (!open) {
-              setActivePlayerSheet((prev) =>
-                prev?.team === 'A' && prev?.playerId === player.odId ? null : prev
-              );
-            }
-          }}
-          playerName={player.displayName}
-          handicap={player.handicap}
-          par={par}
-          holeNumber={currentHole}
-          currentScore={teamAScores[player.odId] || par}
-          onScoreSelect={(score) => handleScoreSelect('A', player.odId, score)}
-          onEnterAndNext={() => advanceToNextPlayerSheet('A', player.odId)}
-        />
-      ))}
-      {game.team_b_players.map(player => (
-        <PlayerScoreSheet
-          key={`B-${player.odId}`}
-          open={activePlayerSheet?.team === 'B' && activePlayerSheet?.playerId === player.odId}
-          onOpenChange={(open) => {
-            if (!open) {
-              setActivePlayerSheet((prev) =>
-                prev?.team === 'B' && prev?.playerId === player.odId ? null : prev
-              );
-            }
-          }}
-          playerName={player.displayName}
-          handicap={player.handicap}
-          par={par}
-          holeNumber={currentHole}
-          currentScore={teamBScores[player.odId] || par}
-          onScoreSelect={(score) => handleScoreSelect('B', player.odId, score)}
-          onEnterAndNext={() => advanceToNextPlayerSheet('B', player.odId)}
-        />
-      ))}
     </div>
   );
 }

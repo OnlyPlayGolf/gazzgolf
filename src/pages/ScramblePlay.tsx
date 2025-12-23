@@ -33,11 +33,14 @@ export default function ScramblePlay() {
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
-  const [currentHole, setCurrentHole] = useState(1);
+  const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const [teamScores, setTeamScores] = useState<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [activeTeamSheet, setActiveTeamSheet] = useState<string | null>(null);
+
+  const currentHole = currentHoleIndex + 1;
+  const totalHoles = game?.holes_played || 18;
 
   useEffect(() => {
     if (gameId) {
@@ -103,19 +106,24 @@ export default function ScramblePlay() {
         team_scores: (h.team_scores as Record<string, number | null>) || {}
       })));
       
-      // Find first hole without all scores entered
-      const incompleteHole = scrambleHoles.find(h => {
-        const scores = h.team_scores as Record<string, number | null>;
-        return parsedTeams.some(t => scores[t.id] === undefined || scores[t.id] === null);
-      });
-      if (incompleteHole) {
-        setCurrentHole(incompleteHole.hole_number);
-      } else if (scrambleHoles.length < gameData.holes_played) {
-        setCurrentHole(scrambleHoles.length + 1);
+      // Set to first unplayed hole on initial load
+      if (scrambleHoles.length > 0) {
+        setCurrentHoleIndex(scrambleHoles.length);
       }
     }
 
     setLoading(false);
+  };
+
+  const loadHoleData = (holeNumber: number) => {
+    const holeData = holes.find(h => h.hole_number === holeNumber);
+    if (holeData) {
+      setTeamScores(holeData.team_scores || {});
+    } else {
+      const emptyScores: Record<string, number | null> = {};
+      teams.forEach(t => { emptyScores[t.id] = null; });
+      setTeamScores(emptyScores);
+    }
   };
 
   const getCurrentHolePar = () => {
@@ -128,11 +136,9 @@ export default function ScramblePlay() {
     return hole?.stroke_index || currentHole;
   };
 
-  const handleScoreSelect = async (teamId: string, score: number | null) => {
-    const newScores = { ...teamScores, [teamId]: score };
-    setTeamScores(newScores);
-
-    // Save to database
+  const saveHole = async () => {
+    if (!gameId) return;
+    
     const par = getCurrentHolePar();
     const strokeIndex = getCurrentHoleStrokeIndex();
 
@@ -143,7 +149,7 @@ export default function ScramblePlay() {
         hole_number: currentHole,
         par,
         stroke_index: strokeIndex,
-        team_scores: newScores
+        team_scores: teamScores
       }, {
         onConflict: 'game_id,hole_number'
       });
@@ -151,49 +157,63 @@ export default function ScramblePlay() {
     if (error) {
       console.error('Error saving score:', error);
       toast.error("Failed to save score");
-      return;
+      return false;
     }
 
     // Update local holes state
     setHoles(prev => {
       const existing = prev.find(h => h.hole_number === currentHole);
       if (existing) {
-        return prev.map(h => h.hole_number === currentHole ? { ...h, team_scores: newScores } : h);
+        return prev.map(h => h.hole_number === currentHole ? { ...h, team_scores: teamScores } : h);
       } else {
         return [...prev, {
           id: `temp-${currentHole}`,
-          game_id: gameId!,
+          game_id: gameId,
           hole_number: currentHole,
           par,
           stroke_index: strokeIndex,
           created_at: new Date().toISOString(),
-          team_scores: newScores
+          team_scores: teamScores
         }];
       }
     });
+
+    return true;
   };
 
-  const advanceToNextTeamSheet = () => {
+  const handleScoreSelect = async (teamId: string, score: number | null) => {
+    const newScores = { ...teamScores, [teamId]: score };
+    setTeamScores(newScores);
+  };
+
+  const advanceToNextTeamSheet = async () => {
     if (!activeTeamSheet) return;
     
     const currentIndex = teams.findIndex(t => t.id === activeTeamSheet);
     if (currentIndex < teams.length - 1) {
-      // Move to next team
       setActiveTeamSheet(teams[currentIndex + 1].id);
     } else {
-      // All teams done - close sheet and auto-advance to next hole
       setActiveTeamSheet(null);
+      // Save and advance to next hole
+      await saveHole();
       if (game && currentHole < game.holes_played) {
-        setCurrentHole(currentHole + 1);
+        setCurrentHoleIndex(currentHoleIndex + 1);
+        loadHoleData(currentHole + 1);
       }
     }
   };
 
   const navigateHole = (direction: 'prev' | 'next') => {
-    if (direction === 'prev' && currentHole > 1) {
-      setCurrentHole(currentHole - 1);
-    } else if (direction === 'next' && game && currentHole < game.holes_played) {
-      setCurrentHole(currentHole + 1);
+    if (direction === 'prev' && currentHoleIndex > 0) {
+      const targetHole = currentHole - 1;
+      loadHoleData(targetHole);
+      setCurrentHoleIndex(currentHoleIndex - 1);
+    } else if (direction === 'next' && game && currentHole <= Math.min(holes.length + 1, totalHoles)) {
+      const targetHole = currentHole + 1;
+      if (targetHole <= totalHoles) {
+        loadHoleData(targetHole);
+        setCurrentHoleIndex(currentHoleIndex + 1);
+      }
     }
   };
 
@@ -204,12 +224,11 @@ export default function ScramblePlay() {
     }, 0);
   };
 
-  const calculateTotalPar = (): number => {
-    return holes.reduce((total, hole) => total + hole.par, 0);
-  };
-
   const finishGame = async () => {
     if (!game) return;
+
+    // Save current hole first
+    await saveHole();
 
     // Calculate winner
     let winningTeam: string | null = null;
@@ -241,18 +260,17 @@ export default function ScramblePlay() {
   };
 
   const handleSaveAndExit = async () => {
+    await saveHole();
     setExitDialogOpen(false);
     toast.success("Game saved");
-    navigate('/rounds');
+    navigate('/rounds-play');
   };
 
   const handleDeleteGame = async () => {
     if (!gameId) return;
     
-    const { error } = await supabase
-      .from('scramble_games')
-      .delete()
-      .eq('id', gameId);
+    await supabase.from('scramble_holes').delete().eq('game_id', gameId);
+    const { error } = await supabase.from('scramble_games').delete().eq('id', gameId);
 
     if (error) {
       toast.error("Failed to delete game");
@@ -261,7 +279,7 @@ export default function ScramblePlay() {
 
     setExitDialogOpen(false);
     toast.success("Game deleted");
-    navigate('/rounds');
+    navigate('/rounds-play');
   };
 
   if (loading) {
@@ -281,7 +299,7 @@ export default function ScramblePlay() {
   }
 
   const par = getCurrentHolePar();
-  const allScoresEntered = teams.every(t => teamScores[t.id] !== null && teamScores[t.id] !== undefined);
+  const allScoresEntered = teams.every(t => teamScores[t.id] !== null && teamScores[t.id] !== undefined && teamScores[t.id]! > 0);
   const isLastHole = currentHole === game.holes_played;
 
   return (
@@ -313,7 +331,7 @@ export default function ScramblePlay() {
               variant="ghost"
               size="icon"
               onClick={() => navigateHole('prev')}
-              disabled={currentHole === 1}
+              disabled={currentHoleIndex === 0}
               className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronLeft size={24} />
@@ -328,7 +346,7 @@ export default function ScramblePlay() {
               variant="ghost"
               size="icon"
               onClick={() => navigateHole('next')}
-              disabled={currentHole === game.holes_played}
+              disabled={currentHole > holes.length || currentHole >= totalHoles}
               className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
             >
               <ChevronRight size={24} />
@@ -338,7 +356,7 @@ export default function ScramblePlay() {
       </div>
 
       {/* Team Scores */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 max-w-2xl mx-auto">
         {teams.map((team) => (
           <Card 
             key={team.id} 
@@ -356,7 +374,9 @@ export default function ScramblePlay() {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Hole</p>
-                    <p className="text-xl font-bold">{teamScores[team.id] ?? '-'}</p>
+                    <p className={`text-xl font-bold ${teamScores[team.id] ? '' : 'text-muted-foreground'}`}>
+                      {teamScores[team.id] ?? '-'}
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Total</p>
@@ -385,31 +405,22 @@ export default function ScramblePlay() {
           />
         ))}
 
-        {/* Navigation buttons */}
-        <div className="flex gap-2 pt-4">
-          {currentHole > 1 && (
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => navigateHole('prev')}
-            >
-              Previous Hole
-            </Button>
-          )}
-          {isLastHole && allScoresEntered ? (
-            <Button className="flex-1" onClick={finishGame}>
-              Finish Game
-            </Button>
-          ) : (
-            <Button
-              className="flex-1"
-              onClick={() => navigateHole('next')}
-              disabled={currentHole === game.holes_played}
-            >
-              Next Hole
-            </Button>
-          )}
-        </div>
+        {/* Save and navigation buttons */}
+        <Button 
+          onClick={async () => {
+            await saveHole();
+            if (isLastHole && allScoresEntered) {
+              finishGame();
+            } else if (currentHole < totalHoles) {
+              setCurrentHoleIndex(currentHoleIndex + 1);
+              loadHoleData(currentHole + 1);
+            }
+          }} 
+          disabled={!allScoresEntered}
+          className="w-full"
+        >
+          {isLastHole && allScoresEntered ? "Finish Game" : "Save & Next Hole"}
+        </Button>
       </div>
 
       <ScrambleBottomTabBar gameId={gameId!} />
