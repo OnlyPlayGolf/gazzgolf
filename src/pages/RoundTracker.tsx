@@ -486,9 +486,7 @@ export default function RoundTracker() {
                     {hasScore ? (
                       <div className="text-3xl font-bold">{playerScore}</div>
                     ) : (
-                      <div className="w-12 h-12 rounded-full border-4 border-[hsl(120,20%,35%)] flex items-center justify-center">
-                        <span className="text-lg text-muted-foreground">–</span>
-                      </div>
+                      <div className="w-12 h-12 rounded-full bg-[hsl(120,20%,35%)]" />
                     )}
                     <div className="text-xs text-muted-foreground mt-1">Strokes</div>
                   </div>
