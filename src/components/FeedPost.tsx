@@ -108,6 +108,23 @@ const parseUmbriagioResult = (content: string) => {
   return null;
 };
 
+// Parse game result from post content (for Best Ball, Match Play, Skins, etc.)
+const parseGameResult = (content: string) => {
+  const match = content?.match(/\[GAME_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/GAME_RESULT\]/);
+  if (match) {
+    return {
+      gameType: match[1],
+      courseName: match[2],
+      winner: match[3] || null,
+      resultText: match[4] || null,
+      additionalInfo: match[5] || null,
+      gameId: match[6] || null,
+      textContent: content.replace(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/, '').trim()
+    };
+  }
+  return null;
+};
+
 // Drill Result Card Component
 const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick }: { 
   drillTitle: string; 
@@ -257,6 +274,58 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
   );
 };
 
+// Game Result Card Component (for Best Ball, Match Play, Skins, Wolf, Copenhagen, Scramble)
+const GameResultCard = ({ gameType, courseName, winner, resultText, additionalInfo, onClick }: { 
+  gameType: string;
+  courseName: string; 
+  winner: string | null;
+  resultText: string | null;
+  additionalInfo: string | null;
+  onClick?: () => void;
+}) => {
+  const getGameIcon = () => {
+    switch (gameType.toLowerCase()) {
+      case 'best ball':
+      case 'match play':
+        return <Trophy className="h-4 w-4 text-primary" />;
+      case 'skins':
+        return <Trophy className="h-4 w-4 text-amber-500" />;
+      case 'wolf':
+      case 'copenhagen':
+      case 'scramble':
+      default:
+        return <Trophy className="h-4 w-4 text-primary" />;
+    }
+  };
+
+  return (
+    <div 
+      className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 transition-all cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            {getGameIcon()}
+          </div>
+          <span className="text-sm font-medium text-muted-foreground">{gameType}</span>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground">{courseName}</h3>
+      {winner && (
+        <p className="text-sm text-primary font-semibold mt-1">{winner}</p>
+      )}
+      {resultText && (
+        <p className="text-sm text-muted-foreground mt-1">{resultText}</p>
+      )}
+      {additionalInfo && (
+        <p className="text-xs text-muted-foreground mt-2">{additionalInfo}</p>
+      )}
+    </div>
+  );
+};
+
 interface FeedPostProps {
   post: any;
   currentUserId: string;
@@ -390,10 +459,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const initials = displayName.charAt(0).toUpperCase();
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
-  // Check if this post contains a drill result, round result, or umbriago result
+  // Check if this post contains a drill result, round result, umbriago result, or game result
   const drillResult = parseDrillResult(post.content);
   const roundResult = parseRoundResult(post.content);
   const umbriagioResult = parseUmbriagioResult(post.content);
+  const gameResult = parseGameResult(post.content);
 
   return (
     <Card>
@@ -548,6 +618,37 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                     navigate(`/umbriago/${games[0].id}/summary`);
                     return;
                   }
+                  toast.error("Game details not found");
+                }
+              }}
+            />
+          </div>
+        ) : gameResult ? (
+          <div className="space-y-3">
+            {gameResult.textContent && (
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{gameResult.textContent}</p>
+            )}
+            <GameResultCard 
+              gameType={gameResult.gameType}
+              courseName={gameResult.courseName}
+              winner={gameResult.winner}
+              resultText={gameResult.resultText}
+              additionalInfo={gameResult.additionalInfo}
+              onClick={() => {
+                if (gameResult.gameId) {
+                  // Route to appropriate summary based on game type
+                  const gameType = gameResult.gameType.toLowerCase().replace(/\s+/g, '-');
+                  const routeMap: Record<string, string> = {
+                    'best-ball': 'best-ball',
+                    'match-play': 'match-play',
+                    'skins': 'skins',
+                    'wolf': 'wolf',
+                    'copenhagen': 'copenhagen',
+                    'scramble': 'scramble',
+                  };
+                  const route = routeMap[gameType] || gameType;
+                  navigate(`/${route}/${gameResult.gameId}/summary`);
+                } else {
                   toast.error("Game details not found");
                 }
               }}

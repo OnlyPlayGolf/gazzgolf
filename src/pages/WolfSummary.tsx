@@ -112,6 +112,7 @@ export default function WolfSummary() {
         winner={winner.name}
         resultText={`${winner.points} points`}
         additionalInfo={`${playerCount} players`}
+        gameId={gameId}
         onContinue={() => navigate("/rounds-play")}
       />
 

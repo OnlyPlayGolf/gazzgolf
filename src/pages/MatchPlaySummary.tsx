@@ -81,6 +81,7 @@ export default function MatchPlaySummary() {
         winner={game.winner_player || undefined}
         resultText={game.final_result || `${player1HolesWon}-${player2HolesWon}`}
         additionalInfo={`${game.player_1} vs ${game.player_2}`}
+        gameId={gameId}
         onContinue={() => navigate("/rounds-play")}
       />
 
