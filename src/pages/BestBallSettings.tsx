@@ -39,11 +39,23 @@ export default function BestBallSettings() {
         .single();
 
       if (data) {
+        // Safely parse player arrays with fallback to empty array
+        const parsePlayerArray = (arr: unknown): BestBallPlayer[] => {
+          if (!arr || !Array.isArray(arr)) return [];
+          return arr.map((p: any) => ({
+            odId: p?.odId || p?.id || '',
+            displayName: p?.displayName || 'Unknown',
+            handicap: p?.handicap,
+            teeColor: p?.teeColor,
+            isTemporary: p?.isTemporary || false,
+          }));
+        };
+
         const typedGame: BestBallGame = {
           ...data,
           game_type: (data.game_type as BestBallGameType) || 'match',
-          team_a_players: data.team_a_players as unknown as BestBallPlayer[],
-          team_b_players: data.team_b_players as unknown as BestBallPlayer[],
+          team_a_players: parsePlayerArray(data.team_a_players),
+          team_b_players: parsePlayerArray(data.team_b_players),
           winner_team: data.winner_team as 'A' | 'B' | 'TIE' | null,
         };
         setGame(typedGame);
