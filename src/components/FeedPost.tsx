@@ -117,26 +117,30 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick }: {
   onClick?: () => void;
 }) => (
   <div 
-    className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]"
+    className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 transition-all cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
     onClick={onClick}
   >
-    <div className="flex items-center gap-2 mb-2">
-      <Target className="h-5 w-5 text-primary" />
-      <span className="text-sm font-medium text-muted-foreground">Drill Completed</span>
-      {isPersonalBest && (
-        <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full ml-auto">
-          <Trophy className="h-3 w-3" />
-          Personal Best!
-        </span>
-      )}
-      {!isPersonalBest && (
-        <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-      )}
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 rounded-lg bg-primary/10">
+          <Target className="h-4 w-4 text-primary" />
+        </div>
+        <span className="text-sm font-medium text-muted-foreground">Drill Result</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {isPersonalBest && (
+          <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
+            <Trophy className="h-3 w-3" />
+            PB
+          </span>
+        )}
+        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+      </div>
     </div>
-    <div className="text-lg font-semibold text-foreground">{drillTitle}</div>
-    <div className="flex items-baseline gap-2 mt-1">
-      <span className="text-3xl font-bold text-primary">{score}</span>
-      <span className="text-sm text-muted-foreground">{unit}</span>
+    <h3 className="text-lg font-semibold text-foreground mb-2">{drillTitle}</h3>
+    <div className="flex items-baseline gap-2">
+      <span className="text-4xl font-bold text-primary">{score}</span>
+      <span className="text-sm text-muted-foreground font-medium">{unit}</span>
     </div>
   </div>
 );
@@ -163,27 +167,37 @@ const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed
 
   return (
     <div 
-      className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-4 mt-2 transition-all cursor-pointer hover:border-primary/40 hover:shadow-md active:scale-[0.98]"
+      className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 transition-all cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
       onClick={onClick}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <MapPin className="h-5 w-5 text-primary" />
-        <span className="text-sm font-medium text-muted-foreground">Round Completed</span>
-        <span className="text-xs text-muted-foreground ml-auto">{holesPlayed} holes</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="text-lg font-semibold text-foreground">{roundName}</div>
-      <div className="text-sm text-muted-foreground">{courseName}</div>
-      <div className="flex items-baseline gap-4 mt-2">
-        <div>
-          <span className="text-3xl font-bold text-primary">{score}</span>
-          <span className="text-sm text-muted-foreground ml-1">score</span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <MapPin className="h-4 w-4 text-primary" />
+          </div>
+          <span className="text-sm font-medium text-muted-foreground">Round Result</span>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{holesPlayed} holes</span>
+          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        </div>
+      </div>
+      <h3 className="text-lg font-semibold text-foreground">{roundName}</h3>
+      <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
+        <MapPin className="h-3 w-3" />
+        {courseName}
+      </p>
+      <div className="flex items-center gap-6">
         <div>
-          <span className={`text-3xl font-bold ${getScoreColor(scoreVsPar)}`}>
+          <span className="text-4xl font-bold text-primary">{score}</span>
+          <span className="text-sm text-muted-foreground ml-1.5">strokes</span>
+        </div>
+        <div className="h-10 w-px bg-border" />
+        <div>
+          <span className={`text-4xl font-bold ${getScoreColor(scoreVsPar)}`}>
             {formatScoreVsPar(scoreVsPar)}
           </span>
-          <span className="text-sm text-muted-foreground ml-1">vs par</span>
+          <span className="text-sm text-muted-foreground ml-1.5">vs par</span>
         </div>
       </div>
     </div>
@@ -209,29 +223,33 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
 
   return (
     <div 
-      className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20 rounded-lg p-4 mt-2 transition-all cursor-pointer hover:border-yellow-500/40 hover:shadow-md active:scale-[0.98]"
+      className="bg-gradient-to-br from-amber-500/5 via-amber-500/10 to-amber-500/5 border border-amber-500/20 rounded-xl p-4 transition-all cursor-pointer hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-500/10 active:scale-[0.98] group"
       onClick={onClick}
     >
-      <div className="flex items-center gap-2 mb-2">
-        <Trophy className="h-5 w-5 text-yellow-500" />
-        <span className="text-sm font-medium text-muted-foreground">Umbriago Complete</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-amber-500/10">
+            <Trophy className="h-4 w-4 text-amber-500" />
+          </div>
+          <span className="text-sm font-medium text-muted-foreground">Umbriago Result</span>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
       </div>
-      <div className="text-lg font-semibold text-foreground">{courseName}</div>
+      <h3 className="text-lg font-semibold text-foreground mb-1">{courseName}</h3>
       {winningTeam !== 'null' && winningTeam !== 'TIE' && (
-        <p className="text-sm text-yellow-600 font-medium mt-1">{getWinnerNames()}</p>
+        <p className="text-sm text-amber-600 font-semibold mb-3">{getWinnerNames()}</p>
       )}
       {winningTeam === 'TIE' && (
-        <p className="text-sm text-muted-foreground font-medium mt-1">Tie Game</p>
+        <p className="text-sm text-muted-foreground font-medium mb-3">Tie Game</p>
       )}
-      <div className="flex items-center justify-between mt-3 gap-2">
+      <div className="flex items-center justify-between gap-3 bg-background/50 rounded-lg p-3">
         <div className="text-center flex-1">
-          <span className="text-2xl font-bold text-blue-500">{teamAPoints}</span>
+          <span className="text-3xl font-bold text-blue-500">{teamAPoints}</span>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{teamAPlayers}</p>
         </div>
-        <span className="text-muted-foreground font-semibold">vs</span>
+        <div className="text-sm font-bold text-muted-foreground">vs</div>
         <div className="text-center flex-1">
-          <span className="text-2xl font-bold text-red-500">{teamBPoints}</span>
+          <span className="text-3xl font-bold text-red-500">{teamBPoints}</span>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{teamBPlayers}</p>
         </div>
       </div>
@@ -434,9 +452,9 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
         {/* Post Content */}
         {drillResult ? (
-          <>
+          <div className="space-y-3">
             {drillResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap">{drillResult.textContent}</p>
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{drillResult.textContent}</p>
             )}
             <DrillResultCard 
               drillTitle={drillResult.drillTitle}
@@ -468,11 +486,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 }
               }}
             />
-          </>
+          </div>
         ) : roundResult ? (
-          <>
+          <div className="space-y-3">
             {roundResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap">{roundResult.textContent}</p>
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundResult.textContent}</p>
             )}
             <RoundResultCard 
               roundName={roundResult.roundName}
@@ -501,11 +519,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 }
               }}
             />
-          </>
+          </div>
         ) : umbriagioResult ? (
-          <>
+          <div className="space-y-3">
             {umbriagioResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap">{umbriagioResult.textContent}</p>
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{umbriagioResult.textContent}</p>
             )}
             <UmbriagioResultCard 
               courseName={umbriagioResult.courseName}
@@ -534,7 +552,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 }
               }}
             />
-          </>
+          </div>
         ) : post.content && (
           <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
         )}
