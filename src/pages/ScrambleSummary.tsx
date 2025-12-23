@@ -94,6 +94,7 @@ export default function ScrambleSummary() {
         winner={winner?.name}
         resultText={winnerTotal > 0 ? `${winnerTotal} (${formatToPar(winnerTotal, totalPar)})` : undefined}
         additionalInfo={winner?.players.map(p => p.name).join(', ')}
+        gameId={gameId}
         onContinue={() => navigate("/rounds-play")}
       />
 

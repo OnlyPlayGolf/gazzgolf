@@ -14,6 +14,7 @@ interface GameShareDialogProps {
   winner?: string;
   resultText?: string;
   additionalInfo?: string;
+  gameId?: string;
   onContinue: () => void;
 }
 
@@ -25,6 +26,7 @@ export function GameShareDialog({
   winner,
   resultText,
   additionalInfo,
+  gameId,
   onContinue,
 }: GameShareDialogProps) {
   const [showShareForm, setShowShareForm] = useState(false);
@@ -41,23 +43,15 @@ export function GameShareDialog({
         return;
       }
 
-      let content = `🏌️ Just finished a ${gameType} round at ${courseName}!`;
-      if (winner) {
-        content += `\n🏆 Winner: ${winner}`;
-      }
-      if (resultText) {
-        content += `\n📊 ${resultText}`;
-      }
-      if (additionalInfo) {
-        content += `\n${additionalInfo}`;
-      }
-      if (comment.trim()) {
-        content += `\n\n${comment}`;
-      }
+      // Create structured game result marker
+      const gameResult = `[GAME_RESULT]${gameType}|${courseName}|${winner || ''}|${resultText || ''}|${additionalInfo || ''}|${gameId || ''}[/GAME_RESULT]`;
+      const postContent = comment.trim()
+        ? `${comment}\n\n${gameResult}`
+        : gameResult;
 
       const { error } = await supabase.from("posts").insert({
         user_id: user.id,
-        content,
+        content: postContent,
       });
 
       if (error) throw error;

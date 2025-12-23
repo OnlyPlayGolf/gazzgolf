@@ -104,6 +104,7 @@ export default function SkinsSummary() {
         winner={winner?.skinsWon > 0 ? winner.playerName : undefined}
         resultText={winner?.skinsWon > 0 ? `${winner.skinsWon} skin${winner.skinsWon > 1 ? 's' : ''} won` : undefined}
         additionalInfo={`${game.players.length} players`}
+        gameId={gameId}
         onContinue={() => navigate("/rounds-play")}
       />
 

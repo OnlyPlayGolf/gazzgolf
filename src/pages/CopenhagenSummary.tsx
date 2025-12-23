@@ -79,6 +79,7 @@ export default function CopenhagenSummary() {
         winner={players[0].name}
         resultText={`${players[0].points} points`}
         additionalInfo={`${game.player_1}, ${game.player_2}, ${game.player_3}`}
+        gameId={gameId}
         onContinue={() => navigate("/rounds-play")}
       />
 
