@@ -517,6 +517,68 @@ export default function RoundsPlay() {
       navigate('/skins/setup');
       return;
     }
+    if (setupState.gameFormat === "simple_skins") {
+      // Simple Skins uses rounds tables like Stroke Play
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        let roundName = setupState.roundName;
+        if (!roundName) {
+          const { count } = await supabase
+            .from("rounds")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user.id);
+          roundName = `Round ${(count || 0) + 1}`;
+        }
+
+        const { data: round, error } = await supabase
+          .from("rounds")
+          .insert([{
+            user_id: user.id,
+            course_name: selectedCourse.name,
+            round_name: roundName,
+            tee_set: setupState.teeColor,
+            holes_played: getHolesPlayed(setupState.selectedHoles as HoleCount),
+            origin: 'simple_skins',
+            date_played: setupState.datePlayed,
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add players
+        const playersToAdd = setupState.groups.flatMap(g =>
+          g.players
+            .filter(p => !p.isTemporary)
+            .map(p => ({ round_id: round.id, user_id: p.odId, tee_color: p.teeColor, handicap: p.handicap }))
+        );
+
+        if (playersToAdd.length > 0) {
+          await supabase.from('round_players').insert(playersToAdd);
+        }
+
+        // Clear storage
+        sessionStorage.removeItem('roundPlayers');
+        sessionStorage.removeItem('userTeeColor');
+        sessionStorage.removeItem('selectedCourse');
+        sessionStorage.removeItem('playGroups');
+        sessionStorage.removeItem('aiGameConfig');
+
+        toast({ title: "Simple Skins started!", description: `Good luck at ${selectedCourse.name}` });
+        navigate(`/simple-skins/${round.id}/track`);
+      } catch (error: any) {
+        toast({ title: "Error creating round", description: error.message, variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     if (setupState.gameFormat === "stroke_play") {
       navigate('/stroke-play/setup');
       return;
@@ -785,6 +847,7 @@ export default function RoundsPlay() {
                       { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
                       { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
                       { id: "skins", label: "Skins", desc: "Win holes for skins" },
+                      { id: "simple_skins", label: "Simple Skins", desc: "Stroke play style skins" },
                       { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
                     ].map((fmt) => (
                       <div key={fmt.id} className="relative">
@@ -807,6 +870,7 @@ export default function RoundsPlay() {
                             if (fmt.id === "stroke_play") navigate('/stroke-play/how-to-play');
                             else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
                             else if (fmt.id === "skins") navigate('/skins/how-to-play');
+                            else if (fmt.id === "simple_skins") navigate('/simple-skins/how-to-play');
                             else navigate('/copenhagen/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
