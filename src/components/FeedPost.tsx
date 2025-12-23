@@ -221,7 +221,7 @@ const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed
   );
 };
 
-// Umbriago Result Card Component
+// Umbriago Result Card Component - styled to match RoundResultCard
 const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam, teamAPlayers, teamBPlayers, onClick }: { 
   courseName: string; 
   teamAPoints: number; 
@@ -240,34 +240,37 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
 
   return (
     <div 
-      className="bg-gradient-to-br from-amber-500/5 via-amber-500/10 to-amber-500/5 border border-amber-500/20 rounded-xl p-4 transition-all cursor-pointer hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-500/10 active:scale-[0.98] group"
+      className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 transition-all cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
       onClick={onClick}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-amber-500/10">
-            <Trophy className="h-4 w-4 text-amber-500" />
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <MapPin className="h-4 w-4 text-primary" />
           </div>
-          <span className="text-sm font-medium text-muted-foreground">Umbriago Result</span>
+          <span className="text-sm font-medium text-muted-foreground">Round Result</span>
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Umbriago</span>
+          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        </div>
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-1">{courseName}</h3>
-      {winningTeam !== 'null' && winningTeam !== 'TIE' && (
-        <p className="text-sm text-amber-600 font-semibold mb-3">{getWinnerNames()}</p>
+      <h3 className="text-lg font-semibold text-foreground">{courseName}</h3>
+      {winningTeam !== 'null' && (
+        <p className="text-sm text-primary font-semibold mt-1 flex items-center gap-1">
+          <Trophy className="h-3.5 w-3.5" />
+          {getWinnerNames()}
+        </p>
       )}
-      {winningTeam === 'TIE' && (
-        <p className="text-sm text-muted-foreground font-medium mb-3">Tie Game</p>
-      )}
-      <div className="flex items-center justify-between gap-3 bg-background/50 rounded-lg p-3">
-        <div className="text-center flex-1">
-          <span className="text-3xl font-bold text-blue-500">{teamAPoints}</span>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{teamAPlayers}</p>
+      <div className="flex items-center gap-6 mt-3">
+        <div>
+          <span className="text-4xl font-bold text-primary">{teamAPoints}</span>
+          <span className="text-sm text-muted-foreground ml-1.5">pts</span>
         </div>
-        <div className="text-sm font-bold text-muted-foreground">vs</div>
-        <div className="text-center flex-1">
-          <span className="text-3xl font-bold text-red-500">{teamBPoints}</span>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{teamBPlayers}</p>
+        <div className="h-10 w-px bg-border" />
+        <div>
+          <span className="text-4xl font-bold text-muted-foreground">{teamBPoints}</span>
+          <span className="text-sm text-muted-foreground ml-1.5">pts</span>
         </div>
       </div>
     </div>
@@ -275,6 +278,7 @@ const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam
 };
 
 // Game Result Card Component (for Best Ball, Match Play, Skins, Wolf, Copenhagen, Scramble)
+// Now styled to match RoundResultCard for consistency
 const GameResultCard = ({ gameType, courseName, winner, resultText, additionalInfo, onClick }: { 
   gameType: string;
   courseName: string; 
@@ -283,21 +287,6 @@ const GameResultCard = ({ gameType, courseName, winner, resultText, additionalIn
   additionalInfo: string | null;
   onClick?: () => void;
 }) => {
-  const getGameIcon = () => {
-    switch (gameType.toLowerCase()) {
-      case 'best ball':
-      case 'match play':
-        return <Trophy className="h-4 w-4 text-primary" />;
-      case 'skins':
-        return <Trophy className="h-4 w-4 text-amber-500" />;
-      case 'wolf':
-      case 'copenhagen':
-      case 'scramble':
-      default:
-        return <Trophy className="h-4 w-4 text-primary" />;
-    }
-  };
-
   return (
     <div 
       className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 transition-all cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
@@ -306,15 +295,21 @@ const GameResultCard = ({ gameType, courseName, winner, resultText, additionalIn
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-primary/10">
-            {getGameIcon()}
+            <MapPin className="h-4 w-4 text-primary" />
           </div>
-          <span className="text-sm font-medium text-muted-foreground">{gameType}</span>
+          <span className="text-sm font-medium text-muted-foreground">Round Result</span>
         </div>
-        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{gameType}</span>
+          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        </div>
       </div>
       <h3 className="text-lg font-semibold text-foreground">{courseName}</h3>
       {winner && (
-        <p className="text-sm text-primary font-semibold mt-1">{winner}</p>
+        <p className="text-sm text-primary font-semibold mt-1 flex items-center gap-1">
+          <Trophy className="h-3.5 w-3.5" />
+          {winner}
+        </p>
       )}
       {resultText && (
         <p className="text-sm text-muted-foreground mt-1">{resultText}</p>
