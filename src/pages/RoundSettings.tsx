@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
+import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -19,6 +20,7 @@ interface RoundData {
   holes_played: number;
   tee_set: string | null;
   round_name: string | null;
+  origin: string | null;
 }
 
 interface RoundPlayer {
@@ -121,6 +123,14 @@ export default function RoundSettings() {
     }
   };
 
+  const renderBottomTabBar = () => {
+    if (!roundId) return null;
+    if (round?.origin === "simple_skins") {
+      return <SimpleSkinsBottomTabBar roundId={roundId} />;
+    }
+    return <RoundBottomTabBar roundId={roundId} />;
+  };
+
   if (loading || !round) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
@@ -191,7 +201,7 @@ export default function RoundSettings() {
         deleting={deleting}
       />
 
-      {roundId && <RoundBottomTabBar roundId={roundId} />}
+      {renderBottomTabBar()}
     </div>
   );
 }
