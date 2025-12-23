@@ -218,12 +218,16 @@ export default function BestBallSetup() {
         return;
       }
 
+      // Get round name from session storage
+      const savedRoundName = sessionStorage.getItem('roundName');
+
       const { data: game, error } = await supabase
         .from("best_ball_games")
         .insert([{
           user_id: user.id,
           course_name: selectedCourse?.name || "Best Ball Game",
           course_id: selectedCourseId || null,
+          round_name: savedRoundName || null,
           holes_played: 18,
           game_type: gameType,
           team_a_name: teamAName,

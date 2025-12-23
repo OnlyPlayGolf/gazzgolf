@@ -27,6 +27,7 @@ export type Database = {
           id: string
           is_finished: boolean
           match_status: number
+          round_name: string | null
           team_a_name: string
           team_a_players: Json
           team_a_total: number
@@ -49,6 +50,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           match_status?: number
+          round_name?: string | null
           team_a_name?: string
           team_a_players?: Json
           team_a_total?: number
@@ -71,6 +73,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           match_status?: number
+          round_name?: string | null
           team_a_name?: string
           team_a_players?: Json
           team_a_total?: number
@@ -245,6 +248,7 @@ export type Database = {
           player_3_tee: string | null
           player_3_total_points: number
           presses: Json | null
+          round_name: string | null
           stake_per_point: number
           tee_set: string | null
           use_handicaps: boolean
@@ -272,6 +276,7 @@ export type Database = {
           player_3_tee?: string | null
           player_3_total_points?: number
           presses?: Json | null
+          round_name?: string | null
           stake_per_point?: number
           tee_set?: string | null
           use_handicaps?: boolean
@@ -299,6 +304,7 @@ export type Database = {
           player_3_tee?: string | null
           player_3_total_points?: number
           presses?: Json | null
+          round_name?: string | null
           stake_per_point?: number
           tee_set?: string | null
           use_handicaps?: boolean
@@ -845,6 +851,7 @@ export type Database = {
           player_2: string
           player_2_handicap: number | null
           player_2_tee: string | null
+          round_name: string | null
           tee_set: string | null
           use_handicaps: boolean
           user_id: string
@@ -867,6 +874,7 @@ export type Database = {
           player_2: string
           player_2_handicap?: number | null
           player_2_tee?: string | null
+          round_name?: string | null
           tee_set?: string | null
           use_handicaps?: boolean
           user_id: string
@@ -889,6 +897,7 @@ export type Database = {
           player_2?: string
           player_2_handicap?: number | null
           player_2_tee?: string | null
+          round_name?: string | null
           tee_set?: string | null
           use_handicaps?: boolean
           user_id?: string
@@ -1358,6 +1367,7 @@ export type Database = {
           id: string
           is_finished: boolean
           min_drives_per_player: number | null
+          round_name: string | null
           scoring_type: string
           teams: Json
           tee_set: string | null
@@ -1374,6 +1384,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           min_drives_per_player?: number | null
+          round_name?: string | null
           scoring_type?: string
           teams?: Json
           tee_set?: string | null
@@ -1390,6 +1401,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           min_drives_per_player?: number | null
+          round_name?: string | null
           scoring_type?: string
           teams?: Json
           tee_set?: string | null
@@ -1457,6 +1469,7 @@ export type Database = {
           id: string
           is_finished: boolean
           players: Json
+          round_name: string | null
           skin_value: number
           use_handicaps: boolean
           user_id: string
@@ -1473,6 +1486,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           players?: Json
+          round_name?: string | null
           skin_value?: number
           use_handicaps?: boolean
           user_id: string
@@ -1489,6 +1503,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           players?: Json
+          round_name?: string | null
           skin_value?: number
           use_handicaps?: boolean
           user_id?: string
@@ -1564,6 +1579,7 @@ export type Database = {
           payout_mode: string
           roll_history: Json | null
           rolls_per_team: number
+          round_name: string | null
           stake_per_point: number
           team_a_player_1: string
           team_a_player_2: string
@@ -1587,6 +1603,7 @@ export type Database = {
           payout_mode?: string
           roll_history?: Json | null
           rolls_per_team?: number
+          round_name?: string | null
           stake_per_point?: number
           team_a_player_1: string
           team_a_player_2: string
@@ -1610,6 +1627,7 @@ export type Database = {
           payout_mode?: string
           roll_history?: Json | null
           rolls_per_team?: number
+          round_name?: string | null
           stake_per_point?: number
           team_a_player_1?: string
           team_a_player_2?: string
@@ -1758,6 +1776,7 @@ export type Database = {
           player_4_points: number
           player_5: string | null
           player_5_points: number
+          round_name: string | null
           team_win_points: number
           user_id: string
           winner_player: string | null
@@ -1783,6 +1802,7 @@ export type Database = {
           player_4_points?: number
           player_5?: string | null
           player_5_points?: number
+          round_name?: string | null
           team_win_points?: number
           user_id: string
           winner_player?: string | null
@@ -1808,6 +1828,7 @@ export type Database = {
           player_4_points?: number
           player_5?: string | null
           player_5_points?: number
+          round_name?: string | null
           team_win_points?: number
           user_id?: string
           winner_player?: string | null

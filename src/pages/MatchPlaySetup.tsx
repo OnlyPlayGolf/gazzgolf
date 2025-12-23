@@ -153,12 +153,16 @@ export default function MatchPlaySetup() {
         return;
       }
 
+      // Get round name from session storage
+      const savedRoundName = sessionStorage.getItem('roundName');
+
       const { data: game, error } = await supabase
         .from("match_play_games")
         .insert({
           user_id: user.id,
           course_name: selectedCourse?.name || "Match Play Game",
           course_id: selectedCourseId || null,
+          round_name: savedRoundName || null,
           holes_played: 18,
           player_1: players[0].displayName,
           player_1_handicap: players[0].handicap || null,
