@@ -140,6 +140,7 @@ import SkinsLeaderboard from "./pages/SkinsLeaderboard";
 import SkinsSettings from "./pages/SkinsSettings";
 import SkinsSummary from "./pages/SkinsSummary";
 import HowToPlaySkins from "./pages/HowToPlaySkins";
+import SimpleSkinsSetup from "./pages/SimpleSkinsSetup";
 import SimpleSkinsTracker from "./pages/SimpleSkinsTracker";
 import SimpleSkinsSummary from "./pages/SimpleSkinsSummary";
 import SimpleSkinsInfo from "./pages/SimpleSkinsInfo";
@@ -282,6 +283,7 @@ const App = () => {
             <Route path="/skins/:gameId/settings" element={<SkinsSettings />} />
             <Route path="/skins/:gameId/summary" element={<SkinsSummary />} />
             <Route path="/simple-skins/how-to-play" element={<HowToPlaySimpleSkins />} />
+            <Route path="/simple-skins/setup" element={<SimpleSkinsSetup />} />
             <Route path="/simple-skins/:roundId/track" element={<SimpleSkinsTracker />} />
             <Route path="/simple-skins/:roundId/info" element={<SimpleSkinsInfo />} />
             <Route path="/simple-skins/:roundId/leaderboard" element={<SimpleSkinsLeaderboard />} />
