@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlayerGroup, Player } from "@/types/playSetup";
 import { formatHandicap } from "@/lib/utils";
-import { TeeSelector, getTeeDisplayName } from "@/components/TeeSelector";
+import { TeeSelector } from "@/components/TeeSelector";
+
 interface GroupCardProps {
   group: PlayerGroup;
   groupIndex: number;
   availableTees: string[];
+  courseTeeNames?: Record<string, string> | null;
   canDelete: boolean;
   onUpdateName: (name: string) => void;
   onAddPlayer: () => void;
@@ -30,6 +32,7 @@ const formatPlayerName = (player: Player): string => {
 interface PlayerRowProps {
   player: Player;
   availableTees: string[];
+  courseTeeNames?: Record<string, string> | null;
   onPlayerClick: (player: Player) => void;
   onUpdatePlayerTee: (playerId: string, tee: string) => void;
   onRemovePlayer: (playerId: string) => void;
@@ -40,6 +43,7 @@ interface PlayerRowProps {
 function PlayerRow({
   player,
   availableTees,
+  courseTeeNames,
   onPlayerClick,
   onUpdatePlayerTee,
   onRemovePlayer,
@@ -83,6 +87,7 @@ function PlayerRow({
         value={player.teeColor}
         onValueChange={(tee) => onUpdatePlayerTee(player.odId, tee)}
         teeCount={availableTees.length || 5}
+        courseTeeNames={courseTeeNames}
         triggerClassName="w-20 h-7 text-xs shrink-0 px-2"
       />
       
@@ -105,6 +110,7 @@ export function GroupCard({
   group,
   groupIndex,
   availableTees,
+  courseTeeNames,
   canDelete,
   onUpdateName,
   onAddPlayer,
@@ -203,6 +209,7 @@ export function GroupCard({
                             <PlayerRow
                               player={player}
                               availableTees={availableTees}
+                              courseTeeNames={courseTeeNames}
                               onPlayerClick={onPlayerClick}
                               onUpdatePlayerTee={onUpdatePlayerTee}
                               onRemovePlayer={onRemovePlayer}
@@ -232,6 +239,7 @@ export function GroupCard({
                     key={player.odId}
                     player={player}
                     availableTees={availableTees}
+                    courseTeeNames={courseTeeNames}
                     onPlayerClick={onPlayerClick}
                     onUpdatePlayerTee={onUpdatePlayerTee}
                     onRemovePlayer={onRemovePlayer}

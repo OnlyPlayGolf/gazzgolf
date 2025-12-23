@@ -22,8 +22,7 @@ import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
 import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
 import { cn, parseHandicap } from "@/lib/utils";
-import { TeeSelector, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
-import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
+import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import { CourseScorecard } from "@/components/CourseScorecard";
 
 type HoleCount = "18" | "front9" | "back9";
@@ -728,7 +727,8 @@ export default function RoundsPlay() {
                   key={group.id}
                   group={group}
                   groupIndex={index}
-                  availableTees={DEFAULT_TEE_OPTIONS.map(t => t.value)}
+                  availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
+                  courseTeeNames={courseTeeNames}
                   canDelete={setupState.groups.length > 1}
                   onUpdateName={(name) => updateGroupName(group.id, name)}
                   onAddPlayer={() => {
@@ -887,7 +887,9 @@ export default function RoundsPlay() {
         onClose={() => setShowAIAssistant(false)}
         courseInfo={selectedCourse ? {
           courseName: selectedCourse.name,
-          availableTees: DEFAULT_TEE_OPTIONS.map(t => t.label),
+          availableTees: courseTeeNames
+            ? ["black", "blue", "white", "yellow", "red"].filter(k => courseTeeNames[k]).map(k => courseTeeNames[k])
+            : STANDARD_TEE_OPTIONS.map(t => t.label),
           defaultHoles: getHolesPlayed(setupState.selectedHoles as HoleCount),
           courseHoles,
         } : undefined}
@@ -908,7 +910,7 @@ export default function RoundsPlay() {
         onClose={() => setAddPlayerDialogOpen(false)}
         onAddPlayer={(player) => activeGroupId && addPlayerToGroup(activeGroupId, player)}
         existingPlayerIds={getAllPlayerIds()}
-        defaultTee={setupState.teeColor || "medium"}
+        defaultTee={setupState.teeColor || DEFAULT_MEN_TEE}
       />
 
       <PlayerEditSheet
@@ -919,7 +921,8 @@ export default function RoundsPlay() {
           setEditingPlayerGroupId(null);
         }}
         player={editingPlayer}
-        availableTees={DEFAULT_TEE_OPTIONS.map(t => t.value)}
+        availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
+        courseTeeNames={courseTeeNames}
         onSave={handleSavePlayer}
       />
     </div>

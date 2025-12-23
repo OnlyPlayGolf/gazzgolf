@@ -11,6 +11,7 @@ interface PlayerEditSheetProps {
   onClose: () => void;
   player: Player | null;
   availableTees: string[];
+  courseTeeNames?: Record<string, string> | null;
   onSave: (updatedPlayer: Player) => void;
 }
 
@@ -19,6 +20,7 @@ export function PlayerEditSheet({
   onClose,
   player,
   availableTees,
+  courseTeeNames,
   onSave,
 }: PlayerEditSheetProps) {
   const [displayName, setDisplayName] = useState("");
@@ -97,6 +99,7 @@ export function PlayerEditSheet({
               value={teeColor}
               onValueChange={setTeeColor}
               teeCount={availableTees.length || 5}
+              courseTeeNames={courseTeeNames}
             />
           </div>
 
