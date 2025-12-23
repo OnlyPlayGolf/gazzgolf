@@ -804,7 +804,7 @@ export default function RoundsPlay() {
                           onClick={(e) => {
                             e.stopPropagation();
                             saveState();
-                            if (fmt.id === "stroke_play") navigate('/stroke-play/settings');
+                            if (fmt.id === "stroke_play") navigate('/stroke-play/how-to-play');
                             else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
                             else if (fmt.id === "skins") navigate('/skins/how-to-play');
                             else navigate('/copenhagen/how-to-play');
