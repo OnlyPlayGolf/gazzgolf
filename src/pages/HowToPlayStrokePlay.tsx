@@ -46,21 +46,6 @@ export default function HowToPlayStrokePlay() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Scoring Terms</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p><strong>Albatross:</strong> 3 under par (rare!)</p>
-              <p><strong>Eagle:</strong> 2 under par</p>
-              <p><strong>Birdie:</strong> 1 under par</p>
-              <p><strong>Par:</strong> Expected strokes for the hole</p>
-              <p><strong>Bogey:</strong> 1 over par</p>
-              <p><strong>Double Bogey:</strong> 2 over par</p>
-              <p><strong>Triple Bogey:</strong> 3 over par</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle className="text-lg">Score vs Par</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
@@ -96,17 +81,6 @@ export default function HowToPlayStrokePlay() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Tips</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>• Focus on avoiding big numbers — one bad hole can ruin a round</p>
-              <p>• Play smart on difficult holes — bogey is not a bad score</p>
-              <p>• Track your fairways, greens, and putts for improvement</p>
-              <p>• Stay patient — golf is a marathon, not a sprint</p>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
