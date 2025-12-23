@@ -96,6 +96,7 @@ import WolfSettings from "./pages/WolfSettings";
 import HowToPlayWolf from "./pages/HowToPlayWolf";
 import StrokePlaySettings from "./pages/StrokePlaySettings";
 import StrokePlaySetup from "./pages/StrokePlaySetup";
+import HowToPlayStrokePlay from "./pages/HowToPlayStrokePlay";
 import PerformanceStats from "./pages/PerformanceStats";
 import CopenhagenSetup from "./pages/CopenhagenSetup";
 import CopenhagenPlay from "./pages/CopenhagenPlay";
@@ -199,6 +200,7 @@ const App = () => {
             <Route path="/invite/:code" element={<AcceptInvite />} />
             <Route path="/rounds" element={<Rounds />} />
             <Route path="/rounds-play" element={<RoundsPlay />} />
+            <Route path="/stroke-play/how-to-play" element={<HowToPlayStrokePlay />} />
             <Route path="/stroke-play/settings" element={<StrokePlaySettings />} />
             <Route path="/stroke-play/setup" element={<StrokePlaySetup />} />
             <Route path="/played-rounds" element={<PlayedRounds />} />
