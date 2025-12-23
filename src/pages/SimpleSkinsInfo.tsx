@@ -1,105 +1,72 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trophy } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useParams } from "react-router-dom";
+import { TopNavBar } from "@/components/TopNavBar";
 import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Info } from "lucide-react";
 
 export default function SimpleSkinsInfo() {
   const { roundId } = useParams();
-  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="p-4 pt-6 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="p-2">
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-2xl font-bold">How to Play Simple Skins</h1>
-        </div>
+    <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
+      <TopNavBar />
+      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="text-primary" />
+              About Simple Skins
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Overview</h3>
+              <p className="text-sm text-muted-foreground">
+                Simple Skins is a fun and competitive format where players compete for "skins" on each hole. Each hole is worth one skin, and the player with the outright lowest score wins the skin for that hole.
+              </p>
+            </div>
 
-        <div className="space-y-4">
-          <Card className="border-amber-200 dark:border-amber-800">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-amber-600" />
-                <CardTitle className="text-lg">Overview</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>
-                Simple Skins is a fun and competitive format where players compete
-                for "skins" on each hole. It uses the same simple interface as Stroke Play
-                for easy score entry.
-              </p>
-              <p>
-                Each hole is worth one skin. The player with the outright lowest score
-                wins the skin for that hole.
-              </p>
-            </CardContent>
-          </Card>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">How It Works</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Enter each player's score just like Stroke Play</li>
+                <li>• The lowest score on each hole wins that skin</li>
+                <li>• If two or more players tie, no skin is awarded</li>
+                <li>• Tied skins can carry over to the next hole</li>
+                <li>• The player with the most skins at the end wins</li>
+              </ul>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">How It Works</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>• Enter each player's score just like Stroke Play</p>
-              <p>• The lowest score on each hole wins that skin</p>
-              <p>• If two or more players tie for the lowest score, no skin is awarded</p>
-              <p>• Tied skins carry over to the next hole</p>
-              <p>• The player with the most skins at the end wins</p>
-            </CardContent>
-          </Card>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Carryover Rules</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• When no player wins a hole outright (tie), the skin carries over</li>
+                <li>• Carryover skins add to the next hole's value</li>
+                <li>• Example: If holes 1 and 2 tie, hole 3 is worth 3 skins</li>
+                <li>• This creates exciting high-stakes holes!</li>
+              </ul>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Carryover Rules</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>
-                When no player wins a hole outright (tie), that skin carries over
-                and adds to the next hole's value.
-              </p>
-              <p>
-                For example, if holes 1 and 2 are tied, hole 3 will be worth 3 skins
-                (1 for hole 3 + 2 carryovers).
-              </p>
-              <p>
-                This creates exciting high-stakes holes as carryovers accumulate!
-              </p>
-            </CardContent>
-          </Card>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Winning a Skin</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• <strong>Outright Win:</strong> You must have the lowest score alone</li>
+                <li>• Even a great score doesn't win if another player ties you</li>
+                <li>• Consider taking risks on holes with carryovers</li>
+              </ul>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Winning a Skin</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>
-                <strong>Outright Win:</strong> You must have the lowest score alone.
-                Even if you make a great score, you don't win if another player ties you.
-              </p>
-              <p>
-                <strong>Strategy:</strong> Sometimes it's worth taking risks to try
-                and beat your opponents, especially on holes with carryovers.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Example</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>Hole 1: Player A scores 4, Player B scores 5 → Player A wins 1 skin</p>
-              <p>Hole 2: Both players score 4 → Tie, skin carries over</p>
-              <p>Hole 3: Player B scores 3, Player A scores 4 → Player B wins 2 skins</p>
-            </CardContent>
-          </Card>
-        </div>
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+              <h3 className="font-semibold text-sm">Example</h3>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Hole 1: Player A (4) vs Player B (5) → A wins 1 skin</li>
+                <li>• Hole 2: Both score 4 → Tie, skin carries over</li>
+                <li>• Hole 3: Player B (3) vs Player A (4) → B wins 2 skins</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-
       {roundId && <SimpleSkinsBottomTabBar roundId={roundId} />}
     </div>
   );
