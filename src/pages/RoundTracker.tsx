@@ -202,9 +202,15 @@ export default function RoundTracker() {
 
   const currentHole = courseHoles[currentHoleIndex];
 
-  const getPlayerScore = (playerId: string) => {
+  const getPlayerScore = (playerId: string): number | null => {
     const playerScores = scores.get(playerId) || new Map();
-    return playerScores.get(currentHole?.hole_number) || currentHole?.par || 0;
+    const score = playerScores.get(currentHole?.hole_number);
+    return score !== undefined ? score : null;
+  };
+
+  const hasPlayerEnteredScore = (playerId: string): boolean => {
+    const playerScores = scores.get(playerId) || new Map();
+    return playerScores.has(currentHole?.hole_number);
   };
 
   const updateScore = async (playerId: string, newScore: number) => {
@@ -458,6 +464,7 @@ export default function RoundTracker() {
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         {players.map((player) => {
           const playerScore = getPlayerScore(player.id);
+          const hasScore = hasPlayerEnteredScore(player.id);
           return (
             <Card 
               key={player.id} 
@@ -476,8 +483,14 @@ export default function RoundTracker() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold">{playerScore}</div>
-                    <div className="text-xs text-muted-foreground">Strokes</div>
+                    {hasScore ? (
+                      <div className="text-3xl font-bold">{playerScore}</div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-full border-4 border-[hsl(120,20%,35%)] flex items-center justify-center">
+                        <span className="text-lg text-muted-foreground">–</span>
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-1">Strokes</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
