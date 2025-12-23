@@ -219,10 +219,16 @@ export default function BestBallPlay() {
   const getCurrentBestBalls = () => {
     if (!game) return { teamA: null, teamB: null };
     
-    const buildPlayerScores = (players: BestBallPlayer[], scoresMap: Record<string, number>): BestBallPlayerScore[] => {
-      return players.map(player => {
-        const grossScore = scoresMap[player.odId] || par;
-        const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
+    const buildPlayerScores = (
+      players: BestBallPlayer[],
+      scoresMap?: Record<string, number>
+    ): BestBallPlayerScore[] => {
+      return players.map((player) => {
+        const grossFromMap = scoresMap?.[player.odId];
+        const grossScore = grossFromMap ?? par;
+        const handicapStrokes = game.use_handicaps
+          ? calculateHandicapStrokes(player.handicap, strokeIndex)
+          : 0;
         return {
           playerId: player.odId,
           playerName: player.displayName,
@@ -233,8 +239,8 @@ export default function BestBallPlay() {
       });
     };
     
-    const teamAPlayerScores = buildPlayerScores(game.team_a_players, scores.teamA);
-    const teamBPlayerScores = buildPlayerScores(game.team_b_players, scores.teamB);
+    const teamAPlayerScores = buildPlayerScores(game.team_a_players, scores?.teamA);
+    const teamBPlayerScores = buildPlayerScores(game.team_b_players, scores?.teamB);
     
     return {
       teamA: calculateBestBall(teamAPlayerScores, game.use_handicaps),
@@ -300,8 +306,8 @@ export default function BestBallPlay() {
   };
 
   const allPlayersHaveScores = () => {
-    const teamAHasScores = game.team_a_players.every(p => scores.teamA[p.odId] > 0);
-    const teamBHasScores = game.team_b_players.every(p => scores.teamB[p.odId] > 0);
+    const teamAHasScores = game.team_a_players.every((p) => (scores?.teamA?.[p.odId] ?? 0) > 0);
+    const teamBHasScores = game.team_b_players.every((p) => (scores?.teamB?.[p.odId] ?? 0) > 0);
     return teamAHasScores && teamBHasScores;
   };
 
@@ -371,8 +377,8 @@ export default function BestBallPlay() {
             )}
           </div>
           <div className="space-y-2">
-            {game.team_a_players.map(player => 
-              renderPlayerScoreRow(player, 'A', scores.teamA, bestBalls.teamA?.countingPlayer || null)
+            {game.team_a_players.map((player) =>
+              renderPlayerScoreRow(player, 'A', scores?.teamA ?? {}, bestBalls.teamA?.countingPlayer || null)
             )}
           </div>
         </Card>
@@ -388,8 +394,8 @@ export default function BestBallPlay() {
             )}
           </div>
           <div className="space-y-2">
-            {game.team_b_players.map(player => 
-              renderPlayerScoreRow(player, 'B', scores.teamB, bestBalls.teamB?.countingPlayer || null)
+            {game.team_b_players.map((player) =>
+              renderPlayerScoreRow(player, 'B', scores?.teamB ?? {}, bestBalls.teamB?.countingPlayer || null)
             )}
           </div>
         </Card>
@@ -411,7 +417,7 @@ export default function BestBallPlay() {
             handicap={player.handicap}
             par={par}
             holeNumber={currentHole}
-            currentScore={scores.teamA[player.odId] || 0}
+            currentScore={scores?.teamA?.[player.odId] ?? 0}
             onScoreSelect={(score) => handleScoreSelect('A', player.odId, score)}
             onEnterAndNext={() => advanceToNextPlayerSheet('A', player.odId)}
           />
@@ -425,7 +431,7 @@ export default function BestBallPlay() {
             handicap={player.handicap}
             par={par}
             holeNumber={currentHole}
-            currentScore={scores.teamB[player.odId] || 0}
+            currentScore={scores?.teamB?.[player.odId] ?? 0}
             onScoreSelect={(score) => handleScoreSelect('B', player.odId, score)}
             onEnterAndNext={() => advanceToNextPlayerSheet('B', player.odId)}
           />
