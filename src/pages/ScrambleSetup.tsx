@@ -129,12 +129,16 @@ export default function ScrambleSetup() {
         return;
       }
 
+      // Get round name from session storage
+      const savedRoundName = sessionStorage.getItem('roundName');
+
       const { data: game, error } = await supabase
         .from('scramble_games')
         .insert({
           user_id: user.id,
           course_name: selectedCourse.name,
           course_id: selectedCourse.id,
+          round_name: savedRoundName || null,
           tee_set: teeColor,
           holes_played: getHolesPlayed(),
           teams: teamsWithPlayers as unknown as any,

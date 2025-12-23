@@ -224,12 +224,16 @@ export default function UmbriagioSetup() {
       
       const rotationSchedule = generateRotationSchedule(playerNames, teamRotation, initialTeams);
 
+      // Get round name from session storage
+      const savedRoundName = sessionStorage.getItem('roundName');
+
       const { data: game, error } = await supabase
         .from("umbriago_games")
         .insert({
           user_id: user.id,
           course_name: selectedCourse?.name || "Umbriago Game",
           course_id: selectedCourseId || null,
+          round_name: savedRoundName || null,
           holes_played: 18,
           team_a_player_1: players[0].displayName,
           team_a_player_2: players[1].displayName,

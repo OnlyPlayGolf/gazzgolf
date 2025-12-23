@@ -86,49 +86,49 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 2: copenhagen owned
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 3: skins owned
     supabase
       .from("skins_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, players")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 4: best ball owned
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, team_a_players, team_b_players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 5: scramble owned
     supabase
       .from("scramble_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, teams")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 6: wolf owned
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 7: umbriago owned
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 8: match play owned
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
       .eq("user_id", targetUserId)
       .then((r) => r),
   ];
@@ -140,7 +140,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const skinsParticipantPromises = participantNames.map((name) =>
     supabase
       .from("skins_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, players")
       .contains("players", [{ name }])
       .then((r) => r)
   );
@@ -149,17 +149,17 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const copenhagenParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
       .eq("player_1", name)
       .then((r) => r),
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
       .eq("player_2", name)
       .then((r) => r),
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
       .eq("player_3", name)
       .then((r) => r),
   ]);
@@ -168,12 +168,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const bestBallParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, team_a_players, team_b_players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players")
       .contains("team_a_players", [{ name }])
       .then((r) => r),
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, team_a_players, team_b_players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players")
       .contains("team_b_players", [{ name }])
       .then((r) => r),
   ]);
@@ -183,7 +183,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     ? [
         supabase
           .from("scramble_games")
-          .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, teams")
+          .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams")
           .then((r) => r),
       ]
     : [];
@@ -192,27 +192,27 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const wolfParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
       .eq("player_1", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
       .eq("player_2", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
       .eq("player_3", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
       .eq("player_4", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
       .eq("player_5", name)
       .then((r) => r),
   ]);
@@ -221,22 +221,22 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const umbriagioParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
       .eq("team_a_player_1", name)
       .then((r) => r),
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
       .eq("team_a_player_2", name)
       .then((r) => r),
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
       .eq("team_b_player_1", name)
       .then((r) => r),
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
       .eq("team_b_player_2", name)
       .then((r) => r),
   ]);
@@ -245,12 +245,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const matchPlayParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
       .eq("player_1", name)
       .then((r) => r),
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
       .eq("player_2", name)
       .then((r) => r),
   ]);
@@ -419,6 +419,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
+      round_name: game.round_name,
       date: game.date_played,
       score: 0,
       playerCount: 3,
@@ -437,6 +438,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
+      round_name: game.round_name,
       date: game.date_played,
       score: 0,
       playerCount: players.length || 2,
@@ -456,6 +458,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
+      round_name: game.round_name,
       date: game.date_played,
       score: 0,
       playerCount: teamA.length + teamB.length,
@@ -478,6 +481,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
+      round_name: game.round_name,
       date: game.date_played,
       score: 0,
       playerCount: playerCount || 2,
@@ -503,6 +507,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
+      round_name: game.round_name,
       date: game.date_played,
       score: 0,
       playerCount,
@@ -519,6 +524,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
+      round_name: game.round_name,
       date: game.date_played,
       score: 0,
       playerCount: 4,
@@ -536,6 +542,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
+      round_name: game.round_name,
       date: game.date_played,
       score: 0,
       playerCount: 2,

@@ -242,12 +242,16 @@ export default function SkinsSetup() {
         return;
       }
 
+      // Get round name from session storage
+      const savedRoundName = sessionStorage.getItem('roundName');
+
       const { data, error } = await supabase
         .from("skins_games")
         .insert({
           user_id: user.id,
           course_id: selectedCourseId,
           course_name: selectedCourse.name,
+          round_name: savedRoundName || null,
           holes_played: holesPlayed,
           skin_value: skinValue,
           carryover_enabled: carryoverEnabled,
