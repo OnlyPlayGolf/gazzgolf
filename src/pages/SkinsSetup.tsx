@@ -17,6 +17,7 @@ import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SkinsPlayer } from "@/types/skins";
+import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
   id: string;
@@ -63,7 +64,7 @@ export default function SkinsSetup() {
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
   const [showEditSheet, setShowEditSheet] = useState(false);
-  const [defaultTee, setDefaultTee] = useState("medium");
+  const [defaultTee, setDefaultTee] = useState(DEFAULT_MEN_TEE);
 
   useEffect(() => {
     const loadData = async () => {
@@ -511,6 +512,7 @@ export default function SkinsSetup() {
         onClose={() => setShowEditSheet(false)}
         player={editingPlayer}
         onSave={handleSavePlayer}
+        availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
       />
     </div>
   );

@@ -48,8 +48,8 @@ export const createDefaultGroup = (index: number): PlayerGroup => ({
 });
 
 export const getInitialPlaySetupState = (): PlaySetupState => {
-  // Read default tee from app preferences
-  let defaultTee = "medium";
+  // Read default tee from app preferences, fallback to blue (second farthest)
+  let defaultTee = "blue";
   try {
     const savedPrefs = localStorage.getItem('appPreferences');
     if (savedPrefs) {

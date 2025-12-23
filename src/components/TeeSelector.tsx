@@ -1,5 +1,13 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
+
+// Standard tee options in order from longest to shortest (color-based for database compatibility)
+export const STANDARD_TEE_OPTIONS = [
+  { value: "black", label: "Black" },
+  { value: "blue", label: "Blue" },
+  { value: "white", label: "White" },
+  { value: "yellow", label: "Yellow" },
+  { value: "red", label: "Red" },
+];
 
 // Default tee names mapping (used when no course-specific names available)
 const DEFAULT_TEE_NAMES: Record<string, string> = {
@@ -10,8 +18,14 @@ const DEFAULT_TEE_NAMES: Record<string, string> = {
   red: "Red",
 };
 
-// Standard tee options in order from longest to shortest
+// Standard tee order from longest to shortest
 const STANDARD_TEE_ORDER = ["black", "blue", "white", "yellow", "red"];
+
+// Default tee for men (second farthest = blue)
+export const DEFAULT_MEN_TEE = "blue";
+
+// Default tee for women (typically red or yellow)
+export const DEFAULT_WOMEN_TEE = "red";
 
 interface TeeSelectorProps {
   value: string;
@@ -75,7 +89,7 @@ function getOptions(courseTeeNames?: Record<string, string> | null): { value: st
 }
 
 // Normalize legacy values (difficulty-based) to color-based system
-function normalizeValue(value: string): string {
+export function normalizeValue(value: string): string {
   if (!value) return "";
   
   const lower = value.toLowerCase();
@@ -94,7 +108,7 @@ function normalizeValue(value: string): string {
     "shortest": "red",
   };
   
-  return difficultyMap[lower] || "white";
+  return difficultyMap[lower] || DEFAULT_MEN_TEE;
 }
 
 function getDisplayName(value: string, courseTeeNames?: Record<string, string> | null): string {
@@ -105,7 +119,7 @@ function getDisplayName(value: string, courseTeeNames?: Record<string, string> |
 
 // Export for use in display contexts
 export function getTeeDisplayName(teeValue: string, courseTeeNames?: Record<string, string> | null): string {
-  if (!teeValue) return "White";
+  if (!teeValue) return DEFAULT_TEE_NAMES[DEFAULT_MEN_TEE];
   const normalized = normalizeValue(teeValue);
   return getDisplayName(normalized, courseTeeNames);
 }

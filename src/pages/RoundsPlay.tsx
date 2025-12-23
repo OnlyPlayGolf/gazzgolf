@@ -22,7 +22,7 @@ import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
 import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
 import { cn, parseHandicap } from "@/lib/utils";
-import { TeeSelector } from "@/components/TeeSelector";
+import { TeeSelector, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
 import { CourseScorecard } from "@/components/CourseScorecard";
 
@@ -89,7 +89,7 @@ export default function RoundsPlay() {
       // Add current user to first group
       if (profile) {
         // Get default tee from app preferences
-        let defaultTee = "medium";
+        let defaultTee = DEFAULT_MEN_TEE;
         try {
           const savedPrefs = localStorage.getItem('appPreferences');
           if (savedPrefs) {

@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Player {
   odId: string;
@@ -23,7 +24,7 @@ export function SetupAddGuestSheet({
   isOpen,
   onClose,
   onAddPlayer,
-  defaultTee = "",
+  defaultTee = DEFAULT_MEN_TEE,
 }: SetupAddGuestSheetProps) {
   const [name, setName] = useState("");
   const [handicap, setHandicap] = useState("");

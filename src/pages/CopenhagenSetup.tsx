@@ -15,6 +15,7 @@ import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
+import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
   id: string;
@@ -66,6 +67,7 @@ export default function CopenhagenSetup() {
         odId: user.id,
         displayName: userName,
         handicap: userHandicap,
+        teeColor: DEFAULT_MEN_TEE,
         isTemporary: false,
         isCurrentUser: true,
       };
@@ -287,7 +289,7 @@ export default function CopenhagenSetup() {
           isOpen={!!editingPlayer}
           onClose={() => setEditingPlayer(null)}
           onSave={handleUpdatePlayer}
-          availableTees={["White", "Yellow", "Blue", "Red"]}
+          availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
         />
 
         <SetupAddFriendSheet
@@ -295,12 +297,14 @@ export default function CopenhagenSetup() {
           onClose={() => setShowAddFriend(false)}
           onAddPlayer={handleAddPlayer}
           existingPlayerIds={existingPlayerIds}
+          defaultTee={DEFAULT_MEN_TEE}
         />
 
         <SetupAddGuestSheet
           isOpen={showAddGuest}
           onClose={() => setShowAddGuest(false)}
           onAddPlayer={handleAddPlayer}
+          defaultTee={DEFAULT_MEN_TEE}
         />
       </div>
     </div>
