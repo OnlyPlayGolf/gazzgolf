@@ -32,6 +32,18 @@ interface BestBallScores {
   teamB: Record<string, number>;
 }
 
+// Safely parse player arrays with fallback to empty array
+const parsePlayerArray = (data: unknown): BestBallPlayer[] => {
+  if (!data || !Array.isArray(data)) return [];
+  return data.map((p: any) => ({
+    odId: p?.odId || p?.id || '',
+    displayName: p?.displayName || 'Unknown',
+    handicap: p?.handicap,
+    teeColor: p?.teeColor,
+    isTemporary: p?.isTemporary || false,
+  }));
+};
+
 const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, BestBallHole, BestBallScores> => ({
   gameId,
   gameTable: "best_ball_games",
@@ -40,8 +52,8 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
   parseGame: (data): BestBallGame => ({
     ...data,
     game_type: (data.game_type as BestBallGameType) || 'match',
-    team_a_players: data.team_a_players as unknown as BestBallPlayer[],
-    team_b_players: data.team_b_players as unknown as BestBallPlayer[],
+    team_a_players: parsePlayerArray(data.team_a_players),
+    team_b_players: parsePlayerArray(data.team_b_players),
     winner_team: data.winner_team as 'A' | 'B' | 'TIE' | null,
   }),
   parseHole: (data): BestBallHole => ({
@@ -57,16 +69,16 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
   createEmptyScores: (game) => {
     const teamA: Record<string, number> = {};
     const teamB: Record<string, number> = {};
-    game.team_a_players.forEach(p => { teamA[p.odId] = 0; });
-    game.team_b_players.forEach(p => { teamB[p.odId] = 0; });
+    (game.team_a_players || []).forEach(p => { if (p?.odId) teamA[p.odId] = 0; });
+    (game.team_b_players || []).forEach(p => { if (p?.odId) teamB[p.odId] = 0; });
     return { teamA, teamB };
   },
   
   extractScoresFromHole: (hole, game) => {
     const teamA: Record<string, number> = {};
     const teamB: Record<string, number> = {};
-    hole.team_a_scores.forEach(s => { teamA[s.playerId] = s.grossScore ?? 0; });
-    hole.team_b_scores.forEach(s => { teamB[s.playerId] = s.grossScore ?? 0; });
+    (hole.team_a_scores || []).forEach(s => { if (s?.playerId) teamA[s.playerId] = s.grossScore ?? 0; });
+    (hole.team_b_scores || []).forEach(s => { if (s?.playerId) teamB[s.playerId] = s.grossScore ?? 0; });
     return { teamA, teamB };
   },
   
