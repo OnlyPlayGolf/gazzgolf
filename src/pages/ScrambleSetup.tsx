@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ScrambleTeam, ScramblePlayer } from "@/types/scramble";
 import { formatHandicap } from "@/lib/utils";
-import { TeeSelector } from "@/components/TeeSelector";
+import { TeeSelector, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
   id: string;
@@ -29,7 +29,7 @@ export default function ScrambleSetup() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
-  const [teeColor, setTeeColor] = useState("white");
+  const [teeColor, setTeeColor] = useState(DEFAULT_MEN_TEE);
   
   // Teams
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);

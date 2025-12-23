@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, Search, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn, parseHandicap, formatHandicap } from "@/lib/utils";
+import { DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Friend {
   id: string;
@@ -37,7 +38,7 @@ export function SetupAddFriendSheet({
   onClose,
   onAddPlayer,
   existingPlayerIds,
-  defaultTee = "",
+  defaultTee = DEFAULT_MEN_TEE,
 }: SetupAddFriendSheetProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchQuery, setSearchQuery] = useState("");

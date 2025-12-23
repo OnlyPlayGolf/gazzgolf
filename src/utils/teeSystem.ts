@@ -263,6 +263,11 @@ export function calculateTeeHandicapAdjustment(
 export const DEFAULT_TEE_OPTIONS = getStandardTeeOptions(5);
 
 /**
+ * Default tee for men (second farthest)
+ */
+export const DEFAULT_MEN_TEE = "long";
+
+/**
  * Legacy color options for backwards compatibility with database
  */
 export const LEGACY_TEE_COLORS = ["White", "Yellow", "Blue", "Red", "Orange"];

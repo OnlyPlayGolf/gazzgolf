@@ -14,6 +14,7 @@ import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
+import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
   id: string;
@@ -66,6 +67,7 @@ export default function MatchPlaySetup() {
         odId: user.id,
         displayName: userName,
         handicap: userHandicap,
+        teeColor: DEFAULT_MEN_TEE,
         isTemporary: false,
         isCurrentUser: true,
       };
@@ -324,6 +326,7 @@ export default function MatchPlaySetup() {
           handleUpdatePlayer(updated);
           setEditingPlayer(null);
         }}
+        availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
       />
 
       <AddPlayerDialog
@@ -334,7 +337,7 @@ export default function MatchPlaySetup() {
           setShowAddPlayer(false);
         }}
         existingPlayerIds={existingPlayerIds}
-        defaultTee=""
+        defaultTee={DEFAULT_MEN_TEE}
       />
     </div>
   );

@@ -15,8 +15,7 @@ import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
-import { TeeSelector } from "@/components/TeeSelector";
-import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
+import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
   id: string;
@@ -43,7 +42,7 @@ export default function StrokePlaySetup() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
-  const [teeColor, setTeeColor] = useState("white");
+  const [teeColor, setTeeColor] = useState(DEFAULT_MEN_TEE);
   
   // Players (including current user)
   const [players, setPlayers] = useState<Player[]>([]);
@@ -105,7 +104,7 @@ export default function StrokePlaySetup() {
         odId: user.id,
         displayName: userName,
         handicap: userHandicap,
-        teeColor: savedTee || "medium",
+        teeColor: savedTee || DEFAULT_MEN_TEE,
         isTemporary: false,
         isCurrentUser: true,
       };
@@ -119,7 +118,7 @@ export default function StrokePlaySetup() {
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,
-          teeColor: p.teeColor || savedTee || "medium",
+          teeColor: p.teeColor || savedTee || DEFAULT_MEN_TEE,
           isTemporary: p.isTemporary || false,
           isCurrentUser: false,
         }));
@@ -376,7 +375,7 @@ export default function StrokePlaySetup() {
         isOpen={!!editingPlayer}
         onClose={() => setEditingPlayer(null)}
         player={editingPlayer}
-        availableTees={DEFAULT_TEE_OPTIONS.map(t => t.value)}
+        availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
         onSave={handleUpdatePlayer}
       />
 

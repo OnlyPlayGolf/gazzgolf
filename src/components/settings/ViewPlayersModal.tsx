@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { GamePlayer } from "./GameDetailsSection";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 interface ViewPlayersModalProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function ViewPlayersModal({
                 <p className="font-medium truncate">{player.name}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   {player.team && <span>{player.team}</span>}
-                  {player.tee && <span>• {player.tee} tees</span>}
+                  {player.tee && <span>• {getTeeDisplayName(player.tee)} tees</span>}
                 </div>
               </div>
               {useHandicaps && player.handicap !== undefined && (
