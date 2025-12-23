@@ -140,6 +140,11 @@ import SkinsLeaderboard from "./pages/SkinsLeaderboard";
 import SkinsSettings from "./pages/SkinsSettings";
 import SkinsSummary from "./pages/SkinsSummary";
 import HowToPlaySkins from "./pages/HowToPlaySkins";
+import SimpleSkinsTracker from "./pages/SimpleSkinsTracker";
+import SimpleSkinsSummary from "./pages/SimpleSkinsSummary";
+import SimpleSkinsInfo from "./pages/SimpleSkinsInfo";
+import SimpleSkinsLeaderboard from "./pages/SimpleSkinsLeaderboard";
+import HowToPlaySimpleSkins from "./pages/HowToPlaySimpleSkins";
 import Statistics from "./pages/Statistics";
 import StatDetail from "./pages/StatDetail";
 
@@ -276,6 +281,11 @@ const App = () => {
             <Route path="/skins/:gameId/leaderboard" element={<SkinsLeaderboard />} />
             <Route path="/skins/:gameId/settings" element={<SkinsSettings />} />
             <Route path="/skins/:gameId/summary" element={<SkinsSummary />} />
+            <Route path="/simple-skins/how-to-play" element={<HowToPlaySimpleSkins />} />
+            <Route path="/simple-skins/:roundId/track" element={<SimpleSkinsTracker />} />
+            <Route path="/simple-skins/:roundId/info" element={<SimpleSkinsInfo />} />
+            <Route path="/simple-skins/:roundId/leaderboard" element={<SimpleSkinsLeaderboard />} />
+            <Route path="/simple-skins/:roundId/summary" element={<SimpleSkinsSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />
