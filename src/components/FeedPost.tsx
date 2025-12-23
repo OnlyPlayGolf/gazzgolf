@@ -573,19 +573,40 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                   navigate(`/rounds/${roundResult.roundId}/detail`);
                 } else {
                   // Try to find the round by matching course, user, and score
-                  const { data: rounds } = await supabase
-                    .from('round_summaries')
-                    .select('round_id')
-                    .eq('user_id', post.user_id)
-                    .eq('course_name', roundResult.courseName)
-                    .eq('total_score', roundResult.score)
-                    .order('date_played', { ascending: false })
-                    .limit(1);
-                  if (rounds && rounds.length > 0) {
-                    navigate(`/rounds/${rounds[0].round_id}/detail`);
-                    return;
+                  try {
+                    const { data: rounds, error } = await supabase
+                      .from('rounds')
+                      .select('id')
+                      .eq('user_id', post.user_id)
+                      .eq('course_name', roundResult.courseName)
+                      .order('created_at', { ascending: false })
+                      .limit(5);
+                    
+                    if (error) throw error;
+                    
+                    if (rounds && rounds.length > 0) {
+                      // Try to find exact match with score from round_summaries
+                      for (const round of rounds) {
+                        const { data: summary } = await supabase
+                          .from('round_summaries')
+                          .select('total_score')
+                          .eq('round_id', round.id)
+                          .single();
+                        
+                        if (summary?.total_score === roundResult.score) {
+                          navigate(`/rounds/${round.id}/detail`);
+                          return;
+                        }
+                      }
+                      // If no exact score match, navigate to first match by course
+                      navigate(`/rounds/${rounds[0].id}/detail`);
+                      return;
+                    }
+                    toast.error("Round details not found");
+                  } catch (error) {
+                    console.error('Error finding round:', error);
+                    toast.error("Round details not found");
                   }
-                  toast.error("Round details not found");
                 }
               }}
             />
