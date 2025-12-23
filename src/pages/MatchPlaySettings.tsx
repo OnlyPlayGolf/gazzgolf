@@ -1,21 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame } from "@/types/matchPlay";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  GameDetailsSection,
+  GameDetailsData,
+  GamePlayer,
+  ViewPlayersModal,
+  RoundActionsSection,
+  DeleteGameDialog,
+} from "@/components/settings";
 
 export default function MatchPlaySettings() {
   const { gameId } = useParams();
@@ -24,10 +20,13 @@ export default function MatchPlaySettings() {
   const [game, setGame] = useState<MatchPlayGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [holesCompleted, setHolesCompleted] = useState(0);
 
   useEffect(() => {
     if (gameId) {
       fetchGame();
+      fetchProgress();
     }
   }, [gameId]);
 
@@ -46,6 +45,32 @@ export default function MatchPlaySettings() {
       console.error("Error fetching game:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProgress = async () => {
+    const { count } = await supabase
+      .from("match_play_holes")
+      .select("*", { count: "exact", head: true })
+      .eq("game_id", gameId);
+    setHolesCompleted(count || 0);
+  };
+
+  const handleFinishGame = async () => {
+    if (!game) return;
+    try {
+      const winner = game.match_status > 0 ? game.player_1 : 
+                     game.match_status < 0 ? game.player_2 : null;
+      
+      await supabase
+        .from("match_play_games")
+        .update({ is_finished: true, winner_player: winner })
+        .eq("id", gameId);
+      
+      toast({ title: "Game finished!" });
+      navigate(`/match-play/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
 
@@ -78,76 +103,73 @@ export default function MatchPlaySettings() {
     );
   }
 
+  const players: GamePlayer[] = [
+    { 
+      name: game.player_1, 
+      handicap: game.use_handicaps ? game.player_1_handicap : undefined,
+      tee: game.player_1_tee 
+    },
+    { 
+      name: game.player_2, 
+      handicap: game.use_handicaps ? game.player_2_handicap : undefined,
+      tee: game.player_2_tee 
+    },
+  ];
+
+  const teeInfo = (() => {
+    if (game.player_1_tee && game.player_2_tee) {
+      if (game.player_1_tee === game.player_2_tee) {
+        return game.player_1_tee;
+      }
+      return "Mixed tees";
+    }
+    return game.tee_set || "Not specified";
+  })();
+
+  const gameDetails: GameDetailsData = {
+    format: "Match Play",
+    courseName: game.course_name,
+    datePlayed: game.date_played,
+    players,
+    teeInfo,
+    holesPlayed: game.holes_played,
+    currentHole: holesCompleted > 0 ? holesCompleted : undefined,
+    scoring: game.use_handicaps ? "Net scoring (handicaps enabled)" : "Gross scoring",
+    roundName: (game as any).round_name,
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Settings</h1>
+        <h1 className="text-2xl font-bold">Settings</h1>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Game Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Course</span>
-              <span>{game.course_name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Player 1</span>
-              <span>{game.player_1}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Player 2</span>
-              <span>{game.player_2}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Handicaps</span>
-              <span>{game.use_handicaps ? "Enabled" : "Disabled"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Holes</span>
-              <span>{game.holes_played}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <GameDetailsSection 
+          data={gameDetails} 
+          onViewPlayers={() => setShowPlayersModal(true)} 
+        />
 
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-lg text-destructive">Danger Zone</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="destructive" 
-              className="w-full"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              Delete Game
-            </Button>
-          </CardContent>
-        </Card>
+        <RoundActionsSection
+          onFinish={handleFinishGame}
+          onSaveAndExit={() => navigate(`/match-play/${gameId}/summary`)}
+          onDelete={() => setShowDeleteDialog(true)}
+        />
       </div>
 
-      {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+      <ViewPlayersModal
+        open={showPlayersModal}
+        onOpenChange={setShowPlayersModal}
+        players={players}
+        useHandicaps={game.use_handicaps}
+      />
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Game?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this Match Play game and all its data. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteGame}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteGameDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteGame}
+        gameName="Match Play Game"
+      />
+
+      {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
     </div>
   );
 }

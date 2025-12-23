@@ -1,22 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { SkinsGame, SkinsPlayer } from "@/types/skins";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Trash2, Save, X } from "lucide-react";
+  GameDetailsSection,
+  GameDetailsData,
+  GamePlayer,
+  ViewPlayersModal,
+  RoundActionsSection,
+  DeleteGameDialog,
+} from "@/components/settings";
 
 export default function SkinsSettings() {
   const { gameId } = useParams();
@@ -25,9 +20,14 @@ export default function SkinsSettings() {
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [holesCompleted, setHolesCompleted] = useState(0);
 
   useEffect(() => {
-    if (gameId) fetchGame();
+    if (gameId) {
+      fetchGame();
+      fetchProgress();
+    }
   }, [gameId]);
 
   const fetchGame = async () => {
@@ -50,6 +50,14 @@ export default function SkinsSettings() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchProgress = async () => {
+    const { count } = await supabase
+      .from("skins_holes")
+      .select("*", { count: "exact", head: true })
+      .eq("game_id", gameId);
+    setHolesCompleted(count || 0);
   };
 
   const handleFinishGame = async () => {
@@ -88,113 +96,64 @@ export default function SkinsSettings() {
     );
   }
 
+  const players: GamePlayer[] = game.players.map(p => ({
+    name: p.name,
+    handicap: game.use_handicaps ? p.handicap : undefined,
+    tee: (p as any).tee_color,
+    team: p.group_name,
+  }));
+
+  const tees = game.players.map(p => (p as any).tee_color).filter(Boolean);
+  const uniqueTees = [...new Set(tees)];
+  const teeInfo = uniqueTees.length === 0 ? "Not specified" :
+                  uniqueTees.length === 1 ? String(uniqueTees[0]) : "Mixed tees";
+
+  const scoringParts = [`$${game.skin_value} per skin`];
+  if (game.carryover_enabled) scoringParts.push("Carryover");
+  if (game.use_handicaps) scoringParts.push(`${game.handicap_mode} scoring`);
+
+  const gameDetails: GameDetailsData = {
+    format: "Skins",
+    courseName: game.course_name,
+    datePlayed: game.date_played,
+    players,
+    teeInfo,
+    holesPlayed: game.holes_played,
+    currentHole: holesCompleted > 0 ? holesCompleted : undefined,
+    scoring: scoringParts.join(" • "),
+    roundName: (game as any).round_name,
+  };
+
   return (
     <div className="min-h-screen pb-32 bg-background">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
         <h1 className="text-2xl font-bold">Settings</h1>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Game Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              onClick={handleFinishGame}
-              className="w-full"
-              variant="default"
-            >
-              <Save size={16} className="mr-2" />
-              Finish Game
-            </Button>
+        <GameDetailsSection 
+          data={gameDetails} 
+          onViewPlayers={() => setShowPlayersModal(true)} 
+        />
 
-            <Button
-              onClick={() => navigate(`/skins/${gameId}/summary`)}
-              className="w-full"
-              variant="outline"
-            >
-              <X size={16} className="mr-2" />
-              Save & Exit
-            </Button>
-
-            <Button
-              onClick={() => setShowDeleteDialog(true)}
-              className="w-full"
-              variant="destructive"
-            >
-              <Trash2 size={16} className="mr-2" />
-              Delete Game
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Game Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Course</span>
-              <span>{game.course_name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Holes</span>
-              <span>{game.holes_played}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Skin Value</span>
-              <span>${game.skin_value}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Carryover</span>
-              <span>{game.carryover_enabled ? "Enabled" : "Disabled"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Handicaps</span>
-              <span>{game.use_handicaps ? `Enabled (${game.handicap_mode})` : "Disabled"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Players</span>
-              <span>{game.players.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Players</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {game.players.map((player, idx) => (
-              <div key={idx} className="flex justify-between items-center p-2 rounded bg-muted/50">
-                <div>
-                  <div className="font-medium">{player.name}</div>
-                  <div className="text-xs text-muted-foreground">{player.group_name}</div>
-                </div>
-                {game.use_handicaps && player.handicap !== null && (
-                  <span className="text-sm text-muted-foreground">HCP: {player.handicap}</span>
-                )}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <RoundActionsSection
+          onFinish={handleFinishGame}
+          onSaveAndExit={() => navigate(`/skins/${gameId}/summary`)}
+          onDelete={() => setShowDeleteDialog(true)}
+        />
       </div>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this game? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteGame} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ViewPlayersModal
+        open={showPlayersModal}
+        onOpenChange={setShowPlayersModal}
+        players={players}
+        useHandicaps={game.use_handicaps}
+      />
+
+      <DeleteGameDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteGame}
+        gameName="Skins Game"
+      />
 
       {gameId && <SkinsBottomTabBar gameId={gameId} />}
     </div>

@@ -1,22 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { CopenhagenGame, Press } from "@/types/copenhagen";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Trash2, Save, X } from "lucide-react";
+  GameDetailsSection,
+  GameDetailsData,
+  GamePlayer,
+  ViewPlayersModal,
+  RoundActionsSection,
+  DeleteGameDialog,
+} from "@/components/settings";
 
 export default function CopenhagenSettings() {
   const { gameId } = useParams();
@@ -25,9 +20,14 @@ export default function CopenhagenSettings() {
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [holesCompleted, setHolesCompleted] = useState(0);
 
   useEffect(() => {
-    if (gameId) fetchGame();
+    if (gameId) {
+      fetchGame();
+      fetchProgress();
+    }
   }, [gameId]);
 
   const fetchGame = async () => {
@@ -49,6 +49,14 @@ export default function CopenhagenSettings() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchProgress = async () => {
+    const { count } = await supabase
+      .from("copenhagen_holes")
+      .select("*", { count: "exact", head: true })
+      .eq("game_id", gameId);
+    setHolesCompleted(count || 0);
   };
 
   const handleFinishGame = async () => {
@@ -95,82 +103,74 @@ export default function CopenhagenSettings() {
     );
   }
 
+  const players: GamePlayer[] = [
+    { 
+      name: game.player_1, 
+      handicap: game.use_handicaps ? game.player_1_handicap : undefined,
+      tee: game.player_1_tee 
+    },
+    { 
+      name: game.player_2, 
+      handicap: game.use_handicaps ? game.player_2_handicap : undefined,
+      tee: game.player_2_tee 
+    },
+    { 
+      name: game.player_3, 
+      handicap: game.use_handicaps ? game.player_3_handicap : undefined,
+      tee: game.player_3_tee 
+    },
+  ];
+
+  const tees = [game.player_1_tee, game.player_2_tee, game.player_3_tee].filter(Boolean);
+  const uniqueTees = [...new Set(tees)];
+  const teeInfo = uniqueTees.length === 0 ? (game.tee_set || "Not specified") :
+                  uniqueTees.length === 1 ? uniqueTees[0]! : "Mixed tees";
+
+  const stake = (game as any).stake_per_point ?? 1;
+  const gameDetails: GameDetailsData = {
+    format: "Copenhagen",
+    courseName: game.course_name,
+    datePlayed: game.date_played,
+    players,
+    teeInfo,
+    holesPlayed: game.holes_played,
+    currentHole: holesCompleted > 0 ? holesCompleted : undefined,
+    scoring: game.use_handicaps 
+      ? `${stake} per point • Net scoring` 
+      : `${stake} per point • Gross scoring`,
+    roundName: (game as any).round_name,
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
         <h1 className="text-2xl font-bold">Settings</h1>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Game Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              onClick={handleFinishGame}
-              className="w-full"
-              variant="default"
-            >
-              <Save size={16} className="mr-2" />
-              Finish Game
-            </Button>
+        <GameDetailsSection 
+          data={gameDetails} 
+          onViewPlayers={() => setShowPlayersModal(true)} 
+        />
 
-            <Button
-              onClick={() => navigate(`/copenhagen/${gameId}/summary`)}
-              className="w-full"
-              variant="outline"
-            >
-              <X size={16} className="mr-2" />
-              Save & Exit
-            </Button>
-
-            <Button
-              onClick={() => setShowDeleteDialog(true)}
-              className="w-full"
-              variant="destructive"
-            >
-              <Trash2 size={16} className="mr-2" />
-              Delete Game
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Game Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Course</span>
-              <span>{game.course_name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Holes</span>
-              <span>{game.holes_played}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Handicaps</span>
-              <span>{game.use_handicaps ? "Enabled" : "Disabled"}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <RoundActionsSection
+          onFinish={handleFinishGame}
+          onSaveAndExit={() => navigate(`/copenhagen/${gameId}/summary`)}
+          onDelete={() => setShowDeleteDialog(true)}
+        />
       </div>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this game? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteGame} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ViewPlayersModal
+        open={showPlayersModal}
+        onOpenChange={setShowPlayersModal}
+        players={players}
+        useHandicaps={game.use_handicaps}
+      />
+
+      <DeleteGameDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteGame}
+        gameName="Copenhagen Game"
+      />
 
       {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
     </div>

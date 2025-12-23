@@ -1,21 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { BestBallGame, BestBallPlayer, BestBallGameType } from "@/types/bestBall";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  GameDetailsSection,
+  GameDetailsData,
+  GamePlayer,
+  ViewPlayersModal,
+  RoundActionsSection,
+  DeleteGameDialog,
+} from "@/components/settings";
 
 export default function BestBallSettings() {
   const { gameId } = useParams();
@@ -24,10 +20,13 @@ export default function BestBallSettings() {
   const [game, setGame] = useState<BestBallGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [holesCompleted, setHolesCompleted] = useState(0);
 
   useEffect(() => {
     if (gameId) {
       fetchGame();
+      fetchProgress();
     }
   }, [gameId]);
 
@@ -53,6 +52,32 @@ export default function BestBallSettings() {
       console.error("Error fetching game:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProgress = async () => {
+    const { count } = await supabase
+      .from("best_ball_holes")
+      .select("*", { count: "exact", head: true })
+      .eq("game_id", gameId);
+    setHolesCompleted(count || 0);
+  };
+
+  const handleFinishGame = async () => {
+    if (!game) return;
+    try {
+      const winner = game.team_a_total > game.team_b_total ? "A" : 
+                     game.team_b_total > game.team_a_total ? "B" : "TIE";
+      
+      await supabase
+        .from("best_ball_games")
+        .update({ is_finished: true, winner_team: winner })
+        .eq("id", gameId);
+      
+      toast({ title: "Game finished!" });
+      navigate(`/best-ball/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
 
@@ -85,80 +110,72 @@ export default function BestBallSettings() {
     );
   }
 
+  const players: GamePlayer[] = [
+    ...game.team_a_players.map(p => ({
+      name: p.displayName,
+      handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
+      tee: (p as any).teeColor,
+      team: game.team_a_name,
+    })),
+    ...game.team_b_players.map(p => ({
+      name: p.displayName,
+      handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
+      tee: (p as any).teeColor,
+      team: game.team_b_name,
+    })),
+  ];
+
+  const allTees = [...game.team_a_players, ...game.team_b_players]
+    .map(p => (p as any).teeColor)
+    .filter(Boolean);
+  const uniqueTees = [...new Set(allTees)];
+  const teeInfo = uniqueTees.length === 0 ? "Not specified" :
+                  uniqueTees.length === 1 ? uniqueTees[0]! : "Mixed tees";
+
+  const gameDetails: GameDetailsData = {
+    format: `Best Ball ${game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}`,
+    courseName: game.course_name,
+    datePlayed: game.date_played,
+    players,
+    teeInfo,
+    holesPlayed: game.holes_played,
+    currentHole: holesCompleted > 0 ? holesCompleted : undefined,
+    scoring: game.use_handicaps ? "Net scoring (handicaps enabled)" : "Gross scoring",
+    roundName: (game as any).round_name,
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Settings</h1>
+        <h1 className="text-2xl font-bold">Settings</h1>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Game Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Course</span>
-              <span>{game.course_name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Format</span>
-              <span>Best Ball {game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{game.team_a_name}</span>
-              <span>{game.team_a_players.map(p => p.displayName).join(', ')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{game.team_b_name}</span>
-              <span>{game.team_b_players.map(p => p.displayName).join(', ')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Handicaps</span>
-              <span>{game.use_handicaps ? "Enabled" : "Disabled"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Holes</span>
-              <span>{game.holes_played}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <GameDetailsSection 
+          data={gameDetails} 
+          onViewPlayers={() => setShowPlayersModal(true)} 
+        />
 
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-lg text-destructive">Danger Zone</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              variant="destructive" 
-              className="w-full"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              Delete Game
-            </Button>
-          </CardContent>
-        </Card>
+        <RoundActionsSection
+          onFinish={handleFinishGame}
+          onSaveAndExit={() => navigate(`/best-ball/${gameId}/summary`)}
+          onDelete={() => setShowDeleteDialog(true)}
+        />
       </div>
 
-      {gameId && <BestBallBottomTabBar gameId={gameId} />}
+      <ViewPlayersModal
+        open={showPlayersModal}
+        onOpenChange={setShowPlayersModal}
+        players={players}
+        useHandicaps={game.use_handicaps}
+      />
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Game?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this Best Ball game and all its data. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteGame}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteGameDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDeleteGame}
+        gameName="Best Ball Game"
+      />
+
+      {gameId && <BestBallBottomTabBar gameId={gameId} />}
     </div>
   );
 }
