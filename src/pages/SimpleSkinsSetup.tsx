@@ -353,12 +353,13 @@ export default function SimpleSkinsSetup() {
                   <SelectValue placeholder="Select skin value" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">$1 per skin</SelectItem>
-                  <SelectItem value="2">$2 per skin</SelectItem>
-                  <SelectItem value="5">$5 per skin</SelectItem>
-                  <SelectItem value="10">$10 per skin</SelectItem>
-                  <SelectItem value="20">$20 per skin</SelectItem>
-                  <SelectItem value="50">$50 per skin</SelectItem>
+                  <SelectItem value="1">1 skin per hole</SelectItem>
+                  <SelectItem value="2">2 skins per hole</SelectItem>
+                  <SelectItem value="5">5 skins per hole</SelectItem>
+                  <SelectItem value="10">10 skins per hole</SelectItem>
+                  <SelectItem value="20">20 skins per hole</SelectItem>
+                  <SelectItem value="50">50 skins per hole</SelectItem>
+                  <SelectItem value="progressive">1 skin first 6, 2 skins next 6, 3 skins last 6</SelectItem>
                 </SelectContent>
               </Select>
             </div>
