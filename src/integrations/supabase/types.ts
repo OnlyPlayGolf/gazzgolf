@@ -848,6 +848,7 @@ export type Database = {
           id: string
           is_finished: boolean
           match_status: number
+          mulligans_per_player: number | null
           player_1: string
           player_1_handicap: number | null
           player_1_tee: string | null
@@ -871,6 +872,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           match_status?: number
+          mulligans_per_player?: number | null
           player_1: string
           player_1_handicap?: number | null
           player_1_tee?: string | null
@@ -894,6 +896,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           match_status?: number
+          mulligans_per_player?: number | null
           player_1?: string
           player_1_handicap?: number | null
           player_1_tee?: string | null
@@ -927,8 +930,10 @@ export type Database = {
           match_status_after: number
           par: number
           player_1_gross_score: number | null
+          player_1_mulligan: boolean | null
           player_1_net_score: number | null
           player_2_gross_score: number | null
+          player_2_mulligan: boolean | null
           player_2_net_score: number | null
           stroke_index: number | null
         }
@@ -942,8 +947,10 @@ export type Database = {
           match_status_after?: number
           par?: number
           player_1_gross_score?: number | null
+          player_1_mulligan?: boolean | null
           player_1_net_score?: number | null
           player_2_gross_score?: number | null
+          player_2_mulligan?: boolean | null
           player_2_net_score?: number | null
           stroke_index?: number | null
         }
@@ -957,8 +964,10 @@ export type Database = {
           match_status_after?: number
           par?: number
           player_1_gross_score?: number | null
+          player_1_mulligan?: boolean | null
           player_1_net_score?: number | null
           player_2_gross_score?: number | null
+          player_2_mulligan?: boolean | null
           player_2_net_score?: number | null
           stroke_index?: number | null
         }
