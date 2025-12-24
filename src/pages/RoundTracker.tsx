@@ -189,23 +189,35 @@ export default function RoundTracker() {
       
       setCourseHoles(holesArray);
 
-      // Fetch existing hole scores for all players
+      // Fetch existing hole scores and mulligans for all players
       const { data: existingHoles, error: existingError } = await supabase
         .from("holes")
-        .select("hole_number, score, player_id")
+        .select("hole_number, score, player_id, mulligan")
         .eq("round_id", roundId);
 
       if (!existingError && existingHoles) {
         const scoresMap = new Map<string, Map<number, number>>();
+        const mulligansMap = new Map<string, Set<number>>();
+        
         existingHoles.forEach((hole) => {
           if (hole.player_id) {
+            // Scores
             if (!scoresMap.has(hole.player_id)) {
               scoresMap.set(hole.player_id, new Map());
             }
             scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
+            
+            // Mulligans
+            if (hole.mulligan) {
+              if (!mulligansMap.has(hole.player_id)) {
+                mulligansMap.set(hole.player_id, new Set());
+              }
+              mulligansMap.get(hole.player_id)!.add(hole.hole_number);
+            }
           }
         });
         setScores(scoresMap);
+        setMulligansUsed(mulligansMap);
       }
     } catch (error: any) {
       console.error("Error fetching round data:", error);
@@ -314,7 +326,7 @@ export default function RoundTracker() {
     return mulligansUsed.get(playerId)?.has(holeNumber) || false;
   };
 
-  const useMulliganOnHole = (playerId: string, holeNumber: number) => {
+  const useMulliganOnHole = async (playerId: string, holeNumber: number) => {
     setMulligansUsed(prev => {
       const updated = new Map(prev);
       const playerMulligans = new Set(prev.get(playerId) || []);
@@ -322,9 +334,36 @@ export default function RoundTracker() {
       updated.set(playerId, playerMulligans);
       return updated;
     });
+
+    // Update mulligan in database
+    try {
+      await supabase
+        .from("holes")
+        .update({ mulligan: true })
+        .eq("round_id", roundId)
+        .eq("player_id", playerId)
+        .eq("hole_number", holeNumber);
+
+      // Post automatic feed comment for mulligan
+      const { data: { user } } = await supabase.auth.getUser();
+      const player = players.find(p => p.id === playerId);
+      const playerName = player?.profiles?.display_name || player?.profiles?.username || "A player";
+      
+      if (user) {
+        await supabase.from("round_comments").insert({
+          round_id: roundId,
+          user_id: user.id,
+          content: `🔄 ${playerName} used a mulligan on hole ${holeNumber}`,
+          hole_number: holeNumber,
+          game_type: "round",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving mulligan:", error);
+    }
   };
 
-  const removeMulliganFromHole = (playerId: string, holeNumber: number) => {
+  const removeMulliganFromHole = async (playerId: string, holeNumber: number) => {
     setMulligansUsed(prev => {
       const updated = new Map(prev);
       const playerMulligans = new Set(prev.get(playerId) || []);
@@ -332,6 +371,18 @@ export default function RoundTracker() {
       updated.set(playerId, playerMulligans);
       return updated;
     });
+
+    // Update mulligan in database
+    try {
+      await supabase
+        .from("holes")
+        .update({ mulligan: false })
+        .eq("round_id", roundId)
+        .eq("player_id", playerId)
+        .eq("hole_number", holeNumber);
+    } catch (error) {
+      console.error("Error removing mulligan:", error);
+    }
   };
 
   // Comment helpers
