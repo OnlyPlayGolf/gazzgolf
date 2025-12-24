@@ -491,6 +491,16 @@ export default function RoundTracker() {
   const isAtLastPlannedHole = currentHoleIndex === roundState.plannedHoles - 1;
   const isAtLastCurrentHole = currentHoleIndex === courseHoles.length - 1;
   const isExtraHoles = courseHoles.length > roundState.plannedHoles;
+  
+  // Check if all holes have scores for all players
+  const allHolesScored = courseHoles.length > 0 && players.length > 0 && players.every(player => {
+    const playerScores = scores.get(player.id);
+    if (!playerScores) return false;
+    return courseHoles.every(hole => {
+      const score = playerScores.get(hole.hole_number);
+      return score !== undefined && score > 0;
+    });
+  });
 
   const handleShowCompletionDialog = () => {
     setShowCompletionDialog(true);
@@ -706,8 +716,8 @@ export default function RoundTracker() {
           );
         })}
         
-        {/* Show completion button when at the last planned hole or beyond */}
-        {isAtLastCurrentHole && (
+        {/* Show completion button when at the last hole AND all holes have scores */}
+        {isAtLastCurrentHole && allHolesScored && (
           <Button
             onClick={handleShowCompletionDialog}
             className="w-full bg-[hsl(120,20%,35%)] hover:bg-[hsl(120,20%,30%)] text-white"
