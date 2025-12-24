@@ -118,7 +118,7 @@ export default function SimpleSkinsTracker() {
     const allPlayersHaveScores = players.every(p => {
       const playerScores = scores.get(p.id);
       const score = playerScores?.get(currentHoleNum);
-      return score && score > 0;
+      return score !== undefined && (score > 0 || score === -1);
     });
     
     // Auto-advance if all players have scores and not at last hole
@@ -356,7 +356,8 @@ export default function SimpleSkinsTracker() {
   };
 
   const updateScore = async (playerId: string, newScore: number) => {
-    if (!currentHole || newScore < 0) return;
+    // Allow -1 (dash/conceded) and positive scores, reject 0 and other negatives
+    if (!currentHole || (newScore < 0 && newScore !== -1)) return;
 
     const updatedScores = new Map(scores);
     const playerScores = updatedScores.get(playerId) || new Map();
@@ -642,7 +643,7 @@ export default function SimpleSkinsTracker() {
   const allPlayersHaveScores = players.every(p => {
     const playerScores = scores.get(p.id);
     const score = playerScores?.get(currentHole.hole_number);
-    return score && score > 0;
+    return score !== undefined && (score > 0 || score === -1);
   });
 
   return (

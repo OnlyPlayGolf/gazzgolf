@@ -335,7 +335,7 @@ export default function RoundLeaderboard() {
                                 className="text-center font-bold text-xs px-1 py-1.5"
                               >
                                 <div className="flex items-center justify-center gap-0.5">
-                                  {hasScore ? (score === 0 ? '-' : score) : ''}
+                                  {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
                                   {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
                                 </div>
                               </TableCell>
@@ -352,7 +352,7 @@ export default function RoundLeaderboard() {
                             const hasScore = player.scores.has(hole.hole_number);
                             return (
                               <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                {hasScore ? (score === 0 ? '-' : score) : ''}
+                                {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
                               </TableCell>
                             );
                           })}
@@ -412,7 +412,7 @@ export default function RoundLeaderboard() {
                                   className="text-center font-bold text-xs px-1 py-1.5"
                                 >
                                   <div className="flex items-center justify-center gap-0.5">
-                                    {hasScore ? (score === 0 ? '-' : score) : ''}
+                                    {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
                                     {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
                                   </div>
                                 </TableCell>
@@ -428,9 +428,9 @@ export default function RoundLeaderboard() {
                               const score = player.scores.get(hole.hole_number);
                               const hasScore = player.scores.has(hole.hole_number);
                               return (
-                                <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                  {hasScore ? (score === 0 ? '-' : score) : ''}
-                                </TableCell>
+                              <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                                {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
+                              </TableCell>
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">

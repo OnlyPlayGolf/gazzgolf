@@ -447,7 +447,7 @@ export default function SimpleSkinsLeaderboard() {
                                 return (
                                   <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1.5">
                                     <div className="flex items-center justify-center gap-0.5">
-                                      {hasScore ? (score === 0 ? '-' : score) : ''}
+                                      {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
                                       {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
                                     </div>
                                   </TableCell>
@@ -506,7 +506,7 @@ export default function SimpleSkinsLeaderboard() {
                                   return (
                                     <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1.5">
                                       <div className="flex items-center justify-center gap-0.5">
-                                        {hasScore ? (score === 0 ? '-' : score) : ''}
+                                        {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
                                         {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
                                       </div>
                                     </TableCell>
