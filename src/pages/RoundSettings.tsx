@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Settings } from "lucide-react";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -46,12 +52,43 @@ export default function RoundSettings() {
   const [deleting, setDeleting] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
 
+  // Game settings state
+  const [teeColor, setTeeColor] = useState("white");
+  const [handicapEnabled, setHandicapEnabled] = useState(false);
+  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
+  const [gimmesEnabled, setGimmesEnabled] = useState(false);
+
   useEffect(() => {
     if (roundId) {
       fetchRound();
       fetchProgress();
+      loadSettings();
     }
   }, [roundId]);
+
+  const loadSettings = () => {
+    const savedSettings = sessionStorage.getItem('strokePlaySettings');
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      setHandicapEnabled(settings.handicapEnabled || false);
+      setGimmesEnabled(settings.gimmesEnabled || false);
+    }
+  };
+
+  const saveSettings = () => {
+    sessionStorage.setItem('strokePlaySettings', JSON.stringify({
+      mulligansPerPlayer,
+      handicapEnabled,
+      gimmesEnabled,
+    }));
+  };
+
+  useEffect(() => {
+    if (!loading) {
+      saveSettings();
+    }
+  }, [mulligansPerPlayer, handicapEnabled, gimmesEnabled]);
 
   const fetchRound = async () => {
     try {
@@ -63,6 +100,9 @@ export default function RoundSettings() {
 
       if (roundData) {
         setRound(roundData);
+        if (roundData.tee_set) {
+          setTeeColor(roundData.tee_set);
+        }
       }
 
       const { data: playersData } = await supabase
@@ -81,6 +121,9 @@ export default function RoundSettings() {
 
       if (playersData) {
         setPlayers(playersData as unknown as RoundPlayer[]);
+        // Check if any player has handicap
+        const hasHandicaps = playersData.some(p => p.handicap !== null);
+        setHandicapEnabled(hasHandicaps);
       }
     } catch (error) {
       console.error("Error fetching round:", error);
@@ -95,6 +138,16 @@ export default function RoundSettings() {
       .select("*", { count: "exact", head: true })
       .eq("round_id", roundId);
     setHolesCompleted(count || 0);
+  };
+
+  const handleTeeChange = async (newTee: string) => {
+    setTeeColor(newTee);
+    if (roundId) {
+      await supabase
+        .from("rounds")
+        .update({ tee_set: newTee })
+        .eq("id", roundId);
+    }
   };
 
   const handleFinishRound = async () => {
@@ -177,6 +230,80 @@ export default function RoundSettings() {
           data={gameDetails} 
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
+
+        {/* Game Settings */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Settings size={20} className="text-primary" />
+              Game Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Default Tee */}
+            <div className="space-y-2">
+              <Label>Default Tee Box</Label>
+              <TeeSelector
+                value={teeColor}
+                onValueChange={handleTeeChange}
+                teeCount={5}
+                courseTeeNames={null}
+              />
+            </div>
+
+            {/* Handicap toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="handicap">Use Handicaps</Label>
+                <p className="text-xs text-muted-foreground">
+                  Apply player handicaps to scoring
+                </p>
+              </div>
+              <Switch
+                id="handicap"
+                checked={handicapEnabled}
+                onCheckedChange={setHandicapEnabled}
+              />
+            </div>
+
+            {/* Mulligans */}
+            <div className="space-y-2">
+              <Label>Mulligans per Player</Label>
+              <Select 
+                value={mulligansPerPlayer.toString()} 
+                onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select mulligans" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">0 (No mulligans)</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">9 (1 per hole on 9)</SelectItem>
+                  <SelectItem value="18">18 (1 per hole on 18)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Gimmes toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="gimmes">Allow Gimmes</Label>
+                <p className="text-xs text-muted-foreground">
+                  Short putts can be conceded
+                </p>
+              </div>
+              <Switch
+                id="gimmes"
+                checked={gimmesEnabled}
+                onCheckedChange={setGimmesEnabled}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         <RoundActionsSection
           onFinish={handleFinishRound}
