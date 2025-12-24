@@ -111,9 +111,9 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore, onSco
       <Button
         variant="secondary"
         onClick={() => {
-          onScoreSelect(null);
+          onScoreSelect(-1); // -1 signals "dash/conceded/unfinished"
           if (onScoreAndAdvance) {
-            onScoreAndAdvance(0); // Advance to next, 0 signals "no score"
+            onScoreAndAdvance(-1);
           }
         }}
         className="h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80"
