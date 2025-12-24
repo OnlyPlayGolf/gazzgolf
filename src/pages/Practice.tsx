@@ -50,7 +50,7 @@ const Practice = () => {
                   <Target size={32} className="text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl">Test & Drills</div>
+                  <div className="text-2xl">Tests & Drills</div>
                   <div className="text-sm font-normal text-muted-foreground mt-1">
                     Game-like practice
                   </div>
