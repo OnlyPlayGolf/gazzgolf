@@ -399,26 +399,6 @@ export default function RoundLeaderboard() {
                     </div>
                   )}
 
-                  {/* Summary */}
-                  <div className="border-t bg-muted/30 p-4">
-                    <div className="flex items-center justify-around text-center">
-                      <div>
-                        <div className="text-sm text-muted-foreground">Par</div>
-                        <div className="text-2xl font-bold">{overallTotals.totalPar}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Score</div>
-                        <div className="text-2xl font-bold">
-                          {overallTotals.totalScore}/{overallTotals.totalPar}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Position</div>
-                        <div className="text-2xl font-bold">-</div>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Action Buttons */}
                   <div className="border-t p-4">
                     <div className="flex items-center justify-around">
