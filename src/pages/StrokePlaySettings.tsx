@@ -102,8 +102,7 @@ export default function StrokePlaySettings() {
                   <SelectItem value="2">2</SelectItem>
                   <SelectItem value="3">3</SelectItem>
                   <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="9">9 (1 per hole on 9)</SelectItem>
-                  <SelectItem value="18">18 (1 per hole on 18)</SelectItem>
+                  <SelectItem value="9">9 (1 per 9)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
