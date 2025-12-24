@@ -220,6 +220,29 @@ export default function RoundTracker() {
         });
         setScores(scoresMap);
         setMulligansUsed(mulligansMap);
+        
+        // Find the first hole where not all players have entered scores
+        if (playersData && playersData.length > 0) {
+          const playerIds = playersData.map(p => p.id);
+          let startingHoleIndex = 0;
+          
+          for (let i = 0; i < holesArray.length; i++) {
+            const holeNumber = holesArray[i].hole_number;
+            const allPlayersScored = playerIds.every(playerId => {
+              const playerScores = scoresMap.get(playerId);
+              return playerScores && playerScores.has(holeNumber);
+            });
+            
+            if (!allPlayersScored) {
+              startingHoleIndex = i;
+              break;
+            }
+            // If all holes are scored, stay at the last hole
+            startingHoleIndex = i;
+          }
+          
+          setCurrentHoleIndex(startingHoleIndex);
+        }
       }
     } catch (error: any) {
       console.error("Error fetching round data:", error);
