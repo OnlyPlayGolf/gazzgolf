@@ -126,8 +126,10 @@ export default function MatchPlayLeaderboard() {
     const status = getMatchStatusAfter(holeNumber);
     if (status === 0) return { text: "T", color: "bg-muted text-muted-foreground" };
     if (status > 0) {
-      return { text: `${status}UP`, color: "bg-primary text-primary-foreground" };
+      // Player 1 (blue) is up
+      return { text: `${status}UP`, color: "bg-blue-500 text-white" };
     }
+    // Player 2 (red) is up
     return { text: `${Math.abs(status)}UP`, color: "bg-destructive text-destructive-foreground" };
   };
 
@@ -232,7 +234,6 @@ export default function MatchPlayLeaderboard() {
                 if (!holeData) {
                   return (
                     <TableCell key={hole.hole_number} className="text-center text-[9px] px-0.5 py-0.5">
-                      T
                     </TableCell>
                   );
                 }
