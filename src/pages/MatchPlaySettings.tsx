@@ -4,6 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame } from "@/types/matchPlay";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -138,6 +142,35 @@ export default function MatchPlaySettings() {
     roundName: (game as any).round_name,
   };
 
+  const handleUpdateMulligans = async (value: string) => {
+    const newValue = parseInt(value);
+    try {
+      await supabase
+        .from("match_play_games")
+        .update({ mulligans_per_player: newValue })
+        .eq("id", gameId);
+      
+      setGame(prev => prev ? { ...prev, mulligans_per_player: newValue } : null);
+      toast({ title: "Settings updated" });
+    } catch (error: any) {
+      toast({ title: "Error updating settings", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleUpdateHandicaps = async (enabled: boolean) => {
+    try {
+      await supabase
+        .from("match_play_games")
+        .update({ use_handicaps: enabled })
+        .eq("id", gameId);
+      
+      setGame(prev => prev ? { ...prev, use_handicaps: enabled } : null);
+      toast({ title: "Settings updated" });
+    } catch (error: any) {
+      toast({ title: "Error updating settings", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
@@ -147,6 +180,52 @@ export default function MatchPlaySettings() {
           data={gameDetails} 
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
+
+        {/* Game Settings Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Game Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="handicaps">Use Handicaps</Label>
+                <p className="text-xs text-muted-foreground">
+                  Apply handicap strokes per hole
+                </p>
+              </div>
+              <Switch
+                id="handicaps"
+                checked={game.use_handicaps}
+                onCheckedChange={handleUpdateHandicaps}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mulligans">Mulligans per Player</Label>
+              <Select 
+                value={(game.mulligans_per_player || 0).toString()} 
+                onValueChange={handleUpdateMulligans}
+              >
+                <SelectTrigger id="mulligans">
+                  <SelectValue placeholder="Select mulligans" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Number of allowed do-overs per player
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         <RoundActionsSection
           onFinish={handleFinishGame}
