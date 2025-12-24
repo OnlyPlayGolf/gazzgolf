@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TopNavBar } from "@/components/TopNavBar";
+import { GolfScoreDisplay } from "@/components/GolfScoreDisplay";
 
 interface RoundData {
   id: string;
@@ -141,13 +142,9 @@ export default function RoundDetail() {
     });
   };
 
+  // Legacy function - kept for reference but replaced by GolfScoreDisplay component
   const getScoreClass = (score: number, par: number) => {
-    const diff = score - par;
-    if (diff <= -2) return "bg-amber-400 text-amber-900"; // Eagle or better
-    if (diff === -1) return "bg-red-500 text-white"; // Birdie
-    if (diff === 0) return "bg-secondary text-secondary-foreground"; // Par
-    if (diff === 1) return "bg-blue-500 text-white"; // Bogey
-    return "bg-blue-700 text-white"; // Double bogey+
+    return ""; // No longer used - GolfScoreDisplay handles styling
   };
 
   if (loading) {
@@ -273,11 +270,13 @@ export default function RoundDetail() {
                             {[1,2,3,4,5,6,7,8,9].map(hole => {
                               const holeData = player.scores.find(s => s.hole_number === hole);
                               return (
-                                <div key={hole} className="flex flex-col">
+                                <div key={hole} className="flex flex-col items-center">
                                   <div className="text-muted-foreground">{hole}</div>
-                                  <div className={`rounded py-1 ${holeData ? getScoreClass(holeData.score, holeData.par) : 'bg-muted'}`}>
-                                    {holeData?.score || '-'}
-                                  </div>
+                                  <GolfScoreDisplay 
+                                    score={holeData?.score || null} 
+                                    par={holeData?.par || 4}
+                                    size="sm"
+                                  />
                                 </div>
                               );
                             })}
@@ -298,11 +297,13 @@ export default function RoundDetail() {
                               {[10,11,12,13,14,15,16,17,18].map(hole => {
                                 const holeData = player.scores.find(s => s.hole_number === hole);
                                 return (
-                                  <div key={hole} className="flex flex-col">
+                                  <div key={hole} className="flex flex-col items-center">
                                     <div className="text-muted-foreground">{hole}</div>
-                                    <div className={`rounded py-1 ${holeData ? getScoreClass(holeData.score, holeData.par) : 'bg-muted'}`}>
-                                      {holeData?.score || '-'}
-                                    </div>
+                                    <GolfScoreDisplay 
+                                      score={holeData?.score || null} 
+                                      par={holeData?.par || 4}
+                                      size="sm"
+                                    />
                                   </div>
                                 );
                               })}
