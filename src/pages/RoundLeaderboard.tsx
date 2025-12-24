@@ -212,29 +212,47 @@ export default function RoundLeaderboard() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {players.map((player) => {
-          const isExpanded = expandedPlayerId === player.id;
-          const frontTotals = calculateTotals(player, frontNine);
-          const backTotals = calculateTotals(player, backNine);
-          const overallTotals = calculateTotals(player, courseHoles);
+        {(() => {
+          // Calculate positions based on score to par
+          const playersWithTotals = players.map(player => {
+            const totals = calculateTotals(player, courseHoles);
+            const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
+            return { player, scoreToPar };
+          });
+          
+          // Sort by score to par (lower is better)
+          const sorted = [...playersWithTotals].sort((a, b) => a.scoreToPar - b.scoreToPar);
+          
+          // Create position map
+          const positionMap = new Map<string, number>();
+          sorted.forEach((item, index) => {
+            positionMap.set(item.player.id, index + 1);
+          });
 
-          return (
-            <Card key={player.id} className="overflow-hidden">
+          return players.map((player) => {
+            const isExpanded = expandedPlayerId === player.id;
+            const frontTotals = calculateTotals(player, frontNine);
+            const backTotals = calculateTotals(player, backNine);
+            const overallTotals = calculateTotals(player, courseHoles);
+            const position = positionMap.get(player.id) || 1;
 
-              {/* Player Info Bar - Clickable */}
-              <div 
-                className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <ChevronDown 
-                      size={20} 
-                      className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
-                    />
-                    <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
-                      {overallTotals.holesCompleted || "-"}
-                    </div>
+            return (
+              <Card key={player.id} className="overflow-hidden">
+
+                {/* Player Info Bar - Clickable */}
+                <div 
+                  className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <ChevronDown 
+                        size={20} 
+                        className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+                      />
+                      <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
+                        {position}
+                      </div>
                     <div>
                       <div className="text-xl font-bold">{player.display_name}</div>
                       <div className="text-sm text-muted-foreground">
@@ -418,9 +436,10 @@ export default function RoundLeaderboard() {
                   </div>
                 </>
               )}
-            </Card>
-          );
-        })}
+              </Card>
+            );
+          });
+        })()}
       </div>
 
       <RoundBottomTabBar roundId={roundId!} />
