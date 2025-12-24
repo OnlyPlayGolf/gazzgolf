@@ -99,10 +99,23 @@ export default function RoundTracker() {
   }, [roundId]);
 
   const loadSettings = () => {
+    // First try round-specific settings (from localStorage for persistence)
+    const roundSettings = localStorage.getItem(`roundSettings_${roundId}`);
+    if (roundSettings) {
+      const settings = JSON.parse(roundSettings);
+      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      return;
+    }
+    
+    // Fallback to session storage for new rounds
     const savedSettings = sessionStorage.getItem('strokePlaySettings');
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
       setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      // Save to round-specific storage for future
+      localStorage.setItem(`roundSettings_${roundId}`, JSON.stringify({
+        mulligansPerPlayer: settings.mulligansPerPlayer || 0,
+      }));
     }
   };
 
