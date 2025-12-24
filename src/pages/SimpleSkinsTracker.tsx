@@ -811,14 +811,23 @@ export default function SimpleSkinsTracker() {
             }}
             onMore={handleOpenMoreSheet}
             onEnterAndNext={() => {
-              const currentPlayerIndex = players.findIndex(p => p.id === selectedPlayer.id);
-              if (currentPlayerIndex < players.length - 1) {
-                // Move to next player
-                setSelectedPlayer(players[currentPlayerIndex + 1]);
+              const currentHoleNum = currentHole.hole_number;
+              
+              // Find next player without a score for this hole
+              const nextPlayerWithoutScore = players.find(p => {
+                if (p.id === selectedPlayer.id) return false;
+                const playerScores = scores.get(p.id);
+                const score = playerScores?.get(currentHoleNum);
+                return !score || score === 0;
+              });
+              
+              if (nextPlayerWithoutScore) {
+                // Move to next player without a score
+                setSelectedPlayer(nextPlayerWithoutScore);
               } else {
-                // Last player - just close the sheet, let useEffect handle hole advancement
+                // All players have scores - close the sheet
                 setShowScoreSheet(false);
-                // Only show completion if at last hole
+                // Show completion dialog if at last hole
                 if (currentHoleIndex >= courseHoles.length - 1) {
                   setShowCompletionDialog(true);
                 }
