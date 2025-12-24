@@ -138,7 +138,7 @@ export default function MatchPlayPlay() {
   const player2MulligansUsed = holes.filter(h => h.player_2_mulligan).length + (scores.player2Mulligan ? 1 : 0);
 
   const updateScore = (player: 'player1' | 'player2', newScore: number) => {
-    if (newScore < 1) return;
+    if (newScore === 0) return; // 0 is not valid, but -1 (dash) and positive are valid
     setScores(prev => ({ ...prev, [player]: newScore }));
   };
 
@@ -164,7 +164,8 @@ export default function MatchPlayPlay() {
   };
 
   // Check if both players have entered scores for current hole
-  const allPlayersEnteredCurrentHole = scores.player1 > 0 && scores.player2 > 0;
+  // -1 means dash/conceded, which is also a valid entry
+  const allPlayersEnteredCurrentHole = (scores.player1 > 0 || scores.player1 === -1) && (scores.player2 > 0 || scores.player2 === -1);
 
   // Auto-save and advance to next hole when all players have entered scores
   useEffect(() => {
@@ -331,8 +332,8 @@ export default function MatchPlayPlay() {
               )}
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${scores.player1 > 0 ? '' : 'text-muted-foreground'}`}>
-                {scores.player1}
+              <div className={`text-2xl font-bold ${scores.player1 !== 0 ? '' : 'text-muted-foreground'}`}>
+                {scores.player1 === -1 ? '–' : scores.player1}
               </div>
               <div className="text-xs text-muted-foreground">Strokes</div>
             </div>
@@ -362,8 +363,8 @@ export default function MatchPlayPlay() {
               )}
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${scores.player2 > 0 ? '' : 'text-muted-foreground'}`}>
-                {scores.player2}
+              <div className={`text-2xl font-bold ${scores.player2 !== 0 ? '' : 'text-muted-foreground'}`}>
+                {scores.player2 === -1 ? '–' : scores.player2}
               </div>
               <div className="text-xs text-muted-foreground">Strokes</div>
             </div>
@@ -386,7 +387,7 @@ export default function MatchPlayPlay() {
           }}
           onMore={handleOpenMoreSheet}
           onEnterAndNext={() => {
-            // Find next player without a score
+            // Find next player without a score (0 means no entry, -1 is dash which counts as entered)
             if (selectedPlayer === 1 && scores.player2 === 0) {
               setSelectedPlayer(2);
             } else if (selectedPlayer === 2 && scores.player1 === 0) {

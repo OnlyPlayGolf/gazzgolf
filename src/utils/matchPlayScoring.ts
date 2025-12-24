@@ -6,6 +6,11 @@ export function calculateHoleResult(
   player1Score: number,
   player2Score: number
 ): number {
+  // -1 means dash/conceded - player concedes the hole
+  if (player1Score === -1 && player2Score === -1) return 0; // Both conceded = halved
+  if (player1Score === -1) return -1; // Player 1 conceded, player 2 wins
+  if (player2Score === -1) return 1;  // Player 2 conceded, player 1 wins
+  
   if (player1Score < player2Score) return 1;
   if (player2Score < player1Score) return -1;
   return 0;
