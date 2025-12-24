@@ -284,7 +284,8 @@ export default function RoundTracker() {
   };
 
   const updateScore = async (playerId: string, newScore: number) => {
-    if (!currentHole || newScore < 0) return;
+    // Allow -1 (dash/conceded) and positive scores, reject 0 and other negatives
+    if (!currentHole || (newScore < 0 && newScore !== -1)) return;
 
     const updatedScores = new Map(scores);
     const playerScores = updatedScores.get(playerId) || new Map();
@@ -503,10 +504,11 @@ export default function RoundTracker() {
   });
 
   // Check if all players have entered scores for the current hole
+  // -1 is a valid entry (dash/conceded)
   const allPlayersEnteredCurrentHole = currentHole && players.length > 0 && players.every(player => {
     const playerScores = scores.get(player.id);
     const score = playerScores?.get(currentHole.hole_number);
-    return score !== undefined && score > 0;
+    return score !== undefined && (score > 0 || score === -1);
   });
 
   // Auto-advance to next hole when all players have entered scores for current hole
