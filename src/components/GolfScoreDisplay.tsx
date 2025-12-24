@@ -27,33 +27,64 @@ export function GolfScoreDisplay({ score, par, className, size = "sm" }: GolfSco
   
   // Size configurations
   const sizeConfig = {
-    sm: { base: "w-6 h-6 text-xs", ring: "ring-1", gap: 1 },
-    md: { base: "w-8 h-8 text-sm", ring: "ring-[1.5px]", gap: 1.5 },
-    lg: { base: "w-10 h-10 text-base", ring: "ring-2", gap: 2 },
+    sm: { 
+      innerSize: "w-5 h-5 text-[10px]", 
+      borderWidth: 1,
+      gap: 2,
+    },
+    md: { 
+      innerSize: "w-6 h-6 text-xs", 
+      borderWidth: 1.5,
+      gap: 2,
+    },
+    lg: { 
+      innerSize: "w-8 h-8 text-sm", 
+      borderWidth: 2,
+      gap: 3,
+    },
   };
 
   const config = sizeConfig[size];
 
-  // Under par - circles
+  // Under par - circles (concentric rings)
   if (diff < 0) {
     const circleCount = Math.min(Math.abs(diff), 3); // Max 3 circles (albatross)
+    
+    // Calculate outer padding for nested circles
+    const totalPadding = (circleCount - 1) * (config.borderWidth + config.gap);
     
     return (
       <div className={cn("flex items-center justify-center", className)}>
         <div 
-          className={cn(
-            "flex items-center justify-center rounded-full font-semibold",
-            config.base,
-            config.ring,
-            "ring-foreground/70"
-          )}
-          style={{
-            boxShadow: circleCount >= 2 
-              ? `0 0 0 ${config.gap * 2 + 1}px transparent, 0 0 0 ${config.gap * 2 + 2}px hsl(var(--foreground) / 0.7)${circleCount >= 3 ? `, 0 0 0 ${config.gap * 4 + 3}px transparent, 0 0 0 ${config.gap * 4 + 4}px hsl(var(--foreground) / 0.7)` : ''}` 
-              : undefined
-          }}
+          className="relative flex items-center justify-center"
+          style={{ padding: totalPadding }}
         >
-          {score}
+          {/* Outer circles */}
+          {circleCount >= 3 && (
+            <div 
+              className="absolute inset-0 rounded-full border-foreground/70"
+              style={{ borderWidth: config.borderWidth }}
+            />
+          )}
+          {circleCount >= 2 && (
+            <div 
+              className="absolute rounded-full border-foreground/70"
+              style={{ 
+                borderWidth: config.borderWidth,
+                inset: circleCount >= 3 ? config.borderWidth + config.gap : 0,
+              }}
+            />
+          )}
+          {/* Inner circle with score */}
+          <div 
+            className={cn(
+              "flex items-center justify-center rounded-full font-semibold border-foreground/70",
+              config.innerSize
+            )}
+            style={{ borderWidth: config.borderWidth }}
+          >
+            {score}
+          </div>
         </div>
       </div>
     );
@@ -63,32 +94,64 @@ export function GolfScoreDisplay({ score, par, className, size = "sm" }: GolfSco
   if (diff === 0) {
     return (
       <div className={cn("flex items-center justify-center", className)}>
-        <div className={cn("flex items-center justify-center font-medium", config.base)}>
+        <div className={cn("flex items-center justify-center font-medium", config.innerSize)}>
           {score}
         </div>
       </div>
     );
   }
 
-  // Over par - boxes
+  // Over par - boxes (concentric squares)
   const boxCount = Math.min(diff, 4); // Max 4 boxes (quadruple bogey)
+  
+  // Calculate outer padding for nested boxes
+  const totalPadding = (boxCount - 1) * (config.borderWidth + config.gap);
   
   return (
     <div className={cn("flex items-center justify-center", className)}>
       <div 
-        className={cn(
-          "flex items-center justify-center font-semibold",
-          config.base,
-          config.ring,
-          "ring-foreground/70"
-        )}
-        style={{
-          boxShadow: boxCount >= 2 
-            ? `0 0 0 ${config.gap * 2 + 1}px transparent, 0 0 0 ${config.gap * 2 + 2}px hsl(var(--foreground) / 0.7)${boxCount >= 3 ? `, 0 0 0 ${config.gap * 4 + 3}px transparent, 0 0 0 ${config.gap * 4 + 4}px hsl(var(--foreground) / 0.7)${boxCount >= 4 ? `, 0 0 0 ${config.gap * 6 + 5}px transparent, 0 0 0 ${config.gap * 6 + 6}px hsl(var(--foreground) / 0.7)` : ''}` : ''}` 
-            : undefined
-        }}
+        className="relative flex items-center justify-center"
+        style={{ padding: totalPadding }}
       >
-        {score}
+        {/* Outer boxes */}
+        {boxCount >= 4 && (
+          <div 
+            className="absolute inset-0 border-foreground/70"
+            style={{ borderWidth: config.borderWidth }}
+          />
+        )}
+        {boxCount >= 3 && (
+          <div 
+            className="absolute border-foreground/70"
+            style={{ 
+              borderWidth: config.borderWidth,
+              inset: boxCount >= 4 ? config.borderWidth + config.gap : 0,
+            }}
+          />
+        )}
+        {boxCount >= 2 && (
+          <div 
+            className="absolute border-foreground/70"
+            style={{ 
+              borderWidth: config.borderWidth,
+              inset: boxCount >= 4 
+                ? (config.borderWidth + config.gap) * 2 
+                : boxCount >= 3 
+                  ? config.borderWidth + config.gap 
+                  : 0,
+            }}
+          />
+        )}
+        {/* Inner box with score */}
+        <div 
+          className={cn(
+            "flex items-center justify-center font-semibold border-foreground/70",
+            config.innerSize
+          )}
+          style={{ borderWidth: config.borderWidth }}
+        >
+          {score}
+        </div>
       </div>
     </div>
   );
