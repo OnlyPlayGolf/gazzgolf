@@ -63,7 +63,10 @@ export default function SimpleSkinsTracker() {
   
   const [round, setRound] = useState<Round | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
-  const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
+  const [currentHoleIndex, setCurrentHoleIndex] = useState(() => {
+    const saved = localStorage.getItem(`simpleSkinsCurrentHole_${roundId}`);
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
@@ -92,6 +95,13 @@ export default function SimpleSkinsTracker() {
       loadSettings();
     }
   }, [roundId]);
+
+  // Save current hole index to localStorage
+  useEffect(() => {
+    if (roundId) {
+      localStorage.setItem(`simpleSkinsCurrentHole_${roundId}`, currentHoleIndex.toString());
+    }
+  }, [currentHoleIndex, roundId]);
 
   // Calculate skin results whenever scores change
   useEffect(() => {
