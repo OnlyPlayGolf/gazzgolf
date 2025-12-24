@@ -715,6 +715,7 @@ export type Database = {
           first_putt_band: Database["public"]["Enums"]["first_putt_band"] | null
           hole_number: number
           id: string
+          mulligan: boolean
           par: number
           penalties: number | null
           player_id: string | null
@@ -738,6 +739,7 @@ export type Database = {
             | null
           hole_number: number
           id?: string
+          mulligan?: boolean
           par: number
           penalties?: number | null
           player_id?: string | null
@@ -761,6 +763,7 @@ export type Database = {
             | null
           hole_number?: number
           id?: string
+          mulligan?: boolean
           par?: number
           penalties?: number | null
           player_id?: string | null

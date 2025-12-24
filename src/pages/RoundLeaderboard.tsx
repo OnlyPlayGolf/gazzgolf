@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, MessageSquare, BarChart3, ChevronDown } from "lucide-react";
+import { ThumbsUp, MessageSquare, BarChart3, ChevronDown, RotateCcw } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -38,6 +38,7 @@ interface PlayerData {
   display_name: string;
   username: string | null;
   scores: Map<number, number>;
+  mulligans: Set<number>;
 }
 
 export default function RoundLeaderboard() {
@@ -110,19 +111,30 @@ export default function RoundLeaderboard() {
 
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
-      // Fetch all scores
+      // Fetch all scores and mulligans
       const { data: scoresData } = await supabase
         .from("holes")
-        .select("hole_number, score, player_id")
+        .select("hole_number, score, player_id, mulligan")
         .eq("round_id", roundId);
 
       const scoresMap = new Map<string, Map<number, number>>();
+      const mulligansMap = new Map<string, Set<number>>();
+      
       scoresData?.forEach((hole) => {
         if (hole.player_id) {
+          // Scores
           if (!scoresMap.has(hole.player_id)) {
             scoresMap.set(hole.player_id, new Map());
           }
           scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
+          
+          // Mulligans
+          if (hole.mulligan) {
+            if (!mulligansMap.has(hole.player_id)) {
+              mulligansMap.set(hole.player_id, new Set());
+            }
+            mulligansMap.get(hole.player_id)!.add(hole.hole_number);
+          }
         }
       });
 
@@ -137,6 +149,7 @@ export default function RoundLeaderboard() {
           display_name: profile?.display_name || profile?.username || "Player",
           username: profile?.username || null,
           scores: scoresMap.get(player.id) || new Map(),
+          mulligans: mulligansMap.get(player.id) || new Set(),
         };
       });
 
@@ -315,12 +328,16 @@ export default function RoundLeaderboard() {
                           {frontNine.map(hole => {
                             const score = player.scores.get(hole.hole_number);
                             const hasScore = player.scores.has(hole.hole_number);
+                            const hasMulligan = player.mulligans.has(hole.hole_number);
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
                                 className="text-center font-bold text-xs px-1 py-1.5"
                               >
-                                {hasScore ? (score === 0 ? '-' : score) : ''}
+                                <div className="flex items-center justify-center gap-0.5">
+                                  {hasScore ? (score === 0 ? '-' : score) : ''}
+                                  {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
+                                </div>
                               </TableCell>
                             );
                           })}
@@ -388,12 +405,16 @@ export default function RoundLeaderboard() {
                             {backNine.map(hole => {
                               const score = player.scores.get(hole.hole_number);
                               const hasScore = player.scores.has(hole.hole_number);
+                              const hasMulligan = player.mulligans.has(hole.hole_number);
                               return (
                                 <TableCell 
                                   key={hole.hole_number} 
                                   className="text-center font-bold text-xs px-1 py-1.5"
                                 >
-                                  {hasScore ? (score === 0 ? '-' : score) : ''}
+                                  <div className="flex items-center justify-center gap-0.5">
+                                    {hasScore ? (score === 0 ? '-' : score) : ''}
+                                    {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
+                                  </div>
                                 </TableCell>
                               );
                             })}
