@@ -168,16 +168,13 @@ export default function MatchPlayPlay() {
 
   // Auto-advance to next hole when all players have entered scores
   useEffect(() => {
-    if (allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && currentHoleIndex < holes.length) {
-      // Scores have been saved, advance to next hole
+    if (allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && currentHole < totalHoles) {
       const timeout = setTimeout(() => {
-        if (currentHole < totalHoles) {
-          navigateHole("next");
-        }
+        navigateHole("next");
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [holes.length]);
+  }, [allPlayersEnteredCurrentHole, showScoreSheet, showMoreSheet, currentHole, totalHoles]);
 
   const handleSaveMoreSheet = async () => {
     // Save comment to feed if provided
