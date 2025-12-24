@@ -116,7 +116,6 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore, onSco
         }`}
       >
         <span className="text-3xl font-bold">–</span>
-        <span className="text-xs mt-0.5">Strokes</span>
       </Button>
       
       <Button
