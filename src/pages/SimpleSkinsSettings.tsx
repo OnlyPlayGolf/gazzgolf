@@ -232,7 +232,9 @@ export default function SimpleSkinsSettings() {
     teeInfo,
     holesPlayed: round.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
-    scoring: `$${skinValue} per skin${carryoverEnabled ? " with carryover" : ""}`,
+    scoring: skinValue.toString() === "progressive" 
+      ? `Progressive skins${carryoverEnabled ? " with carryover" : ""}`
+      : `${skinValue} skin${skinValue !== 1 ? 's' : ''} per hole${carryoverEnabled ? " with carryover" : ""}`,
     roundName: round.round_name,
   };
 
