@@ -171,8 +171,10 @@ export default function MatchPlayLeaderboard() {
     const displayScore = score === -1 ? "–" : score;
     
     if (won) {
+      // Player 1 wins = red (destructive), Player 2 wins = green (primary)
+      const colorClass = playerNum === 1 ? "text-destructive" : "text-primary";
       return (
-        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border-2 border-current">
+        <span className={`font-bold ${colorClass}`}>
           {displayScore}
         </span>
       );
@@ -212,7 +214,7 @@ export default function MatchPlayLeaderboard() {
               <TableCell className="px-1 py-1 sticky left-0 bg-background z-10">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive flex-shrink-0"></span>
-                  <span className="font-medium text-[10px] truncate">{game.player_1.split(' ')[0]}</span>
+                  <span className="font-medium text-[10px] truncate text-destructive">{game.player_1.split(' ')[0]}</span>
                 </div>
               </TableCell>
               {nineHoles.map(hole => (
@@ -250,7 +252,7 @@ export default function MatchPlayLeaderboard() {
               <TableCell className="px-1 py-1 sticky left-0 bg-background z-10">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
-                  <span className="font-medium text-[10px] truncate">{game.player_2.split(' ')[0]}</span>
+                  <span className="font-medium text-[10px] truncate text-primary">{game.player_2.split(' ')[0]}</span>
                 </div>
               </TableCell>
               {nineHoles.map(hole => (
