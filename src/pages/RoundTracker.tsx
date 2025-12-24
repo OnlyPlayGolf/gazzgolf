@@ -488,7 +488,7 @@ export default function RoundTracker() {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
-                    <div className="text-xs text-muted-foreground">To Par</div>
+                    <div className="text-xs text-muted-foreground font-bold">To Par</div>
                   </div>
                 </div>
               </div>
