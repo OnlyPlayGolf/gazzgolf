@@ -108,6 +108,30 @@ export default function SimpleSkinsTracker() {
     calculateSkinResults();
   }, [scores, courseHoles, players]);
 
+  // Auto-advance to next hole when all players have scores
+  useEffect(() => {
+    if (!courseHoles.length || !players.length || loading) return;
+    
+    const currentHoleNum = courseHoles[currentHoleIndex]?.hole_number;
+    if (!currentHoleNum) return;
+    
+    const allPlayersHaveScores = players.every(p => {
+      const playerScores = scores.get(p.id);
+      const score = playerScores?.get(currentHoleNum);
+      return score && score > 0;
+    });
+    
+    // Auto-advance if all players have scores and not at last hole
+    if (allPlayersHaveScores && currentHoleIndex < courseHoles.length - 1) {
+      // Small delay for visual feedback before advancing
+      const timer = setTimeout(() => {
+        setCurrentHoleIndex(prev => prev + 1);
+        setShowScoreSheet(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [scores, currentHoleIndex, courseHoles, players, loading]);
+
   const loadSettings = () => {
     // First try round-specific settings (from localStorage for persistence)
     const roundSettings = localStorage.getItem(`simpleSkinsRoundSettings_${roundId}`);
