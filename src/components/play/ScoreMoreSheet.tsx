@@ -88,7 +88,6 @@ export function ScoreMoreSheet({
                   className="w-full"
                   onClick={onRemoveMulligan}
                 >
-                  <RotateCcw size={16} className="mr-2" />
                   Remove Mulligan from this Hole
                 </Button>
               ) : (
@@ -98,7 +97,6 @@ export function ScoreMoreSheet({
                   disabled={!canUseMulligan}
                   onClick={onUseMulligan}
                 >
-                  <RotateCcw size={16} className="mr-2" />
                   {canUseMulligan 
                     ? "Use Mulligan on this Hole" 
                     : mulligansRemaining === 0 
