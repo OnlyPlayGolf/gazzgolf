@@ -5,12 +5,11 @@ import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Heart, MessageCircle, Send, Clock, Flag, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 
 interface Comment {
   id: string;
@@ -52,6 +51,7 @@ export default function RoundFeed() {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -81,7 +81,6 @@ export default function RoundFeed() {
     if (!roundId) return;
     
     try {
-      // Fetch comments
       const { data: commentsData, error } = await supabase
         .from("round_comments")
         .select("id, content, hole_number, user_id, created_at")
@@ -90,7 +89,6 @@ export default function RoundFeed() {
 
       if (error) throw error;
 
-      // Get unique user IDs and fetch profiles
       const userIds = [...new Set((commentsData || []).map(c => c.user_id))];
       const { data: profilesData } = await supabase
         .from("profiles")
@@ -99,7 +97,6 @@ export default function RoundFeed() {
 
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
-      // Fetch likes and replies counts for each comment
       const commentsWithCounts = await Promise.all(
         (commentsData || []).map(async (comment) => {
           const { count: likesCount } = await supabase
@@ -157,9 +154,9 @@ export default function RoundFeed() {
 
       setNewComment("");
       fetchComments();
-      toast({ title: "Comment posted" });
+      toast({ title: "Update posted" });
     } catch (error: any) {
-      toast({ title: "Error posting comment", description: error.message, variant: "destructive" });
+      toast({ title: "Error posting update", description: error.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -192,9 +189,9 @@ export default function RoundFeed() {
     
     if (newExpanded.has(commentId)) {
       newExpanded.delete(commentId);
+      setReplyingTo(null);
     } else {
       newExpanded.add(commentId);
-      // Fetch replies if not already loaded
       if (!replies.has(commentId)) {
         const { data: repliesData } = await supabase
           .from("round_comment_replies")
@@ -203,7 +200,6 @@ export default function RoundFeed() {
           .order("created_at", { ascending: true });
 
         if (repliesData) {
-          // Fetch profiles for replies
           const userIds = [...new Set(repliesData.map(r => r.user_id))];
           const { data: profilesData } = await supabase
             .from("profiles")
@@ -236,8 +232,8 @@ export default function RoundFeed() {
       if (error) throw error;
 
       setReplyText(prev => new Map(prev).set(commentId, ""));
+      setReplyingTo(null);
       
-      // Refresh replies
       const { data: repliesData } = await supabase
         .from("round_comment_replies")
         .select("id, content, user_id, created_at")
@@ -268,9 +264,14 @@ export default function RoundFeed() {
     return profiles?.display_name || profiles?.username || "Player";
   };
 
-  const getInitials = (profiles: Comment["profiles"] | Reply["profiles"]) => {
-    const name = getDisplayName(profiles);
-    return name.substring(0, 2).toUpperCase();
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) {
+      return format(date, "h:mm a");
+    } else if (isYesterday(date)) {
+      return `Yesterday, ${format(date, "h:mm a")}`;
+    }
+    return format(date, "MMM d, h:mm a");
   };
 
   const renderBottomTabBar = () => {
@@ -281,125 +282,188 @@ export default function RoundFeed() {
     return <RoundBottomTabBar roundId={roundId} />;
   };
 
+  // Group comments by date
+  const groupedComments = comments.reduce((groups, comment) => {
+    const date = new Date(comment.created_at);
+    let key: string;
+    if (isToday(date)) {
+      key = "Today";
+    } else if (isYesterday(date)) {
+      key = "Yesterday";
+    } else {
+      key = format(date, "MMMM d, yyyy");
+    }
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(comment);
+    return groups;
+  }, {} as Record<string, Comment[]>);
+
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Feed</h1>
+      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Round Updates</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {comments.length} update{comments.length !== 1 ? 's' : ''}
+          </p>
+        </div>
 
-        {/* New Comment Box */}
+        {/* New Update Input */}
         {currentUserId && (
-          <Card>
-            <CardContent className="p-4">
-              <Textarea
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="mb-3"
-              />
-              <Button 
-                onClick={handleSubmitComment} 
-                disabled={!newComment.trim() || submitting}
-                className="w-full"
-              >
-                <Send size={16} className="mr-2" />
-                Post Comment
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add an update..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSubmitComment()}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleSubmitComment} 
+              disabled={!newComment.trim() || submitting}
+              size="icon"
+              variant="secondary"
+            >
+              <Send size={16} />
+            </Button>
+          </div>
         )}
 
-        {/* Comments List */}
+        {/* Updates List */}
         {loading ? (
-          <div className="text-center text-muted-foreground py-8">Loading...</div>
+          <div className="text-center text-muted-foreground py-12 text-sm">
+            Loading updates...
+          </div>
         ) : comments.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <MessageCircle className="mx-auto text-muted-foreground mb-4" size={48} />
-              <h2 className="text-lg font-semibold mb-2">No comments yet</h2>
-              <p className="text-sm text-muted-foreground">
-                Be the first to comment on this round!
+          <Card className="border-dashed">
+            <CardContent className="py-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                <Clock className="text-muted-foreground" size={24} />
+              </div>
+              <p className="text-sm font-medium mb-1">No updates yet</p>
+              <p className="text-xs text-muted-foreground">
+                Updates and events will appear here during the round
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <Card key={comment.id}>
-                <CardContent className="p-4">
-                  {/* Comment Header */}
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                      <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
-                        {comment.hole_number && (
-                          <Badge variant="secondary" className="text-xs">
-                            Hole {comment.hole_number}
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm">{comment.content}</p>
+          <div className="space-y-6">
+            {Object.entries(groupedComments).map(([dateLabel, dateComments]) => (
+              <div key={dateLabel}>
+                {/* Date Header */}
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {dateLabel}
+                  </span>
+                  <Separator className="flex-1" />
+                </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-4 mt-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
-                          onClick={() => handleLike(comment.id, comment.user_has_liked)}
-                        >
-                          <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
-                          {comment.likes_count > 0 && comment.likes_count}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => toggleReplies(comment.id)}
-                        >
-                          <MessageCircle size={16} />
-                          {comment.replies_count > 0 && comment.replies_count}
-                        </Button>
+                {/* Updates for this date */}
+                <div className="space-y-2">
+                  {dateComments.map((comment) => (
+                    <div 
+                      key={comment.id} 
+                      className="group bg-card border rounded-lg p-4 hover:border-border/80 transition-colors"
+                    >
+                      {/* Update Header */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          {/* Hole indicator and time */}
+                          <div className="flex items-center gap-2 mb-1.5">
+                            {comment.hole_number && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                                <Flag size={12} />
+                                Hole {comment.hole_number}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {formatTime(comment.created_at)}
+                            </span>
+                          </div>
+
+                          {/* Content */}
+                          <p className="text-sm leading-relaxed">
+                            {comment.content}
+                          </p>
+
+                          {/* Author */}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {getDisplayName(comment.profiles)}
+                          </p>
+                        </div>
+
+                        {/* Actions - shown on hover or when active */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-8 w-8 p-0 ${comment.user_has_liked ? "text-red-500" : "text-muted-foreground"}`}
+                            onClick={() => handleLike(comment.id, comment.user_has_liked)}
+                          >
+                            <Heart size={14} fill={comment.user_has_liked ? "currentColor" : "none"} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-muted-foreground"
+                            onClick={() => toggleReplies(comment.id)}
+                          >
+                            <MessageCircle size={14} />
+                          </Button>
+                        </div>
                       </div>
+
+                      {/* Interaction counts - only show if any */}
+                      {(comment.likes_count > 0 || comment.replies_count > 0) && (
+                        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/50">
+                          {comment.likes_count > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {comment.likes_count} like{comment.likes_count !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                          {comment.replies_count > 0 && (
+                            <button
+                              onClick={() => toggleReplies(comment.id)}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                            >
+                              {comment.replies_count} repl{comment.replies_count !== 1 ? 'ies' : 'y'}
+                              {expandedReplies.has(comment.id) ? (
+                                <ChevronUp size={12} />
+                              ) : (
+                                <ChevronDown size={12} />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      )}
 
                       {/* Replies Section */}
                       {expandedReplies.has(comment.id) && (
-                        <div className="mt-4 space-y-3 border-l-2 border-muted pl-4">
+                        <div className="mt-3 pt-3 border-t border-border/50 space-y-3">
                           {replies.get(comment.id)?.map((reply) => (
-                            <div key={reply.id} className="flex items-start gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={reply.profiles?.avatar_url || undefined} />
-                                <AvatarFallback className="text-xs">{getInitials(reply.profiles)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-sm">{getDisplayName(reply.profiles)}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
-                                  </span>
-                                </div>
-                                <p className="text-sm">{reply.content}</p>
-                              </div>
+                            <div key={reply.id} className="pl-4 border-l-2 border-muted">
+                              <p className="text-sm">{reply.content}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {getDisplayName(reply.profiles)} · {formatTime(reply.created_at)}
+                              </p>
                             </div>
                           ))}
 
                           {/* Reply Input */}
                           {currentUserId && (
-                            <div className="flex gap-2 mt-2">
-                              <Textarea
-                                placeholder="Write a reply..."
+                            <div className="flex gap-2 pt-2">
+                              <Input
+                                placeholder="Add a reply..."
                                 value={replyText.get(comment.id) || ""}
                                 onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
-                                className="min-h-[60px]"
+                                onKeyDown={(e) => e.key === 'Enter' && handleSubmitReply(comment.id)}
+                                className="flex-1 h-9 text-sm"
                               />
                               <Button
                                 size="sm"
+                                variant="secondary"
+                                className="h-9"
                                 onClick={() => handleSubmitReply(comment.id)}
                                 disabled={!replyText.get(comment.id)?.trim()}
                               >
@@ -410,9 +474,9 @@ export default function RoundFeed() {
                         </div>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
