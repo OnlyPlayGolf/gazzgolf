@@ -502,6 +502,24 @@ export default function RoundTracker() {
     });
   });
 
+  // Check if all players have entered scores for the current hole
+  const allPlayersEnteredCurrentHole = currentHole && players.length > 0 && players.every(player => {
+    const playerScores = scores.get(player.id);
+    const score = playerScores?.get(currentHole.hole_number);
+    return score !== undefined && score > 0;
+  });
+
+  // Auto-advance to next hole when all players have entered scores for current hole
+  useEffect(() => {
+    if (allPlayersEnteredCurrentHole && currentHoleIndex < courseHoles.length - 1) {
+      const timeout = setTimeout(() => {
+        setCurrentHoleIndex(currentHoleIndex + 1);
+        setShowScoreSheet(false);
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length]);
+
   const handleShowCompletionDialog = () => {
     setShowCompletionDialog(true);
   };
@@ -757,21 +775,25 @@ export default function RoundTracker() {
             }}
             onMore={handleOpenMoreSheet}
             onEnterAndNext={() => {
-              const currentPlayerIndex = players.findIndex(p => p.id === selectedPlayer.id);
-              if (currentPlayerIndex < players.length - 1) {
-                // Move to next player
-                setSelectedPlayer(players[currentPlayerIndex + 1]);
+              const currentHoleNum = currentHole.hole_number;
+              
+              // Find next player without a score for this hole
+              const nextPlayerWithoutScore = players.find(p => {
+                if (p.id === selectedPlayer.id) return false;
+                const playerScores = scores.get(p.id);
+                const score = playerScores?.get(currentHoleNum);
+                return !score || score === 0;
+              });
+              
+              if (nextPlayerWithoutScore) {
+                // Move to next player without a score
+                setSelectedPlayer(nextPlayerWithoutScore);
               } else {
-                // Last player on this hole
+                // All players have scores - close the sheet
                 setShowScoreSheet(false);
-                
-                // Check if we're at the last hole (planned or extended)
+                // Show completion dialog if at last hole
                 if (currentHoleIndex >= courseHoles.length - 1) {
-                  // Show completion dialog when all players finished the last hole
                   setShowCompletionDialog(true);
-                } else {
-                  // Move to next hole
-                  setCurrentHoleIndex(currentHoleIndex + 1);
                 }
               }
             }}
