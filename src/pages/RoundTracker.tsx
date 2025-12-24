@@ -90,6 +90,8 @@ export default function RoundTracker() {
   const [currentComment, setCurrentComment] = useState("");
   // Track if mulligan was just added in current More sheet session (to combine with comment)
   const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
+  // Track if user manually navigated (to prevent auto-advance)
+  const [isManualNavigation, setIsManualNavigation] = useState(false);
 
   useEffect(() => {
     if (roundId) {
@@ -286,6 +288,9 @@ export default function RoundTracker() {
   const updateScore = async (playerId: string, newScore: number) => {
     // Allow -1 (dash/conceded) and positive scores, reject 0 and other negatives
     if (!currentHole || (newScore < 0 && newScore !== -1)) return;
+    
+    // Reset manual navigation flag so auto-advance works after score update
+    setIsManualNavigation(false);
 
     const updatedScores = new Map(scores);
     const playerScores = updatedScores.get(playerId) || new Map();
@@ -323,6 +328,7 @@ export default function RoundTracker() {
 
   const navigateHole = (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
+      setIsManualNavigation(true);
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next" && currentHoleIndex < courseHoles.length - 1) {
       setCurrentHoleIndex(currentHoleIndex + 1);
@@ -512,7 +518,12 @@ export default function RoundTracker() {
   });
 
   // Auto-advance to next hole when all players have entered scores for current hole
+  // Skip if user manually navigated back to review scores
   useEffect(() => {
+    if (isManualNavigation) {
+      // Reset flag but don't auto-advance
+      return;
+    }
     if (allPlayersEnteredCurrentHole && currentHoleIndex < courseHoles.length - 1) {
       const timeout = setTimeout(() => {
         setCurrentHoleIndex(currentHoleIndex + 1);
@@ -520,7 +531,7 @@ export default function RoundTracker() {
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length]);
+  }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation]);
 
   const handleShowCompletionDialog = () => {
     setShowCompletionDialog(true);
