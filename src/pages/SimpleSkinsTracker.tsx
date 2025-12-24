@@ -727,7 +727,7 @@ export default function SimpleSkinsTracker() {
                 </div>
                 <div className="text-center">
                   <div className={`text-3xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-                    {hasScore ? playerScore : '–'}
+                    {hasScore ? playerScore : '0'}
                   </div>
                   <div className="text-xs text-muted-foreground">Strokes</div>
                 </div>
