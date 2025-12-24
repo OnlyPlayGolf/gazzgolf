@@ -171,8 +171,8 @@ export default function MatchPlayLeaderboard() {
     const displayScore = score === -1 ? "–" : score;
     
     if (won) {
-      // Player 1 wins = red (destructive), Player 2 wins = green (primary)
-      const colorClass = playerNum === 1 ? "text-destructive" : "text-primary";
+      // Player 1 wins = red (destructive), Player 2 wins = blue
+      const colorClass = playerNum === 1 ? "text-destructive" : "text-blue-500";
       return (
         <span className={`font-bold ${colorClass}`}>
           {displayScore}
@@ -251,8 +251,8 @@ export default function MatchPlayLeaderboard() {
             <TableRow>
               <TableCell className="px-1 py-1 sticky left-0 bg-background z-10">
                 <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
-                  <span className="font-medium text-[10px] truncate text-primary">{game.player_2.split(' ')[0]}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
+                  <span className="font-medium text-[10px] truncate text-blue-500">{game.player_2.split(' ')[0]}</span>
                 </div>
               </TableCell>
               {nineHoles.map(hole => (
