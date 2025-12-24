@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GamePlayer } from "./GameDetailsSection";
 import { getTeeDisplayName } from "@/components/TeeSelector";
 
@@ -38,11 +39,19 @@ export function ViewPlayersModal({
               key={idx} 
               className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{player.name}</p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {player.team && <span>{player.team}</span>}
-                  {player.tee && <span>• {getTeeDisplayName(player.tee)} tees</span>}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarImage src={player.avatarUrl || undefined} alt={player.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                    {player.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{player.name}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {player.team && <span>{player.team}</span>}
+                    {player.tee && <span>• {getTeeDisplayName(player.tee)} tees</span>}
+                  </div>
                 </div>
               </div>
               {useHandicaps && player.handicap !== undefined && (
