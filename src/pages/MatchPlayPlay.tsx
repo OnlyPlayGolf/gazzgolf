@@ -166,15 +166,12 @@ export default function MatchPlayPlay() {
   // Check if both players have entered scores for current hole
   const allPlayersEnteredCurrentHole = scores.player1 > 0 && scores.player2 > 0;
 
-  // Auto-advance to next hole when all players have entered scores
+  // Auto-save and advance to next hole when all players have entered scores
   useEffect(() => {
-    if (allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && currentHole < totalHoles) {
-      const timeout = setTimeout(() => {
-        navigateHole("next");
-      }, 500);
-      return () => clearTimeout(timeout);
+    if (allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && !saving) {
+      saveHole();
     }
-  }, [allPlayersEnteredCurrentHole, showScoreSheet, showMoreSheet, currentHole, totalHoles]);
+  }, [allPlayersEnteredCurrentHole, showScoreSheet, showMoreSheet]);
 
   const handleSaveMoreSheet = async () => {
     // Save comment to feed if provided
@@ -472,14 +469,6 @@ export default function MatchPlayPlay() {
           </Card>
         )}
 
-        {/* Save Button */}
-        <Button 
-          onClick={() => saveHole()} 
-          disabled={saving || scores.player1 === 0 || scores.player2 === 0}
-          className="w-full"
-        >
-          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Match" : "Save & Next Hole"}
-        </Button>
       </div>
 
       {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
