@@ -341,7 +341,6 @@ export default function SimpleSkinsLeaderboard() {
                         </span>
                         <div>
                           <p className="font-medium">{getPlayerName(player)}</p>
-                          <p className="text-sm text-muted-foreground">Total: {totalScore || '–'}</p>
                         </div>
                       </div>
                       <div className="text-right">
