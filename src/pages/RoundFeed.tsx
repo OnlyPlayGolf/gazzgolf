@@ -323,97 +323,132 @@ export default function RoundFeed() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {comments.map((comment) => (
-              <Card key={comment.id}>
-                <CardContent className="p-4">
-                  {/* Comment Header */}
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                      <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
-                        {comment.hole_number && (
-                          <Badge variant="secondary" className="text-xs">
-                            Hole {comment.hole_number}
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm">{comment.content}</p>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-4 mt-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
-                          onClick={() => handleLike(comment.id, comment.user_has_liked)}
-                        >
-                          <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
-                          {comment.likes_count > 0 && comment.likes_count}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => toggleReplies(comment.id)}
-                        >
-                          <MessageCircle size={16} />
-                          {comment.replies_count > 0 && comment.replies_count}
-                        </Button>
-                      </div>
-
-                      {/* Replies Section */}
-                      {expandedReplies.has(comment.id) && (
-                        <div className="mt-4 space-y-3 border-l-2 border-muted pl-4">
-                          {replies.get(comment.id)?.map((reply) => (
-                            <div key={reply.id} className="flex items-start gap-2">
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={reply.profiles?.avatar_url || undefined} />
-                                <AvatarFallback className="text-xs">{getInitials(reply.profiles)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-sm">{getDisplayName(reply.profiles)}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
-                                  </span>
-                                </div>
-                                <p className="text-sm">{reply.content}</p>
-                              </div>
-                            </div>
-                          ))}
-
-                          {/* Reply Input */}
-                          {currentUserId && (
-                            <div className="flex gap-2 mt-2">
-                              <Textarea
-                                placeholder="Write a reply..."
-                                value={replyText.get(comment.id) || ""}
-                                onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
-                                className="min-h-[60px]"
-                              />
-                              <Button
-                                size="sm"
-                                onClick={() => handleSubmitReply(comment.id)}
-                                disabled={!replyText.get(comment.id)?.trim()}
-                              >
-                                <Send size={14} />
-                              </Button>
-                            </div>
+            {comments.map((comment) => {
+              // Parse mulligan comments
+              const isMulliganComment = comment.content.startsWith("🔄");
+              let userComment = "";
+              let mulliganText = "";
+              
+              if (isMulliganComment) {
+                // Check if there's a user comment attached: format is "🔄 Name used a mulligan on hole X: "comment""
+                const colonQuoteMatch = comment.content.match(/^🔄 (.+?) used a mulligan on hole (\d+): "(.+)"$/);
+                const simpleMatch = comment.content.match(/^🔄 (.+?) used a mulligan on hole (\d+)$/);
+                
+                if (colonQuoteMatch) {
+                  const [, playerName, holeNum, extractedComment] = colonQuoteMatch;
+                  userComment = extractedComment;
+                  mulliganText = `${playerName} used a mulligan on hole ${holeNum}`;
+                } else if (simpleMatch) {
+                  const [, playerName, holeNum] = simpleMatch;
+                  mulliganText = `${playerName} used a mulligan on hole ${holeNum}`;
+                }
+              }
+              
+              return (
+                <Card key={comment.id}>
+                  <CardContent className="p-4">
+                    {/* Comment Header */}
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                        <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
+                          {comment.hole_number && (
+                            <Badge variant="secondary" className="text-xs">
+                              Hole {comment.hole_number}
+                            </Badge>
                           )}
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          </span>
                         </div>
-                      )}
+                        
+                        {/* Content Display */}
+                        {isMulliganComment ? (
+                          <div className="mt-2 space-y-2">
+                            {userComment && (
+                              <p className="text-sm">{userComment}</p>
+                            )}
+                            <div className="bg-muted/50 border border-border rounded-lg px-3 py-2">
+                              <p className="text-sm text-muted-foreground">{mulliganText}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-sm">{comment.content}</p>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-4 mt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
+                            onClick={() => handleLike(comment.id, comment.user_has_liked)}
+                          >
+                            <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
+                            {comment.likes_count > 0 && comment.likes_count}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => toggleReplies(comment.id)}
+                          >
+                            <MessageCircle size={16} />
+                            {comment.replies_count > 0 && comment.replies_count}
+                          </Button>
+                        </div>
+
+                        {/* Replies Section */}
+                        {expandedReplies.has(comment.id) && (
+                          <div className="mt-4 space-y-3 border-l-2 border-muted pl-4">
+                            {replies.get(comment.id)?.map((reply) => (
+                              <div key={reply.id} className="flex items-start gap-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={reply.profiles?.avatar_url || undefined} />
+                                  <AvatarFallback className="text-xs">{getInitials(reply.profiles)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm">{getDisplayName(reply.profiles)}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm">{reply.content}</p>
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Reply Input */}
+                            {currentUserId && (
+                              <div className="flex gap-2 mt-2">
+                                <Textarea
+                                  placeholder="Write a reply..."
+                                  value={replyText.get(comment.id) || ""}
+                                  onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
+                                  className="min-h-[60px]"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSubmitReply(comment.id)}
+                                  disabled={!replyText.get(comment.id)?.trim()}
+                                >
+                                  <Send size={14} />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
