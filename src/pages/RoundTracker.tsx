@@ -564,7 +564,6 @@ export default function RoundTracker() {
                     <span className="text-xl font-bold">{getPlayerName(player)}</span>
                     {hasMulliganOnHole && (
                       <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                        <RotateCcw size={10} className="mr-1" />
                         Mulligan
                       </Badge>
                     )}
