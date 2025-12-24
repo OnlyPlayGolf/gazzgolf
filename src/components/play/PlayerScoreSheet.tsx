@@ -11,7 +11,6 @@ interface PlayerScoreSheetProps {
   currentScore: number | null;
   onScoreSelect: (score: number | null) => void;
   onMore?: () => void;
-  /** @deprecated Use onMore instead for stroke play rounds */
   onEnterAndNext?: () => void;
 }
 
@@ -38,7 +37,10 @@ export function PlayerScoreSheet({
 
   const handleScoreSelect = (score: number | null) => {
     onScoreSelect(score);
-    // If onEnterAndNext is provided (for other game modes), auto-advance on score select
+  };
+
+  const handleScoreAndAdvance = (score: number) => {
+    // Called after score is selected to advance to next player/hole
     if (onEnterAndNext) {
       onEnterAndNext();
     }
@@ -80,6 +82,7 @@ export function PlayerScoreSheet({
           currentScore={currentScore}
           onScoreSelect={handleScoreSelect}
           onMore={handleMore}
+          onScoreAndAdvance={handleScoreAndAdvance}
         />
       </SheetContent>
     </Sheet>

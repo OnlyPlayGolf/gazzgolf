@@ -7,6 +7,7 @@ interface ScoreInputGridProps {
   currentScore: number | null;
   onScoreSelect: (score: number | null) => void;
   onMore?: () => void;
+  onScoreAndAdvance?: (score: number) => void;
 }
 
 const getScoreLabel = (score: number, par: number): string | null => {
@@ -22,13 +23,17 @@ const getScoreLabel = (score: number, par: number): string | null => {
   return null;
 };
 
-export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore }: ScoreInputGridProps) {
+export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore, onScoreAndAdvance }: ScoreInputGridProps) {
   const [showHighScores, setShowHighScores] = useState(false);
   const scores = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const highScores = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
   const handleScoreAndAdvance = (score: number) => {
     onScoreSelect(score);
+    // If onScoreAndAdvance is provided, call it to advance to next player/hole
+    if (onScoreAndAdvance) {
+      onScoreAndAdvance(score);
+    }
   };
   
   if (showHighScores) {

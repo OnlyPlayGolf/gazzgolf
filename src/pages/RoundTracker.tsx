@@ -628,6 +628,25 @@ export default function RoundTracker() {
               }
             }}
             onMore={handleOpenMoreSheet}
+            onEnterAndNext={() => {
+              const currentPlayerIndex = players.findIndex(p => p.id === selectedPlayer.id);
+              if (currentPlayerIndex < players.length - 1) {
+                // Move to next player
+                setSelectedPlayer(players[currentPlayerIndex + 1]);
+              } else {
+                // Last player on this hole
+                setShowScoreSheet(false);
+                
+                // Check if we're at the last hole (planned or extended)
+                if (currentHoleIndex >= courseHoles.length - 1) {
+                  // Show completion dialog when all players finished the last hole
+                  setShowCompletionDialog(true);
+                } else {
+                  // Move to next hole
+                  setCurrentHoleIndex(currentHoleIndex + 1);
+                }
+              }
+            }}
           />
           
           <ScoreMoreSheet
