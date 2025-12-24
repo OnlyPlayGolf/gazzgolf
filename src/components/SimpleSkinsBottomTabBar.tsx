@@ -14,7 +14,7 @@ export function SimpleSkinsBottomTabBar({ roundId }: SimpleSkinsBottomTabBarProp
     { id: "info", label: "Game info", icon: Info, path: `/simple-skins/${roundId}/info` },
     { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed` },
     { id: "leaderboard", label: "Leaderboard", icon: List, path: `/simple-skins/${roundId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/rounds/${roundId}/settings` },
+    { id: "settings", label: "Settings", icon: Settings, path: `/simple-skins/${roundId}/settings` },
   ];
 
   return (
