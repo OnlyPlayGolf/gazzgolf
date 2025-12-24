@@ -88,6 +88,8 @@ export default function RoundTracker() {
   const [holeComments, setHoleComments] = useState<Map<string, Map<number, string>>>(new Map());
   // Current comment being edited in the More sheet
   const [currentComment, setCurrentComment] = useState("");
+  // Track if mulligan was just added in current More sheet session (to combine with comment)
+  const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
 
   useEffect(() => {
     if (roundId) {
@@ -344,20 +346,8 @@ export default function RoundTracker() {
         .eq("player_id", playerId)
         .eq("hole_number", holeNumber);
 
-      // Post automatic feed comment for mulligan
-      const { data: { user } } = await supabase.auth.getUser();
-      const player = players.find(p => p.id === playerId);
-      const playerName = player?.profiles?.display_name || player?.profiles?.username || "A player";
-      
-      if (user) {
-        await supabase.from("round_comments").insert({
-          round_id: roundId,
-          user_id: user.id,
-          content: `🔄 ${playerName} used a mulligan on hole ${holeNumber}`,
-          hole_number: holeNumber,
-          game_type: "round",
-        });
-      }
+      // Mark that mulligan was just added (will be combined with comment on save)
+      setMulliganJustAdded(true);
     } catch (error) {
       console.error("Error saving mulligan:", error);
     }
@@ -408,30 +398,56 @@ export default function RoundTracker() {
   const handleOpenMoreSheet = () => {
     if (selectedPlayer && currentHole) {
       setCurrentComment(getHoleComment(selectedPlayer.id, currentHole.hole_number));
+      setMulliganJustAdded(false); // Reset flag when opening sheet
       setShowMoreSheet(true);
     }
   };
 
   // Handle saving from More sheet
   const handleSaveMore = async () => {
-    if (selectedPlayer && currentHole && currentComment.trim()) {
-      setHoleComment(selectedPlayer.id, currentHole.hole_number, currentComment);
+    if (selectedPlayer && currentHole) {
+      const hasComment = currentComment.trim().length > 0;
+      const hasMulligan = mulliganJustAdded;
       
-      // Save comment to database for the feed
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from("round_comments").insert({
-            round_id: roundId,
-            user_id: user.id,
-            content: currentComment.trim(),
-            hole_number: currentHole.hole_number,
-            game_type: "round",
-          });
+      // Only post if there's a comment or mulligan
+      if (hasComment || hasMulligan) {
+        if (hasComment) {
+          setHoleComment(selectedPlayer.id, currentHole.hole_number, currentComment);
         }
-      } catch (error) {
-        console.error("Error saving comment to feed:", error);
+        
+        // Build combined content
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const playerName = getPlayerName(selectedPlayer);
+            let content = "";
+            
+            if (hasMulligan && hasComment) {
+              // Combined mulligan + comment
+              content = `🔄 ${playerName} used a mulligan on hole ${currentHole.hole_number}: "${currentComment.trim()}"`;
+            } else if (hasMulligan) {
+              // Mulligan only
+              content = `🔄 ${playerName} used a mulligan on hole ${currentHole.hole_number}`;
+            } else {
+              // Comment only
+              content = currentComment.trim();
+            }
+            
+            await supabase.from("round_comments").insert({
+              round_id: roundId,
+              user_id: user.id,
+              content,
+              hole_number: currentHole.hole_number,
+              game_type: "round",
+            });
+          }
+        } catch (error) {
+          console.error("Error saving to feed:", error);
+        }
       }
+      
+      // Reset the flag
+      setMulliganJustAdded(false);
     }
   };
 
