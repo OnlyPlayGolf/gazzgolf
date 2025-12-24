@@ -67,6 +67,17 @@ export default function RoundSettings() {
   }, [roundId]);
 
   const loadSettings = () => {
+    // First try round-specific settings (from localStorage for persistence)
+    const roundSettings = localStorage.getItem(`roundSettings_${roundId}`);
+    if (roundSettings) {
+      const settings = JSON.parse(roundSettings);
+      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      setHandicapEnabled(settings.handicapEnabled || false);
+      setGimmesEnabled(settings.gimmesEnabled || false);
+      return;
+    }
+    
+    // Fallback to session storage for new rounds
     const savedSettings = sessionStorage.getItem('strokePlaySettings');
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
@@ -77,6 +88,13 @@ export default function RoundSettings() {
   };
 
   const saveSettings = () => {
+    // Save to round-specific localStorage for persistence
+    localStorage.setItem(`roundSettings_${roundId}`, JSON.stringify({
+      mulligansPerPlayer,
+      handicapEnabled,
+      gimmesEnabled,
+    }));
+    // Also save to session storage for backward compatibility
     sessionStorage.setItem('strokePlaySettings', JSON.stringify({
       mulligansPerPlayer,
       handicapEnabled,

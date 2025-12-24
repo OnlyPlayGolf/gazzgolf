@@ -209,7 +209,13 @@ export default function StrokePlaySetup() {
         }
       }
 
-      // Save settings
+      // Save settings to round-specific localStorage
+      localStorage.setItem(`roundSettings_${round.id}`, JSON.stringify({
+        mulligansPerPlayer,
+        handicapEnabled,
+        gimmesEnabled,
+      }));
+      // Also save to session storage for backward compatibility
       sessionStorage.setItem('strokePlaySettings', JSON.stringify({
         mulligansPerPlayer,
         handicapEnabled,
