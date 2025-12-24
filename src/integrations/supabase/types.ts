@@ -1246,12 +1246,74 @@ export type Database = {
         }
         Relationships: []
       }
+      round_comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "round_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      round_comment_replies: {
+        Row: {
+          comment_id: string
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_comment_replies_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "round_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       round_comments: {
         Row: {
           content: string
           created_at: string
           game_id: string | null
           game_type: string
+          hole_number: number | null
           id: string
           round_id: string
           user_id: string
@@ -1261,6 +1323,7 @@ export type Database = {
           created_at?: string
           game_id?: string | null
           game_type?: string
+          hole_number?: number | null
           id?: string
           round_id: string
           user_id: string
@@ -1270,6 +1333,7 @@ export type Database = {
           created_at?: string
           game_id?: string | null
           game_type?: string
+          hole_number?: number | null
           id?: string
           round_id?: string
           user_id?: string

@@ -362,9 +362,25 @@ export default function RoundTracker() {
   };
 
   // Handle saving from More sheet
-  const handleSaveMore = () => {
-    if (selectedPlayer && currentHole) {
+  const handleSaveMore = async () => {
+    if (selectedPlayer && currentHole && currentComment.trim()) {
       setHoleComment(selectedPlayer.id, currentHole.hole_number, currentComment);
+      
+      // Save comment to database for the feed
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("round_comments").insert({
+            round_id: roundId,
+            user_id: user.id,
+            content: currentComment.trim(),
+            hole_number: currentHole.hole_number,
+            game_type: "round",
+          });
+        }
+      } catch (error) {
+        console.error("Error saving comment to feed:", error);
+      }
     }
   };
 
