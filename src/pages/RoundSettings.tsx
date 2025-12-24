@@ -125,20 +125,25 @@ export default function RoundSettings() {
 
       const { data: playersData } = await supabase
         .from("round_players")
-        .select(`
-          id,
-          user_id,
-          handicap,
-          tee_color,
-          profiles:user_id (
-            display_name,
-            username
-          )
-        `)
+        .select("id, user_id, handicap, tee_color")
         .eq("round_id", roundId);
 
-      if (playersData) {
-        setPlayers(playersData as unknown as RoundPlayer[]);
+      if (playersData && playersData.length > 0) {
+        // Fetch profiles separately
+        const userIds = playersData.map(p => p.user_id);
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name, username")
+          .in("id", userIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        
+        const playersWithProfiles = playersData.map(p => ({
+          ...p,
+          profiles: profilesMap.get(p.user_id) || null
+        }));
+
+        setPlayers(playersWithProfiles as RoundPlayer[]);
         // Check if any player has handicap
         const hasHandicaps = playersData.some(p => p.handicap !== null);
         setHandicapEnabled(hasHandicaps);
