@@ -167,14 +167,17 @@ export default function MatchPlayLeaderboard() {
     
     if (score === null) return "";
     
+    // Display dash for conceded holes (-1)
+    const displayScore = score === -1 ? "–" : score;
+    
     if (won) {
       return (
         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border-2 border-current">
-          {score}
+          {displayScore}
         </span>
       );
     }
-    return score;
+    return displayScore;
   };
 
   const renderNine = (nineHoles: CourseHole[], label: string, parTotal: number) => {
