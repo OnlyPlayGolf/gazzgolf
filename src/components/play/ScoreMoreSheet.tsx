@@ -73,10 +73,7 @@ export function ScoreMoreSheet({
           {mulligansAllowed > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <RotateCcw size={16} />
-                  Mulligan
-                </Label>
+                <Label>Mulligan</Label>
                 <Badge variant="secondary">
                   {mulligansRemaining} of {mulligansAllowed} remaining
                 </Badge>
