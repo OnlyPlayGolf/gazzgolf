@@ -483,12 +483,8 @@ export default function RoundTracker() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    {hasScore ? (
-                      <div className="text-3xl font-bold">{playerScore}</div>
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-[hsl(120,20%,35%)]" />
-                    )}
-                    <div className="text-xs text-muted-foreground mt-1">Strokes</div>
+                    <div className="text-2xl font-bold text-muted-foreground">{hasScore ? playerScore : 0}</div>
+                    <div className="text-xs text-muted-foreground">Strokes</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-muted-foreground">{getScoreDisplay(player.id)}</div>
