@@ -111,9 +111,7 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore, onSco
       <Button
         variant="secondary"
         onClick={() => handleScoreAndAdvance(0)}
-        className={`h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 ${
-          currentScore === 0 ? "ring-2 ring-primary bg-primary text-primary-foreground hover:bg-primary/90" : ""
-        }`}
+        className="h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80"
       >
         <span className="text-3xl font-bold">–</span>
       </Button>
