@@ -310,7 +310,7 @@ export default function MatchPlayPlay() {
       <div className="p-4 max-w-2xl mx-auto space-y-4">
         {/* Player 1 */}
         <Card 
-          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
           onClick={() => {
             setSelectedPlayer(1);
             setShowScoreSheet(true);
@@ -319,7 +319,7 @@ export default function MatchPlayPlay() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-blue-600">{game.player_1}</p>
+                <span className="text-xl font-bold text-blue-600">{game.player_1}</span>
                 {scores.player1Mulligan && (
                   <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
                     Mulligan
@@ -327,18 +327,21 @@ export default function MatchPlayPlay() {
                 )}
               </div>
               {game.use_handicaps && game.player_1_handicap && (
-                <span className="text-xs text-muted-foreground">HCP: {game.player_1_handicap}</span>
+                <span className="text-sm text-muted-foreground">HCP: {game.player_1_handicap}</span>
               )}
             </div>
-            <span className={`text-3xl font-bold ${scores.player1 > 0 ? '' : 'text-muted-foreground'}`}>
-              {scores.player1}
-            </span>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${scores.player1 > 0 ? '' : 'text-muted-foreground'}`}>
+                {scores.player1}
+              </div>
+              <div className="text-xs text-muted-foreground">Strokes</div>
+            </div>
           </div>
         </Card>
 
         {/* Player 2 */}
         <Card 
-          className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+          className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
           onClick={() => {
             setSelectedPlayer(2);
             setShowScoreSheet(true);
@@ -347,7 +350,7 @@ export default function MatchPlayPlay() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-red-600">{game.player_2}</p>
+                <span className="text-xl font-bold text-red-600">{game.player_2}</span>
                 {scores.player2Mulligan && (
                   <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
                     Mulligan
@@ -355,12 +358,15 @@ export default function MatchPlayPlay() {
                 )}
               </div>
               {game.use_handicaps && game.player_2_handicap && (
-                <span className="text-xs text-muted-foreground">HCP: {game.player_2_handicap}</span>
+                <span className="text-sm text-muted-foreground">HCP: {game.player_2_handicap}</span>
               )}
             </div>
-            <span className={`text-3xl font-bold ${scores.player2 > 0 ? '' : 'text-muted-foreground'}`}>
-              {scores.player2}
-            </span>
+            <div className="text-center">
+              <div className={`text-2xl font-bold ${scores.player2 > 0 ? '' : 'text-muted-foreground'}`}>
+                {scores.player2}
+              </div>
+              <div className="text-xs text-muted-foreground">Strokes</div>
+            </div>
           </div>
         </Card>
 
