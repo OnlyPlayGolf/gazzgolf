@@ -111,11 +111,11 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore, onSco
       <Button
         variant="secondary"
         onClick={() => handleScoreAndAdvance(0)}
-        className={`h-20 flex flex-col items-center justify-center rounded-lg ${
+        className={`h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 ${
           currentScore === 0 ? "ring-2 ring-primary bg-primary text-primary-foreground" : ""
         }`}
       >
-        <span className="text-3xl font-bold">0</span>
+        <span className="text-3xl font-bold">–</span>
         <span className="text-xs mt-0.5">Strokes</span>
       </Button>
       
