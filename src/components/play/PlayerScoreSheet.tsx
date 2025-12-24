@@ -10,6 +10,8 @@ interface PlayerScoreSheetProps {
   holeNumber: number;
   currentScore: number | null;
   onScoreSelect: (score: number | null) => void;
+  onMore?: () => void;
+  /** @deprecated Use onMore instead for stroke play rounds */
   onEnterAndNext?: () => void;
 }
 
@@ -22,6 +24,7 @@ export function PlayerScoreSheet({
   holeNumber,
   currentScore,
   onScoreSelect,
+  onMore,
   onEnterAndNext,
 }: PlayerScoreSheetProps) {
   const formatHandicap = (hcp: number | string | null | undefined): string => {
@@ -35,13 +38,18 @@ export function PlayerScoreSheet({
 
   const handleScoreSelect = (score: number | null) => {
     onScoreSelect(score);
-  };
-
-  const handleEnter = () => {
+    // If onEnterAndNext is provided (for other game modes), auto-advance on score select
     if (onEnterAndNext) {
       onEnterAndNext();
-    } else {
-      onOpenChange(false);
+    }
+  };
+
+  const handleMore = () => {
+    if (onMore) {
+      onMore();
+    } else if (onEnterAndNext) {
+      // Fallback for other game modes - just call onEnterAndNext
+      onEnterAndNext();
     }
   };
 
@@ -71,7 +79,7 @@ export function PlayerScoreSheet({
           par={par}
           currentScore={currentScore}
           onScoreSelect={handleScoreSelect}
-          onEnter={handleEnter}
+          onMore={handleMore}
         />
       </SheetContent>
     </Sheet>

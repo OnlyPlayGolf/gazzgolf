@@ -6,7 +6,7 @@ interface ScoreInputGridProps {
   par: number;
   currentScore: number | null;
   onScoreSelect: (score: number | null) => void;
-  onEnter?: () => void;
+  onMore?: () => void;
 }
 
 const getScoreLabel = (score: number, par: number): string | null => {
@@ -22,14 +22,13 @@ const getScoreLabel = (score: number, par: number): string | null => {
   return null;
 };
 
-export function ScoreInputGrid({ par, currentScore, onScoreSelect, onEnter }: ScoreInputGridProps) {
+export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore }: ScoreInputGridProps) {
   const [showHighScores, setShowHighScores] = useState(false);
   const scores = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const highScores = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
   const handleScoreAndAdvance = (score: number) => {
     onScoreSelect(score);
-    onEnter?.();
   };
   
   if (showHighScores) {
@@ -93,7 +92,7 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onEnter }: Sc
         );
       })}
       
-      {/* Bottom row: 10+, -, Enter */}
+      {/* Bottom row: 10+, -, More */}
       <Button
         variant="secondary"
         onClick={() => setShowHighScores(true)}
@@ -116,10 +115,10 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onEnter }: Sc
       
       <Button
         variant="default"
-        onClick={onEnter}
+        onClick={onMore}
         className="h-20 flex flex-col items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
       >
-        <span className="text-lg font-bold">Enter</span>
+        <span className="text-lg font-bold">More</span>
       </Button>
     </div>
   );
