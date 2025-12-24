@@ -43,6 +43,7 @@ export default function MatchPlaySetup() {
   const [currentUserId, setCurrentUserId] = useState<string>("");
   
   const [useHandicaps, setUseHandicaps] = useState(false);
+  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -158,6 +159,11 @@ export default function MatchPlaySetup() {
       // Get round name from session storage
       const savedRoundName = sessionStorage.getItem('roundName');
 
+      // Save settings to localStorage for persistence during game
+      localStorage.setItem(`matchPlaySettings_${Date.now()}`, JSON.stringify({
+        mulligansPerPlayer,
+      }));
+
       const { data: game, error } = await supabase
         .from("match_play_games")
         .insert({
@@ -171,6 +177,7 @@ export default function MatchPlaySetup() {
           player_2: players[1].displayName,
           player_2_handicap: players[1].handicap || null,
           use_handicaps: useHandicaps,
+          mulligans_per_player: mulligansPerPlayer,
           match_status: 0,
           holes_remaining: 18,
         })
@@ -306,6 +313,30 @@ export default function MatchPlaySetup() {
                 Strokes will be allocated based on handicap difference and stroke index
               </p>
             )}
+
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="mulligans">Mulligans per Player</Label>
+              <Select 
+                value={mulligansPerPlayer.toString()} 
+                onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+              >
+                <SelectTrigger id="mulligans">
+                  <SelectValue placeholder="Select mulligans" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Number of allowed do-overs per player during the match
+              </p>
+            </div>
           </CardContent>
         </Card>
 

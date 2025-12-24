@@ -3,11 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useGameScoring, GameScoringConfig, CourseHoleData } from "@/hooks/useGameScoring";
 import { useToast } from "@/hooks/use-toast";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import {
   calculateHoleResult,
   formatMatchStatusWithHoles,
@@ -28,6 +30,8 @@ import {
 interface MatchPlayScores {
   player1: number;
   player2: number;
+  player1Mulligan?: boolean;
+  player2Mulligan?: boolean;
 }
 
 // Configuration for Match Play format
@@ -43,11 +47,13 @@ const createMatchPlayConfig = (gameId: string): GameScoringConfig<MatchPlayGame,
   getCourseId: (game) => game.course_id || null,
   getSummaryRoute: (id) => `/match-play/${id}/summary`,
   
-  createEmptyScores: () => ({ player1: 0, player2: 0 }),
+  createEmptyScores: () => ({ player1: 0, player2: 0, player1Mulligan: false, player2Mulligan: false }),
   
   extractScoresFromHole: (hole) => ({
     player1: hole.player_1_gross_score || 0,
     player2: hole.player_2_gross_score || 0,
+    player1Mulligan: hole.player_1_mulligan || false,
+    player2Mulligan: hole.player_2_mulligan || false,
   }),
   
   buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles }) => {
@@ -66,6 +72,8 @@ const createMatchPlayConfig = (gameId: string): GameScoringConfig<MatchPlayGame,
       player_1_net_score: scores.player1,
       player_2_gross_score: scores.player2,
       player_2_net_score: scores.player2,
+      player_1_mulligan: scores.player1Mulligan || false,
+      player_2_mulligan: scores.player2Mulligan || false,
       hole_result: holeResult,
       match_status_after: newMatchStatus,
       holes_remaining_after: 18 - holeNumber, // Will be updated based on actual total
@@ -111,6 +119,8 @@ export default function MatchPlayPlay() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<1 | 2 | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [currentComment, setCurrentComment] = useState("");
   
   const config = createMatchPlayConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -121,9 +131,35 @@ export default function MatchPlayPlay() {
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
 
+  // Calculate mulligans used by each player
+  const mulligansPerPlayer = game?.mulligans_per_player || 0;
+  const player1MulligansUsed = holes.filter(h => h.player_1_mulligan).length + (scores.player1Mulligan ? 1 : 0);
+  const player2MulligansUsed = holes.filter(h => h.player_2_mulligan).length + (scores.player2Mulligan ? 1 : 0);
+
   const updateScore = (player: 'player1' | 'player2', newScore: number) => {
     if (newScore < 1) return;
     setScores(prev => ({ ...prev, [player]: newScore }));
+  };
+
+  const handleUseMulligan = () => {
+    if (selectedPlayer === 1) {
+      setScores(prev => ({ ...prev, player1Mulligan: true }));
+    } else if (selectedPlayer === 2) {
+      setScores(prev => ({ ...prev, player2Mulligan: true }));
+    }
+  };
+
+  const handleRemoveMulligan = () => {
+    if (selectedPlayer === 1) {
+      setScores(prev => ({ ...prev, player1Mulligan: false }));
+    } else if (selectedPlayer === 2) {
+      setScores(prev => ({ ...prev, player2Mulligan: false }));
+    }
+  };
+
+  const handleOpenMoreSheet = () => {
+    setShowScoreSheet(false);
+    setShowMoreSheet(true);
   };
 
   const handleDeleteGame = async () => {
@@ -218,7 +254,14 @@ export default function MatchPlayPlay() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold text-blue-600">{game.player_1}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-blue-600">{game.player_1}</p>
+                {scores.player1Mulligan && (
+                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                    Mulligan
+                  </Badge>
+                )}
+              </div>
               {game.use_handicaps && game.player_1_handicap && (
                 <span className="text-xs text-muted-foreground">HCP: {game.player_1_handicap}</span>
               )}
@@ -239,7 +282,14 @@ export default function MatchPlayPlay() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold text-red-600">{game.player_2}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-red-600">{game.player_2}</p>
+                {scores.player2Mulligan && (
+                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                    Mulligan
+                  </Badge>
+                )}
+              </div>
               {game.use_handicaps && game.player_2_handicap && (
                 <span className="text-xs text-muted-foreground">HCP: {game.player_2_handicap}</span>
               )}
@@ -264,6 +314,7 @@ export default function MatchPlayPlay() {
               updateScore(selectedPlayer === 1 ? 'player1' : 'player2', score);
             }
           }}
+          onMore={mulligansPerPlayer > 0 ? handleOpenMoreSheet : undefined}
           onEnterAndNext={() => {
             if (selectedPlayer === 1) {
               setSelectedPlayer(2);
@@ -273,6 +324,28 @@ export default function MatchPlayPlay() {
             }
           }}
         />
+
+        {/* More Sheet for Mulligans */}
+        {selectedPlayer && (
+          <ScoreMoreSheet
+            open={showMoreSheet}
+            onOpenChange={setShowMoreSheet}
+            holeNumber={currentHole}
+            par={par}
+            playerName={selectedPlayer === 1 ? game.player_1 : game.player_2}
+            comment={currentComment}
+            onCommentChange={setCurrentComment}
+            mulligansAllowed={mulligansPerPlayer}
+            mulligansUsed={selectedPlayer === 1 ? player1MulligansUsed : player2MulligansUsed}
+            mulliganUsedOnThisHole={selectedPlayer === 1 ? (scores.player1Mulligan || false) : (scores.player2Mulligan || false)}
+            onUseMulligan={handleUseMulligan}
+            onRemoveMulligan={handleRemoveMulligan}
+            onSave={() => {
+              setShowMoreSheet(false);
+              setCurrentComment("");
+            }}
+          />
+        )}
 
         {/* Match Status */}
         <div className="p-3 bg-primary/10 rounded-lg text-center">

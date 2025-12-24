@@ -17,6 +17,7 @@ export interface MatchPlayGame {
   player_2_tee?: string | null;
   
   use_handicaps: boolean;
+  mulligans_per_player?: number;
   
   match_status: number; // positive = player 1 up, negative = player 2 up, 0 = all square
   holes_remaining: number;
@@ -39,6 +40,9 @@ export interface MatchPlayHole {
   player_1_net_score: number | null;
   player_2_gross_score: number | null;
   player_2_net_score: number | null;
+  
+  player_1_mulligan?: boolean;
+  player_2_mulligan?: boolean;
   
   hole_result: number; // 1 = player 1 won, -1 = player 2 won, 0 = halved
   
