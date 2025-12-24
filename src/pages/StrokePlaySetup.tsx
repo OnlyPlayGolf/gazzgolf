@@ -337,13 +337,13 @@ export default function StrokePlaySetup() {
                   <SelectValue placeholder="Select mulligans" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">0 (No mulligans)</SelectItem>
+                  <SelectItem value="0">No mulligans</SelectItem>
                   <SelectItem value="1">1</SelectItem>
                   <SelectItem value="2">2</SelectItem>
                   <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
                   <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="9">9 (1 per hole on 9)</SelectItem>
-                  <SelectItem value="18">18 (1 per hole on 18)</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
