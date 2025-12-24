@@ -813,13 +813,14 @@ export default function SimpleSkinsTracker() {
             onEnterAndNext={() => {
               const currentPlayerIndex = players.findIndex(p => p.id === selectedPlayer.id);
               if (currentPlayerIndex < players.length - 1) {
+                // Move to next player
                 setSelectedPlayer(players[currentPlayerIndex + 1]);
               } else {
+                // Last player - just close the sheet, let useEffect handle hole advancement
                 setShowScoreSheet(false);
+                // Only show completion if at last hole
                 if (currentHoleIndex >= courseHoles.length - 1) {
                   setShowCompletionDialog(true);
-                } else {
-                  setCurrentHoleIndex(currentHoleIndex + 1);
                 }
               }
             }}
