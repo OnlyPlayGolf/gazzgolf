@@ -38,6 +38,9 @@ export default function StrokePlaySetup() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
+  // Editing mode
+  const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
+  
   // Course from sessionStorage
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
@@ -66,6 +69,13 @@ export default function StrokePlaySetup() {
       if (!user) return;
       
       setCurrentUserId(user.id);
+      
+      // Check if we're editing an existing round
+      const editingRound = sessionStorage.getItem('editingRound');
+      if (editingRound) {
+        const roundData = JSON.parse(editingRound);
+        setEditingRoundId(roundData.roundId);
+      }
       
       // Get current user's profile
       const { data: profile } = await supabase
@@ -174,39 +184,77 @@ export default function StrokePlaySetup() {
         return;
       }
 
-      const { data: round, error } = await supabase
-        .from("rounds")
-        .insert({
-          user_id: user.id,
-          course_name: selectedCourse.name,
-          tee_set: teeColor,
-          holes_played: getHolesPlayed(),
-          origin: 'play',
-          date_played: new Date().toISOString().split('T')[0],
-        })
-        .select()
-        .single();
+      let roundId = editingRoundId;
 
-      if (error) throw error;
+      if (editingRoundId) {
+        // Update existing round
+        const { error } = await supabase
+          .from("rounds")
+          .update({
+            course_name: selectedCourse.name,
+            tee_set: teeColor,
+            holes_played: getHolesPlayed(),
+          })
+          .eq("id", editingRoundId);
 
-      // Add all players (filter out temp players for database, keep for session)
-      const playersToAdd = players
-        .filter(p => !p.isTemporary)
-        .map(p => ({
-          round_id: round.id,
-          user_id: p.odId,
-          tee_color: p.teeColor || teeColor,
-          handicap: p.handicap,
-        }));
+        if (error) throw error;
 
-      if (playersToAdd.length > 0) {
-        const { error: playersError } = await supabase
-          .from('round_players')
-          .insert(playersToAdd);
+        // Update players: remove existing and re-add
+        await supabase.from('round_players').delete().eq('round_id', editingRoundId);
 
-        if (playersError) {
-          console.error("Error adding players:", playersError);
+        const playersToAdd = players
+          .filter(p => !p.isTemporary)
+          .map(p => ({
+            round_id: editingRoundId,
+            user_id: p.odId,
+            tee_color: p.teeColor || teeColor,
+            handicap: p.handicap,
+          }));
+
+        if (playersToAdd.length > 0) {
+          await supabase.from('round_players').insert(playersToAdd);
         }
+
+        toast({ title: "Round updated!", description: "Your changes have been saved" });
+      } else {
+        // Create new round
+        const { data: round, error } = await supabase
+          .from("rounds")
+          .insert({
+            user_id: user.id,
+            course_name: selectedCourse.name,
+            tee_set: teeColor,
+            holes_played: getHolesPlayed(),
+            origin: 'play',
+            date_played: new Date().toISOString().split('T')[0],
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        roundId = round.id;
+
+        // Add all players
+        const playersToAdd = players
+          .filter(p => !p.isTemporary)
+          .map(p => ({
+            round_id: round.id,
+            user_id: p.odId,
+            tee_color: p.teeColor || teeColor,
+            handicap: p.handicap,
+          }));
+
+        if (playersToAdd.length > 0) {
+          const { error: playersError } = await supabase
+            .from('round_players')
+            .insert(playersToAdd);
+
+          if (playersError) {
+            console.error("Error adding players:", playersError);
+          }
+        }
+
+        toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
       }
 
       // Save settings
@@ -223,11 +271,11 @@ export default function StrokePlaySetup() {
       sessionStorage.removeItem('selectedHoles');
       sessionStorage.removeItem('roundName');
       sessionStorage.removeItem('datePlayer');
+      sessionStorage.removeItem('editingRound');
 
-      toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
-      navigate(`/rounds/${round.id}/track`);
+      navigate(`/rounds/${roundId}/track`);
     } catch (error: any) {
-      toast({ title: "Error creating round", description: error.message, variant: "destructive" });
+      toast({ title: "Error saving round", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -240,10 +288,25 @@ export default function StrokePlaySetup() {
       <TopNavBar />
       <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')} className="p-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              if (editingRoundId) {
+                // Go back to the round tracker
+                sessionStorage.removeItem('editingRound');
+                navigate(`/rounds/${editingRoundId}/track`);
+              } else {
+                navigate('/rounds-play');
+              }
+            }} 
+            className="p-2"
+          >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">Stroke Play Setup</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {editingRoundId ? "Edit Round Setup" : "Stroke Play Setup"}
+          </h1>
         </div>
 
         {/* Course Info - Compact */}
@@ -366,7 +429,7 @@ export default function StrokePlaySetup() {
         </Card>
 
         <Button onClick={handleStartRound} disabled={loading || !selectedCourse} className="w-full" size="lg">
-          {loading ? "Starting..." : "Start Round"}
+          {loading ? (editingRoundId ? "Saving..." : "Starting...") : (editingRoundId ? "Save Changes" : "Start Round")}
         </Button>
       </div>
 

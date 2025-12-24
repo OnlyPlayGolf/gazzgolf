@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Settings, RotateCcw } from "lucide-react";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -51,6 +62,8 @@ export default function RoundSettings() {
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
+  const [showBackToSetupDialog, setShowBackToSetupDialog] = useState(false);
+  const [hasScores, setHasScores] = useState(false);
 
   // Game settings state
   const [teeColor, setTeeColor] = useState("white");
@@ -138,6 +151,65 @@ export default function RoundSettings() {
       .select("*", { count: "exact", head: true })
       .eq("round_id", roundId);
     setHolesCompleted(count || 0);
+    setHasScores((count || 0) > 0);
+  };
+
+  const handleBackToSetup = () => {
+    if (hasScores) {
+      setShowBackToSetupDialog(true);
+    } else {
+      navigateToSetup();
+    }
+  };
+
+  const navigateToSetup = async () => {
+    if (!round || !roundId) return;
+
+    // Prepare data for setup page
+    const setupData = {
+      roundId: roundId,
+      courseName: round.course_name,
+      teeSet: round.tee_set || teeColor,
+      holesPlayed: round.holes_played,
+      roundName: round.round_name,
+      datePlayed: round.date_played,
+    };
+
+    // Store current round data in sessionStorage for editing
+    sessionStorage.setItem('editingRound', JSON.stringify(setupData));
+
+    // Store players for the setup page
+    const playersForSetup = players.map(p => ({
+      odId: p.user_id,
+      displayName: p.profiles?.display_name || p.profiles?.username || "Player",
+      handicap: p.handicap,
+      teeColor: p.tee_color || teeColor,
+      isTemporary: false,
+    }));
+    sessionStorage.setItem('roundPlayers', JSON.stringify(playersForSetup.slice(1))); // Skip first (current user)
+    
+    // Store course info
+    sessionStorage.setItem('selectedCourse', JSON.stringify({
+      id: '',
+      name: round.course_name,
+      location: null,
+    }));
+
+    // Store holes selection
+    const holesSelection = round.holes_played === 9 ? "front9" : "18";
+    sessionStorage.setItem('selectedHoles', holesSelection);
+
+    // Store tee color
+    sessionStorage.setItem('userTeeColor', round.tee_set || teeColor);
+
+    // Store stroke play settings
+    sessionStorage.setItem('strokePlaySettings', JSON.stringify({
+      mulligansPerPlayer,
+      handicapEnabled,
+      gimmesEnabled,
+    }));
+
+    navigate('/stroke-play-setup');
   };
 
   const handleTeeChange = async (newTee: string) => {
@@ -305,6 +377,18 @@ export default function RoundSettings() {
           </CardContent>
         </Card>
 
+        {/* Back to Round Setup Button */}
+        {round?.origin !== "simple_skins" && (
+          <Button 
+            variant="outline" 
+            className="w-full gap-2"
+            onClick={handleBackToSetup}
+          >
+            <RotateCcw size={18} />
+            Back to Round Setup
+          </Button>
+        )}
+
         <RoundActionsSection
           onFinish={handleFinishRound}
           onSaveAndExit={() => navigate(`/rounds/${roundId}/summary`)}
@@ -327,6 +411,22 @@ export default function RoundSettings() {
         gameName="Round"
         deleting={deleting}
       />
+
+      {/* Back to Setup Confirmation Dialog */}
+      <AlertDialog open={showBackToSetupDialog} onOpenChange={setShowBackToSetupDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Changing setup may affect existing scores</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have already entered scores for this round. Do you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={navigateToSetup}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {renderBottomTabBar()}
     </div>
