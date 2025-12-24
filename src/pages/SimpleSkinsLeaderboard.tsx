@@ -302,12 +302,7 @@ export default function SimpleSkinsLeaderboard() {
   return (
     <div className="pb-24 min-h-screen bg-background">
       <div className="p-4 space-y-4 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="p-2">
-            <ArrowLeft size={20} />
-          </Button>
-          <h1 className="text-2xl font-bold">Leaderboard</h1>
-        </div>
+        <h1 className="text-2xl font-bold">Leaderboard</h1>
 
         <Tabs defaultValue="skins" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
