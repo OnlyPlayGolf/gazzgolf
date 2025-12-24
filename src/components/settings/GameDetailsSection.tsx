@@ -8,6 +8,7 @@ export interface GamePlayer {
   handicap?: number | null;
   tee?: string | null;
   team?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface GameDetailsData {

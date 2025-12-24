@@ -37,7 +37,8 @@ interface RoundPlayer {
   profiles?: {
     display_name: string | null;
     username: string | null;
-  };
+    avatar_url: string | null;
+  } | null;
 }
 
 export default function RoundSettings() {
@@ -133,7 +134,7 @@ export default function RoundSettings() {
         const userIds = playersData.map(p => p.user_id);
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("id, display_name, username")
+          .select("id, display_name, username, avatar_url")
           .in("id", userIds);
 
         const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
@@ -222,6 +223,7 @@ export default function RoundSettings() {
       name: profile?.display_name || profile?.username || "Player",
       handicap: p.handicap,
       tee: p.tee_color,
+      avatarUrl: profile?.avatar_url,
     };
   });
 
