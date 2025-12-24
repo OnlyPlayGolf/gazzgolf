@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { useGameScoring, GameScoringConfig, CourseHoleData } from "@/hooks/useGameScoring";
 import { useToast } from "@/hooks/use-toast";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
@@ -162,6 +163,75 @@ export default function MatchPlayPlay() {
     setShowMoreSheet(true);
   };
 
+  // Check if both players have entered scores for current hole
+  const allPlayersEnteredCurrentHole = scores.player1 > 0 && scores.player2 > 0;
+
+  // Auto-advance to next hole when all players have entered scores
+  useEffect(() => {
+    if (allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && currentHoleIndex < holes.length) {
+      // Scores have been saved, advance to next hole
+      const timeout = setTimeout(() => {
+        if (currentHole < totalHoles) {
+          navigateHole("next");
+        }
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [holes.length]);
+
+  const handleSaveMoreSheet = async () => {
+    // Save comment to feed if provided
+    if (currentComment.trim() && gameId && selectedPlayer) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const playerName = selectedPlayer === 1 ? game?.player_1 : game?.player_2;
+          const mulliganUsed = selectedPlayer === 1 ? scores.player1Mulligan : scores.player2Mulligan;
+          
+          let content = currentComment.trim();
+          if (mulliganUsed) {
+            content = `🔄 ${playerName} used a mulligan on hole ${currentHole}: "${content}"`;
+          }
+          
+          await supabase.from("round_comments").insert({
+            round_id: gameId,
+            user_id: user.id,
+            content,
+            hole_number: currentHole,
+            game_type: "match_play",
+            game_id: gameId,
+          });
+        }
+      } catch (error) {
+        console.error("Error saving comment:", error);
+      }
+    } else if (selectedPlayer) {
+      // Save mulligan-only comment if no text but mulligan was used
+      const mulliganUsed = selectedPlayer === 1 ? scores.player1Mulligan : scores.player2Mulligan;
+      if (mulliganUsed && gameId) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const playerName = selectedPlayer === 1 ? game?.player_1 : game?.player_2;
+            await supabase.from("round_comments").insert({
+              round_id: gameId,
+              user_id: user.id,
+              content: `🔄 ${playerName} used a mulligan on hole ${currentHole}`,
+              hole_number: currentHole,
+              game_type: "match_play",
+              game_id: gameId,
+            });
+          }
+        } catch (error) {
+          console.error("Error saving mulligan comment:", error);
+        }
+      }
+    }
+    
+    setShowMoreSheet(false);
+    setCurrentComment("");
+  };
+
   const handleDeleteGame = async () => {
     await deleteGame();
   };
@@ -267,7 +337,7 @@ export default function MatchPlayPlay() {
               )}
             </div>
             <span className={`text-3xl font-bold ${scores.player1 > 0 ? '' : 'text-muted-foreground'}`}>
-              {scores.player1 > 0 ? scores.player1 : '–'}
+              {scores.player1}
             </span>
           </div>
         </Card>
@@ -295,7 +365,7 @@ export default function MatchPlayPlay() {
               )}
             </div>
             <span className={`text-3xl font-bold ${scores.player2 > 0 ? '' : 'text-muted-foreground'}`}>
-              {scores.player2 > 0 ? scores.player2 : '–'}
+              {scores.player2}
             </span>
           </div>
         </Card>
@@ -314,18 +384,21 @@ export default function MatchPlayPlay() {
               updateScore(selectedPlayer === 1 ? 'player1' : 'player2', score);
             }
           }}
-          onMore={mulligansPerPlayer > 0 ? handleOpenMoreSheet : undefined}
+          onMore={handleOpenMoreSheet}
           onEnterAndNext={() => {
-            if (selectedPlayer === 1) {
+            // Find next player without a score
+            if (selectedPlayer === 1 && scores.player2 === 0) {
               setSelectedPlayer(2);
+            } else if (selectedPlayer === 2 && scores.player1 === 0) {
+              setSelectedPlayer(1);
             } else {
+              // Both players have scores - close sheet
               setShowScoreSheet(false);
-              saveHole();
             }
           }}
         />
 
-        {/* More Sheet for Mulligans */}
+        {/* More Sheet for Mulligans and Comments */}
         {selectedPlayer && (
           <ScoreMoreSheet
             open={showMoreSheet}
@@ -340,10 +413,7 @@ export default function MatchPlayPlay() {
             mulliganUsedOnThisHole={selectedPlayer === 1 ? (scores.player1Mulligan || false) : (scores.player2Mulligan || false)}
             onUseMulligan={handleUseMulligan}
             onRemoveMulligan={handleRemoveMulligan}
-            onSave={() => {
-              setShowMoreSheet(false);
-              setCurrentComment("");
-            }}
+            onSave={handleSaveMoreSheet}
           />
         )}
 
