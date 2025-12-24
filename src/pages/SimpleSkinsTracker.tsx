@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import {
   AlertDialog,
@@ -70,12 +71,25 @@ export default function SimpleSkinsTracker() {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [skinResults, setSkinResults] = useState<SkinResult[]>([]);
   const [carryoverCount, setCarryoverCount] = useState(1);
+
+  // Mulligan and comment tracking
+  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
+  // Map: playerId -> Set of hole numbers where mulligan was used
+  const [mulligansUsed, setMulligansUsed] = useState<Map<string, Set<number>>>(new Map());
+  // Map: playerId -> Map<holeNumber, comment>
+  const [holeComments, setHoleComments] = useState<Map<string, Map<number, string>>>(new Map());
+  // Current comment being edited in the More sheet
+  const [currentComment, setCurrentComment] = useState("");
+  // Track if mulligan was just added in current More sheet session
+  const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
 
   useEffect(() => {
     if (roundId) {
       fetchRoundData();
+      loadSettings();
     }
   }, [roundId]);
 
@@ -83,6 +97,29 @@ export default function SimpleSkinsTracker() {
   useEffect(() => {
     calculateSkinResults();
   }, [scores, courseHoles, players]);
+
+  const loadSettings = () => {
+    // First try round-specific settings (from localStorage for persistence)
+    const roundSettings = localStorage.getItem(`simpleSkinsRoundSettings_${roundId}`);
+    if (roundSettings) {
+      const settings = JSON.parse(roundSettings);
+      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      return;
+    }
+    
+    // Fallback to session storage for new rounds
+    const savedSettings = sessionStorage.getItem('simpleSkinsSettings');
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      // Save to round-specific storage for future
+      localStorage.setItem(`simpleSkinsRoundSettings_${roundId}`, JSON.stringify({
+        mulligansPerPlayer: settings.mulligansPerPlayer || 0,
+        skinValue: settings.skinValue || 1,
+        carryoverEnabled: settings.carryoverEnabled ?? true,
+      }));
+    }
+  };
 
   const fetchRoundData = async () => {
     try {
@@ -155,22 +192,35 @@ export default function SimpleSkinsTracker() {
       
       setCourseHoles(holesArray);
 
+      // Fetch existing hole scores and mulligans for all players
       const { data: existingHoles, error: existingError } = await supabase
         .from("holes")
-        .select("hole_number, score, player_id")
+        .select("hole_number, score, player_id, mulligan")
         .eq("round_id", roundId);
 
       if (!existingError && existingHoles) {
         const scoresMap = new Map<string, Map<number, number>>();
+        const mulligansMap = new Map<string, Set<number>>();
+        
         existingHoles.forEach((hole) => {
           if (hole.player_id) {
+            // Scores
             if (!scoresMap.has(hole.player_id)) {
               scoresMap.set(hole.player_id, new Map());
             }
             scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
+            
+            // Mulligans
+            if (hole.mulligan) {
+              if (!mulligansMap.has(hole.player_id)) {
+                mulligansMap.set(hole.player_id, new Set());
+              }
+              mulligansMap.get(hole.player_id)!.add(hole.hole_number);
+            }
           }
         });
         setScores(scoresMap);
+        setMulligansUsed(mulligansMap);
       }
     } catch (error: any) {
       console.error("Error fetching round data:", error);
@@ -319,6 +369,138 @@ export default function SimpleSkinsTracker() {
 
   const getCurrentHoleSkinResult = (): SkinResult | null => {
     return skinResults.find(r => r.holeNumber === currentHole?.hole_number) || null;
+  };
+
+  // Mulligan helpers
+  const getPlayerMulligansUsed = (playerId: string): number => {
+    return mulligansUsed.get(playerId)?.size || 0;
+  };
+
+  const hasPlayerUsedMulliganOnHole = (playerId: string, holeNumber: number): boolean => {
+    return mulligansUsed.get(playerId)?.has(holeNumber) || false;
+  };
+
+  const useMulliganOnHole = async (playerId: string, holeNumber: number) => {
+    setMulligansUsed(prev => {
+      const updated = new Map(prev);
+      const playerMulligans = new Set(prev.get(playerId) || []);
+      playerMulligans.add(holeNumber);
+      updated.set(playerId, playerMulligans);
+      return updated;
+    });
+
+    // Update mulligan in database
+    try {
+      await supabase
+        .from("holes")
+        .update({ mulligan: true })
+        .eq("round_id", roundId)
+        .eq("player_id", playerId)
+        .eq("hole_number", holeNumber);
+
+      // Mark that mulligan was just added (will be combined with comment on save)
+      setMulliganJustAdded(true);
+    } catch (error) {
+      console.error("Error saving mulligan:", error);
+    }
+  };
+
+  const removeMulliganFromHole = async (playerId: string, holeNumber: number) => {
+    setMulligansUsed(prev => {
+      const updated = new Map(prev);
+      const playerMulligans = new Set(prev.get(playerId) || []);
+      playerMulligans.delete(holeNumber);
+      updated.set(playerId, playerMulligans);
+      return updated;
+    });
+
+    // Update mulligan in database
+    try {
+      await supabase
+        .from("holes")
+        .update({ mulligan: false })
+        .eq("round_id", roundId)
+        .eq("player_id", playerId)
+        .eq("hole_number", holeNumber);
+    } catch (error) {
+      console.error("Error removing mulligan:", error);
+    }
+  };
+
+  // Comment helpers
+  const getHoleComment = (playerId: string, holeNumber: number): string => {
+    return holeComments.get(playerId)?.get(holeNumber) || "";
+  };
+
+  const setHoleComment = (playerId: string, holeNumber: number, comment: string) => {
+    setHoleComments(prev => {
+      const updated = new Map(prev);
+      const playerComments = new Map(prev.get(playerId) || []);
+      if (comment) {
+        playerComments.set(holeNumber, comment);
+      } else {
+        playerComments.delete(holeNumber);
+      }
+      updated.set(playerId, playerComments);
+      return updated;
+    });
+  };
+
+  // Handle opening the More sheet
+  const handleOpenMoreSheet = () => {
+    if (selectedPlayer && currentHole) {
+      setCurrentComment(getHoleComment(selectedPlayer.id, currentHole.hole_number));
+      setMulliganJustAdded(false); // Reset flag when opening sheet
+      setShowMoreSheet(true);
+    }
+  };
+
+  // Handle saving from More sheet
+  const handleSaveMore = async () => {
+    if (selectedPlayer && currentHole) {
+      const hasComment = currentComment.trim().length > 0;
+      const hasMulligan = mulliganJustAdded;
+      
+      // Only post if there's a comment or mulligan
+      if (hasComment || hasMulligan) {
+        if (hasComment) {
+          setHoleComment(selectedPlayer.id, currentHole.hole_number, currentComment);
+        }
+        
+        // Build combined content
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const playerName = getPlayerName(selectedPlayer);
+            let content = "";
+            
+            if (hasMulligan && hasComment) {
+              // Combined mulligan + comment
+              content = `🔄 ${playerName} used a mulligan on hole ${currentHole.hole_number}: "${currentComment.trim()}"`;
+            } else if (hasMulligan) {
+              // Mulligan only
+              content = `🔄 ${playerName} used a mulligan on hole ${currentHole.hole_number}`;
+            } else {
+              // Comment only
+              content = currentComment.trim();
+            }
+            
+            await supabase.from("round_comments").insert({
+              round_id: roundId,
+              user_id: user.id,
+              content,
+              hole_number: currentHole.hole_number,
+              game_type: "simple_skins",
+            });
+          }
+        } catch (error) {
+          console.error("Error saving to feed:", error);
+        }
+      }
+      
+      // Reset the flag
+      setMulliganJustAdded(false);
+    }
   };
 
   const handleShowCompletionDialog = () => {
@@ -513,6 +695,7 @@ export default function SimpleSkinsTracker() {
           const playerScore = getPlayerScore(player.id);
           const skinCount = getPlayerSkinCount(player.id);
           const hasScore = playerScore > 0;
+          const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
           
           return (
             <Card 
@@ -525,7 +708,14 @@ export default function SimpleSkinsTracker() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xl font-bold mb-1">{getPlayerName(player)}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                    {hasMulliganOnHole && (
+                      <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                        Mulligan
+                      </Badge>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                     <span>Tee: {player.tee_color || round.tee_set}</span>
                     <span>•</span>
@@ -572,32 +762,51 @@ export default function SimpleSkinsTracker() {
 
       {/* Score Input Sheet */}
       {selectedPlayer && currentHole && (
-        <PlayerScoreSheet
-          open={showScoreSheet}
-          onOpenChange={setShowScoreSheet}
-          playerName={getPlayerName(selectedPlayer)}
-          par={currentHole.par}
-          holeNumber={currentHole.hole_number}
-          currentScore={getPlayerScore(selectedPlayer.id)}
-          onScoreSelect={(score) => {
-            if (score !== null) {
-              updateScore(selectedPlayer.id, score);
-            }
-          }}
-          onEnterAndNext={() => {
-            const currentPlayerIndex = players.findIndex(p => p.id === selectedPlayer.id);
-            if (currentPlayerIndex < players.length - 1) {
-              setSelectedPlayer(players[currentPlayerIndex + 1]);
-            } else {
-              setShowScoreSheet(false);
-              if (currentHoleIndex >= courseHoles.length - 1) {
-                setShowCompletionDialog(true);
-              } else {
-                setCurrentHoleIndex(currentHoleIndex + 1);
+        <>
+          <PlayerScoreSheet
+            open={showScoreSheet}
+            onOpenChange={setShowScoreSheet}
+            playerName={getPlayerName(selectedPlayer)}
+            par={currentHole.par}
+            holeNumber={currentHole.hole_number}
+            currentScore={getPlayerScore(selectedPlayer.id)}
+            onScoreSelect={(score) => {
+              if (score !== null) {
+                updateScore(selectedPlayer.id, score);
               }
-            }
-          }}
-        />
+            }}
+            onMore={handleOpenMoreSheet}
+            onEnterAndNext={() => {
+              const currentPlayerIndex = players.findIndex(p => p.id === selectedPlayer.id);
+              if (currentPlayerIndex < players.length - 1) {
+                setSelectedPlayer(players[currentPlayerIndex + 1]);
+              } else {
+                setShowScoreSheet(false);
+                if (currentHoleIndex >= courseHoles.length - 1) {
+                  setShowCompletionDialog(true);
+                } else {
+                  setCurrentHoleIndex(currentHoleIndex + 1);
+                }
+              }
+            }}
+          />
+          
+          <ScoreMoreSheet
+            open={showMoreSheet}
+            onOpenChange={setShowMoreSheet}
+            holeNumber={currentHole.hole_number}
+            par={currentHole.par}
+            playerName={getPlayerName(selectedPlayer)}
+            comment={currentComment}
+            onCommentChange={setCurrentComment}
+            mulligansAllowed={mulligansPerPlayer}
+            mulligansUsed={getPlayerMulligansUsed(selectedPlayer.id)}
+            mulliganUsedOnThisHole={hasPlayerUsedMulliganOnHole(selectedPlayer.id, currentHole.hole_number)}
+            onUseMulligan={() => useMulliganOnHole(selectedPlayer.id, currentHole.hole_number)}
+            onRemoveMulligan={() => removeMulliganFromHole(selectedPlayer.id, currentHole.hole_number)}
+            onSave={handleSaveMore}
+          />
+        </>
       )}
 
       <SimpleSkinsBottomTabBar roundId={roundId!} />
