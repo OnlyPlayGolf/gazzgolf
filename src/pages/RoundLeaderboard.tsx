@@ -314,12 +314,13 @@ export default function RoundLeaderboard() {
                           <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                           {frontNine.map(hole => {
                             const score = player.scores.get(hole.hole_number);
+                            const hasScore = player.scores.has(hole.hole_number);
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
                                 className="text-center font-bold text-xs px-1 py-1.5"
                               >
-                                {score && score > 0 ? score : ''}
+                                {hasScore ? (score === 0 ? '-' : score) : ''}
                               </TableCell>
                             );
                           })}
@@ -331,9 +332,10 @@ export default function RoundLeaderboard() {
                           <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Net</TableCell>
                           {frontNine.map(hole => {
                             const score = player.scores.get(hole.hole_number);
+                            const hasScore = player.scores.has(hole.hole_number);
                             return (
                               <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                {score && score > 0 ? score : ''}
+                                {hasScore ? (score === 0 ? '-' : score) : ''}
                               </TableCell>
                             );
                           })}
@@ -385,12 +387,13 @@ export default function RoundLeaderboard() {
                             <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                             {backNine.map(hole => {
                               const score = player.scores.get(hole.hole_number);
+                              const hasScore = player.scores.has(hole.hole_number);
                               return (
                                 <TableCell 
                                   key={hole.hole_number} 
                                   className="text-center font-bold text-xs px-1 py-1.5"
                                 >
-                                  {score && score > 0 ? score : ''}
+                                  {hasScore ? (score === 0 ? '-' : score) : ''}
                                 </TableCell>
                               );
                             })}
@@ -402,9 +405,10 @@ export default function RoundLeaderboard() {
                             <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Net</TableCell>
                             {backNine.map(hole => {
                               const score = player.scores.get(hole.hole_number);
+                              const hasScore = player.scores.has(hole.hole_number);
                               return (
                                 <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                  {score && score > 0 ? score : ''}
+                                  {hasScore ? (score === 0 ? '-' : score) : ''}
                                 </TableCell>
                               );
                             })}
