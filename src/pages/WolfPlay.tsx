@@ -178,14 +178,14 @@ export default function WolfPlay() {
     const allScoresEntered = scoresState.scores.slice(0, playerCount).every(s => s !== null);
     const wolfChoiceMade = scoresState.wolfChoice !== null;
     
-    if (allScoresEntered && wolfChoiceMade && currentHole <= holes.length) {
+    if (allScoresEntered && wolfChoiceMade) {
       // Small delay for visual feedback before auto-saving and advancing
       const timer = setTimeout(async () => {
         await saveHole();
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [scoresState.scores, scoresState.wolfChoice, game, saving, loading, currentHole, holes.length]);
+  }, [scoresState.scores, scoresState.wolfChoice, game, saving, loading]);
 
   const handleScoreSelect = (playerIndex: number, score: number | null) => {
     if (score === null) return;
@@ -469,14 +469,6 @@ export default function WolfPlay() {
           )}
         </Card>
 
-        {/* Save Button */}
-        <Button 
-          onClick={handleSaveHole} 
-          disabled={saving || !scoresState.wolfChoice || scoresState.scores.slice(0, playerCount).some(s => s === null)}
-          className="w-full"
-        >
-          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Game" : "Save & Next Hole"}
-        </Button>
       </div>
 
       {gameId && <WolfBottomTabBar gameId={gameId} />}
