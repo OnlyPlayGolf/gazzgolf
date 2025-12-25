@@ -1657,9 +1657,11 @@ export type Database = {
           rolls_per_team: number
           round_name: string | null
           stake_per_point: number
+          team_a_name: string
           team_a_player_1: string
           team_a_player_2: string
           team_a_total_points: number
+          team_b_name: string
           team_b_player_1: string
           team_b_player_2: string
           team_b_total_points: number
@@ -1681,9 +1683,11 @@ export type Database = {
           rolls_per_team?: number
           round_name?: string | null
           stake_per_point?: number
+          team_a_name?: string
           team_a_player_1: string
           team_a_player_2: string
           team_a_total_points?: number
+          team_b_name?: string
           team_b_player_1: string
           team_b_player_2: string
           team_b_total_points?: number
@@ -1705,9 +1709,11 @@ export type Database = {
           rolls_per_team?: number
           round_name?: string | null
           stake_per_point?: number
+          team_a_name?: string
           team_a_player_1?: string
           team_a_player_2?: string
           team_a_total_points?: number
+          team_b_name?: string
           team_b_player_1?: string
           team_b_player_2?: string
           team_b_total_points?: number

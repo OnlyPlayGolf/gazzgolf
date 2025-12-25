@@ -242,6 +242,8 @@ export default function UmbriagioSetup() {
           course_id: selectedCourseId || null,
           round_name: savedRoundName || null,
           holes_played: 18,
+          team_a_name: teamAName,
+          team_b_name: teamBName,
           team_a_player_1: players[0].displayName,
           team_a_player_2: players[1].displayName,
           team_b_player_1: players[2].displayName,

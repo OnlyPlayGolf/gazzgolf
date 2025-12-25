@@ -493,21 +493,21 @@ export default function UmbriagioPlay() {
               className="flex-1"
               onClick={() => setClosestToPinWinner(scores.closestToPinWinner === 'A' ? null : 'A')}
             >
-              Team A
+              {game.team_a_name}
             </Button>
             <Button
               variant={scores.closestToPinWinner === 'B' ? 'default' : 'outline'}
               className="flex-1"
               onClick={() => setClosestToPinWinner(scores.closestToPinWinner === 'B' ? null : 'B')}
             >
-              Team B
+              {game.team_b_name}
             </Button>
           </div>
         </Card>
 
         {/* Team A */}
         <Card className="p-4">
-          <h3 className="font-semibold text-blue-600 mb-3">Team A</h3>
+          <h3 className="font-semibold text-blue-600 mb-3">{game.team_a_name}</h3>
           <div className="space-y-2">
             {[
               { key: 'teamAPlayer1' as const, name: game.team_a_player_1, score: scores.teamAPlayer1 },
@@ -554,7 +554,7 @@ export default function UmbriagioPlay() {
 
         {/* Team B */}
         <Card className="p-4">
-          <h3 className="font-semibold text-red-600 mb-3">Team B</h3>
+          <h3 className="font-semibold text-red-600 mb-3">{game.team_b_name}</h3>
           <div className="space-y-2">
             {[
               { key: 'teamBPlayer1' as const, name: game.team_b_player_1, score: scores.teamBPlayer1 },
@@ -609,12 +609,12 @@ export default function UmbriagioPlay() {
         <Card className="p-4">
           <div className="flex justify-between items-center">
             <div className="text-center flex-1">
-              <div className="text-sm text-muted-foreground">Team A</div>
+              <div className="text-sm text-muted-foreground">{game.team_a_name}</div>
               <div className="text-2xl font-bold text-blue-600">{game.team_a_total_points}</div>
             </div>
             <div className="text-muted-foreground">vs</div>
             <div className="text-center flex-1">
-              <div className="text-sm text-muted-foreground">Team B</div>
+              <div className="text-sm text-muted-foreground">{game.team_b_name}</div>
               <div className="text-2xl font-bold text-red-600">{game.team_b_total_points}</div>
             </div>
           </div>
