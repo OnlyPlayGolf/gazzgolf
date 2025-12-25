@@ -234,7 +234,6 @@ export default function CopenhagenSetup() {
                 key={player.odId}
                 player={player}
                 onEdit={() => setEditingPlayer(player)}
-                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                 showTee={true}
               />
             ))}
