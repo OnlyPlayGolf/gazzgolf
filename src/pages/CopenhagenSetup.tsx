@@ -42,6 +42,7 @@ export default function CopenhagenSetup() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [useHandicaps, setUseHandicaps] = useState(false);
+  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
@@ -270,6 +271,28 @@ export default function CopenhagenSetup() {
               <p className="text-xs text-muted-foreground">
                 Apply net scoring based on player handicaps
               </p>
+            </div>
+
+            {/* Mulligans */}
+            <div className="space-y-2">
+              <Label>Mulligans per Player</Label>
+              <Select 
+                value={mulligansPerPlayer.toString()} 
+                onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select mulligans" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
