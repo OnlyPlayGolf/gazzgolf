@@ -398,7 +398,7 @@ export default function RoundLeaderboard() {
                             );
                           })}
                           <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                            {frontTotals.totalScore > 0 ? frontTotals.totalScore : ''}
+                            {hasConceded ? '-' : (frontTotals.totalScore > 0 ? frontTotals.totalScore : '')}
                           </TableCell>
                         </TableRow>
                         <TableRow>
@@ -413,7 +413,7 @@ export default function RoundLeaderboard() {
                             );
                           })}
                           <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                            {frontTotals.totalScore > 0 ? frontTotals.totalScore : ''}
+                            {hasConceded ? '-' : (frontTotals.totalScore > 0 ? frontTotals.totalScore : '')}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -475,7 +475,7 @@ export default function RoundLeaderboard() {
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                              {backTotals.totalScore > 0 ? backTotals.totalScore : ''}
+                              {hasConceded ? '-' : (backTotals.totalScore > 0 ? backTotals.totalScore : '')}
                             </TableCell>
                           </TableRow>
                           <TableRow>
@@ -490,7 +490,7 @@ export default function RoundLeaderboard() {
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                              {backTotals.totalScore > 0 ? backTotals.totalScore : ''}
+                              {hasConceded ? '-' : (backTotals.totalScore > 0 ? backTotals.totalScore : '')}
                             </TableCell>
                           </TableRow>
                         </TableBody>
