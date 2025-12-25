@@ -1,3 +1,8 @@
+export interface RollEvent {
+  hole: number;
+  player: number; // 1-5, which player used a roll
+}
+
 export interface WolfGame {
   id: string;
   user_id: string;
@@ -21,6 +26,10 @@ export interface WolfGame {
   
   // Wolf goes first or last
   wolf_position: 'first' | 'last';
+  
+  // Rolls settings
+  rolls_per_player: number;
+  roll_history: RollEvent[];
   
   // Player scores (running totals)
   player_1_points: number;
@@ -71,6 +80,11 @@ export interface WolfHole {
   
   // Winning side
   winning_side: 'wolf' | 'opponents' | 'tie' | null;
+  
+  // Double/multiplier
+  multiplier: number;
+  double_called_by: number | null; // 1-5, which player called double
+  double_back_called: boolean;
 }
 
 export interface WolfSettings {
@@ -78,4 +92,5 @@ export interface WolfSettings {
   lone_wolf_loss_points: number;
   team_win_points: number;
   wolf_position: 'first' | 'last';
+  rolls_per_player: number;
 }

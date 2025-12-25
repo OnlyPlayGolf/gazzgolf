@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, User, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Users, Zap, Dices } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
 import { useToast } from "@/hooks/use-toast";
-import { WolfGame, WolfHole } from "@/types/wolf";
+import { WolfGame, WolfHole, RollEvent } from "@/types/wolf";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { calculateWolfHoleScore, getWolfPlayerForHole } from "@/utils/wolfScoring";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +26,9 @@ interface WolfScores {
   scores: (number | null)[];
   wolfChoice: 'lone' | 'partner' | null;
   partnerPlayer: number | null;
+  multiplier: number;
+  doubleCalledBy: number | null;
+  doubleBackCalled: boolean;
 }
 
 const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole, WolfScores> => ({
@@ -43,6 +47,9 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     scores: [null, null, null, null, null],
     wolfChoice: null,
     partnerPlayer: null,
+    multiplier: 1,
+    doubleCalledBy: null,
+    doubleBackCalled: false,
   }),
   
   extractScoresFromHole: (hole) => ({
@@ -55,10 +62,13 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     ],
     wolfChoice: hole.wolf_choice as 'lone' | 'partner' | null,
     partnerPlayer: hole.partner_player,
+    multiplier: hole.multiplier || 1,
+    doubleCalledBy: hole.double_called_by,
+    doubleBackCalled: hole.double_back_called || false,
   }),
   
   buildHoleData: ({ gameId, holeNumber, par, scores: scoresState, previousHoles, game }) => {
-    const { scores, wolfChoice, partnerPlayer } = scoresState;
+    const { scores, wolfChoice, partnerPlayer, multiplier, doubleCalledBy, doubleBackCalled } = scoresState;
     
     // Get player count
     let playerCount = 3;
@@ -73,6 +83,7 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       lone_wolf_loss_points: game.lone_wolf_loss_points,
       team_win_points: game.team_win_points,
       wolf_position: wolfPosition,
+      rolls_per_player: game.rolls_per_player || 1,
     };
     
     const result = calculateWolfHoleScore({
@@ -82,6 +93,7 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       partnerPlayer,
       playerCount,
       settings,
+      multiplier,
     });
     
     // Calculate running totals
@@ -119,6 +131,9 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       player_4_running_total: runningTotals[3],
       player_5_running_total: runningTotals[4],
       winning_side: result.winningSide,
+      multiplier,
+      double_called_by: doubleCalledBy,
+      double_back_called: doubleBackCalled,
     };
   },
   
@@ -211,6 +226,66 @@ export default function WolfPlay() {
       wolfChoice: 'lone',
       partnerPlayer: null,
     }));
+  };
+
+  // Calculate rolls used by each player
+  const getPlayerRollsUsed = (playerNum: number): number => {
+    if (!game?.roll_history) return 0;
+    return (game.roll_history as RollEvent[]).filter(r => r.player === playerNum).length;
+  };
+
+  const handleRoll = async (playerNum: number) => {
+    if (!game || !gameId) return;
+    
+    const rollsUsed = getPlayerRollsUsed(playerNum);
+    const rollsPerPlayer = game.rolls_per_player || 1;
+    
+    if (rollsUsed >= rollsPerPlayer) {
+      toast({ title: "No rolls remaining", description: `${getPlayerName(playerNum - 1)} has used all rolls`, variant: "destructive" });
+      return;
+    }
+    
+    const newRollEvent: RollEvent = { hole: currentHole, player: playerNum };
+    const currentHistory = (game.roll_history as RollEvent[]) || [];
+    const newHistory = [...currentHistory, newRollEvent];
+    
+    try {
+      await supabase
+        .from("wolf_games" as any)
+        .update({ roll_history: newHistory })
+        .eq("id", gameId);
+      
+      toast({ title: "Roll used!", description: `${getPlayerName(playerNum - 1)} is now the Wolf for this hole` });
+      
+      // Refresh game data
+      window.location.reload();
+    } catch (error: any) {
+      toast({ title: "Error using roll", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDouble = (playerNum: number) => {
+    if (scoresState.multiplier > 1) {
+      // Already doubled, can double back
+      if (scoresState.doubleCalledBy === playerNum) {
+        toast({ title: "Can't double back", description: "You called the original double", variant: "destructive" });
+        return;
+      }
+      setScores(prev => ({
+        ...prev,
+        multiplier: prev.multiplier * 2,
+        doubleBackCalled: true,
+      }));
+      toast({ title: "Double Back!", description: `${getPlayerName(playerNum - 1)} doubled back! Points are now ×${scoresState.multiplier * 2}` });
+    } else {
+      // First double
+      setScores(prev => ({
+        ...prev,
+        multiplier: 2,
+        doubleCalledBy: playerNum,
+      }));
+      toast({ title: "Doubled!", description: `${getPlayerName(playerNum - 1)} doubled the hole! Points are now ×2` });
+    }
   };
 
   const advanceToNextPlayerSheet = (currentPlayerIndex: number) => {
@@ -311,6 +386,9 @@ export default function WolfPlay() {
             <div className="text-center">
               <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
               <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
+              {scoresState.multiplier > 1 && (
+                <div className="text-sm font-bold text-amber-600">×{scoresState.multiplier}</div>
+              )}
             </div>
 
             <Button
@@ -333,6 +411,48 @@ export default function WolfPlay() {
             <span className="text-amber-600 font-bold text-lg">
               🐺 Wolf: {getPlayerName(currentWolfPlayer - 1)}
             </span>
+          </div>
+        </Card>
+
+        {/* Rolls & Double */}
+        <Card className="p-4">
+          <h3 className="font-semibold mb-3 text-center">Actions</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {[...Array(playerCount)].map((_, i) => {
+              const playerNum = i + 1;
+              const rollsUsed = getPlayerRollsUsed(playerNum);
+              const rollsPerPlayer = game.rolls_per_player || 1;
+              const rollsRemaining = rollsPerPlayer - rollsUsed;
+              const canDouble = scoresState.doubleCalledBy !== playerNum || scoresState.multiplier === 1;
+              
+              return (
+                <div key={i} className="space-y-1">
+                  <div className="text-xs text-center text-muted-foreground truncate">{getPlayerName(i)}</div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDouble(playerNum)}
+                      disabled={scoresState.doubleCalledBy === playerNum && scoresState.multiplier > 1}
+                      className="flex-1 text-xs"
+                    >
+                      <Zap size={12} className="mr-1" />
+                      {scoresState.multiplier > 1 && scoresState.doubleCalledBy !== playerNum ? 'Back' : '2×'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRoll(playerNum)}
+                      disabled={rollsRemaining <= 0}
+                      className="flex-1 text-xs"
+                    >
+                      <Dices size={12} className="mr-1" />
+                      {rollsRemaining}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
 

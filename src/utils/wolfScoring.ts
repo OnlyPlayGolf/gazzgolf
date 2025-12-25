@@ -7,6 +7,7 @@ export interface WolfScoreInput {
   partnerPlayer: number | null; // 1-5 if partner chosen
   playerCount: number;        // 3-5 players
   settings: WolfSettings;
+  multiplier?: number;        // Optional multiplier for double
 }
 
 export interface WolfScoreResult {
@@ -15,7 +16,7 @@ export interface WolfScoreResult {
 }
 
 export function calculateWolfHoleScore(input: WolfScoreInput): WolfScoreResult {
-  const { scores, wolfPlayer, wolfChoice, partnerPlayer, playerCount, settings } = input;
+  const { scores, wolfPlayer, wolfChoice, partnerPlayer, playerCount, settings, multiplier = 1 } = input;
   
   // Get valid scores (non-null)
   const wolfIndex = wolfPlayer - 1;
@@ -80,13 +81,13 @@ export function calculateWolfHoleScore(input: WolfScoreInput): WolfScoreResult {
   
   if (wolfChoice === 'lone') {
     if (winningSide === 'wolf') {
-      // Lone wolf wins: gets lone_wolf_win_points
-      playerPoints[wolfIndex] = settings.lone_wolf_win_points;
+      // Lone wolf wins: gets lone_wolf_win_points * multiplier
+      playerPoints[wolfIndex] = settings.lone_wolf_win_points * multiplier;
     } else {
-      // Lone wolf loses: each opponent gets lone_wolf_loss_points
+      // Lone wolf loses: each opponent gets lone_wolf_loss_points * multiplier
       for (let i = 0; i < playerCount; i++) {
         if (i !== wolfIndex) {
-          playerPoints[i] = settings.lone_wolf_loss_points;
+          playerPoints[i] = settings.lone_wolf_loss_points * multiplier;
         }
       }
     }
@@ -96,13 +97,13 @@ export function calculateWolfHoleScore(input: WolfScoreInput): WolfScoreResult {
     
     if (winningSide === 'wolf') {
       // Wolf team wins
-      playerPoints[wolfIndex] = settings.team_win_points;
-      playerPoints[partnerIndex] = settings.team_win_points;
+      playerPoints[wolfIndex] = settings.team_win_points * multiplier;
+      playerPoints[partnerIndex] = settings.team_win_points * multiplier;
     } else {
       // Opponents win
       for (let i = 0; i < playerCount; i++) {
         if (i !== wolfIndex && i !== partnerIndex) {
-          playerPoints[i] = settings.team_win_points;
+          playerPoints[i] = settings.team_win_points * multiplier;
         }
       }
     }
