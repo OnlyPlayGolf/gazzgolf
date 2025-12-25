@@ -603,7 +603,7 @@ export default function UmbriagioPlay() {
               variant={scores.rollUsedOnThisHole === 'A' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleRoll('A')}
-              disabled={!canTeamRoll('A') || teamARollsUsed >= game.rolls_per_team}
+              disabled={!canTeamRoll('A') || (scores.rollUsedOnThisHole !== 'A' && teamARollsUsed >= game.rolls_per_team)}
               className="flex-1"
             >
               <Dices size={14} className="mr-1" /> Roll ({game.rolls_per_team - teamARollsUsed})
@@ -650,7 +650,7 @@ export default function UmbriagioPlay() {
               variant={scores.rollUsedOnThisHole === 'B' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleRoll('B')}
-              disabled={!canTeamRoll('B') || teamBRollsUsed >= game.rolls_per_team}
+              disabled={!canTeamRoll('B') || (scores.rollUsedOnThisHole !== 'B' && teamBRollsUsed >= game.rolls_per_team)}
               className="flex-1"
             >
               <Dices size={14} className="mr-1" /> Roll ({game.rolls_per_team - teamBRollsUsed})
