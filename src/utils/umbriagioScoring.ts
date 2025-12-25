@@ -1,10 +1,10 @@
 import { UmbriagioHole } from '@/types/umbriago';
 
 export interface HoleScores {
-  teamAPlayer1: number;
-  teamAPlayer2: number;
-  teamBPlayer1: number;
-  teamBPlayer2: number;
+  teamAPlayer1: number | null;
+  teamAPlayer2: number | null;
+  teamBPlayer1: number | null;
+  teamBPlayer2: number | null;
   par: number;
 }
 
@@ -16,6 +16,14 @@ export interface CategoryResults {
 }
 
 export function calculateTeamLow(scores: HoleScores): 'A' | 'B' | null {
+  // If any player has null (didn't finish), their team can't win team low
+  const teamAHasNull = scores.teamAPlayer1 === null || scores.teamAPlayer2 === null;
+  const teamBHasNull = scores.teamBPlayer1 === null || scores.teamBPlayer2 === null;
+  
+  if (teamAHasNull && teamBHasNull) return null; // Both teams have a player who didn't finish
+  if (teamAHasNull) return 'B'; // Team A can't win, Team B wins by default
+  if (teamBHasNull) return 'A'; // Team B can't win, Team A wins by default
+  
   const teamATotal = scores.teamAPlayer1 + scores.teamAPlayer2;
   const teamBTotal = scores.teamBPlayer1 + scores.teamBPlayer2;
   
@@ -30,7 +38,9 @@ export function calculateIndividualLow(scores: HoleScores): 'A' | 'B' | null {
     { team: 'A' as const, score: scores.teamAPlayer2 },
     { team: 'B' as const, score: scores.teamBPlayer1 },
     { team: 'B' as const, score: scores.teamBPlayer2 },
-  ];
+  ].filter(s => s.score !== null && s.score > 0) as { team: 'A' | 'B'; score: number }[];
+  
+  if (allScores.length === 0) return null;
   
   const minScore = Math.min(...allScores.map(s => s.score));
   const playersWithMin = allScores.filter(s => s.score === minScore);
@@ -46,8 +56,11 @@ export function calculateIndividualLow(scores: HoleScores): 'A' | 'B' | null {
 }
 
 export function calculateBirdieEagle(scores: HoleScores): 'A' | 'B' | null {
-  const teamAHasBirdie = scores.teamAPlayer1 <= scores.par - 1 || scores.teamAPlayer2 <= scores.par - 1;
-  const teamBHasBirdie = scores.teamBPlayer1 <= scores.par - 1 || scores.teamBPlayer2 <= scores.par - 1;
+  // Only count actual scores (not null) for birdie/eagle
+  const teamAHasBirdie = (scores.teamAPlayer1 !== null && scores.teamAPlayer1 <= scores.par - 1) || 
+                         (scores.teamAPlayer2 !== null && scores.teamAPlayer2 <= scores.par - 1);
+  const teamBHasBirdie = (scores.teamBPlayer1 !== null && scores.teamBPlayer1 <= scores.par - 1) || 
+                         (scores.teamBPlayer2 !== null && scores.teamBPlayer2 <= scores.par - 1);
   
   if (teamAHasBirdie && !teamBHasBirdie) return 'A';
   if (teamBHasBirdie && !teamAHasBirdie) return 'B';
@@ -83,10 +96,10 @@ export function calculateHolePoints(
   let umbriagioMultiplierB = 1;
   
   if (scores) {
-    const teamAPlayer1Eagle = scores.teamAPlayer1 <= scores.par - 2;
-    const teamAPlayer2Eagle = scores.teamAPlayer2 <= scores.par - 2;
-    const teamBPlayer1Eagle = scores.teamBPlayer1 <= scores.par - 2;
-    const teamBPlayer2Eagle = scores.teamBPlayer2 <= scores.par - 2;
+    const teamAPlayer1Eagle = scores.teamAPlayer1 !== null && scores.teamAPlayer1 <= scores.par - 2;
+    const teamAPlayer2Eagle = scores.teamAPlayer2 !== null && scores.teamAPlayer2 <= scores.par - 2;
+    const teamBPlayer1Eagle = scores.teamBPlayer1 !== null && scores.teamBPlayer1 <= scores.par - 2;
+    const teamBPlayer2Eagle = scores.teamBPlayer2 !== null && scores.teamBPlayer2 <= scores.par - 2;
     
     // x4 if both players have eagle or better, x2 if one player has eagle or better
     if (isUmbriagioA) {
