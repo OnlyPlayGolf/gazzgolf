@@ -862,7 +862,7 @@ export default function RoundsPlay() {
                       { id: "best_ball", label: "Best Ball", desc: "Team match play or stroke play" },
                       { id: "scramble", label: "Scramble", desc: "Team plays best shot" },
                       { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
-                      { id: "wolf", label: "🐺 Wolf", desc: "3-5 players, dynamic teams" },
+                      { id: "wolf", label: "🐺 Wolf", desc: "4-6 players, various teams" },
                     ].map((fmt) => (
                       <div key={fmt.id} className="relative">
                         <button

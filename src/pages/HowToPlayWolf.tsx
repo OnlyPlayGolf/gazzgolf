@@ -23,7 +23,7 @@ export default function HowToPlayWolf() {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>
-                Wolf is a golf betting game for 3-5 players where one player each hole 
+                Wolf is a golf betting game for 4-6 players where one player each hole 
                 becomes the "Wolf" and decides whether to team up or go solo.
               </p>
               <p>
@@ -37,7 +37,7 @@ export default function HowToPlayWolf() {
               <CardTitle className="text-lg">Setup</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>• Works with 3-5 players</p>
+              <p>• Works with 4-6 players</p>
               <p>• On the 1st tee, set a fixed player order (randomized in the app)</p>
               <p>• The Wolf rotates each hole</p>
               <p>• The Wolf tees off first or last, depending on settings</p>
