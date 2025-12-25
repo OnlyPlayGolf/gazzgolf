@@ -638,15 +638,6 @@ export default function UmbriagioPlay() {
           onRemoveMulligan={() => {}}
           onSave={handleSaveMore}
         />
-
-        {/* Save Button */}
-        <Button 
-          onClick={() => saveHole()} 
-          disabled={saving || !allScoresEntered}
-          className="w-full"
-        >
-          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Game" : "Save & Next Hole"}
-        </Button>
       </div>
 
       {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
