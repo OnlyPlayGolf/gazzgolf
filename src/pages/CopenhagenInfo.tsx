@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
-import { Trophy, Target, Zap, Info } from "lucide-react";
-import { formatHandicap } from "@/lib/utils";
+import { Zap, Info } from "lucide-react";
 
 export default function CopenhagenInfo() {
   const { gameId } = useParams();
@@ -61,89 +59,9 @@ export default function CopenhagenInfo() {
     );
   }
 
-  const sweeps = holes.filter(h => h.is_sweep);
-
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        {/* Game Details */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Copenhagen (6-Point)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Course</span>
-              <span className="font-medium">{game.course_name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Holes</span>
-              <span className="font-medium">{game.holes_played}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Handicaps</span>
-              <span className="font-medium">{game.use_handicaps ? "Yes" : "No"}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Players */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Trophy size={18} />
-              Players
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { name: game.player_1, points: game.player_1_total_points, hcp: game.player_1_handicap, tee: game.player_1_tee, color: "text-emerald-600" },
-              { name: game.player_2, points: game.player_2_total_points, hcp: game.player_2_handicap, tee: game.player_2_tee, color: "text-blue-600" },
-              { name: game.player_3, points: game.player_3_total_points, hcp: game.player_3_handicap, tee: game.player_3_tee, color: "text-amber-600" },
-            ].sort((a, b) => b.points - a.points).map((player, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div>
-                  <div className={`font-medium ${player.color}`}>{player.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {player.tee && `${player.tee} tees`}
-                    {game.use_handicaps && player.hcp !== null && ` • HCP: ${formatHandicap(player.hcp)}`}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold">{player.points}</div>
-                  <div className="text-xs text-muted-foreground">points</div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Sweeps */}
-        {sweeps.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Target size={18} />
-                Sweeps
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {sweeps.map((hole) => {
-                  const winnerName = hole.sweep_winner === 1 ? game.player_1 :
-                                    hole.sweep_winner === 2 ? game.player_2 : game.player_3;
-                  return (
-                    <div key={hole.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                      <span>Hole {hole.hole_number}</span>
-                      <Badge variant="secondary">{winnerName}</Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Active Presses */}
         {game.presses.length > 0 && (
           <Card>
