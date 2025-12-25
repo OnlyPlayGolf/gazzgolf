@@ -371,7 +371,6 @@ export default function UmbriagioPlay() {
     }
     return "Double";
   };
-
   // Can team roll? Only losing team can roll
   const canTeamRoll = (team: 'A' | 'B') => {
     // Can't roll if already used roll on this hole
@@ -383,6 +382,29 @@ export default function UmbriagioPlay() {
     // Only losing team can roll
     return team === losingTeam;
   };
+
+  // Track if we've already auto-saved for this hole to prevent double-saves
+  const hasAutoSavedRef = useRef(false);
+  
+  // Reset auto-save flag when hole changes
+  useEffect(() => {
+    hasAutoSavedRef.current = false;
+  }, [currentHoleIndex]);
+
+  // Check if all have real input (null = didn't finish, or > 0 = actual score)
+  const hasValidInput = (score: number | null) => score === null || (score !== null && score > 0);
+  const allHaveValidInput = hasValidInput(scores.teamAPlayer1) && 
+                           hasValidInput(scores.teamAPlayer2) && 
+                           hasValidInput(scores.teamBPlayer1) && 
+                           hasValidInput(scores.teamBPlayer2);
+  
+  // Auto-save when all scores are entered
+  useEffect(() => {
+    if (allHaveValidInput && !saving && !hasAutoSavedRef.current && activeScoreSheet === null) {
+      hasAutoSavedRef.current = true;
+      saveHole();
+    }
+  }, [scores.teamAPlayer1, scores.teamAPlayer2, scores.teamBPlayer1, scores.teamBPlayer2, allHaveValidInput, saving, activeScoreSheet]);
 
   if (loading) {
     return (
@@ -404,36 +426,6 @@ export default function UmbriagioPlay() {
 
   const teamARollsUsed = (game.roll_history || []).filter(r => r.team === 'A').length;
   const teamBRollsUsed = (game.roll_history || []).filter(r => r.team === 'B').length;
-
-  // Check if score is entered (positive number or null for "didn't finish")
-  const isScoreEntered = (score: number | null) => score !== null && score !== 0 ? true : score === null;
-  const allScoresEntered = isScoreEntered(scores.teamAPlayer1) && 
-                          isScoreEntered(scores.teamAPlayer2) && 
-                          isScoreEntered(scores.teamBPlayer1) && 
-                          isScoreEntered(scores.teamBPlayer2);
-  
-  // Actually check if all have real input (null = didn't finish, or > 0 = actual score)
-  const hasValidInput = (score: number | null) => score === null || (score !== null && score > 0);
-  const allHaveValidInput = hasValidInput(scores.teamAPlayer1) && 
-                           hasValidInput(scores.teamAPlayer2) && 
-                           hasValidInput(scores.teamBPlayer1) && 
-                           hasValidInput(scores.teamBPlayer2);
-  
-  // Track if we've already auto-saved for this hole to prevent double-saves
-  const hasAutoSavedRef = useRef(false);
-  
-  // Reset auto-save flag when hole changes
-  useEffect(() => {
-    hasAutoSavedRef.current = false;
-  }, [currentHoleIndex]);
-  
-  // Auto-save when all scores are entered
-  useEffect(() => {
-    if (allHaveValidInput && !saving && !hasAutoSavedRef.current && activeScoreSheet === null) {
-      hasAutoSavedRef.current = true;
-      saveHole();
-    }
-  }, [scores.teamAPlayer1, scores.teamAPlayer2, scores.teamBPlayer1, scores.teamBPlayer2, allHaveValidInput, saving, activeScoreSheet]);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
