@@ -77,62 +77,112 @@ export default function RoundsPlay() {
   const initializeSetup = async () => {
     // Fetch current user
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      setCurrentUser(profile);
-      
-      // Add current user to first group
-      if (profile) {
-        // Get default tee from app preferences
-        let defaultTee = DEFAULT_MEN_TEE;
-        try {
-          const savedPrefs = localStorage.getItem('appPreferences');
-          if (savedPrefs) {
-            const prefs = JSON.parse(savedPrefs);
-            if (prefs.defaultTee) {
-              defaultTee = prefs.defaultTee;
-            }
-          }
-        } catch (e) {
-          console.error("Error reading app preferences:", e);
-        }
+    if (!user) {
+      // No user, just fetch round count (saved state restoration happens below for logged-in users)
+      fetchRoundCount();
+      return;
+    }
 
-        const currentUserPlayer: Player = {
-          odId: user.id,
-          teeColor: defaultTee,
-          displayName: profile.display_name || profile.username || "You",
-          username: profile.username || "",
-          avatarUrl: profile.avatar_url,
-          handicap: parseHandicap(profile.handicap),
-          isTemporary: false,
-        };
-        
-        setSetupState(prev => ({
-          ...prev,
-          teeColor: defaultTee,
-          groups: [{
-            ...prev.groups[0],
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    setCurrentUser(profile);
+
+    // Get default tee from app preferences
+    let defaultTee = DEFAULT_MEN_TEE;
+    try {
+      const savedPrefs = localStorage.getItem('appPreferences');
+      if (savedPrefs) {
+        const prefs = JSON.parse(savedPrefs);
+        if (prefs.defaultTee) {
+          defaultTee = prefs.defaultTee;
+        }
+      }
+    } catch (e) {
+      console.error("Error reading app preferences:", e);
+    }
+
+    // Create current user player object
+    const currentUserPlayer: Player = {
+      odId: user.id,
+      teeColor: defaultTee,
+      displayName: profile?.display_name || profile?.username || "You",
+      username: profile?.username || "",
+      avatarUrl: profile?.avatar_url,
+      handicap: parseHandicap(profile?.handicap),
+      isTemporary: false,
+    };
+
+    // Restore saved state first
+    const savedCourse = sessionStorage.getItem('selectedCourse');
+    const savedHoles = sessionStorage.getItem('selectedHoles');
+    const savedRoundName = sessionStorage.getItem('roundName');
+    const savedDate = sessionStorage.getItem('datePlayer');
+    const savedGroups = sessionStorage.getItem('playGroups');
+    const savedAIConfig = sessionStorage.getItem('aiGameConfig');
+    const savedGameFormat = sessionStorage.getItem('gameFormat');
+
+    if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
+
+    setSetupState(prev => {
+      const updated = { ...prev, teeColor: defaultTee };
+      if (savedHoles) updated.selectedHoles = savedHoles as HoleCount;
+      if (savedRoundName) updated.roundName = savedRoundName;
+      if (savedDate) updated.datePlayed = savedDate;
+      if (savedGameFormat) updated.gameFormat = savedGameFormat as any;
+      if (savedAIConfig) {
+        const config = JSON.parse(savedAIConfig);
+        updated.aiConfigApplied = true;
+        updated.aiAssumptions = config.assumptions;
+        updated.aiConfigSummary = `${config.baseFormat?.replace('_', ' ')} with ${config.totalHoles} holes`;
+      }
+
+      // Handle groups - ensure current user is always in first group
+      let groups = savedGroups ? JSON.parse(savedGroups) : prev.groups;
+      
+      // Check if current user already exists in any group
+      const userExistsInGroups = groups.some((g: PlayerGroup) => 
+        g.players.some((p: Player) => p.odId === user.id)
+      );
+
+      if (!userExistsInGroups) {
+        // Add current user to first group
+        if (groups.length > 0) {
+          groups[0] = {
+            ...groups[0],
+            players: [currentUserPlayer, ...groups[0].players]
+          };
+        } else {
+          groups = [{
+            ...createDefaultGroup(0),
             players: [currentUserPlayer]
-          }]
+          }];
+        }
+      } else {
+        // Update current user's info in case profile changed
+        groups = groups.map((g: PlayerGroup) => ({
+          ...g,
+          players: g.players.map((p: Player) => 
+            p.odId === user.id ? { ...currentUserPlayer, teeColor: p.teeColor || defaultTee } : p
+          )
         }));
       }
 
-      // Pre-select recently played course (only if no saved course in session)
-      const savedCourse = sessionStorage.getItem('selectedCourse');
-      if (!savedCourse) {
-        await fetchRecentCourse(user.id);
-      }
+      updated.groups = groups;
+      return updated;
+    });
+
+    // Pre-select recently played course (only if no saved course in session)
+    if (!savedCourse) {
+      await fetchRecentCourse(user.id);
     }
 
     // Fetch round count for default name
-    fetchRoundCount();
-    
-    // Restore saved state
-    restoreSavedState();
+    if (!savedRoundName) {
+      fetchRoundCount();
+    }
   };
 
   const fetchRecentCourse = async (userId: string) => {
@@ -180,34 +230,6 @@ export default function RoundsPlay() {
     } catch (error) {
       console.error("Error fetching round count:", error);
     }
-  };
-
-  const restoreSavedState = () => {
-    const savedCourse = sessionStorage.getItem('selectedCourse');
-    const savedHoles = sessionStorage.getItem('selectedHoles');
-    const savedRoundName = sessionStorage.getItem('roundName');
-    const savedDate = sessionStorage.getItem('datePlayer');
-    const savedGroups = sessionStorage.getItem('playGroups');
-    const savedAIConfig = sessionStorage.getItem('aiGameConfig');
-    const savedGameFormat = sessionStorage.getItem('gameFormat');
-
-    if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
-    
-    setSetupState(prev => {
-      const updated = { ...prev };
-      if (savedHoles) updated.selectedHoles = savedHoles as HoleCount;
-      if (savedRoundName) updated.roundName = savedRoundName;
-      if (savedDate) updated.datePlayed = savedDate;
-      if (savedGroups) updated.groups = JSON.parse(savedGroups);
-      if (savedGameFormat) updated.gameFormat = savedGameFormat as any;
-      if (savedAIConfig) {
-        const config = JSON.parse(savedAIConfig);
-        updated.aiConfigApplied = true;
-        updated.aiAssumptions = config.assumptions;
-        updated.aiConfigSummary = `${config.baseFormat?.replace('_', ' ')} with ${config.totalHoles} holes`;
-      }
-      return updated;
-    });
   };
 
   const fetchCourseTees = async (courseId: string) => {
