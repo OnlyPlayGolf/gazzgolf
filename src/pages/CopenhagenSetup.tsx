@@ -173,6 +173,11 @@ export default function CopenhagenSetup() {
 
       if (error) throw error;
 
+      // Save settings to game-specific localStorage and session storage
+      const copenhagenSettings = { mulligansPerPlayer };
+      localStorage.setItem(`copenhagenSettings_${game.id}`, JSON.stringify(copenhagenSettings));
+      sessionStorage.setItem('copenhagenSettings', JSON.stringify(copenhagenSettings));
+
       toast({ title: "Copenhagen game started!" });
       navigate(`/copenhagen/${game.id}/play`);
     } catch (error: any) {
