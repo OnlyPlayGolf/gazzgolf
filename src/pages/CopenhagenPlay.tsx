@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { calculateCopenhagenPoints, calculateNetScore } from "@/utils/copenhagenScoring";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -111,6 +113,13 @@ export default function CopenhagenPlay() {
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  
+  // Mulligan and comment tracking
+  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
+  const [mulligansUsed, setMulligansUsed] = useState<Map<number, Set<number>>>(new Map()); // playerNum -> Set of hole numbers
+  const [currentComment, setCurrentComment] = useState("");
+  const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
   
   const config = createCopenhagenConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -120,6 +129,112 @@ export default function CopenhagenPlay() {
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+
+  // Load mulligan settings on mount
+  useEffect(() => {
+    if (gameId) {
+      loadSettings();
+    }
+  }, [gameId]);
+
+  const loadSettings = () => {
+    // First try game-specific settings
+    const gameSettings = localStorage.getItem(`copenhagenSettings_${gameId}`);
+    if (gameSettings) {
+      const settings = JSON.parse(gameSettings);
+      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      return;
+    }
+    
+    // Fallback to session storage for new games
+    const savedSettings = sessionStorage.getItem('copenhagenSettings');
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      // Save to game-specific storage for future
+      localStorage.setItem(`copenhagenSettings_${gameId}`, JSON.stringify({
+        mulligansPerPlayer: settings.mulligansPerPlayer || 0,
+      }));
+    }
+  };
+
+  // Mulligan helpers
+  const getPlayerMulligansUsed = (playerNum: number): number => {
+    return mulligansUsed.get(playerNum)?.size || 0;
+  };
+
+  const hasPlayerUsedMulliganOnHole = (playerNum: number, holeNumber: number): boolean => {
+    return mulligansUsed.get(playerNum)?.has(holeNumber) || false;
+  };
+
+  const useMulliganOnHole = (playerNum: number, holeNumber: number) => {
+    setMulligansUsed(prev => {
+      const updated = new Map(prev);
+      const playerMulligans = new Set(prev.get(playerNum) || []);
+      playerMulligans.add(holeNumber);
+      updated.set(playerNum, playerMulligans);
+      return updated;
+    });
+    setMulliganJustAdded(true);
+  };
+
+  const removeMulliganFromHole = (playerNum: number, holeNumber: number) => {
+    setMulligansUsed(prev => {
+      const updated = new Map(prev);
+      const playerMulligans = new Set(prev.get(playerNum) || []);
+      playerMulligans.delete(holeNumber);
+      updated.set(playerNum, playerMulligans);
+      return updated;
+    });
+  };
+
+  // Handle opening the More sheet
+  const handleOpenMoreSheet = () => {
+    if (activePlayerSheet) {
+      setCurrentComment("");
+      setMulliganJustAdded(false);
+      setShowMoreSheet(true);
+    }
+  };
+
+  // Handle saving from More sheet
+  const handleSaveMore = async () => {
+    if (activePlayerSheet && game) {
+      const hasComment = currentComment.trim().length > 0;
+      const hasMulligan = mulliganJustAdded;
+      
+      if (hasComment || hasMulligan) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const playerName = activePlayerSheet === 1 ? game.player_1 : activePlayerSheet === 2 ? game.player_2 : game.player_3;
+            let content = "";
+            
+            if (hasMulligan && hasComment) {
+              content = `🔄 ${playerName} used a mulligan on hole ${currentHole}: "${currentComment.trim()}"`;
+            } else if (hasMulligan) {
+              content = `🔄 ${playerName} used a mulligan on hole ${currentHole}`;
+            } else {
+              content = currentComment.trim();
+            }
+            
+            await supabase.from("round_comments").insert({
+              round_id: gameId,
+              user_id: user.id,
+              content,
+              hole_number: currentHole,
+              game_type: "copenhagen",
+              game_id: gameId,
+            });
+          }
+        } catch (error) {
+          console.error("Error saving to feed:", error);
+        }
+      }
+      
+      setMulliganJustAdded(false);
+    }
+  };
 
   const updateScore = (player: 'player1' | 'player2' | 'player3', score: number | null) => {
     setScores(prev => ({
@@ -250,9 +365,29 @@ export default function CopenhagenPlay() {
             holeNumber={currentHole}
             currentScore={num === 1 ? scores.player1 : num === 2 ? scores.player2 : scores.player3}
             onScoreSelect={(score) => updateScore(`player${num}` as any, score)}
+            onMore={handleOpenMoreSheet}
             onEnterAndNext={handleEnterAndNext}
           />
         ))}
+
+        {/* More Sheet for Mulligans/Comments */}
+        {activePlayerSheet && (
+          <ScoreMoreSheet
+            open={showMoreSheet}
+            onOpenChange={setShowMoreSheet}
+            holeNumber={currentHole}
+            par={par}
+            playerName={activePlayerSheet === 1 ? game.player_1 : activePlayerSheet === 2 ? game.player_2 : game.player_3}
+            comment={currentComment}
+            onCommentChange={setCurrentComment}
+            mulligansAllowed={mulligansPerPlayer}
+            mulligansUsed={getPlayerMulligansUsed(activePlayerSheet)}
+            mulliganUsedOnThisHole={hasPlayerUsedMulliganOnHole(activePlayerSheet, currentHole)}
+            onUseMulligan={() => useMulliganOnHole(activePlayerSheet, currentHole)}
+            onRemoveMulligan={() => removeMulliganFromHole(activePlayerSheet, currentHole)}
+            onSave={handleSaveMore}
+          />
+        )}
 
         {/* Points Display */}
         <Card className="p-4">
