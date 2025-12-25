@@ -339,7 +339,8 @@ export default function WolfPlay() {
         {/* Wolf Choice */}
         <Card className="p-4">
           <h3 className="font-semibold mb-3 text-center">Wolf's Choice</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="space-y-2">
+            {/* Lone Wolf on its own row */}
             <Button
               variant={scoresState.wolfChoice === 'lone' ? 'default' : 'outline'}
               onClick={handleGoLone}
@@ -348,21 +349,24 @@ export default function WolfPlay() {
               <User size={18} />
               Lone Wolf
             </Button>
-            {[...Array(playerCount)].map((_, i) => {
-              if (i === currentWolfPlayer - 1) return null;
-              const isSelected = scoresState.wolfChoice === 'partner' && scoresState.partnerPlayer === i + 1;
-              return (
-                <Button
-                  key={i}
-                  variant={isSelected ? 'default' : 'outline'}
-                  onClick={() => handleChoosePartner(i)}
-                  className="flex items-center justify-center gap-2 w-full truncate"
-                >
-                  <Users size={18} className="flex-shrink-0" />
-                  <span className="truncate">{getPlayerName(i)}</span>
-                </Button>
-              );
-            })}
+            {/* Partner choices in a grid */}
+            <div className="grid grid-cols-2 gap-2">
+              {[...Array(playerCount)].map((_, i) => {
+                if (i === currentWolfPlayer - 1) return null;
+                const isSelected = scoresState.wolfChoice === 'partner' && scoresState.partnerPlayer === i + 1;
+                return (
+                  <Button
+                    key={i}
+                    variant={isSelected ? 'default' : 'outline'}
+                    onClick={() => handleChoosePartner(i)}
+                    className="flex items-center justify-center gap-2 w-full truncate"
+                  >
+                    <Users size={18} className="flex-shrink-0" />
+                    <span className="truncate">{getPlayerName(i)}</span>
+                  </Button>
+                );
+              })}
+            </div>
           </div>
           {scoresState.wolfChoice && (
             <p className="text-sm text-center mt-2 text-muted-foreground">
