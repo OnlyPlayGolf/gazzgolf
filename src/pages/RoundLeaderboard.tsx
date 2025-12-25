@@ -236,18 +236,23 @@ export default function RoundLeaderboard() {
           // Sort by score to par (lower is better)
           const sorted = [...playersWithTotals].sort((a, b) => a.scoreToPar - b.scoreToPar);
           
-          // Create position map
-          const positionMap = new Map<string, number>();
-          sorted.forEach((item, index) => {
-            positionMap.set(item.player.id, index + 1);
-          });
+          // Helper for position with ties
+          const getPositionLabel = (scoreToPar: number): string => {
+            const playersAhead = sorted.filter(p => p.scoreToPar < scoreToPar).length;
+            const position = playersAhead + 1;
+            const sameScoreCount = sorted.filter(p => p.scoreToPar === scoreToPar).length;
+            if (sameScoreCount > 1) {
+              return `T${position}`;
+            }
+            return `${position}`;
+          };
 
-          return players.map((player) => {
+          return sorted.map(({ player, scoreToPar }) => {
             const isExpanded = expandedPlayerId === player.id;
             const frontTotals = calculateTotals(player, frontNine);
             const backTotals = calculateTotals(player, backNine);
             const overallTotals = calculateTotals(player, courseHoles);
-            const position = positionMap.get(player.id) || 1;
+            const positionLabel = getPositionLabel(scoreToPar);
 
             return (
               <Card key={player.id} className="overflow-hidden">
@@ -264,7 +269,7 @@ export default function RoundLeaderboard() {
                         className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
                       />
                       <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
-                        {position}
+                        {positionLabel}
                       </div>
                     <div>
                       <div className="text-xl font-bold">{player.display_name}</div>
