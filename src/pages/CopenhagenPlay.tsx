@@ -261,13 +261,25 @@ export default function CopenhagenPlay() {
 
   // Advance between players; actual hole-advance happens when all scores are valid.
   const handleEnterAndNext = () => {
-    if (activePlayerSheet === 1) {
-      setActivePlayerSheet(2);
-    } else if (activePlayerSheet === 2) {
-      setActivePlayerSheet(3);
-    } else {
-      setActivePlayerSheet(null);
+    // Find the next player who doesn't have a valid score yet
+    const currentScores = {
+      1: activePlayerSheet === 1 ? true : hasValidScore(scores.player1), // Current player just entered
+      2: activePlayerSheet === 2 ? true : hasValidScore(scores.player2),
+      3: activePlayerSheet === 3 ? true : hasValidScore(scores.player3),
+    };
+    
+    // Check players in order starting from the next one
+    const playerOrder = activePlayerSheet === 1 ? [2, 3, 1] : activePlayerSheet === 2 ? [3, 1, 2] : [1, 2, 3];
+    
+    for (const playerNum of playerOrder) {
+      if (!currentScores[playerNum as 1 | 2 | 3]) {
+        setActivePlayerSheet(playerNum as 1 | 2 | 3);
+        return;
+      }
     }
+    
+    // All players have scores, close the sheet
+    setActivePlayerSheet(null);
   };
 
   // After state is updated with the last entered score, save and let useGameScoring advance holes.
