@@ -42,7 +42,7 @@ export default function WolfSetup() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   
-  // Players (3-5)
+  // Players (4-6)
   const [players, setPlayers] = useState<Player[]>([]);
   const [shuffled, setShuffled] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
@@ -88,7 +88,7 @@ export default function WolfSetup() {
       let additionalPlayers: Player[] = [];
       if (savedPlayers) {
         const parsed = JSON.parse(savedPlayers);
-        additionalPlayers = parsed.slice(0, 4).map((p: any) => ({
+        additionalPlayers = parsed.slice(0, 5).map((p: any) => ({
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,
@@ -127,8 +127,8 @@ export default function WolfSetup() {
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
   
   const handleAddPlayer = (player: Player) => {
-    if (players.length >= 5) {
-      toast({ title: "Maximum 5 players", description: "Remove a player to add another", variant: "destructive" });
+    if (players.length >= 6) {
+      toast({ title: "Maximum 6 players", description: "Remove a player to add another", variant: "destructive" });
       return;
     }
     setPlayers(prev => [...prev, player]);
@@ -160,8 +160,8 @@ export default function WolfSetup() {
   };
   
   const handleShuffle = () => {
-    if (players.length < 3) {
-      toast({ title: "Need at least 3 players to shuffle", variant: "destructive" });
+    if (players.length < 4) {
+      toast({ title: "Need at least 4 players to shuffle", variant: "destructive" });
       return;
     }
     
@@ -172,8 +172,8 @@ export default function WolfSetup() {
   };
 
   const handleStartGame = async () => {
-    if (players.length < 3) {
-      toast({ title: "At least 3 players required", variant: "destructive" });
+    if (players.length < 4) {
+      toast({ title: "At least 4 players required", variant: "destructive" });
       return;
     }
     
@@ -206,6 +206,7 @@ export default function WolfSetup() {
           player_3: players[2]?.displayName || "",
           player_4: players[3]?.displayName || null,
           player_5: players[4]?.displayName || null,
+          player_6: players[5]?.displayName || null,
           lone_wolf_win_points: loneWolfWinPoints,
           lone_wolf_loss_points: loneWolfLossPoints,
           team_win_points: teamWinPoints,
@@ -264,7 +265,7 @@ export default function WolfSetup() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Users size={20} className="text-primary" />
-              Players (3-5)
+              Players (4-6)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -312,7 +313,7 @@ export default function WolfSetup() {
               variant="outline" 
               className="w-full"
               onClick={handleShuffle}
-              disabled={players.length < 3}
+              disabled={players.length < 4}
             >
               <Shuffle size={18} className="mr-2" />
               {shuffled ? 'Reshuffle Order' : 'Randomize Tee-Off Order'}
@@ -411,7 +412,7 @@ export default function WolfSetup() {
           </CardContent>
         </Card>
 
-        {!shuffled && players.length >= 3 && (
+        {!shuffled && players.length >= 4 && (
           <p className="text-sm text-muted-foreground text-center">
             Tap "Randomize Order" above to set the tee-off order before starting
           </p>
@@ -419,7 +420,7 @@ export default function WolfSetup() {
         
         <Button 
           onClick={handleStartGame} 
-          disabled={loading || players.length < 3 || !shuffled} 
+          disabled={loading || players.length < 4 || !shuffled} 
           className="w-full" 
           size="lg"
         >

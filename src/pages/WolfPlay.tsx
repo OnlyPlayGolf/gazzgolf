@@ -26,7 +26,7 @@ interface WolfScores {
   scores: (number | null)[];
   wolfChoice: 'lone' | 'partner' | null;
   partnerPlayer: number | null;
-  doubleCalledBy: number | null; // Player number who doubled (1-5)
+  doubleCalledBy: number | null; // Player number who doubled (1-6)
   doubleBackCalled: boolean; // Whether opponent doubled back
 }
 
@@ -43,7 +43,7 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
   getSummaryRoute: (id) => `/wolf/${id}/summary`,
   
   createEmptyScores: () => ({
-    scores: [null, null, null, null, null],
+    scores: [null, null, null, null, null, null],
     wolfChoice: null,
     partnerPlayer: null,
     doubleCalledBy: null,
@@ -57,6 +57,7 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       hole.player_3_score,
       hole.player_4_score,
       hole.player_5_score,
+      hole.player_6_score,
     ],
     wolfChoice: hole.wolf_choice as 'lone' | 'partner' | null,
     partnerPlayer: hole.partner_player,
@@ -68,9 +69,9 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     const { scores, wolfChoice, partnerPlayer, doubleCalledBy, doubleBackCalled } = scoresState;
     
     // Get player count
-    let playerCount = 3;
-    if (game.player_4) playerCount = 4;
+    let playerCount = 4;
     if (game.player_5) playerCount = 5;
+    if (game.player_6) playerCount = 6;
     
     const wolfPosition = game.wolf_position as 'first' | 'last' || 'last';
     const currentWolfPlayer = getWolfPlayerForHole(holeNumber, playerCount, wolfPosition);
@@ -107,13 +108,14 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     const multipliedPoints = result.playerPoints.map(p => p * multiplier);
     
     // Calculate running totals
-    const previousTotals = [0, 0, 0, 0, 0];
+    const previousTotals = [0, 0, 0, 0, 0, 0];
     previousHoles.forEach(h => {
       previousTotals[0] += h.player_1_hole_points;
       previousTotals[1] += h.player_2_hole_points;
       previousTotals[2] += h.player_3_hole_points;
       previousTotals[3] += h.player_4_hole_points;
       previousTotals[4] += h.player_5_hole_points;
+      previousTotals[5] += h.player_6_hole_points;
     });
     
     const runningTotals = previousTotals.map((t, i) => t + multipliedPoints[i]);
@@ -133,16 +135,19 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       player_3_score: scores[2],
       player_4_score: scores[3],
       player_5_score: scores[4],
+      player_6_score: scores[5],
       player_1_hole_points: multipliedPoints[0],
       player_2_hole_points: multipliedPoints[1],
       player_3_hole_points: multipliedPoints[2],
       player_4_hole_points: multipliedPoints[3],
       player_5_hole_points: multipliedPoints[4],
+      player_6_hole_points: multipliedPoints[5],
       player_1_running_total: runningTotals[0],
       player_2_running_total: runningTotals[1],
       player_3_running_total: runningTotals[2],
       player_4_running_total: runningTotals[3],
       player_5_running_total: runningTotals[4],
+      player_6_running_total: runningTotals[5],
       winning_side: result.winningSide,
     };
   },
@@ -153,6 +158,7 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     player_3_points: newHoleData.player_3_running_total,
     player_4_points: newHoleData.player_4_running_total,
     player_5_points: newHoleData.player_5_running_total,
+    player_6_points: newHoleData.player_6_running_total,
   }),
   
   isGameFinished: (game, holeNumber, totalHoles) => holeNumber >= totalHoles,
@@ -179,16 +185,16 @@ export default function WolfPlay() {
   
   // Get player count
   const getPlayerCount = () => {
-    if (!game) return 3;
-    let count = 3;
-    if (game.player_4) count = 4;
+    if (!game) return 4;
+    let count = 4;
     if (game.player_5) count = 5;
+    if (game.player_6) count = 6;
     return count;
   };
   
   const getPlayerName = (index: number): string => {
     if (!game) return '';
-    const names = [game.player_1, game.player_2, game.player_3, game.player_4 || '', game.player_5 || ''];
+    const names = [game.player_1, game.player_2, game.player_3, game.player_4 || '', game.player_5 || '', game.player_6 || ''];
     return names[index];
   };
   
