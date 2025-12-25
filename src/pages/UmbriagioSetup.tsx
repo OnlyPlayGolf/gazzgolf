@@ -400,7 +400,6 @@ export default function UmbriagioSetup() {
                               <SetupPlayerCard
                                 player={player}
                                 onEdit={() => setEditingPlayer(player)}
-                                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                                 showTee={false}
                                 dragHandleProps={provided.dragHandleProps}
                               />
@@ -438,7 +437,6 @@ export default function UmbriagioSetup() {
                               <SetupPlayerCard
                                 player={player}
                                 onEdit={() => setEditingPlayer(player)}
-                                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                                 showTee={false}
                                 dragHandleProps={provided.dragHandleProps}
                               />
