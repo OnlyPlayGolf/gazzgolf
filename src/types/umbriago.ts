@@ -7,7 +7,10 @@ export interface UmbriagioGame {
   holes_played: number;
   date_played: string;
   created_at: string;
+  round_name?: string | null;
   
+  team_a_name: string;
+  team_b_name: string;
   team_a_player_1: string;
   team_a_player_2: string;
   team_b_player_1: string;

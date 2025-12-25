@@ -122,6 +122,7 @@ export default function UmbriagioLeaderboard() {
     const isExpanded = expandedTeam === team;
     const isLeader = leader === team;
     const totalPoints = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
+    const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
     const player1 = team === 'A' ? game.team_a_player_1 : game.team_b_player_1;
     const player2 = team === 'A' ? game.team_a_player_2 : game.team_b_player_2;
 
@@ -144,7 +145,7 @@ export default function UmbriagioLeaderboard() {
                 {holes.length || "-"}
               </div>
               <div>
-                <div className="text-xl font-bold">Team {team}</div>
+                <div className="text-xl font-bold">{teamName}</div>
                 <div className="text-sm text-muted-foreground">
                   {player1} & {player2}
                 </div>
