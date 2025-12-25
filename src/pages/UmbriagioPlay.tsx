@@ -178,22 +178,26 @@ export default function UmbriagioPlay() {
   };
 
   const advanceToNextPlayerSheet = (player: typeof playerOrder[number]) => {
-    // Get the score that was just entered for this player
-    const currentScores = { ...scores, [player]: scores[player] };
-    
     // Helper to check if a player has a valid score entered
+    // undefined = not entered yet, null = didn't finish (valid), number > 0 = valid score
     const hasValidScore = (p: typeof playerOrder[number]) => {
-      const score = currentScores[p];
-      return score === null || (score !== null && score > 0);
+      const score = scores[p];
+      // undefined means no score entered yet - NOT valid
+      if (score === undefined) return false;
+      // null means "didn't finish" - this IS a valid entry
+      if (score === null) return true;
+      // A positive number is a valid score
+      return score > 0;
     };
     
-    // Find the next player who doesn't have a valid score, starting from the beginning
-    const nextPlayerWithoutScore = playerOrder.find(p => !hasValidScore(p));
+    // Find the next player who doesn't have a valid score, excluding the current player
+    // (since their score is being set asynchronously via setState)
+    const nextPlayerWithoutScore = playerOrder.find(p => p !== player && !hasValidScore(p));
     
     if (nextPlayerWithoutScore) {
       setActiveScoreSheet(nextPlayerWithoutScore);
     } else {
-      // All players have valid scores - close the sheet
+      // All other players have valid scores - close the sheet
       setActiveScoreSheet(null);
     }
   };
