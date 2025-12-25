@@ -339,11 +339,11 @@ export default function WolfPlay() {
         {/* Wolf Choice */}
         <Card className="p-4">
           <h3 className="font-semibold mb-3 text-center">Wolf's Choice</h3>
-          <div className="flex gap-2 justify-center flex-wrap">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <Button
               variant={scoresState.wolfChoice === 'lone' ? 'default' : 'outline'}
               onClick={handleGoLone}
-              className="flex items-center gap-2"
+              className="flex items-center justify-center gap-2 w-full"
             >
               <User size={18} />
               Lone Wolf
@@ -356,10 +356,10 @@ export default function WolfPlay() {
                   key={i}
                   variant={isSelected ? 'default' : 'outline'}
                   onClick={() => handleChoosePartner(i)}
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-2 w-full truncate"
                 >
-                  <Users size={18} />
-                  {getPlayerName(i)}
+                  <Users size={18} className="flex-shrink-0" />
+                  <span className="truncate">{getPlayerName(i)}</span>
                 </Button>
               );
             })}
