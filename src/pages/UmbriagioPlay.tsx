@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
 import {
   calculateTeamLow,
@@ -152,6 +153,8 @@ export default function UmbriagioPlay() {
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activeScoreSheet, setActiveScoreSheet] = useState<keyof Pick<UmbriagioScores, 'teamAPlayer1' | 'teamAPlayer2' | 'teamBPlayer1' | 'teamBPlayer2'> | null>(null);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [currentComment, setCurrentComment] = useState("");
   
   const config = createUmbriagioConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -177,6 +180,33 @@ export default function UmbriagioPlay() {
     } else {
       setActiveScoreSheet(null);
       saveHole();
+    }
+  };
+
+  // Handle opening the More sheet
+  const handleOpenMoreSheet = () => {
+    if (activeScoreSheet) {
+      setCurrentComment("");
+      setShowMoreSheet(true);
+    }
+  };
+
+  // Handle saving from More sheet (no mulligans in Umbriago, just comments placeholder)
+  const handleSaveMore = () => {
+    // Comments could be saved to a local state or database if needed
+    // For now, just close the sheet
+    setShowMoreSheet(false);
+  };
+
+  // Get current player name for the More sheet
+  const getActivePlayerName = () => {
+    if (!activeScoreSheet || !game) return "";
+    switch (activeScoreSheet) {
+      case 'teamAPlayer1': return game.team_a_player_1;
+      case 'teamAPlayer2': return game.team_a_player_2;
+      case 'teamBPlayer1': return game.team_b_player_1;
+      case 'teamBPlayer2': return game.team_b_player_2;
+      default: return "";
     }
   };
 
@@ -540,10 +570,28 @@ export default function UmbriagioPlay() {
               holeNumber={currentHole}
               currentScore={scores[key]}
               onScoreSelect={(score) => handleScoreSelect(key, score)}
+              onMore={handleOpenMoreSheet}
               onEnterAndNext={() => advanceToNextPlayerSheet(key)}
             />
           );
         })}
+
+        {/* Score More Sheet */}
+        <ScoreMoreSheet
+          open={showMoreSheet}
+          onOpenChange={setShowMoreSheet}
+          holeNumber={currentHole}
+          par={par}
+          playerName={getActivePlayerName()}
+          comment={currentComment}
+          onCommentChange={setCurrentComment}
+          mulligansAllowed={0}
+          mulligansUsed={0}
+          mulliganUsedOnThisHole={false}
+          onUseMulligan={() => {}}
+          onRemoveMulligan={() => {}}
+          onSave={handleSaveMore}
+        />
 
         {/* Save Button */}
         <Button 
