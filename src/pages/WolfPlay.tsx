@@ -25,6 +25,8 @@ interface WolfScores {
   scores: (number | null)[];
   wolfChoice: 'lone' | 'partner' | null;
   partnerPlayer: number | null;
+  doubleCalledBy: number | null; // Player number who doubled (1-5)
+  doubleBackCalled: boolean; // Whether opponent doubled back
 }
 
 const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole, WolfScores> => ({
@@ -43,6 +45,8 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     scores: [null, null, null, null, null],
     wolfChoice: null,
     partnerPlayer: null,
+    doubleCalledBy: null,
+    doubleBackCalled: false,
   }),
   
   extractScoresFromHole: (hole) => ({
@@ -55,10 +59,12 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     ],
     wolfChoice: hole.wolf_choice as 'lone' | 'partner' | null,
     partnerPlayer: hole.partner_player,
+    doubleCalledBy: hole.double_called_by ?? null,
+    doubleBackCalled: hole.double_back_called ?? false,
   }),
   
   buildHoleData: ({ gameId, holeNumber, par, scores: scoresState, previousHoles, game }) => {
-    const { scores, wolfChoice, partnerPlayer } = scoresState;
+    const { scores, wolfChoice, partnerPlayer, doubleCalledBy, doubleBackCalled } = scoresState;
     
     // Get player count
     let playerCount = 3;
@@ -84,6 +90,18 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       settings,
     });
     
+    // Calculate multiplier based on doubles
+    let multiplier = 1;
+    if (doubleCalledBy !== null) {
+      multiplier = 2;
+      if (doubleBackCalled) {
+        multiplier = 4;
+      }
+    }
+    
+    // Apply multiplier to hole points
+    const multipliedPoints = result.playerPoints.map(p => p * multiplier);
+    
     // Calculate running totals
     const previousTotals = [0, 0, 0, 0, 0];
     previousHoles.forEach(h => {
@@ -94,7 +112,7 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       previousTotals[4] += h.player_5_hole_points;
     });
     
-    const runningTotals = previousTotals.map((t, i) => t + result.playerPoints[i]);
+    const runningTotals = previousTotals.map((t, i) => t + multipliedPoints[i]);
 
     return {
       game_id: gameId,
@@ -103,16 +121,19 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       wolf_player: currentWolfPlayer,
       wolf_choice: wolfChoice,
       partner_player: partnerPlayer,
+      multiplier,
+      double_called_by: doubleCalledBy,
+      double_back_called: doubleBackCalled,
       player_1_score: scores[0],
       player_2_score: scores[1],
       player_3_score: scores[2],
       player_4_score: scores[3],
       player_5_score: scores[4],
-      player_1_hole_points: result.playerPoints[0],
-      player_2_hole_points: result.playerPoints[1],
-      player_3_hole_points: result.playerPoints[2],
-      player_4_hole_points: result.playerPoints[3],
-      player_5_hole_points: result.playerPoints[4],
+      player_1_hole_points: multipliedPoints[0],
+      player_2_hole_points: multipliedPoints[1],
+      player_3_hole_points: multipliedPoints[2],
+      player_4_hole_points: multipliedPoints[3],
+      player_5_hole_points: multipliedPoints[4],
       player_1_running_total: runningTotals[0],
       player_2_running_total: runningTotals[1],
       player_3_running_total: runningTotals[2],
@@ -406,6 +427,133 @@ export default function WolfPlay() {
               );
             })}
           </div>
+        </Card>
+
+        {/* Double Section */}
+        <Card className="p-4">
+          <h3 className="font-semibold mb-3">Double</h3>
+          {(() => {
+            // Determine which side has fewer players (tees off first, can double first)
+            const isLoneWolf = scoresState.wolfChoice === 'lone';
+            const wolfTeamSize = isLoneWolf ? 1 : 2;
+            const opponentTeamSize = playerCount - wolfTeamSize;
+            
+            // The side with fewer players tees off first
+            const wolfTeamTeeFirst = wolfTeamSize <= opponentTeamSize;
+            
+            // Get players for each side
+            const wolfTeamPlayers = isLoneWolf 
+              ? [currentWolfPlayer] 
+              : [currentWolfPlayer, scoresState.partnerPlayer].filter(Boolean) as number[];
+            const opponentPlayers = [...Array(playerCount)]
+              .map((_, i) => i + 1)
+              .filter(p => !wolfTeamPlayers.includes(p));
+            
+            // First doubler side
+            const firstDoublerSide = wolfTeamTeeFirst ? 'wolf' : 'opponents';
+            const secondDoublerSide = wolfTeamTeeFirst ? 'opponents' : 'wolf';
+            
+            // Check who has doubled
+            const hasFirstDouble = scoresState.doubleCalledBy !== null;
+            const isFirstDoublerFromWolfTeam = hasFirstDouble && wolfTeamPlayers.includes(scoresState.doubleCalledBy!);
+            
+            // Can second side double back?
+            const canDoubleBack = hasFirstDouble && !scoresState.doubleBackCalled;
+            
+            const getTeamLabel = (side: 'wolf' | 'opponents') => {
+              if (side === 'wolf') {
+                return isLoneWolf 
+                  ? `${getPlayerName(currentWolfPlayer - 1)} (Lone Wolf)` 
+                  : `Wolf Team`;
+              }
+              return 'Opponents';
+            };
+            
+            const handleDouble = (side: 'wolf' | 'opponents') => {
+              const playerToUse = side === 'wolf' ? currentWolfPlayer : opponentPlayers[0];
+              if (!hasFirstDouble) {
+                // First double
+                setScores(prev => ({
+                  ...prev,
+                  doubleCalledBy: playerToUse,
+                  doubleBackCalled: false,
+                }));
+              } else if (canDoubleBack) {
+                // Double back
+                setScores(prev => ({
+                  ...prev,
+                  doubleBackCalled: true,
+                }));
+              }
+            };
+            
+            const handleClearDouble = () => {
+              setScores(prev => ({
+                ...prev,
+                doubleCalledBy: null,
+                doubleBackCalled: false,
+              }));
+            };
+            
+            const multiplier = hasFirstDouble ? (scoresState.doubleBackCalled ? 4 : 2) : 1;
+            
+            return (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  {/* First doubler side */}
+                  <Button
+                    variant={hasFirstDouble && 
+                      ((firstDoublerSide === 'wolf' && isFirstDoublerFromWolfTeam) || 
+                       (firstDoublerSide === 'opponents' && !isFirstDoublerFromWolfTeam)) 
+                      ? 'default' : 'outline'}
+                    onClick={() => handleDouble(firstDoublerSide)}
+                    disabled={hasFirstDouble}
+                    className="flex flex-col items-center py-3 h-auto"
+                  >
+                    <span className="text-xs text-muted-foreground mb-1">Tees off first</span>
+                    <span className="font-medium truncate w-full text-center">{getTeamLabel(firstDoublerSide)}</span>
+                    <span className="text-sm mt-1">Double</span>
+                  </Button>
+                  
+                  {/* Second doubler side (can only double after first double) */}
+                  <Button
+                    variant={scoresState.doubleBackCalled ? 'default' : 'outline'}
+                    onClick={() => handleDouble(secondDoublerSide)}
+                    disabled={!canDoubleBack}
+                    className="flex flex-col items-center py-3 h-auto"
+                  >
+                    <span className="text-xs text-muted-foreground mb-1">Tees off second</span>
+                    <span className="font-medium truncate w-full text-center">{getTeamLabel(secondDoublerSide)}</span>
+                    <span className="text-sm mt-1">Double Back</span>
+                  </Button>
+                </div>
+                
+                {hasFirstDouble && (
+                  <div className="flex items-center justify-between">
+                    <div className="text-center flex-1">
+                      <span className="text-lg font-bold text-amber-600">
+                        {multiplier}x Points
+                      </span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleClearDouble}
+                      className="text-muted-foreground"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                )}
+                
+                {!scoresState.wolfChoice && (
+                  <p className="text-sm text-muted-foreground text-center">
+                    Select Wolf's choice first
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </Card>
 
         {/* Player Score Sheets */}
