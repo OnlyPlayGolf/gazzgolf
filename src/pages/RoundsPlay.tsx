@@ -516,6 +516,11 @@ export default function RoundsPlay() {
       return;
     }
     if (setupState.gameFormat === "wolf") {
+      const totalPlayers = getTotalPlayers();
+      if (totalPlayers < 4 || totalPlayers > 6) {
+        toast({ title: "Wolf requires 4-6 players", description: `You have ${totalPlayers} player${totalPlayers === 1 ? '' : 's'}. Add or remove players to continue.`, variant: "destructive" });
+        return;
+      }
       navigate('/wolf/setup');
       return;
     }
