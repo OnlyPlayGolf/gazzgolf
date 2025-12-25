@@ -1837,6 +1837,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          double_enabled: boolean
           holes_played: number
           id: string
           is_finished: boolean
@@ -1865,6 +1866,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          double_enabled?: boolean
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1893,6 +1895,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          double_enabled?: boolean
           holes_played?: number
           id?: string
           is_finished?: boolean

@@ -399,7 +399,8 @@ export default function WolfPlay() {
           )}
         </Card>
 
-        {/* Double Section */}
+        {/* Double Section - only show if enabled */}
+        {game.double_enabled && (
         <Card className="p-4">
           <h3 className="font-semibold mb-3">Double</h3>
           {(() => {
@@ -525,6 +526,7 @@ export default function WolfPlay() {
             );
           })()}
         </Card>
+        )}
 
         {/* Score Entry */}
         <Card className="p-4">
