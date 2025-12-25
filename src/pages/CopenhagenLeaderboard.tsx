@@ -115,6 +115,14 @@ export default function CopenhagenLeaderboard() {
     return hole.player_3_hole_points;
   };
 
+  const getPlayerGrossScore = (holeNumber: number, playerIndex: number) => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
+    if (playerIndex === 1) return hole.player_1_gross_score;
+    if (playerIndex === 2) return hole.player_2_gross_score;
+    return hole.player_3_gross_score;
+  };
+
   const renderPlayerCard = (player: { index: number; name: string; points: number }, rank: number) => {
     const isExpanded = expandedPlayer === player.index;
     const isLeader = leader === player.index;
@@ -193,6 +201,23 @@ export default function CopenhagenLeaderboard() {
                       {frontNine.reduce((sum, h) => sum + h.par, 0)}
                     </TableCell>
                   </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                    {frontNine.map(hole => {
+                      const score = getPlayerGrossScore(hole.hole_number, player.index);
+                      return (
+                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                          {score === -1 ? '–' : score !== null ? score : ''}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5">
+                      {frontNine.reduce((sum, h) => {
+                        const s = getPlayerGrossScore(h.hole_number, player.index);
+                        return sum + (s !== null && s > 0 ? s : 0);
+                      }, 0) || ''}
+                    </TableCell>
+                  </TableRow>
                   <TableRow className="font-bold">
                     <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
                     {frontNine.map(hole => {
@@ -252,6 +277,23 @@ export default function CopenhagenLeaderboard() {
                       ))}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
                         {backNine.reduce((sum, h) => sum + h.par, 0)}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                      {backNine.map(hole => {
+                        const score = getPlayerGrossScore(hole.hole_number, player.index);
+                        return (
+                          <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                            {score === -1 ? '–' : score !== null ? score : ''}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5">
+                        {backNine.reduce((sum, h) => {
+                          const s = getPlayerGrossScore(h.hole_number, player.index);
+                          return sum + (s !== null && s > 0 ? s : 0);
+                        }, 0) || ''}
                       </TableCell>
                     </TableRow>
                     <TableRow className="font-bold">

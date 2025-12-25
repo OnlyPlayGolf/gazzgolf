@@ -246,15 +246,35 @@ export default function CopenhagenPlay() {
   // Helper to check if a score has been entered (positive score or dash/-1)
   const hasValidScore = (score: number) => score > 0 || score === -1;
 
-  const handleEnterAndNext = async () => {
-    if (activePlayerSheet === 1) {
-      setActivePlayerSheet(2);
-    } else if (activePlayerSheet === 2) {
-      setActivePlayerSheet(3);
-    } else {
+  // Check if all players have valid scores and auto-advance
+  const checkAndAdvance = async (updatedScores: CopenhagenScores) => {
+    if (hasValidScore(updatedScores.player1) && hasValidScore(updatedScores.player2) && hasValidScore(updatedScores.player3)) {
       setActivePlayerSheet(null);
-      // Only save and advance if all players have scores entered (including dash/-1)
-      if (hasValidScore(scores.player1) && hasValidScore(scores.player2) && hasValidScore(scores.player3)) {
+      await saveHole();
+    }
+  };
+
+  const handleEnterAndNext = async () => {
+    const currentScores = { ...scores };
+    
+    if (activePlayerSheet === 1) {
+      // Check if all scores are now valid after player 1
+      if (hasValidScore(currentScores.player1) && hasValidScore(currentScores.player2) && hasValidScore(currentScores.player3)) {
+        await checkAndAdvance(currentScores);
+      } else {
+        setActivePlayerSheet(2);
+      }
+    } else if (activePlayerSheet === 2) {
+      // Check if all scores are now valid after player 2
+      if (hasValidScore(currentScores.player1) && hasValidScore(currentScores.player2) && hasValidScore(currentScores.player3)) {
+        await checkAndAdvance(currentScores);
+      } else {
+        setActivePlayerSheet(3);
+      }
+    } else {
+      // After player 3, check and advance
+      setActivePlayerSheet(null);
+      if (hasValidScore(currentScores.player1) && hasValidScore(currentScores.player2) && hasValidScore(currentScores.player3)) {
         await saveHole();
       }
     }
