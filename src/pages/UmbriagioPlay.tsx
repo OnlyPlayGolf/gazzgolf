@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Zap, Dices } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -26,6 +26,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+interface TeamCombination {
+  teamA: [string, string];
+  teamB: [string, string];
+}
+
+interface RotationSchedule {
+  type: "every9" | "every6";
+  schedule: TeamCombination[];
+}
 
 interface UmbriagioScores {
   teamAPlayer1: number | null;
@@ -168,6 +178,42 @@ export default function UmbriagioPlay() {
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
 
+  // Load rotation schedule from sessionStorage
+  const rotationSchedule = useMemo<RotationSchedule | null>(() => {
+    if (!gameId) return null;
+    const stored = sessionStorage.getItem(`umbriago_rotation_${gameId}`);
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored) as RotationSchedule;
+    } catch {
+      return null;
+    }
+  }, [gameId]);
+
+  // Get current team players based on rotation and hole number
+  const getCurrentTeamPlayers = useMemo(() => {
+    if (!game) return null;
+    
+    // Default: use game's original team assignments
+    const defaultPlayers = {
+      teamA: [game.team_a_player_1, game.team_a_player_2] as [string, string],
+      teamB: [game.team_b_player_1, game.team_b_player_2] as [string, string],
+    };
+    
+    if (!rotationSchedule || rotationSchedule.schedule.length === 0) {
+      return defaultPlayers;
+    }
+    
+    // Determine which segment we're in based on hole number and rotation type
+    const holesPerSegment = rotationSchedule.type === "every9" ? 9 : 6;
+    const segmentIndex = Math.min(
+      Math.floor((currentHole - 1) / holesPerSegment),
+      rotationSchedule.schedule.length - 1
+    );
+    
+    return rotationSchedule.schedule[segmentIndex] || defaultPlayers;
+  }, [game, rotationSchedule, currentHole]);
+
   const playerOrder: (keyof Pick<UmbriagioScores, 'teamAPlayer1' | 'teamAPlayer2' | 'teamBPlayer1' | 'teamBPlayer2'>)[] = 
     ['teamAPlayer1', 'teamAPlayer2', 'teamBPlayer1', 'teamBPlayer2'];
 
@@ -221,10 +267,10 @@ export default function UmbriagioPlay() {
   const getActivePlayerName = () => {
     if (!activeScoreSheet || !game) return "";
     switch (activeScoreSheet) {
-      case 'teamAPlayer1': return game.team_a_player_1;
-      case 'teamAPlayer2': return game.team_a_player_2;
-      case 'teamBPlayer1': return game.team_b_player_1;
-      case 'teamBPlayer2': return game.team_b_player_2;
+      case 'teamAPlayer1': return getCurrentTeamPlayers?.teamA[0] || game.team_a_player_1;
+      case 'teamAPlayer2': return getCurrentTeamPlayers?.teamA[1] || game.team_a_player_2;
+      case 'teamBPlayer1': return getCurrentTeamPlayers?.teamB[0] || game.team_b_player_1;
+      case 'teamBPlayer2': return getCurrentTeamPlayers?.teamB[1] || game.team_b_player_2;
       default: return "";
     }
   };
@@ -569,8 +615,8 @@ export default function UmbriagioPlay() {
           <h3 className="font-semibold text-blue-600 mb-3">{game.team_a_name}</h3>
           <div className="space-y-2">
             {[
-              { key: 'teamAPlayer1' as const, name: game.team_a_player_1, score: scores.teamAPlayer1 },
-              { key: 'teamAPlayer2' as const, name: game.team_a_player_2, score: scores.teamAPlayer2 },
+              { key: 'teamAPlayer1' as const, name: getCurrentTeamPlayers?.teamA[0] || game.team_a_player_1, score: scores.teamAPlayer1 },
+              { key: 'teamAPlayer2' as const, name: getCurrentTeamPlayers?.teamA[1] || game.team_a_player_2, score: scores.teamAPlayer2 },
             ].map(player => (
               <div
                 key={player.key}
@@ -616,8 +662,8 @@ export default function UmbriagioPlay() {
           <h3 className="font-semibold text-red-600 mb-3">{game.team_b_name}</h3>
           <div className="space-y-2">
             {[
-              { key: 'teamBPlayer1' as const, name: game.team_b_player_1, score: scores.teamBPlayer1 },
-              { key: 'teamBPlayer2' as const, name: game.team_b_player_2, score: scores.teamBPlayer2 },
+              { key: 'teamBPlayer1' as const, name: getCurrentTeamPlayers?.teamB[0] || game.team_b_player_1, score: scores.teamBPlayer1 },
+              { key: 'teamBPlayer2' as const, name: getCurrentTeamPlayers?.teamB[1] || game.team_b_player_2, score: scores.teamBPlayer2 },
             ].map(player => (
               <div
                 key={player.key}
@@ -675,9 +721,10 @@ export default function UmbriagioPlay() {
 
         {/* Player Score Sheets */}
         {playerOrder.map(key => {
-          const playerName = key === 'teamAPlayer1' ? game.team_a_player_1 :
-                            key === 'teamAPlayer2' ? game.team_a_player_2 :
-                            key === 'teamBPlayer1' ? game.team_b_player_1 : game.team_b_player_2;
+          const playerName = key === 'teamAPlayer1' ? (getCurrentTeamPlayers?.teamA[0] || game.team_a_player_1) :
+                            key === 'teamAPlayer2' ? (getCurrentTeamPlayers?.teamA[1] || game.team_a_player_2) :
+                            key === 'teamBPlayer1' ? (getCurrentTeamPlayers?.teamB[0] || game.team_b_player_1) : 
+                            (getCurrentTeamPlayers?.teamB[1] || game.team_b_player_2);
           return (
             <PlayerScoreSheet
               key={key}
