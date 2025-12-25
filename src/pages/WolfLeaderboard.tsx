@@ -320,23 +320,6 @@ export default function WolfLeaderboard() {
               </div>
             )}
 
-            {/* Summary */}
-            <div className="border-t bg-muted/30 p-4">
-              <div className="flex items-center justify-around text-center">
-                <div>
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-2xl font-bold">{player.points}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Holes</div>
-                  <div className="text-2xl font-bold">{holes.length}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Position</div>
-                  <div className="text-2xl font-bold">{position}</div>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </Card>
