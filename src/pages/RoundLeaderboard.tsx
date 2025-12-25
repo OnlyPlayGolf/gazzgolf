@@ -202,6 +202,13 @@ export default function RoundLeaderboard() {
     }
   };
 
+  const hasPlayerConcededAnyHole = (player: PlayerData): boolean => {
+    for (const score of player.scores.values()) {
+      if (score === -1) return true;
+    }
+    return false;
+  };
+
   const calculateTotals = (player: PlayerData, holes: CourseHole[]) => {
     let totalScore = 0;
     let totalPar = 0;
@@ -224,6 +231,17 @@ export default function RoundLeaderboard() {
     if (diff === 0) return "E";
     if (diff > 0) return `+${diff}`;
     return diff.toString();
+  };
+
+  const getPlayerScoreToParDisplay = (player: PlayerData) => {
+    // If player has any conceded hole (dash), show "-"
+    if (hasPlayerConcededAnyHole(player)) return "-";
+    
+    const totals = calculateTotals(player, courseHoles);
+    if (totals.totalScore > 0) {
+      return getScoreToPar(totals.totalScore, totals.totalPar);
+    }
+    return "E";
   };
 
   if (loading) {
@@ -260,30 +278,35 @@ export default function RoundLeaderboard() {
           // Calculate positions based on score to par
           const playersWithTotals = players.map(player => {
             const totals = calculateTotals(player, courseHoles);
-            const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
-            return { player, scoreToPar };
+            const hasConceded = hasPlayerConcededAnyHole(player);
+            // Players with conceded holes go to the bottom (Infinity)
+            const scoreToPar = hasConceded ? Infinity : (totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity);
+            return { player, scoreToPar, hasConceded };
           });
           
-          // Sort by score to par (lower is better)
+          // Sort by score to par (lower is better), conceded players go last
           const sorted = [...playersWithTotals].sort((a, b) => a.scoreToPar - b.scoreToPar);
           
           // Helper for position with ties
-          const getPositionLabel = (scoreToPar: number): string => {
+          const getPositionLabel = (scoreToPar: number, hasConceded: boolean): string => {
+            // Players with conceded holes show "-" instead of position
+            if (hasConceded) return "-";
+            
             const playersAhead = sorted.filter(p => p.scoreToPar < scoreToPar).length;
             const position = playersAhead + 1;
-            const sameScoreCount = sorted.filter(p => p.scoreToPar === scoreToPar).length;
+            const sameScoreCount = sorted.filter(p => p.scoreToPar === scoreToPar && !p.hasConceded).length;
             if (sameScoreCount > 1) {
               return `T${position}`;
             }
             return `${position}`;
           };
 
-          return sorted.map(({ player, scoreToPar }) => {
+          return sorted.map(({ player, scoreToPar, hasConceded }) => {
             const isExpanded = expandedPlayerId === player.id;
             const frontTotals = calculateTotals(player, frontNine);
             const backTotals = calculateTotals(player, backNine);
             const overallTotals = calculateTotals(player, courseHoles);
-            const positionLabel = getPositionLabel(scoreToPar);
+            const positionLabel = getPositionLabel(scoreToPar, hasConceded);
 
             return (
               <Card key={player.id} className="overflow-hidden">
@@ -311,10 +334,7 @@ export default function RoundLeaderboard() {
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold">
-                      {overallTotals.totalScore > 0 
-                        ? getScoreToPar(overallTotals.totalScore, overallTotals.totalPar)
-                        : "E"
-                      }
+                      {getPlayerScoreToParDisplay(player)}
                     </div>
                     <div className="text-sm text-muted-foreground">TO PAR</div>
                   </div>

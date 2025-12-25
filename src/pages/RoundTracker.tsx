@@ -397,6 +397,14 @@ export default function RoundTracker() {
     }
   };
 
+  const hasPlayerConcededAnyHole = (playerId: string): boolean => {
+    const playerScores = scores.get(playerId) || new Map();
+    for (const score of playerScores.values()) {
+      if (score === -1) return true;
+    }
+    return false;
+  };
+
   const calculateScoreToPar = (playerId: string) => {
     let totalScore = 0;
     let totalPar = 0;
@@ -414,6 +422,9 @@ export default function RoundTracker() {
   };
 
   const getScoreDisplay = (playerId: string) => {
+    // If player has any conceded hole (dash), show "-"
+    if (hasPlayerConcededAnyHole(playerId)) return "-";
+    
     const diff = calculateScoreToPar(playerId);
     if (diff === 0) return "E";
     if (diff > 0) return `+${diff}`;
