@@ -10,6 +10,7 @@ import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { calculateWolfHoleScore, getWolfPlayerForHole } from "@/utils/wolfScoring";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -262,10 +263,30 @@ export default function WolfPlay() {
     setShowMoreSheet(true);
   };
 
-  const handleSaveMore = () => {
-    // Comments are handled via the round_comments table if needed
-    // For now, just close the sheet
+  const handleSaveMore = async () => {
+    // Save comment to feed if provided
+    if (currentComment.trim() && gameId && activePlayerSheet !== null) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const playerName = getPlayerName(activePlayerSheet);
+          
+          await supabase.from("round_comments").insert({
+            round_id: gameId,
+            user_id: user.id,
+            content: currentComment.trim(),
+            hole_number: currentHole,
+            game_type: "wolf",
+            game_id: gameId,
+          });
+        }
+      } catch (error) {
+        console.error("Error saving comment:", error);
+      }
+    }
+    
     setShowMoreSheet(false);
+    setCurrentComment("");
   };
 
   const handleSaveHole = async () => {
