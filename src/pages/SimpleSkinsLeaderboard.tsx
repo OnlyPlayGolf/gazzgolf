@@ -287,6 +287,18 @@ export default function SimpleSkinsLeaderboard() {
     getPlayerSkinCount(b.id) - getPlayerSkinCount(a.id)
   );
 
+  // Helper for skins position with ties
+  const getSkinsPositionLabel = (playerId: string): string => {
+    const skinCount = getPlayerSkinCount(playerId);
+    const playersAhead = sortedPlayers.filter(p => getPlayerSkinCount(p.id) > skinCount).length;
+    const position = playersAhead + 1;
+    const sameSkinsCount = sortedPlayers.filter(p => getPlayerSkinCount(p.id) === skinCount).length;
+    if (sameSkinsCount > 1) {
+      return `T${position}`;
+    }
+    return `${position}`;
+  };
+
   const frontNine = courseHoles.slice(0, 9);
   const backNine = courseHoles.slice(9, 18);
 
@@ -298,6 +310,32 @@ export default function SimpleSkinsLeaderboard() {
     const bScoreToPar = bTotals.totalScore > 0 ? bTotals.totalScore - bTotals.totalPar : Infinity;
     return aScoreToPar - bScoreToPar;
   });
+
+  // Helper for stroke play position with ties
+  const getStrokePlayPositionLabel = (playerId: string): string => {
+    const player = strokePlayPlayers.find(p => p.id === playerId);
+    if (!player) return "1";
+    const playerTotals = calculateTotals(player, courseHoles);
+    const playerScoreToPar = playerTotals.totalScore > 0 ? playerTotals.totalScore - playerTotals.totalPar : Infinity;
+    
+    const playersAhead = sortedStrokePlayPlayers.filter(p => {
+      const totals = calculateTotals(p, courseHoles);
+      const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
+      return scoreToPar < playerScoreToPar;
+    }).length;
+    const position = playersAhead + 1;
+    
+    const sameToPar = sortedStrokePlayPlayers.filter(p => {
+      const totals = calculateTotals(p, courseHoles);
+      const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
+      return scoreToPar === playerScoreToPar;
+    }).length;
+    
+    if (sameToPar > 1) {
+      return `T${position}`;
+    }
+    return `${position}`;
+  };
 
   return (
     <div className="pb-24 min-h-screen bg-background">
@@ -319,20 +357,21 @@ export default function SimpleSkinsLeaderboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {sortedPlayers.map((player, index) => {
+                {sortedPlayers.map((player) => {
                   const skinCount = getPlayerSkinCount(player.id);
-                  const totalScore = getPlayerTotalScore(player.id);
+                  const positionLabel = getSkinsPositionLabel(player.id);
+                  const isLeader = positionLabel === "1" || positionLabel === "T1";
                   
                   return (
                     <div 
                       key={player.id}
                       className={`flex items-center justify-between p-3 rounded-lg ${
-                        index === 0 && skinCount > 0 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-muted/50'
+                        isLeader && skinCount > 0 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-muted/50'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={`text-lg font-bold ${index === 0 && skinCount > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
-                          #{index + 1}
+                        <span className={`text-lg font-bold ${isLeader && skinCount > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                          {positionLabel}
                         </span>
                         <div>
                           <p className="font-medium">{getPlayerName(player)}</p>
@@ -360,12 +399,12 @@ export default function SimpleSkinsLeaderboard() {
               </div>
             </div>
 
-            {sortedStrokePlayPlayers.map((player, index) => {
+            {sortedStrokePlayPlayers.map((player) => {
               const isExpanded = expandedPlayerId === player.id;
               const frontTotals = calculateTotals(player, frontNine);
               const backTotals = calculateTotals(player, backNine);
               const overallTotals = calculateTotals(player, courseHoles);
-              const position = index + 1;
+              const positionLabel = getStrokePlayPositionLabel(player.id);
 
               return (
                 <Card key={player.id} className="overflow-hidden">
@@ -380,7 +419,7 @@ export default function SimpleSkinsLeaderboard() {
                           className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
                         />
                         <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
-                          {position}
+                          {positionLabel}
                         </div>
                         <div>
                           <div className="text-xl font-bold">{player.display_name}</div>
