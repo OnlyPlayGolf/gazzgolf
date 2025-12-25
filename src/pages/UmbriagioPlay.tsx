@@ -177,13 +177,13 @@ export default function UmbriagioPlay() {
     setScores(prev => ({ ...prev, [player]: scoreToSave }));
   };
 
-  const advanceToNextPlayerSheet = (player: typeof playerOrder[number]) => {
+  const advanceToNextPlayerSheet = (player: typeof playerOrder[number], updatedScores: UmbriagioScores) => {
     // Find next player who doesn't have a score yet
     const currentIndex = playerOrder.indexOf(player);
     
-    // Helper to check if a player has a valid score
+    // Helper to check if a player has a valid score (using updated scores)
     const hasScore = (p: typeof playerOrder[number]) => {
-      const score = scores[p];
+      const score = updatedScores[p];
       return score !== null && score !== undefined;
     };
     
@@ -688,7 +688,11 @@ export default function UmbriagioPlay() {
               currentScore={scores[key]}
               onScoreSelect={(score) => handleScoreSelect(key, score)}
               onMore={handleOpenMoreSheet}
-              onEnterAndNext={() => advanceToNextPlayerSheet(key)}
+              onEnterAndNext={() => {
+                // Pass the current scores with this player's score included
+                const updatedScores = { ...scores, [key]: scores[key] };
+                advanceToNextPlayerSheet(key, updatedScores);
+              }}
             />
           );
         })}
