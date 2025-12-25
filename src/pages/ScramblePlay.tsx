@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,12 @@ export default function ScramblePlay() {
   const [loading, setLoading] = useState(true);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [activeTeamSheet, setActiveTeamSheet] = useState<string | null>(null);
+  
+  // More sheet state
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [currentComment, setCurrentComment] = useState("");
+  // Map: teamId -> Map<holeNumber, comment>
+  const [holeComments, setHoleComments] = useState<Map<string, Map<number, string>>>(new Map());
 
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -238,6 +245,34 @@ export default function ScramblePlay() {
     }
   };
 
+  // More sheet handlers
+  const handleOpenMoreSheet = () => {
+    if (activeTeamSheet) {
+      const existingComment = holeComments.get(activeTeamSheet)?.get(currentHole) || "";
+      setCurrentComment(existingComment);
+      setShowMoreSheet(true);
+    }
+  };
+
+  const handleSaveMore = () => {
+    if (activeTeamSheet && currentComment.trim()) {
+      setHoleComments(prev => {
+        const updated = new Map(prev);
+        const teamComments = new Map(prev.get(activeTeamSheet) || []);
+        teamComments.set(currentHole, currentComment);
+        updated.set(activeTeamSheet, teamComments);
+        return updated;
+      });
+    }
+    setShowMoreSheet(false);
+  };
+
+  const getActiveTeamName = (): string => {
+    if (!activeTeamSheet) return "";
+    const team = teams.find(t => t.id === activeTeamSheet);
+    return team?.name || "";
+  };
+
   const navigateHole = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && currentHoleIndex > 0) {
       const targetHole = currentHole - 1;
@@ -436,9 +471,27 @@ export default function ScramblePlay() {
             holeNumber={currentHole}
             currentScore={teamScores[team.id] ?? null}
             onScoreSelect={(score) => handleScoreSelect(team.id, score)}
+            onMore={handleOpenMoreSheet}
             onEnterAndNext={advanceToNextTeamSheet}
           />
         ))}
+
+        {/* Score More Sheet */}
+        <ScoreMoreSheet
+          open={showMoreSheet}
+          onOpenChange={setShowMoreSheet}
+          holeNumber={currentHole}
+          par={par}
+          playerName={getActiveTeamName()}
+          comment={currentComment}
+          onCommentChange={setCurrentComment}
+          mulligansAllowed={0}
+          mulligansUsed={0}
+          mulliganUsedOnThisHole={false}
+          onUseMulligan={() => {}}
+          onRemoveMulligan={() => {}}
+          onSave={handleSaveMore}
+        />
 
         {/* Finish Game button - only shown on last hole when all scores entered */}
         {isLastHole && allScoresEntered && (
