@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Zap, Dices, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap, Dices } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
@@ -248,6 +248,19 @@ export default function UmbriagioPlay() {
   const { losingTeam, winningTeam } = getTeamStatus();
 
   const handleDouble = (team: 'A' | 'B') => {
+    // Toggle off if this team already has double active at 2x
+    if (scores.multiplier === 2 && scores.doubleCalledBy === team && !scores.doubleBackCalled) {
+      setScores(prev => ({ ...prev, multiplier: 1, doubleCalledBy: null }));
+      toast({ title: "Double cleared" });
+      return;
+    }
+    // Toggle off double back if at 4x and this team called double back
+    if (scores.multiplier === 4 && scores.doubleBackCalled && scores.doubleCalledBy !== team) {
+      setScores(prev => ({ ...prev, multiplier: 2, doubleBackCalled: false }));
+      toast({ title: "Double Back cleared", description: "Multiplier is now ×2" });
+      return;
+    }
+    
     if (scores.multiplier === 1) {
       setScores(prev => ({ ...prev, multiplier: 2, doubleCalledBy: team }));
       toast({ title: `Team ${team} called Double!`, description: "Multiplier is now ×2" });
@@ -258,17 +271,17 @@ export default function UmbriagioPlay() {
     }
   };
 
-  const handleClearDouble = async () => {
-    // If a roll was used on this hole, undo it
-    if (scores.rollUsedOnThisHole && game) {
+  const handleRoll = async (team: 'A' | 'B') => {
+    if (!game) return;
+    
+    // Toggle off if roll was used on this hole by this team
+    if (scores.rollUsedOnThisHole === team) {
       const rollHistory = game.roll_history || [];
-      // Find the roll for this hole and team
       const rollIndex = rollHistory.findIndex(
-        r => r.hole === currentHole && r.team === scores.rollUsedOnThisHole
+        r => r.hole === currentHole && r.team === team
       );
       
       if (rollIndex !== -1) {
-        const roll = rollHistory[rollIndex];
         const newRollHistory = rollHistory.filter((_, i) => i !== rollIndex);
         
         // Restore points (double them back since they were halved)
@@ -286,22 +299,14 @@ export default function UmbriagioPlay() {
             .eq("id", game.id);
           
           await refetchGame();
+          setScores(prev => ({ ...prev, multiplier: 1, rollUsedOnThisHole: null }));
           toast({ title: "Roll cleared and points restored" });
         } catch (error: any) {
           toast({ title: "Error clearing roll", description: error.message, variant: "destructive" });
-          return;
         }
       }
+      return;
     }
-    
-    setScores(prev => ({ ...prev, multiplier: 1, doubleCalledBy: null, doubleBackCalled: false, rollUsedOnThisHole: null }));
-    if (!scores.rollUsedOnThisHole) {
-      toast({ title: "Double cleared" });
-    }
-  };
-
-  const handleRoll = async (team: 'A' | 'B') => {
-    if (!game) return;
     
     const rollHistory = game.roll_history || [];
     const teamRolls = rollHistory.filter(r => r.team === team).length;
@@ -599,12 +604,6 @@ export default function UmbriagioPlay() {
           </div>
         </Card>
 
-        {/* Clear Double/Roll */}
-        {scores.multiplier > 1 && (
-          <Button variant="outline" className="w-full" onClick={handleClearDouble}>
-            <X size={16} className="mr-2" /> Clear Double/Roll (×{scores.multiplier} → ×1)
-          </Button>
-        )}
         {/* Points Display */}
         <Card className="p-4">
           <div className="flex justify-between items-center">
