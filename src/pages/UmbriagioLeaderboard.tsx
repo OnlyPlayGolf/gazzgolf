@@ -150,11 +150,58 @@ export default function UmbriagioLeaderboard() {
     }
   };
 
-  // Calculate total score and to-par for a player
+  // Determine which team a player was on for a specific hole (considering rotation)
+  const getPlayerTeamForHole = (holeNumber: number, playerId: string): 'A' | 'B' | null => {
+    if (!game || !rotationSchedule || rotationSchedule.schedule.length <= 1) {
+      // No rotation - use original team assignment
+      if (playerId === 'team_a_player_1' || playerId === 'team_a_player_2') return 'A';
+      if (playerId === 'team_b_player_1' || playerId === 'team_b_player_2') return 'B';
+      return null;
+    }
+
+    // Get player name
+    let playerName = '';
+    switch (playerId) {
+      case 'team_a_player_1': playerName = game.team_a_player_1; break;
+      case 'team_a_player_2': playerName = game.team_a_player_2; break;
+      case 'team_b_player_1': playerName = game.team_b_player_1; break;
+      case 'team_b_player_2': playerName = game.team_b_player_2; break;
+    }
+
+    // Determine segment for this hole
+    const holesPerSegment = rotationSchedule.type === "every9" ? 9 : 6;
+    const segmentIndex = Math.min(
+      Math.floor((holeNumber - 1) / holesPerSegment),
+      rotationSchedule.schedule.length - 1
+    );
+
+    const segment = rotationSchedule.schedule[segmentIndex];
+    if (!segment) return null;
+
+    if (segment.teamA.includes(playerName)) return 'A';
+    if (segment.teamB.includes(playerName)) return 'B';
+    return null;
+  };
+
+  // Get player's points for a specific hole based on which team they were on
+  const getPlayerPointsForHole = (holeNumber: number, playerId: string): number | null => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
+
+    const playerTeam = getPlayerTeamForHole(holeNumber, playerId);
+    if (!playerTeam) return null;
+
+    // Points are split between the two team members
+    const teamPoints = playerTeam === 'A' ? hole.team_a_hole_points : hole.team_b_hole_points;
+    return teamPoints / 2; // Each player gets half the team's points
+  };
+
+  // Calculate total stats for a player including points
   const getPlayerStats = (playerId: string) => {
     let totalScore = 0;
     let totalPar = 0;
     let holesPlayed = 0;
+    let totalPoints = 0;
 
     holes.forEach(hole => {
       const score = getPlayerScore(hole.hole_number, playerId);
@@ -163,12 +210,44 @@ export default function UmbriagioLeaderboard() {
         totalPar += hole.par;
         holesPlayed++;
       }
+      
+      const points = getPlayerPointsForHole(hole.hole_number, playerId);
+      if (points !== null) {
+        totalPoints += points;
+      }
     });
 
     const toPar = totalScore - totalPar;
     const toParDisplay = totalScore === 0 ? 'E' : toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : `${toPar}`;
 
-    return { totalScore, toPar, toParDisplay, holesPlayed };
+    return { totalScore, toPar, toParDisplay, holesPlayed, totalPoints };
+  };
+
+  // Get sorted players by points for ranking
+  const rankedPlayers = useMemo(() => {
+    const playersWithStats = allPlayers.map(player => ({
+      ...player,
+      stats: getPlayerStats(player.id)
+    }));
+    
+    // Sort by points (highest first)
+    return playersWithStats.sort((a, b) => b.stats.totalPoints - a.stats.totalPoints);
+  }, [allPlayers, holes]);
+
+  // Get player's position in leaderboard
+  const getPlayerPosition = (playerId: string): number => {
+    const index = rankedPlayers.findIndex(p => p.id === playerId);
+    if (index === -1) return 0;
+    
+    // Handle ties - players with same points get same position
+    const playerPoints = rankedPlayers[index].stats.totalPoints;
+    let position = 1;
+    for (let i = 0; i < index; i++) {
+      if (rankedPlayers[i].stats.totalPoints > playerPoints) {
+        position = i + 2;
+      }
+    }
+    return position;
   };
 
   if (loading) {
@@ -187,9 +266,17 @@ export default function UmbriagioLeaderboard() {
     );
   }
 
-  const renderPlayerCard = (player: { id: string; name: string }) => {
+  const renderPlayerCard = (player: { id: string; name: string }, position: number) => {
     const isExpanded = expandedPlayer === player.id;
     const stats = getPlayerStats(player.id);
+    const isLeader = position === 1;
+
+    const getPositionSuffix = (pos: number) => {
+      if (pos === 1) return 'st';
+      if (pos === 2) return 'nd';
+      if (pos === 3) return 'rd';
+      return 'th';
+    };
 
     return (
       <Card key={player.id} className="overflow-hidden">
@@ -204,8 +291,10 @@ export default function UmbriagioLeaderboard() {
                 size={20} 
                 className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
               />
-              <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
-                {stats.holesPlayed || "-"}
+              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
+                isLeader ? 'bg-amber-500/20 text-amber-600' : ''
+              }`}>
+                {position}{getPositionSuffix(position)}
               </div>
               <div>
                 <div className="text-xl font-bold">{player.name}</div>
@@ -216,10 +305,10 @@ export default function UmbriagioLeaderboard() {
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold">
-                {stats.totalScore || '-'}
+                {stats.totalPoints}
               </div>
               <div className="text-sm text-muted-foreground">
-                {stats.toParDisplay}
+                {isLeader ? 'LEADING' : 'POINTS'}
               </div>
             </div>
           </div>
@@ -278,6 +367,29 @@ export default function UmbriagioLeaderboard() {
                       }, 0) || ''}
                     </TableCell>
                   </TableRow>
+                  <TableRow className="font-bold">
+                    <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
+                    {frontNine.map(hole => {
+                      const points = getPlayerPointsForHole(hole.hole_number, player.id);
+                      return (
+                        <TableCell 
+                          key={hole.hole_number} 
+                          className={`text-center font-bold text-xs px-1 py-1.5 ${
+                            points !== null && points > 0 ? 'text-green-600' : 
+                            points !== null && points < 0 ? 'text-red-600' : ''
+                          }`}
+                        >
+                          {points !== null ? (points > 0 ? `+${points}` : points === 0 ? '0' : points) : ''}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      {frontNine.reduce((sum, h) => {
+                        const points = getPlayerPointsForHole(h.hole_number, player.id);
+                        return sum + (points || 0);
+                      }, 0) || ''}
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </div>
@@ -333,6 +445,29 @@ export default function UmbriagioLeaderboard() {
                         }, 0) || ''}
                       </TableCell>
                     </TableRow>
+                    <TableRow className="font-bold">
+                      <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
+                      {backNine.map(hole => {
+                        const points = getPlayerPointsForHole(hole.hole_number, player.id);
+                        return (
+                          <TableCell 
+                            key={hole.hole_number} 
+                            className={`text-center font-bold text-xs px-1 py-1.5 ${
+                              points !== null && points > 0 ? 'text-green-600' : 
+                              points !== null && points < 0 ? 'text-red-600' : ''
+                            }`}
+                          >
+                            {points !== null ? (points > 0 ? `+${points}` : points === 0 ? '0' : points) : ''}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                        {backNine.reduce((sum, h) => {
+                          const points = getPlayerPointsForHole(h.hole_number, player.id);
+                          return sum + (points || 0);
+                        }, 0) || ''}
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
@@ -342,16 +477,16 @@ export default function UmbriagioLeaderboard() {
             <div className="border-t bg-muted/30 p-4">
               <div className="flex items-center justify-around text-center">
                 <div>
-                  <div className="text-sm text-muted-foreground">Total</div>
+                  <div className="text-sm text-muted-foreground">Points</div>
+                  <div className="text-2xl font-bold">{stats.totalPoints}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Score</div>
                   <div className="text-2xl font-bold">{stats.totalScore || '-'}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">To Par</div>
-                  <div className="text-2xl font-bold">{stats.toParDisplay}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Holes</div>
-                  <div className="text-2xl font-bold">{stats.holesPlayed}</div>
+                  <div className="text-sm text-muted-foreground">Position</div>
+                  <div className="text-2xl font-bold">{position}{getPositionSuffix(position)}</div>
                 </div>
               </div>
             </div>
@@ -565,9 +700,9 @@ export default function UmbriagioLeaderboard() {
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {isRotating ? (
-          // Show individual player scorecards when rotating
+          // Show individual player scorecards when rotating, sorted by points
           <>
-            {allPlayers.map(player => renderPlayerCard(player))}
+            {rankedPlayers.map((player, index) => renderPlayerCard(player, getPlayerPosition(player.id)))}
           </>
         ) : (
           // Show team scorecards when not rotating
