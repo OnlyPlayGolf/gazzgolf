@@ -1852,6 +1852,8 @@ export type Database = {
           player_4_points: number
           player_5: string | null
           player_5_points: number
+          roll_history: Json | null
+          rolls_per_player: number
           round_name: string | null
           team_win_points: number
           user_id: string
@@ -1878,6 +1880,8 @@ export type Database = {
           player_4_points?: number
           player_5?: string | null
           player_5_points?: number
+          roll_history?: Json | null
+          rolls_per_player?: number
           round_name?: string | null
           team_win_points?: number
           user_id: string
@@ -1904,6 +1908,8 @@ export type Database = {
           player_4_points?: number
           player_5?: string | null
           player_5_points?: number
+          roll_history?: Json | null
+          rolls_per_player?: number
           round_name?: string | null
           team_win_points?: number
           user_id?: string
@@ -1923,9 +1929,12 @@ export type Database = {
       wolf_holes: {
         Row: {
           created_at: string | null
+          double_back_called: boolean | null
+          double_called_by: number | null
           game_id: string
           hole_number: number
           id: string
+          multiplier: number
           par: number
           partner_player: number | null
           player_1_hole_points: number
@@ -1949,9 +1958,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          double_back_called?: boolean | null
+          double_called_by?: number | null
           game_id: string
           hole_number: number
           id?: string
+          multiplier?: number
           par?: number
           partner_player?: number | null
           player_1_hole_points?: number
@@ -1975,9 +1987,12 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          double_back_called?: boolean | null
+          double_called_by?: number | null
           game_id?: string
           hole_number?: number
           id?: string
+          multiplier?: number
           par?: number
           partner_player?: number | null
           player_1_hole_points?: number

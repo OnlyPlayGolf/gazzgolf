@@ -48,6 +48,11 @@ export interface WolfHole {
   wolf_choice: 'lone' | 'partner' | null;
   partner_player: number | null; // 1-5, which player wolf chose as partner
   
+  // Double/press
+  multiplier: number;
+  double_called_by: number | null; // Player number who doubled first
+  double_back_called: boolean; // Whether opponent doubled back
+  
   // Scores for each player
   player_1_score: number | null;
   player_2_score: number | null;
