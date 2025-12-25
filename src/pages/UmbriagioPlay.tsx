@@ -250,6 +250,10 @@ export default function UmbriagioPlay() {
     if (scores.multiplier === 1) {
       setScores(prev => ({ ...prev, multiplier: 2, doubleCalledBy: team }));
       toast({ title: `Team ${team} called Double!`, description: "Multiplier is now ×2" });
+    } else if (scores.multiplier === 2 && scores.doubleCalledBy !== team) {
+      // Double Back - winning team doubles after losing team doubled
+      setScores(prev => ({ ...prev, multiplier: 4, doubleBackCalled: true }));
+      toast({ title: `Team ${team} called Double Back!`, description: "Multiplier is now ×4" });
     }
   };
 
@@ -348,11 +352,23 @@ export default function UmbriagioPlay() {
 
   // Can team double?
   const canTeamDouble = (team: 'A' | 'B') => {
-    if (scores.multiplier > 1) return false;
-    // If tied from start, either can double
+    // Already at 4x, no more doubling
+    if (scores.multiplier >= 4) return false;
+    // If multiplier is 2, only the OTHER team (winning team) can double back
+    if (scores.multiplier === 2) {
+      return scores.doubleCalledBy !== team;
+    }
+    // If multiplier is 1, only losing team can double (or either if tied)
     if (losingTeam === null) return true;
-    // Only losing team can double
     return team === losingTeam;
+  };
+
+  // Get button label based on state
+  const getDoubleButtonLabel = (team: 'A' | 'B') => {
+    if (scores.multiplier === 2 && scores.doubleCalledBy !== team) {
+      return "Double Back";
+    }
+    return "Double";
   };
 
   // Can team roll? Only losing team can roll
@@ -475,13 +491,13 @@ export default function UmbriagioPlay() {
           </div>
           <div className="flex gap-2 mt-3">
             <Button
-              variant={scores.doubleCalledBy === 'A' ? 'default' : 'outline'}
+              variant={scores.doubleCalledBy === 'A' || (scores.doubleBackCalled && scores.doubleCalledBy === 'B') ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDouble('A')}
               disabled={!canTeamDouble('A')}
               className="flex-1"
             >
-              <Zap size={14} className="mr-1" /> Double
+              <Zap size={14} className="mr-1" /> {getDoubleButtonLabel('A')}
             </Button>
             <Button
               variant={scores.rollUsedOnThisHole === 'A' ? 'default' : 'outline'}
@@ -522,13 +538,13 @@ export default function UmbriagioPlay() {
           </div>
           <div className="flex gap-2 mt-3">
             <Button
-              variant={scores.doubleCalledBy === 'B' ? 'default' : 'outline'}
+              variant={scores.doubleCalledBy === 'B' || (scores.doubleBackCalled && scores.doubleCalledBy === 'A') ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDouble('B')}
               disabled={!canTeamDouble('B')}
               className="flex-1"
             >
-              <Zap size={14} className="mr-1" /> Double
+              <Zap size={14} className="mr-1" /> {getDoubleButtonLabel('B')}
             </Button>
             <Button
               variant={scores.rollUsedOnThisHole === 'B' ? 'default' : 'outline'}
