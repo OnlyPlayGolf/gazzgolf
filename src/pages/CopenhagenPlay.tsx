@@ -330,25 +330,28 @@ export default function CopenhagenPlay() {
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         {/* Player Cards */}
         {[
-          { num: 1 as const, name: game.player_1, handicap: game.player_1_handicap, score: scores.player1, color: "text-emerald-600" },
-          { num: 2 as const, name: game.player_2, handicap: game.player_2_handicap, score: scores.player2, color: "text-blue-600" },
-          { num: 3 as const, name: game.player_3, handicap: game.player_3_handicap, score: scores.player3, color: "text-purple-600" },
+          { num: 1 as const, name: game.player_1, handicap: game.player_1_handicap, score: scores.player1 },
+          { num: 2 as const, name: game.player_2, handicap: game.player_2_handicap, score: scores.player2 },
+          { num: 3 as const, name: game.player_3, handicap: game.player_3_handicap, score: scores.player3 },
         ].map(player => (
           <Card 
             key={player.num}
-            className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+            className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => setActivePlayerSheet(player.num)}
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className={`text-sm font-medium ${player.color} truncate max-w-[180px]`}>{player.name}</div>
+                <div className="text-xl font-bold">{player.name}</div>
                 {game.use_handicaps && player.handicap !== null && (
-                  <div className="text-xs text-muted-foreground">HCP: {player.handicap}</div>
+                  <div className="text-sm text-muted-foreground">HCP: {player.handicap}</div>
                 )}
               </div>
-              <span className={`text-3xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                {player.score > 0 ? player.score : '–'}
-              </span>
+              <div className="text-center">
+                <div className={`text-2xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
+                  {player.score > 0 ? player.score : 0}
+                </div>
+                <div className="text-xs text-muted-foreground">Strokes</div>
+              </div>
             </div>
           </Card>
         ))}
@@ -407,15 +410,6 @@ export default function CopenhagenPlay() {
             </div>
           </div>
         </Card>
-
-        {/* Save Button */}
-        <Button 
-          onClick={() => saveHole()} 
-          disabled={saving || scores.player1 === 0 || scores.player2 === 0 || scores.player3 === 0}
-          className="w-full"
-        >
-          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Game" : "Save & Next Hole"}
-        </Button>
       </div>
 
       {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
