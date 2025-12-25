@@ -250,7 +250,10 @@ export default function CopenhagenPlay() {
       setActivePlayerSheet(3);
     } else {
       setActivePlayerSheet(null);
-      await saveHole();
+      // Only save and advance if all players have scores entered
+      if (scores.player1 > 0 && scores.player2 > 0 && scores.player3 > 0) {
+        await saveHole();
+      }
     }
   };
 
