@@ -88,6 +88,8 @@ export default function SimpleSkinsTracker() {
   const [currentComment, setCurrentComment] = useState("");
   // Track if mulligan was just added in current More sheet session
   const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
+  // Track if user manually navigated (to prevent auto-advance)
+  const [isManualNavigation, setIsManualNavigation] = useState(false);
 
   useEffect(() => {
     if (roundId) {
@@ -109,7 +111,12 @@ export default function SimpleSkinsTracker() {
   }, [scores, courseHoles, players]);
 
   // Auto-advance to next hole when all players have scores
+  // Skip if user manually navigated back to review scores
   useEffect(() => {
+    if (isManualNavigation) {
+      // Don't auto-advance when manually navigating
+      return;
+    }
     if (!courseHoles.length || !players.length || loading) return;
     
     const currentHoleNum = courseHoles[currentHoleIndex]?.hole_number;
@@ -130,7 +137,7 @@ export default function SimpleSkinsTracker() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [scores, currentHoleIndex, courseHoles, players, loading]);
+  }, [scores, currentHoleIndex, courseHoles, players, loading, isManualNavigation]);
 
   const loadSettings = () => {
     // First try round-specific settings (from localStorage for persistence)
@@ -358,6 +365,9 @@ export default function SimpleSkinsTracker() {
   const updateScore = async (playerId: string, newScore: number) => {
     // Allow -1 (dash/conceded) and positive scores, reject 0 and other negatives
     if (!currentHole || (newScore < 0 && newScore !== -1)) return;
+    
+    // Reset manual navigation flag so auto-advance works after score update
+    setIsManualNavigation(false);
 
     const updatedScores = new Map(scores);
     const playerScores = updatedScores.get(playerId) || new Map();
@@ -392,6 +402,7 @@ export default function SimpleSkinsTracker() {
 
   const navigateHole = (direction: "prev" | "next") => {
     if (direction === "prev" && currentHoleIndex > 0) {
+      setIsManualNavigation(true);
       setCurrentHoleIndex(currentHoleIndex - 1);
     } else if (direction === "next" && currentHoleIndex < courseHoles.length - 1) {
       setCurrentHoleIndex(currentHoleIndex + 1);
