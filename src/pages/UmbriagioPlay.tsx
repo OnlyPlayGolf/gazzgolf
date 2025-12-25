@@ -755,17 +755,11 @@ export default function UmbriagioPlay() {
             <div className="text-center flex-1">
               <div className="text-sm text-muted-foreground">{game.team_a_name}</div>
               <div className="text-2xl font-bold text-blue-600">{segmentInfo.teamASegmentPoints}</div>
-              {segmentInfo.isRotating && (
-                <div className="text-xs text-muted-foreground">Total: {game.team_a_total_points}</div>
-              )}
             </div>
             <div className="text-muted-foreground">vs</div>
             <div className="text-center flex-1">
               <div className="text-sm text-muted-foreground">{game.team_b_name}</div>
               <div className="text-2xl font-bold text-red-600">{segmentInfo.teamBSegmentPoints}</div>
-              {segmentInfo.isRotating && (
-                <div className="text-xs text-muted-foreground">Total: {game.team_b_total_points}</div>
-              )}
             </div>
           </div>
         </Card>
