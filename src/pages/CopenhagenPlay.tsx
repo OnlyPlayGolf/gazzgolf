@@ -114,6 +114,7 @@ export default function CopenhagenPlay() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [pendingAutoAdvance, setPendingAutoAdvance] = useState(false);
   
   // Mulligan and comment tracking
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
@@ -236,49 +237,52 @@ export default function CopenhagenPlay() {
     }
   };
 
-  const updateScore = (player: 'player1' | 'player2' | 'player3', score: number | null) => {
-    setScores(prev => ({
-      ...prev,
-      [player]: score ?? prev[player],
-    }));
-  };
-
   // Helper to check if a score has been entered (positive score or dash/-1)
   const hasValidScore = (score: number) => score > 0 || score === -1;
 
-  // Check if all players have valid scores and auto-advance
-  const checkAndAdvance = async (updatedScores: CopenhagenScores) => {
-    if (hasValidScore(updatedScores.player1) && hasValidScore(updatedScores.player2) && hasValidScore(updatedScores.player3)) {
-      setActivePlayerSheet(null);
-      await saveHole();
+  const updateScore = (player: 'player1' | 'player2' | 'player3', score: number | null) => {
+    const nextScores: CopenhagenScores = {
+      ...scores,
+      [player]: score ?? (scores as any)[player],
+    } as CopenhagenScores;
+
+    setScores(nextScores);
+
+    // If this score completes the hole (including dash), auto-save + advance.
+    if (
+      activePlayerSheet !== null &&
+      hasValidScore(nextScores.player1) &&
+      hasValidScore(nextScores.player2) &&
+      hasValidScore(nextScores.player3)
+    ) {
+      setPendingAutoAdvance(true);
     }
   };
 
-  const handleEnterAndNext = async () => {
-    const currentScores = { ...scores };
-    
+  // Advance between players; actual hole-advance happens when all scores are valid.
+  const handleEnterAndNext = () => {
     if (activePlayerSheet === 1) {
-      // Check if all scores are now valid after player 1
-      if (hasValidScore(currentScores.player1) && hasValidScore(currentScores.player2) && hasValidScore(currentScores.player3)) {
-        await checkAndAdvance(currentScores);
-      } else {
-        setActivePlayerSheet(2);
-      }
+      setActivePlayerSheet(2);
     } else if (activePlayerSheet === 2) {
-      // Check if all scores are now valid after player 2
-      if (hasValidScore(currentScores.player1) && hasValidScore(currentScores.player2) && hasValidScore(currentScores.player3)) {
-        await checkAndAdvance(currentScores);
-      } else {
-        setActivePlayerSheet(3);
-      }
+      setActivePlayerSheet(3);
     } else {
-      // After player 3, check and advance
       setActivePlayerSheet(null);
-      if (hasValidScore(currentScores.player1) && hasValidScore(currentScores.player2) && hasValidScore(currentScores.player3)) {
-        await saveHole();
-      }
     }
   };
+
+  // After state is updated with the last entered score, save and let useGameScoring advance holes.
+  useEffect(() => {
+    if (!pendingAutoAdvance) return;
+    if (saving) return;
+
+    if (!hasValidScore(scores.player1) || !hasValidScore(scores.player2) || !hasValidScore(scores.player3)) {
+      return;
+    }
+
+    setPendingAutoAdvance(false);
+    setActivePlayerSheet(null);
+    void saveHole();
+  }, [pendingAutoAdvance, saving, scores.player1, scores.player2, scores.player3, saveHole]);
 
   if (loading) {
     return (
