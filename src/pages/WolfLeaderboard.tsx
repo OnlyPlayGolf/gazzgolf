@@ -184,9 +184,6 @@ export default function WolfLeaderboard() {
               </div>
               <div>
                 <div className="text-xl font-bold">{player.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  Player {player.num}
-                </div>
               </div>
             </div>
             <div className="text-right">
