@@ -81,8 +81,11 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
       wolf_position: wolfPosition,
     };
     
+    // Treat dash score (-1) as a very high score for comparisons (i.e. cannot win the hole)
+    const scoresForScoring = scores.map((s) => (s === -1 ? 99 : s));
+
     const result = calculateWolfHoleScore({
-      scores,
+      scores: scoresForScoring,
       wolfPlayer: currentWolfPlayer,
       wolfChoice: wolfChoice || 'lone',
       partnerPlayer,
@@ -534,7 +537,9 @@ export default function WolfPlay() {
             {[...Array(playerCount)].map((_, i) => {
               const isWolf = i === currentWolfPlayer - 1;
               const score = scoresState.scores[i];
+              const isDash = score === -1;
               const hasScore = score !== null && score !== undefined;
+              const displayScore = isDash ? '-' : hasScore ? score : '-';
               
               return (
                 <div
@@ -549,7 +554,7 @@ export default function WolfPlay() {
                     <span className="font-medium">{getPlayerName(i)}</span>
                   </div>
                   <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-                    {hasScore ? score : '–'}
+                    {displayScore}
                   </span>
                 </div>
               );

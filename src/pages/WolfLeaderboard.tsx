@@ -251,7 +251,8 @@ export default function WolfLeaderboard() {
                   <TableRow>
                     <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                     {frontNine.map(hole => {
-                      const score = getHoleScore(hole.hole_number, player.num);
+                      const rawScore = getHoleScore(hole.hole_number, player.num);
+                      const score = rawScore === -1 ? null : rawScore;
                       const par = hole.par;
                       return (
                         <TableCell 
@@ -261,12 +262,26 @@ export default function WolfLeaderboard() {
                             score !== null && score > par ? 'text-sky-600' : ''
                           }`}
                         >
-                          {score ?? ''}
+                          {rawScore === -1 ? '-' : (score ?? '')}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                      {frontNine.reduce((sum, h) => sum + (getHoleScore(h.hole_number, player.num) || 0), 0) || ''}
+                      {(() => {
+                        const total = frontNine.reduce((sum, h) => {
+                          const s = getHoleScore(h.hole_number, player.num);
+                          if (s === null || s === -1) return sum;
+                          return sum + s;
+                        }, 0);
+
+                        const hasAnyEntered = frontNine.some(h => {
+                          const s = getHoleScore(h.hole_number, player.num);
+                          return s !== null && s !== undefined;
+                        });
+
+                        if (!hasAnyEntered) return '';
+                        return total > 0 ? total : '-';
+                      })()}
                     </TableCell>
                   </TableRow>
                   <TableRow className="font-bold">
@@ -332,7 +347,8 @@ export default function WolfLeaderboard() {
                     <TableRow>
                       <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                       {backNine.map(hole => {
-                        const score = getHoleScore(hole.hole_number, player.num);
+                        const rawScore = getHoleScore(hole.hole_number, player.num);
+                        const score = rawScore === -1 ? null : rawScore;
                         const par = hole.par;
                         return (
                           <TableCell 
@@ -342,12 +358,26 @@ export default function WolfLeaderboard() {
                               score !== null && score > par ? 'text-sky-600' : ''
                             }`}
                           >
-                            {score ?? ''}
+                            {rawScore === -1 ? '-' : (score ?? '')}
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                        {backNine.reduce((sum, h) => sum + (getHoleScore(h.hole_number, player.num) || 0), 0) || ''}
+                        {(() => {
+                          const total = backNine.reduce((sum, h) => {
+                            const s = getHoleScore(h.hole_number, player.num);
+                            if (s === null || s === -1) return sum;
+                            return sum + s;
+                          }, 0);
+
+                          const hasAnyEntered = backNine.some(h => {
+                            const s = getHoleScore(h.hole_number, player.num);
+                            return s !== null && s !== undefined;
+                          });
+
+                          if (!hasAnyEntered) return '';
+                          return total > 0 ? total : '-';
+                        })()}
                       </TableCell>
                     </TableRow>
                     <TableRow className="font-bold">
