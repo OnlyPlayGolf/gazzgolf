@@ -561,15 +561,25 @@ export default function RoundsPlay() {
 
       if (error) throw error;
 
-      // Add players
-      const playersToAdd = setupState.groups.flatMap(g =>
-        g.players
-          .filter(p => !p.isTemporary)
-          .map(p => ({ round_id: round.id, user_id: p.odId, tee_color: p.teeColor }))
-      );
+      // Separate registered players and guest players
+      const allPlayers = setupState.groups.flatMap(g => g.players);
+      const registeredPlayers = allPlayers.filter(p => !p.isTemporary);
+      const guestPlayers = allPlayers.filter(p => p.isTemporary);
+
+      // Add registered players to database
+      const playersToAdd = registeredPlayers.map(p => ({
+        round_id: round.id,
+        user_id: p.odId,
+        tee_color: p.teeColor
+      }));
 
       if (playersToAdd.length > 0) {
         await supabase.from('round_players').insert(playersToAdd);
+      }
+
+      // Store guest players in localStorage for this round
+      if (guestPlayers.length > 0) {
+        localStorage.setItem(`roundGuestPlayers_${round.id}`, JSON.stringify(guestPlayers));
       }
 
       // Clear storage
