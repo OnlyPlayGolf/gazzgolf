@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Zap, Dices } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap, Dices, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
@@ -180,6 +180,38 @@ export default function UmbriagioPlay() {
     }
   };
 
+  // Determine which team is losing (can double) and which is winning (can double back)
+  const getTeamStatus = (): { losingTeam: 'A' | 'B' | null; winningTeam: 'A' | 'B' | null } => {
+    const teamATotal = game?.team_a_total_points || 0;
+    const teamBTotal = game?.team_b_total_points || 0;
+    
+    if (teamATotal > teamBTotal) {
+      return { losingTeam: 'B', winningTeam: 'A' };
+    } else if (teamBTotal > teamATotal) {
+      return { losingTeam: 'A', winningTeam: 'B' };
+    } else {
+      // Tied - the team that came from behind (was losing before) is now "winning" and cannot double
+      // We look at previous holes to determine who was behind before the tie
+      if (holes.length > 0) {
+        const prevHole = holes[holes.length - 1];
+        const prevTeamA = prevHole.team_a_running_total;
+        const prevTeamB = prevHole.team_b_running_total;
+        
+        if (prevTeamA < prevTeamB) {
+          // Team A was losing, now tied, so Team A is considered "winning" (came from behind)
+          return { losingTeam: 'B', winningTeam: 'A' };
+        } else if (prevTeamB < prevTeamA) {
+          // Team B was losing, now tied
+          return { losingTeam: 'A', winningTeam: 'B' };
+        }
+      }
+      // Completely tied from start - either can double
+      return { losingTeam: null, winningTeam: null };
+    }
+  };
+
+  const { losingTeam, winningTeam } = getTeamStatus();
+
   const handleDouble = (team: 'A' | 'B') => {
     if (scores.multiplier === 1) {
       setScores(prev => ({ ...prev, multiplier: 2, doubleCalledBy: team }));
@@ -187,11 +219,16 @@ export default function UmbriagioPlay() {
     }
   };
 
-  const handleDoubleBack = () => {
+  const handleDoubleBack = (team: 'A' | 'B') => {
     if (scores.multiplier === 2 && !scores.doubleBackCalled) {
       setScores(prev => ({ ...prev, multiplier: 4, doubleBackCalled: true }));
-      toast({ title: "Double Back!", description: "Multiplier is now ×4" });
+      toast({ title: `Team ${team} called Double Back!`, description: "Multiplier is now ×4" });
     }
+  };
+
+  const handleClearDouble = () => {
+    setScores(prev => ({ ...prev, multiplier: 1, doubleCalledBy: null, doubleBackCalled: false }));
+    toast({ title: "Double/Roll cleared" });
   };
 
   const handleRoll = async (team: 'A' | 'B') => {
@@ -243,6 +280,23 @@ export default function UmbriagioPlay() {
 
   const setClosestToPinWinner = (winner: 'A' | 'B' | null) => {
     setScores(prev => ({ ...prev, closestToPinWinner: winner }));
+  };
+
+  // Can team double?
+  const canTeamDouble = (team: 'A' | 'B') => {
+    if (scores.multiplier > 1) return false;
+    // If tied from start, either can double
+    if (losingTeam === null) return true;
+    // Only losing team can double
+    return team === losingTeam;
+  };
+
+  // Can team double back?
+  const canTeamDoubleBack = (team: 'A' | 'B') => {
+    if (scores.multiplier !== 2) return false;
+    if (scores.doubleBackCalled) return false;
+    // Only the team that didn't call double can double back
+    return team !== scores.doubleCalledBy;
   };
 
   if (loading) {
@@ -348,13 +402,22 @@ export default function UmbriagioPlay() {
           </div>
           <div className="flex gap-2 mt-3">
             <Button
-              variant="outline"
+              variant={scores.doubleCalledBy === 'A' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDouble('A')}
-              disabled={scores.multiplier > 1}
+              disabled={!canTeamDouble('A')}
               className="flex-1"
             >
               <Zap size={14} className="mr-1" /> Double
+            </Button>
+            <Button
+              variant={canTeamDoubleBack('A') ? 'outline' : scores.doubleBackCalled && scores.doubleCalledBy === 'B' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleDoubleBack('A')}
+              disabled={!canTeamDoubleBack('A')}
+              className="flex-1"
+            >
+              <Zap size={14} className="mr-1" /> Double Back
             </Button>
             <Button
               variant="outline"
@@ -390,13 +453,22 @@ export default function UmbriagioPlay() {
           </div>
           <div className="flex gap-2 mt-3">
             <Button
-              variant="outline"
+              variant={scores.doubleCalledBy === 'B' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleDouble('B')}
-              disabled={scores.multiplier > 1}
+              disabled={!canTeamDouble('B')}
               className="flex-1"
             >
               <Zap size={14} className="mr-1" /> Double
+            </Button>
+            <Button
+              variant={canTeamDoubleBack('B') ? 'outline' : scores.doubleBackCalled && scores.doubleCalledBy === 'A' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleDoubleBack('B')}
+              disabled={!canTeamDoubleBack('B')}
+              className="flex-1"
+            >
+              <Zap size={14} className="mr-1" /> Double Back
             </Button>
             <Button
               variant="outline"
@@ -410,10 +482,10 @@ export default function UmbriagioPlay() {
           </div>
         </Card>
 
-        {/* Double Back */}
-        {scores.multiplier === 2 && !scores.doubleBackCalled && (
-          <Button variant="outline" className="w-full" onClick={handleDoubleBack}>
-            <Zap size={16} className="mr-2" /> Double Back (×4)
+        {/* Clear Double/Roll */}
+        {scores.multiplier > 1 && (
+          <Button variant="outline" className="w-full" onClick={handleClearDouble}>
+            <X size={16} className="mr-2" /> Clear Double/Roll (×{scores.multiplier} → ×1)
           </Button>
         )}
 
