@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, User, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -169,6 +169,23 @@ export default function WolfPlay() {
   
   const wolfPosition = game?.wolf_position as 'first' | 'last' || 'last';
   const currentWolfPlayer = getWolfPlayerForHole(currentHole, getPlayerCount(), wolfPosition);
+
+  // Auto-advance to next hole when all scores and wolf choice are entered
+  useEffect(() => {
+    if (!game || saving || loading) return;
+    
+    const playerCount = getPlayerCount();
+    const allScoresEntered = scoresState.scores.slice(0, playerCount).every(s => s !== null);
+    const wolfChoiceMade = scoresState.wolfChoice !== null;
+    
+    if (allScoresEntered && wolfChoiceMade && currentHole <= holes.length) {
+      // Small delay for visual feedback before auto-saving and advancing
+      const timer = setTimeout(async () => {
+        await saveHole();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [scoresState.scores, scoresState.wolfChoice, game, saving, loading, currentHole, holes.length]);
 
   const handleScoreSelect = (playerIndex: number, score: number | null) => {
     if (score === null) return;
