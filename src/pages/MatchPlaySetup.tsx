@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Plus } from "lucide-react";
+import { ArrowLeft, Users, MapPin } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
-import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
@@ -46,7 +45,6 @@ export default function MatchPlaySetup() {
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
-  const [showAddPlayer, setShowAddPlayer] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -126,20 +124,8 @@ export default function MatchPlaySetup() {
 
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
-  const handleAddPlayer = (player: Player) => {
-    if (players.length >= 2) {
-      toast({ title: "Maximum 2 players", description: "Match Play is a 1v1 format", variant: "destructive" });
-      return;
-    }
-    setPlayers(prev => [...prev, player]);
-  };
-
   const handleUpdatePlayer = (updatedPlayer: Player) => {
     setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
-  };
-
-  const handleRemovePlayer = (odId: string) => {
-    setPlayers(prev => prev.filter(p => p.odId !== odId));
   };
 
   const handleStartGame = async () => {
@@ -204,8 +190,6 @@ export default function MatchPlaySetup() {
     setPlayers(newPlayers);
   };
 
-  const existingPlayerIds = players.map(p => p.odId);
-
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
@@ -268,7 +252,6 @@ export default function MatchPlaySetup() {
                             <SetupPlayerCard
                               player={player}
                               onEdit={() => setEditingPlayer(player)}
-                              onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                               showTee={false}
                               dragHandleProps={provided.dragHandleProps}
                             />
@@ -281,17 +264,6 @@ export default function MatchPlaySetup() {
                 )}
               </Droppable>
             </DragDropContext>
-
-            {players.length < 2 && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setShowAddPlayer(true)}
-              >
-                <Plus size={16} className="mr-2" />
-                Add Player
-              </Button>
-            )}
           </CardContent>
         </Card>
 
@@ -358,17 +330,6 @@ export default function MatchPlaySetup() {
           setEditingPlayer(null);
         }}
         availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
-      />
-
-      <AddPlayerDialog
-        isOpen={showAddPlayer}
-        onClose={() => setShowAddPlayer(false)}
-        onAddPlayer={(player) => {
-          handleAddPlayer(player);
-          setShowAddPlayer(false);
-        }}
-        existingPlayerIds={existingPlayerIds}
-        defaultTee={DEFAULT_MEN_TEE}
       />
     </div>
   );

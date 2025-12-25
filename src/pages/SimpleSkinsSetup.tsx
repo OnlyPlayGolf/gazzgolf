@@ -11,10 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
-import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
-import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
-import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
@@ -54,8 +51,6 @@ export default function SimpleSkinsSetup() {
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
-  const [showAddFriend, setShowAddFriend] = useState(false);
-  const [showAddGuest, setShowAddGuest] = useState(false);
 
   const teeCount = 5;
 
@@ -143,16 +138,8 @@ export default function SimpleSkinsSetup() {
     loadData();
   }, []);
 
-  const handleAddPlayer = (player: Player) => {
-    setPlayers(prev => [...prev, { ...player, teeColor: player.teeColor || teeColor }]);
-  };
-
   const handleUpdatePlayer = (updatedPlayer: Player) => {
     setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
-  };
-
-  const handleRemovePlayer = (odId: string) => {
-    setPlayers(prev => prev.filter(p => p.odId !== odId));
   };
 
   const handleStartRound = async () => {
@@ -242,8 +229,6 @@ export default function SimpleSkinsSetup() {
     }
   };
 
-  const existingPlayerIds = players.map(p => p.odId);
-
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
@@ -284,15 +269,9 @@ export default function SimpleSkinsSetup() {
                 key={player.odId}
                 player={player}
                 onEdit={() => setEditingPlayer(player)}
-                onRemove={player.isCurrentUser ? undefined : () => handleRemovePlayer(player.odId)}
                 showTee={true}
               />
             ))}
-            
-            <SetupAddPlayerButtons
-              onAddFriend={() => setShowAddFriend(true)}
-              onAddGuest={() => setShowAddGuest(true)}
-            />
           </CardContent>
         </Card>
 
@@ -393,23 +372,6 @@ export default function SimpleSkinsSetup() {
         player={editingPlayer}
         availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
         onSave={handleUpdatePlayer}
-      />
-
-      {/* Add Friend Sheet */}
-      <SetupAddFriendSheet
-        isOpen={showAddFriend}
-        onClose={() => setShowAddFriend(false)}
-        onAddPlayer={handleAddPlayer}
-        existingPlayerIds={existingPlayerIds}
-        defaultTee={teeColor}
-      />
-
-      {/* Add Guest Sheet */}
-      <SetupAddGuestSheet
-        isOpen={showAddGuest}
-        onClose={() => setShowAddGuest(false)}
-        onAddPlayer={handleAddPlayer}
-        defaultTee={teeColor}
       />
     </div>
   );
