@@ -740,7 +740,7 @@ export default function SimpleSkinsTracker() {
         {players.map((player) => {
           const playerScore = getPlayerScore(player.id);
           const skinCount = getPlayerSkinCount(player.id);
-          const hasScore = playerScore > 0;
+          const hasScore = playerScore > 0 || playerScore === -1;
           const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
           
           return (
@@ -773,7 +773,7 @@ export default function SimpleSkinsTracker() {
                 </div>
                 <div className="text-center">
                   <div className={`text-3xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-                    {hasScore ? playerScore : '0'}
+                    {playerScore === -1 ? '–' : hasScore ? playerScore : '0'}
                   </div>
                   <div className="text-xs text-muted-foreground">Strokes</div>
                 </div>
