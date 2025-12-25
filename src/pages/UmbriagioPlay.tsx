@@ -36,6 +36,7 @@ interface UmbriagioScores {
   multiplier: 1 | 2 | 4;
   doubleCalledBy: 'A' | 'B' | null;
   doubleBackCalled: boolean;
+  rollUsedOnThisHole: 'A' | 'B' | null; // Track if roll was used on current hole for undo
 }
 
 const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame, UmbriagioHole, UmbriagioScores> => ({
@@ -72,6 +73,7 @@ const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame,
     multiplier: 1,
     doubleCalledBy: null,
     doubleBackCalled: false,
+    rollUsedOnThisHole: null,
   }),
   
   extractScoresFromHole: (hole) => ({
@@ -83,6 +85,7 @@ const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame,
     multiplier: hole.multiplier,
     doubleCalledBy: hole.double_called_by,
     doubleBackCalled: hole.double_back_called || false,
+    rollUsedOnThisHole: null, // Rolls are already committed, can't undo when loading existing hole
   }),
   
   buildHoleData: ({ gameId, holeNumber, par, scores, previousHoles }) => {
@@ -250,16 +253,46 @@ export default function UmbriagioPlay() {
     }
   };
 
-  const handleDoubleBack = (team: 'A' | 'B') => {
-    if (scores.multiplier === 2 && !scores.doubleBackCalled) {
-      setScores(prev => ({ ...prev, multiplier: 4, doubleBackCalled: true }));
-      toast({ title: `Team ${team} called Double Back!`, description: "Multiplier is now ×4" });
+  const handleClearDouble = async () => {
+    // If a roll was used on this hole, undo it
+    if (scores.rollUsedOnThisHole && game) {
+      const rollHistory = game.roll_history || [];
+      // Find the roll for this hole and team
+      const rollIndex = rollHistory.findIndex(
+        r => r.hole === currentHole && r.team === scores.rollUsedOnThisHole
+      );
+      
+      if (rollIndex !== -1) {
+        const roll = rollHistory[rollIndex];
+        const newRollHistory = rollHistory.filter((_, i) => i !== rollIndex);
+        
+        // Restore points (double them back since they were halved)
+        const teamARestored = game.team_a_total_points * 2;
+        const teamBRestored = game.team_b_total_points * 2;
+        
+        try {
+          await supabase
+            .from("umbriago_games")
+            .update({
+              roll_history: newRollHistory as unknown as any,
+              team_a_total_points: teamARestored,
+              team_b_total_points: teamBRestored,
+            })
+            .eq("id", game.id);
+          
+          await refetchGame();
+          toast({ title: "Roll cleared and points restored" });
+        } catch (error: any) {
+          toast({ title: "Error clearing roll", description: error.message, variant: "destructive" });
+          return;
+        }
+      }
     }
-  };
-
-  const handleClearDouble = () => {
-    setScores(prev => ({ ...prev, multiplier: 1, doubleCalledBy: null, doubleBackCalled: false }));
-    toast({ title: "Double/Roll cleared" });
+    
+    setScores(prev => ({ ...prev, multiplier: 1, doubleCalledBy: null, doubleBackCalled: false, rollUsedOnThisHole: null }));
+    if (!scores.rollUsedOnThisHole) {
+      toast({ title: "Double cleared" });
+    }
   };
 
   const handleRoll = async (team: 'A' | 'B') => {
@@ -298,7 +331,7 @@ export default function UmbriagioPlay() {
         .eq("id", game.id);
 
       await refetchGame();
-      setScores(prev => ({ ...prev, multiplier: 2 }));
+      setScores(prev => ({ ...prev, multiplier: 2, rollUsedOnThisHole: team }));
 
       toast({ 
         title: `🎲 Team ${team} called Roll!`, 
@@ -322,12 +355,16 @@ export default function UmbriagioPlay() {
     return team === losingTeam;
   };
 
-  // Can team double back?
-  const canTeamDoubleBack = (team: 'A' | 'B') => {
-    if (scores.multiplier !== 2) return false;
-    if (scores.doubleBackCalled) return false;
-    // Only the team that didn't call double can double back
-    return team !== scores.doubleCalledBy;
+  // Can team roll? Only losing team can roll
+  const canTeamRoll = (team: 'A' | 'B') => {
+    // Can't roll if already used roll on this hole
+    if (scores.rollUsedOnThisHole) return false;
+    // Can't roll if multiplier already applied (from double)
+    if (scores.multiplier > 1) return false;
+    // If tied from start, either can roll
+    if (losingTeam === null) return true;
+    // Only losing team can roll
+    return team === losingTeam;
   };
 
   if (loading) {
@@ -442,19 +479,10 @@ export default function UmbriagioPlay() {
               <Zap size={14} className="mr-1" /> Double
             </Button>
             <Button
-              variant={canTeamDoubleBack('A') ? 'outline' : scores.doubleBackCalled && scores.doubleCalledBy === 'B' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleDoubleBack('A')}
-              disabled={!canTeamDoubleBack('A')}
-              className="flex-1"
-            >
-              <Zap size={14} className="mr-1" /> Double Back
-            </Button>
-            <Button
-              variant="outline"
+              variant={scores.rollUsedOnThisHole === 'A' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleRoll('A')}
-              disabled={teamARollsUsed >= game.rolls_per_team}
+              disabled={!canTeamRoll('A') || teamARollsUsed >= game.rolls_per_team}
               className="flex-1"
             >
               <Dices size={14} className="mr-1" /> Roll ({game.rolls_per_team - teamARollsUsed})
@@ -493,19 +521,10 @@ export default function UmbriagioPlay() {
               <Zap size={14} className="mr-1" /> Double
             </Button>
             <Button
-              variant={canTeamDoubleBack('B') ? 'outline' : scores.doubleBackCalled && scores.doubleCalledBy === 'A' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => handleDoubleBack('B')}
-              disabled={!canTeamDoubleBack('B')}
-              className="flex-1"
-            >
-              <Zap size={14} className="mr-1" /> Double Back
-            </Button>
-            <Button
-              variant="outline"
+              variant={scores.rollUsedOnThisHole === 'B' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleRoll('B')}
-              disabled={teamBRollsUsed >= game.rolls_per_team}
+              disabled={!canTeamRoll('B') || teamBRollsUsed >= game.rolls_per_team}
               className="flex-1"
             >
               <Dices size={14} className="mr-1" /> Roll ({game.rolls_per_team - teamBRollsUsed})
