@@ -60,6 +60,7 @@ interface RoundPlayer {
     display_name: string | null;
     username: string | null;
   } | null;
+  isGuest?: boolean;
 }
 
 export default function RoundTracker() {
@@ -142,6 +143,7 @@ export default function RoundTracker() {
       if (playersError) throw playersError;
       
       // Fetch profile data for each player
+      let allPlayers: RoundPlayer[] = [];
       if (playersData && playersData.length > 0) {
         const userIds = playersData.map(p => p.user_id);
         const { data: profilesData } = await supabase
@@ -152,11 +154,31 @@ export default function RoundTracker() {
         const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
         const playersWithProfiles = playersData.map(player => ({
           ...player,
-          profiles: profilesMap.get(player.user_id) || null
+          profiles: profilesMap.get(player.user_id) || null,
+          isGuest: false,
         }));
         
-        setPlayers(playersWithProfiles);
+        allPlayers = playersWithProfiles;
       }
+
+      // Load guest players from localStorage
+      const guestPlayersJson = localStorage.getItem(`roundGuestPlayers_${roundId}`);
+      if (guestPlayersJson) {
+        const guestPlayers = JSON.parse(guestPlayersJson);
+        const guestRoundPlayers: RoundPlayer[] = guestPlayers.map((g: any) => ({
+          id: g.odId,
+          user_id: g.odId,
+          tee_color: g.teeColor || null,
+          profiles: {
+            display_name: g.displayName,
+            username: null,
+          },
+          isGuest: true,
+        }));
+        allPlayers = [...allPlayers, ...guestRoundPlayers];
+      }
+
+      setPlayers(allPlayers);
 
       // Fetch course holes if course exists in database
       const { data: courseData } = await supabase
@@ -212,10 +234,10 @@ export default function RoundTracker() {
         .select("hole_number, score, player_id, mulligan")
         .eq("round_id", roundId);
 
+      const scoresMap = new Map<string, Map<number, number>>();
+      const mulligansMap = new Map<string, Set<number>>();
+
       if (!existingError && existingHoles) {
-        const scoresMap = new Map<string, Map<number, number>>();
-        const mulligansMap = new Map<string, Set<number>>();
-        
         existingHoles.forEach((hole) => {
           if (hole.player_id) {
             // Scores
@@ -233,31 +255,45 @@ export default function RoundTracker() {
             }
           }
         });
-        setScores(scoresMap);
-        setMulligansUsed(mulligansMap);
+      }
+
+      // Load guest scores from localStorage
+      const guestScoresJson = localStorage.getItem(`roundGuestScores_${roundId}`);
+      if (guestScoresJson) {
+        const guestScoresObj = JSON.parse(guestScoresJson);
+        Object.entries(guestScoresObj).forEach(([playerId, scores]) => {
+          const playerScoresMap = new Map<number, number>();
+          Object.entries(scores as Record<string, number>).forEach(([hole, score]) => {
+            playerScoresMap.set(parseInt(hole), score);
+          });
+          scoresMap.set(playerId, playerScoresMap);
+        });
+      }
+
+      setScores(scoresMap);
+      setMulligansUsed(mulligansMap);
+      
+      // Find the first hole where not all players have entered scores
+      if (allPlayers.length > 0) {
+        const playerIds = allPlayers.map(p => p.id);
+        let startingHoleIndex = 0;
         
-        // Find the first hole where not all players have entered scores
-        if (playersData && playersData.length > 0) {
-          const playerIds = playersData.map(p => p.id);
-          let startingHoleIndex = 0;
+        for (let i = 0; i < holesArray.length; i++) {
+          const holeNumber = holesArray[i].hole_number;
+          const allPlayersScored = playerIds.every(playerId => {
+            const playerScores = scoresMap.get(playerId);
+            return playerScores && playerScores.has(holeNumber);
+          });
           
-          for (let i = 0; i < holesArray.length; i++) {
-            const holeNumber = holesArray[i].hole_number;
-            const allPlayersScored = playerIds.every(playerId => {
-              const playerScores = scoresMap.get(playerId);
-              return playerScores && playerScores.has(holeNumber);
-            });
-            
-            if (!allPlayersScored) {
-              startingHoleIndex = i;
-              break;
-            }
-            // If all holes are scored, stay at the last hole
+          if (!allPlayersScored) {
             startingHoleIndex = i;
+            break;
           }
-          
-          setCurrentHoleIndex(startingHoleIndex);
+          // If all holes are scored, stay at the last hole
+          startingHoleIndex = i;
         }
+        
+        setCurrentHoleIndex(startingHoleIndex);
       }
     } catch (error: any) {
       console.error("Error fetching round data:", error);
@@ -298,32 +334,58 @@ export default function RoundTracker() {
     updatedScores.set(playerId, playerScores);
     setScores(updatedScores);
 
-    try {
-      const { error } = await supabase
-        .from("holes")
-        .upsert({
-          round_id: roundId,
-          player_id: playerId,
-          hole_number: currentHole.hole_number,
-          par: currentHole.par,
-          score: newScore,
-        }, {
-          onConflict: 'round_id,player_id,hole_number',
-          ignoreDuplicates: false
-        });
+    // Check if this is a guest player
+    const player = players.find(p => p.id === playerId);
+    const isGuest = player?.isGuest;
 
-      if (error) {
-        console.error("Upsert error:", error);
-        throw error;
+    if (isGuest) {
+      // Save guest scores to localStorage
+      saveGuestScores(updatedScores);
+    } else {
+      // Save to database for registered players
+      try {
+        const { error } = await supabase
+          .from("holes")
+          .upsert({
+            round_id: roundId,
+            player_id: playerId,
+            hole_number: currentHole.hole_number,
+            par: currentHole.par,
+            score: newScore,
+          }, {
+            onConflict: 'round_id,player_id,hole_number',
+            ignoreDuplicates: false
+          });
+
+        if (error) {
+          console.error("Upsert error:", error);
+          throw error;
+        }
+      } catch (error: any) {
+        console.error("Error saving score:", error);
+        toast({
+          title: "Error saving score",
+          description: error.message,
+          variant: "destructive",
+        });
       }
-    } catch (error: any) {
-      console.error("Error saving score:", error);
-      toast({
-        title: "Error saving score",
-        description: error.message,
-        variant: "destructive",
-      });
     }
+  };
+
+  const saveGuestScores = (allScores: Map<string, Map<number, number>>) => {
+    // Get guest player IDs
+    const guestPlayerIds = players.filter(p => p.isGuest).map(p => p.id);
+    
+    // Extract guest scores
+    const guestScoresObj: Record<string, Record<number, number>> = {};
+    guestPlayerIds.forEach(playerId => {
+      const playerScores = allScores.get(playerId);
+      if (playerScores) {
+        guestScoresObj[playerId] = Object.fromEntries(playerScores);
+      }
+    });
+
+    localStorage.setItem(`roundGuestScores_${roundId}`, JSON.stringify(guestScoresObj));
   };
 
   const navigateHole = (direction: "prev" | "next") => {

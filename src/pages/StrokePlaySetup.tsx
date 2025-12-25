@@ -176,15 +176,16 @@ export default function StrokePlaySetup() {
 
       if (error) throw error;
 
-      // Add all players (filter out temp players for database, keep for session)
-      const playersToAdd = players
-        .filter(p => !p.isTemporary)
-        .map(p => ({
-          round_id: round.id,
-          user_id: p.odId,
-          tee_color: p.teeColor || teeColor,
-          handicap: p.handicap,
-        }));
+      // Add registered players to database
+      const registeredPlayers = players.filter(p => !p.isTemporary);
+      const guestPlayers = players.filter(p => p.isTemporary);
+
+      const playersToAdd = registeredPlayers.map(p => ({
+        round_id: round.id,
+        user_id: p.odId,
+        tee_color: p.teeColor || teeColor,
+        handicap: p.handicap,
+      }));
 
       if (playersToAdd.length > 0) {
         const { error: playersError } = await supabase
@@ -194,6 +195,11 @@ export default function StrokePlaySetup() {
         if (playersError) {
           console.error("Error adding players:", playersError);
         }
+      }
+
+      // Store guest players in localStorage for this round
+      if (guestPlayers.length > 0) {
+        localStorage.setItem(`roundGuestPlayers_${round.id}`, JSON.stringify(guestPlayers));
       }
 
       // Save settings to round-specific localStorage
