@@ -11,7 +11,7 @@ interface PlayerScoreSheetProps {
   currentScore: number | null;
   onScoreSelect: (score: number | null) => void;
   onMore?: () => void;
-  onEnterAndNext?: (score: number) => void;
+  onEnterAndNext?: () => void;
 }
 
 export function PlayerScoreSheet({
@@ -42,13 +42,16 @@ export function PlayerScoreSheet({
   const handleScoreAndAdvance = (score: number) => {
     // Called after score is selected to advance to next player/hole
     if (onEnterAndNext) {
-      onEnterAndNext(score);
+      onEnterAndNext();
     }
   };
 
   const handleMore = () => {
     if (onMore) {
       onMore();
+    } else if (onEnterAndNext) {
+      // Fallback for other game modes - just call onEnterAndNext
+      onEnterAndNext();
     }
   };
 

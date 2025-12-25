@@ -177,28 +177,15 @@ export default function UmbriagioPlay() {
     setScores(prev => ({ ...prev, [player]: scoreToSave }));
   };
 
-  const advanceToNextPlayerSheet = (player: typeof playerOrder[number], updatedScores: UmbriagioScores) => {
-    // Find next player who doesn't have a score yet
+  const advanceToNextPlayerSheet = (player: typeof playerOrder[number]) => {
     const currentIndex = playerOrder.indexOf(player);
-    
-    // Helper to check if a player has a valid score (using updated scores)
-    const hasScore = (p: typeof playerOrder[number]) => {
-      const score = updatedScores[p];
-      return score !== null && score !== undefined;
-    };
-    
-    // Look for next player without a score, starting from next position and wrapping around
-    for (let i = 1; i < playerOrder.length; i++) {
-      const nextIndex = (currentIndex + i) % playerOrder.length;
-      const nextPlayer = playerOrder[nextIndex];
-      if (!hasScore(nextPlayer)) {
-        setActiveScoreSheet(nextPlayer);
-        return;
-      }
+    if (currentIndex < playerOrder.length - 1) {
+      setActiveScoreSheet(playerOrder[currentIndex + 1]);
+    } else {
+      // Last player - just close the sheet, don't auto-save
+      // User must click "Save & Next Hole" button when all scores are entered
+      setActiveScoreSheet(null);
     }
-    
-    // All players have scores - close the sheet
-    setActiveScoreSheet(null);
   };
 
   // Handle opening the More sheet
@@ -688,12 +675,7 @@ export default function UmbriagioPlay() {
               currentScore={scores[key]}
               onScoreSelect={(score) => handleScoreSelect(key, score)}
               onMore={handleOpenMoreSheet}
-              onEnterAndNext={(score) => {
-                // Convert -1 back to null for storage
-                const scoreToSave = score === -1 ? null : score;
-                const updatedScores = { ...scores, [key]: scoreToSave };
-                advanceToNextPlayerSheet(key, updatedScores);
-              }}
+              onEnterAndNext={() => advanceToNextPlayerSheet(key)}
             />
           );
         })}

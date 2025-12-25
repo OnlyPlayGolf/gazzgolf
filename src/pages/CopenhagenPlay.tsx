@@ -411,7 +411,7 @@ export default function CopenhagenPlay() {
             currentScore={num === 1 ? scores.player1 : num === 2 ? scores.player2 : scores.player3}
             onScoreSelect={(score) => updateScore(`player${num}` as any, score)}
             onMore={handleOpenMoreSheet}
-            onEnterAndNext={() => handleEnterAndNext()}
+            onEnterAndNext={handleEnterAndNext}
           />
         ))}
 
