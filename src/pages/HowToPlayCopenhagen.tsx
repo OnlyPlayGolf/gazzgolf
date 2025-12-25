@@ -66,21 +66,6 @@ export default function HowToPlayCopenhagen() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Presses</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p>Any player can start a press at any time during the round.</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Press creates a separate side bet</li>
-              <li>Press begins on the next hole</li>
-              <li>Points are tracked separately for each press</li>
-              <li>Multiple presses can be active simultaneously</li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
             <CardTitle>Handicaps</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">

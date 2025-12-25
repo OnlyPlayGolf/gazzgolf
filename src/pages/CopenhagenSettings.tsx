@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { CopenhagenGame, Press } from "@/types/copenhagen";
+import { CopenhagenGame } from "@/types/copenhagen";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -39,10 +39,7 @@ export default function CopenhagenSettings() {
         .single();
 
       if (gameData) {
-        setGame({
-          ...gameData,
-          presses: (gameData.presses as unknown as Press[]) || [],
-        });
+        setGame(gameData as CopenhagenGame);
       }
     } catch (error) {
       console.error("Error loading game:", error);

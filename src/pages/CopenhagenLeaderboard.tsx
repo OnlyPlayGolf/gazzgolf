@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
+import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { ChevronDown } from "lucide-react";
 import {
   Table,
@@ -41,10 +41,7 @@ export default function CopenhagenLeaderboard() {
         .single();
 
       if (gameData) {
-        setGame({
-          ...gameData,
-          presses: (gameData.presses as unknown as Press[]) || [],
-        });
+        setGame(gameData as CopenhagenGame);
 
         // Fetch course holes for scorecard structure
         if (gameData.course_id) {
@@ -70,10 +67,7 @@ export default function CopenhagenLeaderboard() {
         .order("hole_number");
 
       if (holesData) {
-        setHoles(holesData.map(h => ({
-          ...h,
-          press_points: (h.press_points as Record<string, any>) || {},
-        })));
+        setHoles(holesData as CopenhagenHole[]);
       }
     } catch (error) {
       console.error("Error loading game:", error);

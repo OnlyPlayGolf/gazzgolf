@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
-import { Trophy, Zap } from "lucide-react";
+import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
+import { Trophy } from "lucide-react";
 
 export default function CopenhagenFeed() {
   const { gameId } = useParams();
@@ -26,10 +26,7 @@ export default function CopenhagenFeed() {
         .single();
 
       if (gameData) {
-        setGame({
-          ...gameData,
-          presses: (gameData.presses as unknown as Press[]) || [],
-        });
+        setGame(gameData as CopenhagenGame);
       }
 
       const { data: holesData } = await supabase
@@ -39,10 +36,7 @@ export default function CopenhagenFeed() {
         .order("hole_number", { ascending: false });
 
       if (holesData) {
-        setHoles(holesData.map(h => ({
-          ...h,
-          press_points: (h.press_points as Record<string, any>) || {},
-        })));
+        setHoles(holesData as CopenhagenHole[]);
       }
     } catch (error) {
       console.error("Error loading game:", error);

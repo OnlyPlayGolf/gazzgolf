@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
-import { useToast } from "@/hooks/use-toast";
-import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
+import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { calculateCopenhagenPoints, calculateNetScore, createPress } from "@/utils/copenhagenScoring";
+import { calculateCopenhagenPoints, calculateNetScore } from "@/utils/copenhagenScoring";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
-import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,11 +32,9 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
   
   parseGame: (data): CopenhagenGame => ({
     ...data,
-    presses: (data.presses as unknown as Press[]) || [],
   }),
   parseHole: (data): CopenhagenHole => ({
     ...data,
-    press_points: (data.press_points as Record<string, any>) || {},
   }),
   getHoleNumber: (hole) => hole.hole_number,
   getTotalHoles: (game) => game.holes_played || 18,
@@ -73,17 +68,6 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
     const prevP2 = previousHoles.reduce((sum, h) => sum + h.player_2_hole_points, 0);
     const prevP3 = previousHoles.reduce((sum, h) => sum + h.player_3_hole_points, 0);
 
-    const pressPoints: Record<string, any> = {};
-    game.presses.forEach(press => {
-      if (press.is_active && holeNumber >= press.start_hole) {
-        pressPoints[press.id] = {
-          player_1: result.player1Points,
-          player_2: result.player2Points,
-          player_3: result.player3Points,
-        };
-      }
-    });
-
     return {
       game_id: gameId,
       hole_number: holeNumber,
@@ -103,7 +87,6 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
       player_3_running_total: prevP3 + result.player3Points,
       is_sweep: result.isSweep,
       sweep_winner: result.sweepWinner,
-      press_points: pressPoints,
     };
   },
   
@@ -125,7 +108,6 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
 export default function CopenhagenPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);
@@ -134,7 +116,7 @@ export default function CopenhagenPlay() {
   const [state, actions] = useGameScoring(config, navigate);
   
   const { game, holes, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
-  const { setScores, saveHole, navigateHole, deleteGame, refetchGame } = actions;
+  const { setScores, saveHole, navigateHole, deleteGame } = actions;
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -157,25 +139,6 @@ export default function CopenhagenPlay() {
     }
   };
 
-  const handleStartPress = async (playerIndex: number) => {
-    if (!game) return;
-    
-    const newPress = createPress(playerIndex, currentHole + 1, game.presses);
-    const updatedPresses = [...game.presses, newPress];
-    
-    try {
-      await supabase
-        .from("copenhagen_games")
-        .update({ presses: updatedPresses as any })
-        .eq("id", game.id);
-
-      await refetchGame();
-      toast({ title: "Press started!", description: `Press begins on hole ${currentHole + 1}` });
-    } catch (error: any) {
-      toast({ title: "Error starting press", description: error.message, variant: "destructive" });
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
@@ -193,8 +156,6 @@ export default function CopenhagenPlay() {
       </div>
     );
   }
-
-  const activePresses = game.presses.filter(p => p.is_active);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -311,42 +272,6 @@ export default function CopenhagenPlay() {
             </div>
           </div>
         </Card>
-
-        {/* Active Presses */}
-        {activePresses.length > 0 && (
-          <Card className="p-4">
-            <h3 className="font-semibold mb-2 flex items-center gap-2">
-              <Zap size={16} className="text-amber-500" />
-              Active Presses
-            </h3>
-            <div className="space-y-2">
-              {activePresses.map(press => (
-                <div key={press.id} className="flex justify-between items-center text-sm">
-                  <span>Started Hole {press.start_hole}</span>
-                  <Badge variant="outline">
-                    {press.player_1_points} / {press.player_2_points} / {press.player_3_points}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Press Buttons */}
-        <div className="flex gap-2">
-          {[1, 2, 3].map(num => (
-            <Button 
-              key={num}
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={() => handleStartPress(num)}
-            >
-              <Zap size={14} className="mr-1" />
-              Press P{num}
-            </Button>
-          ))}
-        </div>
 
         {/* Save Button */}
         <Button 

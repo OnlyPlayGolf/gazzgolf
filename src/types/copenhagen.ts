@@ -28,8 +28,6 @@ export interface CopenhagenGame {
   player_2_total_points: number;
   player_3_total_points: number;
   
-  presses: Press[];
-  
   is_finished: boolean;
   winner_player: string | null;
 }
@@ -60,19 +58,6 @@ export interface CopenhagenHole {
   
   is_sweep: boolean;
   sweep_winner: number | null; // 1, 2, or 3
-  
-  press_points: Record<string, { player_1: number; player_2: number; player_3: number }>;
-}
-
-export interface Press {
-  id: string;
-  started_by_player: number; // 1, 2, or 3
-  start_hole: number;
-  stake_multiplier: number;
-  is_active: boolean;
-  player_1_points: number;
-  player_2_points: number;
-  player_3_points: number;
 }
 
 export interface CopenhagenSetupData {
