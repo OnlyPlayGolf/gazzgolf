@@ -86,7 +86,7 @@ export interface GameScoringActions<TScores> {
   setScores: (scores: TScores | ((prev: TScores) => TScores)) => void;
   updateScore: <K extends keyof TScores>(key: K, value: TScores[K]) => void;
   saveHole: () => Promise<boolean>;
-  navigateHole: (direction: "prev" | "next") => void;
+  navigateHole: (direction: "prev" | "next") => Promise<void>;
   loadHoleData: (holeNumber: number) => void;
   deleteGame: () => Promise<void>;
   goToSummary: () => void;
@@ -307,12 +307,19 @@ export function useGameScoring<TGame, THole, TScores>(
     }
   }, [game, holes, currentHole, currentHoleIndex, par, strokeIndex, scores, courseHoles, navigate, toast]);
   
-  // Navigate between holes
-  const navigateHole = useCallback((direction: "prev" | "next") => {
+  // Navigate between holes - save current hole first if it has been played
+  const navigateHole = useCallback(async (direction: "prev" | "next") => {
     const cfg = configRef.current;
     if (!game) return;
     
     const totalHoles = cfg.getTotalHoles(game);
+    
+    // Check if current hole exists (was already saved before) - if so, save any changes
+    const existingHole = holes.find(h => cfg.getHoleNumber(h) === currentHole);
+    if (existingHole) {
+      // Save the current hole before navigating to preserve any changes
+      await saveHole();
+    }
     
     if (direction === "prev" && currentHoleIndex > 0) {
       const targetHoleNumber = currentHole - 1;
@@ -327,7 +334,7 @@ export function useGameScoring<TGame, THole, TScores>(
         setCurrentHoleIndex(prev => prev + 1);
       }
     }
-  }, [game, currentHole, currentHoleIndex, holes.length, loadHoleData]);
+  }, [game, currentHole, currentHoleIndex, holes, loadHoleData, saveHole]);
   
   // Update a single score field
   const updateScore = useCallback(<K extends keyof TScores>(key: K, value: TScores[K]) => {
