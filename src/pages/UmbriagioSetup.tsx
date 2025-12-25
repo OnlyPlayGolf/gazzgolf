@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle, Plus } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Dice5, RefreshCw, Shuffle, Plus, Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,6 +93,12 @@ export default function UmbriagioSetup() {
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
   const [teamRotation, setTeamRotation] = useState<TeamRotation>("none");
   const [teamsConfirmed, setTeamsConfirmed] = useState(false);
+  
+  // Team names
+  const [teamAName, setTeamAName] = useState("Team A");
+  const [teamBName, setTeamBName] = useState("Team B");
+  const [editingTeamName, setEditingTeamName] = useState<"A" | "B" | null>(null);
+  const teamNameInputRef = useRef<HTMLInputElement>(null);
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -380,7 +387,30 @@ export default function UmbriagioSetup() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500" />
-                  <Label className="font-semibold">Team A</Label>
+                  {editingTeamName === "A" ? (
+                    <Input
+                      ref={teamNameInputRef}
+                      value={teamAName}
+                      onChange={(e) => setTeamAName(e.target.value)}
+                      onBlur={() => setEditingTeamName(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setEditingTeamName(null);
+                      }}
+                      className="h-7 w-32 text-sm font-semibold"
+                      autoFocus
+                    />
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setEditingTeamName("A");
+                        setTimeout(() => teamNameInputRef.current?.select(), 0);
+                      }}
+                      className="flex items-center gap-1.5 font-semibold text-sm hover:text-primary transition-colors"
+                    >
+                      {teamAName}
+                      <Pencil className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
                 </div>
                 <Droppable droppableId="teamA">
                   {(provided) => (
@@ -417,7 +447,30 @@ export default function UmbriagioSetup() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <Label className="font-semibold">Team B</Label>
+                  {editingTeamName === "B" ? (
+                    <Input
+                      ref={teamNameInputRef}
+                      value={teamBName}
+                      onChange={(e) => setTeamBName(e.target.value)}
+                      onBlur={() => setEditingTeamName(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") setEditingTeamName(null);
+                      }}
+                      className="h-7 w-32 text-sm font-semibold"
+                      autoFocus
+                    />
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setEditingTeamName("B");
+                        setTimeout(() => teamNameInputRef.current?.select(), 0);
+                      }}
+                      className="flex items-center gap-1.5 font-semibold text-sm hover:text-primary transition-colors"
+                    >
+                      {teamBName}
+                      <Pencil className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  )}
                 </div>
                 <Droppable droppableId="teamB">
                   {(provided) => (
