@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Dices } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Settings } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -43,6 +44,8 @@ export default function CopenhagenSetup() {
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
+  const [gimmesEnabled, setGimmesEnabled] = useState(false);
+  const [defaultTee, setDefaultTee] = useState(DEFAULT_MEN_TEE);
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
@@ -64,11 +67,23 @@ export default function CopenhagenSetup() {
       const userName = profile?.display_name || profile?.username || 'You';
       const userHandicap = parseHandicap(profile?.handicap);
       
+      // Load saved settings
+      const savedSettings = sessionStorage.getItem('copenhagenSettings');
+      let savedDefaultTee = DEFAULT_MEN_TEE;
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+        setUseHandicaps(settings.useHandicaps || false);
+        setGimmesEnabled(settings.gimmesEnabled || false);
+        savedDefaultTee = settings.defaultTee || DEFAULT_MEN_TEE;
+        setDefaultTee(savedDefaultTee);
+      }
+
       const currentUserPlayer: Player = {
         odId: user.id,
         displayName: userName,
         handicap: userHandicap,
-        teeColor: DEFAULT_MEN_TEE,
+        teeColor: savedDefaultTee,
         isTemporary: false,
         isCurrentUser: true,
       };
@@ -174,7 +189,7 @@ export default function CopenhagenSetup() {
       if (error) throw error;
 
       // Save settings to game-specific localStorage and session storage
-      const copenhagenSettings = { mulligansPerPlayer };
+      const copenhagenSettings = { mulligansPerPlayer, useHandicaps, gimmesEnabled, defaultTee };
       localStorage.setItem(`copenhagenSettings_${game.id}`, JSON.stringify(copenhagenSettings));
       sessionStorage.setItem('copenhagenSettings', JSON.stringify(copenhagenSettings));
 
@@ -256,24 +271,43 @@ export default function CopenhagenSetup() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Dices size={20} className="text-primary" />
+              <Settings size={20} className="text-primary" />
               Game Settings
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Use Handicaps toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="handicap">Use Handicaps</Label>
+                <p className="text-xs text-muted-foreground">
+                  Apply player handicaps to scoring
+                </p>
+              </div>
+              <Switch
+                id="handicap"
+                checked={useHandicaps}
+                onCheckedChange={setUseHandicaps}
+              />
+            </div>
+
+            {/* Default Tee */}
             <div className="space-y-2">
-              <Label>Handicaps</Label>
-              <Select value={useHandicaps ? "yes" : "no"} onValueChange={(v) => setUseHandicaps(v === "yes")}>
+              <Label>Default Tee</Label>
+              <Select value={defaultTee} onValueChange={setDefaultTee}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select default tee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no">Off</SelectItem>
-                  <SelectItem value="yes">On</SelectItem>
+                  {STANDARD_TEE_OPTIONS.map((tee) => (
+                    <SelectItem key={tee.value} value={tee.value}>
+                      {tee.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Apply net scoring based on player handicaps
+                Default tee for new players
               </p>
             </div>
 
@@ -297,6 +331,24 @@ export default function CopenhagenSetup() {
                   <SelectItem value="9">1 per 9 holes</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Number of allowed do-overs per player during the round
+              </p>
+            </div>
+
+            {/* Gimmes toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="gimmes">Allow Gimmes</Label>
+                <p className="text-xs text-muted-foreground">
+                  Short putts can be conceded without being played
+                </p>
+              </div>
+              <Switch
+                id="gimmes"
+                checked={gimmesEnabled}
+                onCheckedChange={setGimmesEnabled}
+              />
             </div>
           </CardContent>
         </Card>
