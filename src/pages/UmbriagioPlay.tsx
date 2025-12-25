@@ -178,8 +178,9 @@ export default function UmbriagioPlay() {
     if (currentIndex < playerOrder.length - 1) {
       setActiveScoreSheet(playerOrder[currentIndex + 1]);
     } else {
+      // Last player - just close the sheet, don't auto-save
+      // User must click "Save & Next Hole" button when all scores are entered
       setActiveScoreSheet(null);
-      saveHole();
     }
   };
 
