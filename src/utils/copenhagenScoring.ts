@@ -158,23 +158,3 @@ export function calculatePointDifferentials(
     player3: player3Points - averagePoints,
   };
 }
-
-/**
- * Create a new press
- */
-export function createPress(
-  startedByPlayer: number,
-  startHole: number,
-  existingPresses: any[]
-): any {
-  return {
-    id: `press_${Date.now()}`,
-    started_by_player: startedByPlayer,
-    start_hole: startHole,
-    stake_multiplier: 1,
-    is_active: true,
-    player_1_points: 0,
-    player_2_points: 0,
-    player_3_points: 0,
-  };
-}

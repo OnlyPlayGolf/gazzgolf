@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { CopenhagenGame, CopenhagenHole, Press } from "@/types/copenhagen";
-import { Trophy, Zap, Target } from "lucide-react";
+import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
+import { Trophy, Target } from "lucide-react";
 import { GameShareDialog } from "@/components/GameShareDialog";
 
 export default function CopenhagenSummary() {
@@ -28,10 +27,7 @@ export default function CopenhagenSummary() {
         .single();
 
       if (gameData) {
-        setGame({
-          ...gameData,
-          presses: (gameData.presses as unknown as Press[]) || [],
-        });
+        setGame(gameData as CopenhagenGame);
       }
 
       const { data: holesData } = await supabase
@@ -41,10 +37,7 @@ export default function CopenhagenSummary() {
         .order("hole_number");
 
       if (holesData) {
-        setHoles(holesData.map(h => ({
-          ...h,
-          press_points: (h.press_points as Record<string, any>) || {},
-        })));
+        setHoles(holesData as CopenhagenHole[]);
       }
     } catch (error) {
       console.error("Error loading game:", error);
@@ -127,44 +120,14 @@ export default function CopenhagenSummary() {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Game Stats</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 rounded-lg bg-muted/50">
+          <CardContent className="flex justify-center">
+            <div className="text-center p-3 rounded-lg bg-muted/50 w-full max-w-[200px]">
               <Target className="mx-auto text-amber-500 mb-1" size={24} />
               <div className="text-2xl font-bold">{sweeps.length}</div>
               <div className="text-xs text-muted-foreground">Sweeps</div>
             </div>
-            <div className="text-center p-3 rounded-lg bg-muted/50">
-              <Zap className="mx-auto text-blue-500 mb-1" size={24} />
-              <div className="text-2xl font-bold">{game.presses.length}</div>
-              <div className="text-xs text-muted-foreground">Presses</div>
-            </div>
           </CardContent>
         </Card>
-
-        {/* Press Results */}
-        {game.presses.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Press Results</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {game.presses.map((press, i) => {
-                const pressPlayers = [
-                  { name: game.player_1, points: press.player_1_points },
-                  { name: game.player_2, points: press.player_2_points },
-                  { name: game.player_3, points: press.player_3_points },
-                ].sort((a, b) => b.points - a.points);
-
-                return (
-                  <div key={press.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                    <span>Press #{i + 1}</span>
-                    <Badge variant="outline">{pressPlayers[0].name} wins</Badge>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
