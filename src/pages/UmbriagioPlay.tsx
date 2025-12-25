@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Zap, Dices, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -28,10 +28,10 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface UmbriagioScores {
-  teamAPlayer1: number;
-  teamAPlayer2: number;
-  teamBPlayer1: number;
-  teamBPlayer2: number;
+  teamAPlayer1: number | null;
+  teamAPlayer2: number | null;
+  teamBPlayer1: number | null;
+  teamBPlayer2: number | null;
   closestToPinWinner: 'A' | 'B' | null;
   multiplier: 1 | 2 | 4;
   doubleCalledBy: 'A' | 'B' | null;
@@ -65,10 +65,10 @@ const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame,
   getSummaryRoute: (id) => `/umbriago/${id}/summary`,
   
   createEmptyScores: () => ({
-    teamAPlayer1: 0,
-    teamAPlayer2: 0,
-    teamBPlayer1: 0,
-    teamBPlayer2: 0,
+    teamAPlayer1: 0 as number | null,
+    teamAPlayer2: 0 as number | null,
+    teamBPlayer1: 0 as number | null,
+    teamBPlayer2: 0 as number | null,
     closestToPinWinner: null,
     multiplier: 1,
     doubleCalledBy: null,
@@ -77,10 +77,10 @@ const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame,
   }),
   
   extractScoresFromHole: (hole) => ({
-    teamAPlayer1: hole.team_a_player_1_score ?? 0,
-    teamAPlayer2: hole.team_a_player_2_score ?? 0,
-    teamBPlayer1: hole.team_b_player_1_score ?? 0,
-    teamBPlayer2: hole.team_b_player_2_score ?? 0,
+    teamAPlayer1: hole.team_a_player_1_score,
+    teamAPlayer2: hole.team_a_player_2_score,
+    teamBPlayer1: hole.team_b_player_1_score,
+    teamBPlayer2: hole.team_b_player_2_score,
     closestToPinWinner: hole.closest_to_pin_winner,
     multiplier: hole.multiplier,
     doubleCalledBy: hole.double_called_by,
@@ -172,8 +172,9 @@ export default function UmbriagioPlay() {
     ['teamAPlayer1', 'teamAPlayer2', 'teamBPlayer1', 'teamBPlayer2'];
 
   const handleScoreSelect = (player: typeof playerOrder[number], score: number | null) => {
-    if (score === null) return;
-    setScores(prev => ({ ...prev, [player]: score }));
+    // -1 from ScoreInputGrid means "didn't finish" - save as null
+    const scoreToSave = score === -1 ? null : score;
+    setScores(prev => ({ ...prev, [player]: scoreToSave }));
   };
 
   const advanceToNextPlayerSheet = (player: typeof playerOrder[number]) => {
@@ -404,10 +405,35 @@ export default function UmbriagioPlay() {
   const teamARollsUsed = (game.roll_history || []).filter(r => r.team === 'A').length;
   const teamBRollsUsed = (game.roll_history || []).filter(r => r.team === 'B').length;
 
-  const allScoresEntered = (scores.teamAPlayer1 > 0 || scores.teamAPlayer1 === -1) && 
-                          (scores.teamAPlayer2 > 0 || scores.teamAPlayer2 === -1) && 
-                          (scores.teamBPlayer1 > 0 || scores.teamBPlayer1 === -1) && 
-                          (scores.teamBPlayer2 > 0 || scores.teamBPlayer2 === -1);
+  // Check if score is entered (positive number or null for "didn't finish")
+  const isScoreEntered = (score: number | null) => score !== null && score !== 0 ? true : score === null;
+  const allScoresEntered = isScoreEntered(scores.teamAPlayer1) && 
+                          isScoreEntered(scores.teamAPlayer2) && 
+                          isScoreEntered(scores.teamBPlayer1) && 
+                          isScoreEntered(scores.teamBPlayer2);
+  
+  // Actually check if all have real input (null = didn't finish, or > 0 = actual score)
+  const hasValidInput = (score: number | null) => score === null || (score !== null && score > 0);
+  const allHaveValidInput = hasValidInput(scores.teamAPlayer1) && 
+                           hasValidInput(scores.teamAPlayer2) && 
+                           hasValidInput(scores.teamBPlayer1) && 
+                           hasValidInput(scores.teamBPlayer2);
+  
+  // Track if we've already auto-saved for this hole to prevent double-saves
+  const hasAutoSavedRef = useRef(false);
+  
+  // Reset auto-save flag when hole changes
+  useEffect(() => {
+    hasAutoSavedRef.current = false;
+  }, [currentHoleIndex]);
+  
+  // Auto-save when all scores are entered
+  useEffect(() => {
+    if (allHaveValidInput && !saving && !hasAutoSavedRef.current && activeScoreSheet === null) {
+      hasAutoSavedRef.current = true;
+      saveHole();
+    }
+  }, [scores.teamAPlayer1, scores.teamAPlayer2, scores.teamBPlayer1, scores.teamBPlayer2, allHaveValidInput, saving, activeScoreSheet]);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -466,6 +492,27 @@ export default function UmbriagioPlay() {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
+        {/* Closest to Pin */}
+        <Card className="p-4">
+          <h3 className="font-semibold mb-3">Closest to Pin</h3>
+          <div className="flex gap-2">
+            <Button
+              variant={scores.closestToPinWinner === 'A' ? 'default' : 'outline'}
+              className="flex-1"
+              onClick={() => setClosestToPinWinner(scores.closestToPinWinner === 'A' ? null : 'A')}
+            >
+              Team A
+            </Button>
+            <Button
+              variant={scores.closestToPinWinner === 'B' ? 'default' : 'outline'}
+              className="flex-1"
+              onClick={() => setClosestToPinWinner(scores.closestToPinWinner === 'B' ? null : 'B')}
+            >
+              Team B
+            </Button>
+          </div>
+        </Card>
+
         {/* Team A */}
         <Card className="p-4">
           <h3 className="font-semibold text-blue-600 mb-3">Team A</h3>
@@ -481,8 +528,8 @@ export default function UmbriagioPlay() {
               >
                 <span className="font-medium">{player.name}</span>
                 <div className="flex flex-col items-center">
-                  <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                    {player.score === -1 ? '–' : player.score > 0 ? player.score : '0'}
+                  <span className={`text-xl font-bold ${player.score !== null && player.score > 0 ? '' : 'text-muted-foreground'}`}>
+                    {player.score === null ? '–' : player.score > 0 ? player.score : '0'}
                   </span>
                   {player.score === 0 && (
                     <span className="text-xs text-muted-foreground">Strokes</span>
@@ -528,8 +575,8 @@ export default function UmbriagioPlay() {
               >
                 <span className="font-medium">{player.name}</span>
                 <div className="flex flex-col items-center">
-                  <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                    {player.score === -1 ? '–' : player.score > 0 ? player.score : '0'}
+                  <span className={`text-xl font-bold ${player.score !== null && player.score > 0 ? '' : 'text-muted-foreground'}`}>
+                    {player.score === null ? '–' : player.score > 0 ? player.score : '0'}
                   </span>
                   {player.score === 0 && (
                     <span className="text-xs text-muted-foreground">Strokes</span>
@@ -566,28 +613,6 @@ export default function UmbriagioPlay() {
             <X size={16} className="mr-2" /> Clear Double/Roll (×{scores.multiplier} → ×1)
           </Button>
         )}
-
-        {/* Closest to Pin */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3">Closest to Pin</h3>
-          <div className="flex gap-2">
-            <Button
-              variant={scores.closestToPinWinner === 'A' ? 'default' : 'outline'}
-              className="flex-1"
-              onClick={() => setClosestToPinWinner(scores.closestToPinWinner === 'A' ? null : 'A')}
-            >
-              Team A
-            </Button>
-            <Button
-              variant={scores.closestToPinWinner === 'B' ? 'default' : 'outline'}
-              className="flex-1"
-              onClick={() => setClosestToPinWinner(scores.closestToPinWinner === 'B' ? null : 'B')}
-            >
-              Team B
-            </Button>
-          </div>
-        </Card>
-
         {/* Points Display */}
         <Card className="p-4">
           <div className="flex justify-between items-center">
