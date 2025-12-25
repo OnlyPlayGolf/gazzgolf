@@ -243,6 +243,9 @@ export default function CopenhagenPlay() {
     }));
   };
 
+  // Helper to check if a score has been entered (positive score or dash/-1)
+  const hasValidScore = (score: number) => score > 0 || score === -1;
+
   const handleEnterAndNext = async () => {
     if (activePlayerSheet === 1) {
       setActivePlayerSheet(2);
@@ -250,8 +253,8 @@ export default function CopenhagenPlay() {
       setActivePlayerSheet(3);
     } else {
       setActivePlayerSheet(null);
-      // Only save and advance if all players have scores entered
-      if (scores.player1 > 0 && scores.player2 > 0 && scores.player3 > 0) {
+      // Only save and advance if all players have scores entered (including dash/-1)
+      if (hasValidScore(scores.player1) && hasValidScore(scores.player2) && hasValidScore(scores.player3)) {
         await saveHole();
       }
     }
@@ -351,7 +354,7 @@ export default function CopenhagenPlay() {
               </div>
               <div className="text-center">
                 <div className={`text-2xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                  {player.score > 0 ? player.score : 0}
+                  {player.score === -1 ? '–' : player.score > 0 ? player.score : 0}
                 </div>
                 <div className="text-xs text-muted-foreground">Strokes</div>
               </div>
