@@ -425,7 +425,6 @@ export default function WolfPlay() {
         {/* Double Section - only show if enabled */}
         {game.double_enabled && (
         <Card className="p-4">
-          <h3 className="font-semibold mb-3">Double</h3>
           {(() => {
             // Determine which side has fewer players (tees off first, can double first)
             const isLoneWolf = scoresState.wolfChoice === 'lone';
@@ -494,32 +493,34 @@ export default function WolfPlay() {
             return (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  {/* First doubler side */}
-                  <Button
-                    variant={hasFirstDouble && 
-                      ((firstDoublerSide === 'wolf' && isFirstDoublerFromWolfTeam) || 
-                       (firstDoublerSide === 'opponents' && !isFirstDoublerFromWolfTeam)) 
-                      ? 'default' : 'outline'}
-                    onClick={() => handleDouble(firstDoublerSide)}
-                    disabled={hasFirstDouble}
-                    className="flex flex-col items-center py-3 h-auto"
-                  >
-                    <span className="text-xs text-muted-foreground mb-1">Tees off first</span>
-                    <span className="font-medium truncate w-full text-center">{getTeamLabel(firstDoublerSide)}</span>
-                    <span className="text-sm mt-1">Double</span>
-                  </Button>
+                  {/* Wolf team - Double */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-sm font-semibold mb-2">Double</span>
+                    <Button
+                      variant={hasFirstDouble && 
+                        ((firstDoublerSide === 'wolf' && isFirstDoublerFromWolfTeam) || 
+                         (firstDoublerSide === 'opponents' && !isFirstDoublerFromWolfTeam)) 
+                        ? 'default' : 'outline'}
+                      onClick={() => handleDouble(firstDoublerSide)}
+                      disabled={hasFirstDouble}
+                      className="flex flex-col items-center py-3 h-auto w-full"
+                    >
+                      <span className="font-medium truncate w-full text-center">{getTeamLabel(firstDoublerSide)}</span>
+                    </Button>
+                  </div>
                   
-                  {/* Second doubler side (can only double after first double) */}
-                  <Button
-                    variant={scoresState.doubleBackCalled ? 'default' : 'outline'}
-                    onClick={() => handleDouble(secondDoublerSide)}
-                    disabled={!canDoubleBack}
-                    className="flex flex-col items-center py-3 h-auto"
-                  >
-                    <span className="text-xs text-muted-foreground mb-1">Tees off second</span>
-                    <span className="font-medium truncate w-full text-center">{getTeamLabel(secondDoublerSide)}</span>
-                    <span className="text-sm mt-1">Double Back</span>
-                  </Button>
+                  {/* Opponents - Double Back */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-sm font-semibold mb-2">Double Back</span>
+                    <Button
+                      variant={scoresState.doubleBackCalled ? 'default' : 'outline'}
+                      onClick={() => handleDouble(secondDoublerSide)}
+                      disabled={!canDoubleBack}
+                      className="flex flex-col items-center py-3 h-auto w-full"
+                    >
+                      <span className="font-medium truncate w-full text-center">{getTeamLabel(secondDoublerSide)}</span>
+                    </Button>
+                  </div>
                 </div>
                 
                 {hasFirstDouble && (
