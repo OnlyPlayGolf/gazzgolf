@@ -458,7 +458,7 @@ export default function ScramblePlay() {
                   <span className="text-xl font-bold">{team.name}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {team.players.map(p => p.name).join(', ')}
+                  {team.players.map(p => p.name.split(' ')[0]).join(', ')}
                 </div>
               </div>
               <div className="flex items-center gap-4">
