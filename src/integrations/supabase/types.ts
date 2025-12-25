@@ -1853,6 +1853,8 @@ export type Database = {
           player_4_points: number
           player_5: string | null
           player_5_points: number
+          player_6: string | null
+          player_6_points: number
           roll_history: Json | null
           rolls_per_player: number
           round_name: string | null
@@ -1882,6 +1884,8 @@ export type Database = {
           player_4_points?: number
           player_5?: string | null
           player_5_points?: number
+          player_6?: string | null
+          player_6_points?: number
           roll_history?: Json | null
           rolls_per_player?: number
           round_name?: string | null
@@ -1911,6 +1915,8 @@ export type Database = {
           player_4_points?: number
           player_5?: string | null
           player_5_points?: number
+          player_6?: string | null
+          player_6_points?: number
           roll_history?: Json | null
           rolls_per_player?: number
           round_name?: string | null
@@ -1955,6 +1961,9 @@ export type Database = {
           player_5_hole_points: number
           player_5_running_total: number
           player_5_score: number | null
+          player_6_hole_points: number
+          player_6_running_total: number
+          player_6_score: number | null
           winning_side: string | null
           wolf_choice: string | null
           wolf_player: number
@@ -1984,6 +1993,9 @@ export type Database = {
           player_5_hole_points?: number
           player_5_running_total?: number
           player_5_score?: number | null
+          player_6_hole_points?: number
+          player_6_running_total?: number
+          player_6_score?: number | null
           winning_side?: string | null
           wolf_choice?: string | null
           wolf_player: number
@@ -2013,6 +2025,9 @@ export type Database = {
           player_5_hole_points?: number
           player_5_running_total?: number
           player_5_score?: number | null
+          player_6_hole_points?: number
+          player_6_running_total?: number
+          player_6_score?: number | null
           winning_side?: string | null
           wolf_choice?: string | null
           wolf_player?: number

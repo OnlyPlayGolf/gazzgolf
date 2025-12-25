@@ -8,12 +8,13 @@ export interface WolfGame {
   date_played: string;
   created_at: string;
   
-  // Players (3-5 players, order is tee-off order)
+  // Players (4-6 players, order is tee-off order)
   player_1: string;
   player_2: string;
   player_3: string;
   player_4: string | null;
   player_5: string | null;
+  player_6: string | null;
   
   // Points settings
   lone_wolf_win_points: number;
@@ -32,6 +33,7 @@ export interface WolfGame {
   player_3_points: number;
   player_4_points: number;
   player_5_points: number;
+  player_6_points: number;
   
   is_finished: boolean;
   winner_player: string | null;
@@ -46,11 +48,11 @@ export interface WolfHole {
   par: number;
   
   // Who is the wolf this hole
-  wolf_player: number; // 1-5, which player is wolf
+  wolf_player: number; // 1-6, which player is wolf
   
   // Wolf's choice
   wolf_choice: 'lone' | 'partner' | null;
-  partner_player: number | null; // 1-5, which player wolf chose as partner
+  partner_player: number | null; // 1-6, which player wolf chose as partner
   
   // Double/press
   multiplier: number;
@@ -63,6 +65,7 @@ export interface WolfHole {
   player_3_score: number | null;
   player_4_score: number | null;
   player_5_score: number | null;
+  player_6_score: number | null;
   
   // Points earned this hole
   player_1_hole_points: number;
@@ -70,6 +73,7 @@ export interface WolfHole {
   player_3_hole_points: number;
   player_4_hole_points: number;
   player_5_hole_points: number;
+  player_6_hole_points: number;
   
   // Running totals
   player_1_running_total: number;
@@ -77,6 +81,7 @@ export interface WolfHole {
   player_3_running_total: number;
   player_4_running_total: number;
   player_5_running_total: number;
+  player_6_running_total: number;
   
   // Winning side
   winning_side: 'wolf' | 'opponents' | 'tie' | null;

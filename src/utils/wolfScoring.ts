@@ -1,17 +1,17 @@
 import { WolfHole, WolfSettings } from '@/types/wolf';
 
 export interface WolfScoreInput {
-  scores: (number | null)[];  // Scores for each player (index 0-4)
-  wolfPlayer: number;         // 1-5 which player is wolf
+  scores: (number | null)[];  // Scores for each player (index 0-5)
+  wolfPlayer: number;         // 1-6 which player is wolf
   wolfChoice: 'lone' | 'partner';
-  partnerPlayer: number | null; // 1-5 if partner chosen
-  playerCount: number;        // 3-5 players
+  partnerPlayer: number | null; // 1-6 if partner chosen
+  playerCount: number;        // 4-6 players
   settings: WolfSettings;
 }
 
 export interface WolfScoreResult {
   winningSide: 'wolf' | 'opponents' | 'tie';
-  playerPoints: number[];     // Points for each player (index 0-4)
+  playerPoints: number[];     // Points for each player (index 0-5)
 }
 
 export function calculateWolfHoleScore(input: WolfScoreInput): WolfScoreResult {
@@ -22,7 +22,7 @@ export function calculateWolfHoleScore(input: WolfScoreInput): WolfScoreResult {
   const wolfScore = scores[wolfIndex];
   
   if (wolfScore === null) {
-    return { winningSide: 'tie', playerPoints: [0, 0, 0, 0, 0] };
+    return { winningSide: 'tie', playerPoints: [0, 0, 0, 0, 0, 0] };
   }
   
   let wolfTeamBestScore: number;
@@ -71,7 +71,7 @@ export function calculateWolfHoleScore(input: WolfScoreInput): WolfScoreResult {
   }
   
   // Calculate points
-  const playerPoints = [0, 0, 0, 0, 0];
+  const playerPoints = [0, 0, 0, 0, 0, 0];
   
   if (winningSide === 'tie') {
     // No points on tie
