@@ -138,6 +138,19 @@ export default function RoundLeaderboard() {
         }
       });
 
+      // Load guest scores from localStorage
+      const guestScoresJson = localStorage.getItem(`roundGuestScores_${roundId}`);
+      if (guestScoresJson) {
+        const guestScoresObj = JSON.parse(guestScoresJson);
+        Object.entries(guestScoresObj).forEach(([playerId, scores]) => {
+          const playerScoresMap = new Map<number, number>();
+          Object.entries(scores as Record<string, number>).forEach(([hole, score]) => {
+            playerScoresMap.set(parseInt(hole), score);
+          });
+          scoresMap.set(playerId, playerScoresMap);
+        });
+      }
+
       // Combine all player data
       const playersWithScores: PlayerData[] = playersData.map(player => {
         const profile = profilesMap.get(player.user_id);
@@ -152,6 +165,24 @@ export default function RoundLeaderboard() {
           mulligans: mulligansMap.get(player.id) || new Set(),
         };
       });
+
+      // Load guest players from localStorage
+      const guestPlayersJson = localStorage.getItem(`roundGuestPlayers_${roundId}`);
+      if (guestPlayersJson) {
+        const guestPlayers = JSON.parse(guestPlayersJson);
+        guestPlayers.forEach((g: any) => {
+          playersWithScores.push({
+            id: g.odId,
+            user_id: g.odId,
+            tee_color: g.teeColor || null,
+            handicap: null,
+            display_name: g.displayName,
+            username: null,
+            scores: scoresMap.get(g.odId) || new Map(),
+            mulligans: new Set(),
+          });
+        });
+      }
 
       setPlayers(playersWithScores);
       
