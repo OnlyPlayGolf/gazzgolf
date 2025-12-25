@@ -539,7 +539,6 @@ export default function WolfPlay() {
               const score = scoresState.scores[i];
               const isDash = score === -1;
               const hasScore = score !== null && score !== undefined;
-              const displayScore = isDash ? '-' : hasScore ? score : '-';
               
               return (
                 <div
@@ -553,9 +552,12 @@ export default function WolfPlay() {
                     {isWolf && <span>🐺</span>}
                     <span className="font-medium">{getPlayerName(i)}</span>
                   </div>
-                  <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-                    {displayScore}
-                  </span>
+                  <div className="flex flex-col items-center">
+                    <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
+                      {isDash ? '-' : hasScore ? score : '0'}
+                    </span>
+                    {!hasScore && <span className="text-xs text-muted-foreground">Strokes</span>}
+                  </div>
                 </div>
               );
             })}
