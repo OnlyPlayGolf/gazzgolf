@@ -214,6 +214,46 @@ export default function UmbriagioPlay() {
     return rotationSchedule.schedule[segmentIndex] || defaultPlayers;
   }, [game, rotationSchedule, currentHole]);
 
+  // Calculate the current segment range and segment-specific points
+  const segmentInfo = useMemo(() => {
+    if (!rotationSchedule || rotationSchedule.schedule.length <= 1) {
+      // No rotation or single segment - show total points
+      return {
+        startHole: 1,
+        endHole: totalHoles,
+        teamASegmentPoints: game?.team_a_total_points || 0,
+        teamBSegmentPoints: game?.team_b_total_points || 0,
+        isRotating: false,
+      };
+    }
+    
+    const holesPerSegment = rotationSchedule.type === "every9" ? 9 : 6;
+    const segmentIndex = Math.floor((currentHole - 1) / holesPerSegment);
+    const startHole = segmentIndex * holesPerSegment + 1;
+    const endHole = Math.min((segmentIndex + 1) * holesPerSegment, totalHoles);
+    
+    // Calculate points only for holes in the current segment
+    let teamASegmentPoints = 0;
+    let teamBSegmentPoints = 0;
+    
+    holes.forEach(hole => {
+      if (hole.hole_number >= startHole && hole.hole_number <= endHole) {
+        teamASegmentPoints += hole.team_a_hole_points;
+        teamBSegmentPoints += hole.team_b_hole_points;
+      }
+    });
+    
+    return {
+      startHole,
+      endHole,
+      teamASegmentPoints,
+      teamBSegmentPoints,
+      isRotating: true,
+      segmentIndex: segmentIndex + 1,
+      totalSegments: rotationSchedule.schedule.length,
+    };
+  }, [rotationSchedule, currentHole, totalHoles, holes, game?.team_a_total_points, game?.team_b_total_points]);
+
   const playerOrder: (keyof Pick<UmbriagioScores, 'teamAPlayer1' | 'teamAPlayer2' | 'teamBPlayer1' | 'teamBPlayer2'>)[] = 
     ['teamAPlayer1', 'teamAPlayer2', 'teamBPlayer1', 'teamBPlayer2'];
 
@@ -706,15 +746,26 @@ export default function UmbriagioPlay() {
 
         {/* Points Display */}
         <Card className="p-4">
+          {segmentInfo.isRotating && (
+            <div className="text-center text-xs text-muted-foreground mb-2">
+              Segment {segmentInfo.segmentIndex}/{segmentInfo.totalSegments} (Holes {segmentInfo.startHole}-{segmentInfo.endHole})
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <div className="text-center flex-1">
               <div className="text-sm text-muted-foreground">{game.team_a_name}</div>
-              <div className="text-2xl font-bold text-blue-600">{game.team_a_total_points}</div>
+              <div className="text-2xl font-bold text-blue-600">{segmentInfo.teamASegmentPoints}</div>
+              {segmentInfo.isRotating && (
+                <div className="text-xs text-muted-foreground">Total: {game.team_a_total_points}</div>
+              )}
             </div>
             <div className="text-muted-foreground">vs</div>
             <div className="text-center flex-1">
               <div className="text-sm text-muted-foreground">{game.team_b_name}</div>
-              <div className="text-2xl font-bold text-red-600">{game.team_b_total_points}</div>
+              <div className="text-2xl font-bold text-red-600">{segmentInfo.teamBSegmentPoints}</div>
+              {segmentInfo.isRotating && (
+                <div className="text-xs text-muted-foreground">Total: {game.team_b_total_points}</div>
+              )}
             </div>
           </div>
         </Card>
