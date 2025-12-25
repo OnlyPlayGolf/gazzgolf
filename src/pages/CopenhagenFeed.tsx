@@ -1,69 +1,260 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
-import { Trophy } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Heart, MessageCircle, Send } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
+
+interface Comment {
+  id: string;
+  content: string;
+  hole_number: number | null;
+  user_id: string;
+  created_at: string;
+  profiles: {
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+  likes_count: number;
+  replies_count: number;
+  user_has_liked: boolean;
+}
+
+interface Reply {
+  id: string;
+  content: string;
+  user_id: string;
+  created_at: string;
+  profiles: {
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+}
 
 export default function CopenhagenFeed() {
   const { gameId } = useParams();
-  const [game, setGame] = useState<CopenhagenGame | null>(null);
-  const [holes, setHoles] = useState<CopenhagenHole[]>([]);
+  const { toast } = useToast();
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newComment, setNewComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
+  const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    if (gameId) fetchGame();
-  }, [gameId]);
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    fetchUser();
+  }, []);
 
-  const fetchGame = async () => {
+  useEffect(() => {
+    if (gameId) {
+      fetchComments();
+    }
+  }, [gameId, currentUserId]);
+
+  const fetchComments = async () => {
+    if (!gameId) return;
+    
     try {
-      const { data: gameData } = await supabase
-        .from("copenhagen_games")
-        .select("*")
-        .eq("id", gameId)
-        .single();
-
-      if (gameData) {
-        setGame(gameData as CopenhagenGame);
-      }
-
-      const { data: holesData } = await supabase
-        .from("copenhagen_holes")
-        .select("*")
+      const { data: commentsData, error } = await supabase
+        .from("round_comments")
+        .select("id, content, hole_number, user_id, created_at")
         .eq("game_id", gameId)
-        .order("hole_number", { ascending: false });
+        .eq("game_type", "copenhagen")
+        .order("created_at", { ascending: false });
 
-      if (holesData) {
-        setHoles(holesData as CopenhagenHole[]);
-      }
+      if (error) throw error;
+
+      const userIds = [...new Set((commentsData || []).map(c => c.user_id))];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, display_name, username, avatar_url")
+        .in("id", userIds);
+
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+      const commentsWithCounts = await Promise.all(
+        (commentsData || []).map(async (comment) => {
+          const { count: likesCount } = await supabase
+            .from("round_comment_likes")
+            .select("*", { count: "exact", head: true })
+            .eq("comment_id", comment.id);
+
+          const { count: repliesCount } = await supabase
+            .from("round_comment_replies")
+            .select("*", { count: "exact", head: true })
+            .eq("comment_id", comment.id);
+
+          let userHasLiked = false;
+          if (currentUserId) {
+            const { data: likeData } = await supabase
+              .from("round_comment_likes")
+              .select("id")
+              .eq("comment_id", comment.id)
+              .eq("user_id", currentUserId)
+              .maybeSingle();
+            userHasLiked = !!likeData;
+          }
+
+          return {
+            ...comment,
+            profiles: profilesMap.get(comment.user_id) || null,
+            likes_count: likesCount || 0,
+            replies_count: repliesCount || 0,
+            user_has_liked: userHasLiked,
+          };
+        })
+      );
+
+      setComments(commentsWithCounts);
     } catch (error) {
-      console.error("Error loading game:", error);
+      console.error("Error fetching comments:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !game) {
-    return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-        {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
-      </div>
-    );
-  }
+  const handleSubmitComment = async () => {
+    if (!newComment.trim() || !gameId || !currentUserId) return;
 
-  const getPlayerName = (index: number) => {
-    if (index === 1) return game.player_1;
-    if (index === 2) return game.player_2;
-    return game.player_3;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("round_comments").insert({
+        round_id: gameId,
+        game_id: gameId,
+        user_id: currentUserId,
+        content: newComment.trim(),
+        game_type: "copenhagen",
+      });
+
+      if (error) throw error;
+
+      setNewComment("");
+      fetchComments();
+      toast({ title: "Comment posted" });
+    } catch (error: any) {
+      toast({ title: "Error posting comment", description: error.message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const getPlayerColor = (index: number) => {
-    if (index === 1) return "text-emerald-600";
-    if (index === 2) return "text-blue-600";
-    return "text-amber-600";
+  const handleLike = async (commentId: string, hasLiked: boolean) => {
+    if (!currentUserId) return;
+
+    try {
+      if (hasLiked) {
+        await supabase
+          .from("round_comment_likes")
+          .delete()
+          .eq("comment_id", commentId)
+          .eq("user_id", currentUserId);
+      } else {
+        await supabase.from("round_comment_likes").insert({
+          comment_id: commentId,
+          user_id: currentUserId,
+        });
+      }
+      fetchComments();
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    }
+  };
+
+  const toggleReplies = async (commentId: string) => {
+    const newExpanded = new Set(expandedReplies);
+    
+    if (newExpanded.has(commentId)) {
+      newExpanded.delete(commentId);
+    } else {
+      newExpanded.add(commentId);
+      if (!replies.has(commentId)) {
+        const { data: repliesData } = await supabase
+          .from("round_comment_replies")
+          .select("id, content, user_id, created_at")
+          .eq("comment_id", commentId)
+          .order("created_at", { ascending: true });
+
+        if (repliesData) {
+          const userIds = [...new Set(repliesData.map(r => r.user_id))];
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, display_name, username, avatar_url")
+            .in("id", userIds);
+
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+          setReplies(prev => new Map(prev).set(commentId, repliesData.map(r => ({
+            ...r,
+            profiles: profilesMap.get(r.user_id) || null
+          }))));
+        }
+      }
+    }
+    setExpandedReplies(newExpanded);
+  };
+
+  const handleSubmitReply = async (commentId: string) => {
+    const text = replyText.get(commentId)?.trim();
+    if (!text || !currentUserId) return;
+
+    try {
+      const { error } = await supabase.from("round_comment_replies").insert({
+        comment_id: commentId,
+        user_id: currentUserId,
+        content: text,
+      });
+
+      if (error) throw error;
+
+      setReplyText(prev => new Map(prev).set(commentId, ""));
+      
+      const { data: repliesData } = await supabase
+        .from("round_comment_replies")
+        .select("id, content, user_id, created_at")
+        .eq("comment_id", commentId)
+        .order("created_at", { ascending: true });
+
+      if (repliesData) {
+        const userIds = [...new Set(repliesData.map(r => r.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name, username, avatar_url")
+          .in("id", userIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+        setReplies(prev => new Map(prev).set(commentId, repliesData.map(r => ({
+          ...r,
+          profiles: profilesMap.get(r.user_id) || null
+        }))));
+      }
+      fetchComments();
+    } catch (error: any) {
+      toast({ title: "Error posting reply", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const getDisplayName = (profiles: Comment["profiles"] | Reply["profiles"]) => {
+    return profiles?.display_name || profiles?.username || "Player";
+  };
+
+  const getInitials = (profiles: Comment["profiles"] | Reply["profiles"]) => {
+    const name = getDisplayName(profiles);
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -71,64 +262,134 @@ export default function CopenhagenFeed() {
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
         <h1 className="text-2xl font-bold">Game Feed</h1>
 
-        {holes.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">No holes played yet</p>
+        {/* New Comment Box */}
+        {currentUserId && (
+          <Card>
+            <CardContent className="p-4">
+              <Textarea
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="mb-3"
+              />
+              <Button 
+                onClick={handleSubmitComment} 
+                disabled={!newComment.trim() || submitting}
+                className="w-full"
+              >
+                <Send size={16} className="mr-2" />
+                Post Comment
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Comments List */}
+        {loading ? (
+          <div className="text-center text-muted-foreground py-8">Loading...</div>
+        ) : comments.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <MessageCircle className="mx-auto text-muted-foreground mb-4" size={48} />
+              <h2 className="text-lg font-semibold mb-2">No comments yet</h2>
+              <p className="text-sm text-muted-foreground">
+                Be the first to comment on this game!
+              </p>
+            </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {holes.map((hole) => {
-              const winner = [
-                { index: 1, points: hole.player_1_hole_points },
-                { index: 2, points: hole.player_2_hole_points },
-                { index: 3, points: hole.player_3_hole_points },
-              ].sort((a, b) => b.points - a.points)[0];
-
-              return (
-                <Card key={hole.id} className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg">Hole {hole.hole_number}</span>
-                      <span className="text-sm text-muted-foreground">Par {hole.par}</span>
-                    </div>
-                    {hole.is_sweep && (
-                      <Badge className="bg-amber-500">
-                        <Trophy size={12} className="mr-1" />
-                        SWEEP
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    {[
-                      { name: game.player_1, gross: hole.player_1_gross_score, net: hole.player_1_net_score, points: hole.player_1_hole_points, color: "text-emerald-600" },
-                      { name: game.player_2, gross: hole.player_2_gross_score, net: hole.player_2_net_score, points: hole.player_2_hole_points, color: "text-blue-600" },
-                      { name: game.player_3, gross: hole.player_3_gross_score, net: hole.player_3_net_score, points: hole.player_3_hole_points, color: "text-amber-600" },
-                    ].map((player, i) => (
-                      <div key={i} className="p-2 rounded bg-muted/50">
-                        <div className={`text-xs font-medium truncate ${player.color}`}>{player.name}</div>
-                        <div className="text-lg font-bold">{player.gross}</div>
-                        {game.use_handicaps && player.net !== player.gross && (
-                          <div className="text-xs text-muted-foreground">Net: {player.net}</div>
+          <div className="space-y-4">
+            {comments.map((comment) => (
+              <Card key={comment.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                      <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
+                        {comment.hole_number && (
+                          <Badge variant="secondary" className="text-xs">
+                            Hole {comment.hole_number}
+                          </Badge>
                         )}
-                        <div className="text-sm font-semibold text-primary">+{player.points}</div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                        </span>
                       </div>
-                    ))}
-                  </div>
+                      
+                      <p className="mt-1 text-sm">{comment.content}</p>
 
-                  <div className="mt-3 pt-3 border-t flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Running Total</span>
-                    <span className="font-medium">
-                      <span className="text-emerald-600">{hole.player_1_running_total}</span>
-                      {" - "}
-                      <span className="text-blue-600">{hole.player_2_running_total}</span>
-                      {" - "}
-                      <span className="text-amber-600">{hole.player_3_running_total}</span>
-                    </span>
+                      {/* Actions */}
+                      <div className="flex items-center gap-4 mt-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
+                          onClick={() => handleLike(comment.id, comment.user_has_liked)}
+                        >
+                          <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
+                          {comment.likes_count > 0 && comment.likes_count}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1"
+                          onClick={() => toggleReplies(comment.id)}
+                        >
+                          <MessageCircle size={16} />
+                          {comment.replies_count > 0 && comment.replies_count}
+                        </Button>
+                      </div>
+
+                      {/* Replies Section */}
+                      {expandedReplies.has(comment.id) && (
+                        <div className="mt-4 space-y-3 border-l-2 border-muted pl-4">
+                          {replies.get(comment.id)?.map((reply) => (
+                            <div key={reply.id} className="flex items-start gap-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={reply.profiles?.avatar_url || undefined} />
+                                <AvatarFallback className="text-xs">{getInitials(reply.profiles)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-sm">{getDisplayName(reply.profiles)}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                  </span>
+                                </div>
+                                <p className="text-sm">{reply.content}</p>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Reply Input */}
+                          {currentUserId && (
+                            <div className="flex gap-2 mt-2">
+                              <Textarea
+                                placeholder="Write a reply..."
+                                value={replyText.get(comment.id) || ""}
+                                onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
+                                className="min-h-[60px]"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => handleSubmitReply(comment.id)}
+                                disabled={!replyText.get(comment.id)?.trim()}
+                              >
+                                <Send size={14} />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </Card>
-              );
-            })}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
