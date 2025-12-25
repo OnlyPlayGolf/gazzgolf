@@ -248,26 +248,43 @@ export default function UmbriagioPlay() {
   const { losingTeam, winningTeam } = getTeamStatus();
 
   const handleDouble = (team: 'A' | 'B') => {
-    // Toggle off if this team already has double active at 2x
-    if (scores.multiplier === 2 && scores.doubleCalledBy === team && !scores.doubleBackCalled) {
+    // Toggle off if this team already has double active at 2x (not from roll)
+    if (scores.multiplier === 2 && scores.doubleCalledBy === team && !scores.doubleBackCalled && !scores.rollUsedOnThisHole) {
       setScores(prev => ({ ...prev, multiplier: 1, doubleCalledBy: null }));
       toast({ title: "Double cleared" });
       return;
     }
-    // Toggle off double back if at 4x and this team called double back
-    if (scores.multiplier === 4 && scores.doubleBackCalled && scores.doubleCalledBy !== team) {
-      setScores(prev => ({ ...prev, multiplier: 2, doubleBackCalled: false }));
-      toast({ title: "Double Back cleared", description: "Multiplier is now ×2" });
+    // Toggle off double at 4x if this team called it (after roll)
+    if (scores.multiplier === 4 && scores.doubleCalledBy === team && !scores.doubleBackCalled && scores.rollUsedOnThisHole) {
+      setScores(prev => ({ ...prev, multiplier: 2, doubleCalledBy: null }));
+      toast({ title: "Double cleared", description: "Multiplier is now ×2" });
+      return;
+    }
+    // Toggle off double back
+    if (scores.doubleBackCalled && scores.doubleCalledBy !== team) {
+      const newMultiplier = scores.rollUsedOnThisHole ? 4 : 2;
+      setScores(prev => ({ ...prev, multiplier: newMultiplier, doubleBackCalled: false }));
+      toast({ title: "Double Back cleared", description: `Multiplier is now ×${newMultiplier}` });
       return;
     }
     
+    // Roll is active (multiplier = 2, doubleCalledBy = null) - losing team can double to 4x
+    if (scores.multiplier === 2 && scores.doubleCalledBy === null && scores.rollUsedOnThisHole) {
+      setScores(prev => ({ ...prev, multiplier: 4, doubleCalledBy: team }));
+      toast({ title: `Team ${team} called Double!`, description: "Multiplier is now ×4" });
+      return;
+    }
+    
+    // No roll, no double yet - double to 2x
     if (scores.multiplier === 1) {
       setScores(prev => ({ ...prev, multiplier: 2, doubleCalledBy: team }));
       toast({ title: `Team ${team} called Double!`, description: "Multiplier is now ×2" });
-    } else if (scores.multiplier === 2 && scores.doubleCalledBy !== team) {
-      // Double Back - winning team doubles after losing team doubled
-      setScores(prev => ({ ...prev, multiplier: 4, doubleBackCalled: true }));
-      toast({ title: `Team ${team} called Double Back!`, description: "Multiplier is now ×4" });
+    } 
+    // Double already called (2x without roll, or 4x with roll) - other team can double back
+    else if (scores.doubleCalledBy !== null && scores.doubleCalledBy !== team && !scores.doubleBackCalled) {
+      const newMultiplier = scores.rollUsedOnThisHole ? 4 : 4; // Cap at 4x
+      setScores(prev => ({ ...prev, multiplier: newMultiplier as 1 | 2 | 4, doubleBackCalled: true }));
+      toast({ title: `Team ${team} called Double Back!`, description: `Multiplier is now ×${newMultiplier}` });
     }
   };
 
@@ -358,28 +375,41 @@ export default function UmbriagioPlay() {
 
   // Can team double? (also allow clicking to toggle off)
   const canTeamDouble = (team: 'A' | 'B') => {
-    // Allow toggling off if this team called double at 2x
-    if (scores.multiplier === 2 && scores.doubleCalledBy === team && !scores.doubleBackCalled) {
+    // Allow toggling off if this team called double
+    if (scores.doubleCalledBy === team && !scores.doubleBackCalled) {
       return true;
     }
-    // Allow toggling off double back at 4x
-    if (scores.multiplier === 4 && scores.doubleBackCalled && scores.doubleCalledBy !== team) {
+    // Allow toggling off double back
+    if (scores.doubleBackCalled && scores.doubleCalledBy !== team) {
       return true;
     }
-    // Already at 4x and can't toggle off, no more doubling
-    if (scores.multiplier >= 4) return false;
-    // If multiplier is 2, only the OTHER team (winning team) can double back
-    if (scores.multiplier === 2) {
-      return scores.doubleCalledBy !== team;
+    // Already double backed, no more doubling
+    if (scores.doubleBackCalled) return false;
+    // Roll active but no double yet - losing team can double
+    if (scores.multiplier === 2 && scores.doubleCalledBy === null && scores.rollUsedOnThisHole) {
+      if (losingTeam === null) return true;
+      return team === losingTeam;
     }
-    // If multiplier is 1, only losing team can double (or either if tied)
-    if (losingTeam === null) return true;
-    return team === losingTeam;
+    // Double called - winning team can double back
+    if (scores.doubleCalledBy !== null && scores.doubleCalledBy !== team) {
+      return true;
+    }
+    // No double yet, no roll - losing team can double
+    if (scores.multiplier === 1) {
+      if (losingTeam === null) return true;
+      return team === losingTeam;
+    }
+    return false;
   };
 
   // Get button label based on state
   const getDoubleButtonLabel = (team: 'A' | 'B') => {
-    if (scores.multiplier === 2 && scores.doubleCalledBy !== team) {
+    // After roll with no double yet - show "Double"
+    if (scores.rollUsedOnThisHole && scores.doubleCalledBy === null) {
+      return "Double";
+    }
+    // Other team already doubled - show "Double Back"
+    if (scores.doubleCalledBy !== null && scores.doubleCalledBy !== team && !scores.doubleBackCalled) {
       return "Double Back";
     }
     return "Double";
