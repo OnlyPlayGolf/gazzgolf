@@ -3,6 +3,7 @@ export interface WolfGame {
   user_id: string;
   course_name: string;
   course_id?: string | null;
+  round_name?: string | null;
   holes_played: number;
   date_played: string;
   created_at: string;

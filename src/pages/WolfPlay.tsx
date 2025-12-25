@@ -311,8 +311,8 @@ export default function WolfPlay() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Wolf</h1>
-              <p className="text-sm text-muted-foreground">{game.course_name}</p>
+              <h1 className="text-xl font-bold">{game.round_name || game.course_name}</h1>
+              {game.round_name && <p className="text-sm text-muted-foreground">{game.course_name}</p>}
             </div>
             <div className="w-10" />
           </div>
