@@ -247,7 +247,7 @@ export default function WolfLeaderboard() {
                             points !== null && points < 0 ? 'text-red-600' : ''
                           }`}
                         >
-                          {points !== null ? (points !== 0 ? (points > 0 ? `+${points}` : points) : '-') : ''}
+                          {points !== null ? (points > 0 ? `+${points}` : points) : ''}
                         </TableCell>
                       );
                     })}
@@ -307,7 +307,7 @@ export default function WolfLeaderboard() {
                               points !== null && points < 0 ? 'text-red-600' : ''
                             }`}
                           >
-                            {points !== null ? (points !== 0 ? (points > 0 ? `+${points}` : points) : '-') : ''}
+                            {points !== null ? (points > 0 ? `+${points}` : points) : ''}
                           </TableCell>
                         );
                       })}
