@@ -463,7 +463,7 @@ export default function UmbriagioPlay() {
               >
                 <span className="font-medium">{player.name}</span>
                 <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                  {player.score > 0 ? player.score : '–'}
+                  {player.score > 0 ? player.score : '0'}
                 </span>
               </div>
             ))}
@@ -505,7 +505,7 @@ export default function UmbriagioPlay() {
               >
                 <span className="font-medium">{player.name}</span>
                 <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                  {player.score > 0 ? player.score : '–'}
+                  {player.score > 0 ? player.score : '0'}
                 </span>
               </div>
             ))}
