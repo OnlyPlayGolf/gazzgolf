@@ -178,12 +178,22 @@ export default function UmbriagioPlay() {
   };
 
   const advanceToNextPlayerSheet = (player: typeof playerOrder[number]) => {
-    const currentIndex = playerOrder.indexOf(player);
-    if (currentIndex < playerOrder.length - 1) {
-      setActiveScoreSheet(playerOrder[currentIndex + 1]);
+    // Get the score that was just entered for this player
+    const currentScores = { ...scores, [player]: scores[player] };
+    
+    // Helper to check if a player has a valid score entered
+    const hasValidScore = (p: typeof playerOrder[number]) => {
+      const score = currentScores[p];
+      return score === null || (score !== null && score > 0);
+    };
+    
+    // Find the next player who doesn't have a valid score, starting from the beginning
+    const nextPlayerWithoutScore = playerOrder.find(p => !hasValidScore(p));
+    
+    if (nextPlayerWithoutScore) {
+      setActiveScoreSheet(nextPlayerWithoutScore);
     } else {
-      // Last player - just close the sheet, don't auto-save
-      // User must click "Save & Next Hole" button when all scores are entered
+      // All players have valid scores - close the sheet
       setActiveScoreSheet(null);
     }
   };
