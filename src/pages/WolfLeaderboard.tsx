@@ -131,6 +131,15 @@ export default function WolfLeaderboard() {
     points: getPlayerPoints(i + 1),
   })).sort((a, b) => b.points - a.points) : [];
 
+  // Calculate positions with tie handling
+  const getPlayerPosition = (playerIndex: number): string => {
+    const player = players[playerIndex];
+    const playersWithSamePoints = players.filter(p => p.points === player.points);
+    const isTied = playersWithSamePoints.length > 1;
+    const position = players.findIndex(p => p.points === player.points) + 1;
+    return isTied ? `T${position}` : `${position}`;
+  };
+
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
   const backNine = courseHoles.filter(h => h.hole_number > 9);
 
@@ -153,6 +162,7 @@ export default function WolfLeaderboard() {
   const renderPlayerCard = (player: { num: number; name: string; points: number }, rank: number) => {
     const isExpanded = expandedPlayerId === player.num;
     const isLeader = rank === 0;
+    const position = getPlayerPosition(rank);
 
     return (
       <Card key={player.num} className="overflow-hidden">
@@ -170,7 +180,7 @@ export default function WolfLeaderboard() {
               <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
                 isLeader ? 'bg-amber-500/20 text-amber-600' : ''
               }`}>
-                {holes.length || "-"}
+                {position}
               </div>
               <div>
                 <div className="text-xl font-bold">{player.name}</div>
@@ -326,9 +336,7 @@ export default function WolfLeaderboard() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Position</div>
-                  <div className="text-2xl font-bold">
-                    {rank + 1}{rank === 0 ? 'st' : rank === 1 ? 'nd' : rank === 2 ? 'rd' : 'th'}
-                  </div>
+                  <div className="text-2xl font-bold">{position}</div>
                 </div>
               </div>
             </div>
