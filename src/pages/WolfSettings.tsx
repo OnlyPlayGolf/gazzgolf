@@ -160,12 +160,6 @@ export default function WolfSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        <RoundActionsSection
-          onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate(`/wolf/${gameId}/summary`)}
-          onDelete={() => setShowDeleteDialog(true)}
-        />
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Game Rules</CardTitle>
@@ -231,6 +225,12 @@ export default function WolfSettings() {
             </Button>
           </CardContent>
         </Card>
+
+        <RoundActionsSection
+          onFinish={handleFinishGame}
+          onSaveAndExit={() => navigate(`/wolf/${gameId}/summary`)}
+          onDelete={() => setShowDeleteDialog(true)}
+        />
       </div>
 
       <ViewPlayersModal
