@@ -123,9 +123,20 @@ export default function CopenhagenLeaderboard() {
     return hole.player_3_gross_score;
   };
 
+  // Calculate positions with tie handling
+  const getPositionLabel = (rank: number, points: number): string => {
+    const samePointsCount = sortedPlayers.filter(p => p.points === points).length;
+    const position = rank + 1;
+    if (samePointsCount > 1) {
+      return `T${position}`;
+    }
+    return `${position}`;
+  };
+
   const renderPlayerCard = (player: { index: number; name: string; points: number }, rank: number) => {
     const isExpanded = expandedPlayer === player.index;
     const isLeader = leader === player.index;
+    const positionLabel = getPositionLabel(rank, player.points);
 
     return (
       <Card key={player.index} className="overflow-hidden">
@@ -143,13 +154,10 @@ export default function CopenhagenLeaderboard() {
               <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
                 isLeader ? 'bg-amber-500/20 text-amber-600' : ''
               }`}>
-                {holes.length || "-"}
+                {positionLabel}
               </div>
               <div>
                 <div className="text-xl font-bold">{player.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  Player {player.index}
-                </div>
               </div>
             </div>
             <div className="text-right">
