@@ -493,14 +493,72 @@ export default function RoundsPlay() {
 
   const getAllPlayerIds = () => setupState.groups.flatMap(g => g.players.map(p => p.odId));
 
+  // Validation for player requirements per game format
+  const getPlayerValidationError = (): string | null => {
+    const totalPlayers = getTotalPlayers();
+    const format = setupState.gameFormat;
+
+    switch (format) {
+      case "umbriago":
+        if (totalPlayers !== 4) {
+          return `Umbriago requires exactly 4 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "wolf":
+        if (totalPlayers < 4 || totalPlayers > 6) {
+          return `Wolf requires 4-6 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "copenhagen":
+        if (totalPlayers !== 3) {
+          return `Copenhagen requires exactly 3 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "match_play":
+        if (totalPlayers !== 2) {
+          return `Match Play requires exactly 2 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "best_ball":
+        if (totalPlayers < 2) {
+          return `Best Ball requires at least 2 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "scramble":
+        if (totalPlayers < 2) {
+          return `Scramble requires at least 2 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "skins":
+      case "simple_skins":
+        if (totalPlayers < 2) {
+          return `Skins requires at least 2 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "stroke_play":
+        if (totalPlayers < 1) {
+          return `Add at least 1 player to continue.`;
+        }
+        break;
+      default:
+        if (totalPlayers < 1) {
+          return `Add at least 1 player to continue.`;
+        }
+    }
+    return null;
+  };
+
+  const playerValidationError = getPlayerValidationError();
+
   const handleStartRound = async () => {
     if (!selectedCourse) {
       toast({ title: "Course required", description: "Please select a course", variant: "destructive" });
       return;
     }
 
-    if (getTotalPlayers() === 0) {
-      toast({ title: "Players required", description: "Add at least one player", variant: "destructive" });
+    // Validate player count for game format
+    if (playerValidationError) {
+      toast({ title: "Invalid player count", description: playerValidationError, variant: "destructive" });
       return;
     }
 
@@ -516,11 +574,6 @@ export default function RoundsPlay() {
       return;
     }
     if (setupState.gameFormat === "wolf") {
-      const totalPlayers = getTotalPlayers();
-      if (totalPlayers < 4 || totalPlayers > 6) {
-        toast({ title: "Wolf requires 4-6 players", description: `You have ${totalPlayers} player${totalPlayers === 1 ? '' : 's'}. Add or remove players to continue.`, variant: "destructive" });
-        return;
-      }
       navigate('/wolf/setup');
       return;
     }
@@ -905,14 +958,19 @@ export default function RoundsPlay() {
         </Collapsible>
 
         {/* Start Button */}
-        <Button
-          onClick={handleStartRound}
-          disabled={loading || !selectedCourse}
-          className="w-full h-12 text-base font-semibold"
-          size="lg"
-        >
-          {loading ? "Starting..." : "Continue"}
-        </Button>
+        <div className="space-y-2">
+          {playerValidationError && (
+            <p className="text-sm text-destructive text-center">{playerValidationError}</p>
+          )}
+          <Button
+            onClick={handleStartRound}
+            disabled={loading || !selectedCourse || !!playerValidationError}
+            className="w-full h-12 text-base font-semibold"
+            size="lg"
+          >
+            {loading ? "Starting..." : "Continue"}
+          </Button>
+        </div>
       </div>
 
       {/* AI Assistant FAB */}
