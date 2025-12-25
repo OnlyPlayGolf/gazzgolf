@@ -111,12 +111,11 @@ export function ScoreInputGrid({ par, currentScore, onScoreSelect, onMore, onSco
       <Button
         variant="secondary"
         onClick={() => {
-          onScoreSelect(-1); // -1 signals "dash/conceded/unfinished"
-          if (onScoreAndAdvance) {
-            onScoreAndAdvance(-1);
-          }
+          onScoreSelect(null); // null signals "dash/conceded/no score"
         }}
-        className="h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80"
+        className={`h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 ${
+          currentScore === null ? "" : ""
+        }`}
       >
         <span className="text-3xl font-bold">–</span>
       </Button>

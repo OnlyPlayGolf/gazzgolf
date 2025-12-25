@@ -209,7 +209,6 @@ export default function WolfPlay() {
   }, [scoresState.scores, scoresState.wolfChoice, game, saving, loading]);
 
   const handleScoreSelect = (playerIndex: number, score: number | null) => {
-    if (score === null) return;
     setScores(prev => {
       const newScores = [...prev.scores];
       newScores[playerIndex] = score;
