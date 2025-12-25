@@ -356,9 +356,17 @@ export default function UmbriagioPlay() {
     setScores(prev => ({ ...prev, closestToPinWinner: winner }));
   };
 
-  // Can team double?
+  // Can team double? (also allow clicking to toggle off)
   const canTeamDouble = (team: 'A' | 'B') => {
-    // Already at 4x, no more doubling
+    // Allow toggling off if this team called double at 2x
+    if (scores.multiplier === 2 && scores.doubleCalledBy === team && !scores.doubleBackCalled) {
+      return true;
+    }
+    // Allow toggling off double back at 4x
+    if (scores.multiplier === 4 && scores.doubleBackCalled && scores.doubleCalledBy !== team) {
+      return true;
+    }
+    // Already at 4x and can't toggle off, no more doubling
     if (scores.multiplier >= 4) return false;
     // If multiplier is 2, only the OTHER team (winning team) can double back
     if (scores.multiplier === 2) {
@@ -376,9 +384,11 @@ export default function UmbriagioPlay() {
     }
     return "Double";
   };
-  // Can team roll? Only losing team can roll
+  // Can team roll? Only losing team can roll (also allow clicking to toggle off)
   const canTeamRoll = (team: 'A' | 'B') => {
-    // Can't roll if already used roll on this hole
+    // Allow toggling off if this team used roll on this hole
+    if (scores.rollUsedOnThisHole === team) return true;
+    // Can't roll if another team used roll on this hole
     if (scores.rollUsedOnThisHole) return false;
     // Can't roll if multiplier already applied (from double)
     if (scores.multiplier > 1) return false;
