@@ -399,36 +399,6 @@ export default function WolfPlay() {
           )}
         </Card>
 
-        {/* Score Entry */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3">Scores</h3>
-          <div className="space-y-2">
-            {[...Array(playerCount)].map((_, i) => {
-              const isWolf = i === currentWolfPlayer - 1;
-              const score = scoresState.scores[i];
-              const hasScore = score !== null && score !== undefined;
-              
-              return (
-                <div
-                  key={i}
-                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-muted/70 ${
-                    isWolf ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/50'
-                  }`}
-                  onClick={() => setActivePlayerSheet(i)}
-                >
-                  <div className="flex items-center gap-2">
-                    {isWolf && <span>🐺</span>}
-                    <span className="font-medium">{getPlayerName(i)}</span>
-                  </div>
-                  <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-                    {hasScore ? score : '–'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-
         {/* Double Section */}
         <Card className="p-4">
           <h3 className="font-semibold mb-3">Double</h3>
@@ -554,6 +524,36 @@ export default function WolfPlay() {
               </div>
             );
           })()}
+        </Card>
+
+        {/* Score Entry */}
+        <Card className="p-4">
+          <h3 className="font-semibold mb-3">Scores</h3>
+          <div className="space-y-2">
+            {[...Array(playerCount)].map((_, i) => {
+              const isWolf = i === currentWolfPlayer - 1;
+              const score = scoresState.scores[i];
+              const hasScore = score !== null && score !== undefined;
+              
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-muted/70 ${
+                    isWolf ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-muted/50'
+                  }`}
+                  onClick={() => setActivePlayerSheet(i)}
+                >
+                  <div className="flex items-center gap-2">
+                    {isWolf && <span>🐺</span>}
+                    <span className="font-medium">{getPlayerName(i)}</span>
+                  </div>
+                  <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
+                    {hasScore ? score : '–'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </Card>
 
         {/* Player Score Sheets */}
