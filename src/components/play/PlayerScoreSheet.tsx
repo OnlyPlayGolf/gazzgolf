@@ -73,7 +73,7 @@ export function PlayerScoreSheet({
             )}
           </div>
           <div className={`bg-background text-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${currentScore === null || currentScore === 0 ? 'text-muted-foreground' : ''}`}>
-            {currentScore !== null && currentScore !== 0 ? currentScore : '–'}
+            {currentScore === -1 ? '–' : currentScore !== null && currentScore !== 0 ? currentScore : '–'}
           </div>
         </div>
         
