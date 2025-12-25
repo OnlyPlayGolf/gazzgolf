@@ -126,7 +126,7 @@ export default function MatchPlayPlay() {
   const config = createMatchPlayConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
   
-  const { game, holes, currentHoleIndex, loading, saving, scores, par } = state;
+  const { game, holes, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
   const { setScores, saveHole, navigateHole, deleteGame } = actions;
   
   const currentHole = currentHoleIndex + 1;
@@ -269,7 +269,7 @@ export default function MatchPlayPlay() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Match Play</h1>
+              <h1 className="text-xl font-bold">{game.round_name || 'Match Play'}</h1>
               <p className="text-sm text-muted-foreground">{game.course_name}</p>
             </div>
             <div className="w-10" />
@@ -292,6 +292,7 @@ export default function MatchPlayPlay() {
             <div className="text-center">
               <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
               <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
+              <div className="text-sm text-[hsl(120,20%,40%)]">HCP {strokeIndex || '-'}</div>
             </div>
 
             <Button

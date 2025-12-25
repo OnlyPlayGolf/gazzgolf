@@ -7,6 +7,7 @@ export interface MatchPlayGame {
   holes_played: number;
   date_played: string;
   created_at: string;
+  round_name?: string | null;
   
   player_1: string;
   player_1_handicap?: number | null;
