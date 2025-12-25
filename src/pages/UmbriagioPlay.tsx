@@ -462,9 +462,14 @@ export default function UmbriagioPlay() {
                 onClick={() => setActiveScoreSheet(player.key)}
               >
                 <span className="font-medium">{player.name}</span>
-                <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                  {player.score > 0 ? player.score : '0'}
-                </span>
+                <div className="flex flex-col items-center">
+                  <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
+                    {player.score > 0 ? player.score : '0'}
+                  </span>
+                  {player.score === 0 && (
+                    <span className="text-xs text-muted-foreground">Strokes</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -504,9 +509,14 @@ export default function UmbriagioPlay() {
                 onClick={() => setActiveScoreSheet(player.key)}
               >
                 <span className="font-medium">{player.name}</span>
-                <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                  {player.score > 0 ? player.score : '0'}
-                </span>
+                <div className="flex flex-col items-center">
+                  <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
+                    {player.score > 0 ? player.score : '0'}
+                  </span>
+                  {player.score === 0 && (
+                    <span className="text-xs text-muted-foreground">Strokes</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
