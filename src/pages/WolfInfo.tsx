@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function WolfInfo() {
   const { gameId } = useParams();
@@ -12,32 +12,101 @@ export default function WolfInfo() {
       </div>
       
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        <Card className="p-4">
-          <h2 className="font-semibold mb-3">How Wolf Works</h2>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p><strong>Wolf Rotation:</strong> The Wolf rotates each hole. On Hole 1, the last player in order is Wolf, then it cycles.</p>
-            <p><strong>Choose Partner or Lone Wolf:</strong> After seeing tee shots, the Wolf can pick a partner or go solo (Lone Wolf).</p>
-            <p><strong>Matchups:</strong> Wolf + partner vs others, OR Lone Wolf vs everyone.</p>
-            <p><strong>Scoring:</strong> Best ball determines winner. Lone Wolf win = big points. Team win = shared points.</p>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>
+              Wolf is a golf betting game for 3-5 players where one player each hole 
+              becomes the "Wolf" and decides whether to team up or go solo.
+            </p>
+            <p>
+              The player with the most points after 18 holes wins.
+            </p>
+          </CardContent>
         </Card>
-        
-        <Card className="p-4">
-          <h2 className="font-semibold mb-3">Points Guide</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Lone Wolf wins solo</span>
-              <span className="font-bold text-green-600">+3 pts</span>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Setup</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>• Works with 3-5 players</p>
+            <p>• On the 1st tee, set a fixed player order (randomized in the app)</p>
+            <p>• The Wolf rotates each hole</p>
+            <p>• The Wolf tees off first or last, depending on settings</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Gameplay</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>
+              <strong>Choose: Partner or Lone Wolf</strong>
+            </p>
+            <p>
+              The Wolf can pick a partner after any tee shot—but once they skip someone, 
+              they can't pick them later. If the Wolf doesn't pick anyone, they become Lone Wolf.
+            </p>
+            <p className="pt-2">
+              <strong>Matchup for the hole:</strong>
+            </p>
+            <p>• Wolf + chosen partner vs the other players</p>
+            <p>• OR Lone Wolf vs everyone</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Scoring</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>Points are customizable in settings. Default scoring:</p>
+            <div className="space-y-1 pt-2">
+              <div className="flex justify-between">
+                <span>Lone Wolf win</span>
+                <span className="font-semibold text-green-600">+3 points</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Lone Wolf loss (each opponent)</span>
+                <span className="font-semibold text-red-600">+1 point</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Team win (each member)</span>
+                <span className="font-semibold text-blue-600">+1 point</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Losing team</span>
+                <span className="text-muted-foreground">0 points</span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span>Lone Wolf loses (opponents each)</span>
-              <span className="font-bold text-red-600">+1 pt</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Team win (each member)</span>
-              <span className="font-bold text-blue-600">+1 pt</span>
-            </div>
-          </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Double</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>
+              The Double option allows players to raise the stakes on any hole.
+            </p>
+            <p>
+              <strong>Who can double first:</strong> The team/player with the fewest 
+              players tees off first and has the first opportunity to call Double.
+            </p>
+            <p>
+              <strong>Double Back:</strong> After a Double is called, the other team/player 
+              can respond with a Double Back to accept the challenge.
+            </p>
+            <p>
+              <strong>Effect:</strong> When Double is called, the points for that hole 
+              are doubled. All point values (Lone Wolf win, team win, etc.) are multiplied by 2.
+            </p>
+          </CardContent>
         </Card>
       </div>
 
