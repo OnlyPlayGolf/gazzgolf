@@ -184,9 +184,45 @@ export default function ScramblePlay() {
   const handleScoreSelect = async (teamId: string, score: number | null) => {
     const newScores = { ...teamScores, [teamId]: score };
     setTeamScores(newScores);
+    
+    // Save immediately when score is selected
+    if (!gameId) return;
+    
+    const par = getCurrentHolePar();
+    const strokeIndex = getCurrentHoleStrokeIndex();
+
+    await supabase
+      .from('scramble_holes')
+      .upsert({
+        game_id: gameId,
+        hole_number: currentHole,
+        par,
+        stroke_index: strokeIndex,
+        team_scores: newScores
+      }, {
+        onConflict: 'game_id,hole_number'
+      });
+
+    // Update local holes state
+    setHoles(prev => {
+      const existing = prev.find(h => h.hole_number === currentHole);
+      if (existing) {
+        return prev.map(h => h.hole_number === currentHole ? { ...h, team_scores: newScores } : h);
+      } else {
+        return [...prev, {
+          id: `temp-${currentHole}`,
+          game_id: gameId,
+          hole_number: currentHole,
+          par,
+          stroke_index: strokeIndex,
+          created_at: new Date().toISOString(),
+          team_scores: newScores
+        }];
+      }
+    });
   };
 
-  const advanceToNextTeamSheet = async () => {
+  const advanceToNextTeamSheet = () => {
     if (!activeTeamSheet) return;
     
     const currentIndex = teams.findIndex(t => t.id === activeTeamSheet);
@@ -194,8 +230,7 @@ export default function ScramblePlay() {
       setActiveTeamSheet(teams[currentIndex + 1].id);
     } else {
       setActiveTeamSheet(null);
-      // Save and advance to next hole
-      await saveHole();
+      // Auto-advance to next hole if not the last hole
       if (game && currentHole < game.holes_played) {
         setCurrentHoleIndex(currentHoleIndex + 1);
         loadHoleData(currentHole + 1);
@@ -405,22 +440,15 @@ export default function ScramblePlay() {
           />
         ))}
 
-        {/* Save and navigation buttons */}
-        <Button 
-          onClick={async () => {
-            await saveHole();
-            if (isLastHole && allScoresEntered) {
-              finishGame();
-            } else if (currentHole < totalHoles) {
-              setCurrentHoleIndex(currentHoleIndex + 1);
-              loadHoleData(currentHole + 1);
-            }
-          }} 
-          disabled={!allScoresEntered}
-          className="w-full"
-        >
-          {isLastHole && allScoresEntered ? "Finish Game" : "Save & Next Hole"}
-        </Button>
+        {/* Finish Game button - only shown on last hole when all scores entered */}
+        {isLastHole && allScoresEntered && (
+          <Button 
+            onClick={finishGame}
+            className="w-full"
+          >
+            Finish Game
+          </Button>
+        )}
       </div>
 
       <ScrambleBottomTabBar gameId={gameId!} />
