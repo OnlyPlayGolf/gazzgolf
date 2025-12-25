@@ -317,7 +317,7 @@ export default function CopenhagenPlay() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Copenhagen</h1>
+              <h1 className="text-xl font-bold">{game.round_name || 'Copenhagen'}</h1>
               <p className="text-sm text-muted-foreground">{game.course_name}</p>
             </div>
             <div className="w-10" />

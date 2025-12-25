@@ -8,6 +8,7 @@ export interface CopenhagenGame {
   tee_set: string | null;
   holes_played: number;
   date_played: string;
+  round_name?: string | null;
   created_at: string;
   
   player_1: string;
