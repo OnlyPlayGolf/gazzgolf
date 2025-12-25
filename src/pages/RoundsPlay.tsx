@@ -874,7 +874,7 @@ export default function RoundsPlay() {
           className="w-full h-12 text-base font-semibold"
           size="lg"
         >
-          {loading ? "Starting..." : "Start Round"}
+          {loading ? "Starting..." : "Continue"}
         </Button>
       </div>
 
