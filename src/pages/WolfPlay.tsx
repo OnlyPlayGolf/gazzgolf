@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { WolfGame, WolfHole } from "@/types/wolf";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { calculateWolfHoleScore, getWolfPlayerForHole } from "@/utils/wolfScoring";
 import {
   AlertDialog,
@@ -139,6 +140,8 @@ export default function WolfPlay() {
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<number | null>(null);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [currentComment, setCurrentComment] = useState("");
   
   const config = createWolfConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -193,13 +196,36 @@ export default function WolfPlay() {
     }));
   };
 
-  const advanceToNextPlayerSheet = (playerIndex: number) => {
+  const advanceToNextPlayerSheet = (currentPlayerIndex: number) => {
     const playerCount = getPlayerCount();
-    if (playerIndex < playerCount - 1) {
-      setActivePlayerSheet(playerIndex + 1);
-    } else {
-      setActivePlayerSheet(null);
+    
+    // Find next player without a score
+    for (let i = currentPlayerIndex + 1; i < playerCount; i++) {
+      if (scoresState.scores[i] === null) {
+        setActivePlayerSheet(i);
+        return;
+      }
     }
+    // Check players before current (wrap around)
+    for (let i = 0; i < currentPlayerIndex; i++) {
+      if (scoresState.scores[i] === null) {
+        setActivePlayerSheet(i);
+        return;
+      }
+    }
+    // All players have scores - close the sheet
+    setActivePlayerSheet(null);
+  };
+
+  const handleOpenMoreSheet = () => {
+    setCurrentComment("");
+    setShowMoreSheet(true);
+  };
+
+  const handleSaveMore = () => {
+    // Comments are handled via the round_comments table if needed
+    // For now, just close the sheet
+    setShowMoreSheet(false);
   };
 
   const handleSaveHole = async () => {
@@ -372,9 +398,29 @@ export default function WolfPlay() {
             holeNumber={currentHole}
             currentScore={scoresState.scores[i] ?? 0}
             onScoreSelect={(score) => handleScoreSelect(i, score)}
+            onMore={handleOpenMoreSheet}
             onEnterAndNext={() => advanceToNextPlayerSheet(i)}
           />
         ))}
+
+        {/* More Sheet for comments */}
+        {activePlayerSheet !== null && (
+          <ScoreMoreSheet
+            open={showMoreSheet}
+            onOpenChange={setShowMoreSheet}
+            holeNumber={currentHole}
+            par={par}
+            playerName={getPlayerName(activePlayerSheet)}
+            comment={currentComment}
+            onCommentChange={setCurrentComment}
+            mulligansAllowed={0}
+            mulligansUsed={0}
+            mulliganUsedOnThisHole={false}
+            onUseMulligan={() => {}}
+            onRemoveMulligan={() => {}}
+            onSave={handleSaveMore}
+          />
+        )}
 
         {/* Points Summary */}
         <Card className="p-4">
