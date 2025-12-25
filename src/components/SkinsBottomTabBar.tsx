@@ -1,20 +1,20 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface SkinsBottomTabBarProps {
-  gameId: string;
+  roundId: string;
 }
 
-export function SkinsBottomTabBar({ gameId }: SkinsBottomTabBarProps) {
-  const location = useLocation();
+export function SkinsBottomTabBar({ roundId }: SkinsBottomTabBarProps) {
   const navigate = useNavigate();
-
+  const location = useLocation();
+  
   const tabs = [
-    { id: "play", label: "Enter score", icon: Pencil, path: `/skins/${gameId}/play` },
-    { id: "info", label: "Game info", icon: Info, path: `/skins/${gameId}/info` },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/skins/${gameId}/feed` },
-    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/skins/${gameId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/skins/${gameId}/settings` },
+    { id: "score", label: "Enter score", icon: Pencil, path: `/skins/${roundId}/track` },
+    { id: "info", label: "Game info", icon: Info, path: `/skins/${roundId}/info` },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed` },
+    { id: "leaderboard", label: "Leaderboard", icon: List, path: `/skins/${roundId}/leaderboard` },
+    { id: "settings", label: "Settings", icon: Settings, path: `/skins/${roundId}/settings` },
   ];
 
   return (

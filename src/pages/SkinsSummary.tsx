@@ -1,263 +1,380 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Trophy, Users } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Calendar, MapPin, Trophy, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { SkinsGame, SkinsHole, SkinsPlayer, SkinsPlayerScore } from "@/types/skins";
+import { format } from "date-fns";
+import { RoundShareDialog } from "@/components/RoundShareDialog";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
-import { calculateSkinsLeaderboard } from "@/utils/skinsScoring";
-import { GameShareDialog } from "@/components/GameShareDialog";
 
-export default function SkinsSummary() {
-  const { gameId } = useParams();
+interface Round {
+  id: string;
+  course_name: string;
+  date_played: string;
+  tee_set: string;
+  holes_played: number;
+  round_name?: string | null;
+}
+
+interface RoundPlayer {
+  id: string;
+  user_id: string;
+  tee_color: string | null;
+  profiles: {
+    display_name: string | null;
+    username: string | null;
+  } | null;
+}
+
+interface CourseHole {
+  hole_number: number;
+  par: number;
+}
+
+interface SkinResult {
+  holeNumber: number;
+  winnerId: string | null;
+  winnerName: string | null;
+  skinsWon: number;
+  isCarryover: boolean;
+}
+
+export default function SimpleSkinsSummary() {
+  const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [game, setGame] = useState<SkinsGame | null>(null);
-  const [holes, setHoles] = useState<SkinsHole[]>([]);
+  const [round, setRound] = useState<Round | null>(null);
+  const [players, setPlayers] = useState<RoundPlayer[]>([]);
+  const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showShareDialog, setShowShareDialog] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [skinResults, setSkinResults] = useState<SkinResult[]>([]);
 
   useEffect(() => {
-    if (gameId) fetchGame();
-  }, [gameId]);
+    fetchData();
+  }, [roundId]);
 
-  const fetchGame = async () => {
+  useEffect(() => {
+    if (players.length > 0 && courseHoles.length > 0) {
+      calculateSkinResults();
+    }
+  }, [scores, courseHoles, players]);
+
+  const fetchData = async () => {
     try {
-      const { data: gameData, error: gameError } = await supabase
-        .from("skins_games")
+      const { data: roundData, error: roundError } = await supabase
+        .from("rounds")
         .select("*")
-        .eq("id", gameId)
+        .eq("id", roundId)
         .single();
 
-      if (gameError) throw gameError;
-      
-      const typedGame: SkinsGame = {
-        ...gameData,
-        players: (gameData.players as unknown as SkinsPlayer[]) || [],
-        handicap_mode: (gameData.handicap_mode as 'gross' | 'net') || 'net',
-      };
-      
-      setGame(typedGame);
+      if (roundError) throw roundError;
+      setRound(roundData);
 
-      const { data: holesData } = await supabase
-        .from("skins_holes")
-        .select("*")
-        .eq("game_id", gameId)
-        .order("hole_number");
+      const { data: playersData } = await supabase
+        .from("round_players")
+        .select("id, user_id, tee_color")
+        .eq("round_id", roundId);
+
+      if (playersData && playersData.length > 0) {
+        const userIds = playersData.map(p => p.user_id);
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name, username")
+          .in("id", userIds);
+        
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        const playersWithProfiles = playersData.map(player => ({
+          ...player,
+          profiles: profilesMap.get(player.user_id) || null
+        }));
+        setPlayers(playersWithProfiles);
+      }
+
+      const { data: courseData } = await supabase
+        .from("courses")
+        .select("id")
+        .eq("name", roundData.course_name)
+        .maybeSingle();
+
+      let holesArray: CourseHole[] = [];
+      if (courseData) {
+        const { data: holesData } = await supabase
+          .from("course_holes")
+          .select("hole_number, par")
+          .eq("course_id", courseData.id)
+          .order("hole_number");
+        
+        if (holesData) {
+          holesArray = holesData.slice(0, roundData.holes_played);
+        }
+      }
       
-      const typedHoles: SkinsHole[] = (holesData || []).map(h => ({
-        ...h,
-        player_scores: (h.player_scores as unknown as Record<string, SkinsPlayerScore>) || {},
-      }));
-      
-      setHoles(typedHoles);
+      if (holesArray.length === 0) {
+        const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5];
+        holesArray = Array.from({ length: roundData.holes_played }, (_, i) => ({
+          hole_number: i + 1,
+          par: i < 9 ? defaultPar[i] : defaultPar[i % 9],
+        }));
+      }
+      setCourseHoles(holesArray);
+
+      const { data: existingHoles } = await supabase
+        .from("holes")
+        .select("hole_number, score, player_id")
+        .eq("round_id", roundId);
+
+      if (existingHoles) {
+        const scoresMap = new Map<string, Map<number, number>>();
+        existingHoles.forEach((hole) => {
+          if (hole.player_id) {
+            if (!scoresMap.has(hole.player_id)) {
+              scoresMap.set(hole.player_id, new Map());
+            }
+            scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
+          }
+        });
+        setScores(scoresMap);
+      }
     } catch (error: any) {
-      toast({ title: "Error loading game", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error loading summary",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen pb-32 flex items-center justify-center">
-        <div className="text-muted-foreground">Loading summary...</div>
-        {gameId && <SkinsBottomTabBar gameId={gameId} />}
-      </div>
-    );
-  }
+  const calculateSkinResults = () => {
+    const results: SkinResult[] = [];
+    let carryover = 0;
+    
+    for (const hole of courseHoles) {
+      const holeScores: { playerId: string; playerName: string; score: number }[] = [];
+      
+      for (const player of players) {
+        const playerScoreMap = scores.get(player.id);
+        const score = playerScoreMap?.get(hole.hole_number);
+        if (score && score > 0) {
+          holeScores.push({
+            playerId: player.id,
+            playerName: getPlayerName(player),
+            score
+          });
+        }
+      }
+      
+      if (holeScores.length < players.length || players.length === 0) {
+        results.push({
+          holeNumber: hole.hole_number,
+          winnerId: null,
+          winnerName: null,
+          skinsWon: 0,
+          isCarryover: false
+        });
+        continue;
+      }
+      
+      const lowestScore = Math.min(...holeScores.map(s => s.score));
+      const playersWithLowest = holeScores.filter(s => s.score === lowestScore);
+      
+      if (playersWithLowest.length === 1) {
+        results.push({
+          holeNumber: hole.hole_number,
+          winnerId: playersWithLowest[0].playerId,
+          winnerName: playersWithLowest[0].playerName,
+          skinsWon: 1 + carryover,
+          isCarryover: false
+        });
+        carryover = 0;
+      } else {
+        results.push({
+          holeNumber: hole.hole_number,
+          winnerId: null,
+          winnerName: null,
+          skinsWon: 0,
+          isCarryover: true
+        });
+        carryover += 1;
+      }
+    }
+    
+    setSkinResults(results);
+  };
 
-  if (!game) {
-    return (
-      <div className="min-h-screen pb-32 flex items-center justify-center">
-        <div className="text-muted-foreground">Game not found</div>
-        {gameId && <SkinsBottomTabBar gameId={gameId} />}
-      </div>
-    );
-  }
+  const getPlayerName = (player: RoundPlayer) => {
+    return player.profiles?.display_name || player.profiles?.username || "Player";
+  };
 
-  const leaderboard = calculateSkinsLeaderboard(
-    game.players,
-    holes.map(h => ({
-      hole_number: h.hole_number,
-      winner_player: h.winner_player,
-      skins_available: h.skins_available,
-    })),
-    game.skin_value
+  const getPlayerSkinCount = (playerId: string): number => {
+    return skinResults
+      .filter(r => r.winnerId === playerId)
+      .reduce((sum, r) => sum + r.skinsWon, 0);
+  };
+
+  const getPlayerTotalScore = (playerId: string): number => {
+    const playerScores = scores.get(playerId);
+    if (!playerScores) return 0;
+    let total = 0;
+    playerScores.forEach(score => { total += score; });
+    return total;
+  };
+
+  if (loading) return <div className="p-4">Loading...</div>;
+  if (!round) return <div className="p-4">Round not found</div>;
+
+  // Sort players by skin count (descending)
+  const sortedPlayers = [...players].sort((a, b) => 
+    getPlayerSkinCount(b.id) - getPlayerSkinCount(a.id)
   );
 
-  const winner = leaderboard[0];
-  const totalSkinsAwarded = leaderboard.reduce((sum, p) => sum + p.skinsWon, 0);
-  const skinsCarriedOver = holes.filter(h => h.is_carryover).length;
+  const winner = sortedPlayers[0];
+  const winnerSkins = getPlayerSkinCount(winner?.id || '');
 
   return (
-    <div className="min-h-screen pb-32 bg-background">
-      <GameShareDialog
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-        gameType="Skins"
-        courseName={game.course_name}
-        winner={winner?.skinsWon > 0 ? winner.playerName : undefined}
-        resultText={winner?.skinsWon > 0 ? `${winner.skinsWon} skin${winner.skinsWon > 1 ? 's' : ''} won` : undefined}
-        additionalInfo={`${game.players.length} players`}
-        gameId={gameId}
-        onContinue={() => navigate("/rounds-play")}
-      />
+    <div className="pb-24 min-h-screen bg-background">
+      <div className="p-4 space-y-4 max-w-2xl mx-auto">
+        <Button variant="ghost" onClick={() => navigate("/rounds")}>
+          <ArrowLeft className="mr-2" size={20} />
+          Back to Rounds
+        </Button>
 
-      {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="p-4 max-w-2xl mx-auto">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/rounds-play")}
-              className="rounded-full"
-            >
-              <ChevronLeft size={24} />
-            </Button>
-            <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Skins Summary</h1>
-              <p className="text-sm text-muted-foreground">{game.course_name}</p>
+        {/* Header Card */}
+        <Card className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin size={18} className="text-amber-600" />
+                  <CardTitle>{round.course_name}</CardTitle>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar size={14} />
+                  <span>{format(new Date(round.date_played), "MMMM d, yyyy")}</span>
+                  <span>•</span>
+                  <span>{round.holes_played} holes</span>
+                </div>
+              </div>
             </div>
-            <div className="w-10" />
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
-        {/* Winner Card */}
-        {winner && winner.skinsWon > 0 && (
-          <Card className="p-6 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/50 dark:to-yellow-950/50 border-amber-200 dark:border-amber-800">
-            <div className="text-center">
-              <Trophy className="h-12 w-12 text-amber-500 mx-auto mb-3" />
-              <h2 className="text-2xl font-bold text-amber-800 dark:text-amber-200">
-                {winner.playerName}
-              </h2>
-              <p className="text-amber-600 dark:text-amber-400 mt-1">
-                {winner.skinsWon} Skin{winner.skinsWon > 1 ? 's' : ''} Won
-              </p>
-              {game.skin_value > 0 && (
-                <p className="text-lg font-semibold text-amber-700 dark:text-amber-300 mt-2">
-                  ${winner.totalValue.toFixed(2)}
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <Trophy className="h-8 w-8 text-amber-600" />
+              <div>
+                <p className="text-sm text-muted-foreground">Winner</p>
+                <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                  {winner ? getPlayerName(winner) : 'N/A'}
                 </p>
-              )}
-              <Badge variant="outline" className="mt-2 text-amber-600 border-amber-300">
-                {winner.groupName}
-              </Badge>
+                <p className="text-sm text-amber-600">{winnerSkins} skin{winnerSkins !== 1 ? 's' : ''} won</p>
+              </div>
             </div>
-          </Card>
-        )}
-
-        {/* Game Stats */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3">Game Stats</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Holes Played</span>
-              <p className="font-medium">{holes.length}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Total Players</span>
-              <p className="font-medium">{game.players.length}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Skins Awarded</span>
-              <p className="font-medium">{totalSkinsAwarded}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Ties (Carryovers)</span>
-              <p className="font-medium">{skinsCarriedOver}</p>
-            </div>
-          </div>
+          </CardContent>
         </Card>
 
         {/* Leaderboard */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Leaderboard</h3>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Users size={14} />
-              <span>All groups combined</span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {leaderboard.map((entry, index) => (
-              <div 
-                key={entry.playerName}
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  index === 0 && entry.skinsWon > 0
-                    ? 'bg-amber-50 dark:bg-amber-950/30'
-                    : 'bg-muted/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={`font-bold w-6 text-center ${
-                    index === 0 && entry.skinsWon > 0 ? 'text-amber-600' : 'text-muted-foreground'
-                  }`}>
-                    {index + 1}
-                  </span>
-                  <div>
-                    <p className="font-medium">{entry.playerName}</p>
-                    <p className="text-xs text-muted-foreground">{entry.groupName}</p>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Final Standings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {sortedPlayers.map((player, index) => {
+              const skinCount = getPlayerSkinCount(player.id);
+              const totalScore = getPlayerTotalScore(player.id);
+              
+              return (
+                <div 
+                  key={player.id}
+                  className={`flex items-center justify-between p-3 rounded-lg ${
+                    index === 0 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-muted/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`text-lg font-bold ${index === 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                      #{index + 1}
+                    </span>
+                    <div>
+                      <p className="font-medium">{getPlayerName(player)}</p>
+                      <p className="text-sm text-muted-foreground">Total: {totalScore}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 text-amber-600">
+                      <Trophy size={16} />
+                      <span className="text-xl font-bold">{skinCount}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">skin{skinCount !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold">
-                    {entry.skinsWon} Skin{entry.skinsWon !== 1 ? 's' : ''}
-                  </p>
-                  {game.skin_value > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      ${entry.totalValue.toFixed(2)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              );
+            })}
+          </CardContent>
         </Card>
 
-        {/* Hole-by-Hole Results */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-4">Hole-by-Hole Results</h3>
-          <div className="space-y-2">
-            {holes.map((hole) => (
-              <div 
-                key={hole.id}
-                className="flex items-center justify-between py-2 border-b border-border last:border-0"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground w-12">
-                    Hole {hole.hole_number}
+        {/* Hole by Hole Results */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Hole by Hole</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {skinResults.map(result => (
+                <div 
+                  key={result.holeNumber}
+                  className={`flex items-center justify-between p-2 rounded ${
+                    result.winnerId ? 'bg-green-50 dark:bg-green-900/20' : 
+                    result.isCarryover ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-muted/30'
+                  }`}
+                >
+                  <span className="font-medium">Hole {result.holeNumber}</span>
+                  <span className={`text-sm ${result.winnerId ? 'text-green-600' : 'text-amber-600'}`}>
+                    {result.winnerId ? `${result.winnerName} (${result.skinsWon} skin${result.skinsWon > 1 ? 's' : ''})` : 
+                     result.isCarryover ? 'Carryover' : '–'}
                   </span>
-                  {hole.skins_available > 1 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {hole.skins_available} skins
-                    </Badge>
-                  )}
                 </div>
-                <div className="text-right">
-                  {hole.winner_player ? (
-                    <span className="font-medium text-amber-600 dark:text-amber-400">
-                      {hole.winner_player}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      {hole.is_carryover ? 'Carryover' : 'No winner'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
+
+        <div className="flex gap-3">
+          <Button 
+            variant="outline"
+            size="lg"
+            className="flex-1"
+            onClick={() => setShowShareDialog(true)}
+          >
+            <Share2 className="mr-2" size={18} />
+            Share
+          </Button>
+          
+          <Button 
+            onClick={() => navigate("/rounds")} 
+            className="flex-1 bg-amber-600 hover:bg-amber-700" 
+            size="lg"
+          >
+            Done
+          </Button>
+        </div>
       </div>
 
-      {gameId && <SkinsBottomTabBar gameId={gameId} />}
+      <SkinsBottomTabBar roundId={roundId!} />
+
+      <RoundShareDialog
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        roundName={round.round_name || 'Simple Skins'}
+        courseName={round.course_name}
+        score={winnerSkins}
+        scoreVsPar={0}
+        holesPlayed={round.holes_played}
+        roundId={roundId}
+        onContinue={() => navigate("/rounds")}
+      />
     </div>
   );
 }

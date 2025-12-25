@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Check, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
+import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -635,7 +635,7 @@ export default function SimpleSkinsTracker() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading round...</div>
-        {roundId && <SimpleSkinsBottomTabBar roundId={roundId} />}
+        {roundId && <SkinsBottomTabBar roundId={roundId} />}
       </div>
     );
   }
@@ -644,7 +644,7 @@ export default function SimpleSkinsTracker() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Round not found</div>
-        {roundId && <SimpleSkinsBottomTabBar roundId={roundId} />}
+        {roundId && <SkinsBottomTabBar roundId={roundId} />}
       </div>
     );
   }
@@ -865,7 +865,7 @@ export default function SimpleSkinsTracker() {
         </>
       )}
 
-      <SimpleSkinsBottomTabBar roundId={roundId!} />
+      <SkinsBottomTabBar roundId={roundId!} />
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>

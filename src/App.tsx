@@ -133,20 +133,12 @@ import ScrambleSettings from "./pages/ScrambleSettings";
 import ScrambleSummary from "./pages/ScrambleSummary";
 import HowToPlayScramble from "./pages/HowToPlayScramble";
 import SkinsSetup from "./pages/SkinsSetup";
-import SkinsPlay from "./pages/SkinsPlay";
+import SkinsTracker from "./pages/SkinsTracker";
 import SkinsInfo from "./pages/SkinsInfo";
-import SkinsFeed from "./pages/SkinsFeed";
 import SkinsLeaderboard from "./pages/SkinsLeaderboard";
 import SkinsSettings from "./pages/SkinsSettings";
 import SkinsSummary from "./pages/SkinsSummary";
 import HowToPlaySkins from "./pages/HowToPlaySkins";
-import SimpleSkinsSetup from "./pages/SimpleSkinsSetup";
-import SimpleSkinsTracker from "./pages/SimpleSkinsTracker";
-import SimpleSkinsSummary from "./pages/SimpleSkinsSummary";
-import SimpleSkinsInfo from "./pages/SimpleSkinsInfo";
-import SimpleSkinsLeaderboard from "./pages/SimpleSkinsLeaderboard";
-import HowToPlaySimpleSkins from "./pages/HowToPlaySimpleSkins";
-import SimpleSkinsSettings from "./pages/SimpleSkinsSettings";
 import Statistics from "./pages/Statistics";
 import StatDetail from "./pages/StatDetail";
 
@@ -277,19 +269,11 @@ const App = () => {
             <Route path="/scramble/:gameId/summary" element={<ScrambleSummary />} />
             <Route path="/skins/how-to-play" element={<HowToPlaySkins />} />
             <Route path="/skins/setup" element={<SkinsSetup />} />
-            <Route path="/skins/:gameId/play" element={<SkinsPlay />} />
-            <Route path="/skins/:gameId/info" element={<SkinsInfo />} />
-            <Route path="/skins/:gameId/feed" element={<SkinsFeed />} />
-            <Route path="/skins/:gameId/leaderboard" element={<SkinsLeaderboard />} />
-            <Route path="/skins/:gameId/settings" element={<SkinsSettings />} />
-            <Route path="/skins/:gameId/summary" element={<SkinsSummary />} />
-            <Route path="/simple-skins/how-to-play" element={<HowToPlaySimpleSkins />} />
-            <Route path="/simple-skins/setup" element={<SimpleSkinsSetup />} />
-            <Route path="/simple-skins/:roundId/track" element={<SimpleSkinsTracker />} />
-            <Route path="/simple-skins/:roundId/info" element={<SimpleSkinsInfo />} />
-            <Route path="/simple-skins/:roundId/leaderboard" element={<SimpleSkinsLeaderboard />} />
-            <Route path="/simple-skins/:roundId/summary" element={<SimpleSkinsSummary />} />
-            <Route path="/simple-skins/:roundId/settings" element={<SimpleSkinsSettings />} />
+            <Route path="/skins/:roundId/track" element={<SkinsTracker />} />
+            <Route path="/skins/:roundId/info" element={<SkinsInfo />} />
+            <Route path="/skins/:roundId/leaderboard" element={<SkinsLeaderboard />} />
+            <Route path="/skins/:roundId/settings" element={<SkinsSettings />} />
+            <Route path="/skins/:roundId/summary" element={<SkinsSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />

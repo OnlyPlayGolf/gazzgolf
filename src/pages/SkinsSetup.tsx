@@ -1,28 +1,24 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Users, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Users, MapPin, Settings } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
-import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
-import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
-import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
-import { SkinsPlayer } from "@/types/skins";
-import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Course {
   id: string;
   name: string;
   location: string | null;
+  tee_names?: Record<string, string> | null;
 }
 
 interface Player {
@@ -34,204 +30,126 @@ interface Player {
   isCurrentUser?: boolean;
 }
 
-interface Group {
-  id: string;
-  name: string;
-  players: Player[];
-}
-
-export default function SkinsSetup() {
+export default function SimpleSkinsSetup() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
-
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
-  const [holesPlayed, setHolesPlayed] = useState(18);
+  const [loading, setLoading] = useState(false);
+  
+  // Course from sessionStorage
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
+  const [selectedHoles, setSelectedHoles] = useState<"18" | "9">("18");
+  const [teeColor, setTeeColor] = useState(DEFAULT_MEN_TEE);
+  
+  // Players (including current user)
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  
+  // Simple Skins specific settings
   const [skinValue, setSkinValue] = useState(1);
   const [carryoverEnabled, setCarryoverEnabled] = useState(true);
-  const [useHandicaps, setUseHandicaps] = useState(false);
-  const [handicapMode, setHandicapMode] = useState<'gross' | 'net'>('net');
-  const [groups, setGroups] = useState<Group[]>([
-    { id: '1', name: 'Group 1', players: [] }
-  ]);
-  const [loading, setLoading] = useState(false);
 
   // Sheet states
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
-  const [showAddFriendSheet, setShowAddFriendSheet] = useState(false);
-  const [showAddGuestSheet, setShowAddGuestSheet] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
-  const [showEditSheet, setShowEditSheet] = useState(false);
-  const [defaultTee, setDefaultTee] = useState(DEFAULT_MEN_TEE);
+
+  const teeCount = 5;
 
   useEffect(() => {
     const loadData = async () => {
-      // Get default tee from app preferences
-      try {
-        const savedPrefs = localStorage.getItem('appPreferences');
-        if (savedPrefs) {
-          const prefs = JSON.parse(savedPrefs);
-          if (prefs.defaultTee) {
-            setDefaultTee(prefs.defaultTee);
-          }
-        }
-      } catch (e) {
-        console.error("Error reading app preferences:", e);
-      }
-
-      // Fetch courses
-      const { data: coursesData } = await supabase
-        .from('courses')
-        .select('id, name, location')
-        .order('name');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       
-      if (coursesData) setCourses(coursesData);
-
-      // Load course from session storage
+      setCurrentUserId(user.id);
+      
+      // Get current user's profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, username, handicap')
+        .eq('id', user.id)
+        .single();
+      
+      const userName = profile?.display_name || profile?.username || 'You';
+      const userHandicap = parseHandicap(profile?.handicap);
+      
+      // Load course from sessionStorage
       const savedCourse = sessionStorage.getItem('selectedCourse');
       if (savedCourse) {
-        try {
-          const course = JSON.parse(savedCourse);
-          const matchingCourse = coursesData?.find(c => c.name === course.name);
-          if (matchingCourse) {
-            setSelectedCourseId(matchingCourse.id);
-          }
-        } catch (e) {
-          console.error("Error parsing saved course:", e);
+        const course = JSON.parse(savedCourse);
+        setSelectedCourse(course);
+        if (course.tee_names) {
+          setCourseTeeNames(course.tee_names);
         }
-      } else if (location.state?.courseName) {
-        const matchingCourse = coursesData?.find(c => c.name === location.state.courseName);
-        if (matchingCourse) {
-          setSelectedCourseId(matchingCourse.id);
-        }
-      } else if (coursesData && coursesData.length > 0) {
-        setSelectedCourseId(coursesData[0].id);
       }
-
-      // Load players from groups
-      const savedGroups = sessionStorage.getItem('playGroups');
-      if (savedGroups) {
-        try {
-          const playGroups = JSON.parse(savedGroups);
-          const convertedGroups: Group[] = playGroups.map((pg: any, idx: number) => ({
-            id: String(idx + 1),
-            name: pg.name || `Group ${idx + 1}`,
-            players: pg.players.map((p: any, playerIdx: number) => ({
-              odId: p.odId || `player-${idx}-${playerIdx}-${Date.now()}`,
-              displayName: p.displayName || p.username || 'Player',
-              handicap: p.handicap ?? undefined,
-              teeColor: p.teeColor || 'medium',
-              isTemporary: p.isTemporary ?? true,
-              isCurrentUser: playerIdx === 0 && idx === 0,
-            }))
-          }));
-          
-          if (convertedGroups.some(g => g.players.length > 0)) {
-            setGroups(convertedGroups);
-          }
-        } catch (e) {
-          console.error("Error parsing saved groups:", e);
+      
+      // Load holes selection (convert to 9/18 format)
+      const savedHoles = sessionStorage.getItem('selectedHoles');
+      if (savedHoles) {
+        if (savedHoles === "front9" || savedHoles === "back9") {
+          setSelectedHoles("9");
+        } else {
+          setSelectedHoles("18");
+        }
+      }
+      
+      // Load tee color
+      const savedTee = sessionStorage.getItem('userTeeColor');
+      if (savedTee) {
+        setTeeColor(savedTee);
+      }
+      
+      // Initialize with current user
+      const currentUserPlayer: Player = {
+        odId: user.id,
+        displayName: userName,
+        handicap: userHandicap,
+        teeColor: savedTee || DEFAULT_MEN_TEE,
+        isTemporary: false,
+        isCurrentUser: true,
+      };
+      
+      // Load added players
+      const savedPlayers = sessionStorage.getItem('roundPlayers');
+      let additionalPlayers: Player[] = [];
+      if (savedPlayers) {
+        const parsed = JSON.parse(savedPlayers);
+        additionalPlayers = parsed.map((p: any) => ({
+          odId: p.odId || p.userId || `temp_${Date.now()}`,
+          displayName: p.displayName,
+          handicap: p.handicap,
+          teeColor: p.teeColor || savedTee || DEFAULT_MEN_TEE,
+          isTemporary: p.isTemporary || false,
+          isCurrentUser: false,
+        }));
+      }
+      
+      setPlayers([currentUserPlayer, ...additionalPlayers]);
+      
+      // Load simple skins settings if previously saved
+      const savedSettings = sessionStorage.getItem('simpleSkinsSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setSkinValue(settings.skinValue || 1);
+        setCarryoverEnabled(settings.carryoverEnabled ?? true);
+        if (settings.holesPlayed) {
+          setSelectedHoles(settings.holesPlayed.toString() as "9" | "18");
         }
       }
     };
-    
     loadData();
-  }, [location.state]);
+  }, []);
 
-  const selectedCourse = courses.find(c => c.id === selectedCourseId);
-
-  const addGroup = () => {
-    const newId = String(groups.length + 1);
-    setGroups([...groups, { id: newId, name: `Group ${newId}`, players: [] }]);
+  const handleUpdatePlayer = (updatedPlayer: Player) => {
+    setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
   };
 
-  const removeGroup = (groupId: string) => {
-    if (groups.length <= 1) return;
-    setGroups(groups.filter(g => g.id !== groupId));
-  };
-
-  const updateGroupName = (groupId: string, name: string) => {
-    setGroups(groups.map(g => g.id === groupId ? { ...g, name } : g));
-  };
-
-  const handleAddPlayerToGroup = (groupId: string, player: Player) => {
-    setGroups(groups.map(g => {
-      if (g.id === groupId) {
-        return { ...g, players: [...g.players, player] };
-      }
-      return g;
-    }));
-    setShowAddFriendSheet(false);
-    setShowAddGuestSheet(false);
-  };
-
-  const removePlayerFromGroup = (groupId: string, playerId: string) => {
-    setGroups(groups.map(g => {
-      if (g.id === groupId) {
-        return { ...g, players: g.players.filter(p => p.odId !== playerId) };
-      }
-      return g;
-    }));
-  };
-
-  const handleEditPlayer = (groupId: string, player: Player) => {
-    setEditingPlayer(player);
-    setEditingGroupId(groupId);
-    setShowEditSheet(true);
-  };
-
-  const handleSavePlayer = (updatedPlayer: Player) => {
-    if (!editingGroupId) return;
-    setGroups(groups.map(g => {
-      if (g.id === editingGroupId) {
-        return {
-          ...g,
-          players: g.players.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p)
-        };
-      }
-      return g;
-    }));
-  };
-
-  const openAddFriend = (groupId: string) => {
-    setActiveGroupId(groupId);
-    setShowAddFriendSheet(true);
-  };
-
-  const openAddGuest = (groupId: string) => {
-    setActiveGroupId(groupId);
-    setShowAddGuestSheet(true);
-  };
-
-  const getAllPlayers = (): Player[] => {
-    return groups.flatMap(g => g.players);
-  };
-
-  const getAllPlayerIds = (): string[] => {
-    return groups.flatMap(g => g.players.map(p => p.odId));
-  };
-
-  const convertToSkinsPlayers = (): SkinsPlayer[] => {
-    return groups.flatMap(g => g.players.map(p => ({
-      name: p.displayName,
-      handicap: p.handicap ?? null,
-      tee: p.teeColor || null,
-      group_name: g.name,
-    })));
-  };
-
-  const handleStartGame = async () => {
-    const allPlayers = convertToSkinsPlayers();
-    
+  const handleStartRound = async () => {
     if (!selectedCourse) {
-      toast({ title: "Please select a course", variant: "destructive" });
+      toast({ title: "Course required", description: "Please go back and select a course", variant: "destructive" });
       return;
     }
-    
-    if (allPlayers.length < 2) {
-      toast({ title: "Please add at least 2 players", variant: "destructive" });
+
+    if (players.length < 2) {
+      toast({ title: "More players needed", description: "Skins requires at least 2 players", variant: "destructive" });
       return;
     }
 
@@ -239,42 +157,77 @@ export default function SkinsSetup() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({ title: "Please log in", variant: "destructive" });
+        navigate("/auth");
         return;
       }
 
-      // Get round name from session storage
-      const savedRoundName = sessionStorage.getItem('roundName');
+      const holesPlayed = parseInt(selectedHoles);
 
-      const { data, error } = await supabase
-        .from("skins_games")
+      const { data: round, error } = await supabase
+        .from("rounds")
         .insert({
           user_id: user.id,
-          course_id: selectedCourseId,
           course_name: selectedCourse.name,
-          round_name: savedRoundName || null,
+          tee_set: teeColor,
           holes_played: holesPlayed,
-          skin_value: skinValue,
-          carryover_enabled: carryoverEnabled,
-          use_handicaps: useHandicaps,
-          handicap_mode: handicapMode,
-          players: allPlayers as any,
-        } as any)
+          origin: 'simple_skins',
+          date_played: new Date().toISOString().split('T')[0],
+        })
         .select()
         .single();
 
       if (error) throw error;
 
-      toast({ title: "Skins game created!" });
-      navigate(`/skins/${(data as any).id}/play`);
+      // Add all players (filter out temp players for database)
+      const playersToAdd = players
+        .filter(p => !p.isTemporary)
+        .map(p => ({
+          round_id: round.id,
+          user_id: p.odId,
+          tee_color: p.teeColor || teeColor,
+          handicap: p.handicap,
+        }));
+
+      if (playersToAdd.length > 0) {
+        const { error: playersError } = await supabase
+          .from('round_players')
+          .insert(playersToAdd);
+
+        if (playersError) {
+          console.error("Error adding players:", playersError);
+        }
+      }
+
+      // Save settings for the tracker
+      sessionStorage.setItem('simpleSkinsSettings', JSON.stringify({
+        skinValue,
+        carryoverEnabled,
+        holesPlayed,
+        players: players.map(p => ({
+          odId: p.odId,
+          displayName: p.displayName,
+          handicap: p.handicap,
+          teeColor: p.teeColor,
+          isTemporary: p.isTemporary,
+        })),
+      }));
+
+      // Clear setup sessionStorage
+      sessionStorage.removeItem('roundPlayers');
+      sessionStorage.removeItem('userTeeColor');
+      sessionStorage.removeItem('selectedCourse');
+      sessionStorage.removeItem('selectedHoles');
+      sessionStorage.removeItem('roundName');
+      sessionStorage.removeItem('datePlayed');
+
+      toast({ title: "Game started!", description: `Good luck at ${selectedCourse.name}` });
+      navigate(`/simple-skins/${round.id}/track`);
     } catch (error: any) {
       toast({ title: "Error creating game", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
-
-  const totalPlayers = getAllPlayers().length;
 
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
@@ -284,235 +237,141 @@ export default function SkinsSetup() {
           <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')} className="p-2">
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">Skins Setup</h1>
+          <h1 className="text-2xl font-bold text-foreground">Simple Skins Setup</h1>
         </div>
 
-        {/* Course Selection */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <MapPin size={16} className="text-primary" />
-            Course
-          </Label>
-          <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a course" />
-            </SelectTrigger>
-            <SelectContent>
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
-                  {course.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Multi-Group Info Banner */}
-        <Card className="bg-primary/10 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium text-primary">Skins Across All Groups</p>
-                <p className="text-sm text-muted-foreground">
-                  All {totalPlayers} players compete for skins together, regardless of which group they play in.
-                </p>
+        {/* Course Info - Compact */}
+        {selectedCourse && (
+          <div className="p-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium">{selectedCourse.name}</span>
+                <span className="text-muted-foreground text-sm ml-2">
+                  {selectedHoles} holes
+                </span>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Players Section */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Users size={20} className="text-primary" />
+              Players
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {players.map((player) => (
+              <SetupPlayerCard
+                key={player.odId}
+                player={player}
+                onEdit={() => setEditingPlayer(player)}
+                showTee={true}
+              />
+            ))}
           </CardContent>
         </Card>
-
-        {/* Groups with Player Cards */}
-        {groups.map((group) => (
-          <Card key={group.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <Input
-                  value={group.name}
-                  onChange={(e) => updateGroupName(group.id, e.target.value)}
-                  className="font-semibold text-lg border-0 p-0 h-auto focus-visible:ring-0 bg-transparent"
-                />
-                {groups.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeGroup(group.id)}
-                    className="text-destructive"
-                  >
-                    <Trash2 size={18} />
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Player Cards */}
-              <div className="space-y-2">
-                {group.players.map((player) => (
-                  <SetupPlayerCard
-                    key={player.odId}
-                    player={player}
-                    onEdit={() => handleEditPlayer(group.id, player)}
-                    onRemove={!player.isCurrentUser ? () => removePlayerFromGroup(group.id, player.odId) : undefined}
-                    showTee={true}
-                  />
-                ))}
-              </div>
-
-              {/* Add Player Buttons */}
-              <SetupAddPlayerButtons
-                onAddFriend={() => openAddFriend(group.id)}
-                onAddGuest={() => openAddGuest(group.id)}
-              />
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* Add Group Button */}
-        <Button
-          variant="outline"
-          onClick={addGroup}
-          className="w-full"
-        >
-          <Plus size={16} className="mr-2" />
-          Add Another Group
-        </Button>
 
         {/* Game Settings */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Game Settings</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Settings size={20} className="text-primary" />
+              Game Settings
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            {/* Holes */}
+            <div className="space-y-2">
               <Label>Holes</Label>
               <div className="flex gap-2">
                 <Button
-                  variant={holesPlayed === 9 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setHolesPlayed(9)}
+                  type="button"
+                  variant={selectedHoles === "9" ? "default" : "outline"}
+                  onClick={() => setSelectedHoles("9")}
+                  className="flex-1"
                 >
-                  9
+                  9 Holes
                 </Button>
                 <Button
-                  variant={holesPlayed === 18 ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setHolesPlayed(18)}
+                  type="button"
+                  variant={selectedHoles === "18" ? "default" : "outline"}
+                  onClick={() => setSelectedHoles("18")}
+                  className="flex-1"
                 >
-                  18
+                  18 Holes
                 </Button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Label>Skin Value</Label>
-              <Input
-                type="number"
-                value={skinValue}
-                onChange={(e) => setSkinValue(Number(e.target.value) || 1)}
-                className="w-24 text-right"
-                min={1}
+            {/* Default Tee */}
+            <div className="space-y-2">
+              <Label>Default Tee Box</Label>
+              <TeeSelector
+                value={teeColor}
+                onValueChange={(v) => {
+                  setTeeColor(v);
+                  setPlayers(prev => prev.map(p => ({ ...p, teeColor: v })));
+                }}
+                teeCount={teeCount}
+                courseTeeNames={courseTeeNames}
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Carryover</Label>
-                <p className="text-xs text-muted-foreground">Ties carry skin to next hole</p>
+            {/* Skin Value */}
+            <div className="space-y-2">
+              <Label>Skin Value</Label>
+              <Select 
+                value={skinValue.toString()} 
+                onValueChange={(value) => setSkinValue(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select skin value" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 skin per hole</SelectItem>
+                  <SelectItem value="2">2 skins per hole</SelectItem>
+                  <SelectItem value="5">5 skins per hole</SelectItem>
+                  <SelectItem value="10">10 skins per hole</SelectItem>
+                  <SelectItem value="20">20 skins per hole</SelectItem>
+                  <SelectItem value="50">50 skins per hole</SelectItem>
+                  <SelectItem value="progressive">1 skin first 6, 2 skins next 6, 3 skins last 6</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Carryover toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="carryover">Carryover</Label>
+                <p className="text-xs text-muted-foreground">
+                  Ties carry the skin to the next hole
+                </p>
               </div>
               <Switch
+                id="carryover"
                 checked={carryoverEnabled}
                 onCheckedChange={setCarryoverEnabled}
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">Apply net scoring</p>
-              </div>
-              <Switch
-                checked={useHandicaps}
-                onCheckedChange={setUseHandicaps}
-              />
-            </div>
-
-            {useHandicaps && (
-              <div className="flex items-center justify-between">
-                <Label>Scoring Mode</Label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={handicapMode === 'net' ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setHandicapMode('net')}
-                  >
-                    Net
-                  </Button>
-                  <Button
-                    variant={handicapMode === 'gross' ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setHandicapMode('gross')}
-                  >
-                    Gross
-                  </Button>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        {/* Summary */}
-        <Card className="bg-muted/50">
-          <CardContent className="p-4 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Total Players</span>
-              <Badge variant="secondary">{totalPlayers}</Badge>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span>Groups</span>
-              <Badge variant="secondary">{groups.length}</Badge>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span>Total Skins Available</span>
-              <Badge variant="secondary">{holesPlayed}</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Start Game */}
-        <Button
-          onClick={handleStartGame}
-          disabled={loading || totalPlayers < 2 || !selectedCourse}
-          className="w-full"
-          size="lg"
-        >
-          {loading ? "Creating..." : "Start Skins Game"}
+        <Button onClick={handleStartRound} disabled={loading || !selectedCourse} className="w-full" size="lg">
+          {loading ? "Starting..." : "Start Game"}
         </Button>
       </div>
 
-      {/* Add Friend Sheet */}
-      <SetupAddFriendSheet
-        isOpen={showAddFriendSheet}
-        onClose={() => setShowAddFriendSheet(false)}
-        onAddPlayer={(player) => activeGroupId && handleAddPlayerToGroup(activeGroupId, player)}
-        existingPlayerIds={getAllPlayerIds()}
-        defaultTee={defaultTee}
-      />
-
-      {/* Add Guest Sheet */}
-      <SetupAddGuestSheet
-        isOpen={showAddGuestSheet}
-        onClose={() => setShowAddGuestSheet(false)}
-        onAddPlayer={(player) => activeGroupId && handleAddPlayerToGroup(activeGroupId, player)}
-        defaultTee={defaultTee}
-      />
-
       {/* Edit Player Sheet */}
       <SetupPlayerEditSheet
-        isOpen={showEditSheet}
-        onClose={() => setShowEditSheet(false)}
+        isOpen={!!editingPlayer}
+        onClose={() => setEditingPlayer(null)}
         player={editingPlayer}
-        onSave={handleSavePlayer}
         availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
+        onSave={handleUpdatePlayer}
       />
     </div>
   );
