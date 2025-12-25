@@ -72,8 +72,13 @@ export function PlayerScoreSheet({
               <div className="text-sm opacity-80">{formatHandicap(handicap)}</div>
             )}
           </div>
-          <div className={`bg-background text-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${currentScore === null || currentScore === 0 ? 'text-muted-foreground' : ''}`}>
-            {currentScore === -1 ? '-' : currentScore !== null && currentScore !== 0 ? currentScore : '-'}
+          <div className="flex flex-col items-center">
+            <div className={`bg-background text-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${currentScore === null || currentScore === 0 || currentScore === -1 ? 'text-muted-foreground' : ''}`}>
+              {currentScore !== null && currentScore > 0 ? currentScore : '0'}
+            </div>
+            {(currentScore === null || currentScore === 0 || currentScore === -1) && (
+              <span className="text-xs text-muted-foreground mt-1">Strokes</span>
+            )}
           </div>
         </div>
         
