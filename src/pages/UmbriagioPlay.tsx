@@ -688,9 +688,10 @@ export default function UmbriagioPlay() {
               currentScore={scores[key]}
               onScoreSelect={(score) => handleScoreSelect(key, score)}
               onMore={handleOpenMoreSheet}
-              onEnterAndNext={() => {
-                // Pass the current scores with this player's score included
-                const updatedScores = { ...scores, [key]: scores[key] };
+              onEnterAndNext={(score) => {
+                // Convert -1 back to null for storage
+                const scoreToSave = score === -1 ? null : score;
+                const updatedScores = { ...scores, [key]: scoreToSave };
                 advanceToNextPlayerSheet(key, updatedScores);
               }}
             />

@@ -401,7 +401,7 @@ export default function ScramblePlay() {
             holeNumber={currentHole}
             currentScore={teamScores[team.id] ?? null}
             onScoreSelect={(score) => handleScoreSelect(team.id, score)}
-            onEnterAndNext={advanceToNextTeamSheet}
+            onEnterAndNext={() => advanceToNextTeamSheet()}
           />
         ))}
 
