@@ -796,7 +796,7 @@ export default function RoundTracker() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === 0 ? "-" : playerScore) : 0}</div>
+                    <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
                     <div className="text-xs text-muted-foreground">Strokes</div>
                   </div>
                   <div className="text-center">
