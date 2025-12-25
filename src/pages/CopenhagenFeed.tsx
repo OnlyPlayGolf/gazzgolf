@@ -299,7 +299,28 @@ export default function CopenhagenFeed() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {comments.map((comment) => (
+        {comments.map((comment) => {
+              // Parse mulligan comments
+              const isMulliganComment = comment.content.startsWith("🔄");
+              let userComment = "";
+              let mulliganText = "";
+              
+              if (isMulliganComment) {
+                // Check if there's a user comment attached: format is "🔄 Name used a mulligan on hole X: "comment""
+                const colonQuoteMatch = comment.content.match(/^🔄 (.+?) used a mulligan on hole (\d+): "(.+)"$/);
+                const simpleMatch = comment.content.match(/^🔄 (.+?) used a mulligan on hole (\d+)$/);
+                
+                if (colonQuoteMatch) {
+                  const [, playerName, holeNum, extractedComment] = colonQuoteMatch;
+                  userComment = extractedComment;
+                  mulliganText = `${playerName} used a mulligan on hole ${holeNum}`;
+                } else if (simpleMatch) {
+                  const [, playerName, holeNum] = simpleMatch;
+                  mulliganText = `${playerName} used a mulligan on hole ${holeNum}`;
+                }
+              }
+              
+              return (
               <Card key={comment.id}>
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
@@ -320,7 +341,19 @@ export default function CopenhagenFeed() {
                         </span>
                       </div>
                       
-                      <p className="mt-1 text-sm">{comment.content}</p>
+                      {/* Content Display */}
+                      {isMulliganComment ? (
+                        <div className="mt-2 space-y-2">
+                          {userComment && (
+                            <p className="text-sm">{userComment}</p>
+                          )}
+                          <div className="bg-muted/50 border border-border rounded-lg px-3 py-2">
+                            <p className="text-sm text-muted-foreground">{mulliganText}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-sm">{comment.content}</p>
+                      )}
 
                       {/* Actions */}
                       <div className="flex items-center gap-4 mt-3">
@@ -389,7 +422,8 @@ export default function CopenhagenFeed() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
