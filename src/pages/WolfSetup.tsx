@@ -307,12 +307,6 @@ export default function WolfSetup() {
               </Droppable>
             </DragDropContext>
 
-            {players.length < 5 && (
-              <SetupAddPlayerButtons
-                onAddFriend={() => setShowAddFriend(true)}
-                onAddGuest={() => setShowAddGuest(true)}
-              />
-            )}
             
             <Button 
               variant="outline" 
