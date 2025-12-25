@@ -7,6 +7,7 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +52,7 @@ export default function WolfSetup() {
   const [loneWolfLossPoints, setLoneWolfLossPoints] = useState(1);
   const [teamWinPoints, setTeamWinPoints] = useState(1);
   const [wolfPosition, setWolfPosition] = useState<'first' | 'last'>('last');
+  const [doubleEnabled, setDoubleEnabled] = useState(true);
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -208,6 +210,7 @@ export default function WolfSetup() {
           lone_wolf_loss_points: loneWolfLossPoints,
           team_win_points: teamWinPoints,
           wolf_position: wolfPosition,
+          double_enabled: doubleEnabled,
         })
         .select()
         .single();
@@ -338,6 +341,16 @@ export default function WolfSetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Double</Label>
+                <p className="text-xs text-muted-foreground">
+                  Allow teams to double the points on a hole
+                </p>
+              </div>
+              <Switch checked={doubleEnabled} onCheckedChange={setDoubleEnabled} />
+            </div>
+
             <div className="space-y-2">
               <Label>Wolf Position</Label>
               <Select value={wolfPosition} onValueChange={(v) => setWolfPosition(v as 'first' | 'last')}>

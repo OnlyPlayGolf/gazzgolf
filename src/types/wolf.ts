@@ -22,6 +22,9 @@ export interface WolfGame {
   // Wolf goes first or last
   wolf_position: 'first' | 'last';
   
+  // Double option
+  double_enabled: boolean;
+  
   // Player scores (running totals)
   player_1_points: number;
   player_2_points: number;

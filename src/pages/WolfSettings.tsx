@@ -4,6 +4,7 @@ import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ export default function WolfSettings() {
   const [loneWolfWinPoints, setLoneWolfWinPoints] = useState(3);
   const [loneWolfLossPoints, setLoneWolfLossPoints] = useState(1);
   const [teamWinPoints, setTeamWinPoints] = useState(1);
+  const [doubleEnabled, setDoubleEnabled] = useState(true);
   const [wolfPosition, setWolfPosition] = useState<'first' | 'last'>('last');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
@@ -51,6 +53,7 @@ export default function WolfSettings() {
         setLoneWolfWinPoints(typedGame.lone_wolf_win_points);
         setLoneWolfLossPoints(typedGame.lone_wolf_loss_points);
         setTeamWinPoints(typedGame.team_win_points);
+        setDoubleEnabled(typedGame.double_enabled ?? true);
         setWolfPosition(typedGame.wolf_position as 'first' | 'last');
       }
     } catch (error) {
@@ -76,6 +79,7 @@ export default function WolfSettings() {
           lone_wolf_win_points: loneWolfWinPoints,
           lone_wolf_loss_points: loneWolfLossPoints,
           team_win_points: teamWinPoints,
+          double_enabled: doubleEnabled,
           wolf_position: wolfPosition,
         })
         .eq("id", gameId);
@@ -165,6 +169,16 @@ export default function WolfSettings() {
             <CardTitle className="text-lg">Game Rules</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Double</Label>
+                <p className="text-xs text-muted-foreground">
+                  Allow teams to double the points on a hole
+                </p>
+              </div>
+              <Switch checked={doubleEnabled} onCheckedChange={setDoubleEnabled} />
+            </div>
+
             <div className="space-y-2">
               <Label>Wolf Position</Label>
               <Select value={wolfPosition} onValueChange={(v) => setWolfPosition(v as 'first' | 'last')}>
