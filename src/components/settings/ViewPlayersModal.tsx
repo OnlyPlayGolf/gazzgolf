@@ -34,7 +34,7 @@ export function ViewPlayersModal({
           <DialogTitle>Players</DialogTitle>
         </DialogHeader>
         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-          {players.map((player, idx) => (
+          {[...players].sort((a, b) => a.name.localeCompare(b.name)).map((player, idx) => (
             <div 
               key={idx} 
               className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
