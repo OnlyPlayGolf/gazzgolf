@@ -294,6 +294,25 @@ export default function ScramblePlay() {
     }, 0);
   };
 
+  const calculateTeamToPar = (teamId: string): string => {
+    let totalScore = 0;
+    let totalPar = 0;
+    
+    holes.forEach(hole => {
+      const score = hole.team_scores[teamId];
+      if (score && score > 0) {
+        totalScore += score;
+        totalPar += hole.par;
+      }
+    });
+    
+    if (totalScore === 0) return "E";
+    
+    const diff = totalScore - totalPar;
+    if (diff === 0) return "E";
+    return diff > 0 ? `+${diff}` : `${diff}`;
+  };
+
   const finishGame = async () => {
     if (!game) return;
 
@@ -430,31 +449,29 @@ export default function ScramblePlay() {
         {teams.map((team) => (
           <Card 
             key={team.id} 
-            className="cursor-pointer hover:bg-accent/50 transition-colors"
+            className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => setActiveTeamSheet(team.id)}
           >
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">{team.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {team.players.map(p => p.name).join(', ')}
-                  </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold">{team.name}</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Hole</p>
-                    <p className={`text-xl font-bold ${teamScores[team.id] ? '' : 'text-muted-foreground'}`}>
-                      {teamScores[team.id] ?? '-'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Total</p>
-                    <p className="text-lg font-semibold text-muted-foreground">{calculateTeamTotal(team.id)}</p>
-                  </div>
+                <div className="text-sm text-muted-foreground">
+                  {team.players.map(p => p.name).join(', ')}
                 </div>
               </div>
-            </CardContent>
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-muted-foreground">{teamScores[team.id] ?? 0}</div>
+                  <div className="text-xs text-muted-foreground">Strokes</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{calculateTeamToPar(team.id)}</div>
+                  <div className="text-xs text-muted-foreground font-bold">To Par</div>
+                </div>
+              </div>
+            </div>
           </Card>
         ))}
 
