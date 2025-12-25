@@ -124,9 +124,11 @@ export default function CopenhagenLeaderboard() {
   };
 
   // Calculate positions with tie handling
-  const getPositionLabel = (rank: number, points: number): string => {
+  const getPositionLabel = (points: number): string => {
+    // Position is 1 + number of players with MORE points
+    const playersAhead = sortedPlayers.filter(p => p.points > points).length;
+    const position = playersAhead + 1;
     const samePointsCount = sortedPlayers.filter(p => p.points === points).length;
-    const position = rank + 1;
     if (samePointsCount > 1) {
       return `T${position}`;
     }
@@ -136,7 +138,7 @@ export default function CopenhagenLeaderboard() {
   const renderPlayerCard = (player: { index: number; name: string; points: number }, rank: number) => {
     const isExpanded = expandedPlayer === player.index;
     const isLeader = leader === player.index;
-    const positionLabel = getPositionLabel(rank, player.points);
+    const positionLabel = getPositionLabel(player.points);
 
     return (
       <Card key={player.index} className="overflow-hidden">
