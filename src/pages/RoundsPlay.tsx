@@ -530,7 +530,6 @@ export default function RoundsPlay() {
         }
         break;
       case "skins":
-      case "simple_skins":
         if (totalPlayers < 2) {
           return `Skins requires at least 2 players. You have ${totalPlayers}.`;
         }
@@ -595,10 +594,6 @@ export default function RoundsPlay() {
     }
     if (setupState.gameFormat === "skins") {
       navigate('/skins/setup');
-      return;
-    }
-    if (setupState.gameFormat === "simple_skins") {
-      navigate('/simple-skins/setup');
       return;
     }
     if (setupState.gameFormat === "stroke_play") {
@@ -879,7 +874,6 @@ export default function RoundsPlay() {
                       { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
                       { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
                       { id: "skins", label: "Skins", desc: "Win holes for skins" },
-                      { id: "simple_skins", label: "Simple Skins", desc: "Stroke play style skins" },
                       { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
                     ].map((fmt) => (
                       <div key={fmt.id} className="relative">
@@ -902,7 +896,6 @@ export default function RoundsPlay() {
                             if (fmt.id === "stroke_play") navigate('/stroke-play/how-to-play');
                             else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
                             else if (fmt.id === "skins") navigate('/skins/how-to-play');
-                            else if (fmt.id === "simple_skins") navigate('/simple-skins/how-to-play');
                             else navigate('/copenhagen/how-to-play');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"

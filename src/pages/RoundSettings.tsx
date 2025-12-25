@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Settings } from "lucide-react";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
-import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
+import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -202,8 +202,8 @@ export default function RoundSettings() {
 
   const renderBottomTabBar = () => {
     if (!roundId) return null;
-    if (round?.origin === "simple_skins") {
-      return <SimpleSkinsBottomTabBar roundId={roundId} />;
+    if (round?.origin === "skins") {
+      return <SkinsBottomTabBar roundId={roundId} />;
     }
     return <RoundBottomTabBar roundId={roundId} />;
   };

@@ -29,7 +29,7 @@ export interface PlaySetupState {
   selectedHoles: "18" | "front9" | "back9" | "custom";
   customHoles?: number[];
   teeColor: string;
-  gameFormat: "stroke_play" | "umbriago" | "wolf" | "copenhagen" | "match_play" | "scramble" | "best_ball" | "skins" | "simple_skins";
+  gameFormat: "stroke_play" | "umbriago" | "wolf" | "copenhagen" | "match_play" | "scramble" | "best_ball" | "skins";
   groups: PlayerGroup[];
   strokePlaySettings: {
     mulligansPerPlayer: number;

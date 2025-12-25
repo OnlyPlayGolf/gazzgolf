@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
-import { SimpleSkinsBottomTabBar } from "@/components/SimpleSkinsBottomTabBar";
+import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -275,8 +275,8 @@ export default function RoundFeed() {
 
   const renderBottomTabBar = () => {
     if (!roundId) return null;
-    if (origin === "simple_skins") {
-      return <SimpleSkinsBottomTabBar roundId={roundId} />;
+    if (origin === "skins") {
+      return <SkinsBottomTabBar roundId={roundId} />;
     }
     return <RoundBottomTabBar roundId={roundId} />;
   };
