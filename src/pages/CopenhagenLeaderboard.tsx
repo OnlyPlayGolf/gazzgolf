@@ -332,32 +332,6 @@ export default function CopenhagenLeaderboard() {
               </div>
             )}
 
-            {/* Summary */}
-            <div className="border-t bg-muted/30 p-4">
-              <div className="flex items-center justify-around text-center">
-                <div>
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-2xl font-bold">{player.points}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Sweeps</div>
-                  <div className="text-2xl font-bold">
-                    {holes.filter(h => {
-                      const pts = player.index === 1 ? h.player_1_hole_points : 
-                                  player.index === 2 ? h.player_2_hole_points : 
-                                  h.player_3_hole_points;
-                      return pts === 6;
-                    }).length}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Position</div>
-                  <div className="text-2xl font-bold">
-                    {rank + 1}{rank === 0 ? 'st' : rank === 1 ? 'nd' : 'rd'}
-                  </div>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </Card>
