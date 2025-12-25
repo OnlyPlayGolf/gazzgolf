@@ -77,10 +77,10 @@ const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame,
   }),
   
   extractScoresFromHole: (hole) => ({
-    teamAPlayer1: hole.team_a_player_1_score || 0,
-    teamAPlayer2: hole.team_a_player_2_score || 0,
-    teamBPlayer1: hole.team_b_player_1_score || 0,
-    teamBPlayer2: hole.team_b_player_2_score || 0,
+    teamAPlayer1: hole.team_a_player_1_score ?? 0,
+    teamAPlayer2: hole.team_a_player_2_score ?? 0,
+    teamBPlayer1: hole.team_b_player_1_score ?? 0,
+    teamBPlayer2: hole.team_b_player_2_score ?? 0,
     closestToPinWinner: hole.closest_to_pin_winner,
     multiplier: hole.multiplier,
     doubleCalledBy: hole.double_called_by,
@@ -404,8 +404,10 @@ export default function UmbriagioPlay() {
   const teamARollsUsed = (game.roll_history || []).filter(r => r.team === 'A').length;
   const teamBRollsUsed = (game.roll_history || []).filter(r => r.team === 'B').length;
 
-  const allScoresEntered = scores.teamAPlayer1 > 0 && scores.teamAPlayer2 > 0 && 
-                          scores.teamBPlayer1 > 0 && scores.teamBPlayer2 > 0;
+  const allScoresEntered = (scores.teamAPlayer1 > 0 || scores.teamAPlayer1 === -1) && 
+                          (scores.teamAPlayer2 > 0 || scores.teamAPlayer2 === -1) && 
+                          (scores.teamBPlayer1 > 0 || scores.teamBPlayer1 === -1) && 
+                          (scores.teamBPlayer2 > 0 || scores.teamBPlayer2 === -1);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -480,7 +482,7 @@ export default function UmbriagioPlay() {
                 <span className="font-medium">{player.name}</span>
                 <div className="flex flex-col items-center">
                   <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                    {player.score > 0 ? player.score : '0'}
+                    {player.score === -1 ? '–' : player.score > 0 ? player.score : '0'}
                   </span>
                   {player.score === 0 && (
                     <span className="text-xs text-muted-foreground">Strokes</span>
@@ -527,7 +529,7 @@ export default function UmbriagioPlay() {
                 <span className="font-medium">{player.name}</span>
                 <div className="flex flex-col items-center">
                   <span className={`text-xl font-bold ${player.score > 0 ? '' : 'text-muted-foreground'}`}>
-                    {player.score > 0 ? player.score : '0'}
+                    {player.score === -1 ? '–' : player.score > 0 ? player.score : '0'}
                   </span>
                   {player.score === 0 && (
                     <span className="text-xs text-muted-foreground">Strokes</span>
