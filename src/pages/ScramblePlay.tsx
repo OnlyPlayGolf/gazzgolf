@@ -254,7 +254,7 @@ export default function ScramblePlay() {
     }
   };
 
-  const handleSaveMore = () => {
+  const handleSaveMore = async () => {
     if (activeTeamSheet && currentComment.trim()) {
       setHoleComments(prev => {
         const updated = new Map(prev);
@@ -263,6 +263,22 @@ export default function ScramblePlay() {
         updated.set(activeTeamSheet, teamComments);
         return updated;
       });
+
+      // Save comment to database for feed
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && gameId) {
+        const team = teams.find(t => t.id === activeTeamSheet);
+        const teamName = team?.name || 'Team';
+        
+        await supabase.from('round_comments').insert({
+          game_id: gameId,
+          round_id: gameId,
+          game_type: 'scramble',
+          user_id: user.id,
+          content: currentComment.trim(),
+          hole_number: currentHole
+        });
+      }
     }
     setShowMoreSheet(false);
   };
