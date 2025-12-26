@@ -276,34 +276,31 @@ export default function BestBallPlay() {
   ) => {
     const score = scoresMap[player.odId];
     const hasScore = score !== undefined && score !== null && score !== 0;
-    const isCounting = countingPlayer === player.displayName;
     const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
     
     return (
-      <div
+      <Card
         key={player.odId}
-        className={`flex items-center justify-between p-3 rounded-lg transition-all cursor-pointer hover:bg-muted/70 ${
-          isCounting ? 'bg-primary/10 ring-2 ring-primary/30' : 'bg-muted/50'
-        }`}
+        className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
         onClick={() => setActivePlayerSheet({ team, playerId: player.odId })}
       >
-        <div>
-          <p className="font-medium">{player.displayName}</p>
-          {game.use_handicaps && (
-            <span className="text-xs text-muted-foreground">
-              HCP: {player.handicap ?? 0} {handicapStrokes > 0 && `(+${handicapStrokes})`}
-            </span>
-          )}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-lg font-bold">{player.displayName}</p>
+            {game.use_handicaps && (
+              <div className="text-sm text-muted-foreground">
+                HCP: {player.handicap ?? 0} {handicapStrokes > 0 && `(+${handicapStrokes})`}
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <div className={`text-2xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
+              {hasScore ? score : 0}
+            </div>
+            <div className="text-xs text-muted-foreground">Strokes</div>
+          </div>
         </div>
-        <div className="text-center">
-          <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-            {hasScore ? score : '0'}
-          </span>
-          {!hasScore && (
-            <p className="text-xs text-muted-foreground">Strokes</p>
-          )}
-        </div>
-      </div>
+      </Card>
     );
   };
 
