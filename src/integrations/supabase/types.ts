@@ -27,6 +27,7 @@ export type Database = {
           id: string
           is_finished: boolean
           match_status: number
+          mulligans_per_player: number | null
           round_name: string | null
           team_a_name: string
           team_a_players: Json
@@ -50,6 +51,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           match_status?: number
+          mulligans_per_player?: number | null
           round_name?: string | null
           team_a_name?: string
           team_a_players?: Json
@@ -73,6 +75,7 @@ export type Database = {
           id?: string
           is_finished?: boolean
           match_status?: number
+          mulligans_per_player?: number | null
           round_name?: string | null
           team_a_name?: string
           team_a_players?: Json
