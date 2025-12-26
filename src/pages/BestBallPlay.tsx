@@ -437,14 +437,6 @@ export default function BestBallPlay() {
           />
         ))}
 
-        {/* Save Button */}
-        <Button 
-          onClick={() => saveHole()} 
-          disabled={saving || !allPlayersHaveScores()}
-          className="w-full"
-        >
-          {saving ? "Saving..." : currentHole >= totalHoles ? "Finish Game" : "Save & Next Hole"}
-        </Button>
       </div>
 
       {gameId && <BestBallBottomTabBar gameId={gameId} />}
