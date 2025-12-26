@@ -147,15 +147,15 @@ export default function BestBallLeaderboard() {
     return hole?.hole_result || 0;
   };
 
-  const renderTeamScorecard = (team: 'A' | 'B', position: number) => {
+  const renderTeamScorecard = (team: 'A' | 'B', position: number, isTied: boolean) => {
     if (courseHoles.length === 0) return null;
 
     const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
-    const teamColor = team === 'A' ? 'bg-blue-500' : 'bg-red-500';
     const teamTotal = team === 'A' ? game.team_a_total : game.team_b_total;
     const totalPar = courseHoles.reduce((sum, h) => sum + h.par, 0);
     const toPar = teamTotal - totalPar;
     const toParDisplay = teamTotal === 0 ? 'E' : toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar.toString();
+    const positionDisplay = isTied ? `T${position}` : position.toString();
 
     const frontNineTotal = frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, team) || 0), 0);
     const backNineTotal = backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, team) || 0), 0);
@@ -165,27 +165,27 @@ export default function BestBallLeaderboard() {
     const isExpanded = expandedTeam === team;
 
     return (
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border-2">
         <Collapsible open={isExpanded} onOpenChange={(open) => setExpandedTeam(open ? team : null)}>
           <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                  {position}
-                </div>
-                <div className={`w-3 h-3 rounded-full ${teamColor}`} />
-                <span className="text-lg font-bold">{teamName}</span>
+            <div className="flex items-center p-4 hover:bg-muted/50 transition-colors">
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform mr-3 ${isExpanded ? 'rotate-180' : '-rotate-90'}`} />
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center font-bold text-foreground text-sm mr-4">
+                {positionDisplay}
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <div className={`text-xl font-bold ${toPar < 0 ? 'text-red-500' : toPar > 0 ? 'text-muted-foreground' : ''}`}>
-                    {toParDisplay}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {teamTotal} ({holes.length} holes)
-                  </div>
+              <div className="flex-1 text-left">
+                <div className="text-xl font-bold">{teamName}</div>
+                <div className="text-sm text-muted-foreground">
+                  {holes.length} holes played
                 </div>
-                <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              </div>
+              <div className="text-right">
+                <div className={`text-3xl font-bold ${toPar < 0 ? 'text-primary' : ''}`}>
+                  {toParDisplay}
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                  To Par
+                </div>
               </div>
             </div>
           </CollapsibleTrigger>
@@ -518,17 +518,24 @@ export default function BestBallLeaderboard() {
           renderCombinedScorecard()
         ) : (
           <>
-            {game.team_a_total <= game.team_b_total ? (
-              <>
-                {renderTeamScorecard('A', 1)}
-                {renderTeamScorecard('B', game.team_a_total === game.team_b_total ? 1 : 2)}
-              </>
-            ) : (
-              <>
-                {renderTeamScorecard('B', 1)}
-                {renderTeamScorecard('A', 2)}
-              </>
-            )}
+            {(() => {
+              const isTied = game.team_a_total === game.team_b_total;
+              if (game.team_a_total <= game.team_b_total) {
+                return (
+                  <>
+                    {renderTeamScorecard('A', 1, isTied)}
+                    {renderTeamScorecard('B', isTied ? 1 : 2, false)}
+                  </>
+                );
+              } else {
+                return (
+                  <>
+                    {renderTeamScorecard('B', 1, false)}
+                    {renderTeamScorecard('A', 2, false)}
+                  </>
+                );
+              }
+            })()}
           </>
         )}
       </div>
