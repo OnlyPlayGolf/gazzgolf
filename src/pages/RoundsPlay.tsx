@@ -520,9 +520,8 @@ export default function RoundsPlay() {
         }
         break;
       case "best_ball":
-        // Best Ball setup page handles team assignment - allow continuing with 1+ players
-        if (totalPlayers < 1) {
-          return `Add at least 1 player to continue.`;
+        if (totalPlayers < 3) {
+          return `Best Ball requires at least 3 players. You have ${totalPlayers}.`;
         }
         break;
       case "scramble":
