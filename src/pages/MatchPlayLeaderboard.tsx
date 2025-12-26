@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
-import { ThumbsUp, MessageSquare } from "lucide-react";
+import { ThumbsUp, MessageSquare, BarChart3 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -310,6 +310,10 @@ export default function MatchPlayLeaderboard() {
               <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
                 <MessageSquare size={20} className="text-primary" />
                 <span className="text-xs text-center">Comment to<br/>Game Feed</span>
+              </Button>
+              <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
+                <BarChart3 size={20} className="text-primary" />
+                <span className="text-xs">Statistics</span>
               </Button>
             </div>
           </div>
