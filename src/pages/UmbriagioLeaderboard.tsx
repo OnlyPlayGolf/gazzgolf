@@ -500,6 +500,16 @@ export default function UmbriagioLeaderboard() {
     const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
     const player1 = team === 'A' ? game.team_a_player_1 : game.team_b_player_1;
     const player2 = team === 'A' ? game.team_a_player_2 : game.team_b_player_2;
+    const otherTeamPoints = team === 'A' ? game.team_b_total_points : game.team_a_total_points;
+
+    // Determine position with tie handling
+    const getTeamPositionLabel = (): string => {
+      if (totalPoints > otherTeamPoints) return '1';
+      if (totalPoints < otherTeamPoints) return '2';
+      return 'T1'; // Tied
+    };
+
+    const positionLabel = getTeamPositionLabel();
 
     return (
       <Card key={team} className="overflow-hidden">
@@ -517,7 +527,7 @@ export default function UmbriagioLeaderboard() {
               <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
                 isLeader ? 'bg-amber-500/20 text-amber-600' : ''
               }`}>
-                {holes.length || "-"}
+                {positionLabel}
               </div>
               <div>
                 <div className="text-xl font-bold">{teamName}</div>
