@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export default function ScramblePlay() {
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const [teamScores, setTeamScores] = useState<Record<string, number | null>>({});
+  const teamScoresRef = useRef<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
   const [activeTeamSheet, setActiveTeamSheet] = useState<string | null>(null);
@@ -191,6 +192,7 @@ export default function ScramblePlay() {
   const handleScoreSelect = async (teamId: string, score: number | null) => {
     const newScores = { ...teamScores, [teamId]: score };
     setTeamScores(newScores);
+    teamScoresRef.current = newScores;
     
     // Save immediately when score is selected
     if (!gameId) return;
@@ -229,38 +231,38 @@ export default function ScramblePlay() {
     });
   };
 
-  const advanceToNextTeamSheet = () => {
-    if (!activeTeamSheet) return;
+  const advanceToNextTeam = (currentTeamId: string) => {
+    // Use the ref to get the latest scores
+    const latestScores = teamScoresRef.current;
+    const currentIndex = teams.findIndex(t => t.id === currentTeamId);
     
-    // Find the next team that doesn't have a score yet
-    const findNextTeamWithoutScore = (startIndex: number): string | null => {
-      for (let i = 0; i < teams.length; i++) {
-        const checkIndex = (startIndex + i) % teams.length;
-        const team = teams[checkIndex];
-        const score = teamScores[team.id];
-        // Score is missing if null, undefined, or 0
-        if (score === null || score === undefined || score === 0) {
-          return team.id;
-        }
-      }
-      return null; // All teams have scores
-    };
-
-    const currentIndex = teams.findIndex(t => t.id === activeTeamSheet);
-    const nextTeamWithoutScore = findNextTeamWithoutScore(currentIndex + 1);
-    
-    if (nextTeamWithoutScore) {
-      // There's still a team without a score, navigate to it
-      setActiveTeamSheet(nextTeamWithoutScore);
-    } else {
-      // All teams have scores - close sheet and advance to next hole
-      setActiveTeamSheet(null);
-      if (game && currentHole < game.holes_played) {
-        setCurrentHoleIndex(currentHoleIndex + 1);
-        loadHoleData(currentHole + 1);
+    // Find next team without a valid score, starting from the next team
+    for (let i = 1; i < teams.length; i++) {
+      const checkIndex = (currentIndex + i) % teams.length;
+      const team = teams[checkIndex];
+      const teamScore = latestScores[team.id];
+      
+      // Score is missing if null, undefined, or 0
+      if (teamScore === null || teamScore === undefined || teamScore === 0) {
+        setActiveTeamSheet(team.id);
+        return;
       }
     }
+    
+    // All teams have scores - check including the one we just entered
+    const allHaveScores = teams.every(t => {
+      const s = latestScores[t.id];
+      return s !== null && s !== undefined && s !== 0;
+    });
+    
+    setActiveTeamSheet(null);
+    
+    if (allHaveScores && game && currentHole < game.holes_played) {
+      setCurrentHoleIndex(prev => prev + 1);
+      loadHoleData(currentHole + 1);
+    }
   };
+
 
   // More sheet handlers
   const handleOpenMoreSheet = () => {
@@ -522,7 +524,7 @@ export default function ScramblePlay() {
             currentScore={teamScores[team.id] ?? null}
             onScoreSelect={(score) => handleScoreSelect(team.id, score)}
             onMore={handleOpenMoreSheet}
-            onEnterAndNext={advanceToNextTeamSheet}
+            onEnterAndNext={() => advanceToNextTeam(team.id)}
           />
         ))}
 
