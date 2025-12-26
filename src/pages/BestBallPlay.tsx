@@ -216,27 +216,12 @@ export default function BestBallPlay() {
     }
   }, [scores]);
   
-  // Load mulligans setting from session/local storage
+  // Load mulligans setting from the game data (database)
   useEffect(() => {
-    if (gameId) {
-      const savedSettings = localStorage.getItem(`bestBallSettings_${gameId}`);
-      if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-      } else {
-        // Check session storage for new games
-        const sessionSettings = sessionStorage.getItem('bestBallSettings');
-        if (sessionSettings) {
-          const settings = JSON.parse(sessionSettings);
-          setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-          // Persist to local storage
-          localStorage.setItem(`bestBallSettings_${gameId}`, JSON.stringify({
-            mulligansPerPlayer: settings.mulligansPerPlayer || 0
-          }));
-        }
-      }
+    if (game) {
+      setMulligansPerPlayer(game.mulligans_per_player || 0);
     }
-  }, [gameId]);
+  }, [game]);
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;

@@ -32,6 +32,7 @@ export interface BestBallGame {
   team_b_name: string;
   team_b_players: BestBallPlayer[];
   use_handicaps: boolean;
+  mulligans_per_player: number | null;
   team_a_total: number;
   team_b_total: number;
   match_status: number;
