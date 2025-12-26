@@ -285,16 +285,10 @@ export default function BestBallLeaderboard() {
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                       {frontNine.map(hole => {
                         const score = getTeamBestScore(hole.hole_number, team);
-                        const par = hole.par;
-                        const isUnderPar = score && score < par;
-                        const isOverPar = score && score > par;
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className={`text-center font-bold text-xs px-1 py-1.5 ${
-                              isUnderPar ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 
-                              isOverPar ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : ''
-                            }`}
+                            className="text-center font-bold text-xs px-1 py-1.5"
                           >
                             {score || ''}
                           </TableCell>
@@ -375,16 +369,10 @@ export default function BestBallLeaderboard() {
                         <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                         {backNine.map(hole => {
                           const score = getTeamBestScore(hole.hole_number, team);
-                          const par = hole.par;
-                          const isUnderPar = score && score < par;
-                          const isOverPar = score && score > par;
                           return (
                             <TableCell 
                               key={hole.hole_number} 
-                              className={`text-center font-bold text-xs px-1 py-1.5 ${
-                                isUnderPar ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 
-                                isOverPar ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : ''
-                              }`}
+                              className="text-center font-bold text-xs px-1 py-1.5"
                             >
                               {score || ''}
                             </TableCell>
