@@ -501,17 +501,16 @@ export default function BestBallLeaderboard() {
         </div>
       </div>
 
-      <div className="bg-primary/10 p-3 text-center">
-        <p className="text-lg font-bold text-primary">
-          {isMatchPlay 
-            ? formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)
-            : `${game.team_a_name}: ${game.team_a_total} | ${game.team_b_name}: ${game.team_b_total}`
-          }
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {game.holes_remaining} holes remaining
-        </p>
-      </div>
+      {isMatchPlay && (
+        <div className="bg-primary/10 p-3 text-center">
+          <p className="text-lg font-bold text-primary">
+            {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {game.holes_remaining} holes remaining
+          </p>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {isMatchPlay ? (
@@ -524,14 +523,14 @@ export default function BestBallLeaderboard() {
                 return (
                   <>
                     {renderTeamScorecard('A', 1, isTied)}
-                    {renderTeamScorecard('B', isTied ? 1 : 2, false)}
+                    {renderTeamScorecard('B', isTied ? 1 : 2, isTied)}
                   </>
                 );
               } else {
                 return (
                   <>
-                    {renderTeamScorecard('B', 1, false)}
-                    {renderTeamScorecard('A', 2, false)}
+                    {renderTeamScorecard('B', 1, isTied)}
+                    {renderTeamScorecard('A', isTied ? 1 : 2, isTied)}
                   </>
                 );
               }
