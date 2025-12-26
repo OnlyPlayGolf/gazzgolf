@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
@@ -287,20 +287,22 @@ export default function BestBallPlay() {
         }`}
         onClick={() => setActivePlayerSheet({ team, playerId: player.odId })}
       >
-        <div className="flex items-center gap-2">
-          {isCounting && <Star size={16} className="text-primary fill-primary" />}
-          <div>
-            <p className="font-medium">{player.displayName}</p>
-            {game.use_handicaps && (
-              <span className="text-xs text-muted-foreground">
-                HCP: {player.handicap ?? 0} {handicapStrokes > 0 && `(+${handicapStrokes})`}
-              </span>
-            )}
-          </div>
+        <div>
+          <p className="font-medium">{player.displayName}</p>
+          {game.use_handicaps && (
+            <span className="text-xs text-muted-foreground">
+              HCP: {player.handicap ?? 0} {handicapStrokes > 0 && `(+${handicapStrokes})`}
+            </span>
+          )}
         </div>
-        <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-          {hasScore ? score : '–'}
-        </span>
+        <div className="text-center">
+          <span className={`text-xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
+            {hasScore ? score : '0'}
+          </span>
+          {!hasScore && (
+            <p className="text-xs text-muted-foreground">Strokes</p>
+          )}
+        </div>
       </div>
     );
   };
