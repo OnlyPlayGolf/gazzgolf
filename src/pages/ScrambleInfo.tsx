@@ -1,127 +1,121 @@
-import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
-import { ScrambleGame, ScrambleTeam } from "@/types/scramble";
-import { Users, MapPin, Calendar, Flag, Settings } from "lucide-react";
 
 export default function ScrambleInfo() {
   const { gameId } = useParams<{ gameId: string }>();
-  const [game, setGame] = useState<ScrambleGame | null>(null);
-  const [teams, setTeams] = useState<ScrambleTeam[]>([]);
-
-  useEffect(() => {
-    if (gameId) fetchGame();
-  }, [gameId]);
-
-  const fetchGame = async () => {
-    const { data } = await supabase
-      .from('scramble_games')
-      .select('*')
-      .eq('id', gameId)
-      .single();
-
-    if (data) {
-      setGame(data as unknown as ScrambleGame);
-      setTeams((data.teams as unknown as ScrambleTeam[]) || []);
-    }
-  };
-
-  if (!game) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center pb-20">
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="bg-primary text-primary-foreground p-4">
-        <h1 className="text-xl font-bold text-center">Game Info</h1>
+        <h1 className="text-xl font-bold text-center">How to Play Scramble</h1>
       </div>
 
       <div className="p-4 space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin size={18} />
-              Course
-            </CardTitle>
+            <CardTitle>Overview</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{game.course_name}</p>
-            <p className="text-sm text-muted-foreground">{game.tee_set} tees</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar size={18} />
-              Date
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg">{new Date(game.date_played).toLocaleDateString()}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Flag size={18} />
-              Format
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg">Scramble - {game.holes_played} Holes</p>
-            <p className="text-sm text-muted-foreground">
-              {game.use_handicaps ? `Net (${game.scoring_type})` : 'Gross'}
+          <CardContent className="space-y-3 text-sm">
+            <p>
+              Scramble is a fun, team-based golf format that's perfect for groups of all skill levels. 
+              Teams work together to achieve the best possible score on each hole.
+            </p>
+            <p>
+              This format emphasizes teamwork and strategy while keeping the pace of play quick 
+              and enjoyable for everyone.
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users size={18} />
-              Teams
-            </CardTitle>
+            <CardTitle>Basic Rules</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {teams.map((team) => (
-              <div key={team.id} className="p-3 bg-muted/50 rounded-lg">
-                <h4 className="font-semibold">{team.name}</h4>
-                <div className="mt-2 space-y-1">
-                  {team.players.map((player) => (
-                    <p key={player.id} className="text-sm text-muted-foreground">
-                      {player.name}
-                      {player.handicap !== null && player.handicap !== undefined && ` (HCP: ${player.handicap})`}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <CardContent className="space-y-3 text-sm">
+            <div>
+              <h4 className="font-semibold mb-1">1. Tee Shots</h4>
+              <p className="text-muted-foreground">
+                All team members hit tee shots. The team then selects the best shot to play from.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">2. Second Shots & Beyond</h4>
+              <p className="text-muted-foreground">
+                All players hit from the chosen spot. Again, select the best shot. 
+                Repeat until the ball is holed.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">3. Team Score</h4>
+              <p className="text-muted-foreground">
+                The team records one score per hole – the total strokes taken from tee to hole.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        {game.min_drives_per_player && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings size={18} />
-                Rules
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">
-                Minimum {game.min_drives_per_player} drive(s) per player required
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Structure</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <ul className="list-disc pl-4 space-y-2 text-muted-foreground">
+              <li>Teams can have 2, 3, 4, or more players</li>
+              <li>Multiple teams can compete against each other</li>
+              <li>Teams can be assigned manually or randomly</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Optional Rules</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div>
+              <h4 className="font-semibold mb-1">Minimum Drives</h4>
+              <p className="text-muted-foreground">
+                Require each player's drive to be used a minimum number of times during the round 
+                (e.g., each player's tee shot must be selected at least 2 times).
               </p>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">Handicaps</h4>
+              <p className="text-muted-foreground">
+                Handicaps can be applied for net scoring to level the playing field between teams.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Scoring</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <ul className="list-disc pl-4 space-y-2 text-muted-foreground">
+              <li>Lowest total team score wins</li>
+              <li>Score is compared to par (e.g., -5, +2, E)</li>
+              <li>Each hole gets one team score</li>
+              <li>If a team doesn't complete a hole, mark it with "–"</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Tips for Success</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <ul className="list-disc pl-4 space-y-2 text-muted-foreground">
+              <li>Communicate as a team before selecting shots</li>
+              <li>Consider risk vs. reward when choosing aggressive vs. safe shots</li>
+              <li>Let confident putters go last to read the line</li>
+              <li>Use your best driver on wide fairways, your most accurate on tight ones</li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
       <ScrambleBottomTabBar gameId={gameId!} />
