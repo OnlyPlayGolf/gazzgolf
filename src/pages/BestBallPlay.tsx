@@ -400,12 +400,14 @@ export default function BestBallPlay() {
           </div>
         </Card>
 
-        {/* Match Status */}
-        <div className="p-3 bg-primary/10 rounded-lg text-center">
-          <p className="text-lg font-bold text-primary">
-            {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
-          </p>
-        </div>
+        {/* Match Status - only show for match play */}
+        {game.game_type === 'match' && (
+          <div className="p-3 bg-primary/10 rounded-lg text-center">
+            <p className="text-lg font-bold text-primary">
+              {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
+            </p>
+          </div>
+        )}
 
         {/* Player Score Sheets */}
         {game.team_a_players.map(player => (
