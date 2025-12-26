@@ -103,19 +103,6 @@ export default function ScrambleInfo() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Tips for Success</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <ul className="list-disc pl-4 space-y-2 text-muted-foreground">
-              <li>Communicate as a team before selecting shots</li>
-              <li>Consider risk vs. reward when choosing aggressive vs. safe shots</li>
-              <li>Let confident putters go last to read the line</li>
-              <li>Use your best driver on wide fairways, your most accurate on tight ones</li>
-            </ul>
-          </CardContent>
-        </Card>
       </div>
 
       <ScrambleBottomTabBar gameId={gameId!} />
