@@ -470,23 +470,6 @@ export default function UmbriagioLeaderboard() {
               </div>
             )}
 
-            {/* Summary */}
-            <div className="border-t bg-muted/30 p-4">
-              <div className="flex items-center justify-around text-center">
-                <div>
-                  <div className="text-sm text-muted-foreground">Points</div>
-                  <div className="text-2xl font-bold">{stats.totalPoints}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Score</div>
-                  <div className="text-2xl font-bold">{stats.totalScore || '-'}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Position</div>
-                  <div className="text-2xl font-bold">{positionLabel}</div>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </Card>
@@ -670,25 +653,6 @@ export default function UmbriagioLeaderboard() {
               </div>
             )}
 
-            {/* Summary */}
-            <div className="border-t bg-muted/30 p-4">
-              <div className="flex items-center justify-around text-center">
-                <div>
-                  <div className="text-sm text-muted-foreground">Total</div>
-                  <div className="text-2xl font-bold">{totalPoints}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Holes</div>
-                  <div className="text-2xl font-bold">{holes.length}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Position</div>
-                  <div className="text-2xl font-bold">
-                    {isLeader ? '1st' : '2nd'}
-                  </div>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </Card>
