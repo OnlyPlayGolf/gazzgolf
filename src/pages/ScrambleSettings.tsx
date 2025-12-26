@@ -165,12 +165,6 @@ export default function ScrambleSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        <RoundActionsSection
-          onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate(`/scramble/${gameId}/summary`)}
-          onDelete={() => setShowDeleteDialog(true)}
-        />
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Game Rules</CardTitle>
@@ -222,6 +216,12 @@ export default function ScrambleSettings() {
             </Button>
           </CardContent>
         </Card>
+
+        <RoundActionsSection
+          onFinish={handleFinishGame}
+          onSaveAndExit={() => navigate(`/scramble/${gameId}/summary`)}
+          onDelete={() => setShowDeleteDialog(true)}
+        />
       </div>
 
       <ViewPlayersModal
