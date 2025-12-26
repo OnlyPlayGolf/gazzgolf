@@ -248,6 +248,25 @@ export default function BestBallPlay() {
     };
   };
 
+  // Calculate team score to par based on played holes
+  const getTeamScoreToPar = (team: 'A' | 'B') => {
+    if (!game) return null;
+    
+    const teamTotal = team === 'A' ? game.team_a_total : game.team_b_total;
+    
+    // Calculate par for played holes
+    const playedHoleNumbers = holes.map(h => h.hole_number);
+    const parForPlayedHoles = courseHoles
+      .filter(ch => playedHoleNumbers.includes(ch.hole_number))
+      .reduce((sum, ch) => sum + ch.par, 0);
+    
+    if (parForPlayedHoles === 0) return null;
+    
+    const scoreToPar = teamTotal - parForPlayedHoles;
+    if (scoreToPar === 0) return 'E';
+    return scoreToPar > 0 ? `+${scoreToPar}` : scoreToPar.toString();
+  };
+
   const bestBalls = getCurrentBestBalls();
 
   if (loading) {
@@ -369,9 +388,9 @@ export default function BestBallPlay() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-blue-600">{game.team_a_name}</h3>
-            {bestBalls.teamA?.bestScore && (
+            {getTeamScoreToPar('A') !== null && (
               <span className="text-sm font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                Best: {bestBalls.teamA.bestScore}
+                {getTeamScoreToPar('A')}
               </span>
             )}
           </div>
@@ -386,9 +405,9 @@ export default function BestBallPlay() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-red-600">{game.team_b_name}</h3>
-            {bestBalls.teamB?.bestScore && (
+            {getTeamScoreToPar('B') !== null && (
               <span className="text-sm font-medium bg-red-100 text-red-700 px-2 py-1 rounded">
-                Best: {bestBalls.teamB.bestScore}
+                {getTeamScoreToPar('B')}
               </span>
             )}
           </div>
