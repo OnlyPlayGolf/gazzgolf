@@ -153,10 +153,9 @@ export default function BestBallLeaderboard() {
     if (!hole) return '';
     const status = hole.match_status_after;
     if (status === 0) return 'AS';
-    // Show which team is up and by how many holes
+    // Show "1UP", "2UP" etc. format
     const upBy = Math.abs(status);
-    const leadingTeam = status > 0 ? game.team_a_name.charAt(0) : game.team_b_name.charAt(0);
-    return `${leadingTeam}${upBy}`;
+    return `${upBy}UP`;
   };
 
   const renderTeamScorecard = (team: 'A' | 'B', position: number, isTied: boolean) => {
