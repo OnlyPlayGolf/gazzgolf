@@ -180,7 +180,7 @@ export default function ScrambleLeaderboard() {
               <div>
                 <div className="text-xl font-bold">{ts.team.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  {ts.team.players.map(p => p.name).join(', ')}
+                  {ts.team.players.map(p => p.name.split(' ')[0]).join(', ')}
                 </div>
               </div>
             </div>
