@@ -152,8 +152,12 @@ export default function BestBallLeaderboard() {
 
     const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
     const teamTotal = team === 'A' ? game.team_a_total : game.team_b_total;
-    const totalPar = courseHoles.reduce((sum, h) => sum + h.par, 0);
-    const toPar = teamTotal - totalPar;
+    // Calculate par only for holes that have been played
+    const playedHoleNumbers = holes.map(h => h.hole_number);
+    const parForPlayedHoles = courseHoles
+      .filter(h => playedHoleNumbers.includes(h.hole_number))
+      .reduce((sum, h) => sum + h.par, 0);
+    const toPar = teamTotal - parForPlayedHoles;
     const toParDisplay = teamTotal === 0 ? 'E' : toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar.toString();
     const positionDisplay = isTied ? `T${position}` : position.toString();
 
