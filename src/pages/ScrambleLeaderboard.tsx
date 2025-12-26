@@ -97,9 +97,12 @@ export default function ScrambleLeaderboard() {
       holes.forEach(hole => {
         const score = hole.team_scores[team.id];
         if (score !== null && score !== undefined) {
-          total += score;
+          // Only add positive scores to total (skip -1 dash scores)
+          if (score > 0) {
+            total += score;
+            parTotal += hole.par;
+          }
           thru++;
-          parTotal += hole.par;
         }
       });
 
@@ -136,6 +139,12 @@ export default function ScrambleLeaderboard() {
     if (!hole) return null;
     const score = hole.team_scores[teamId];
     return score !== null && score !== undefined ? score : null;
+  };
+
+  const formatScore = (score: number | null): string => {
+    if (score === null) return '';
+    if (score === -1) return '–';
+    return score.toString();
   };
 
   if (!game) {
@@ -233,12 +242,15 @@ export default function ScrambleLeaderboard() {
                           key={hole.hole_number} 
                           className="text-center font-bold text-xs px-1 py-1.5"
                         >
-                          {score !== null ? score : ''}
+                          {formatScore(score)}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                      {frontNine.reduce((sum, h) => sum + (getTeamScore(h.hole_number, ts.team.id) || 0), 0) || ''}
+                      {frontNine.reduce((sum, h) => {
+                        const s = getTeamScore(h.hole_number, ts.team.id);
+                        return sum + (s !== null && s > 0 ? s : 0);
+                      }, 0) || ''}
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -290,12 +302,15 @@ export default function ScrambleLeaderboard() {
                             key={hole.hole_number} 
                             className="text-center font-bold text-xs px-1 py-1.5"
                           >
-                            {score !== null ? score : ''}
+                            {formatScore(score)}
                           </TableCell>
                         );
                       })}
                       <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                        {backNine.reduce((sum, h) => sum + (getTeamScore(h.hole_number, ts.team.id) || 0), 0) || ''}
+                        {backNine.reduce((sum, h) => {
+                          const s = getTeamScore(h.hole_number, ts.team.id);
+                          return sum + (s !== null && s > 0 ? s : 0);
+                        }, 0) || ''}
                       </TableCell>
                     </TableRow>
                   </TableBody>
