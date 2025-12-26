@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Plus, Shuffle, Trophy } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Shuffle, Trophy, Settings } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,7 @@ export default function BestBallSetup() {
   // Game settings
   const [gameType, setGameType] = useState<GameType>('match');
   const [useHandicaps, setUseHandicaps] = useState(false);
+  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [teamAName, setTeamAName] = useState("Team A");
   const [teamBName, setTeamBName] = useState("Team B");
   
@@ -235,6 +236,7 @@ export default function BestBallSetup() {
           team_b_name: teamBName,
           team_b_players: teamB as unknown as any,
           use_handicaps: useHandicaps,
+          mulligans_per_player: mulligansPerPlayer,
         }])
         .select()
         .single();
@@ -350,15 +352,37 @@ export default function BestBallSetup() {
           </CardContent>
         </Card>
 
-        {/* Handicaps Toggle */}
+        {/* Game Settings */}
         <Card>
-          <CardContent className="pt-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Settings size={20} className="text-primary" />
+              Game Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label>Use Handicaps (Net)</Label>
                 <p className="text-xs text-muted-foreground">Apply stroke allocation</p>
               </div>
               <Switch checked={useHandicaps} onCheckedChange={setUseHandicaps} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Mulligans per Player</Label>
+                <p className="text-xs text-muted-foreground">Extra shots allowed</p>
+              </div>
+              <Select value={mulligansPerPlayer.toString()} onValueChange={(v) => setMulligansPerPlayer(parseInt(v))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2, 3, 4, 5].map(n => (
+                    <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>

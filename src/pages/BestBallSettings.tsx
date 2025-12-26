@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { BestBallGame, BestBallPlayer, BestBallGameType } from "@/types/bestBall";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -165,6 +170,62 @@ export default function BestBallSettings() {
           data={gameDetails} 
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
+
+        {/* Game Settings */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Settings size={20} className="text-primary" />
+              Game Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Use Handicaps (Net)</Label>
+                <p className="text-xs text-muted-foreground">Apply stroke allocation</p>
+              </div>
+              <Switch 
+                checked={game.use_handicaps} 
+                onCheckedChange={async (checked) => {
+                  await supabase
+                    .from("best_ball_games")
+                    .update({ use_handicaps: checked })
+                    .eq("id", gameId);
+                  setGame({ ...game, use_handicaps: checked });
+                  toast({ title: checked ? "Handicaps enabled" : "Handicaps disabled" });
+                }} 
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Mulligans per Player</Label>
+                <p className="text-xs text-muted-foreground">Extra shots allowed</p>
+              </div>
+              <Select 
+                value={((game as any).mulligans_per_player || 0).toString()} 
+                onValueChange={async (v) => {
+                  const mulligans = parseInt(v);
+                  await supabase
+                    .from("best_ball_games")
+                    .update({ mulligans_per_player: mulligans })
+                    .eq("id", gameId);
+                  setGame({ ...game, mulligans_per_player: mulligans } as any);
+                  toast({ title: `Mulligans set to ${mulligans}` });
+                }}
+              >
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2, 3, 4, 5].map(n => (
+                    <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         <RoundActionsSection
           onFinish={handleFinishGame}
