@@ -166,7 +166,6 @@ export default function BestBallLeaderboard() {
                     {hole.hole_number}
                   </TableHead>
                 ))}
-                <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,9 +176,6 @@ export default function BestBallLeaderboard() {
                     {hole.par}
                   </TableCell>
                 ))}
-                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                  {frontNine.reduce((sum, h) => sum + h.par, 0)}
-                </TableCell>
               </TableRow>
               {/* Team A Row */}
               <TableRow className="font-bold">
@@ -204,9 +200,6 @@ export default function BestBallLeaderboard() {
                     </TableCell>
                   );
                 })}
-                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                  {frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0) || ''}
-                </TableCell>
               </TableRow>
               {/* Team B Row */}
               <TableRow className="font-bold">
@@ -231,9 +224,6 @@ export default function BestBallLeaderboard() {
                     </TableCell>
                   );
                 })}
-                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                  {frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0) || ''}
-                </TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -251,7 +241,6 @@ export default function BestBallLeaderboard() {
                       {hole.hole_number}
                     </TableHead>
                   ))}
-                  <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/10 w-[28px]">In</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -262,9 +251,6 @@ export default function BestBallLeaderboard() {
                       {hole.par}
                     </TableCell>
                   ))}
-                  <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                    {backNine.reduce((sum, h) => sum + h.par, 0)}
-                  </TableCell>
                 </TableRow>
                 {/* Team A Row */}
                 <TableRow className="font-bold">
@@ -289,9 +275,6 @@ export default function BestBallLeaderboard() {
                       </TableCell>
                     );
                   })}
-                  <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                    {backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0) || ''}
-                  </TableCell>
                 </TableRow>
                 {/* Team B Row */}
                 <TableRow className="font-bold">
@@ -316,9 +299,6 @@ export default function BestBallLeaderboard() {
                       </TableCell>
                     );
                   })}
-                  <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                    {backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0) || ''}
-                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
