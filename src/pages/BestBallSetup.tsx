@@ -289,7 +289,6 @@ export default function BestBallSetup() {
                         setEditingPlayer(player);
                         setEditingTeam(team);
                       }}
-                      onRemove={player.odId === currentUserId ? undefined : () => handleRemovePlayer(player.odId, team)}
                       showTee={false}
                       dragHandleProps={provided.dragHandleProps}
                     />
@@ -301,18 +300,6 @@ export default function BestBallSetup() {
           </div>
         )}
       </Droppable>
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() => {
-          setAddToTeam(team);
-          setShowAddPlayer(true);
-        }}
-      >
-        <Plus size={14} className="mr-1" />
-        Add Player
-      </Button>
     </div>
   );
 
