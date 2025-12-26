@@ -440,42 +440,6 @@ export default function MatchPlayPlay() {
           </Card>
         )}
 
-        {/* Hole History */}
-        {holes.length > 0 && (
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3">Hole Results</h3>
-            <div className="grid grid-cols-9 gap-1 text-xs">
-              {holes.slice(0, 9).map((hole, i) => (
-                <div key={hole.id} className="text-center">
-                  <div className="text-muted-foreground">{i + 1}</div>
-                  <div className={`font-medium ${
-                    hole.hole_result === 1 ? 'text-blue-600' : 
-                    hole.hole_result === -1 ? 'text-red-600' : 
-                    'text-muted-foreground'
-                  }`}>
-                    {hole.hole_result === 1 ? 'W' : hole.hole_result === -1 ? 'L' : '-'}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {holes.length > 9 && (
-              <div className="grid grid-cols-9 gap-1 text-xs mt-2">
-                {holes.slice(9, 18).map((hole, i) => (
-                  <div key={hole.id} className="text-center">
-                    <div className="text-muted-foreground">{i + 10}</div>
-                    <div className={`font-medium ${
-                      hole.hole_result === 1 ? 'text-blue-600' : 
-                      hole.hole_result === -1 ? 'text-red-600' : 
-                      'text-muted-foreground'
-                    }`}>
-                      {hole.hole_result === 1 ? 'W' : hole.hole_result === -1 ? 'L' : '-'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        )}
 
       </div>
 
