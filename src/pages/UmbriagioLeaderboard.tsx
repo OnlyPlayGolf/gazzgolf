@@ -234,20 +234,24 @@ export default function UmbriagioLeaderboard() {
     return playersWithStats.sort((a, b) => b.stats.totalPoints - a.stats.totalPoints);
   }, [allPlayers, holes]);
 
-  // Get player's position in leaderboard
-  const getPlayerPosition = (playerId: string): number => {
+  // Get player's position label in leaderboard (with T prefix for ties)
+  const getPlayerPositionLabel = (playerId: string): string => {
     const index = rankedPlayers.findIndex(p => p.id === playerId);
-    if (index === -1) return 0;
+    if (index === -1) return "0";
     
-    // Handle ties - players with same points get same position
     const playerPoints = rankedPlayers[index].stats.totalPoints;
-    let position = 1;
-    for (let i = 0; i < index; i++) {
-      if (rankedPlayers[i].stats.totalPoints > playerPoints) {
-        position = i + 2;
-      }
+    
+    // Count players with higher points to determine position
+    const playersAhead = rankedPlayers.filter(p => p.stats.totalPoints > playerPoints).length;
+    const position = playersAhead + 1;
+    
+    // Check if there are ties at this position
+    const samePointsCount = rankedPlayers.filter(p => p.stats.totalPoints === playerPoints).length;
+    
+    if (samePointsCount > 1) {
+      return `T${position}`;
     }
-    return position;
+    return `${position}`;
   };
 
   if (loading) {
@@ -266,17 +270,10 @@ export default function UmbriagioLeaderboard() {
     );
   }
 
-  const renderPlayerCard = (player: { id: string; name: string }, position: number) => {
+  const renderPlayerCard = (player: { id: string; name: string }, positionLabel: string) => {
     const isExpanded = expandedPlayer === player.id;
     const stats = getPlayerStats(player.id);
-    const isLeader = position === 1;
-
-    const getPositionSuffix = (pos: number) => {
-      if (pos === 1) return 'st';
-      if (pos === 2) return 'nd';
-      if (pos === 3) return 'rd';
-      return 'th';
-    };
+    const isLeader = positionLabel === '1';
 
     return (
       <Card key={player.id} className="overflow-hidden">
@@ -294,7 +291,7 @@ export default function UmbriagioLeaderboard() {
               <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
                 isLeader ? 'bg-amber-500/20 text-amber-600' : ''
               }`}>
-                {position}{getPositionSuffix(position)}
+                {positionLabel}
               </div>
               <div>
                 <div className="text-xl font-bold">{player.name}</div>
@@ -486,7 +483,7 @@ export default function UmbriagioLeaderboard() {
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Position</div>
-                  <div className="text-2xl font-bold">{position}{getPositionSuffix(position)}</div>
+                  <div className="text-2xl font-bold">{positionLabel}</div>
                 </div>
               </div>
             </div>
@@ -702,7 +699,7 @@ export default function UmbriagioLeaderboard() {
         {isRotating ? (
           // Show individual player scorecards when rotating, sorted by points
           <>
-            {rankedPlayers.map((player, index) => renderPlayerCard(player, getPlayerPosition(player.id)))}
+            {rankedPlayers.map((player, index) => renderPlayerCard(player, getPlayerPositionLabel(player.id)))}
           </>
         ) : (
           // Show team scorecards when not rotating
