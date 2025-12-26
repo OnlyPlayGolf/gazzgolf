@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface BestBallScores {
-  teamA: Record<string, number>;
-  teamB: Record<string, number>;
+  teamA: Record<string, number | null>;
+  teamB: Record<string, number | null>;
 }
 
 // Safely parse player arrays with fallback to empty array
@@ -67,31 +67,33 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
   getSummaryRoute: (id) => `/best-ball/${id}/summary`,
   
   createEmptyScores: (game) => {
-    const teamA: Record<string, number> = {};
-    const teamB: Record<string, number> = {};
-    (game.team_a_players || []).forEach(p => { if (p?.odId) teamA[p.odId] = 0; });
-    (game.team_b_players || []).forEach(p => { if (p?.odId) teamB[p.odId] = 0; });
+    const teamA: Record<string, number | null> = {};
+    const teamB: Record<string, number | null> = {};
+    (game.team_a_players || []).forEach(p => { if (p?.odId) teamA[p.odId] = null; });
+    (game.team_b_players || []).forEach(p => { if (p?.odId) teamB[p.odId] = null; });
     return { teamA, teamB };
   },
   
   extractScoresFromHole: (hole, game) => {
-    const teamA: Record<string, number> = {};
-    const teamB: Record<string, number> = {};
-    (hole.team_a_scores || []).forEach(s => { if (s?.playerId) teamA[s.playerId] = s.grossScore ?? 0; });
-    (hole.team_b_scores || []).forEach(s => { if (s?.playerId) teamB[s.playerId] = s.grossScore ?? 0; });
+    const teamA: Record<string, number | null> = {};
+    const teamB: Record<string, number | null> = {};
+    (hole.team_a_scores || []).forEach(s => { if (s?.playerId) teamA[s.playerId] = s.grossScore ?? null; });
+    (hole.team_b_scores || []).forEach(s => { if (s?.playerId) teamB[s.playerId] = s.grossScore ?? null; });
     return { teamA, teamB };
   },
   
   buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles, game, courseHoles }) => {
     const buildPlayerScores = (
       players: BestBallPlayer[],
-      scoresMap: Record<string, number>,
+      scoresMap: Record<string, number | null>,
       useHandicaps: boolean
     ): BestBallPlayerScore[] => {
       return players.map(player => {
-        const grossScore = scoresMap[player.odId] || par;
+        const rawScore = scoresMap[player.odId];
+        // Only use the score if it was actually entered (not null and not 0)
+        const grossScore = rawScore && rawScore > 0 ? rawScore : null;
         const handicapStrokes = useHandicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
-        const netScore = grossScore - handicapStrokes;
+        const netScore = grossScore !== null ? grossScore - handicapStrokes : null;
         return {
           playerId: player.odId,
           playerName: player.displayName,
@@ -221,11 +223,12 @@ export default function BestBallPlay() {
     
     const buildPlayerScores = (
       players: BestBallPlayer[],
-      scoresMap?: Record<string, number>
+      scoresMap?: Record<string, number | null>
     ): BestBallPlayerScore[] => {
       return players.map((player) => {
         const grossFromMap = scoresMap?.[player.odId];
-        const grossScore = grossFromMap ?? par;
+        // Only use the score if actually entered (not null and > 0)
+        const grossScore = grossFromMap && grossFromMap > 0 ? grossFromMap : null;
         const handicapStrokes = game.use_handicaps
           ? calculateHandicapStrokes(player.handicap, strokeIndex)
           : 0;
@@ -233,7 +236,7 @@ export default function BestBallPlay() {
           playerId: player.odId,
           playerName: player.displayName,
           grossScore,
-          netScore: grossScore - handicapStrokes,
+          netScore: grossScore !== null ? grossScore - handicapStrokes : null,
           handicapStrokes,
         };
       });
@@ -290,11 +293,11 @@ export default function BestBallPlay() {
   const renderPlayerScoreRow = (
     player: BestBallPlayer,
     team: 'A' | 'B',
-    scoresMap: Record<string, number>,
+    scoresMap: Record<string, number | null>,
     countingPlayer: string | null
   ) => {
     const score = scoresMap[player.odId];
-    const hasScore = score !== undefined && score !== null && score !== 0;
+    const hasScore = score !== undefined && score !== null && score > 0;
     const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
     
     return (
@@ -314,7 +317,7 @@ export default function BestBallPlay() {
           </div>
           <div className="text-center">
             <div className={`text-2xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-              {hasScore ? score : 0}
+              {hasScore ? score : '-'}
             </div>
             <div className="text-xs text-muted-foreground">Strokes</div>
           </div>
@@ -324,8 +327,14 @@ export default function BestBallPlay() {
   };
 
   const allPlayersHaveScores = () => {
-    const teamAHasScores = game.team_a_players.every((p) => (scores?.teamA?.[p.odId] ?? 0) > 0);
-    const teamBHasScores = game.team_b_players.every((p) => (scores?.teamB?.[p.odId] ?? 0) > 0);
+    const teamAHasScores = game.team_a_players.every((p) => {
+      const score = scores?.teamA?.[p.odId];
+      return score !== null && score !== undefined && score > 0;
+    });
+    const teamBHasScores = game.team_b_players.every((p) => {
+      const score = scores?.teamB?.[p.odId];
+      return score !== null && score !== undefined && score > 0;
+    });
     return teamAHasScores && teamBHasScores;
   };
 
@@ -437,7 +446,7 @@ export default function BestBallPlay() {
             handicap={player.handicap}
             par={par}
             holeNumber={currentHole}
-            currentScore={scores?.teamA?.[player.odId] ?? 0}
+            currentScore={scores?.teamA?.[player.odId] ?? null}
             onScoreSelect={(score) => handleScoreSelect('A', player.odId, score)}
             onEnterAndNext={() => advanceToNextPlayerSheet('A', player.odId)}
           />
@@ -451,7 +460,7 @@ export default function BestBallPlay() {
             handicap={player.handicap}
             par={par}
             holeNumber={currentHole}
-            currentScore={scores?.teamB?.[player.odId] ?? 0}
+            currentScore={scores?.teamB?.[player.odId] ?? null}
             onScoreSelect={(score) => handleScoreSelect('B', player.odId, score)}
             onEnterAndNext={() => advanceToNextPlayerSheet('B', player.odId)}
           />
