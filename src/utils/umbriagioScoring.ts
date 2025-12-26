@@ -56,15 +56,31 @@ export function calculateIndividualLow(scores: HoleScores): 'A' | 'B' | null {
 }
 
 export function calculateBirdieEagle(scores: HoleScores): 'A' | 'B' | null {
-  // Only count actual scores (not null) for birdie/eagle
-  const teamAHasBirdie = (scores.teamAPlayer1 !== null && scores.teamAPlayer1 <= scores.par - 1) || 
-                         (scores.teamAPlayer2 !== null && scores.teamAPlayer2 <= scores.par - 1);
-  const teamBHasBirdie = (scores.teamBPlayer1 !== null && scores.teamBPlayer1 <= scores.par - 1) || 
-                         (scores.teamBPlayer2 !== null && scores.teamBPlayer2 <= scores.par - 1);
+  // Get best score for each team
+  const teamABest = Math.min(
+    scores.teamAPlayer1 !== null ? scores.teamAPlayer1 : Infinity,
+    scores.teamAPlayer2 !== null ? scores.teamAPlayer2 : Infinity
+  );
+  const teamBBest = Math.min(
+    scores.teamBPlayer1 !== null ? scores.teamBPlayer1 : Infinity,
+    scores.teamBPlayer2 !== null ? scores.teamBPlayer2 : Infinity
+  );
   
-  if (teamAHasBirdie && !teamBHasBirdie) return 'A';
-  if (teamBHasBirdie && !teamAHasBirdie) return 'B';
-  return null; // Both or neither
+  const teamAUnderPar = teamABest < scores.par;
+  const teamBUnderPar = teamBBest < scores.par;
+  
+  // If neither is under par, no winner
+  if (!teamAUnderPar && !teamBUnderPar) return null;
+  
+  // If only one team is under par, they win
+  if (teamAUnderPar && !teamBUnderPar) return 'A';
+  if (teamBUnderPar && !teamAUnderPar) return 'B';
+  
+  // Both under par - team with best (lowest) score wins
+  if (teamABest < teamBBest) return 'A';
+  if (teamBBest < teamABest) return 'B';
+  
+  return null; // Same best score under par = tie
 }
 
 export function calculateHolePoints(
@@ -91,46 +107,39 @@ export function calculateHolePoints(
   const isUmbriagioA = teamACategories === 4;
   const isUmbriagioB = teamBCategories === 4;
   
-  // Calculate umbriago multiplier based on eagle (-2) scores
-  let umbriagioMultiplierA = 1;
-  let umbriagioMultiplierB = 1;
-  
-  if (scores) {
-    const teamAPlayer1Eagle = scores.teamAPlayer1 !== null && scores.teamAPlayer1 <= scores.par - 2;
-    const teamAPlayer2Eagle = scores.teamAPlayer2 !== null && scores.teamAPlayer2 <= scores.par - 2;
-    const teamBPlayer1Eagle = scores.teamBPlayer1 !== null && scores.teamBPlayer1 <= scores.par - 2;
-    const teamBPlayer2Eagle = scores.teamBPlayer2 !== null && scores.teamBPlayer2 <= scores.par - 2;
-    
-    // x4 if both players have eagle or better, x2 if one player has eagle or better
-    if (isUmbriagioA) {
-      if (teamAPlayer1Eagle && teamAPlayer2Eagle) {
-        umbriagioMultiplierA = 4; // 32 points total (4 * 2 * 4)
-      } else if (teamAPlayer1Eagle || teamAPlayer2Eagle) {
-        umbriagioMultiplierA = 2; // 16 points total (4 * 2 * 2)
-      }
-    }
-    
-    if (isUmbriagioB) {
-      if (teamBPlayer1Eagle && teamBPlayer2Eagle) {
-        umbriagioMultiplierB = 4;
-      } else if (teamBPlayer1Eagle || teamBPlayer2Eagle) {
-        umbriagioMultiplierB = 2;
-      }
-    }
-  }
-  
-  // Apply Umbriago doubling first, then super umbriago multiplier, then hole multiplier
   let teamAPoints = teamACategories;
   let teamBPoints = teamBCategories;
+  let umbriagioMultiplier: number | undefined;
   
-  if (isUmbriagioA) teamAPoints = teamAPoints * 2 * umbriagioMultiplierA; // 4 → 8 → 16/32
-  if (isUmbriagioB) teamBPoints = teamBPoints * 2 * umbriagioMultiplierB;
+  if ((isUmbriagioA || isUmbriagioB) && scores) {
+    // Calculate strokes under par for each team
+    // Each stroke under par = 8 points for winning team
+    // Each stroke under par from losing team cancels 8 points
+    const teamAPlayer1UnderPar = scores.teamAPlayer1 !== null ? Math.max(0, scores.par - scores.teamAPlayer1) : 0;
+    const teamAPlayer2UnderPar = scores.teamAPlayer2 !== null ? Math.max(0, scores.par - scores.teamAPlayer2) : 0;
+    const teamBPlayer1UnderPar = scores.teamBPlayer1 !== null ? Math.max(0, scores.par - scores.teamBPlayer1) : 0;
+    const teamBPlayer2UnderPar = scores.teamBPlayer2 !== null ? Math.max(0, scores.par - scores.teamBPlayer2) : 0;
+    
+    const teamAUnderPar = teamAPlayer1UnderPar + teamAPlayer2UnderPar;
+    const teamBUnderPar = teamBPlayer1UnderPar + teamBPlayer2UnderPar;
+    
+    if (isUmbriagioA) {
+      // Net strokes under par × 8
+      const netUnderPar = teamAUnderPar - teamBUnderPar;
+      teamAPoints = netUnderPar * 8;
+      teamBPoints = 0;
+      umbriagioMultiplier = netUnderPar;
+    } else if (isUmbriagioB) {
+      const netUnderPar = teamBUnderPar - teamAUnderPar;
+      teamBPoints = netUnderPar * 8;
+      teamAPoints = 0;
+      umbriagioMultiplier = netUnderPar;
+    }
+  }
   
   // Apply hole multiplier (doubles/double-back)
   teamAPoints *= multiplier;
   teamBPoints *= multiplier;
-  
-  const umbriagioMultiplier = isUmbriagioA ? umbriagioMultiplierA : isUmbriagioB ? umbriagioMultiplierB : undefined;
   
   return {
     teamAPoints,
