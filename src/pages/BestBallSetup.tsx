@@ -423,13 +423,17 @@ export default function BestBallSetup() {
                 <p className="text-xs text-muted-foreground">Extra shots allowed</p>
               </div>
               <Select value={mulligansPerPlayer.toString()} onValueChange={(v) => setMulligansPerPlayer(parseInt(v))}>
-                <SelectTrigger className="w-20">
+                <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[0, 1, 2, 3, 4, 5].map(n => (
-                    <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                  ))}
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
