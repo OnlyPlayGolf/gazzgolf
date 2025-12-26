@@ -232,12 +232,29 @@ export default function ScramblePlay() {
   const advanceToNextTeamSheet = () => {
     if (!activeTeamSheet) return;
     
+    // Find the next team that doesn't have a score yet
+    const findNextTeamWithoutScore = (startIndex: number): string | null => {
+      for (let i = 0; i < teams.length; i++) {
+        const checkIndex = (startIndex + i) % teams.length;
+        const team = teams[checkIndex];
+        const score = teamScores[team.id];
+        // Score is missing if null, undefined, or 0
+        if (score === null || score === undefined || score === 0) {
+          return team.id;
+        }
+      }
+      return null; // All teams have scores
+    };
+
     const currentIndex = teams.findIndex(t => t.id === activeTeamSheet);
-    if (currentIndex < teams.length - 1) {
-      setActiveTeamSheet(teams[currentIndex + 1].id);
+    const nextTeamWithoutScore = findNextTeamWithoutScore(currentIndex + 1);
+    
+    if (nextTeamWithoutScore) {
+      // There's still a team without a score, navigate to it
+      setActiveTeamSheet(nextTeamWithoutScore);
     } else {
+      // All teams have scores - close sheet and advance to next hole
       setActiveTeamSheet(null);
-      // Auto-advance to next hole if not the last hole
       if (game && currentHole < game.holes_played) {
         setCurrentHoleIndex(currentHoleIndex + 1);
         loadHoleData(currentHole + 1);
