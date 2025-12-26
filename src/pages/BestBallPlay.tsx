@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -189,11 +189,21 @@ export default function BestBallPlay() {
   const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);
   const [shouldSaveOnComplete, setShouldSaveOnComplete] = useState(false);
   
+  // Use a ref to track latest scores for the advance logic (avoids stale state)
+  const scoresRef = useRef<BestBallScores>({ teamA: {}, teamB: {} });
+  
   const config = createBestBallConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
   
   const { game, holes, courseHoles, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
   const { setScores, saveHole, navigateHole, deleteGame } = actions;
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    if (scores) {
+      scoresRef.current = scores;
+    }
+  }, [scores]);
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -201,9 +211,12 @@ export default function BestBallPlay() {
   const handleScoreSelect = (team: 'A' | 'B', playerId: string, score: number | null) => {
     if (score === null) return;
     
+    // Update ref immediately for the advance logic
     if (team === 'A') {
+      scoresRef.current = { ...scoresRef.current, teamA: { ...scoresRef.current.teamA, [playerId]: score } };
       setScores(prev => ({ ...prev, teamA: { ...prev.teamA, [playerId]: score } }));
     } else {
+      scoresRef.current = { ...scoresRef.current, teamB: { ...scoresRef.current.teamB, [playerId]: score } };
       setScores(prev => ({ ...prev, teamB: { ...prev.teamB, [playerId]: score } }));
     }
   };
@@ -211,6 +224,8 @@ export default function BestBallPlay() {
   const advanceToNextPlayerSheet = (team: 'A' | 'B', playerId: string) => {
     if (!game) return;
 
+    const latestScores = scoresRef.current;
+    
     const allPlayers = [
       ...game.team_a_players.map(p => ({ ...p, team: 'A' as const })),
       ...game.team_b_players.map(p => ({ ...p, team: 'B' as const })),
@@ -222,14 +237,24 @@ export default function BestBallPlay() {
       return;
     }
 
-    if (currentIndex < allPlayers.length - 1) {
-      const nextPlayer = allPlayers[currentIndex + 1];
-      setActivePlayerSheet({ team: nextPlayer.team, playerId: nextPlayer.odId });
-    } else {
-      // Mark that we should save when all scores are complete
-      setShouldSaveOnComplete(true);
-      setActivePlayerSheet(null);
+    // Find the next player without a score, starting from the next player in the list
+    for (let i = 1; i < allPlayers.length; i++) {
+      const checkIndex = (currentIndex + i) % allPlayers.length;
+      const player = allPlayers[checkIndex];
+      const playerScore = player.team === 'A' 
+        ? latestScores.teamA[player.odId]
+        : latestScores.teamB[player.odId];
+      
+      // Score is missing if null or undefined
+      if (playerScore === null || playerScore === undefined) {
+        setActivePlayerSheet({ team: player.team, playerId: player.odId });
+        return;
+      }
     }
+
+    // All players have scores - close sheet and save/advance
+    setActivePlayerSheet(null);
+    setShouldSaveOnComplete(true);
   };
 
   // Effect to save hole after the last player's score has been set in state
