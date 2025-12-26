@@ -147,6 +147,18 @@ export default function BestBallLeaderboard() {
     return hole?.hole_result || 0;
   };
 
+  const getPlayerScoresForHole = (holeNumber: number, team: 'A' | 'B'): BestBallPlayerScore[] => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return [];
+    return team === 'A' ? (hole.team_a_scores || []) : (hole.team_b_scores || []);
+  };
+
+  const getLowestScore = (scores: BestBallPlayerScore[]): number | null => {
+    const validScores = scores.filter(s => s.grossScore !== null).map(s => s.grossScore as number);
+    if (validScores.length === 0) return null;
+    return Math.min(...validScores);
+  };
+
   // Get the match status after a specific hole (running total)
   const getMatchStatusAfterHole = (holeNumber: number): { text: string; leadingTeam: 'A' | 'B' | null } => {
     const hole = holesMap.get(holeNumber);
@@ -233,6 +245,42 @@ export default function BestBallLeaderboard() {
                         {frontNinePar}
                       </TableCell>
                     </TableRow>
+                    {/* Player Score Rows */}
+                    {(team === 'A' ? game.team_a_players : game.team_b_players).map((player, playerIndex) => {
+                      const playerTotals = frontNine.reduce((sum, h) => {
+                        const scores = getPlayerScoresForHole(h.hole_number, team);
+                        const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                        return sum + (playerScore?.grossScore || 0);
+                      }, 0);
+                      
+                      return (
+                        <TableRow key={player.odId || playerIndex} className="text-muted-foreground">
+                          <TableCell className="text-xs px-1 py-1 sticky left-0 bg-background z-10 truncate max-w-[50px]">
+                            {player.displayName.split(' ')[0]}
+                          </TableCell>
+                          {frontNine.map(hole => {
+                            const scores = getPlayerScoresForHole(hole.hole_number, team);
+                            const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                            const lowestScore = getLowestScore(scores);
+                            const isLowest = playerScore?.grossScore !== null && playerScore?.grossScore === lowestScore;
+                            
+                            return (
+                              <TableCell 
+                                key={hole.hole_number} 
+                                className={`text-center text-xs px-1 py-1 ${
+                                  isLowest ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold' : ''
+                                }`}
+                              >
+                                {playerScore?.grossScore || ''}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center text-xs px-1 py-1 bg-muted">
+                            {playerTotals || ''}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                     <TableRow className="font-bold">
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                       {frontNine.map(hole => {
@@ -287,6 +335,42 @@ export default function BestBallLeaderboard() {
                           {backNinePar}
                         </TableCell>
                       </TableRow>
+                      {/* Player Score Rows */}
+                      {(team === 'A' ? game.team_a_players : game.team_b_players).map((player, playerIndex) => {
+                        const playerTotals = backNine.reduce((sum, h) => {
+                          const scores = getPlayerScoresForHole(h.hole_number, team);
+                          const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                          return sum + (playerScore?.grossScore || 0);
+                        }, 0);
+                        
+                        return (
+                          <TableRow key={player.odId || playerIndex} className="text-muted-foreground">
+                            <TableCell className="text-xs px-1 py-1 sticky left-0 bg-background z-10 truncate max-w-[50px]">
+                              {player.displayName.split(' ')[0]}
+                            </TableCell>
+                            {backNine.map(hole => {
+                              const scores = getPlayerScoresForHole(hole.hole_number, team);
+                              const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                              const lowestScore = getLowestScore(scores);
+                              const isLowest = playerScore?.grossScore !== null && playerScore?.grossScore === lowestScore;
+                              
+                              return (
+                                <TableCell 
+                                  key={hole.hole_number} 
+                                  className={`text-center text-xs px-1 py-1 ${
+                                    isLowest ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold' : ''
+                                  }`}
+                                >
+                                  {playerScore?.grossScore || ''}
+                                </TableCell>
+                              );
+                            })}
+                            <TableCell className="text-center text-xs px-1 py-1 bg-muted">
+                              {playerTotals || ''}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                       <TableRow className="font-bold">
                         <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                         {backNine.map(hole => {
