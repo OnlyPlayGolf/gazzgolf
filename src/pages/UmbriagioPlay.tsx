@@ -296,10 +296,26 @@ export default function UmbriagioPlay() {
     }
   };
 
-  // Handle saving from More sheet (no mulligans in Umbriago, just comments placeholder)
-  const handleSaveMore = () => {
-    // Comments could be saved to a local state or database if needed
-    // For now, just close the sheet
+  // Handle saving from More sheet (no mulligans in Umbriago, just comments)
+  const handleSaveMore = async () => {
+    // Save comment to database if there's content
+    if (currentComment.trim() && gameId) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("round_comments").insert({
+            round_id: gameId,
+            game_id: gameId,
+            user_id: user.id,
+            content: currentComment.trim(),
+            game_type: "umbriago",
+            hole_number: currentHole,
+          });
+        }
+      } catch (error) {
+        console.error("Error saving comment:", error);
+      }
+    }
     setShowMoreSheet(false);
   };
 
