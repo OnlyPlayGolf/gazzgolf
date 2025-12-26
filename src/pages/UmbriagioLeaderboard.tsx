@@ -191,9 +191,9 @@ export default function UmbriagioLeaderboard() {
     const playerTeam = getPlayerTeamForHole(holeNumber, playerId);
     if (!playerTeam) return null;
 
-    // Points are split between the two team members
+    // Each player gets the full team points (not split)
     const teamPoints = playerTeam === 'A' ? hole.team_a_hole_points : hole.team_b_hole_points;
-    return teamPoints / 2; // Each player gets half the team's points
+    return teamPoints;
   };
 
   // Calculate total stats for a player including points
