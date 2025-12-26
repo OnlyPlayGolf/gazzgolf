@@ -147,6 +147,16 @@ export default function BestBallLeaderboard() {
     return hole?.hole_result || 0;
   };
 
+  // Get the match status after a specific hole (running total)
+  const getMatchStatusAfterHole = (holeNumber: number): string => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return '';
+    const status = hole.match_status_after;
+    if (status === 0) return 'AS';
+    if (status > 0) return `${game.team_a_name.charAt(0)}`;
+    return `${game.team_b_name.charAt(0)}`;
+  };
+
   const renderTeamScorecard = (team: 'A' | 'B', position: number, isTied: boolean) => {
     if (courseHoles.length === 0) return null;
 
@@ -334,7 +344,6 @@ export default function BestBallLeaderboard() {
                     {hole.hole_number}
                   </TableHead>
                 ))}
-                <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -345,9 +354,6 @@ export default function BestBallLeaderboard() {
                     {hole.par}
                   </TableCell>
                 ))}
-                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                  {frontNine.reduce((sum, h) => sum + h.par, 0)}
-                </TableCell>
               </TableRow>
               {/* Team A Row */}
               <TableRow className="font-bold">
@@ -372,9 +378,18 @@ export default function BestBallLeaderboard() {
                     </TableCell>
                   );
                 })}
-                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                  {frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0) || ''}
-                </TableCell>
+              </TableRow>
+              {/* Match Status Row */}
+              <TableRow className="bg-muted/50">
+                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Status</TableCell>
+                {frontNine.map(hole => {
+                  const status = getMatchStatusAfterHole(hole.hole_number);
+                  return (
+                    <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1">
+                      {status}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
               {/* Team B Row */}
               <TableRow className="font-bold">
@@ -399,9 +414,6 @@ export default function BestBallLeaderboard() {
                     </TableCell>
                   );
                 })}
-                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                  {frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0) || ''}
-                </TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -419,7 +431,6 @@ export default function BestBallLeaderboard() {
                       {hole.hole_number}
                     </TableHead>
                   ))}
-                  <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -430,9 +441,6 @@ export default function BestBallLeaderboard() {
                       {hole.par}
                     </TableCell>
                   ))}
-                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                    {backNine.reduce((sum, h) => sum + h.par, 0)}
-                  </TableCell>
                 </TableRow>
                 {/* Team A Row */}
                 <TableRow className="font-bold">
@@ -457,9 +465,18 @@ export default function BestBallLeaderboard() {
                       </TableCell>
                     );
                   })}
-                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                    {backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0) || ''}
-                  </TableCell>
+                </TableRow>
+                {/* Match Status Row */}
+                <TableRow className="bg-muted/50">
+                  <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Status</TableCell>
+                  {backNine.map(hole => {
+                    const status = getMatchStatusAfterHole(hole.hole_number);
+                    return (
+                      <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1">
+                        {status}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
                 {/* Team B Row */}
                 <TableRow className="font-bold">
@@ -484,9 +501,6 @@ export default function BestBallLeaderboard() {
                       </TableCell>
                     );
                   })}
-                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                    {backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0) || ''}
-                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
