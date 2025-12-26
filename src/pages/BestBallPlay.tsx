@@ -66,6 +66,19 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
   getCourseId: (game) => game.course_id || null,
   getSummaryRoute: (id) => `/best-ball/${id}/summary`,
   
+  // Only save on navigate if all players have scores
+  shouldSaveOnNavigate: (game, scores) => {
+    const teamAComplete = game.team_a_players.every(p => {
+      const score = scores.teamA[p.odId];
+      return score !== null && score !== undefined;
+    });
+    const teamBComplete = game.team_b_players.every(p => {
+      const score = scores.teamB[p.odId];
+      return score !== null && score !== undefined;
+    });
+    return teamAComplete && teamBComplete;
+  },
+  
   createEmptyScores: (game) => {
     const teamA: Record<string, number | null> = {};
     const teamB: Record<string, number | null> = {};
@@ -174,6 +187,7 @@ export default function BestBallPlay() {
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);
+  const [shouldSaveOnComplete, setShouldSaveOnComplete] = useState(false);
   
   const config = createBestBallConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -212,10 +226,30 @@ export default function BestBallPlay() {
       const nextPlayer = allPlayers[currentIndex + 1];
       setActivePlayerSheet({ team: nextPlayer.team, playerId: nextPlayer.odId });
     } else {
+      // Mark that we should save when all scores are complete
+      setShouldSaveOnComplete(true);
       setActivePlayerSheet(null);
-      saveHole();
     }
   };
+
+  // Effect to save hole after the last player's score has been set in state
+  useEffect(() => {
+    if (shouldSaveOnComplete && game) {
+      // Check if all players now have scores before saving
+      const allHaveScores = game.team_a_players.every((p) => {
+        const score = scores?.teamA?.[p.odId];
+        return score !== null && score !== undefined;
+      }) && game.team_b_players.every((p) => {
+        const score = scores?.teamB?.[p.odId];
+        return score !== null && score !== undefined;
+      });
+      
+      if (allHaveScores) {
+        setShouldSaveOnComplete(false);
+        saveHole();
+      }
+    }
+  }, [shouldSaveOnComplete, scores, game, saveHole]);
 
   // Calculate current best balls for display
   const getCurrentBestBalls = () => {

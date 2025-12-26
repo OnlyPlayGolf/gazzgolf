@@ -60,6 +60,9 @@ export interface GameScoringConfig<TGame, THole, TScores> {
   // Check if game is finished
   isGameFinished?: (game: TGame, holeNumber: number, totalHoles: number, newHoleData: Record<string, any>) => boolean;
   
+  // Check if current hole should be saved when navigating away (optional - defaults to true if hole exists)
+  shouldSaveOnNavigate?: (game: TGame, scores: TScores) => boolean;
+  
   // Get total holes from game
   getTotalHoles: (game: TGame) => number;
   
@@ -317,8 +320,12 @@ export function useGameScoring<TGame, THole, TScores>(
     // Check if current hole exists (was already saved before) - if so, save any changes
     const existingHole = holes.find(h => cfg.getHoleNumber(h) === currentHole);
     if (existingHole) {
-      // Save the current hole before navigating to preserve any changes
-      await saveHole();
+      // Check if we should save on navigate (defaults to true)
+      const shouldSave = cfg.shouldSaveOnNavigate ? cfg.shouldSaveOnNavigate(game, scores) : true;
+      if (shouldSave) {
+        // Save the current hole before navigating to preserve any changes
+        await saveHole();
+      }
     }
     
     if (direction === "prev" && currentHoleIndex > 0) {
