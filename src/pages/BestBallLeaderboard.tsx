@@ -141,6 +141,139 @@ export default function BestBallLeaderboard() {
     return hole?.hole_result || 0;
   };
 
+  const renderTeamScorecard = (team: 'A' | 'B') => {
+    if (courseHoles.length === 0) return null;
+
+    const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
+    const teamColor = team === 'A' ? 'bg-blue-500' : 'bg-red-500';
+    const teamTotal = team === 'A' ? game.team_a_total : game.team_b_total;
+
+    const frontNineTotal = frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, team) || 0), 0);
+    const backNineTotal = backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, team) || 0), 0);
+    const frontNinePar = frontNine.reduce((sum, h) => sum + h.par, 0);
+    const backNinePar = backNine.reduce((sum, h) => sum + h.par, 0);
+
+    return (
+      <Card className="overflow-hidden">
+        <div className="bg-card border-b border-border p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${teamColor}`} />
+              <span className="text-lg font-bold">{teamName}</span>
+            </div>
+            <div className="text-lg font-bold">
+              Total: {teamTotal}
+            </div>
+          </div>
+        </div>
+
+        {/* Front 9 */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-primary/5">
+                <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10 w-[40px]">Hole</TableHead>
+                {frontNine.map(hole => (
+                  <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[28px]">
+                    {hole.hole_number}
+                  </TableHead>
+                ))}
+                <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                {frontNine.map(hole => (
+                  <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                    {hole.par}
+                  </TableCell>
+                ))}
+                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                  {frontNinePar}
+                </TableCell>
+              </TableRow>
+              <TableRow className="font-bold">
+                <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                {frontNine.map(hole => {
+                  const score = getTeamBestScore(hole.hole_number, team);
+                  const result = getHoleResult(hole.hole_number);
+                  const won = (team === 'A' && result === 1) || (team === 'B' && result === -1);
+                  return (
+                    <TableCell 
+                      key={hole.hole_number} 
+                      className={`text-center font-bold text-xs px-1 py-1.5 ${
+                        won ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : ''
+                      }`}
+                    >
+                      {score || ''}
+                    </TableCell>
+                  );
+                })}
+                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                  {frontNineTotal || ''}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Back 9 */}
+        {backNine.length > 0 && (
+          <div className="border-t">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-primary/5">
+                  <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10 w-[40px]">Hole</TableHead>
+                  {backNine.map(hole => (
+                    <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[28px]">
+                      {hole.hole_number}
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                  {backNine.map(hole => (
+                    <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                      {hole.par}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                    {backNinePar}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="font-bold">
+                  <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                  {backNine.map(hole => {
+                    const score = getTeamBestScore(hole.hole_number, team);
+                    const result = getHoleResult(hole.hole_number);
+                    const won = (team === 'A' && result === 1) || (team === 'B' && result === -1);
+                    return (
+                      <TableCell 
+                        key={hole.hole_number} 
+                        className={`text-center font-bold text-xs px-1 py-1.5 ${
+                          won ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : ''
+                        }`}
+                      >
+                        {score || ''}
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                    {backNineTotal || ''}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
+    );
+  };
+
   const renderCombinedScorecard = () => {
     if (courseHoles.length === 0) return null;
 
@@ -166,6 +299,7 @@ export default function BestBallLeaderboard() {
                     {hole.hole_number}
                   </TableHead>
                 ))}
+                <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -176,6 +310,9 @@ export default function BestBallLeaderboard() {
                     {hole.par}
                   </TableCell>
                 ))}
+                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                  {frontNine.reduce((sum, h) => sum + h.par, 0)}
+                </TableCell>
               </TableRow>
               {/* Team A Row */}
               <TableRow className="font-bold">
@@ -200,6 +337,9 @@ export default function BestBallLeaderboard() {
                     </TableCell>
                   );
                 })}
+                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                  {frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0) || ''}
+                </TableCell>
               </TableRow>
               {/* Team B Row */}
               <TableRow className="font-bold">
@@ -224,6 +364,9 @@ export default function BestBallLeaderboard() {
                     </TableCell>
                   );
                 })}
+                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                  {frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0) || ''}
+                </TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -232,32 +375,36 @@ export default function BestBallLeaderboard() {
         {/* Back 9 */}
         {backNine.length > 0 && (
           <div className="border-t">
-            <Table className="table-fixed w-full">
+            <Table>
               <TableHeader>
                 <TableRow className="bg-primary/5">
-                  <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 w-[40px] bg-primary/5">Hole</TableHead>
+                  <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
                   {backNine.map(hole => (
-                    <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 w-[24px]">
+                    <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[28px]">
                       {hole.hole_number}
                     </TableHead>
                   ))}
+                  <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
+                  <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
                   {backNine.map(hole => (
-                    <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                    <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
                       {hole.par}
                     </TableCell>
                   ))}
+                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                    {backNine.reduce((sum, h) => sum + h.par, 0)}
+                  </TableCell>
                 </TableRow>
                 {/* Team A Row */}
                 <TableRow className="font-bold">
-                  <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">
-                    <div className="flex items-center gap-0.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0" />
-                      <span className="truncate">{game.team_a_name}</span>
+                  <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="truncate max-w-[60px]">{game.team_a_name}</span>
                     </div>
                   </TableCell>
                   {backNine.map(hole => {
@@ -267,7 +414,7 @@ export default function BestBallLeaderboard() {
                     return (
                       <TableCell 
                         key={hole.hole_number} 
-                        className={`text-center font-bold text-[10px] px-0 py-1 ${
+                        className={`text-center font-bold text-xs px-1 py-1.5 ${
                           won ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : ''
                         }`}
                       >
@@ -275,13 +422,16 @@ export default function BestBallLeaderboard() {
                       </TableCell>
                     );
                   })}
+                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                    {backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0) || ''}
+                  </TableCell>
                 </TableRow>
                 {/* Team B Row */}
                 <TableRow className="font-bold">
-                  <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">
-                    <div className="flex items-center gap-0.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                      <span className="truncate">{game.team_b_name}</span>
+                  <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      <span className="truncate max-w-[60px]">{game.team_b_name}</span>
                     </div>
                   </TableCell>
                   {backNine.map(hole => {
@@ -291,7 +441,7 @@ export default function BestBallLeaderboard() {
                     return (
                       <TableCell 
                         key={hole.hole_number} 
-                        className={`text-center font-bold text-[10px] px-0 py-1 ${
+                        className={`text-center font-bold text-xs px-1 py-1.5 ${
                           won ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : ''
                         }`}
                       >
@@ -299,6 +449,9 @@ export default function BestBallLeaderboard() {
                       </TableCell>
                     );
                   })}
+                  <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                    {backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0) || ''}
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -330,7 +483,14 @@ export default function BestBallLeaderboard() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {renderCombinedScorecard()}
+        {isMatchPlay ? (
+          renderCombinedScorecard()
+        ) : (
+          <>
+            {renderTeamScorecard('A')}
+            {renderTeamScorecard('B')}
+          </>
+        )}
       </div>
 
       {gameId && <BestBallBottomTabBar gameId={gameId} />}
