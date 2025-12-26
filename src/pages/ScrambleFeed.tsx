@@ -3,16 +3,19 @@ import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { Send } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 interface Comment {
   id: string;
   content: string;
   created_at: string;
   user_id: string;
+  hole_number: number | null;
   profile?: {
     display_name: string | null;
     username: string | null;
@@ -42,10 +45,10 @@ export default function ScrambleFeed() {
   const fetchComments = async () => {
     const { data } = await supabase
       .from('round_comments')
-      .select('*')
+      .select('*, hole_number')
       .eq('game_id', gameId)
       .eq('game_type', 'scramble')
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (data) {
       // Fetch profiles for comments
@@ -131,13 +134,20 @@ export default function ScrambleFeed() {
                       {(comment.profile?.display_name || comment.profile?.username || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-sm">
-                        {comment.profile?.display_name || comment.profile?.username || 'Unknown'}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-sm">
+                          {comment.profile?.display_name || comment.profile?.username || 'Unknown'}
+                        </p>
+                        {comment.hole_number && (
+                          <Badge variant="secondary" className="text-xs">
+                            Hole {comment.hole_number}
+                          </Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
                       <p className="text-sm mt-1">{comment.content}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(comment.created_at).toLocaleString()}
-                      </p>
                     </div>
                   </div>
                 </CardContent>
