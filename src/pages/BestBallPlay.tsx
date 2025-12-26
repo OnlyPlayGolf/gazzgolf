@@ -431,7 +431,7 @@ export default function BestBallPlay() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-blue-600">{game.team_a_name}</h3>
-            {getTeamScoreToPar('A') !== null && (
+            {game.game_type === 'stroke' && getTeamScoreToPar('A') !== null && (
               <span className="text-sm font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded">
                 {getTeamScoreToPar('A')}
               </span>
@@ -448,7 +448,7 @@ export default function BestBallPlay() {
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-red-600">{game.team_b_name}</h3>
-            {getTeamScoreToPar('B') !== null && (
+            {game.game_type === 'stroke' && getTeamScoreToPar('B') !== null && (
               <span className="text-sm font-medium bg-red-100 text-red-700 px-2 py-1 rounded">
                 {getTeamScoreToPar('B')}
               </span>
