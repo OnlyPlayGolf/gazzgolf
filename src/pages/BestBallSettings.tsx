@@ -211,16 +211,20 @@ export default function BestBallSettings() {
                     .update({ mulligans_per_player: mulligans })
                     .eq("id", gameId);
                   setGame({ ...game, mulligans_per_player: mulligans } as any);
-                  toast({ title: `Mulligans set to ${mulligans}` });
+                  toast({ title: mulligans === 0 ? "Mulligans disabled" : mulligans === 9 ? "1 mulligan per 9 holes" : `Mulligans set to ${mulligans}` });
                 }}
               >
-                <SelectTrigger className="w-20">
+                <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[0, 1, 2, 3, 4, 5].map(n => (
-                    <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                  ))}
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
                 </SelectContent>
               </Select>
             </div>
