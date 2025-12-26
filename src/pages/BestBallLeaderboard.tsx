@@ -148,14 +148,15 @@ export default function BestBallLeaderboard() {
   };
 
   // Get the match status after a specific hole (running total)
-  const getMatchStatusAfterHole = (holeNumber: number): string => {
+  const getMatchStatusAfterHole = (holeNumber: number): { text: string; leadingTeam: 'A' | 'B' | null } => {
     const hole = holesMap.get(holeNumber);
-    if (!hole) return '';
+    if (!hole) return { text: '', leadingTeam: null };
     const status = hole.match_status_after;
-    if (status === 0) return 'AS';
+    if (status === 0) return { text: 'AS', leadingTeam: null };
     // Show "1UP", "2UP" etc. format
     const upBy = Math.abs(status);
-    return `${upBy}UP`;
+    const leadingTeam = status > 0 ? 'A' : 'B';
+    return { text: `${upBy}UP`, leadingTeam };
   };
 
   const renderTeamScorecard = (team: 'A' | 'B', position: number, isTied: boolean) => {
@@ -382,12 +383,18 @@ export default function BestBallLeaderboard() {
               </TableRow>
               {/* Match Status Row */}
               <TableRow className="bg-muted/50">
-                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Status</TableCell>
+                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Score</TableCell>
                 {frontNine.map(hole => {
-                  const status = getMatchStatusAfterHole(hole.hole_number);
+                  const { text, leadingTeam } = getMatchStatusAfterHole(hole.hole_number);
                   return (
-                    <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1">
-                      {status}
+                    <TableCell 
+                      key={hole.hole_number} 
+                      className={`text-center font-bold text-xs px-1 py-1 ${
+                        leadingTeam === 'A' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                        leadingTeam === 'B' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : ''
+                      }`}
+                    >
+                      {text}
                     </TableCell>
                   );
                 })}
@@ -469,12 +476,18 @@ export default function BestBallLeaderboard() {
                 </TableRow>
                 {/* Match Status Row */}
                 <TableRow className="bg-muted/50">
-                  <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Status</TableCell>
+                  <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Score</TableCell>
                   {backNine.map(hole => {
-                    const status = getMatchStatusAfterHole(hole.hole_number);
+                    const { text, leadingTeam } = getMatchStatusAfterHole(hole.hole_number);
                     return (
-                      <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1">
-                        {status}
+                      <TableCell 
+                        key={hole.hole_number} 
+                        className={`text-center font-bold text-xs px-1 py-1 ${
+                          leadingTeam === 'A' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                          leadingTeam === 'B' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : ''
+                        }`}
+                      >
+                        {text}
                       </TableCell>
                     );
                   })}
