@@ -5,9 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
+import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import {
   calculateBestBall,
   calculateHoleResult,
@@ -189,6 +191,15 @@ export default function BestBallPlay() {
   const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);
   const [shouldSaveOnComplete, setShouldSaveOnComplete] = useState(false);
   
+  // More sheet state
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [currentComment, setCurrentComment] = useState("");
+  const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
+  
+  // Mulligan tracking: Map<playerId, Set<holeNumber>>
+  const [mulligansUsed, setMulligansUsed] = useState<Map<string, Set<number>>>(new Map());
+  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
+  
   // Use a ref to track latest scores for the advance logic (avoids stale state)
   const scoresRef = useRef<BestBallScores>({ teamA: {}, teamB: {} });
   
@@ -204,6 +215,28 @@ export default function BestBallPlay() {
       scoresRef.current = scores;
     }
   }, [scores]);
+  
+  // Load mulligans setting from session/local storage
+  useEffect(() => {
+    if (gameId) {
+      const savedSettings = localStorage.getItem(`bestBallSettings_${gameId}`);
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+      } else {
+        // Check session storage for new games
+        const sessionSettings = sessionStorage.getItem('bestBallSettings');
+        if (sessionSettings) {
+          const settings = JSON.parse(sessionSettings);
+          setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
+          // Persist to local storage
+          localStorage.setItem(`bestBallSettings_${gameId}`, JSON.stringify({
+            mulligansPerPlayer: settings.mulligansPerPlayer || 0
+          }));
+        }
+      }
+    }
+  }, [gameId]);
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -327,6 +360,84 @@ export default function BestBallPlay() {
     const scoreToPar = teamTotal - parForPlayedHoles;
     if (scoreToPar === 0) return 'E';
     return scoreToPar > 0 ? `+${scoreToPar}` : scoreToPar.toString();
+  };
+
+  // Mulligan helpers
+  const getPlayerMulligansUsed = (playerId: string): number => {
+    return mulligansUsed.get(playerId)?.size || 0;
+  };
+
+  const hasPlayerUsedMulliganOnHole = (playerId: string, holeNumber: number): boolean => {
+    return mulligansUsed.get(playerId)?.has(holeNumber) || false;
+  };
+
+  const useMulliganOnHole = (playerId: string, holeNumber: number) => {
+    setMulligansUsed(prev => {
+      const updated = new Map(prev);
+      const playerMulligans = new Set(prev.get(playerId) || []);
+      playerMulligans.add(holeNumber);
+      updated.set(playerId, playerMulligans);
+      return updated;
+    });
+    setMulliganJustAdded(true);
+  };
+
+  const removeMulliganFromHole = (playerId: string, holeNumber: number) => {
+    setMulligansUsed(prev => {
+      const updated = new Map(prev);
+      const playerMulligans = new Set(prev.get(playerId) || []);
+      playerMulligans.delete(holeNumber);
+      updated.set(playerId, playerMulligans);
+      return updated;
+    });
+  };
+
+  // More sheet handlers
+  const handleOpenMoreSheet = () => {
+    if (activePlayerSheet) {
+      setCurrentComment("");
+      setMulliganJustAdded(false);
+      setShowMoreSheet(true);
+    }
+  };
+
+  const handleSaveMore = async () => {
+    if (!activePlayerSheet || !gameId) return;
+    
+    const hasComment = currentComment.trim().length > 0;
+    const hasMulligan = mulliganJustAdded;
+    
+    if (hasComment || hasMulligan) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const playerName = activePlayerSheet.team === 'A'
+            ? game?.team_a_players.find(p => p.odId === activePlayerSheet.playerId)?.displayName || 'Player'
+            : game?.team_b_players.find(p => p.odId === activePlayerSheet.playerId)?.displayName || 'Player';
+          
+          let content = "";
+          if (hasMulligan && hasComment) {
+            content = `🔄 ${playerName} used a mulligan on hole ${currentHole}: "${currentComment.trim()}"`;
+          } else if (hasMulligan) {
+            content = `🔄 ${playerName} used a mulligan on hole ${currentHole}`;
+          } else {
+            content = currentComment.trim();
+          }
+          
+          await supabase.from("round_comments").insert({
+            round_id: gameId,
+            user_id: user.id,
+            content,
+            hole_number: currentHole,
+            game_type: "best_ball",
+          });
+        }
+      } catch (error) {
+        console.error("Error saving to feed:", error);
+      }
+    }
+    
+    setMulliganJustAdded(false);
   };
 
   const bestBalls = getCurrentBestBalls();
@@ -507,6 +618,7 @@ export default function BestBallPlay() {
             holeNumber={currentHole}
             currentScore={scores?.teamA?.[player.odId] ?? null}
             onScoreSelect={(score) => handleScoreSelect('A', player.odId, score)}
+            onMore={handleOpenMoreSheet}
             onEnterAndNext={() => advanceToNextPlayerSheet('A', player.odId)}
           />
         ))}
@@ -521,9 +633,33 @@ export default function BestBallPlay() {
             holeNumber={currentHole}
             currentScore={scores?.teamB?.[player.odId] ?? null}
             onScoreSelect={(score) => handleScoreSelect('B', player.odId, score)}
+            onMore={handleOpenMoreSheet}
             onEnterAndNext={() => advanceToNextPlayerSheet('B', player.odId)}
           />
         ))}
+
+        {/* Score More Sheet */}
+        {activePlayerSheet && (
+          <ScoreMoreSheet
+            open={showMoreSheet}
+            onOpenChange={setShowMoreSheet}
+            holeNumber={currentHole}
+            par={par}
+            playerName={
+              activePlayerSheet.team === 'A'
+                ? game.team_a_players.find(p => p.odId === activePlayerSheet.playerId)?.displayName || 'Player'
+                : game.team_b_players.find(p => p.odId === activePlayerSheet.playerId)?.displayName || 'Player'
+            }
+            comment={currentComment}
+            onCommentChange={setCurrentComment}
+            mulligansAllowed={mulligansPerPlayer}
+            mulligansUsed={getPlayerMulligansUsed(activePlayerSheet.playerId)}
+            mulliganUsedOnThisHole={hasPlayerUsedMulliganOnHole(activePlayerSheet.playerId, currentHole)}
+            onUseMulligan={() => useMulliganOnHole(activePlayerSheet.playerId, currentHole)}
+            onRemoveMulligan={() => removeMulliganFromHole(activePlayerSheet.playerId, currentHole)}
+            onSave={handleSaveMore}
+          />
+        )}
 
       </div>
 
