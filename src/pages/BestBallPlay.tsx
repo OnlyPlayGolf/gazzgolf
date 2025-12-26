@@ -90,8 +90,8 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
     ): BestBallPlayerScore[] => {
       return players.map(player => {
         const rawScore = scoresMap[player.odId];
-        // Only use the score if it was actually entered (not null and not 0)
-        const grossScore = rawScore && rawScore > 0 ? rawScore : null;
+        // Only use the score if it was actually entered (not null)
+        const grossScore = rawScore !== null && rawScore !== undefined ? rawScore : null;
         const handicapStrokes = useHandicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
         const netScore = grossScore !== null ? grossScore - handicapStrokes : null;
         return {
@@ -227,8 +227,8 @@ export default function BestBallPlay() {
     ): BestBallPlayerScore[] => {
       return players.map((player) => {
         const grossFromMap = scoresMap?.[player.odId];
-        // Only use the score if actually entered (not null and > 0)
-        const grossScore = grossFromMap && grossFromMap > 0 ? grossFromMap : null;
+        // Only use the score if actually entered (not null)
+        const grossScore = grossFromMap !== null && grossFromMap !== undefined ? grossFromMap : null;
         const handicapStrokes = game.use_handicaps
           ? calculateHandicapStrokes(player.handicap, strokeIndex)
           : 0;
@@ -297,7 +297,7 @@ export default function BestBallPlay() {
     countingPlayer: string | null
   ) => {
     const score = scoresMap[player.odId];
-    const hasScore = score !== undefined && score !== null && score > 0;
+    const hasScore = score !== undefined && score !== null;
     const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
     
     return (
@@ -317,7 +317,7 @@ export default function BestBallPlay() {
           </div>
           <div className="text-center">
             <div className={`text-2xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>
-              {hasScore ? score : '-'}
+              {hasScore ? score : 0}
             </div>
             <div className="text-xs text-muted-foreground">Strokes</div>
           </div>
@@ -329,11 +329,11 @@ export default function BestBallPlay() {
   const allPlayersHaveScores = () => {
     const teamAHasScores = game.team_a_players.every((p) => {
       const score = scores?.teamA?.[p.odId];
-      return score !== null && score !== undefined && score > 0;
+      return score !== null && score !== undefined;
     });
     const teamBHasScores = game.team_b_players.every((p) => {
       const score = scores?.teamB?.[p.odId];
-      return score !== null && score !== undefined && score > 0;
+      return score !== null && score !== undefined;
     });
     return teamAHasScores && teamBHasScores;
   };
