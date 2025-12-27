@@ -112,15 +112,6 @@ const createMatchPlayConfig = (gameId: string): GameScoringConfig<MatchPlayGame,
   },
 });
 
-interface EventGame {
-  id: string;
-  player_1: string;
-  player_2: string;
-  match_status: number;
-  holes_remaining: number;
-  is_finished: boolean;
-}
-
 export default function MatchPlayPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
@@ -131,7 +122,6 @@ export default function MatchPlayPlay() {
   const [showScoreSheet, setShowScoreSheet] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [currentComment, setCurrentComment] = useState("");
-  const [eventGames, setEventGames] = useState<EventGame[]>([]);
   
   const config = createMatchPlayConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -141,27 +131,6 @@ export default function MatchPlayPlay() {
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
-
-  // Fetch all games in the same event
-  useEffect(() => {
-    const fetchEventGames = async () => {
-      if (!game?.event_id) return;
-      
-      const { data } = await supabase
-        .from("match_play_games")
-        .select("id, player_1, player_2, match_status, holes_remaining, is_finished")
-        .eq("event_id", game.event_id)
-        .order("created_at");
-      
-      if (data) {
-        setEventGames(data);
-      }
-    };
-    
-    if (game) {
-      fetchEventGames();
-    }
-  }, [game?.event_id, game?.match_status]);
 
   // Calculate mulligans used by each player
   const mulligansPerPlayer = game?.mulligans_per_player || 0;
@@ -338,46 +307,6 @@ export default function MatchPlayPlay() {
           </div>
         </div>
       </div>
-
-      {/* All Groups Overview (if multiple games in event) */}
-      {eventGames.length > 1 && (
-        <div className="p-4 pt-2 max-w-2xl mx-auto">
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {eventGames.map((eg, idx) => {
-              const isCurrentGame = eg.id === gameId;
-              const statusText = eg.match_status === 0 
-                ? "AS" 
-                : eg.match_status > 0 
-                  ? `${eg.player_1.split(' ')[0]} ${eg.match_status}UP`
-                  : `${eg.player_2.split(' ')[0]} ${Math.abs(eg.match_status)}UP`;
-              
-              return (
-                <Card 
-                  key={eg.id}
-                  className={`p-2 min-w-[120px] cursor-pointer transition-colors ${
-                    isCurrentGame ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'
-                  }`}
-                  onClick={() => {
-                    if (!isCurrentGame) navigate(`/match-play/${eg.id}/play`);
-                  }}
-                >
-                  <div className="text-xs font-semibold text-center mb-1">
-                    Group {String.fromCharCode(65 + idx)}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground text-center truncate">
-                    {eg.player_1.split(' ')[0]} vs {eg.player_2.split(' ')[0]}
-                  </div>
-                  <div className={`text-xs font-bold text-center mt-1 ${
-                    eg.is_finished ? 'text-green-600' : 'text-primary'
-                  }`}>
-                    {eg.is_finished ? 'Finished' : statusText}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Score Entry */}
       <div className="p-4 max-w-2xl mx-auto space-y-4">

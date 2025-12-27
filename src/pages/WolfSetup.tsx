@@ -83,49 +83,21 @@ export default function WolfSetup() {
         isCurrentUser: true,
       };
       
-      // Load players from all groups (multi-group support)
-      const savedGroups = sessionStorage.getItem('playGroups');
+      // Load added players from sessionStorage
       const savedPlayers = sessionStorage.getItem('roundPlayers');
-
-      let playersFromStorage: Player[] = [];
-
-      if (savedGroups) {
-        const parsedGroups = JSON.parse(savedGroups);
-        // Collect players from ALL groups
-        for (const group of parsedGroups) {
-          if (Array.isArray(group?.players)) {
-            for (const p of group.players) {
-              playersFromStorage.push({
-                odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
-                displayName: p.displayName,
-                handicap: p.handicap,
-                teeColor: p.teeColor,
-                isTemporary: p.isTemporary || false,
-                isCurrentUser: (p.odId || p.userId) === user.id,
-              });
-            }
-          }
-        }
-      }
-
-      if (playersFromStorage.length === 0 && savedPlayers) {
+      let additionalPlayers: Player[] = [];
+      if (savedPlayers) {
         const parsed = JSON.parse(savedPlayers);
-        const additionalPlayers: Player[] = parsed.map((p: any) => ({
+        additionalPlayers = parsed.slice(0, 5).map((p: any) => ({
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,
           isTemporary: p.isTemporary || false,
           isCurrentUser: false,
         }));
-        playersFromStorage = [currentUserPlayer, ...additionalPlayers];
       }
-
-      if (!playersFromStorage.some(p => p.odId === user.id)) {
-        playersFromStorage = [currentUserPlayer, ...playersFromStorage];
-      }
-
-      setPlayers(playersFromStorage.map(p => ({ ...p, isCurrentUser: p.odId === user.id })));
-
+      
+      setPlayers([currentUserPlayer, ...additionalPlayers]);
       
       const savedCourse = sessionStorage.getItem('selectedCourse');
       

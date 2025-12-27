@@ -128,53 +128,21 @@ export default function UmbriagioSetup() {
         isCurrentUser: true,
       };
       
-      // Load players from all groups (multi-group support)
-      const savedGroups = sessionStorage.getItem('playGroups');
+      // Load added players from sessionStorage
       const savedPlayers = sessionStorage.getItem('roundPlayers');
-      
-      let allPlayersFromStorage: Player[] = [];
-      
-      if (savedGroups) {
-        const parsedGroups = JSON.parse(savedGroups);
-        // Collect players from ALL groups
-        for (const group of parsedGroups) {
-          if (Array.isArray(group?.players)) {
-            for (const p of group.players) {
-              allPlayersFromStorage.push({
-                odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
-                displayName: p.displayName,
-                handicap: p.handicap,
-                teeColor: p.teeColor,
-                isTemporary: p.isTemporary || false,
-                isCurrentUser: (p.odId || p.userId) === user.id,
-              });
-            }
-          }
-        }
-      } else if (savedPlayers) {
-        // Legacy format: roundPlayers (excludes current user)
+      let additionalPlayers: Player[] = [];
+      if (savedPlayers) {
         const parsed = JSON.parse(savedPlayers);
-        const additionalPlayers = parsed.map((p: any) => ({
+        additionalPlayers = parsed.slice(0, 3).map((p: any) => ({
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,
           isTemporary: p.isTemporary || false,
           isCurrentUser: false,
         }));
-        allPlayersFromStorage = [currentUserPlayer, ...additionalPlayers];
       }
       
-      // If we got players from storage, use them; otherwise just the current user
-      if (allPlayersFromStorage.length > 0) {
-        // Ensure current user is marked correctly
-        const playersWithCurrentUser = allPlayersFromStorage.map(p => ({
-          ...p,
-          isCurrentUser: p.odId === user.id,
-        }));
-        setPlayers(playersWithCurrentUser);
-      } else {
-        setPlayers([currentUserPlayer]);
-      }
+      setPlayers([currentUserPlayer, ...additionalPlayers]);
       
       const savedCourse = sessionStorage.getItem('selectedCourse');
       

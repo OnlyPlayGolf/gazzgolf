@@ -590,66 +590,57 @@ export default function RoundsPlay() {
 
   const getAllPlayerIds = () => setupState.groups.flatMap(g => g.players.map(p => p.odId));
 
-  // Validation for player requirements per game format (validates per group, not total)
+  // Validation for player requirements per game format
   const getPlayerValidationError = (): string | null => {
+    const totalPlayers = getTotalPlayers();
     const format = setupState.gameFormat;
-    const groups = setupState.groups;
 
-    // Requirements per group for each game format
-    // match_play: allow 2 or 4 players (1v1 or 2v2)
-    const requirements: Record<string, { min: number; max: number; exact?: number; allowed?: number[] }> = {
-      stroke_play: { min: 1, max: 100 },
-      match_play: { min: 2, max: 4, allowed: [2, 4] },
-      copenhagen: { min: 3, max: 3, exact: 3 },
-      skins: { min: 2, max: 8 },
-      best_ball: { min: 3, max: 8 },
-      scramble: { min: 2, max: 8 },
-      umbriago: { min: 4, max: 4, exact: 4 },
-      wolf: { min: 4, max: 6 },
-    };
-
-    const req = requirements[format];
-    if (!req) {
-      // Default: at least 1 player in total
-      if (getTotalPlayers() < 1) {
-        return `Add at least 1 player to continue.`;
-      }
-      return null;
+    switch (format) {
+      case "umbriago":
+        if (totalPlayers !== 4) {
+          return `Umbriago requires exactly 4 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "wolf":
+        if (totalPlayers < 4 || totalPlayers > 6) {
+          return `Wolf requires 4-6 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "copenhagen":
+        if (totalPlayers !== 3) {
+          return `Copenhagen requires exactly 3 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "match_play":
+        if (totalPlayers !== 2) {
+          return `Match Play requires exactly 2 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "best_ball":
+        if (totalPlayers < 3) {
+          return `Best Ball requires at least 3 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "scramble":
+        if (totalPlayers < 2) {
+          return `Scramble requires at least 2 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "skins":
+        if (totalPlayers < 2) {
+          return `Skins requires at least 2 players. You have ${totalPlayers}.`;
+        }
+        break;
+      case "stroke_play":
+        if (totalPlayers < 1) {
+          return `Add at least 1 player to continue.`;
+        }
+        break;
+      default:
+        if (totalPlayers < 1) {
+          return `Add at least 1 player to continue.`;
+        }
     }
-
-    // Validate each group individually
-    for (const group of groups) {
-      const playerCount = group.players.length;
-      
-      if (playerCount === 0) continue; // Skip empty groups
-
-      // Check allowed specific values (e.g., match_play: 2 or 4)
-      if (req.allowed && !req.allowed.includes(playerCount)) {
-        const formatName = format.replace('_', ' ');
-        return `${formatName} requires ${req.allowed.join(' or ')} players per group. "${group.name}" has ${playerCount}.`;
-      }
-      
-      if (req.exact && playerCount !== req.exact) {
-        const formatName = format.replace('_', ' ');
-        return `${formatName} requires exactly ${req.exact} players per group. "${group.name}" has ${playerCount}.`;
-      }
-
-      if (!req.allowed && playerCount < req.min) {
-        const formatName = format.replace('_', ' ');
-        return `${formatName} requires at least ${req.min} players per group. "${group.name}" has ${playerCount}.`;
-      }
-
-      if (!req.allowed && playerCount > req.max) {
-        const formatName = format.replace('_', ' ');
-        return `${formatName} allows at most ${req.max} players per group. "${group.name}" has ${playerCount}.`;
-      }
-    }
-
-    // Also check that at least one group has players
-    if (getTotalPlayers() < 1) {
-      return `Add at least 1 player to continue.`;
-    }
-
     return null;
   };
 

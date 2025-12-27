@@ -77,31 +77,10 @@ export default function BestBallSetup() {
       isTemporary: false,
     };
     
-    // Load players from all groups (multi-group support)
-    const savedGroups = sessionStorage.getItem('playGroups');
+    // Load saved players from sessionStorage
     const savedPlayers = sessionStorage.getItem('roundPlayers');
-
     let additionalPlayers: BestBallPlayer[] = [];
-
-    if (savedGroups) {
-      const parsedGroups = JSON.parse(savedGroups);
-      // Collect players from ALL groups
-      for (const group of parsedGroups) {
-        if (Array.isArray(group?.players)) {
-          for (const p of group.players) {
-            if ((p.odId || p.userId) !== user.id) {
-              additionalPlayers.push({
-                odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
-                displayName: p.displayName,
-                handicap: p.handicap,
-                teeColor: p.teeColor,
-                isTemporary: p.isTemporary || false,
-              });
-            }
-          }
-        }
-      }
-    } else if (savedPlayers) {
+    if (savedPlayers) {
       const parsed = JSON.parse(savedPlayers);
       additionalPlayers = parsed.map((p: any) => ({
         odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
@@ -111,7 +90,7 @@ export default function BestBallSetup() {
         isTemporary: p.isTemporary || false,
       }));
     }
-
+    
     // Auto-assign: current user to Team A, others distributed
     setTeamA([currentUserPlayer]);
     if (additionalPlayers.length >= 3) {

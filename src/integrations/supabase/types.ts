@@ -23,7 +23,6 @@ export type Database = {
           event_id: string | null
           final_result: string | null
           game_type: string
-          group_id: string | null
           holes_played: number
           holes_remaining: number
           id: string
@@ -49,7 +48,6 @@ export type Database = {
           event_id?: string | null
           final_result?: string | null
           game_type?: string
-          group_id?: string | null
           holes_played?: number
           holes_remaining?: number
           id?: string
@@ -75,7 +73,6 @@ export type Database = {
           event_id?: string | null
           final_result?: string | null
           game_type?: string
-          group_id?: string | null
           holes_played?: number
           holes_remaining?: number
           id?: string
@@ -106,13 +103,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "best_ball_games_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "game_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -256,7 +246,6 @@ export type Database = {
           created_at: string | null
           date_played: string
           event_id: string | null
-          group_id: string | null
           holes_played: number
           id: string
           is_finished: boolean
@@ -286,7 +275,6 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           event_id?: string | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -316,7 +304,6 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           event_id?: string | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -353,13 +340,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "copenhagen_games_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "game_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -679,8 +659,6 @@ export type Database = {
       game_groups: {
         Row: {
           created_at: string
-          event_id: string | null
-          game_type: string | null
           group_index: number
           group_name: string
           id: string
@@ -690,8 +668,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          event_id?: string | null
-          game_type?: string | null
           group_index?: number
           group_name?: string
           id?: string
@@ -701,8 +677,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          event_id?: string | null
-          game_type?: string | null
           group_index?: number
           group_name?: string
           id?: string
@@ -711,13 +685,6 @@ export type Database = {
           tee_time?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "game_groups_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "game_groups_round_id_fkey"
             columns: ["round_id"]
@@ -986,7 +953,6 @@ export type Database = {
           date_played: string
           event_id: string | null
           final_result: string | null
-          group_id: string | null
           holes_played: number
           holes_remaining: number
           id: string
@@ -1012,7 +978,6 @@ export type Database = {
           date_played?: string
           event_id?: string | null
           final_result?: string | null
-          group_id?: string | null
           holes_played?: number
           holes_remaining?: number
           id?: string
@@ -1038,7 +1003,6 @@ export type Database = {
           date_played?: string
           event_id?: string | null
           final_result?: string | null
-          group_id?: string | null
           holes_played?: number
           holes_remaining?: number
           id?: string
@@ -1070,13 +1034,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "match_play_games_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "game_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -1623,7 +1580,6 @@ export type Database = {
           created_at: string | null
           date_played: string
           event_id: string | null
-          group_id: string | null
           holes_played: number
           id: string
           is_finished: boolean
@@ -1642,7 +1598,6 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           event_id?: string | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1661,7 +1616,6 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           event_id?: string | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1687,13 +1641,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "scramble_games_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "game_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -1744,7 +1691,6 @@ export type Database = {
           created_at: string | null
           date_played: string
           event_id: string | null
-          group_id: string | null
           handicap_mode: string
           holes_played: number
           id: string
@@ -1763,7 +1709,6 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           event_id?: string | null
-          group_id?: string | null
           handicap_mode?: string
           holes_played?: number
           id?: string
@@ -1782,7 +1727,6 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           event_id?: string | null
-          group_id?: string | null
           handicap_mode?: string
           holes_played?: number
           id?: string
@@ -1807,13 +1751,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "skins_games_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "game_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -1873,7 +1810,6 @@ export type Database = {
           date_played: string
           event_id: string | null
           final_payout: number | null
-          group_id: string | null
           holes_played: number
           id: string
           is_finished: boolean
@@ -1901,7 +1837,6 @@ export type Database = {
           date_played?: string
           event_id?: string | null
           final_payout?: number | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1929,7 +1864,6 @@ export type Database = {
           date_played?: string
           event_id?: string | null
           final_payout?: number | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1963,13 +1897,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "umbriago_games_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "game_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -2088,7 +2015,6 @@ export type Database = {
           date_played: string
           double_enabled: boolean
           event_id: string | null
-          group_id: string | null
           holes_played: number
           id: string
           is_finished: boolean
@@ -2121,7 +2047,6 @@ export type Database = {
           date_played?: string
           double_enabled?: boolean
           event_id?: string | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -2154,7 +2079,6 @@ export type Database = {
           date_played?: string
           double_enabled?: boolean
           event_id?: string | null
-          group_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -2193,13 +2117,6 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "wolf_games_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "game_groups"
             referencedColumns: ["id"]
           },
         ]

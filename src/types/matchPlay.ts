@@ -3,8 +3,6 @@ export interface MatchPlayGame {
   user_id: string;
   course_name: string;
   course_id?: string | null;
-  event_id?: string | null;
-  group_id?: string | null;
   tee_set: string | null;
   holes_played: number;
   date_played: string;
