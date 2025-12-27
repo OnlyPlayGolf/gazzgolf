@@ -11,6 +11,7 @@ import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
+import { EventGroupSelector } from "@/components/play/EventGroupSelector";
 import {
   calculateHoleResult,
   formatMatchStatusWithHoles,
@@ -272,7 +273,12 @@ export default function MatchPlayPlay() {
               <h1 className="text-xl font-bold">{game.round_name || 'Match Play'}</h1>
               <p className="text-sm text-muted-foreground">{game.course_name}</p>
             </div>
-            <div className="w-10" />
+            <EventGroupSelector
+              currentGameId={gameId || ''}
+              eventId={game.event_id || null}
+              gameType="match_play"
+              basePath="/match-play"
+            />
           </div>
         </div>
 

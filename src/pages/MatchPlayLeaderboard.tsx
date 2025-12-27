@@ -7,6 +7,7 @@ import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
 import { ThumbsUp, MessageSquare, BarChart3 } from "lucide-react";
+import { EventGroupsList } from "@/components/play/EventGroupSelector";
 import {
   Table,
   TableBody,
@@ -277,6 +278,14 @@ export default function MatchPlayLeaderboard() {
           <p className="text-sm opacity-90">Match Play</p>
         </div>
       </div>
+
+      {/* Group Tabs */}
+      <EventGroupsList
+        eventId={game.event_id || null}
+        gameType="match_play"
+        basePath="/match-play"
+        currentGameId={gameId || ''}
+      />
 
       {/* Match Status Banner */}
       <div className="bg-primary/10 p-3 text-center">
