@@ -62,9 +62,13 @@ export default function RoundDetail() {
         .from("rounds")
         .select("*")
         .eq("id", roundId)
-        .single();
+        .maybeSingle();
 
       if (roundError) throw roundError;
+      if (!roundData) {
+        setLoading(false);
+        return;
+      }
       setRound(roundData);
 
       // Fetch players
