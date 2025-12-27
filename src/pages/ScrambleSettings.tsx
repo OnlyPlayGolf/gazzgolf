@@ -70,21 +70,42 @@ export default function ScrambleSettings() {
     setHolesCompleted(count || 0);
   };
 
-  const saveSettings = async () => {
+  const saveSettings = async (updates: {
+    minDrives?: string;
+    useHandicaps?: boolean;
+    scoringType?: 'gross' | 'net';
+  }) => {
+    const minDrivesValue = updates.minDrives ?? minDrives;
+    const useHandicapsValue = updates.useHandicaps ?? useHandicaps;
+    const scoringTypeValue = updates.scoringType ?? scoringType;
+
     const { error } = await supabase
       .from('scramble_games')
       .update({
-        min_drives_per_player: minDrives === 'none' ? null : parseInt(minDrives),
-        use_handicaps: useHandicaps,
-        scoring_type: scoringType
+        min_drives_per_player: minDrivesValue === 'none' ? null : parseInt(minDrivesValue),
+        use_handicaps: useHandicapsValue,
+        scoring_type: scoringTypeValue
       })
       .eq('id', gameId);
 
     if (error) {
       toast.error("Failed to save settings");
-    } else {
-      toast.success("Settings saved");
     }
+  };
+
+  const handleMinDrivesChange = (value: string) => {
+    setMinDrives(value);
+    saveSettings({ minDrives: value });
+  };
+
+  const handleUseHandicapsChange = (value: boolean) => {
+    setUseHandicaps(value);
+    saveSettings({ useHandicaps: value });
+  };
+
+  const handleScoringTypeChange = (value: 'gross' | 'net') => {
+    setScoringType(value);
+    saveSettings({ scoringType: value });
   };
 
   const handleFinishGame = async () => {
@@ -175,7 +196,7 @@ export default function ScrambleSettings() {
                 <Label>Minimum drives per player</Label>
                 <p className="text-xs text-muted-foreground">Require each player's drive to be used</p>
               </div>
-              <Select value={minDrives} onValueChange={setMinDrives}>
+              <Select value={minDrives} onValueChange={handleMinDrivesChange}>
                 <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
@@ -193,13 +214,13 @@ export default function ScrambleSettings() {
                 <Label>Use Handicaps</Label>
                 <p className="text-xs text-muted-foreground">Apply handicap strokes</p>
               </div>
-              <Switch checked={useHandicaps} onCheckedChange={setUseHandicaps} />
+              <Switch checked={useHandicaps} onCheckedChange={handleUseHandicapsChange} />
             </div>
 
             {useHandicaps && (
               <div className="flex items-center justify-between">
                 <Label>Scoring Type</Label>
-                <Select value={scoringType} onValueChange={(v) => setScoringType(v as 'gross' | 'net')}>
+                <Select value={scoringType} onValueChange={handleScoringTypeChange}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
                   </SelectTrigger>
@@ -210,10 +231,6 @@ export default function ScrambleSettings() {
                 </Select>
               </div>
             )}
-
-            <Button onClick={saveSettings} className="w-full">
-              Save Rules
-            </Button>
           </CardContent>
         </Card>
 
