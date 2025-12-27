@@ -71,10 +71,19 @@ export default function MatchPlaySetup() {
         isTemporary: false,
       };
       
-      // Load saved groups from session storage or initialize with current user
-      const savedGroups = sessionStorage.getItem('matchPlayGroups');
+      // Load saved groups from session storage (from RoundsPlay) or initialize with current user
+      const savedGroups = sessionStorage.getItem('playGroups');
       if (savedGroups) {
-        setGroups(JSON.parse(savedGroups));
+        const parsed = JSON.parse(savedGroups) as PlayerGroup[];
+        // Ensure all players have required fields
+        const processedGroups = parsed.map(g => ({
+          ...g,
+          players: g.players.map(p => ({
+            ...p,
+            teeColor: p.teeColor || DEFAULT_MEN_TEE,
+          }))
+        }));
+        setGroups(processedGroups);
       } else {
         // Initialize first group with current user
         setGroups([{
