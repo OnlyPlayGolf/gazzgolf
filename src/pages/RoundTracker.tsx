@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, Plus, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Plus, RotateCcw, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
+import { canEditGroupScores } from "@/types/gameGroups";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ interface Round {
   date_played: string;
   round_name?: string | null;
   origin?: string | null;
+  user_id: string;
 }
 
 // Track original planned holes vs actual holes played
@@ -52,10 +54,18 @@ interface HoleScore {
   stroke_index: number;
 }
 
+interface GameGroup {
+  id: string;
+  group_name: string;
+  group_index: number;
+  tee_time?: string | null;
+}
+
 interface RoundPlayer {
   id: string;
   user_id: string;
   tee_color: string | null;
+  group_id: string | null;
   profiles: {
     display_name: string | null;
     username: string | null;
@@ -74,6 +84,9 @@ export default function RoundTracker() {
   const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
   const [loading, setLoading] = useState(true);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
+  const [groups, setGroups] = useState<GameGroup[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [currentUserGroupId, setCurrentUserGroupId] = useState<string | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
@@ -93,6 +106,12 @@ export default function RoundTracker() {
   const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
   // Track if user manually navigated (to prevent auto-advance)
   const [isManualNavigation, setIsManualNavigation] = useState(false);
+
+  // Check if current user can edit a player's scores
+  const canEditPlayer = (player: RoundPlayer): boolean => {
+    if (!round) return false;
+    return canEditGroupScores(currentUserId, round.user_id, player.group_id, currentUserGroupId);
+  };
 
   useEffect(() => {
     if (roundId) {
@@ -134,10 +153,10 @@ export default function RoundTracker() {
       if (roundError) throw roundError;
       setRound(roundData);
 
-      // Fetch players in the round
+      // Fetch players in the round (including group_id)
       const { data: playersData, error: playersError } = await supabase
         .from("round_players")
-        .select("id, user_id, tee_color")
+        .select("id, user_id, tee_color, group_id")
         .eq("round_id", roundId);
 
       if (playersError) throw playersError;
@@ -161,6 +180,16 @@ export default function RoundTracker() {
         allPlayers = playersWithProfiles;
       }
 
+      // Fetch game groups for this round
+      const { data: groupsData } = await supabase
+        .from("game_groups")
+        .select("id, group_name, group_index, tee_time")
+        .eq("round_id", roundId)
+        .order("group_index");
+
+      const gameGroups: GameGroup[] = groupsData || [];
+      setGroups(gameGroups);
+
       // Load guest players from localStorage
       const guestPlayersJson = localStorage.getItem(`roundGuestPlayers_${roundId}`);
       if (guestPlayersJson) {
@@ -169,6 +198,7 @@ export default function RoundTracker() {
           id: g.odId,
           user_id: g.odId,
           tee_color: g.teeColor || null,
+          group_id: g.groupId || null,
           profiles: {
             display_name: g.displayName,
             username: null,
@@ -179,6 +209,16 @@ export default function RoundTracker() {
       }
 
       setPlayers(allPlayers);
+
+      // Determine current user's group
+      const { data: { user: currentAuthUser } } = await supabase.auth.getUser();
+      if (currentAuthUser) {
+        setCurrentUserId(currentAuthUser.id);
+        const currentPlayerEntry = allPlayers.find(p => p.user_id === currentAuthUser.id);
+        if (currentPlayerEntry?.group_id) {
+          setCurrentUserGroupId(currentPlayerEntry.group_id);
+        }
+      }
 
       // Fetch course holes if course exists in database
       const { data: courseData } = await supabase
@@ -782,19 +822,25 @@ export default function RoundTracker() {
           const playerScore = getPlayerScore(player.id);
           const hasScore = hasPlayerEnteredScore(player.id);
           const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
+          const canEdit = canEditPlayer(player);
           return (
             <Card 
               key={player.id} 
-              className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+              className={`p-6 transition-colors ${canEdit ? 'cursor-pointer hover:bg-muted/50' : 'opacity-75'}`}
               onClick={() => {
-                setSelectedPlayer(player);
-                setShowScoreSheet(true);
+                if (canEdit) {
+                  setSelectedPlayer(player);
+                  setShowScoreSheet(true);
+                }
               }}
             >
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                    {!canEdit && (
+                      <Lock size={14} className="text-muted-foreground" />
+                    )}
                     {hasMulliganOnHole && (
                       <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
                         Mulligan

@@ -656,6 +656,51 @@ export type Database = {
           },
         ]
       }
+      game_groups: {
+        Row: {
+          created_at: string
+          group_index: number
+          group_name: string
+          id: string
+          round_id: string | null
+          starting_hole: number | null
+          tee_time: string | null
+        }
+        Insert: {
+          created_at?: string
+          group_index?: number
+          group_name?: string
+          id?: string
+          round_id?: string | null
+          starting_hole?: number | null
+          tee_time?: string | null
+        }
+        Update: {
+          created_at?: string
+          group_index?: number
+          group_name?: string
+          id?: string
+          round_id?: string | null
+          starting_hole?: number | null
+          tee_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_groups_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "round_summaries"
+            referencedColumns: ["round_id"]
+          },
+          {
+            foreignKeyName: "game_groups_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_invites: {
         Row: {
           code: string
@@ -1429,6 +1474,7 @@ export type Database = {
       round_players: {
         Row: {
           created_at: string
+          group_id: string | null
           handicap: number | null
           id: string
           round_id: string
@@ -1438,6 +1484,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          group_id?: string | null
           handicap?: number | null
           id?: string
           round_id: string
@@ -1447,6 +1494,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          group_id?: string | null
           handicap?: number | null
           id?: string
           round_id?: string
@@ -1455,6 +1503,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "round_players_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "game_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "round_players_round_id_fkey"
             columns: ["round_id"]
