@@ -13,6 +13,7 @@ import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { PlayerGroup } from "@/types/playSetup";
 
 interface Course {
   id: string;
@@ -40,9 +41,11 @@ export default function StrokePlaySetup() {
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
   const [teeColor, setTeeColor] = useState(DEFAULT_MEN_TEE);
+  const [roundName, setRoundName] = useState<string>("");
+  const [datePlayed, setDatePlayed] = useState<string>(new Date().toISOString().split('T')[0]);
   
-  // Players (including current user)
-  const [players, setPlayers] = useState<Player[]>([]);
+  // Groups with players
+  const [groups, setGroups] = useState<PlayerGroup[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   
   // Game settings
@@ -54,6 +57,18 @@ export default function StrokePlaySetup() {
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
 
   const teeCount = 5; // Standard tee options
+
+  // Helper to get all players from all groups
+  const getAllPlayers = (): Player[] => {
+    return groups.flatMap(g => g.players.map(p => ({
+      odId: p.odId,
+      displayName: p.displayName,
+      handicap: p.handicap,
+      teeColor: p.teeColor,
+      isTemporary: p.isTemporary,
+      isCurrentUser: p.odId === currentUserId,
+    })));
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -68,9 +83,6 @@ export default function StrokePlaySetup() {
         .select('display_name, username, handicap')
         .eq('id', user.id)
         .single();
-      
-      const userName = profile?.display_name || profile?.username || 'You';
-      const userHandicap = parseHandicap(profile?.handicap);
       
       // Load course from sessionStorage
       const savedCourse = sessionStorage.getItem('selectedCourse');
@@ -93,33 +105,25 @@ export default function StrokePlaySetup() {
       if (savedTee) {
         setTeeColor(savedTee);
       }
-      
-      // Initialize with current user
-      const currentUserPlayer: Player = {
-        odId: user.id,
-        displayName: userName,
-        handicap: userHandicap,
-        teeColor: savedTee || DEFAULT_MEN_TEE,
-        isTemporary: false,
-        isCurrentUser: true,
-      };
-      
-      // Load added players
-      const savedPlayers = sessionStorage.getItem('roundPlayers');
-      let additionalPlayers: Player[] = [];
-      if (savedPlayers) {
-        const parsed = JSON.parse(savedPlayers);
-        additionalPlayers = parsed.map((p: any) => ({
-          odId: p.odId || p.userId || `temp_${Date.now()}`,
-          displayName: p.displayName,
-          handicap: p.handicap,
-          teeColor: p.teeColor || savedTee || DEFAULT_MEN_TEE,
-          isTemporary: p.isTemporary || false,
-          isCurrentUser: false,
-        }));
+
+      // Load round name
+      const savedRoundName = sessionStorage.getItem('roundName');
+      if (savedRoundName) {
+        setRoundName(savedRoundName);
+      }
+
+      // Load date
+      const savedDate = sessionStorage.getItem('datePlayer');
+      if (savedDate) {
+        setDatePlayed(savedDate);
       }
       
-      setPlayers([currentUserPlayer, ...additionalPlayers]);
+      // Load groups from sessionStorage
+      const savedGroups = sessionStorage.getItem('playGroups');
+      if (savedGroups) {
+        const parsedGroups = JSON.parse(savedGroups) as PlayerGroup[];
+        setGroups(parsedGroups);
+      }
       
       // Load stroke play settings
       const savedSettings = sessionStorage.getItem('strokePlaySettings');
@@ -144,12 +148,29 @@ export default function StrokePlaySetup() {
   };
 
   const handleUpdatePlayer = (updatedPlayer: Player) => {
-    setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
+    setGroups(prev => prev.map(g => ({
+      ...g,
+      players: g.players.map(p => p.odId === updatedPlayer.odId ? { ...p, ...updatedPlayer } : p)
+    })));
+  };
+
+  const updateAllPlayersTee = (newTee: string) => {
+    setTeeColor(newTee);
+    setGroups(prev => prev.map(g => ({
+      ...g,
+      players: g.players.map(p => ({ ...p, teeColor: newTee }))
+    })));
   };
 
   const handleStartRound = async () => {
     if (!selectedCourse) {
       toast({ title: "Course required", description: "Please go back and select a course", variant: "destructive" });
+      return;
+    }
+
+    const allPlayers = getAllPlayers();
+    if (allPlayers.length === 0) {
+      toast({ title: "No players", description: "Add at least one player to start", variant: "destructive" });
       return;
     }
 
@@ -161,55 +182,94 @@ export default function StrokePlaySetup() {
         return;
       }
 
+      // Create the round
       const { data: round, error } = await supabase
         .from("rounds")
         .insert({
           user_id: user.id,
           course_name: selectedCourse.name,
+          round_name: roundName || null,
           tee_set: teeColor,
           holes_played: getHolesPlayed(),
           origin: 'play',
-          date_played: new Date().toISOString().split('T')[0],
+          date_played: datePlayed,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Add registered players to database
-      const registeredPlayers = players.filter(p => !p.isTemporary);
-      const guestPlayers = players.filter(p => p.isTemporary);
+      // Create game groups and add players with group references
+      const hasMultipleGroups = groups.length > 1;
+      const allGuestPlayers: Player[] = [];
 
-      const playersToAdd = registeredPlayers.map(p => ({
-        round_id: round.id,
-        user_id: p.odId,
-        tee_color: p.teeColor || teeColor,
-        handicap: p.handicap,
-      }));
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
+        let gameGroupId: string | null = null;
 
-      if (playersToAdd.length > 0) {
-        const { error: playersError } = await supabase
-          .from('round_players')
-          .insert(playersToAdd);
+        // Only create game_groups record if there are multiple groups
+        if (hasMultipleGroups) {
+          const { data: gameGroup, error: groupError } = await supabase
+            .from("game_groups")
+            .insert({
+              round_id: round.id,
+              group_name: group.name,
+              group_index: i,
+              tee_time: group.teeTime || null,
+              starting_hole: group.startingHole || null,
+            })
+            .select()
+            .single();
 
-        if (playersError) {
-          console.error("Error adding players:", playersError);
+          if (groupError) {
+            console.error("Error creating game group:", groupError);
+          } else {
+            gameGroupId = gameGroup.id;
+          }
         }
+
+        // Add registered players to database
+        const registeredPlayers = group.players.filter(p => !p.isTemporary);
+        const guestPlayers = group.players.filter(p => p.isTemporary);
+
+        const playersToAdd = registeredPlayers.map(p => ({
+          round_id: round.id,
+          user_id: p.odId,
+          tee_color: p.teeColor || teeColor,
+          handicap: p.handicap,
+          group_id: gameGroupId,
+        }));
+
+        if (playersToAdd.length > 0) {
+          const { error: playersError } = await supabase
+            .from('round_players')
+            .insert(playersToAdd);
+
+          if (playersError) {
+            console.error("Error adding players:", playersError);
+          }
+        }
+
+        // Collect guest players with group info
+        guestPlayers.forEach(p => {
+          allGuestPlayers.push({
+            ...p,
+            odId: p.odId,
+            displayName: p.displayName,
+            handicap: p.handicap,
+            teeColor: p.teeColor,
+            isTemporary: true,
+          });
+        });
       }
 
       // Store guest players in localStorage for this round
-      if (guestPlayers.length > 0) {
-        localStorage.setItem(`roundGuestPlayers_${round.id}`, JSON.stringify(guestPlayers));
+      if (allGuestPlayers.length > 0) {
+        localStorage.setItem(`roundGuestPlayers_${round.id}`, JSON.stringify(allGuestPlayers));
       }
 
       // Save settings to round-specific localStorage
       localStorage.setItem(`roundSettings_${round.id}`, JSON.stringify({
-        mulligansPerPlayer,
-        handicapEnabled,
-        gimmesEnabled,
-      }));
-      // Also save to session storage for backward compatibility
-      sessionStorage.setItem('strokePlaySettings', JSON.stringify({
         mulligansPerPlayer,
         handicapEnabled,
         gimmesEnabled,
@@ -222,6 +282,7 @@ export default function StrokePlaySetup() {
       sessionStorage.removeItem('selectedHoles');
       sessionStorage.removeItem('roundName');
       sessionStorage.removeItem('datePlayer');
+      sessionStorage.removeItem('playGroups');
 
       toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
       navigate(`/rounds/${round.id}/track`);
@@ -231,6 +292,9 @@ export default function StrokePlaySetup() {
       setLoading(false);
     }
   };
+
+  const allPlayers = getAllPlayers();
+  const totalPlayerCount = allPlayers.length;
 
   return (
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
@@ -258,22 +322,51 @@ export default function StrokePlaySetup() {
           </div>
         )}
 
-        {/* Players Section */}
+        {/* Groups & Players Section */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Users size={20} className="text-primary" />
-              Players
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Users size={20} className="text-primary" />
+                {groups.length > 1 ? "Groups & Players" : "Players"}
+              </div>
+              <span className="text-sm font-normal text-muted-foreground">
+                {totalPlayerCount} player{totalPlayerCount !== 1 ? 's' : ''}
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {players.map((player) => (
-              <SetupPlayerCard
-                key={player.odId}
-                player={player}
-                onEdit={() => setEditingPlayer(player)}
-                showTee={true}
-              />
+          <CardContent className="space-y-4">
+            {groups.map((group, groupIndex) => (
+              <div key={group.id} className="space-y-2">
+                {groups.length > 1 && (
+                  <div className="text-sm font-medium text-muted-foreground">
+                    {group.name}
+                    {group.teeTime && <span className="ml-2">• {group.teeTime}</span>}
+                  </div>
+                )}
+                {group.players.map((player) => (
+                  <SetupPlayerCard
+                    key={player.odId}
+                    player={{
+                      odId: player.odId,
+                      displayName: player.displayName,
+                      handicap: player.handicap,
+                      teeColor: player.teeColor,
+                      isTemporary: player.isTemporary,
+                      isCurrentUser: player.odId === currentUserId,
+                    }}
+                    onEdit={() => setEditingPlayer({
+                      odId: player.odId,
+                      displayName: player.displayName,
+                      handicap: player.handicap,
+                      teeColor: player.teeColor,
+                      isTemporary: player.isTemporary,
+                      isCurrentUser: player.odId === currentUserId,
+                    })}
+                    showTee={true}
+                  />
+                ))}
+              </div>
             ))}
           </CardContent>
         </Card>
@@ -292,11 +385,7 @@ export default function StrokePlaySetup() {
               <Label>Default Tee Box</Label>
               <TeeSelector
                 value={teeColor}
-                onValueChange={(v) => {
-                  setTeeColor(v);
-                  // Update all players to new tee
-                  setPlayers(prev => prev.map(p => ({ ...p, teeColor: v })));
-                }}
+                onValueChange={updateAllPlayersTee}
                 teeCount={teeCount}
                 courseTeeNames={courseTeeNames}
               />
@@ -356,7 +445,7 @@ export default function StrokePlaySetup() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleStartRound} disabled={loading || !selectedCourse} className="w-full" size="lg">
+        <Button onClick={handleStartRound} disabled={loading || !selectedCourse || totalPlayerCount === 0} className="w-full" size="lg">
           {loading ? "Starting..." : "Start Round"}
         </Button>
       </div>
