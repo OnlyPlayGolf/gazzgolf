@@ -426,10 +426,15 @@ export default function BestBallLeaderboard() {
             <div className="flex items-center p-3 hover:bg-muted/50 transition-colors">
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform mr-2 ${scorecardOpen ? 'rotate-180' : '-rotate-90'}`} />
               
-              {/* Team A Name */}
-              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 flex-1 text-left truncate">
-                {game.team_a_name}
-              </span>
+              {/* Team A Name and Players */}
+              <div className="flex-1 text-left">
+                <div className="text-sm font-semibold text-blue-600 dark:text-blue-400 truncate">
+                  {game.team_a_name}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {game.team_a_players.map(p => p.displayName.split(' ')[0]).join(' & ')}
+                </div>
+              </div>
               
               {/* Score Display in Middle */}
               <div className="flex items-center mx-2">
@@ -469,10 +474,15 @@ export default function BestBallLeaderboard() {
                 )}
               </div>
               
-              {/* Team B Name */}
-              <span className="text-sm font-semibold text-red-600 dark:text-red-400 flex-1 text-right truncate">
-                {game.team_b_name}
-              </span>
+              {/* Team B Name and Players */}
+              <div className="flex-1 text-right">
+                <div className="text-sm font-semibold text-red-600 dark:text-red-400 truncate">
+                  {game.team_b_name}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {game.team_b_players.map(p => p.displayName.split(' ')[0]).join(' & ')}
+                </div>
+              </div>
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
