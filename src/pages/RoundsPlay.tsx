@@ -24,6 +24,26 @@ import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlay
 import { cn, parseHandicap } from "@/lib/utils";
 import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import { CourseScorecard } from "@/components/CourseScorecard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface ActiveRound {
+  id: string;
+  course_name: string;
+  round_name: string | null;
+  creator_id: string;
+  creator_name: string;
+  holes_played: number;
+  holes_entered: number;
+}
 
 type HoleCount = "18" | "front9" | "back9";
 
@@ -59,9 +79,14 @@ export default function RoundsPlay() {
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [editingPlayerGroupId, setEditingPlayerGroupId] = useState<string | null>(null);
   const [playerEditSheetOpen, setPlayerEditSheetOpen] = useState(false);
+  
+  // Join existing game state
+  const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
 
   useEffect(() => {
     initializeSetup();
+    checkForActiveRounds();
   }, []);
 
   useEffect(() => {
@@ -73,6 +98,78 @@ export default function RoundsPlay() {
       }));
     }
   }, [selectedCourse]);
+
+  // Check for active rounds where user is participant but not creator
+  const checkForActiveRounds = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get rounds where user is a participant but NOT the creator (from last 24 hours)
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
+      const { data: participantRounds } = await supabase
+        .from('round_players')
+        .select('round_id')
+        .eq('user_id', user.id);
+      
+      if (!participantRounds || participantRounds.length === 0) return;
+      
+      const roundIds = participantRounds.map(rp => rp.round_id);
+      
+      // Find rounds where user is participant but not creator, created recently
+      const { data: activeRounds } = await supabase
+        .from('rounds')
+        .select('id, course_name, round_name, user_id, holes_played, created_at')
+        .in('id', roundIds)
+        .neq('user_id', user.id)
+        .gte('created_at', twentyFourHoursAgo)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (activeRounds && activeRounds.length > 0) {
+        const round = activeRounds[0];
+        
+        // Get creator profile
+        const { data: creatorProfile } = await supabase
+          .from('profiles')
+          .select('display_name, username')
+          .eq('id', round.user_id)
+          .single();
+        
+        // Count holes entered
+        const { count: holesEntered } = await supabase
+          .from('holes')
+          .select('*', { count: 'exact', head: true })
+          .eq('round_id', round.id);
+        
+        setActiveRound({
+          id: round.id,
+          course_name: round.course_name,
+          round_name: round.round_name,
+          creator_id: round.user_id,
+          creator_name: creatorProfile?.display_name || creatorProfile?.username || 'A friend',
+          holes_played: round.holes_played,
+          holes_entered: holesEntered || 0
+        });
+        setShowJoinDialog(true);
+      }
+    } catch (error) {
+      console.error('Error checking for active rounds:', error);
+    }
+  };
+
+  const handleJoinRound = () => {
+    if (activeRound) {
+      navigate(`/rounds/${activeRound.id}/track`);
+    }
+    setShowJoinDialog(false);
+  };
+
+  const handleDeclineJoin = () => {
+    setShowJoinDialog(false);
+    setActiveRound(null);
+  };
 
   const initializeSetup = async () => {
     // Fetch current user
@@ -676,6 +773,31 @@ export default function RoundsPlay() {
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
+      
+      {/* Join Existing Game Dialog */}
+      <AlertDialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Join Existing Round?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                <span className="font-medium text-foreground">{activeRound?.creator_name}</span> has added you to a round at{" "}
+                <span className="font-medium text-foreground">{activeRound?.course_name}</span>.
+              </p>
+              {activeRound && activeRound.holes_entered > 0 && (
+                <p className="text-muted-foreground">
+                  {activeRound.holes_entered} of {activeRound.holes_played} holes played.
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeclineJoin}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleJoinRound}>Join Game</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
         
         {/* Header Card - Round Info */}
