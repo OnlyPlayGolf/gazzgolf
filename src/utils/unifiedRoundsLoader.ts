@@ -568,22 +568,22 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
 export function getGameRoute(gameType: GameType, gameId: string): string {
   switch (gameType) {
     case "round":
-      return `/rounds/${gameId}/detail`;
+      return `/rounds/${gameId}/leaderboard`;
     case "copenhagen":
-      return `/copenhagen/${gameId}/summary`;
+      return `/copenhagen/${gameId}/leaderboard`;
     case "skins":
-      return `/skins/${gameId}/summary`;
+      return `/skins/${gameId}/leaderboard`;
     case "best_ball":
-      return `/best-ball/${gameId}/summary`;
+      return `/best-ball/${gameId}/leaderboard`;
     case "scramble":
-      return `/scramble/${gameId}/summary`;
+      return `/scramble/${gameId}/leaderboard`;
     case "wolf":
-      return `/wolf/${gameId}/summary`;
+      return `/wolf/${gameId}/leaderboard`;
     case "umbriago":
-      return `/umbriago/${gameId}/summary`;
+      return `/umbriago/${gameId}/leaderboard`;
     case "match_play":
-      return `/match-play/${gameId}/summary`;
+      return `/match-play/${gameId}/leaderboard`;
     default:
-      return `/rounds/${gameId}/detail`;
+      return `/rounds/${gameId}/leaderboard`;
   }
 }
