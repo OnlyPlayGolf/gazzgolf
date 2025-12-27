@@ -71,20 +71,44 @@ export default function MatchPlaySetup() {
         isCurrentUser: true,
       };
       
+      // Prefer group-based players (multi-group support)
+      const savedGroups = sessionStorage.getItem('playGroups');
       const savedPlayers = sessionStorage.getItem('roundPlayers');
-      let additionalPlayers: Player[] = [];
-      if (savedPlayers) {
+
+      let playersFromStorage: Player[] = [];
+
+      if (savedGroups) {
+        const parsedGroups = JSON.parse(savedGroups);
+        const groupPlayers = parsedGroups?.[0]?.players;
+        if (Array.isArray(groupPlayers)) {
+          playersFromStorage = groupPlayers.map((p: any) => ({
+            odId: p.odId || p.userId || `temp_${Date.now()}`,
+            displayName: p.displayName,
+            handicap: p.handicap,
+            teeColor: p.teeColor,
+            isTemporary: p.isTemporary || false,
+            isCurrentUser: (p.odId || p.userId) === user.id,
+          }));
+        }
+      }
+
+      if (playersFromStorage.length === 0 && savedPlayers) {
         const parsed = JSON.parse(savedPlayers);
-        additionalPlayers = parsed.slice(0, 1).map((p: any) => ({
+        const additionalPlayers: Player[] = parsed.slice(0, 1).map((p: any) => ({
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,
           isTemporary: p.isTemporary || false,
           isCurrentUser: false,
         }));
+        playersFromStorage = [currentUserPlayer, ...additionalPlayers];
       }
-      
-      setPlayers([currentUserPlayer, ...additionalPlayers]);
+
+      if (!playersFromStorage.some(p => p.odId === user.id)) {
+        playersFromStorage = [currentUserPlayer, ...playersFromStorage];
+      }
+
+      setPlayers(playersFromStorage.map(p => ({ ...p, isCurrentUser: p.odId === user.id })));
       
       const savedCourse = sessionStorage.getItem('selectedCourse');
       
