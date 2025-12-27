@@ -194,81 +194,100 @@ const PlayedRounds = () => {
             <p className="text-sm">Start playing to track your scores</p>
           </div>
         ) : (
-          <main className="divide-y divide-border rounded-lg border bg-card overflow-hidden">
-            {rounds.map((round) => {
-              const scoreText = getScoreDisplay(round);
-              const showStrokeScore = isStrokeRound(round);
-              const canDelete = canDeleteRound(round);
+          <main className="space-y-4">
+            {(() => {
+              // Group rounds by year
+              const roundsByYear = rounds.reduce((acc, round) => {
+                const year = new Date(round.date).getFullYear().toString();
+                if (!acc[year]) acc[year] = [];
+                acc[year].push(round);
+                return acc;
+              }, {} as Record<string, UnifiedRound[]>);
 
-              return (
-                <article
-                  key={`${round.gameType}-${round.id}`}
-                  className={`flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer ${
-                    deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""
-                  }`}
-                  onClick={() => {
-                    if (deleteMode) {
-                      setRoundToDelete(round);
-                      setDeleteDialogOpen(true);
-                    } else {
-                      navigate(getGameRoute(round.gameType || "round", round.id, location.pathname));
-                    }
-                  }}
-                >
-                  {/* Date */}
-                  <div className="w-12 text-center flex-shrink-0">
-                    <div className="text-xs text-muted-foreground uppercase">
-                      {format(new Date(round.date), "MMM")}
-                    </div>
-                    <div className="text-lg font-semibold">
-                      {format(new Date(round.date), "d")}
-                    </div>
+              // Sort years descending (most recent first)
+              const sortedYears = Object.keys(roundsByYear).sort((a, b) => parseInt(b) - parseInt(a));
+
+              return sortedYears.map((year) => (
+                <section key={year}>
+                  <h2 className="text-lg font-semibold text-foreground mb-2 px-1">{year}</h2>
+                  <div className="divide-y divide-border rounded-lg border bg-card overflow-hidden">
+                    {roundsByYear[year].map((round) => {
+                      const scoreText = getScoreDisplay(round);
+                      const showStrokeScore = isStrokeRound(round);
+
+                      return (
+                        <article
+                          key={`${round.gameType}-${round.id}`}
+                          className={`flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer ${
+                            deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""
+                          }`}
+                          onClick={() => {
+                            if (deleteMode) {
+                              setRoundToDelete(round);
+                              setDeleteDialogOpen(true);
+                            } else {
+                              navigate(getGameRoute(round.gameType || "round", round.id, location.pathname));
+                            }
+                          }}
+                        >
+                          {/* Date - without year */}
+                          <div className="w-12 text-center flex-shrink-0">
+                            <div className="text-xs text-muted-foreground uppercase">
+                              {format(new Date(round.date), "MMM")}
+                            </div>
+                            <div className="text-lg font-semibold">
+                              {format(new Date(round.date), "d")}
+                            </div>
+                          </div>
+
+                          {/* Round Name & Details */}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">
+                              {round.round_name || round.gameMode}
+                            </div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                              <span className="truncate">{round.course_name}</span>
+                              {typeof round.holesPlayed === "number" && (
+                                <span>• {round.holesPlayed}H</span>
+                              )}
+                              {round.teeSet && <span>• {round.teeSet}</span>}
+                              {round.playerCount > 1 && <span>• {round.playerCount} players</span>}
+                              <span>• {round.gameMode}</span>
+                            </div>
+                          </div>
+
+                          {/* Score / Action */}
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <div
+                                className={`font-bold ${
+                                  !showStrokeScore || scoreText === "-"
+                                    ? "text-muted-foreground"
+                                    : scoreText.startsWith("+")
+                                      ? "text-destructive"
+                                      : scoreText === "E"
+                                        ? "text-foreground"
+                                        : "text-green-600"
+                                }`}
+                              >
+                                {showStrokeScore ? scoreText : "View"}
+                              </div>
+                              {showStrokeScore && typeof round.totalScore === "number" && (
+                                <div className="text-xs text-muted-foreground">
+                                  {round.totalScore}
+                                </div>
+                              )}
+                            </div>
+
+                            <ChevronRight size={16} className="text-muted-foreground" />
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
-
-                  {/* Round Name & Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">
-                      {round.round_name || round.gameMode}
-                    </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                      <span className="truncate">{round.course_name}</span>
-                      {typeof round.holesPlayed === "number" && (
-                        <span>• {round.holesPlayed}H</span>
-                      )}
-                      {round.teeSet && <span>• {round.teeSet}</span>}
-                      {round.playerCount > 1 && <span>• {round.playerCount} players</span>}
-                      <span>• {round.gameMode}</span>
-                    </div>
-                  </div>
-
-                  {/* Score / Action */}
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <div
-                        className={`font-bold ${
-                          !showStrokeScore || scoreText === "-"
-                            ? "text-muted-foreground"
-                            : scoreText.startsWith("+")
-                              ? "text-destructive"
-                              : scoreText === "E"
-                                ? "text-foreground"
-                                : "text-green-600"
-                        }`}
-                      >
-                        {showStrokeScore ? scoreText : "View"}
-                      </div>
-                      {showStrokeScore && typeof round.totalScore === "number" && (
-                        <div className="text-xs text-muted-foreground">
-                          {round.totalScore}
-                        </div>
-                      )}
-                    </div>
-
-                    <ChevronRight size={16} className="text-muted-foreground" />
-                  </div>
-                </article>
-              );
-            })}
+                </section>
+              ));
+            })()}
           </main>
         )}
       </div>
