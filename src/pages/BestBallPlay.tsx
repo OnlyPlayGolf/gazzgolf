@@ -583,8 +583,14 @@ export default function BestBallPlay() {
 
         {/* Match Status - only show for match play */}
         {game.game_type === 'match' && (
-          <div className="p-3 bg-primary/10 rounded-lg text-center">
-            <p className="text-lg font-bold text-primary">
+          <div className={`p-3 rounded-lg text-center ${
+            game.match_status > 0 
+              ? 'bg-blue-600 text-white' 
+              : game.match_status < 0 
+                ? 'bg-red-600 text-white' 
+                : 'bg-muted text-foreground'
+          }`}>
+            <p className="text-lg font-bold">
               {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
             </p>
           </div>
