@@ -8,8 +8,6 @@ export interface MatchPlayGame {
   date_played: string;
   created_at: string;
   round_name?: string | null;
-  event_id?: string | null;
-  group_id?: string | null;
   
   player_1: string;
   player_1_handicap?: number | null;

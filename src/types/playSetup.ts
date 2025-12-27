@@ -2,9 +2,9 @@
 
 export interface Player {
   odId: string;
-  teeColor?: string;
+  teeColor: string;
   displayName: string;
-  username?: string;
+  username: string;
   avatarUrl?: string;
   isTemporary?: boolean;
   handicap?: number;

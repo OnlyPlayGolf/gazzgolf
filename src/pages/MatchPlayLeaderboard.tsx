@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
@@ -23,19 +22,12 @@ interface CourseHole {
   stroke_index: number;
 }
 
-interface GameWithHoles {
-  game: MatchPlayGame;
-  holes: MatchPlayHole[];
-  groupName: string;
-}
-
 export default function MatchPlayLeaderboard() {
   const { gameId } = useParams();
-  const [eventGames, setEventGames] = useState<GameWithHoles[]>([]);
+  const [game, setGame] = useState<MatchPlayGame | null>(null);
+  const [holes, setHoles] = useState<MatchPlayHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [eventName, setEventName] = useState("");
-  const [courseName, setCourseName] = useState("");
 
   useEffect(() => {
     if (gameId) {
@@ -45,95 +37,41 @@ export default function MatchPlayLeaderboard() {
 
   const fetchData = async () => {
     try {
-      // Fetch primary game
-      const { data: primaryGame } = await supabase
+      const { data: gameData } = await supabase
         .from("match_play_games")
         .select("*")
         .eq("id", gameId)
         .single();
 
-      if (!primaryGame) {
-        setLoading(false);
-        return;
-      }
+      if (gameData) {
+        setGame(gameData as MatchPlayGame);
 
-      setCourseName(primaryGame.course_name);
-      setEventName(primaryGame.round_name || 'Match Play');
+        // Fetch course holes for scorecard structure
+        if (gameData.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
 
-      // Fetch all games in event
-      let allGames: MatchPlayGame[] = [primaryGame];
-      let groupNamesMap = new Map<string, string>();
-
-      if (primaryGame.event_id) {
-        const { data: eventData } = await supabase
-          .from("events")
-          .select("name")
-          .eq("id", primaryGame.event_id)
-          .single();
-
-        if (eventData?.name) setEventName(eventData.name);
-
-        const { data: eventGamesData } = await supabase
-          .from("match_play_games")
-          .select("*")
-          .eq("event_id", primaryGame.event_id)
-          .order("created_at");
-
-        if (eventGamesData && eventGamesData.length > 1) {
-          allGames = eventGamesData;
-
-          const groupIds = allGames.map(g => g.group_id).filter(Boolean) as string[];
-          if (groupIds.length > 0) {
-            const { data: groupsData } = await supabase
-              .from("game_groups")
-              .select("id, group_name")
-              .in("id", groupIds);
-
-            if (groupsData) {
-              groupNamesMap = new Map(groupsData.map(g => [g.id, g.group_name]));
-            }
+          if (courseHolesData) {
+            // Filter based on holes_played
+            const filteredHoles = gameData.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
           }
         }
       }
 
-      // Fetch all holes
-      const gameIds = allGames.map(g => g.id);
-      const { data: allHolesData } = await supabase
+      const { data: holesData } = await supabase
         .from("match_play_holes")
         .select("*")
-        .in("game_id", gameIds)
+        .eq("game_id", gameId)
         .order("hole_number");
 
-      const holesMap = new Map<string, MatchPlayHole[]>();
-      (allHolesData || []).forEach(hole => {
-        if (!holesMap.has(hole.game_id)) {
-          holesMap.set(hole.game_id, []);
-        }
-        holesMap.get(hole.game_id)!.push(hole as MatchPlayHole);
-      });
-
-      const gamesWithHoles: GameWithHoles[] = allGames.map(game => ({
-        game: game as MatchPlayGame,
-        holes: holesMap.get(game.id) || [],
-        groupName: game.group_id ? groupNamesMap.get(game.group_id) || 'Match' : 'Match',
-      }));
-
-      setEventGames(gamesWithHoles);
-
-      // Fetch course holes
-      if (primaryGame.course_id) {
-        const { data: courseHolesData } = await supabase
-          .from("course_holes")
-          .select("hole_number, par, stroke_index")
-          .eq("course_id", primaryGame.course_id)
-          .order("hole_number");
-
-        if (courseHolesData) {
-          const filteredHoles = primaryGame.holes_played === 9 
-            ? courseHolesData.slice(0, 9) 
-            : courseHolesData;
-          setCourseHoles(filteredHoles);
-        }
+      if (holesData) {
+        setHoles(holesData as MatchPlayHole[]);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -151,7 +89,7 @@ export default function MatchPlayLeaderboard() {
     );
   }
 
-  if (eventGames.length === 0) {
+  if (!game) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
@@ -160,54 +98,97 @@ export default function MatchPlayLeaderboard() {
     );
   }
 
+  // Create a map for quick hole data lookup
+  const holesMap = new Map(holes.map(h => [h.hole_number, h]));
+
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
   const backNine = courseHoles.filter(h => h.hole_number > 9);
+  const totalHoles = game.holes_played;
 
-  const renderGameScorecard = (gw: GameWithHoles, showGroupName: boolean) => {
-    const holesMap = new Map(gw.holes.map(h => [h.hole_number, h]));
+  const getPlayerScore = (holeNumber: number, playerNum: number) => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
+    return playerNum === 1 ? hole.player_1_gross_score : hole.player_2_gross_score;
+  };
 
-    const getPlayerScore = (holeNumber: number, playerNum: number) => {
-      const hole = holesMap.get(holeNumber);
-      if (!hole) return null;
-      return playerNum === 1 ? hole.player_1_gross_score : hole.player_2_gross_score;
-    };
+  const getHoleResult = (holeNumber: number) => {
+    const hole = holesMap.get(holeNumber);
+    return hole?.hole_result || 0;
+  };
 
-    const getHoleResult = (holeNumber: number) => {
-      return holesMap.get(holeNumber)?.hole_result || 0;
-    };
+  const getMatchStatusAfter = (holeNumber: number) => {
+    const hole = holesMap.get(holeNumber);
+    return hole?.match_status_after || 0;
+  };
 
-    const getMatchStatusDisplay = (holeNumber: number) => {
-      const hole = holesMap.get(holeNumber);
-      if (!hole) return { text: "", color: "" };
-      const status = hole.match_status_after;
-      if (status === 0) return { text: "T", color: "bg-muted text-muted-foreground" };
-      if (status > 0) return { text: `${status}UP`, color: "bg-blue-500 text-white" };
-      return { text: `${Math.abs(status)}UP`, color: "bg-destructive text-destructive-foreground" };
-    };
+  // Calculate running match status for display
+  const getMatchStatusDisplay = (holeNumber: number) => {
+    const status = getMatchStatusAfter(holeNumber);
+    if (status === 0) return { text: "T", color: "bg-muted text-muted-foreground" };
+    if (status > 0) {
+      // Player 1 (blue) is up
+      return { text: `${status}UP`, color: "bg-blue-500 text-white" };
+    }
+    // Player 2 (red) is up
+    return { text: `${Math.abs(status)}UP`, color: "bg-destructive text-destructive-foreground" };
+  };
 
-    const playerWonHole = (holeNumber: number, playerNum: number) => {
-      const result = getHoleResult(holeNumber);
-      if (playerNum === 1) return result === 1;
-      if (playerNum === 2) return result === -1;
-      return false;
-    };
+  // Check if player won the hole (for circling their score)
+  const playerWonHole = (holeNumber: number, playerNum: number) => {
+    const result = getHoleResult(holeNumber);
+    if (playerNum === 1) return result === 1;
+    if (playerNum === 2) return result === -1;
+    return false;
+  };
 
-    const renderScoreCell = (holeNumber: number, playerNum: number) => {
-      const score = getPlayerScore(holeNumber, playerNum);
-      const won = playerWonHole(holeNumber, playerNum);
-      if (score === null) return "";
-      const displayScore = score === -1 ? "–" : score;
-      if (won) {
-        const colorClass = playerNum === 1 ? "text-blue-500" : "text-destructive";
-        return <span className={`font-bold ${colorClass}`}>{displayScore}</span>;
-      }
-      return displayScore;
-    };
+  // Calculate front/back nine totals
+  const frontNinePar = frontNine.reduce((sum, h) => sum + h.par, 0);
+  const backNinePar = backNine.reduce((sum, h) => sum + h.par, 0);
 
-    const renderNine = (nineHoles: CourseHole[]) => {
-      if (nineHoles.length === 0) return null;
+  const getFrontNineTotal = (playerNum: number) => {
+    return frontNine.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, playerNum) || 0), 0);
+  };
 
+  const getBackNineTotal = (playerNum: number) => {
+    return backNine.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, playerNum) || 0), 0);
+  };
+
+  // Get final match status
+  const finalMatchStatus = game.match_status;
+  const getFinalStatusDisplay = () => {
+    if (finalMatchStatus === 0) return { text: "T", color: "bg-muted text-muted-foreground" };
+    if (finalMatchStatus > 0) {
+      return { text: `${finalMatchStatus}UP`, color: "bg-primary text-primary-foreground" };
+    }
+    return { text: `${Math.abs(finalMatchStatus)}UP`, color: "bg-destructive text-destructive-foreground" };
+  };
+
+  const renderScoreCell = (holeNumber: number, playerNum: number) => {
+    const score = getPlayerScore(holeNumber, playerNum);
+    const won = playerWonHole(holeNumber, playerNum);
+    
+    if (score === null) return "";
+    
+    // Display dash for conceded holes (-1)
+    const displayScore = score === -1 ? "–" : score;
+    
+    if (won) {
+      // Player 1 wins = blue, Player 2 wins = red (destructive)
+      const colorClass = playerNum === 1 ? "text-blue-500" : "text-destructive";
       return (
+        <span className={`font-bold ${colorClass}`}>
+          {displayScore}
+        </span>
+      );
+    }
+    return displayScore;
+  };
+
+  const renderNine = (nineHoles: CourseHole[], label: string, parTotal: number) => {
+    if (nineHoles.length === 0) return null;
+
+    return (
+      <div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -220,6 +201,7 @@ export default function MatchPlayLeaderboard() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {/* PAR Row */}
             <TableRow>
               <TableCell className="font-medium text-muted-foreground text-[10px] px-1 py-1 sticky left-0 bg-background z-10">PAR</TableCell>
               {nineHoles.map(hole => (
@@ -228,11 +210,13 @@ export default function MatchPlayLeaderboard() {
                 </TableCell>
               ))}
             </TableRow>
+
+            {/* Player 1 Row */}
             <TableRow>
               <TableCell className="px-1 py-1 sticky left-0 bg-background z-10">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                  <span className="font-medium text-[10px] truncate text-blue-500">{gw.game.player_1.split(' ')[0]}</span>
+                  <span className="font-medium text-[10px] truncate text-blue-500">{game.player_1.split(' ')[0]}</span>
                 </div>
               </TableCell>
               {nineHoles.map(hole => (
@@ -241,12 +225,17 @@ export default function MatchPlayLeaderboard() {
                 </TableCell>
               ))}
             </TableRow>
+
+            {/* Match Status Row */}
             <TableRow className="bg-muted/30">
               <TableCell className="font-medium text-muted-foreground text-[10px] px-1 py-1 sticky left-0 bg-muted/30 z-10">Score</TableCell>
               {nineHoles.map(hole => {
                 const holeData = holesMap.get(hole.hole_number);
                 if (!holeData) {
-                  return <TableCell key={hole.hole_number} className="text-center text-[9px] px-0.5 py-0.5"></TableCell>;
+                  return (
+                    <TableCell key={hole.hole_number} className="text-center text-[9px] px-0.5 py-0.5">
+                    </TableCell>
+                  );
                 }
                 const status = getMatchStatusDisplay(hole.hole_number);
                 return (
@@ -258,11 +247,13 @@ export default function MatchPlayLeaderboard() {
                 );
               })}
             </TableRow>
+
+            {/* Player 2 Row */}
             <TableRow>
               <TableCell className="px-1 py-1 sticky left-0 bg-background z-10">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive flex-shrink-0"></span>
-                  <span className="font-medium text-[10px] truncate text-destructive">{gw.game.player_2.split(' ')[0]}</span>
+                  <span className="font-medium text-[10px] truncate text-destructive">{game.player_2.split(' ')[0]}</span>
                 </div>
               </TableCell>
               {nineHoles.map(hole => (
@@ -273,26 +264,7 @@ export default function MatchPlayLeaderboard() {
             </TableRow>
           </TableBody>
         </Table>
-      );
-    };
-
-    return (
-      <Card key={gw.game.id} className="overflow-hidden">
-        {showGroupName && (
-          <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
-            <Badge variant="secondary">{gw.groupName}</Badge>
-            <span className="text-sm font-medium text-primary">
-              {formatMatchStatus(gw.game.match_status, gw.game.holes_remaining, gw.game.player_1, gw.game.player_2)}
-            </span>
-          </div>
-        )}
-        {renderNine(frontNine)}
-        {backNine.length > 0 && (
-          <div className="border-t">
-            {renderNine(backNine)}
-          </div>
-        )}
-      </Card>
+      </div>
     );
   };
 
@@ -301,41 +273,49 @@ export default function MatchPlayLeaderboard() {
       {/* Header */}
       <div className="bg-primary text-primary-foreground p-4">
         <div className="text-center">
-          <h2 className="text-lg font-bold">{courseName}</h2>
-          <p className="text-sm opacity-90">{eventName}</p>
+          <h2 className="text-lg font-bold">{game.course_name}</h2>
+          <p className="text-sm opacity-90">Match Play</p>
         </div>
       </div>
 
-      {/* Overall Status - only for single game */}
-      {eventGames.length === 1 && (
-        <div className="bg-primary/10 p-3 text-center">
-          <p className="text-lg font-bold text-primary">
-            {formatMatchStatus(eventGames[0].game.match_status, eventGames[0].game.holes_remaining, eventGames[0].game.player_1, eventGames[0].game.player_2)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {eventGames[0].game.holes_remaining} holes remaining
-          </p>
-        </div>
-      )}
+      {/* Match Status Banner */}
+      <div className="bg-primary/10 p-3 text-center">
+        <p className="text-lg font-bold text-primary">
+          {formatMatchStatus(game.match_status, game.holes_remaining, game.player_1, game.player_2)}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {game.holes_remaining} holes remaining
+        </p>
+      </div>
 
-      <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {eventGames.map((gw) => renderGameScorecard(gw, eventGames.length > 1))}
+      <div className="max-w-4xl mx-auto p-4">
+        <Card className="overflow-hidden">
+          {/* Front 9 */}
+          {renderNine(frontNine, "Out", frontNinePar)}
+          
+          {/* Back 9 */}
+          {backNine.length > 0 && (
+            <div className="border-t">
+              {renderNine(backNine, "In", backNinePar)}
+            </div>
+          )}
 
-        {/* Action Buttons */}
-        <Card className="p-4">
-          <div className="flex items-center justify-around">
-            <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
-              <ThumbsUp size={20} className="text-primary" />
-              <span className="text-xs">Like</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
-              <MessageSquare size={20} className="text-primary" />
-              <span className="text-xs text-center">Comment to<br/>Game Feed</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
-              <BarChart3 size={20} className="text-primary" />
-              <span className="text-xs">Statistics</span>
-            </Button>
+          {/* Action Buttons */}
+          <div className="border-t p-4">
+            <div className="flex items-center justify-around">
+              <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
+                <ThumbsUp size={20} className="text-primary" />
+                <span className="text-xs">Like</span>
+              </Button>
+              <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
+                <MessageSquare size={20} className="text-primary" />
+                <span className="text-xs text-center">Comment to<br/>Game Feed</span>
+              </Button>
+              <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
+                <BarChart3 size={20} className="text-primary" />
+                <span className="text-xs">Statistics</span>
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
