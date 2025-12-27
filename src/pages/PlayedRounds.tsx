@@ -130,7 +130,9 @@ const PlayedRounds = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-xl font-semibold text-foreground">All Rounds</h1>
+          <h1 className="text-xl font-semibold text-foreground flex-1">
+            All Rounds ({rounds.length})
+          </h1>
         </header>
 
         {/* New Round Button */}
