@@ -181,11 +181,7 @@ const Friends = () => {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .or(`username.ilike.%${friendSearch}%,display_name.ilike.%${friendSearch}%`)
-        .neq('id', user.id)
-        .limit(10);
+        .rpc('search_profiles', { q: friendSearch.trim(), max_results: 10 });
 
       if (error) throw error;
       setSearchResults(data || []);

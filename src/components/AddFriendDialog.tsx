@@ -79,13 +79,11 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
 
     setLoading(true);
     try {
-      // Search by username or display_name
-      const { data: users } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, country')
-        .or(`username.ilike.%${friendSearch.trim()}%,display_name.ilike.%${friendSearch.trim()}%`)
-        .neq('id', user.id)
-        .limit(10);
+      // Search by username / name / email via RPC (bypasses profiles RLS safely)
+      const { data: users, error: searchError } = await supabase
+        .rpc('search_profiles', { q: friendSearch.trim(), max_results: 10 });
+
+      if (searchError) throw searchError;
 
       if (!users || users.length === 0) {
         toast({
@@ -215,7 +213,7 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
           <TabsContent value="search" className="space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="Search by username..."
+                placeholder="Search by username, name, or email..."
                 value={friendSearch}
                 onChange={(e) => setFriendSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearchFriends()}
