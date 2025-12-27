@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Info, ArrowLeft } from "lucide-react";
 
 export default function RoundInfo() {
   const { roundId } = useParams();
+  const navigate = useNavigate();
   const { isSpectator } = useIsSpectator('round', roundId);
   const [origin, setOrigin] = useState<string | null>(null);
 
@@ -37,8 +39,24 @@ export default function RoundInfo() {
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
-      <TopNavBar />
-      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
+      {isSpectator ? (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground p-4">
+          <div className="relative flex items-center justify-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h2 className="text-lg font-bold">Game Info</h2>
+          </div>
+        </div>
+      ) : (
+        <TopNavBar />
+      )}
+      <div className={`p-4 max-w-2xl mx-auto space-y-4 ${isSpectator ? 'pt-20' : 'pt-20'}`}>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
