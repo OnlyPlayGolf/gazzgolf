@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundCard, RoundCardData } from "@/components/RoundCard";
+import { loadUnifiedRounds } from "@/utils/unifiedRoundsLoader";
 
 export default function FriendRounds() {
   const navigate = useNavigate();
@@ -60,45 +61,9 @@ export default function FriendRounds() {
       setDisplayName(profile.display_name || profile.username || 'User');
     }
 
-    // Load all rounds
-    const { data: roundsData } = await supabase
-      .from('rounds')
-      .select('id, course_name, round_name, date_played, holes_played')
-      .eq('user_id', userId)
-      .or('origin.is.null,origin.eq.tracker,origin.eq.play')
-      .order('date_played', { ascending: false });
-
-    if (roundsData && roundsData.length > 0) {
-      const roundsWithScores = await Promise.all(
-        roundsData.map(async (round) => {
-          const { data: holesData } = await supabase
-            .from('holes')
-            .select('score, par')
-            .eq('round_id', round.id);
-
-          const { count: playerCount } = await supabase
-            .from('round_players')
-            .select('*', { count: 'exact', head: true })
-            .eq('round_id', round.id);
-
-          const totalScore = holesData?.reduce((sum, hole) => sum + hole.score, 0) || 0;
-          const totalPar = holesData?.reduce((sum, hole) => sum + hole.par, 0) || 0;
-          const scoreToPar = totalScore - totalPar;
-
-          return {
-            id: round.id,
-            course_name: round.course_name || 'Unknown Course',
-            round_name: round.round_name,
-            date: round.date_played,
-            score: scoreToPar,
-            playerCount: playerCount || 1,
-            gameMode: 'Stroke Play'
-          };
-        })
-      );
-
-      setRounds(roundsWithScores);
-    }
+    // Load all rounds using unified loader (includes all game types)
+    const unifiedRounds = await loadUnifiedRounds(userId);
+    setRounds(unifiedRounds);
 
     setLoading(false);
   };
@@ -136,7 +101,7 @@ export default function FriendRounds() {
         ) : rounds.length > 0 ? (
           <div className="space-y-3">
             {rounds.map((round) => (
-              <RoundCard key={round.id} round={round} />
+              <RoundCard key={`${round.gameType || 'round'}-${round.id}`} round={round} />
             ))}
           </div>
         ) : (
