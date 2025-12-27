@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,6 +68,23 @@ export default function FriendRounds() {
     setLoading(false);
   };
 
+  // Group rounds by year
+  const roundsByYear = useMemo(() => {
+    const grouped: Record<string, RoundCardData[]> = {};
+    
+    rounds.forEach(round => {
+      const year = new Date(round.date).getFullYear().toString();
+      if (!grouped[year]) {
+        grouped[year] = [];
+      }
+      grouped[year].push(round);
+    });
+
+    // Sort years descending
+    return Object.entries(grouped)
+      .sort(([a], [b]) => parseInt(b) - parseInt(a));
+  }, [rounds]);
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
@@ -99,9 +116,18 @@ export default function FriendRounds() {
             Loading rounds...
           </div>
         ) : rounds.length > 0 ? (
-          <div className="space-y-3">
-            {rounds.map((round) => (
-              <RoundCard key={`${round.gameType || 'round'}-${round.id}`} round={round} />
+          <div className="space-y-6">
+            {roundsByYear.map(([year, yearRounds]) => (
+              <div key={year}>
+                <h2 className="text-lg font-semibold text-foreground mb-3 sticky top-16 bg-background py-2 z-10">
+                  {year}
+                </h2>
+                <div className="space-y-3">
+                  {yearRounds.map((round) => (
+                    <RoundCard key={`${round.gameType || 'round'}-${round.id}`} round={round} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         ) : (
