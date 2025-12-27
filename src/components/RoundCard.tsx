@@ -25,9 +25,10 @@ export interface RoundCardData {
 
 interface RoundCardProps {
   round: RoundCardData;
+  className?: string;
 }
 
-export function RoundCard({ round }: RoundCardProps) {
+export function RoundCard({ round, className }: RoundCardProps) {
   const navigate = useNavigate();
 
   const formatDate = (dateString: string) => {
@@ -53,7 +54,7 @@ export function RoundCard({ round }: RoundCardProps) {
 
   return (
     <Card 
-      className="cursor-pointer hover:bg-muted/50 transition-colors border-border"
+      className={`cursor-pointer hover:bg-muted/50 transition-colors border-border ${className || ''}`}
       onClick={handleClick}
     >
       <CardContent className="p-4">
