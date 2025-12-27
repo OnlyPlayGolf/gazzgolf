@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Trash2, ChevronRight } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, ChevronRight, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -26,7 +26,8 @@ const PlayedRounds = () => {
   const [rounds, setRounds] = useState<UnifiedRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [roundToDelete, setRoundToDelete] = useState<string | null>(null);
+  const [roundToDelete, setRoundToDelete] = useState<UnifiedRound | null>(null);
+  const [deleteMode, setDeleteMode] = useState(false);
 
   useEffect(() => {
     fetchPlayedRounds();
@@ -73,26 +74,27 @@ const PlayedRounds = () => {
 
   const handleDeleteRound = async () => {
     if (!roundToDelete) return;
+    const roundId = roundToDelete.id;
 
     try {
       const { error: holesError } = await supabase
         .from("holes")
         .delete()
-        .eq("round_id", roundToDelete);
+        .eq("round_id", roundId);
 
       if (holesError) throw holesError;
 
       const { error: playersError } = await supabase
         .from("round_players")
         .delete()
-        .eq("round_id", roundToDelete);
+        .eq("round_id", roundId);
 
       if (playersError) throw playersError;
 
       const { error: roundError } = await supabase
         .from("rounds")
         .delete()
-        .eq("id", roundToDelete);
+        .eq("id", roundId);
 
       if (roundError) throw roundError;
 
@@ -101,6 +103,7 @@ const PlayedRounds = () => {
         description: "The round has been deleted successfully.",
       });
 
+      setDeleteMode(false);
       fetchPlayedRounds();
     } catch (error: any) {
       console.error("Error deleting round:", error);
@@ -133,7 +136,23 @@ const PlayedRounds = () => {
           <h1 className="text-xl font-semibold text-foreground flex-1">
             All Rounds ({rounds.length})
           </h1>
+          {rounds.length > 0 && (
+            <Button
+              variant={deleteMode ? "destructive" : "ghost"}
+              size="icon"
+              onClick={() => setDeleteMode(!deleteMode)}
+              className="h-9 w-9"
+              aria-label={deleteMode ? "Cancel delete" : "Delete rounds"}
+            >
+              {deleteMode ? <X size={20} /> : <Trash2 size={20} />}
+            </Button>
+          )}
         </header>
+        {deleteMode && (
+          <p className="text-sm text-destructive mb-4">
+            Tap a round to delete it
+          </p>
+        )}
 
         {/* New Round Button */}
         <Button onClick={() => navigate("/rounds-play")} className="w-full mb-4">
@@ -161,10 +180,17 @@ const PlayedRounds = () => {
               return (
                 <article
                   key={`${round.gameType}-${round.id}`}
-                  className="flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() =>
-                    navigate(getGameRoute(round.gameType || "round", round.id))
-                  }
+                  className={`flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer ${
+                    deleteMode && canDelete ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""
+                  }`}
+                  onClick={() => {
+                    if (deleteMode && canDelete) {
+                      setRoundToDelete(round);
+                      setDeleteDialogOpen(true);
+                    } else {
+                      navigate(getGameRoute(round.gameType || "round", round.id));
+                    }
+                  }}
                 >
                   {/* Date */}
                   <div className="w-12 text-center flex-shrink-0">
@@ -215,23 +241,6 @@ const PlayedRounds = () => {
                       )}
                     </div>
 
-                    {/* Delete Button (only if user owns the round) */}
-                    {canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRoundToDelete(round.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                        aria-label="Delete round"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    )}
-
                     <ChevronRight size={16} className="text-muted-foreground" />
                   </div>
                 </article>
@@ -246,7 +255,7 @@ const PlayedRounds = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Round</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this round? This action cannot be undone.
+              Are you sure you want to delete this round at {roundToDelete?.course_name}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
