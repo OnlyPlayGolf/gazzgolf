@@ -201,6 +201,36 @@ const Friends = () => {
     if (!user) return;
 
     try {
+      // Check if friendship already exists in either direction
+      const { data: existing } = await supabase
+        .from('friendships')
+        .select('id, status, requester, addressee')
+        .or(`and(requester.eq.${user.id},addressee.eq.${friendId}),and(requester.eq.${friendId},addressee.eq.${user.id})`)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.status === 'accepted') {
+          toast({
+            title: "Already friends",
+            description: "You are already friends with this user",
+            variant: "destructive"
+          });
+        } else if (existing.requester === user.id) {
+          toast({
+            title: "Request pending",
+            description: "You already sent a friend request to this user",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Request pending",
+            description: "This user has already sent you a friend request. Check your friend requests!",
+            variant: "destructive"
+          });
+        }
+        return;
+      }
+
       const { error } = await supabase
         .from('friendships')
         .insert({
