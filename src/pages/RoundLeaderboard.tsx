@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
@@ -7,7 +7,7 @@ import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, MessageSquare, BarChart3, ChevronDown, RotateCcw } from "lucide-react";
+import { ThumbsUp, MessageSquare, BarChart3, ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -46,6 +46,7 @@ interface PlayerData {
 
 export default function RoundLeaderboard() {
   const { roundId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator } = useIsSpectator('round', roundId);
   
@@ -271,9 +272,21 @@ export default function RoundLeaderboard() {
     <div className="min-h-screen pb-24 bg-background">
       {/* Single Header */}
       <div className="bg-primary text-primary-foreground p-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold">{round.course_name}</h2>
-          <p className="text-sm opacity-90">Stroke Play NET</p>
+        <div className="relative flex items-center justify-center">
+          {isSpectator && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={20} />
+            </Button>
+          )}
+          <div className="text-center">
+            <h2 className="text-lg font-bold">{round.course_name}</h2>
+            <p className="text-sm opacity-90">Stroke Play NET</p>
+          </div>
         </div>
       </div>
 

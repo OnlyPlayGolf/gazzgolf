@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Send } from "lucide-react";
+import { Heart, MessageCircle, Send, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
@@ -43,6 +43,7 @@ interface Reply {
 
 export default function RoundFeed() {
   const { roundId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator } = useIsSpectator('round', roundId);
   const [origin, setOrigin] = useState<string | null>(null);
@@ -285,8 +286,23 @@ export default function RoundFeed() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Feed</h1>
+      {isSpectator && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground p-4">
+          <div className="relative flex items-center justify-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h2 className="text-lg font-bold">Game Feed</h2>
+          </div>
+        </div>
+      )}
+      <div className={`p-4 max-w-2xl mx-auto space-y-4 ${isSpectator ? 'pt-20' : 'pt-6'}`}>
+        {!isSpectator && <h1 className="text-2xl font-bold">Game Feed</h1>}
 
         {/* New Comment Box */}
         {currentUserId && (
