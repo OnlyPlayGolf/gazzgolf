@@ -678,6 +678,7 @@ export default function BestBallLeaderboard() {
       <div className="bg-primary text-primary-foreground p-4">
         <div className="text-center">
           <h2 className="text-lg font-bold">{game.round_name || 'Best Ball'}</h2>
+          <p className="text-sm text-primary-foreground/80">{game.course_name}</p>
         </div>
       </div>
 
