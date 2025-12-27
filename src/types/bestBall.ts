@@ -23,6 +23,7 @@ export interface BestBallGame {
   user_id: string;
   course_id: string | null;
   course_name: string;
+  round_name: string | null;
   date_played: string;
   holes_played: number;
   created_at: string;

@@ -508,8 +508,7 @@ export default function BestBallPlay() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Best Ball</h1>
-              <p className="text-sm text-muted-foreground">{game.course_name}</p>
+              <h1 className="text-xl font-bold">{game.round_name || 'Best Ball'}</h1>
             </div>
             <div className="w-10" />
           </div>
