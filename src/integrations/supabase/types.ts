@@ -2166,6 +2166,18 @@ export type Database = {
         Args: { p_title: string }
         Returns: string
       }
+      get_public_profile: {
+        Args: { target_user_id: string }
+        Returns: {
+          avatar_url: string
+          country: string
+          display_name: string
+          handicap: string
+          home_club: string
+          id: string
+          username: string
+        }[]
+      }
       global_leaderboard_for_drill: {
         Args: { p_drill_title: string }
         Returns: {
@@ -2203,6 +2215,16 @@ export type Database = {
       is_round_participant: {
         Args: { _round_id: string; _user_id: string }
         Returns: boolean
+      }
+      search_profiles: {
+        Args: { max_results?: number; q: string }
+        Returns: {
+          avatar_url: string
+          country: string
+          display_name: string
+          id: string
+          username: string
+        }[]
       }
       top3_favourite_group_for_drill: {
         Args: { p_drill: string }

@@ -51,12 +51,11 @@ export default function AddFriendFromQR() {
         return;
       }
 
-      // Load target user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      // Load target user profile via RPC (bypasses profiles RLS safely)
+      const { data: profileRows, error: profileError } = await supabase
+        .rpc('get_public_profile', { target_user_id: userId });
+
+      const profileData = (profileRows || [])[0] as any;
 
       if (profileError || !profileData) {
         toast({
