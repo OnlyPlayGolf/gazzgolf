@@ -818,15 +818,82 @@ export default function RoundTracker() {
 
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Filter to only show players in the same group when multiple groups exist */}
-        {players
-          .filter((player) => {
-            // If no groups or user is round creator, show all players
-            if (groups.length === 0 || round.user_id === currentUserId) return true;
-            // Otherwise, only show players in the same group
-            return player.group_id === currentUserGroupId;
-          })
-          .map((player) => {
+        {/* Show players grouped by their game groups */}
+        {groups.length > 0 ? (
+          // When groups exist, show players organized by group
+          <>
+            {groups
+              .filter((group) => {
+                // Round creator sees all groups; others see only their group
+                if (round.user_id === currentUserId) return true;
+                return group.id === currentUserGroupId;
+              })
+              .map((group) => {
+                const groupPlayers = players.filter((p) => p.group_id === group.id);
+                if (groupPlayers.length === 0) return null;
+                
+                return (
+                  <div key={group.id} className="space-y-3">
+                    {/* Group header - only show if round creator viewing multiple groups */}
+                    {round.user_id === currentUserId && groups.length > 1 && (
+                      <div className="flex items-center gap-2 pt-2">
+                        <Badge variant="secondary" className="text-sm">
+                          {group.group_name}
+                        </Badge>
+                        {group.tee_time && (
+                          <span className="text-xs text-muted-foreground">{group.tee_time}</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {groupPlayers.map((player) => {
+                      const playerScore = getPlayerScore(player.id);
+                      const hasScore = hasPlayerEnteredScore(player.id);
+                      const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
+                      return (
+                        <Card 
+                          key={player.id} 
+                          className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => {
+                            setSelectedPlayer(player);
+                            setShowScoreSheet(true);
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                                {hasMulliganOnHole && (
+                                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                                    Mulligan
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Tee: {player.tee_color || round.tee_set}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
+                                <div className="text-xs text-muted-foreground">Strokes</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
+                                <div className="text-xs text-muted-foreground font-bold">To Par</div>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+          </>
+        ) : (
+          // No groups - show all players flat
+          players.map((player) => {
             const playerScore = getPlayerScore(player.id);
             const hasScore = hasPlayerEnteredScore(player.id);
             const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
@@ -866,7 +933,8 @@ export default function RoundTracker() {
                 </div>
               </Card>
             );
-          })}
+          })
+        )}
         
         {/* Show completion button when at the last hole AND all holes have scores */}
         {isAtLastCurrentHole && allHolesScored && (
