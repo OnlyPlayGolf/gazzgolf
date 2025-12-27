@@ -280,8 +280,21 @@ export default function MatchPlaySetup() {
     }
   };
 
+  // Check if at least one group is ready to start
+  const hasValidGroup = groups.some((g) => isValidMatchPlayGroupSize(g.players.length));
+
+  const handleStartMatch = async () => {
+    const validGroups = groups.filter((g) => isValidMatchPlayGroupSize(g.players.length));
+    if (validGroups.length === 0) {
+      toast({ title: "No valid groups", description: "Each group needs 2 or 4 players", variant: "destructive" });
+      return;
+    }
+    // Start the first valid group
+    await handleStartMatchForGroup(validGroups[0]);
+  };
+
   return (
-    <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen pb-32 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
       <main className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
         <header className="flex items-center gap-3">
@@ -403,6 +416,20 @@ export default function MatchPlaySetup() {
           </Card>
         </section>
       </main>
+
+      {/* Fixed bottom Start Match button */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t border-border">
+        <div className="max-w-2xl mx-auto">
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={handleStartMatch}
+            disabled={loading || !hasValidGroup || !selectedCourseId}
+          >
+            {loading ? "Starting..." : "Start Match"}
+          </Button>
+        </div>
+      </div>
 
       <SetupPlayerEditSheet
         player={editingPlayer}
