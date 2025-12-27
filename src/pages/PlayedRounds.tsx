@@ -75,28 +75,36 @@ const PlayedRounds = () => {
   const handleDeleteRound = async () => {
     if (!roundToDelete) return;
     const roundId = roundToDelete.id;
+    const gameType = roundToDelete.gameType || 'round';
 
     try {
-      const { error: holesError } = await supabase
-        .from("holes")
-        .delete()
-        .eq("round_id", roundId);
-
-      if (holesError) throw holesError;
-
-      const { error: playersError } = await supabase
-        .from("round_players")
-        .delete()
-        .eq("round_id", roundId);
-
-      if (playersError) throw playersError;
-
-      const { error: roundError } = await supabase
-        .from("rounds")
-        .delete()
-        .eq("id", roundId);
-
-      if (roundError) throw roundError;
+      // Delete based on game type
+      if (gameType === 'round' || !gameType) {
+        await supabase.from('holes').delete().eq('round_id', roundId);
+        await supabase.from('round_players').delete().eq('round_id', roundId);
+        await supabase.from('rounds').delete().eq('id', roundId);
+      } else if (gameType === 'match_play') {
+        await supabase.from('match_play_holes').delete().eq('game_id', roundId);
+        await supabase.from('match_play_games').delete().eq('id', roundId);
+      } else if (gameType === 'best_ball') {
+        await supabase.from('best_ball_holes').delete().eq('game_id', roundId);
+        await supabase.from('best_ball_games').delete().eq('id', roundId);
+      } else if (gameType === 'copenhagen') {
+        await supabase.from('copenhagen_holes').delete().eq('game_id', roundId);
+        await supabase.from('copenhagen_games').delete().eq('id', roundId);
+      } else if (gameType === 'scramble') {
+        await supabase.from('scramble_holes').delete().eq('game_id', roundId);
+        await supabase.from('scramble_games').delete().eq('id', roundId);
+      } else if (gameType === 'skins') {
+        await supabase.from('skins_holes').delete().eq('game_id', roundId);
+        await supabase.from('skins_games').delete().eq('id', roundId);
+      } else if (gameType === 'umbriago') {
+        await supabase.from('umbriago_holes').delete().eq('game_id', roundId);
+        await supabase.from('umbriago_games').delete().eq('id', roundId);
+      } else if (gameType === 'wolf') {
+        await supabase.from('wolf_holes').delete().eq('game_id', roundId);
+        await supabase.from('wolf_games').delete().eq('id', roundId);
+      }
 
       toast({
         title: "Round deleted",
@@ -181,10 +189,10 @@ const PlayedRounds = () => {
                 <article
                   key={`${round.gameType}-${round.id}`}
                   className={`flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer ${
-                    deleteMode && canDelete ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""
+                    deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""
                   }`}
                   onClick={() => {
-                    if (deleteMode && canDelete) {
+                    if (deleteMode) {
                       setRoundToDelete(round);
                       setDeleteDialogOpen(true);
                     } else {
