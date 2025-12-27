@@ -395,26 +395,84 @@ export default function BestBallLeaderboard() {
   };
 
 
-  const getMatchStatusDisplay = () => {
-    if (game.match_status === 0) return 'AS';
+  const getMatchScoreDisplay = () => {
+    const totalHoles = game.holes_played;
+    const holesPlayed = holes.length;
+    const holesRemaining = totalHoles - holesPlayed;
+    
+    if (game.match_status === 0) {
+      return { teamAScore: null, teamBScore: null, isAllSquare: true };
+    }
+    
     const upBy = Math.abs(game.match_status);
-    const leadingTeam = game.match_status > 0 ? game.team_a_name : game.team_b_name;
-    return `${leadingTeam} ${upBy}UP`;
+    const leadingTeam = game.match_status > 0 ? 'A' : 'B';
+    
+    // Calculate "holes to go" style score (e.g., 3½ means 3 up with remainder)
+    const teamAScore = leadingTeam === 'A' ? `${upBy}` : null;
+    const teamBScore = leadingTeam === 'B' ? `${upBy}` : null;
+    
+    return { teamAScore, teamBScore, isAllSquare: false, leadingTeam };
   };
 
   const renderCombinedScorecard = () => {
     if (courseHoles.length === 0) return null;
 
+    const matchScore = getMatchScoreDisplay();
+
     return (
       <Card className="overflow-hidden">
         <Collapsible open={scorecardOpen} onOpenChange={setScorecardOpen}>
           <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${scorecardOpen ? 'rotate-180' : '-rotate-90'}`} />
-                <span className="text-lg font-bold">{game.team_a_name} vs {game.team_b_name}</span>
+            <div className="flex items-center p-3 hover:bg-muted/50 transition-colors">
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform mr-2 ${scorecardOpen ? 'rotate-180' : '-rotate-90'}`} />
+              
+              {/* Team A Name */}
+              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 flex-1 text-left truncate">
+                {game.team_a_name}
+              </span>
+              
+              {/* Score Display in Middle */}
+              <div className="flex items-center mx-2">
+                {matchScore.isAllSquare ? (
+                  <div className="px-4 py-1.5 bg-muted rounded-md">
+                    <span className="text-sm font-bold text-muted-foreground">AS</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    {/* Team A Score Section */}
+                    <div className={`px-3 py-1.5 rounded-l-md flex items-center ${
+                      matchScore.leadingTeam === 'A' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <span className="text-sm font-bold min-w-[20px] text-center">
+                        {matchScore.leadingTeam === 'A' ? matchScore.teamAScore : ''}
+                      </span>
+                      {matchScore.leadingTeam === 'A' && (
+                        <span className="ml-1 text-xs">UP</span>
+                      )}
+                    </div>
+                    {/* Team B Score Section */}
+                    <div className={`px-3 py-1.5 rounded-r-md flex items-center ${
+                      matchScore.leadingTeam === 'B' 
+                        ? 'bg-red-600 text-white' 
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {matchScore.leadingTeam === 'B' && (
+                        <span className="mr-1 text-xs">UP</span>
+                      )}
+                      <span className="text-sm font-bold min-w-[20px] text-center">
+                        {matchScore.leadingTeam === 'B' ? matchScore.teamBScore : ''}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-              <span className="text-lg font-bold text-primary">{getMatchStatusDisplay()}</span>
+              
+              {/* Team B Name */}
+              <span className="text-sm font-semibold text-red-600 dark:text-red-400 flex-1 text-right truncate">
+                {game.team_b_name}
+              </span>
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
