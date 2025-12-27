@@ -45,9 +45,9 @@ export const BottomTabBar = () => {
                 onClick={() => navigate(tab.path)}
                 className="flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] transition-colors"
               >
-                <div className="w-14 h-14 rounded-full bg-green-500 flex flex-col items-center justify-center">
-                  <Icon size={20} className="text-white mb-0.5" />
-                  <span className="text-[10px] font-medium text-white">{tab.label}</span>
+                <div className="w-14 h-14 rounded-full bg-primary flex flex-col items-center justify-center">
+                  <Icon size={20} className="text-primary-foreground mb-0.5" />
+                  <span className="text-[10px] font-medium text-primary-foreground">{tab.label}</span>
                 </div>
               </button>
             );
@@ -60,7 +60,7 @@ export const BottomTabBar = () => {
               className={cn(
                 "flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] text-[10px] font-medium transition-colors",
                 isActive 
-                  ? "text-green-500" 
+                  ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -68,10 +68,10 @@ export const BottomTabBar = () => {
                 size={20} 
                 className={cn(
                   "mb-0.5",
-                  isActive ? "text-green-500" : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )} 
               />
-              <span className={cn(isActive ? "text-green-500" : "text-muted-foreground")}>
+              <span className={cn(isActive ? "text-primary" : "text-muted-foreground")}>
                 {tab.label}
               </span>
             </button>
