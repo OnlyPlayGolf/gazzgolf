@@ -184,7 +184,25 @@ const Friends = () => {
         .rpc('search_profiles', { q: friendSearch.trim(), max_results: 10 });
 
       if (error) throw error;
-      setSearchResults(data || []);
+
+      // Enrich results with friendship status
+      const enrichedResults = await Promise.all(
+        (data || []).map(async (profile: any) => {
+          const { data: friendship } = await supabase
+            .from('friendships')
+            .select('id, status, requester')
+            .or(`and(requester.eq.${user.id},addressee.eq.${profile.id}),and(requester.eq.${profile.id},addressee.eq.${user.id})`)
+            .maybeSingle();
+
+          return {
+            ...profile,
+            friendshipStatus: friendship?.status || null,
+            isRequester: friendship?.requester === user.id
+          };
+        })
+      );
+
+      setSearchResults(enrichedResults);
     } catch (error) {
       console.error('Error searching friends:', error);
       toast({
@@ -542,15 +560,26 @@ const Friends = () => {
                                 {result.display_name && <p className="text-sm text-muted-foreground">@{result.username}</p>}
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSendFriendRequest(result.id);
-                              }}
-                            >
-                              <UserPlus size={16} />
-                            </Button>
+                            {result.friendshipStatus === 'accepted' ? (
+                              <Button size="sm" variant="secondary" disabled>
+                                <Check size={16} className="mr-1" />
+                                Friends
+                              </Button>
+                            ) : result.friendshipStatus === 'pending' ? (
+                              <Button size="sm" variant="outline" disabled>
+                                {result.isRequester ? 'Pending' : 'Respond'}
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSendFriendRequest(result.id);
+                                }}
+                              >
+                                <UserPlus size={16} />
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>

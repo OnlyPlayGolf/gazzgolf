@@ -17,6 +17,8 @@ interface SearchResult {
   country: string | null;
   groups: string[];
   isFriend: boolean;
+  isPending: boolean;
+  isRequester: boolean;
 }
 
 interface AddFriendDialogProps {
@@ -102,17 +104,19 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
             .select('groups(name)')
             .eq('user_id', u.id);
 
-          // Check if already friends
+          // Check friendship status
           const { data: friendshipData } = await supabase
             .from('friendships')
-            .select('id, status')
+            .select('id, status, requester')
             .or(`and(requester.eq.${user.id},addressee.eq.${u.id}),and(requester.eq.${u.id},addressee.eq.${user.id})`)
             .maybeSingle();
 
           return {
             ...u,
             groups: groupData?.map((g: any) => g.groups.name) || [],
-            isFriend: friendshipData?.status === 'accepted'
+            isFriend: friendshipData?.status === 'accepted',
+            isPending: friendshipData?.status === 'pending',
+            isRequester: friendshipData?.requester === user.id
           };
         })
       );
@@ -252,6 +256,14 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
                       disabled
                     >
                       Friends
+                    </Button>
+                  ) : result.isPending ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                    >
+                      {result.isRequester ? 'Pending' : 'Respond'}
                     </Button>
                   ) : (
                     <Button
