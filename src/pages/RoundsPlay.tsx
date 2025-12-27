@@ -591,46 +591,53 @@ export default function RoundsPlay() {
   const getAllPlayerIds = () => setupState.groups.flatMap(g => g.players.map(p => p.odId));
 
   // Validation for player requirements per game format
+  // For multi-group formats, validate players PER GROUP, not total
   const getPlayerValidationError = (): string | null => {
     const totalPlayers = getTotalPlayers();
     const format = setupState.gameFormat;
+    const groups = setupState.groups;
+
+    // Helper to check if all groups have exactly N players
+    const checkPlayersPerGroup = (requiredPerGroup: number, formatName: string) => {
+      const invalidGroups = groups.filter(g => g.players.length !== requiredPerGroup);
+      if (invalidGroups.length > 0) {
+        const groupNames = invalidGroups.map(g => g.name).join(', ');
+        return `${formatName} requires ${requiredPerGroup} players per group. ${groupNames} ${invalidGroups.length === 1 ? 'needs' : 'need'} ${requiredPerGroup} players.`;
+      }
+      return null;
+    };
+
+    // Helper to check if all groups have at least N players
+    const checkMinPlayersPerGroup = (minPerGroup: number, formatName: string) => {
+      const invalidGroups = groups.filter(g => g.players.length < minPerGroup);
+      if (invalidGroups.length > 0) {
+        const groupNames = invalidGroups.map(g => g.name).join(', ');
+        return `${formatName} requires at least ${minPerGroup} players per group. ${groupNames} ${invalidGroups.length === 1 ? 'needs' : 'need'} more players.`;
+      }
+      return null;
+    };
 
     switch (format) {
       case "umbriago":
-        if (totalPlayers !== 4) {
-          return `Umbriago requires exactly 4 players. You have ${totalPlayers}.`;
-        }
-        break;
+        return checkPlayersPerGroup(4, "Umbriago");
       case "wolf":
-        if (totalPlayers < 4 || totalPlayers > 6) {
-          return `Wolf requires 4-6 players. You have ${totalPlayers}.`;
+        // Wolf: 4-6 players per group
+        const wolfInvalid = groups.filter(g => g.players.length < 4 || g.players.length > 6);
+        if (wolfInvalid.length > 0) {
+          const groupNames = wolfInvalid.map(g => g.name).join(', ');
+          return `Wolf requires 4-6 players per group. ${groupNames} ${wolfInvalid.length === 1 ? 'has' : 'have'} invalid player count.`;
         }
         break;
       case "copenhagen":
-        if (totalPlayers !== 3) {
-          return `Copenhagen requires exactly 3 players. You have ${totalPlayers}.`;
-        }
-        break;
+        return checkPlayersPerGroup(3, "Copenhagen");
       case "match_play":
-        if (totalPlayers !== 2) {
-          return `Match Play requires exactly 2 players. You have ${totalPlayers}.`;
-        }
-        break;
+        return checkPlayersPerGroup(2, "Match Play");
       case "best_ball":
-        if (totalPlayers < 3) {
-          return `Best Ball requires at least 3 players. You have ${totalPlayers}.`;
-        }
-        break;
+        return checkMinPlayersPerGroup(3, "Best Ball");
       case "scramble":
-        if (totalPlayers < 2) {
-          return `Scramble requires at least 2 players. You have ${totalPlayers}.`;
-        }
-        break;
+        return checkMinPlayersPerGroup(2, "Scramble");
       case "skins":
-        if (totalPlayers < 2) {
-          return `Skins requires at least 2 players. You have ${totalPlayers}.`;
-        }
-        break;
+        return checkMinPlayersPerGroup(2, "Skins");
       case "stroke_play":
         if (totalPlayers < 1) {
           return `Add at least 1 player to continue.`;
