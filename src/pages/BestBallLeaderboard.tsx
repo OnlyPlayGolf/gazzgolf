@@ -393,22 +393,33 @@ export default function BestBallLeaderboard() {
     );
   };
 
+  const [scorecardOpen, setScorecardOpen] = useState(false);
+
+  const getMatchStatusDisplay = () => {
+    if (game.match_status === 0) return 'AS';
+    const upBy = Math.abs(game.match_status);
+    const leadingTeam = game.match_status > 0 ? game.team_a_name : game.team_b_name;
+    return `${leadingTeam} ${upBy}UP`;
+  };
+
   const renderCombinedScorecard = () => {
     if (courseHoles.length === 0) return null;
 
     return (
       <Card className="overflow-hidden">
-        <div className="bg-card border-b border-border p-4">
-          <div className="flex items-center justify-between">
-            <div className="text-xl font-bold">Scorecard</div>
-            <div className="text-sm text-muted-foreground">
-              {holes.length} holes played
+        <Collapsible open={scorecardOpen} onOpenChange={setScorecardOpen}>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${scorecardOpen ? 'rotate-180' : '-rotate-90'}`} />
+                <span className="text-lg font-bold">{game.team_a_name} vs {game.team_b_name}</span>
+              </div>
+              <span className="text-lg font-bold text-primary">{getMatchStatusDisplay()}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Front 9 */}
-        <div className="overflow-x-auto">
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {/* Front 9 */}
+            <div className="overflow-x-auto border-t">
           <Table>
             <TableHeader>
               <TableRow className="bg-primary/5">
@@ -588,6 +599,8 @@ export default function BestBallLeaderboard() {
             </Table>
           </div>
         )}
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
     );
   };
@@ -599,17 +612,6 @@ export default function BestBallLeaderboard() {
           <h2 className="text-lg font-bold">{game.round_name || 'Best Ball'}</h2>
         </div>
       </div>
-
-      {isMatchPlay && (
-        <div className="bg-primary/10 p-3 text-center">
-          <p className="text-lg font-bold text-primary">
-            {formatMatchStatus(game.match_status, game.holes_remaining, game.team_a_name, game.team_b_name)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {game.holes_remaining} holes remaining
-          </p>
-        </div>
-      )}
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {isMatchPlay ? (
