@@ -420,8 +420,20 @@ export default function MatchPlayPlay() {
         )}
 
         {/* Match Status */}
-        <div className="p-3 bg-primary/10 rounded-lg text-center">
-          <p className="text-lg font-bold text-primary">
+        <div className={`p-3 rounded-lg text-center ${
+          currentMatchStatus > 0 
+            ? "bg-blue-100 dark:bg-blue-900/30" 
+            : currentMatchStatus < 0 
+              ? "bg-red-100 dark:bg-red-900/30" 
+              : "bg-primary/10"
+        }`}>
+          <p className={`text-lg font-bold ${
+            currentMatchStatus > 0 
+              ? "text-blue-600 dark:text-blue-400" 
+              : currentMatchStatus < 0 
+                ? "text-red-600 dark:text-red-400" 
+                : "text-primary"
+          }`}>
             {formatMatchStatusWithHoles(currentMatchStatus, currentHolesRemaining, game.player_1, game.player_2)}
           </p>
         </div>
