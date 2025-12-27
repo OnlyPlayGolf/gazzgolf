@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +44,7 @@ interface Reply {
 export default function RoundFeed() {
   const { roundId } = useParams();
   const { toast } = useToast();
+  const { isSpectator } = useIsSpectator('round', roundId);
   const [origin, setOrigin] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -276,9 +278,9 @@ export default function RoundFeed() {
   const renderBottomTabBar = () => {
     if (!roundId) return null;
     if (origin === "skins") {
-      return <SkinsBottomTabBar roundId={roundId} />;
+      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
     }
-    return <RoundBottomTabBar roundId={roundId} />;
+    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
   };
 
   return (

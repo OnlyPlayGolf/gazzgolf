@@ -51,13 +51,13 @@ export function LiveRoundCard({
       return `/rounds/${gameId}/track`;
     }
     
-    // Otherwise, go to spectator view
+    // Navigate to the game's leaderboard (spectator mode is handled within the pages)
     switch (gameType) {
-      case 'match_play': return `/spectate/match-play/${gameId}`;
-      case 'umbriago': return `/spectate/umbriago/${gameId}`;
-      case 'wolf': return `/spectate/wolf/${gameId}`;
-      case 'copenhagen': return `/spectate/copenhagen/${gameId}`;
-      default: return `/spectate/round/${gameId}`;
+      case 'match_play': return `/match-play/${gameId}/leaderboard`;
+      case 'umbriago': return `/umbriago/${gameId}/leaderboard`;
+      case 'wolf': return `/wolf/${gameId}/leaderboard`;
+      case 'copenhagen': return `/copenhagen/${gameId}/leaderboard`;
+      default: return `/rounds/${gameId}/leaderboard`;
     }
   };
 
