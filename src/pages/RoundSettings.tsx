@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Settings, ArrowLeft } from "lucide-react";
+import { getSpectatorReturnPath } from "@/utils/unifiedRoundsLoader";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { supabase } from "@/integrations/supabase/client";
@@ -258,7 +259,7 @@ export default function RoundSettings() {
               variant="ghost"
               size="icon"
               className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(getSpectatorReturnPath(roundId || ''))}
             >
               <ArrowLeft size={20} />
             </Button>

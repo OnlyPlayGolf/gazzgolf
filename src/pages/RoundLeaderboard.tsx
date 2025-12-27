@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { getSpectatorReturnPath } from "@/utils/unifiedRoundsLoader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, MessageSquare, BarChart3, ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
@@ -278,7 +279,7 @@ export default function RoundLeaderboard() {
               variant="ghost"
               size="icon"
               className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(getSpectatorReturnPath(roundId || ''))}
             >
               <ArrowLeft size={20} />
             </Button>

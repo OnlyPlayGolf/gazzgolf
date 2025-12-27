@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowLeft, Trash2, ChevronRight, X } from "lucide-react";
@@ -20,6 +20,7 @@ import { getGameRoute, loadUnifiedRounds, type UnifiedRound } from "@/utils/unif
 
 const PlayedRounds = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -210,7 +211,7 @@ const PlayedRounds = () => {
                       setRoundToDelete(round);
                       setDeleteDialogOpen(true);
                     } else {
-                      navigate(getGameRoute(round.gameType || "round", round.id));
+                      navigate(getGameRoute(round.gameType || "round", round.id, location.pathname));
                     }
                   }}
                 >
