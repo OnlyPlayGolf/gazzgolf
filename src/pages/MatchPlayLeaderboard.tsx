@@ -124,7 +124,7 @@ export default function MatchPlayLeaderboard() {
   // Calculate running match status for display
   const getMatchStatusDisplay = (holeNumber: number) => {
     const status = getMatchStatusAfter(holeNumber);
-    if (status === 0) return { text: "T", color: "bg-muted text-muted-foreground" };
+    if (status === 0) return { text: "AS", color: "bg-muted text-muted-foreground" };
     if (status > 0) {
       // Player 1 (blue) is up
       return { text: `${status}UP`, color: "bg-blue-500 text-white" };
@@ -156,7 +156,7 @@ export default function MatchPlayLeaderboard() {
   // Get final match status
   const finalMatchStatus = game.match_status;
   const getFinalStatusDisplay = () => {
-    if (finalMatchStatus === 0) return { text: "T", color: "bg-muted text-muted-foreground" };
+    if (finalMatchStatus === 0) return { text: "AS", color: "bg-muted text-muted-foreground" };
     if (finalMatchStatus > 0) {
       return { text: `${finalMatchStatus}UP`, color: "bg-primary text-primary-foreground" };
     }
