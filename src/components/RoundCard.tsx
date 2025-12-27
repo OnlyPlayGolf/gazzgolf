@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight, MapPin, Calendar, Users, Trophy } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
@@ -30,6 +30,7 @@ interface RoundCardProps {
 
 export function RoundCard({ round, className }: RoundCardProps) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -46,7 +47,7 @@ export function RoundCard({ round, className }: RoundCardProps) {
 
   const handleClick = () => {
     const gameType = round.gameType || 'round';
-    navigate(getGameRoute(gameType, round.id));
+    navigate(getGameRoute(gameType, round.id, location.pathname));
   };
 
   // Only show score for regular stroke play rounds

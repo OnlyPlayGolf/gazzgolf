@@ -565,7 +565,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   return allRounds.map(({ _sortCreatedAt, ...rest }) => rest);
 }
 
-export function getGameRoute(gameType: GameType, gameId: string): string {
+export function getGameRoute(gameType: GameType, gameId: string, returnTo?: string): string {
+  // Store return path for spectator back navigation
+  if (returnTo) {
+    sessionStorage.setItem(`spectator_return_${gameId}`, returnTo);
+  }
+  
   switch (gameType) {
     case "round":
       return `/rounds/${gameId}/leaderboard`;
@@ -586,4 +591,8 @@ export function getGameRoute(gameType: GameType, gameId: string): string {
     default:
       return `/rounds/${gameId}/leaderboard`;
   }
+}
+
+export function getSpectatorReturnPath(gameId: string): string {
+  return sessionStorage.getItem(`spectator_return_${gameId}`) || '/';
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -329,6 +329,7 @@ interface FeedPostProps {
 
 export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [comments, setComments] = useState<any[]>([]);
@@ -565,6 +566,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               holesPlayed={roundResult.holesPlayed}
               onClick={async () => {
                 if (roundResult.roundId) {
+                  sessionStorage.setItem(`spectator_return_${roundResult.roundId}`, location.pathname);
                   navigate(`/rounds/${roundResult.roundId}/leaderboard`);
                 } else {
                   // Try to find the round by matching course, user, and score
@@ -589,11 +591,13 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                           .single();
                         
                         if (summary?.total_score === roundResult.score) {
+                          sessionStorage.setItem(`spectator_return_${round.id}`, location.pathname);
                           navigate(`/rounds/${round.id}/leaderboard`);
                           return;
                         }
                       }
                       // If no exact score match, navigate to first match by course
+                      sessionStorage.setItem(`spectator_return_${rounds[0].id}`, location.pathname);
                       navigate(`/rounds/${rounds[0].id}/leaderboard`);
                       return;
                     }
