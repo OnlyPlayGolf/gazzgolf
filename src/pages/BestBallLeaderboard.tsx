@@ -33,6 +33,7 @@ export default function BestBallLeaderboard() {
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedTeam, setExpandedTeam] = useState<'A' | 'B' | null>(null);
+  const [scorecardOpen, setScorecardOpen] = useState(false);
 
   useEffect(() => {
     if (gameId) {
@@ -393,7 +394,6 @@ export default function BestBallLeaderboard() {
     );
   };
 
-  const [scorecardOpen, setScorecardOpen] = useState(false);
 
   const getMatchStatusDisplay = () => {
     if (game.match_status === 0) return 'AS';
