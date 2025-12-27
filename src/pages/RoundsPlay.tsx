@@ -596,9 +596,10 @@ export default function RoundsPlay() {
     const groups = setupState.groups;
 
     // Requirements per group for each game format
-    const requirements: Record<string, { min: number; max: number; exact?: number }> = {
+    // match_play: allow 2 or 4 players (1v1 or 2v2)
+    const requirements: Record<string, { min: number; max: number; exact?: number; allowed?: number[] }> = {
       stroke_play: { min: 1, max: 100 },
-      match_play: { min: 2, max: 2, exact: 2 },
+      match_play: { min: 2, max: 4, allowed: [2, 4] },
       copenhagen: { min: 3, max: 3, exact: 3 },
       skins: { min: 2, max: 8 },
       best_ball: { min: 3, max: 8 },
@@ -621,18 +622,24 @@ export default function RoundsPlay() {
       const playerCount = group.players.length;
       
       if (playerCount === 0) continue; // Skip empty groups
+
+      // Check allowed specific values (e.g., match_play: 2 or 4)
+      if (req.allowed && !req.allowed.includes(playerCount)) {
+        const formatName = format.replace('_', ' ');
+        return `${formatName} requires ${req.allowed.join(' or ')} players per group. "${group.name}" has ${playerCount}.`;
+      }
       
       if (req.exact && playerCount !== req.exact) {
         const formatName = format.replace('_', ' ');
         return `${formatName} requires exactly ${req.exact} players per group. "${group.name}" has ${playerCount}.`;
       }
 
-      if (playerCount < req.min) {
+      if (!req.allowed && playerCount < req.min) {
         const formatName = format.replace('_', ' ');
         return `${formatName} requires at least ${req.min} players per group. "${group.name}" has ${playerCount}.`;
       }
 
-      if (playerCount > req.max) {
+      if (!req.allowed && playerCount > req.max) {
         const formatName = format.replace('_', ' ');
         return `${formatName} allows at most ${req.max} players per group. "${group.name}" has ${playerCount}.`;
       }

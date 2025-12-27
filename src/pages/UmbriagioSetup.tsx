@@ -128,29 +128,33 @@ export default function UmbriagioSetup() {
         isCurrentUser: true,
       };
       
-      // Load players from playGroups sessionStorage (new format) or roundPlayers (legacy)
+      // Load players from all groups (multi-group support)
       const savedGroups = sessionStorage.getItem('playGroups');
       const savedPlayers = sessionStorage.getItem('roundPlayers');
       
       let allPlayersFromStorage: Player[] = [];
       
       if (savedGroups) {
-        // New format: read from first group's players
         const parsedGroups = JSON.parse(savedGroups);
-        if (parsedGroups.length > 0 && parsedGroups[0].players) {
-          allPlayersFromStorage = parsedGroups[0].players.map((p: any) => ({
-            odId: p.odId || p.userId || `temp_${Date.now()}`,
-            displayName: p.displayName,
-            handicap: p.handicap,
-            teeColor: p.teeColor,
-            isTemporary: p.isTemporary || false,
-            isCurrentUser: p.odId === user.id,
-          }));
+        // Collect players from ALL groups
+        for (const group of parsedGroups) {
+          if (Array.isArray(group?.players)) {
+            for (const p of group.players) {
+              allPlayersFromStorage.push({
+                odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
+                displayName: p.displayName,
+                handicap: p.handicap,
+                teeColor: p.teeColor,
+                isTemporary: p.isTemporary || false,
+                isCurrentUser: (p.odId || p.userId) === user.id,
+              });
+            }
+          }
         }
       } else if (savedPlayers) {
         // Legacy format: roundPlayers (excludes current user)
         const parsed = JSON.parse(savedPlayers);
-        const additionalPlayers = parsed.slice(0, 3).map((p: any) => ({
+        const additionalPlayers = parsed.map((p: any) => ({
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,

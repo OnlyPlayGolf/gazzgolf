@@ -77,7 +77,7 @@ export default function BestBallSetup() {
       isTemporary: false,
     };
     
-    // Prefer group-based players (multi-group support)
+    // Load players from all groups (multi-group support)
     const savedGroups = sessionStorage.getItem('playGroups');
     const savedPlayers = sessionStorage.getItem('roundPlayers');
 
@@ -85,17 +85,21 @@ export default function BestBallSetup() {
 
     if (savedGroups) {
       const parsedGroups = JSON.parse(savedGroups);
-      const groupPlayers = parsedGroups?.[0]?.players;
-      if (Array.isArray(groupPlayers)) {
-        additionalPlayers = groupPlayers
-          .filter((p: any) => (p.odId || p.userId) !== user.id)
-          .map((p: any) => ({
-            odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
-            displayName: p.displayName,
-            handicap: p.handicap,
-            teeColor: p.teeColor,
-            isTemporary: p.isTemporary || false,
-          }));
+      // Collect players from ALL groups
+      for (const group of parsedGroups) {
+        if (Array.isArray(group?.players)) {
+          for (const p of group.players) {
+            if ((p.odId || p.userId) !== user.id) {
+              additionalPlayers.push({
+                odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
+                displayName: p.displayName,
+                handicap: p.handicap,
+                teeColor: p.teeColor,
+                isTemporary: p.isTemporary || false,
+              });
+            }
+          }
+        }
       }
     } else if (savedPlayers) {
       const parsed = JSON.parse(savedPlayers);
