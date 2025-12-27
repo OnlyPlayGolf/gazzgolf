@@ -2054,6 +2054,33 @@ export type Database = {
           },
         ]
       }
+      user_favorites: {
+        Row: {
+          created_at: string
+          drill_category: string
+          drill_id: string
+          drill_title: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          drill_category: string
+          drill_id: string
+          drill_title: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          drill_category?: string
+          drill_id?: string
+          drill_title?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           favourite_group_ids: string[] | null
