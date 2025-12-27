@@ -3,19 +3,22 @@ import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface CopenhagenBottomTabBarProps {
   gameId: string;
+  isSpectator?: boolean;
 }
 
-export function CopenhagenBottomTabBar({ gameId }: CopenhagenBottomTabBarProps) {
+export function CopenhagenBottomTabBar({ gameId, isSpectator = false }: CopenhagenBottomTabBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const tabs = [
-    { id: "score", label: "Enter score", icon: Pencil, path: `/copenhagen/${gameId}/play` },
-    { id: "info", label: "Game info", icon: Info, path: `/copenhagen/${gameId}/info` },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/copenhagen/${gameId}/feed` },
-    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/copenhagen/${gameId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/copenhagen/${gameId}/settings` },
+  const allTabs = [
+    { id: "score", label: "Enter score", icon: Pencil, path: `/copenhagen/${gameId}/play`, hideForSpectator: true },
+    { id: "info", label: "Game info", icon: Info, path: `/copenhagen/${gameId}/info`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/copenhagen/${gameId}/feed`, hideForSpectator: false },
+    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/copenhagen/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "settings", label: "Settings", icon: Settings, path: `/copenhagen/${gameId}/settings`, hideForSpectator: false },
   ];
+
+  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">

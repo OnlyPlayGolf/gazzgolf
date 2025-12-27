@@ -3,19 +3,22 @@ import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface MatchPlayBottomTabBarProps {
   gameId: string;
+  isSpectator?: boolean;
 }
 
-export function MatchPlayBottomTabBar({ gameId }: MatchPlayBottomTabBarProps) {
+export function MatchPlayBottomTabBar({ gameId, isSpectator = false }: MatchPlayBottomTabBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const tabs = [
-    { id: "play", label: "Enter score", icon: Pencil, path: `/match-play/${gameId}/play` },
-    { id: "info", label: "Game info", icon: Info, path: `/match-play/${gameId}/info` },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/match-play/${gameId}/feed` },
-    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/match-play/${gameId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/match-play/${gameId}/settings` },
+  const allTabs = [
+    { id: "play", label: "Enter score", icon: Pencil, path: `/match-play/${gameId}/play`, hideForSpectator: true },
+    { id: "info", label: "Game info", icon: Info, path: `/match-play/${gameId}/info`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/match-play/${gameId}/feed`, hideForSpectator: false },
+    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/match-play/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "settings", label: "Settings", icon: Settings, path: `/match-play/${gameId}/settings`, hideForSpectator: false },
   ];
+
+  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -21,6 +22,7 @@ export default function MatchPlaySettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSpectator } = useIsSpectator('match_play', gameId);
   const [game, setGame] = useState<MatchPlayGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -93,7 +95,7 @@ export default function MatchPlaySettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+        {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -102,7 +104,7 @@ export default function MatchPlaySettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+        {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -181,57 +183,62 @@ export default function MatchPlaySettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* Game Settings Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Game Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicaps">Use Handicaps</Label>
+        {/* Game Settings Card - Hidden for spectators */}
+        {!isSpectator && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Game Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="handicaps">Use Handicaps</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Apply handicap strokes per hole
+                  </p>
+                </div>
+                <Switch
+                  id="handicaps"
+                  checked={game.use_handicaps}
+                  onCheckedChange={handleUpdateHandicaps}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mulligans">Mulligans per Player</Label>
+                <Select 
+                  value={(game.mulligans_per_player || 0).toString()} 
+                  onValueChange={handleUpdateMulligans}
+                >
+                  <SelectTrigger id="mulligans">
+                    <SelectValue placeholder="Select mulligans" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No mulligans</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="9">1 per 9 holes</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground">
-                  Apply handicap strokes per hole
+                  Number of allowed do-overs per player
                 </p>
               </div>
-              <Switch
-                id="handicaps"
-                checked={game.use_handicaps}
-                onCheckedChange={handleUpdateHandicaps}
-              />
-            </div>
+            </CardContent>
+          </Card>
+        )}
 
-            <div className="space-y-2">
-              <Label htmlFor="mulligans">Mulligans per Player</Label>
-              <Select 
-                value={(game.mulligans_per_player || 0).toString()} 
-                onValueChange={handleUpdateMulligans}
-              >
-                <SelectTrigger id="mulligans">
-                  <SelectValue placeholder="Select mulligans" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">No mulligans</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3">3</SelectItem>
-                  <SelectItem value="4">4</SelectItem>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="9">1 per 9 holes</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Number of allowed do-overs per player
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <RoundActionsSection
-          onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate(`/match-play/${gameId}/summary`)}
-          onDelete={() => setShowDeleteDialog(true)}
-        />
+        {/* Round Actions - Hidden for spectators */}
+        {!isSpectator && (
+          <RoundActionsSection
+            onFinish={handleFinishGame}
+            onSaveAndExit={() => navigate(`/match-play/${gameId}/summary`)}
+            onDelete={() => setShowDeleteDialog(true)}
+          />
+        )}
       </div>
 
       <ViewPlayersModal
@@ -248,7 +255,7 @@ export default function MatchPlaySettings() {
         gameName="Match Play Game"
       />
 
-      {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+      {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }
