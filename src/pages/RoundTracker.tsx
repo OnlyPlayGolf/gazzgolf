@@ -892,53 +892,48 @@ export default function RoundTracker() {
               })}
           </>
         ) : (
-          // No groups - filter: round creator sees all, others see only themselves
-          players
-            .filter((player) => {
-              if (round.user_id === currentUserId) return true;
-              return player.user_id === currentUserId;
-            })
-            .map((player) => {
-              const playerScore = getPlayerScore(player.id);
-              const hasScore = hasPlayerEnteredScore(player.id);
-              const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
-              return (
-                <Card 
-                  key={player.id} 
-                  className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => {
-                    setSelectedPlayer(player);
-                    setShowScoreSheet(true);
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold">{getPlayerName(player)}</span>
-                        {hasMulliganOnHole && (
-                          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                            Mulligan
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Tee: {player.tee_color || round.tee_set}
-                      </div>
+          // No groups - show all players (they're in the same implicit group)
+          players.map((player) => {
+            const playerScore = getPlayerScore(player.id);
+            const hasScore = hasPlayerEnteredScore(player.id);
+            const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
+            return (
+              <Card 
+                key={player.id} 
+                className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => {
+                  setSelectedPlayer(player);
+                  setShowScoreSheet(true);
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                      {hasMulliganOnHole && (
+                        <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                          Mulligan
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
-                        <div className="text-xs text-muted-foreground">Strokes</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
-                        <div className="text-xs text-muted-foreground font-bold">To Par</div>
-                      </div>
+                    <div className="text-sm text-muted-foreground">
+                      Tee: {player.tee_color || round.tee_set}
                     </div>
                   </div>
-                </Card>
-              );
-            })
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
+                      <div className="text-xs text-muted-foreground">Strokes</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
+                      <div className="text-xs text-muted-foreground font-bold">To Par</div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })
         )}
         
         {/* Show completion button when at the last hole AND all holes have scores */}
@@ -991,8 +986,8 @@ export default function RoundTracker() {
                 if (groups.length > 0 && currentUserGroupId) {
                   return p.group_id === currentUserGroupId;
                 }
-                // No groups: only allow editing own player
-                return p.user_id === currentUserId;
+                // No groups: all players can edit each other (same implicit group)
+                return true;
               });
               
               // Find next player without a score for this hole
