@@ -622,13 +622,24 @@ export default function RoundTracker() {
     });
   });
 
-  // Check if all players have entered scores for the current hole
+  // Check if all players in the current user's group have entered scores for the current hole
   // -1 is a valid entry (dash/conceded)
-  const allPlayersEnteredCurrentHole = currentHole && players.length > 0 && players.every(player => {
-    const playerScores = scores.get(player.id);
-    const score = playerScores?.get(currentHole.hole_number);
-    return score !== undefined && (score > 0 || score === -1);
-  });
+  const allPlayersEnteredCurrentHole = (() => {
+    if (!currentHole || players.length === 0) return false;
+    
+    // Determine which players to check based on group membership
+    let playersToCheck = players;
+    if (groups.length > 0 && currentUserGroupId && round?.user_id !== currentUserId) {
+      // Non-creator in a multi-group game: only check players in their group
+      playersToCheck = players.filter(p => p.group_id === currentUserGroupId);
+    }
+    
+    return playersToCheck.every(player => {
+      const playerScores = scores.get(player.id);
+      const score = playerScores?.get(currentHole.hole_number);
+      return score !== undefined && (score > 0 || score === -1);
+    });
+  })();
 
   // Auto-advance to next hole when all players have entered scores for current hole
   // Skip if user manually navigated back to review scores
