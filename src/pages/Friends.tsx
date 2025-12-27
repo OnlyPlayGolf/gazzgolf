@@ -590,19 +590,17 @@ const Friends = () => {
             </CardContent>
           </Card>
 
-          {/* Incoming Friend Requests - Always show section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus size={20} className="text-primary" />
-                Friend Requests
-                {incomingRequests.length > 0 && <Badge variant="secondary">{incomingRequests.length}</Badge>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {incomingRequests.length === 0 ? (
-                <p className="text-center text-muted-foreground py-4">No pending friend requests</p>
-              ) : (
+          {/* Incoming Friend Requests - Only show when there are requests */}
+          {incomingRequests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus size={20} className="text-primary" />
+                  Friend Requests
+                  <Badge variant="secondary">{incomingRequests.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-3">
                   {incomingRequests.map((request) => (
                     <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -645,9 +643,9 @@ const Friends = () => {
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Outgoing Requests */}
           {outgoingRequests.length > 0 && (
