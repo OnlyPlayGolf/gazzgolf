@@ -107,7 +107,7 @@ export default function SimpleSkinsSetup() {
         isCurrentUser: true,
       };
       
-      // Prefer group-based players (multi-group support)
+      // Load players from all groups (multi-group support)
       const savedGroups = sessionStorage.getItem('playGroups');
       const savedPlayers = sessionStorage.getItem('roundPlayers');
 
@@ -115,16 +115,20 @@ export default function SimpleSkinsSetup() {
 
       if (savedGroups) {
         const parsedGroups = JSON.parse(savedGroups);
-        const groupPlayers = parsedGroups?.[0]?.players;
-        if (Array.isArray(groupPlayers)) {
-          playersFromStorage = groupPlayers.map((p: any) => ({
-            odId: p.odId || p.userId || `temp_${Date.now()}`,
-            displayName: p.displayName,
-            handicap: p.handicap,
-            teeColor: p.teeColor || savedTee || DEFAULT_MEN_TEE,
-            isTemporary: p.isTemporary || false,
-            isCurrentUser: (p.odId || p.userId) === user.id,
-          }));
+        // Collect players from ALL groups
+        for (const group of parsedGroups) {
+          if (Array.isArray(group?.players)) {
+            for (const p of group.players) {
+              playersFromStorage.push({
+                odId: p.odId || p.userId || `temp_${Date.now()}_${Math.random()}`,
+                displayName: p.displayName,
+                handicap: p.handicap,
+                teeColor: p.teeColor || savedTee || DEFAULT_MEN_TEE,
+                isTemporary: p.isTemporary || false,
+                isCurrentUser: (p.odId || p.userId) === user.id,
+              });
+            }
+          }
         }
       }
 
