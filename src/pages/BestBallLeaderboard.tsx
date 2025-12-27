@@ -444,37 +444,31 @@ export default function BestBallLeaderboard() {
                   </div>
                 ) : (
                   <div className="flex items-center">
-                    {/* Arrow pointing left (Team A leading) */}
+                    {/* Arrow pointing left + Score (Team A leading) */}
                     {matchScore.leadingTeam === 'A' && (
-                      <div 
-                        className="w-0 h-0 border-t-[14px] border-t-transparent border-b-[14px] border-b-transparent border-r-[10px] border-r-blue-600"
-                      />
+                      <>
+                        <div 
+                          className="w-0 h-0 border-t-[14px] border-t-transparent border-b-[14px] border-b-transparent border-r-[10px] border-r-blue-600"
+                        />
+                        <div className="px-5 py-2 bg-blue-600 text-white flex items-center justify-center">
+                          <span className="text-sm font-bold">
+                            {matchScore.teamAScore || Math.abs(game.match_status)}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    {/* Team A Score Section */}
-                    <div className={`px-4 py-2 flex items-center justify-center min-w-[50px] ${
-                      matchScore.leadingTeam === 'A' 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      <span className="text-sm font-bold">
-                        {matchScore.teamAScore || (game.team_a_total - game.team_b_total > 0 ? Math.abs(game.match_status) : '')}
-                      </span>
-                    </div>
-                    {/* Team B Score Section */}
-                    <div className={`px-4 py-2 flex items-center justify-center min-w-[50px] ${
-                      matchScore.leadingTeam === 'B' 
-                        ? 'bg-red-600 text-white' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      <span className="text-sm font-bold">
-                        {matchScore.teamBScore || (game.team_b_total - game.team_a_total > 0 ? Math.abs(game.match_status) : '')}
-                      </span>
-                    </div>
-                    {/* Arrow pointing right (Team B leading) */}
+                    {/* Score + Arrow pointing right (Team B leading) */}
                     {matchScore.leadingTeam === 'B' && (
-                      <div 
-                        className="w-0 h-0 border-t-[14px] border-t-transparent border-b-[14px] border-b-transparent border-l-[10px] border-l-red-600"
-                      />
+                      <>
+                        <div className="px-5 py-2 bg-red-600 text-white flex items-center justify-center">
+                          <span className="text-sm font-bold">
+                            {matchScore.teamBScore || Math.abs(game.match_status)}
+                          </span>
+                        </div>
+                        <div 
+                          className="w-0 h-0 border-t-[14px] border-t-transparent border-b-[14px] border-b-transparent border-l-[10px] border-l-red-600"
+                        />
+                      </>
                     )}
                   </div>
                 )}
