@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Trash2, ChevronRight, X } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
+import { RoundCard } from "@/components/RoundCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,12 +66,6 @@ const PlayedRounds = () => {
     }
   };
 
-  const getScoreDisplay = (round: UnifiedRound) => {
-    if (!isStrokeRound(round)) return "-";
-    const diff = round.score;
-    if (diff === 0) return "E";
-    return diff > 0 ? `+${diff}` : `${diff}`;
-  };
 
   const handleDeleteRound = async () => {
     if (!roundToDelete) return;
@@ -210,80 +204,23 @@ const PlayedRounds = () => {
               return sortedYears.map((year) => (
                 <section key={year}>
                   <h2 className="text-lg font-semibold text-foreground mb-2 px-1">{year}</h2>
-                  <div className="divide-y divide-border rounded-lg border bg-card overflow-hidden">
-                    {roundsByYear[year].map((round) => {
-                      const scoreText = getScoreDisplay(round);
-                      const showStrokeScore = isStrokeRound(round);
-
-                      return (
-                        <article
-                          key={`${round.gameType}-${round.id}`}
-                          className={`flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors cursor-pointer ${
-                            deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""
-                          }`}
-                          onClick={() => {
-                            if (deleteMode) {
-                              setRoundToDelete(round);
-                              setDeleteDialogOpen(true);
-                            } else {
-                              navigate(getGameRoute(round.gameType || "round", round.id, location.pathname));
-                            }
-                          }}
-                        >
-                          {/* Date - without year */}
-                          <div className="w-12 text-center flex-shrink-0">
-                            <div className="text-xs text-muted-foreground uppercase">
-                              {format(new Date(round.date), "MMM")}
-                            </div>
-                            <div className="text-lg font-semibold">
-                              {format(new Date(round.date), "d")}
-                            </div>
-                          </div>
-
-                          {/* Round Name & Details */}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">
-                              {round.round_name || round.gameMode}
-                            </div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                              <span className="truncate">{round.course_name}</span>
-                              {typeof round.holesPlayed === "number" && (
-                                <span>• {round.holesPlayed}H</span>
-                              )}
-                              {round.teeSet && <span>• {round.teeSet}</span>}
-                              {round.playerCount > 1 && <span>• {round.playerCount} players</span>}
-                              <span>• {round.gameMode}</span>
-                            </div>
-                          </div>
-
-                          {/* Score / Action */}
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
-                              <div
-                                className={`font-bold ${
-                                  !showStrokeScore || scoreText === "-"
-                                    ? "text-muted-foreground"
-                                    : scoreText.startsWith("+")
-                                      ? "text-destructive"
-                                      : scoreText === "E"
-                                        ? "text-foreground"
-                                        : "text-green-600"
-                                }`}
-                              >
-                                {showStrokeScore ? scoreText : "View"}
-                              </div>
-                              {showStrokeScore && typeof round.totalScore === "number" && (
-                                <div className="text-xs text-muted-foreground">
-                                  {round.totalScore}
-                                </div>
-                              )}
-                            </div>
-
-                            <ChevronRight size={16} className="text-muted-foreground" />
-                          </div>
-                        </article>
-                      );
-                    })}
+                  <div className="space-y-3">
+                    {roundsByYear[year].map((round) => (
+                      <div
+                        key={`${round.gameType}-${round.id}`}
+                        onClick={() => {
+                          if (deleteMode) {
+                            setRoundToDelete(round);
+                            setDeleteDialogOpen(true);
+                          }
+                        }}
+                      >
+                        <RoundCard
+                          round={round}
+                          className={deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </section>
               ));
