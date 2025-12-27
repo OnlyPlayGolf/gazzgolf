@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronRight, MapPin, Calendar, Users, Trophy } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 
@@ -35,8 +35,7 @@ export function RoundCard({ round, className }: RoundCardProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+      day: 'numeric'
     });
   };
 
@@ -59,42 +58,40 @@ export function RoundCard({ round, className }: RoundCardProps) {
       onClick={handleClick}
     >
       <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground truncate">
-              {round.round_name || 'Round'}
-            </h3>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-              <MapPin size={14} className="flex-shrink-0" />
-              <span className="truncate">{round.course_name}</span>
-            </div>
-            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Calendar size={12} />
-                {formatDate(round.date)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Trophy size={12} />
-                {round.gameMode}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users size={12} />
-                {round.playerCount}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 ml-3">
+        <div className="flex items-center gap-4">
+          {/* Left: Score */}
+          <div className="flex-shrink-0 w-14 text-center">
             {showScore ? (
               <div className={`text-2xl font-bold ${round.score <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
                 {formatScore(round.score)}
               </div>
             ) : (
               <div className="text-sm font-medium text-muted-foreground">
-                View
+                —
               </div>
             )}
-            <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
           </div>
+          
+          {/* Middle: Details */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-foreground truncate">
+              {round.round_name || 'Round'}
+            </h3>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-sm text-muted-foreground truncate">{round.course_name}</span>
+              <span className="text-sm text-muted-foreground flex-shrink-0 ml-2">{formatDate(round.date)}</span>
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs text-muted-foreground">{round.gameMode}</span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Users size={12} />
+                {round.playerCount}
+              </span>
+            </div>
+          </div>
+          
+          {/* Right: Chevron */}
+          <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
         </div>
       </CardContent>
     </Card>
