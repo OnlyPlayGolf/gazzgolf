@@ -77,13 +77,15 @@ export function RoundCard({ round, className }: RoundCardProps) {
             <h3 className="font-semibold text-foreground truncate">
               {round.round_name || 'Round'}
             </h3>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-sm text-muted-foreground truncate">{round.course_name}</span>
-              <span className="text-sm text-muted-foreground flex-shrink-0 ml-2">{formatDate(round.date)}</span>
+            <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+              <span className="truncate">{round.course_name}</span>
+              <span>·</span>
+              <span className="flex-shrink-0">{formatDate(round.date)}</span>
             </div>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-muted-foreground">{round.gameMode}</span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+              <span>{round.gameMode}</span>
+              <span>·</span>
+              <span className="flex items-center gap-1">
                 <Users size={12} />
                 {round.playerCount}
               </span>
