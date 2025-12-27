@@ -1,11 +1,39 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
+import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
 
 export default function RoundInfo() {
   const { roundId } = useParams();
+  const { isSpectator } = useIsSpectator('round', roundId);
+  const [origin, setOrigin] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (roundId) {
+      const fetchRound = async () => {
+        const { data } = await supabase
+          .from("rounds")
+          .select("origin")
+          .eq("id", roundId)
+          .single();
+        setOrigin(data?.origin || null);
+      };
+      fetchRound();
+    }
+  }, [roundId]);
+
+  const renderBottomTabBar = () => {
+    if (!roundId) return null;
+    if (origin === "skins") {
+      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+    }
+    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+  };
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -58,7 +86,7 @@ export default function RoundInfo() {
           </CardContent>
         </Card>
       </div>
-      {roundId && <RoundBottomTabBar roundId={roundId} />}
+      {renderBottomTabBar()}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
+import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, MessageSquare, BarChart3, ChevronDown, RotateCcw } from "lucide-react";
@@ -22,6 +24,7 @@ interface Round {
   holes_played: number;
   date_played: string;
   user_id: string;
+  origin: string | null;
 }
 
 interface CourseHole {
@@ -44,6 +47,7 @@ interface PlayerData {
 export default function RoundLeaderboard() {
   const { roundId } = useParams();
   const { toast } = useToast();
+  const { isSpectator } = useIsSpectator('round', roundId);
   
   const [round, setRound] = useState<Round | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
@@ -523,7 +527,11 @@ export default function RoundLeaderboard() {
         })()}
       </div>
 
-      <RoundBottomTabBar roundId={roundId!} />
+      {round?.origin === "skins" ? (
+        <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+      ) : (
+        <RoundBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+      )}
     </div>
   );
 }
