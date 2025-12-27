@@ -509,6 +509,7 @@ export default function BestBallPlay() {
             </Button>
             <div className="flex-1 text-center">
               <h1 className="text-xl font-bold">{game.round_name || 'Best Ball'}</h1>
+              <p className="text-sm text-primary-foreground/80">{game.course_name}</p>
             </div>
             <div className="w-10" />
           </div>
