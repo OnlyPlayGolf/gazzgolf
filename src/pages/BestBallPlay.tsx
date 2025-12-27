@@ -530,6 +530,7 @@ export default function BestBallPlay() {
             <div className="text-center">
               <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
               <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
+              <div className="text-xs text-[hsl(120,20%,45%)]">HCP {strokeIndex}</div>
             </div>
 
             <Button
