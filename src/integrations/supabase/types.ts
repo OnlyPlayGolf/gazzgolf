@@ -20,6 +20,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          event_id: string | null
           final_result: string | null
           game_type: string
           holes_played: number
@@ -44,6 +45,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           final_result?: string | null
           game_type?: string
           holes_played?: number
@@ -68,6 +70,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           final_result?: string | null
           game_type?: string
           holes_played?: number
@@ -93,6 +96,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "best_ball_games_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -235,6 +245,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          event_id: string | null
           holes_played: number
           id: string
           is_finished: boolean
@@ -263,6 +274,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -291,6 +303,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -320,6 +333,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copenhagen_games_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -549,6 +569,47 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      events: {
+        Row: {
+          course_id: string | null
+          course_name: string | null
+          created_at: string | null
+          creator_id: string
+          date_played: string | null
+          game_type: string
+          id: string
+          name: string
+        }
+        Insert: {
+          course_id?: string | null
+          course_name?: string | null
+          created_at?: string | null
+          creator_id: string
+          date_played?: string | null
+          game_type: string
+          id?: string
+          name: string
+        }
+        Update: {
+          course_id?: string | null
+          course_name?: string | null
+          created_at?: string | null
+          creator_id?: string
+          date_played?: string | null
+          game_type?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       friendships: {
         Row: {
@@ -845,6 +906,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          event_id: string | null
           final_result: string | null
           holes_played: number
           holes_remaining: number
@@ -869,6 +931,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           final_result?: string | null
           holes_played?: number
           holes_remaining?: number
@@ -893,6 +956,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           final_result?: string | null
           holes_played?: number
           holes_remaining?: number
@@ -918,6 +982,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_play_games_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -1405,6 +1476,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          event_id: string | null
           holes_played: number
           id: string
           origin: string | null
@@ -1416,6 +1488,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           holes_played?: number
           id?: string
           origin?: string | null
@@ -1427,6 +1500,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           holes_played?: number
           id?: string
           origin?: string | null
@@ -1434,7 +1508,15 @@ export type Database = {
           tee_set?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rounds_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scramble_games: {
         Row: {
@@ -1442,6 +1524,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          event_id: string | null
           holes_played: number
           id: string
           is_finished: boolean
@@ -1459,6 +1542,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1476,6 +1560,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1494,6 +1579,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scramble_games_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -1543,6 +1635,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          event_id: string | null
           handicap_mode: string
           holes_played: number
           id: string
@@ -1560,6 +1653,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           handicap_mode?: string
           holes_played?: number
           id?: string
@@ -1577,6 +1671,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           handicap_mode?: string
           holes_played?: number
           id?: string
@@ -1594,6 +1689,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skins_games_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -1651,6 +1753,7 @@ export type Database = {
           course_name: string
           created_at: string | null
           date_played: string
+          event_id: string | null
           final_payout: number | null
           holes_played: number
           id: string
@@ -1677,6 +1780,7 @@ export type Database = {
           course_name: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           final_payout?: number | null
           holes_played?: number
           id?: string
@@ -1703,6 +1807,7 @@ export type Database = {
           course_name?: string
           created_at?: string | null
           date_played?: string
+          event_id?: string | null
           final_payout?: number | null
           holes_played?: number
           id?: string
@@ -1730,6 +1835,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "umbriago_games_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -1847,6 +1959,7 @@ export type Database = {
           created_at: string | null
           date_played: string
           double_enabled: boolean
+          event_id: string | null
           holes_played: number
           id: string
           is_finished: boolean
@@ -1878,6 +1991,7 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           double_enabled?: boolean
+          event_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1909,6 +2023,7 @@ export type Database = {
           created_at?: string | null
           date_played?: string
           double_enabled?: boolean
+          event_id?: string | null
           holes_played?: number
           id?: string
           is_finished?: boolean
@@ -1940,6 +2055,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wolf_games_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -2200,6 +2322,7 @@ export type Database = {
           username: string
         }[]
       }
+      is_event_creator: { Args: { _event_id: string }; Returns: boolean }
       is_friend_of_round_participant: {
         Args: { _round_id: string }
         Returns: boolean
