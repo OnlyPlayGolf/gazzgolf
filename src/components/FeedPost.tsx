@@ -565,7 +565,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               holesPlayed={roundResult.holesPlayed}
               onClick={async () => {
                 if (roundResult.roundId) {
-                  navigate(`/rounds/${roundResult.roundId}/detail`);
+                  navigate(`/rounds/${roundResult.roundId}/leaderboard`);
                 } else {
                   // Try to find the round by matching course, user, and score
                   try {
@@ -589,12 +589,12 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                           .single();
                         
                         if (summary?.total_score === roundResult.score) {
-                          navigate(`/rounds/${round.id}/detail`);
+                          navigate(`/rounds/${round.id}/leaderboard`);
                           return;
                         }
                       }
                       // If no exact score match, navigate to first match by course
-                      navigate(`/rounds/${rounds[0].id}/detail`);
+                      navigate(`/rounds/${rounds[0].id}/leaderboard`);
                       return;
                     }
                     toast.error("Round details not found");
