@@ -1,10 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Target, Zap, Hammer, Activity, Star } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { getFavorites, addToFavorites, removeFromFavorites, isFavorite, FavoriteDrill } from "@/utils/favoritesManager";
+import { 
+  getFavoritesFromSupabase, 
+  addToFavoritesAsync, 
+  removeFromFavoritesAsync, 
+  FavoriteDrill,
+  syncLocalFavoritesToSupabase
+} from "@/utils/favoritesManager";
+import { supabase } from "@/integrations/supabase/client";
 
 const allDrills = [
   {
@@ -119,37 +126,52 @@ const CategoryDrills = () => {
   const navigate = useNavigate();
   const { categoryId } = useParams<{ categoryId: string }>();
   const [favorites, setFavorites] = useState<FavoriteDrill[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadFavorites = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const favs = await getFavoritesFromSupabase();
+      setFavorites(favs);
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const load = () => setFavorites(getFavorites());
-    load();
+    loadFavorites();
 
-    const onStorage = (e: StorageEvent) => {
-      if (!e.key || e.key === 'app_favorites' || e.key === 'drillFavorites') {
-        load();
+    // Sync local favorites to Supabase when user is authenticated
+    const syncFavorites = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await syncLocalFavoritesToSupabase(user.id);
+        loadFavorites();
       }
     };
+    syncFavorites();
 
-    const onFavoritesChanged = () => load();
+    const onFavoritesChanged = () => loadFavorites();
 
-    window.addEventListener('storage', onStorage);
     window.addEventListener('favoritesChanged', onFavoritesChanged);
-    window.addEventListener('focus', load);
+    window.addEventListener('focus', loadFavorites);
 
     return () => {
-      window.removeEventListener('storage', onStorage);
       window.removeEventListener('favoritesChanged', onFavoritesChanged);
-      window.removeEventListener('focus', load);
+      window.removeEventListener('focus', loadFavorites);
     };
-  }, [categoryId]);
-  const toggleFavorite = (drill: typeof allDrills[0]) => {
+  }, [categoryId, loadFavorites]);
+
+  const toggleFavorite = async (drill: typeof allDrills[0]) => {
     const drillIsFavorite = favorites.some(f => f.id === drill.id);
     
     if (drillIsFavorite) {
-      const updated = removeFromFavorites(drill.id);
+      const updated = await removeFromFavoritesAsync(drill.id);
       setFavorites(updated);
     } else {
-      const updated = addToFavorites({
+      const updated = await addToFavoritesAsync({
         id: drill.id,
         title: drill.title,
         category: drill.category,
