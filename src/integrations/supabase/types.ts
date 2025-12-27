@@ -2504,6 +2504,10 @@ export type Database = {
         Args: { _round_id: string; _user_id: string }
         Returns: boolean
       }
+      normalized_friendship_pair: {
+        Args: { a: string; b: string }
+        Returns: string[]
+      }
       search_profiles: {
         Args: { max_results?: number; q: string }
         Returns: {
