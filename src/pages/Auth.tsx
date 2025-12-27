@@ -32,7 +32,8 @@ const Auth = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<'signin' | 'signup' | 'forgot'>('signin');
+  const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation'>('signin');
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
 
   // Form states
   const [email, setEmail] = useState('');
@@ -48,8 +49,9 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect authenticated users
-        if (session?.user) {
+        // Only redirect if user is confirmed (email_confirmed_at exists)
+        // This prevents auto-login before email confirmation
+        if (session?.user && session.user.email_confirmed_at) {
           // Check for pending invite code
           const pendingInviteCode = localStorage.getItem('pending_invite_code');
           if (pendingInviteCode) {
@@ -67,8 +69,8 @@ const Auth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // If already authenticated, redirect
-      if (session?.user) {
+      // If already authenticated AND confirmed, redirect
+      if (session?.user && session.user.email_confirmed_at) {
         const pendingInviteCode = localStorage.getItem('pending_invite_code');
         if (pendingInviteCode) {
           localStorage.removeItem('pending_invite_code');
@@ -175,18 +177,20 @@ const Auth = () => {
         return;
       }
 
-      toast({
-        title: "Account Created!",
-        description: "Please check your email to confirm your account.",
-      });
+      // Store the email for confirmation screen
+      setPendingConfirmationEmail(validatedData.email);
+      
+      // Sign out immediately to prevent auto-login before email confirmation
+      await supabase.auth.signOut();
       
       // Clear form
-      setEmail('');
       setPassword('');
       setConfirmPassword('');
       setFirstName('');
       setLastName('');
-      setView('signin');
+      
+      // Show confirmation screen instead of redirecting to signin
+      setView('confirmation');
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
@@ -471,6 +475,47 @@ const Auth = () => {
                   Back to Log In
                 </Button>
               </form>
+            )}
+
+            {view === 'confirmation' && (
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Mail size={32} className="text-primary" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">Check Your Email</h3>
+                  <p className="text-muted-foreground">
+                    We've sent a confirmation link to:
+                  </p>
+                  <p className="font-medium text-primary">{pendingConfirmationEmail}</p>
+                </div>
+                
+                <p className="text-sm text-muted-foreground">
+                  Please click the link in the email to confirm your account. You won't be able to sign in until your email is confirmed.
+                </p>
+                
+                <div className="pt-4 space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Didn't receive the email? Check your spam folder or try signing up again.
+                  </p>
+                  
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setView('signin');
+                      setEmail('');
+                      setPendingConfirmationEmail('');
+                    }}
+                  >
+                    Back to Log In
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
