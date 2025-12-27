@@ -452,7 +452,7 @@ export default function BestBallLeaderboard() {
                         />
                         <div className="px-5 py-2 bg-blue-600 text-white flex items-center justify-center">
                           <span className="text-sm font-bold">
-                            {matchScore.teamAScore || Math.abs(game.match_status)}
+                            {matchScore.teamAScore || Math.abs(game.match_status)} UP
                           </span>
                         </div>
                       </>
@@ -462,7 +462,7 @@ export default function BestBallLeaderboard() {
                       <>
                         <div className="px-5 py-2 bg-red-600 text-white flex items-center justify-center">
                           <span className="text-sm font-bold">
-                            {matchScore.teamBScore || Math.abs(game.match_status)}
+                            {matchScore.teamBScore || Math.abs(game.match_status)} UP
                           </span>
                         </div>
                         <div 
