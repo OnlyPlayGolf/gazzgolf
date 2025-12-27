@@ -18,6 +18,7 @@ interface LiveRoundCardProps {
   status?: string; // e.g., "3 Up" for match play, points for umbriago
   players?: string[];
   createdAt: string;
+  isParticipant?: boolean; // New prop to indicate if current user is a participant
 }
 
 export function LiveRoundCard({
@@ -30,6 +31,7 @@ export function LiveRoundCard({
   status,
   players,
   createdAt,
+  isParticipant = false,
 }: LiveRoundCardProps) {
   const navigate = useNavigate();
 
@@ -43,7 +45,13 @@ export function LiveRoundCard({
     }
   };
 
-  const getSpectatorPath = () => {
+  const getNavigationPath = () => {
+    // If user is a participant in a stroke play round, go to tracker
+    if (isParticipant && gameType === 'round') {
+      return `/rounds/${gameId}/track`;
+    }
+    
+    // Otherwise, go to spectator view
     switch (gameType) {
       case 'match_play': return `/spectate/match-play/${gameId}`;
       case 'umbriago': return `/spectate/umbriago/${gameId}`;
@@ -71,7 +79,7 @@ export function LiveRoundCard({
   return (
     <Card
       className="p-4 cursor-pointer hover:border-primary transition-colors"
-      onClick={() => navigate(getSpectatorPath())}
+      onClick={() => navigate(getNavigationPath())}
     >
       <div className="flex items-center gap-3">
         {/* Avatar */}
@@ -113,7 +121,9 @@ export function LiveRoundCard({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-green-600">LIVE</span>
+            <span className="text-xs font-medium text-green-600">
+              {isParticipant ? 'JOIN' : 'LIVE'}
+            </span>
           </div>
           <ChevronRight size={20} className="text-muted-foreground" />
         </div>

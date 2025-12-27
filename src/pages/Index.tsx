@@ -26,6 +26,7 @@ interface LiveGame {
   totalHoles: number;
   status?: string;
   createdAt: string;
+  isParticipant?: boolean;
 }
 
 const Index = () => {
@@ -194,6 +195,14 @@ const Index = () => {
           .gte('created_at', sixHoursAgo)
           .order('created_at', { ascending: false });
 
+        // Check which rounds user is a participant in
+        const { data: userRoundParticipation } = await supabase
+          .from('round_players')
+          .select('round_id')
+          .eq('user_id', user.id);
+        
+        const participatingRoundIds = new Set(userRoundParticipation?.map(rp => rp.round_id) || []);
+
         if (liveRounds) {
           for (const round of liveRounds) {
             const { data: profile } = await supabase
@@ -216,6 +225,7 @@ const Index = () => {
               holesPlayed: count || 0,
               totalHoles: round.holes_played,
               createdAt: round.created_at,
+              isParticipant: participatingRoundIds.has(round.id),
             });
           }
         }
@@ -367,6 +377,7 @@ const Index = () => {
                 totalHoles={game.totalHoles}
                 status={game.status}
                 createdAt={game.createdAt}
+                isParticipant={game.isParticipant}
               />
             ))}
           </div>
