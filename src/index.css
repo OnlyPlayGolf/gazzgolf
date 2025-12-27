@@ -17,14 +17,14 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 120 20% 15%;
 
-    --primary: 120 40% 25%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 142 55% 49%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 120 30% 85%;
-    --secondary-foreground: 120 40% 25%;
+    --secondary: 142 30% 90%;
+    --secondary-foreground: 142 55% 35%;
 
-    --muted: 120 15% 92%;
-    --muted-foreground: 120 10% 45%;
+    --muted: 142 15% 92%;
+    --muted-foreground: 142 10% 45%;
 
     --accent: 45 90% 60%;
     --accent-foreground: 120 40% 25%;
@@ -32,18 +32,18 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 120 15% 85%;
-    --input: 120 15% 90%;
-    --ring: 120 40% 25%;
+    --border: 142 15% 85%;
+    --input: 142 15% 90%;
+    --ring: 142 55% 49%;
 
-    --success: 120 60% 40%;
-    --success-foreground: 0 0% 98%;
+    --success: 142 55% 49%;
+    --success-foreground: 0 0% 100%;
 
     --warning: 30 90% 50%;
     --warning-foreground: 0 0% 15%;
 
-    --golf-green: 120 40% 25%;
-    --golf-light: 120 30% 85%;
+    --golf-green: 142 55% 49%;
+    --golf-light: 142 30% 90%;
     --golf-accent: 45 90% 60%;
     --locked: 0 0% 60%;
 

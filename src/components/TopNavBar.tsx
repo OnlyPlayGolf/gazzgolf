@@ -75,9 +75,15 @@ export const TopNavBar = () => {
         visible ? "translate-y-0" : "-translate-y-full"
       )}
     >
-      <div className="bg-[hsl(120,50%,20%)] px-4 py-3 flex items-center justify-between">
+      <div className="bg-primary px-4 py-3 flex items-center justify-between">
         {/* Left: Title */}
-        <h1 className="text-white font-luxury font-semibold text-2xl">
+        <h1 
+          className="text-primary-foreground font-luxury font-semibold text-2xl cursor-pointer"
+          onClick={() => {
+            navigate('/');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
           Gazz Golf
         </h1>
 
