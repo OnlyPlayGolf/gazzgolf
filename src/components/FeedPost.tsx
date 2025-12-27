@@ -176,46 +176,36 @@ const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed
     return diff > 0 ? `+${diff}` : `${diff}`;
   };
 
-  const getScoreColor = (diff: number) => {
-    if (diff <= 0) return "text-green-500";
-    if (diff <= 5) return "text-yellow-500";
-    return "text-red-500";
-  };
-
   return (
     <div 
-      className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 transition-all cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
+      className="bg-card border border-border rounded-xl p-4 transition-all cursor-pointer hover:bg-muted/50 group"
       onClick={onClick}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-primary/10">
-            <MapPin className="h-4 w-4 text-primary" />
-          </div>
-          <span className="text-sm font-medium text-muted-foreground">Round Result</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{holesPlayed} holes</span>
-          <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-        </div>
-      </div>
-      <h3 className="text-lg font-semibold text-foreground">{roundName}</h3>
-      <p className="text-sm text-muted-foreground mb-3 flex items-center gap-1">
-        <MapPin className="h-3 w-3" />
-        {courseName}
-      </p>
-      <div className="flex items-center gap-6">
-        <div>
-          <span className="text-4xl font-bold text-primary">{score}</span>
-          <span className="text-sm text-muted-foreground ml-1.5">strokes</span>
-        </div>
-        <div className="h-10 w-px bg-border" />
-        <div>
-          <span className={`text-4xl font-bold ${getScoreColor(scoreVsPar)}`}>
+      <div className="flex items-center gap-4">
+        {/* Left: Score */}
+        <div className="flex-shrink-0 w-14 text-center">
+          <div className={`text-2xl font-bold ${scoreVsPar <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
             {formatScoreVsPar(scoreVsPar)}
-          </span>
-          <span className="text-sm text-muted-foreground ml-1.5">vs par</span>
+          </div>
         </div>
+        
+        {/* Middle: Details */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-foreground truncate">
+            {roundName || 'Round'}
+          </h3>
+          <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+            <span className="truncate">{courseName}</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+            <span>Stroke Play</span>
+            <span>·</span>
+            <span>{holesPlayed} holes</span>
+          </div>
+        </div>
+        
+        {/* Right: Chevron */}
+        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
       </div>
     </div>
   );
