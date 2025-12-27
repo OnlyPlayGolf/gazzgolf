@@ -4,20 +4,23 @@ import { cn } from "@/lib/utils";
 
 interface WolfBottomTabBarProps {
   gameId: string;
+  isSpectator?: boolean;
 }
 
-export function WolfBottomTabBar({ gameId }: WolfBottomTabBarProps) {
+export function WolfBottomTabBar({ gameId, isSpectator = false }: WolfBottomTabBarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
 
-  const tabs = [
-    { id: "play", label: "Enter Score", icon: FileText, path: `/wolf/${gameId}/play` },
-    { id: "info", label: "Game Info", icon: Info, path: `/wolf/${gameId}/info` },
-    { id: "feed", label: "Game Feed", icon: Users, path: `/wolf/${gameId}/feed` },
-    { id: "leaderboard", label: "Leaderboards", icon: Trophy, path: `/wolf/${gameId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/wolf/${gameId}/settings` },
+  const allTabs = [
+    { id: "play", label: "Enter Score", icon: FileText, path: `/wolf/${gameId}/play`, hideForSpectator: true },
+    { id: "info", label: "Game Info", icon: Info, path: `/wolf/${gameId}/info`, hideForSpectator: false },
+    { id: "feed", label: "Game Feed", icon: Users, path: `/wolf/${gameId}/feed`, hideForSpectator: false },
+    { id: "leaderboard", label: "Leaderboards", icon: Trophy, path: `/wolf/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "settings", label: "Settings", icon: Settings, path: `/wolf/${gameId}/settings`, hideForSpectator: false },
   ];
+
+  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">

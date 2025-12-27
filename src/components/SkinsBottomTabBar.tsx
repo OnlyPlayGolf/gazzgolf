@@ -3,19 +3,22 @@ import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface SkinsBottomTabBarProps {
   roundId: string;
+  isSpectator?: boolean;
 }
 
-export function SkinsBottomTabBar({ roundId }: SkinsBottomTabBarProps) {
+export function SkinsBottomTabBar({ roundId, isSpectator = false }: SkinsBottomTabBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const tabs = [
-    { id: "score", label: "Enter score", icon: Pencil, path: `/skins/${roundId}/track` },
-    { id: "info", label: "Game info", icon: Info, path: `/skins/${roundId}/info` },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed` },
-    { id: "leaderboard", label: "Leaderboard", icon: List, path: `/skins/${roundId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/skins/${roundId}/settings` },
+  const allTabs = [
+    { id: "score", label: "Enter score", icon: Pencil, path: `/skins/${roundId}/track`, hideForSpectator: true },
+    { id: "info", label: "Game info", icon: Info, path: `/skins/${roundId}/info`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed`, hideForSpectator: false },
+    { id: "leaderboard", label: "Leaderboard", icon: List, path: `/skins/${roundId}/leaderboard`, hideForSpectator: false },
+    { id: "settings", label: "Settings", icon: Settings, path: `/skins/${roundId}/settings`, hideForSpectator: false },
   ];
+
+  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">

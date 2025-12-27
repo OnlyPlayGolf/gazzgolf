@@ -3,19 +3,22 @@ import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface BestBallBottomTabBarProps {
   gameId: string;
+  isSpectator?: boolean;
 }
 
-export function BestBallBottomTabBar({ gameId }: BestBallBottomTabBarProps) {
+export function BestBallBottomTabBar({ gameId, isSpectator = false }: BestBallBottomTabBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const tabs = [
-    { id: "score", label: "Enter score", icon: Pencil, path: `/best-ball/${gameId}/play` },
-    { id: "info", label: "Game info", icon: Info, path: `/best-ball/${gameId}/info` },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/best-ball/${gameId}/feed` },
-    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/best-ball/${gameId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/best-ball/${gameId}/settings` },
+  const allTabs = [
+    { id: "score", label: "Enter score", icon: Pencil, path: `/best-ball/${gameId}/play`, hideForSpectator: true },
+    { id: "info", label: "Game info", icon: Info, path: `/best-ball/${gameId}/info`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/best-ball/${gameId}/feed`, hideForSpectator: false },
+    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/best-ball/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "settings", label: "Settings", icon: Settings, path: `/best-ball/${gameId}/settings`, hideForSpectator: false },
   ];
+
+  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">

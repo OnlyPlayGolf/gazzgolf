@@ -3,19 +3,22 @@ import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 
 interface ScrambleBottomTabBarProps {
   gameId: string;
+  isSpectator?: boolean;
 }
 
-export function ScrambleBottomTabBar({ gameId }: ScrambleBottomTabBarProps) {
+export function ScrambleBottomTabBar({ gameId, isSpectator = false }: ScrambleBottomTabBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const tabs = [
-    { id: "score", label: "Enter score", icon: Pencil, path: `/scramble/${gameId}/play` },
-    { id: "info", label: "Game info", icon: Info, path: `/scramble/${gameId}/info` },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/scramble/${gameId}/feed` },
-    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/scramble/${gameId}/leaderboard` },
-    { id: "settings", label: "Settings", icon: Settings, path: `/scramble/${gameId}/settings` },
+  const allTabs = [
+    { id: "score", label: "Enter score", icon: Pencil, path: `/scramble/${gameId}/play`, hideForSpectator: true },
+    { id: "info", label: "Game info", icon: Info, path: `/scramble/${gameId}/info`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/scramble/${gameId}/feed`, hideForSpectator: false },
+    { id: "leaderboard", label: "Leaderboards", icon: List, path: `/scramble/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "settings", label: "Settings", icon: Settings, path: `/scramble/${gameId}/settings`, hideForSpectator: false },
   ];
+
+  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">

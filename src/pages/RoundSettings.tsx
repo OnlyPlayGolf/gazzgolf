@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -45,6 +46,7 @@ export default function RoundSettings() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSpectator } = useIsSpectator('round', roundId);
   const [round, setRound] = useState<RoundData | null>(null);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -203,16 +205,16 @@ export default function RoundSettings() {
   const renderBottomTabBar = () => {
     if (!roundId) return null;
     if (round?.origin === "skins") {
-      return <SkinsBottomTabBar roundId={roundId} />;
+      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
     }
-    return <RoundBottomTabBar roundId={roundId} />;
+    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
   };
 
   if (loading || !round) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {roundId && <RoundBottomTabBar roundId={roundId} />}
+        {roundId && <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -256,86 +258,91 @@ export default function RoundSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* Game Settings */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Settings size={20} className="text-primary" />
-              Game Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Default Tee */}
-            <div className="space-y-2">
-              <Label>Default Tee Box</Label>
-              <TeeSelector
-                value={teeColor}
-                onValueChange={handleTeeChange}
-                teeCount={5}
-                courseTeeNames={null}
-              />
-            </div>
-
-            {/* Handicap toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply player handicaps to scoring
-                </p>
+        {/* Game Settings - Hidden for spectators */}
+        {!isSpectator && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Settings size={20} className="text-primary" />
+                Game Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Default Tee */}
+              <div className="space-y-2">
+                <Label>Default Tee Box</Label>
+                <TeeSelector
+                  value={teeColor}
+                  onValueChange={handleTeeChange}
+                  teeCount={5}
+                  courseTeeNames={null}
+                />
               </div>
-              <Switch
-                id="handicap"
-                checked={handicapEnabled}
-                onCheckedChange={setHandicapEnabled}
-              />
-            </div>
 
-            {/* Mulligans */}
-            <div className="space-y-2">
-              <Label>Mulligans per Player</Label>
-              <Select 
-                value={mulligansPerPlayer.toString()} 
-                onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select mulligans" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">No mulligans</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3">3</SelectItem>
-                  <SelectItem value="4">4</SelectItem>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="9">1 per 9 holes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Gimmes toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="gimmes">Allow Gimmes</Label>
-                <p className="text-xs text-muted-foreground">
-                  Short putts can be conceded
-                </p>
+              {/* Handicap toggle */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="handicap">Use Handicaps</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Apply player handicaps to scoring
+                  </p>
+                </div>
+                <Switch
+                  id="handicap"
+                  checked={handicapEnabled}
+                  onCheckedChange={setHandicapEnabled}
+                />
               </div>
-              <Switch
-                id="gimmes"
-                checked={gimmesEnabled}
-                onCheckedChange={setGimmesEnabled}
-              />
-            </div>
-          </CardContent>
-        </Card>
 
-        <RoundActionsSection
-          onFinish={handleFinishRound}
-          onSaveAndExit={() => navigate(`/rounds/${roundId}/summary`)}
-          onDelete={() => setShowDeleteDialog(true)}
-          finishLabel="Finish Round"
-        />
+              {/* Mulligans */}
+              <div className="space-y-2">
+                <Label>Mulligans per Player</Label>
+                <Select 
+                  value={mulligansPerPlayer.toString()} 
+                  onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select mulligans" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No mulligans</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="9">1 per 9 holes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Gimmes toggle */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="gimmes">Allow Gimmes</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Short putts can be conceded
+                  </p>
+                </div>
+                <Switch
+                  id="gimmes"
+                  checked={gimmesEnabled}
+                  onCheckedChange={setGimmesEnabled}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Round Actions - Hidden for spectators */}
+        {!isSpectator && (
+          <RoundActionsSection
+            onFinish={handleFinishRound}
+            onSaveAndExit={() => navigate(`/rounds/${roundId}/summary`)}
+            onDelete={() => setShowDeleteDialog(true)}
+            finishLabel="Finish Round"
+          />
+        )}
       </div>
 
       <ViewPlayersModal
