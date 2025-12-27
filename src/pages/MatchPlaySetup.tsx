@@ -282,15 +282,102 @@ export default function MatchPlaySetup() {
 
   // Check if at least one group is ready to start
   const hasValidGroup = groups.some((g) => isValidMatchPlayGroupSize(g.players.length));
+  const validGroups = groups.filter((g) => isValidMatchPlayGroupSize(g.players.length));
 
-  const handleStartMatch = async () => {
-    const validGroups = groups.filter((g) => isValidMatchPlayGroupSize(g.players.length));
+  const handleStartAllMatches = async () => {
     if (validGroups.length === 0) {
       toast({ title: "No valid groups", description: "Each group needs 2 or 4 players", variant: "destructive" });
       return;
     }
-    // Start the first valid group
-    await handleStartMatchForGroup(validGroups[0]);
+
+    if (!selectedCourseId) {
+      toast({ title: "Course required", description: "Please select a course", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const user = auth.user;
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      const savedRoundName = sessionStorage.getItem("roundName");
+
+      // Create an event to link all games together
+      const { data: event, error: eventError } = await supabase
+        .from("events")
+        .insert({
+          creator_id: user.id,
+          name: savedRoundName || `Match Play - ${new Date().toLocaleDateString()}`,
+          game_type: "match_play",
+          course_id: selectedCourseId,
+          course_name: selectedCourse?.name || "",
+          date_played: new Date().toISOString().split("T")[0],
+        })
+        .select()
+        .single();
+
+      if (eventError) throw eventError;
+
+      // Create all group games with the shared event_id
+      const gameInserts = validGroups.map((group) => {
+        const playerCount = group.players.length;
+        const side1 =
+          playerCount === 2
+            ? group.players[0].displayName
+            : `${group.players[0].displayName} & ${group.players[1].displayName}`;
+        const side2 =
+          playerCount === 2
+            ? group.players[1].displayName
+            : `${group.players[2].displayName} & ${group.players[3].displayName}`;
+
+        return {
+          user_id: user.id,
+          event_id: event.id,
+          course_name: selectedCourse?.name || "Match Play Game",
+          course_id: selectedCourseId || null,
+          round_name: savedRoundName || null,
+          holes_played: 18,
+          player_1: side1,
+          player_1_handicap: group.players[0]?.handicap ?? null,
+          player_2: side2,
+          player_2_handicap: group.players[playerCount === 2 ? 1 : 2]?.handicap ?? null,
+          use_handicaps: useHandicaps,
+          mulligans_per_player: mulligansPerPlayer,
+          match_status: 0,
+          holes_remaining: 18,
+        };
+      });
+
+      const { data: games, error: gamesError } = await supabase
+        .from("match_play_games")
+        .insert(gameInserts)
+        .select();
+
+      if (gamesError) throw gamesError;
+
+      // Store roster for each game
+      games?.forEach((game, idx) => {
+        const group = validGroups[idx];
+        localStorage.setItem(
+          `matchPlayRoster_${game.id}`,
+          JSON.stringify({ groupId: group.id, groupName: group.name, players: group.players })
+        );
+      });
+
+      toast({ title: `${validGroups.length} match${validGroups.length > 1 ? "es" : ""} started!` });
+      // Navigate to the first game's play page
+      if (games && games.length > 0) {
+        navigate(`/match-play/${games[0].id}/play`);
+      }
+    } catch (error: any) {
+      toast({ title: "Error creating matches", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -423,7 +510,7 @@ export default function MatchPlaySetup() {
           <Button
             className="w-full"
             size="lg"
-            onClick={handleStartMatch}
+            onClick={handleStartAllMatches}
             disabled={loading || !hasValidGroup || !selectedCourseId}
           >
             {loading ? "Starting..." : "Start Match"}
