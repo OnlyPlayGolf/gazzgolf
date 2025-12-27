@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, Plus, RotateCcw, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Plus, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
@@ -818,53 +818,55 @@ export default function RoundTracker() {
 
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {players.map((player) => {
-          const playerScore = getPlayerScore(player.id);
-          const hasScore = hasPlayerEnteredScore(player.id);
-          const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
-          const canEdit = canEditPlayer(player);
-          return (
-            <Card 
-              key={player.id} 
-              className={`p-6 transition-colors ${canEdit ? 'cursor-pointer hover:bg-muted/50' : 'opacity-75'}`}
-              onClick={() => {
-                if (canEdit) {
+        {/* Filter to only show players in the same group when multiple groups exist */}
+        {players
+          .filter((player) => {
+            // If no groups or user is round creator, show all players
+            if (groups.length === 0 || round.user_id === currentUserId) return true;
+            // Otherwise, only show players in the same group
+            return player.group_id === currentUserGroupId;
+          })
+          .map((player) => {
+            const playerScore = getPlayerScore(player.id);
+            const hasScore = hasPlayerEnteredScore(player.id);
+            const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
+            return (
+              <Card 
+                key={player.id} 
+                className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => {
                   setSelectedPlayer(player);
                   setShowScoreSheet(true);
-                }
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold">{getPlayerName(player)}</span>
-                    {!canEdit && (
-                      <Lock size={14} className="text-muted-foreground" />
-                    )}
-                    {hasMulliganOnHole && (
-                      <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                        Mulligan
-                      </Badge>
-                    )}
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                      {hasMulliganOnHole && (
+                        <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                          Mulligan
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Tee: {player.tee_color || round.tee_set}
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Tee: {player.tee_color || round.tee_set}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
-                    <div className="text-xs text-muted-foreground">Strokes</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
-                    <div className="text-xs text-muted-foreground font-bold">To Par</div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
+                      <div className="text-xs text-muted-foreground">Strokes</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
+                      <div className="text-xs text-muted-foreground font-bold">To Par</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          );
-        })}
+              </Card>
+            );
+          })}
         
         {/* Show completion button when at the last hole AND all holes have scores */}
         {isAtLastCurrentHole && allHolesScored && (
