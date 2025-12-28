@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { AddCourseDialog } from "./AddCourseDialog";
-
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 interface Course {
   id: string;
   name: string;
@@ -98,6 +99,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [recentCourses, setRecentCourses] = useState<Course[]>([]);
   const [favoriteCourses, setFavoriteCourses] = useState<Course[]>([]);
+  const [favoriteCourseIds, setFavoriteCourseIds] = useState<Set<string>>(new Set());
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
 
@@ -105,6 +107,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
     if (isOpen) {
       fetchCourses();
       fetchRecentCourses();
+      fetchFavoriteCourses();
     }
   }, [isOpen]);
 
@@ -176,6 +179,87 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
     }
   };
 
+  const fetchFavoriteCourses = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("favorite_courses")
+        .select("course_id, courses(id, name, location, tee_names)")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      const favoriteIds = new Set<string>();
+      const favorites: Course[] = [];
+      
+      data?.forEach((fav: any) => {
+        if (fav.courses) {
+          favoriteIds.add(fav.course_id);
+          favorites.push({
+            id: fav.courses.id,
+            name: fav.courses.name,
+            location: fav.courses.location || "",
+            tee_names: fav.courses.tee_names as Record<string, string> | null
+          });
+        }
+      });
+
+      setFavoriteCourseIds(favoriteIds);
+      setFavoriteCourses(favorites);
+    } catch (error) {
+      console.error("Error fetching favorite courses:", error);
+    }
+  };
+
+  const toggleFavorite = async (e: React.MouseEvent, course: Course) => {
+    e.stopPropagation();
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to save favorites");
+        return;
+      }
+
+      const isFavorite = favoriteCourseIds.has(course.id);
+
+      if (isFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from("favorite_courses")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("course_id", course.id);
+
+        if (error) throw error;
+
+        setFavoriteCourseIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(course.id);
+          return newSet;
+        });
+        setFavoriteCourses(prev => prev.filter(c => c.id !== course.id));
+        toast.success("Removed from favorites");
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from("favorite_courses")
+          .insert({ user_id: user.id, course_id: course.id });
+
+        if (error) throw error;
+
+        setFavoriteCourseIds(prev => new Set([...prev, course.id]));
+        setFavoriteCourses(prev => [...prev, course]);
+        toast.success("Added to favorites");
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorites");
+    }
+  };
+
 
   const handleSelectCourse = (course: Course) => {
     onSelectCourse(course);
@@ -189,20 +273,38 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
     handleSelectCourse(course);
   };
 
-  const CourseItem = ({ course }: { course: Course }) => (
-    <button
-      onClick={() => handleSelectCourse(course)}
-      className="w-full p-3 rounded-lg hover:bg-accent transition-colors flex items-start gap-3 text-left border"
-    >
-      <span className="text-xl mt-0.5 shrink-0">{getCountryFlag(course.location)}</span>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{course.name}</p>
-        {course.location && (
-          <p className="text-sm text-muted-foreground truncate">{course.location}</p>
-        )}
-      </div>
-    </button>
-  );
+  const CourseItem = ({ course }: { course: Course }) => {
+    const isFavorite = favoriteCourseIds.has(course.id);
+    
+    return (
+      <button
+        onClick={() => handleSelectCourse(course)}
+        className="w-full p-3 rounded-lg hover:bg-accent transition-colors flex items-center gap-3 text-left border"
+      >
+        <span className="text-xl shrink-0">{getCountryFlag(course.location)}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{course.name}</p>
+          {course.location && (
+            <p className="text-sm text-muted-foreground truncate">{course.location}</p>
+          )}
+        </div>
+        <button
+          onClick={(e) => toggleFavorite(e, course)}
+          className="shrink-0 p-1 rounded-full hover:bg-muted transition-colors"
+        >
+          <Star
+            size={20}
+            className={cn(
+              "transition-colors",
+              isFavorite
+                ? "text-yellow-500 fill-yellow-500"
+                : "text-muted-foreground hover:text-yellow-500"
+            )}
+          />
+        </button>
+      </button>
+    );
+  };
 
   return (
     <>
