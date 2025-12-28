@@ -10,10 +10,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { TopNavBar } from "@/components/TopNavBar";
 import { 
   ArrowLeft, Target, TrendingUp, Crosshair, Circle, 
-  ArrowUp, ArrowDown, Minus, ChevronRight, Play, Info
+  ArrowUp, ArrowDown, Minus, ChevronRight, Play, Info, Lightbulb
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -165,6 +171,7 @@ export default function Statistics() {
   const [drillRecs, setDrillRecs] = useState<DrillRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [sgInfoOpen, setSgInfoOpen] = useState(false);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -327,7 +334,7 @@ export default function Statistics() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate('/statistics/strokes-gained')}
+                onClick={() => setSgInfoOpen(true)}
               >
                 <Info className="h-4 w-4 text-muted-foreground" />
               </Button>
@@ -430,6 +437,64 @@ export default function Statistics() {
           </Card>
         )}
       </div>
+
+      {/* Strokes Gained Info Dialog */}
+      <Dialog open={sgInfoOpen} onOpenChange={setSgInfoOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Strokes Gained
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* What it measures */}
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
+                <Info className="h-4 w-4 text-primary" />
+                What This Measures
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Strokes Gained compares your performance to a baseline (typically scratch golfer) from every shot. Positive = better than baseline, Negative = worse.
+              </p>
+            </div>
+
+            {/* Why it matters */}
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Why It Matters
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                It's the most accurate way to identify strengths and weaknesses. Traditional stats like GIR don't account for difficulty.
+              </p>
+            </div>
+
+            {/* Tips */}
+            <div>
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
+                <Lightbulb className="h-4 w-4 text-primary" />
+                Tips to Improve
+              </h3>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  Focus on your biggest negative category first
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  Small improvements in weak areas have outsized impact
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  Track trends over time, not single rounds
+                </li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
