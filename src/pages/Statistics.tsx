@@ -90,10 +90,26 @@ const StatRow = ({
   </div>
 );
 
-const SGStatRow = ({ label, value, showBadge = false }: { label: string; value: number | null; showBadge?: boolean }) => {
+const SGStatRow = ({ 
+  label, 
+  value, 
+  showBadge = false,
+  onClick 
+}: { 
+  label: string; 
+  value: number | null; 
+  showBadge?: boolean;
+  onClick?: () => void;
+}) => {
   const level = getSGLevel(value);
   return (
-    <div className="flex items-center justify-between py-2">
+    <div 
+      className={cn(
+        "flex items-center justify-between py-2",
+        onClick && "cursor-pointer hover:bg-muted/30 -mx-3 px-3 rounded-md"
+      )}
+      onClick={onClick}
+    >
       <span className="text-sm text-foreground">{label}</span>
       <div className="flex items-center gap-2">
         <span className={cn(
@@ -103,6 +119,7 @@ const SGStatRow = ({ label, value, showBadge = false }: { label: string; value: 
           {formatSG(value)}
         </span>
         {showBadge && level !== 'average' && <StatLevelBadge level={level} />}
+        {onClick && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
       </div>
     </div>
   );
@@ -344,14 +361,14 @@ export default function Statistics() {
             </p>
           </CardHeader>
           <CardContent>
-            <SGStatRow label="Total" value={stats?.strokesGained.total ?? null} showBadge />
+            <SGStatRow label="Total" value={stats?.strokesGained.total ?? null} showBadge onClick={() => navigate('/statistics/sg-total')} />
             <div className="h-px bg-border my-2" />
-            <SGStatRow label="Off the Tee" value={stats?.strokesGained.offTheTee ?? null} showBadge />
-            <SGStatRow label="Approach" value={stats?.strokesGained.approach ?? null} showBadge />
-            <SGStatRow label="Short Game" value={stats?.strokesGained.shortGame ?? null} showBadge />
-            <SGStatRow label="Putting" value={stats?.strokesGained.putting ?? null} showBadge />
-            <SGStatRow label="Other" value={stats?.strokesGained.other ?? null} showBadge />
-            <SGStatRow label="Scoring" value={stats?.strokesGained.scoring ?? null} showBadge />
+            <SGStatRow label="Off the Tee" value={stats?.strokesGained.offTheTee ?? null} showBadge onClick={() => navigate('/statistics/sg-off-the-tee')} />
+            <SGStatRow label="Approach" value={stats?.strokesGained.approach ?? null} showBadge onClick={() => navigate('/statistics/sg-approach')} />
+            <SGStatRow label="Short Game" value={stats?.strokesGained.shortGame ?? null} showBadge onClick={() => navigate('/statistics/sg-short-game')} />
+            <SGStatRow label="Putting" value={stats?.strokesGained.putting ?? null} showBadge onClick={() => navigate('/statistics/sg-putting')} />
+            <SGStatRow label="Other" value={stats?.strokesGained.other ?? null} showBadge onClick={() => navigate('/statistics/sg-other')} />
+            <SGStatRow label="Scoring" value={stats?.strokesGained.scoring ?? null} showBadge onClick={() => navigate('/statistics/sg-scoring')} />
           </CardContent>
         </Card>
 
