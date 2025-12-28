@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Player } from "@/types/playSetup";
 import { TeeSelector } from "@/components/TeeSelector";
+import { formatHandicap, parseHandicap } from "@/lib/utils";
 
 interface PlayerEditSheetProps {
   isOpen: boolean;
@@ -33,7 +34,8 @@ export function PlayerEditSheet({
         ? player.displayName.replace(" (Guest)", "") 
         : player.displayName
       );
-      setHandicap(player.handicap !== undefined ? String(player.handicap) : "");
+      // Format handicap for display (plus handicaps shown with "+")
+      setHandicap(formatHandicap(player.handicap));
       setTeeColor(player.teeColor);
     }
   }, [player]);
@@ -41,13 +43,12 @@ export function PlayerEditSheet({
   const handleSave = () => {
     if (!player) return;
 
-    const normalizedHandicap = handicap.replace(',', '.');
     const updatedPlayer: Player = {
       ...player,
       displayName: player.isTemporary 
         ? (displayName.trim() || "Guest Player")
         : displayName.trim() || player.displayName,
-      handicap: normalizedHandicap ? parseFloat(normalizedHandicap) : undefined,
+      handicap: parseHandicap(handicap),
       teeColor: teeColor || player.teeColor,
     };
     
@@ -85,11 +86,9 @@ export function PlayerEditSheet({
             <Label htmlFor="player-handicap">Handicap</Label>
             <Input
               id="player-handicap"
-              type="number"
-              step="0.1"
               value={handicap}
               onChange={(e) => setHandicap(e.target.value)}
-              placeholder="e.g. 15 or -2.4"
+              placeholder="e.g. 15 or +2.4"
             />
           </div>
 

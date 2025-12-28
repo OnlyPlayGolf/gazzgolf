@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
+import { parseHandicapForSort } from "@/lib/utils";
 
 interface Friend {
   id: string;
@@ -321,15 +322,6 @@ const Friends = () => {
     }
   };
 
-  const parseHandicap = (handicap: string | null): number => {
-    if (!handicap) return 999; // Put null handicaps at the end
-    const trimmed = handicap.trim();
-    if (trimmed.startsWith('+')) {
-      // Plus handicaps are actually better (lower), so negate them
-      return -parseFloat(trimmed.substring(1));
-    }
-    return parseFloat(trimmed);
-  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -348,8 +340,8 @@ const Friends = () => {
       const nameB = (b.display_name || b.username || '').toLowerCase();
       comparison = nameA.localeCompare(nameB, 'sv');
     } else if (sortField === 'handicap') {
-      const hcpA = parseHandicap(a.handicap);
-      const hcpB = parseHandicap(b.handicap);
+      const hcpA = parseHandicapForSort(a.handicap);
+      const hcpB = parseHandicapForSort(b.handicap);
       comparison = hcpA - hcpB;
     } else if (sortField === 'club') {
       const clubA = (a.home_club || '').toLowerCase();
