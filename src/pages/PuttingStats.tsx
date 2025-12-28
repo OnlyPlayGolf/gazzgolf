@@ -241,26 +241,10 @@ export default function PuttingStats() {
               value={formatPercentage(stats?.distance18plus.percentage ?? null)}
               subValue={stats?.distance18plus.total ? `${stats.distance18plus.made}/${stats.distance18plus.total}` : undefined}
             />
-          </CardContent>
-        </Card>
-
-        {/* 3-Putt Avoidance Section */}
-        <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Circle className="h-5 w-5 text-primary" />
-              3-Putt Avoidance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
             <StatRow 
               label="3-Putt Avoidance"
               value={formatPercentage(stats?.threePuttAvoidance ?? null)}
-              isHighlighted
             />
-            <p className="text-xs text-muted-foreground mt-2">
-              Percentage of holes where you avoided 3-putting or worse
-            </p>
           </CardContent>
         </Card>
 
