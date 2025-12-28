@@ -22,8 +22,10 @@ const distances = [4, 5, 6]; // meters
 const outcomes = [
   { label: 'Holed', points: 3 },
   { label: 'Good Pace', points: 1 },
+  { label: 'Long + Made', points: 0 },
   { label: 'Short', points: -3 },
   { label: 'Long Miss', points: -3 },
+  { label: '4-Putt+', points: -5 },
 ];
 
 const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePuttingComponentProps) => {

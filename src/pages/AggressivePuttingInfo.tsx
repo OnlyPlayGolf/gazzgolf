@@ -36,8 +36,10 @@ export default function AggressivePuttingInfo() {
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Holed putt = +3 points</li>
               <li>• Good pace (within 3 ft past the hole) = +1 point</li>
+              <li>• Long but made return putt (3+ ft past) = 0 points</li>
               <li>• Short putt = –3 points</li>
               <li>• Long and missed return putt = –3 points</li>
+              <li>• 4-putt or worse = –5 points</li>
               <li>• Drill ends at 15 points</li>
               <li>• Score = total putts taken</li>
             </ul>
