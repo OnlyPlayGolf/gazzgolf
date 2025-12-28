@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, MapPin, Star, Clock, TrendingUp, Plus } from "lucide-react";
+import { Search, MapPin, Star, Clock, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,6 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [recentCourses, setRecentCourses] = useState<Course[]>([]);
-  const [mostPlayedCourses, setMostPlayedCourses] = useState<Course[]>([]);
   const [favoriteCourses, setFavoriteCourses] = useState<Course[]>([]);
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
@@ -35,7 +34,6 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
     if (isOpen) {
       fetchCourses();
       fetchRecentCourses();
-      fetchMostPlayedCourses();
     }
   }, [isOpen]);
 
@@ -105,46 +103,6 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
     }
   };
 
-  const fetchMostPlayedCourses = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("rounds")
-        .select("course_name")
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      // Count occurrences
-      const courseCounts: Record<string, number> = {};
-      data?.forEach(r => {
-        courseCounts[r.course_name] = (courseCounts[r.course_name] || 0) + 1;
-      });
-
-      // Sort by count and get top 5
-      const sortedCourses = Object.entries(courseCounts)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([name]) => name);
-
-      const mostPlayedData = allCourses.filter(c => sortedCourses.includes(c.name));
-      
-      if (mostPlayedData.length === 0 && sortedCourses.length > 0) {
-        const placeholders = sortedCourses.map((name, i) => ({
-          id: `most-${i}`,
-          name,
-          location: ""
-        }));
-        setMostPlayedCourses(placeholders);
-      } else {
-        setMostPlayedCourses(mostPlayedData);
-      }
-    } catch (error) {
-      console.error("Error fetching most played courses:", error);
-    }
-  };
 
   const handleSelectCourse = (course: Course) => {
     onSelectCourse(course);
@@ -185,7 +143,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-4 mx-4 shrink-0">
+            <TabsList className="grid grid-cols-3 mx-4 shrink-0">
               <TabsTrigger value="search" className="text-xs">
                 <Search className="w-4 h-4" />
               </TabsTrigger>
@@ -194,9 +152,6 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               </TabsTrigger>
               <TabsTrigger value="recent" className="text-xs">
                 <Clock className="w-4 h-4" />
-              </TabsTrigger>
-              <TabsTrigger value="mostPlayed" className="text-xs">
-                <TrendingUp className="w-4 h-4" />
               </TabsTrigger>
             </TabsList>
 
@@ -272,23 +227,6 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="mostPlayed" className="flex-1 overflow-hidden mt-0 p-4">
-              <ScrollArea className="h-full">
-                <div className="space-y-2 pr-4">
-                  {mostPlayedCourses.length > 0 ? (
-                    mostPlayedCourses.map((course) => (
-                      <CourseItem key={course.id} course={course} />
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <TrendingUp className="w-12 h-12 mx-auto text-muted-foreground/50 mb-2" />
-                      <p className="text-muted-foreground">No courses played yet</p>
-                      <p className="text-sm text-muted-foreground">Your most played courses will appear here</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
