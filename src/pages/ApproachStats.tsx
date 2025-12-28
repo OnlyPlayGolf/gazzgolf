@@ -10,12 +10,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TopNavBar } from "@/components/TopNavBar";
-import { ArrowLeft, Crosshair } from "lucide-react";
+import { ArrowLeft, Crosshair, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatsFilter } from "@/utils/statisticsCalculations";
 import { cn } from "@/lib/utils";
+import { subYears, startOfDay } from "date-fns";
 
 type TimeFilter = StatsFilter;
+
+interface Shot {
+  type: 'tee' | 'approach' | 'putt';
+  startDistance: number;
+  startLie?: string;
+  holed: boolean;
+  endDistance?: number;
+  strokesGained: number;
+}
 
 interface ApproachDistanceStats {
   allApproaches: { gir: number; total: number; percentage: number | null };
@@ -28,9 +38,36 @@ interface ApproachDistanceStats {
   distance200plus: { gir: number; total: number; percentage: number | null };
 }
 
+interface ApproachSGStats {
+  sgApproachFw40Plus: number;
+  sgApproachFw200Plus: number;
+  sgApproachFw160to200: number;
+  sgApproachFw120to160: number;
+  sgApproachFw80to120: number;
+  sgApproachFw40to80: number;
+  sgApproachRough40Plus: number;
+  sgApproachRough200Plus: number;
+  sgApproachRough160to200: number;
+  sgApproachRough120to160: number;
+  sgApproachRough80to120: number;
+  sgApproachRough40to80: number;
+  roundsCount: number;
+}
+
 const formatPercentage = (value: number | null): string => {
   if (value === null) return '-';
   return `${value.toFixed(1)}%`;
+};
+
+const getSGColor = (value: number) => {
+  if (value > 0.01) return "text-green-500";
+  if (value < -0.01) return "text-red-500";
+  return "text-muted-foreground";
+};
+
+const formatSG = (value: number) => {
+  if (Math.abs(value) < 0.005) return "0.00";
+  return value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
 };
 
 const StatRow = ({ 
@@ -61,12 +98,23 @@ const StatRow = ({
   </div>
 );
 
+const SGRow = ({ label, value, isBold = false, indent = false }: { label: string; value: number; isBold?: boolean; indent?: boolean }) => (
+  <div className={`flex justify-between py-1 ${indent ? 'pl-3' : ''}`}>
+    <span className={`text-sm ${isBold ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+    <span className={`text-sm font-medium ${getSGColor(value)}`}>
+      {formatSG(value)}
+    </span>
+  </div>
+);
+
 export default function ApproachStats() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<ApproachDistanceStats | null>(null);
+  const [sgStats, setSgStats] = useState<ApproachSGStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [roundsPlayed, setRoundsPlayed] = useState(0);
+  const [proRoundsCount, setProRoundsCount] = useState(0);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -79,7 +127,6 @@ export default function ApproachStats() {
 
       try {
         // Fetch approach stats from holes data
-        // For now, we'll create placeholder structure - actual implementation depends on data tracking
         const approachStats: ApproachDistanceStats = {
           allApproaches: { gir: 0, total: 0, percentage: null },
           distance50to75: { gir: 0, total: 0, percentage: null },
@@ -105,8 +152,114 @@ export default function ApproachStats() {
         const { count } = await roundsQuery;
         setRoundsPlayed(count || 0);
 
-        // TODO: Implement actual approach distance tracking from holes data
-        // This would require additional fields in the holes table to track approach distances
+        // Fetch pro stats for SG approach data
+        const getDateFilter = () => {
+          const now = new Date();
+          switch (timeFilter) {
+            case 'year':
+              return startOfDay(subYears(now, 1)).toISOString();
+            case 'last50':
+            case 'last20':
+            case 'last10':
+            case 'last5':
+              return null; // Will limit by count instead
+            default:
+              return null;
+          }
+        };
+
+        let proQuery = supabase
+          .from('pro_stats_rounds')
+          .select('id, created_at')
+          .eq('user_id', user.id)
+          .eq('holes_played', 18);
+
+        const dateFilter = getDateFilter();
+        if (dateFilter) {
+          proQuery = proQuery.gte('created_at', dateFilter);
+        }
+
+        const { data: proRounds } = await proQuery;
+
+        if (proRounds && proRounds.length > 0) {
+          const roundIds = proRounds.map(r => r.id);
+
+          const { data: holesData } = await supabase
+            .from('pro_stats_holes')
+            .select('pro_round_id, hole_number, par, score, pro_shot_data')
+            .in('pro_round_id', roundIds);
+
+          // Initialize SG stats
+          let sgApproachFw40Plus = 0;
+          let sgApproachFw200Plus = 0;
+          let sgApproachFw160to200 = 0;
+          let sgApproachFw120to160 = 0;
+          let sgApproachFw80to120 = 0;
+          let sgApproachFw40to80 = 0;
+          let sgApproachRough40Plus = 0;
+          let sgApproachRough200Plus = 0;
+          let sgApproachRough160to200 = 0;
+          let sgApproachRough120to160 = 0;
+          let sgApproachRough80to120 = 0;
+          let sgApproachRough40to80 = 0;
+
+          holesData?.forEach(hole => {
+            if (hole.pro_shot_data) {
+              const shots = hole.pro_shot_data as unknown as Shot[];
+              
+              shots.forEach((shot, idx) => {
+                const sg = shot.strokesGained || 0;
+                const dist = shot.startDistance || 0;
+                const lie = (shot.startLie || '').toLowerCase();
+                const isTeeShot = idx === 0;
+                const isFairway = lie === 'fairway' || lie === 'tee';
+                const isRough = lie === 'rough' || lie === 'first_cut';
+
+                if (!isTeeShot && dist >= 40 && shot.type !== 'putt') {
+                  // Approach from fairway
+                  if (isFairway) {
+                    sgApproachFw40Plus += sg;
+                    if (dist >= 200) sgApproachFw200Plus += sg;
+                    else if (dist >= 160) sgApproachFw160to200 += sg;
+                    else if (dist >= 120) sgApproachFw120to160 += sg;
+                    else if (dist >= 80) sgApproachFw80to120 += sg;
+                    else sgApproachFw40to80 += sg;
+                  }
+                  // Approach from rough
+                  else if (isRough) {
+                    sgApproachRough40Plus += sg;
+                    if (dist >= 200) sgApproachRough200Plus += sg;
+                    else if (dist >= 160) sgApproachRough160to200 += sg;
+                    else if (dist >= 120) sgApproachRough120to160 += sg;
+                    else if (dist >= 80) sgApproachRough80to120 += sg;
+                    else sgApproachRough40to80 += sg;
+                  }
+                }
+              });
+            }
+          });
+
+          const validRounds = proRounds.length;
+          setProRoundsCount(validRounds);
+
+          if (validRounds > 0) {
+            setSgStats({
+              sgApproachFw40Plus: sgApproachFw40Plus / validRounds,
+              sgApproachFw200Plus: sgApproachFw200Plus / validRounds,
+              sgApproachFw160to200: sgApproachFw160to200 / validRounds,
+              sgApproachFw120to160: sgApproachFw120to160 / validRounds,
+              sgApproachFw80to120: sgApproachFw80to120 / validRounds,
+              sgApproachFw40to80: sgApproachFw40to80 / validRounds,
+              sgApproachRough40Plus: sgApproachRough40Plus / validRounds,
+              sgApproachRough200Plus: sgApproachRough200Plus / validRounds,
+              sgApproachRough160to200: sgApproachRough160to200 / validRounds,
+              sgApproachRough120to160: sgApproachRough120to160 / validRounds,
+              sgApproachRough80to120: sgApproachRough80to120 / validRounds,
+              sgApproachRough40to80: sgApproachRough40to80 / validRounds,
+              roundsCount: validRounds,
+            });
+          }
+        }
         
         setStats(approachStats);
       } catch (error) {
@@ -227,6 +380,52 @@ export default function ApproachStats() {
             />
           </CardContent>
         </Card>
+
+        {/* Approach from Fairway - SG Section */}
+        {sgStats && proRoundsCount > 0 && (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Approach from Fairway
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Based on {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <SGRow label="All (40m+)" value={sgStats.sgApproachFw40Plus} isBold />
+              <SGRow label="200+ m" value={sgStats.sgApproachFw200Plus} indent />
+              <SGRow label="160-200 m" value={sgStats.sgApproachFw160to200} indent />
+              <SGRow label="120-160 m" value={sgStats.sgApproachFw120to160} indent />
+              <SGRow label="80-120 m" value={sgStats.sgApproachFw80to120} indent />
+              <SGRow label="40-80 m" value={sgStats.sgApproachFw40to80} indent />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Approach from Rough - SG Section */}
+        {sgStats && proRoundsCount > 0 && (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Approach from Rough
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Based on {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <SGRow label="All (40m+)" value={sgStats.sgApproachRough40Plus} isBold />
+              <SGRow label="200+ m" value={sgStats.sgApproachRough200Plus} indent />
+              <SGRow label="160-200 m" value={sgStats.sgApproachRough160to200} indent />
+              <SGRow label="120-160 m" value={sgStats.sgApproachRough120to160} indent />
+              <SGRow label="80-120 m" value={sgStats.sgApproachRough80to120} indent />
+              <SGRow label="40-80 m" value={sgStats.sgApproachRough40to80} indent />
+            </CardContent>
+          </Card>
+        )}
 
         {/* No data message */}
         {roundsPlayed === 0 && (
