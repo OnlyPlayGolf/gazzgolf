@@ -26,7 +26,7 @@ const outcomes = [
   { label: 'Good Pace', points: 1, key: 'good-pace' },
   { label: 'Long + Made', points: 0, key: 'long-made' },
   { label: 'Short', points: -3, key: 'short' },
-  { label: 'Long Miss', points: -3, key: 'long-miss' },
+  { label: 'Long + Miss', points: -3, key: 'long-miss' },
   { label: '4-Putt or worse', points: -5, key: 'four-putt' },
 ];
 
