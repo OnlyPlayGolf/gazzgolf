@@ -350,6 +350,8 @@ export default function Statistics() {
             <SGStatRow label="Approach" value={stats?.strokesGained.approach ?? null} showBadge />
             <SGStatRow label="Short Game" value={stats?.strokesGained.shortGame ?? null} showBadge />
             <SGStatRow label="Putting" value={stats?.strokesGained.putting ?? null} showBadge />
+            <SGStatRow label="Other" value={stats?.strokesGained.other ?? null} showBadge />
+            <SGStatRow label="Scoring" value={stats?.strokesGained.scoring ?? null} showBadge />
           </CardContent>
         </Card>
 

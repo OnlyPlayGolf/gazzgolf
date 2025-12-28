@@ -27,6 +27,8 @@ export interface StrokesGainedStats {
   approach: number | null;
   shortGame: number | null;
   putting: number | null;
+  other: number | null;
+  scoring: number | null;
 }
 
 export interface AccuracyStats {
@@ -208,6 +210,8 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     approach: null,
     shortGame: null,
     putting: null,
+    other: null,
+    scoring: null,
   };
 
   if (proRounds && proRounds.length > 0) {
@@ -218,7 +222,7 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
       .in('pro_round_id', roundIds);
 
     if (holes && holes.length > 0) {
-      let sgTee = 0, sgApproach = 0, sgShort = 0, sgPutt = 0;
+      let sgTee = 0, sgApproach = 0, sgShort = 0, sgPutt = 0, sgOther = 0, sgScoring = 0;
       let shotCount = 0;
 
       holes.forEach(hole => {
@@ -227,8 +231,13 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
             const sg = shot.strokesGained || 0;
             const type = shot.type;
             const dist = shot.startDistance || 0;
+            const category = shot.category; // Check for explicit category if available
             
-            if (type === 'putt') {
+            if (category === 'other') {
+              sgOther += sg;
+            } else if (category === 'scoring') {
+              sgScoring += sg;
+            } else if (type === 'putt') {
               sgPutt += sg;
             } else if (idx === 0 && dist >= 200) {
               sgTee += sg;
@@ -236,6 +245,8 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
               sgApproach += sg;
             } else if (dist > 0) {
               sgShort += sg;
+            } else {
+              sgOther += sg;
             }
             shotCount++;
           });
@@ -244,12 +255,15 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
 
       const roundCount = proRounds.length;
       if (roundCount > 0) {
+        const total = sgTee + sgApproach + sgShort + sgPutt + sgOther + sgScoring;
         strokesGained = {
-          total: (sgTee + sgApproach + sgShort + sgPutt) / roundCount,
+          total: total / roundCount,
           offTheTee: sgTee / roundCount,
           approach: sgApproach / roundCount,
           shortGame: sgShort / roundCount,
           putting: sgPutt / roundCount,
+          other: sgOther !== 0 ? sgOther / roundCount : null,
+          scoring: sgScoring !== 0 ? sgScoring / roundCount : null,
         };
       }
     }
