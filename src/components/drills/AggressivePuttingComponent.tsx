@@ -25,7 +25,7 @@ const outcomes = [
   { label: 'Long + Made', points: 0 },
   { label: 'Short', points: -3 },
   { label: 'Long Miss', points: -3 },
-  { label: '4-Putt+', points: -5 },
+  { label: '4-Putt or worse', points: -5 },
 ];
 
 const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePuttingComponentProps) => {

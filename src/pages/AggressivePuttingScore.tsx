@@ -27,7 +27,7 @@ const outcomes = [
   { label: 'Long + Made', points: 0, key: 'long-made' },
   { label: 'Short', points: -3, key: 'short' },
   { label: 'Long Miss', points: -3, key: 'long-miss' },
-  { label: '4-Putt+', points: -5, key: 'four-putt' },
+  { label: '4-Putt or worse', points: -5, key: 'four-putt' },
 ];
 
 export default function AggressivePuttingScore() {
