@@ -90,10 +90,16 @@ const StatRow = ({
   </div>
 );
 
-const SGStatRow = ({ label, value, showBadge = false }: { label: string; value: number | null; showBadge?: boolean }) => {
+const SGStatRow = ({ label, value, showBadge = false, onClick }: { label: string; value: number | null; showBadge?: boolean; onClick?: () => void }) => {
   const level = getSGLevel(value);
   return (
-    <div className="flex items-center justify-between py-2">
+    <div 
+      className={cn(
+        "flex items-center justify-between py-2",
+        onClick && "cursor-pointer hover:bg-muted/30 -mx-3 px-3"
+      )}
+      onClick={onClick}
+    >
       <span className="text-sm text-foreground">{label}</span>
       <div className="flex items-center gap-2">
         <span className={cn(
@@ -103,6 +109,7 @@ const SGStatRow = ({ label, value, showBadge = false }: { label: string; value: 
           {formatSG(value)}
         </span>
         {showBadge && level !== 'average' && <StatLevelBadge level={level} />}
+        {onClick && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
       </div>
     </div>
   );
@@ -349,7 +356,7 @@ export default function Statistics() {
             <SGStatRow label="Off the Tee" value={stats?.strokesGained.offTheTee ?? null} showBadge />
             <SGStatRow label="Approach" value={stats?.strokesGained.approach ?? null} showBadge />
             <SGStatRow label="Short Game" value={stats?.strokesGained.shortGame ?? null} showBadge />
-            <SGStatRow label="Putting" value={stats?.strokesGained.putting ?? null} showBadge />
+            <SGStatRow label="Putting" value={stats?.strokesGained.putting ?? null} showBadge onClick={() => navigate('/statistics/putting-detail')} />
             <SGStatRow label="Other" value={stats?.strokesGained.other ?? null} showBadge />
             <SGStatRow label="Scoring" value={stats?.strokesGained.scoring ?? null} showBadge />
           </CardContent>
