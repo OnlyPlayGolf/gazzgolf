@@ -25,8 +25,8 @@ export default function AggressivePuttingInfo() {
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <h3 className="font-semibold text-sm">How It Works</h3>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Choose any starting putt</li>
               <li>• Distances cycle: 4m → 5m → 6m → repeat</li>
+              <li>• Choose a different spot for every putt. You may not putt twice from the same position</li>
               <li>• Reach 15 points in as few putts as possible</li>
             </ul>
           </div>
