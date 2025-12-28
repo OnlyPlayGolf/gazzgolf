@@ -24,7 +24,7 @@ const outcomes = [
   { label: 'Good Pace', points: 1 },
   { label: 'Long + Made', points: 0 },
   { label: 'Short', points: -3 },
-  { label: 'Long Miss', points: -3 },
+  { label: 'Long + Miss', points: -3 },
   { label: '4-Putt or worse', points: -5 },
 ];
 
