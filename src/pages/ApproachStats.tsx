@@ -328,59 +328,6 @@ export default function ApproachStats() {
           </Select>
         </div>
 
-        {/* Approach by Distance Section */}
-        <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Crosshair className="h-5 w-5 text-primary" />
-              GIR by Distance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StatRow 
-              label="All Approaches"
-              value={formatPercentage(stats?.allApproaches.percentage ?? null)}
-              subValue={stats?.allApproaches.total ? `${stats.allApproaches.gir}/${stats.allApproaches.total}` : undefined}
-              isHighlighted
-            />
-            <StatRow 
-              label="50-75 m"
-              value={formatPercentage(stats?.distance50to75.percentage ?? null)}
-              subValue={stats?.distance50to75.total ? `${stats.distance50to75.gir}/${stats.distance50to75.total}` : undefined}
-            />
-            <StatRow 
-              label="75-100 m"
-              value={formatPercentage(stats?.distance75to100.percentage ?? null)}
-              subValue={stats?.distance75to100.total ? `${stats.distance75to100.gir}/${stats.distance75to100.total}` : undefined}
-            />
-            <StatRow 
-              label="100-125 m"
-              value={formatPercentage(stats?.distance100to125.percentage ?? null)}
-              subValue={stats?.distance100to125.total ? `${stats.distance100to125.gir}/${stats.distance100to125.total}` : undefined}
-            />
-            <StatRow 
-              label="125-150 m"
-              value={formatPercentage(stats?.distance125to150.percentage ?? null)}
-              subValue={stats?.distance125to150.total ? `${stats.distance125to150.gir}/${stats.distance125to150.total}` : undefined}
-            />
-            <StatRow 
-              label="150-175 m"
-              value={formatPercentage(stats?.distance150to175.percentage ?? null)}
-              subValue={stats?.distance150to175.total ? `${stats.distance150to175.gir}/${stats.distance150to175.total}` : undefined}
-            />
-            <StatRow 
-              label="175-200 m"
-              value={formatPercentage(stats?.distance175to200.percentage ?? null)}
-              subValue={stats?.distance175to200.total ? `${stats.distance175to200.gir}/${stats.distance175to200.total}` : undefined}
-            />
-            <StatRow 
-              label="200+ m"
-              value={formatPercentage(stats?.distance200plus.percentage ?? null)}
-              subValue={stats?.distance200plus.total ? `${stats.distance200plus.gir}/${stats.distance200plus.total}` : undefined}
-            />
-          </CardContent>
-        </Card>
-
         {/* Approach from Fairway - SG Section */}
         {sgStats && proRoundsCount > 0 && (
           <Card className="mb-4">
@@ -403,6 +350,7 @@ export default function ApproachStats() {
             </CardContent>
           </Card>
         )}
+
 
         {/* Approach from Rough - SG Section */}
         {sgStats && proRoundsCount > 0 && (
