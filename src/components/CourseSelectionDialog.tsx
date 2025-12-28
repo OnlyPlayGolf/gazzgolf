@@ -15,56 +15,75 @@ interface Course {
   tee_names?: Record<string, string> | null;
 }
 
+// Country patterns map for both flag detection and search
+const countryPatterns: Record<string, { flag: string; keywords: string[] }> = {
+  usa: {
+    flag: "🇺🇸",
+    keywords: ["usa", "united states", "america", "california", "florida", "texas", "arizona", 
+               "georgia", "new york", "nevada", "carolina", "michigan", "ohio", "oregon", 
+               "washington", "colorado", "hawaii", "pebble beach", ", ca", ", fl", ", tx", 
+               ", az", ", ny", ", nv", ", ga", "monterey", "san francisco", "los angeles"]
+  },
+  uk: {
+    flag: "🇬🇧",
+    keywords: ["scotland", "england", "wales", "united kingdom", "uk", "britain", "st andrews", "northern ireland"]
+  },
+  ireland: { flag: "🇮🇪", keywords: ["ireland", "irish"] },
+  spain: { flag: "🇪🇸", keywords: ["spain", "españa", "spanish"] },
+  france: { flag: "🇫🇷", keywords: ["france", "french"] },
+  germany: { flag: "🇩🇪", keywords: ["germany", "deutschland", "german"] },
+  italy: { flag: "🇮🇹", keywords: ["italy", "italia", "italian"] },
+  portugal: { flag: "🇵🇹", keywords: ["portugal", "portuguese"] },
+  australia: { flag: "🇦🇺", keywords: ["australia", "australian"] },
+  japan: { flag: "🇯🇵", keywords: ["japan", "日本", "japanese"] },
+  canada: { flag: "🇨🇦", keywords: ["canada", "canadian"] },
+  mexico: { flag: "🇲🇽", keywords: ["mexico", "méxico", "mexican"] },
+  uae: { flag: "🇦🇪", keywords: ["dubai", "uae", "emirates", "abu dhabi"] },
+  southafrica: { flag: "🇿🇦", keywords: ["south africa", "african"] },
+  sweden: { flag: "🇸🇪", keywords: ["sweden", "sverige", "swedish"] },
+  denmark: { flag: "🇩🇰", keywords: ["denmark", "danmark", "danish"] },
+  norway: { flag: "🇳🇴", keywords: ["norway", "norge", "norwegian"] },
+  netherlands: { flag: "🇳🇱", keywords: ["netherlands", "holland", "dutch"] },
+  belgium: { flag: "🇧🇪", keywords: ["belgium", "belgian"] },
+  switzerland: { flag: "🇨🇭", keywords: ["switzerland", "schweiz", "swiss"] },
+  austria: { flag: "🇦🇹", keywords: ["austria", "österreich", "austrian"] },
+  thailand: { flag: "🇹🇭", keywords: ["thailand", "thai"] },
+  korea: { flag: "🇰🇷", keywords: ["korea", "korean"] },
+  china: { flag: "🇨🇳", keywords: ["china", "中国", "chinese"] },
+  newzealand: { flag: "🇳🇿", keywords: ["new zealand", "kiwi"] },
+};
+
 // Get country flag emoji from location string
 const getCountryFlag = (location: string): string => {
   if (!location) return "🏌️";
-  
   const loc = location.toLowerCase();
   
-  // USA patterns
-  if (loc.includes("california") || loc.includes("usa") || loc.includes("united states") ||
-      loc.includes("florida") || loc.includes("texas") || loc.includes("arizona") ||
-      loc.includes("georgia") || loc.includes("new york") || loc.includes("nevada") ||
-      loc.includes("carolina") || loc.includes("michigan") || loc.includes("ohio") ||
-      loc.includes("oregon") || loc.includes("washington") || loc.includes("colorado") ||
-      loc.includes("hawaii") || loc.includes("pebble beach") || loc.includes(", ca") ||
-      loc.includes(", fl") || loc.includes(", tx") || loc.includes(", az") ||
-      loc.includes(", ny") || loc.includes(", nv") || loc.includes(", ga")) {
-    return "🇺🇸";
+  for (const country of Object.values(countryPatterns)) {
+    if (country.keywords.some(kw => loc.includes(kw))) {
+      return country.flag;
+    }
   }
-  
-  // UK patterns
-  if (loc.includes("scotland") || loc.includes("england") || loc.includes("wales") ||
-      loc.includes("united kingdom") || loc.includes("uk") || loc.includes("ireland") ||
-      loc.includes("st andrews") || loc.includes("northern ireland")) {
-    return "🇬🇧";
-  }
-  
-  // Other countries
-  if (loc.includes("spain") || loc.includes("españa")) return "🇪🇸";
-  if (loc.includes("france")) return "🇫🇷";
-  if (loc.includes("germany") || loc.includes("deutschland")) return "🇩🇪";
-  if (loc.includes("italy") || loc.includes("italia")) return "🇮🇹";
-  if (loc.includes("portugal")) return "🇵🇹";
-  if (loc.includes("australia")) return "🇦🇺";
-  if (loc.includes("japan") || loc.includes("日本")) return "🇯🇵";
-  if (loc.includes("canada")) return "🇨🇦";
-  if (loc.includes("mexico") || loc.includes("méxico")) return "🇲🇽";
-  if (loc.includes("dubai") || loc.includes("uae") || loc.includes("emirates")) return "🇦🇪";
-  if (loc.includes("south africa")) return "🇿🇦";
-  if (loc.includes("sweden") || loc.includes("sverige")) return "🇸🇪";
-  if (loc.includes("denmark") || loc.includes("danmark")) return "🇩🇰";
-  if (loc.includes("norway") || loc.includes("norge")) return "🇳🇴";
-  if (loc.includes("netherlands") || loc.includes("holland")) return "🇳🇱";
-  if (loc.includes("belgium")) return "🇧🇪";
-  if (loc.includes("switzerland") || loc.includes("schweiz")) return "🇨🇭";
-  if (loc.includes("austria") || loc.includes("österreich")) return "🇦🇹";
-  if (loc.includes("thailand")) return "🇹🇭";
-  if (loc.includes("korea")) return "🇰🇷";
-  if (loc.includes("china") || loc.includes("中国")) return "🇨🇳";
-  if (loc.includes("new zealand")) return "🇳🇿";
   
   return "🏌️"; // Default golf flag for unknown locations
+};
+
+// Check if a course matches a country search term
+const matchesCountrySearch = (location: string, searchTerm: string): boolean => {
+  if (!location || !searchTerm) return false;
+  const search = searchTerm.toLowerCase();
+  const loc = location.toLowerCase();
+  
+  for (const country of Object.values(countryPatterns)) {
+    // Check if search term matches any country keyword
+    const searchMatchesCountry = country.keywords.some(kw => kw.includes(search) || search.includes(kw));
+    // Check if location matches that country
+    const locationMatchesCountry = country.keywords.some(kw => loc.includes(kw));
+    
+    if (searchMatchesCountry && locationMatchesCountry) {
+      return true;
+    }
+  }
+  return false;
 };
 
 interface CourseSelectionDialogProps {
@@ -91,9 +110,11 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
 
   useEffect(() => {
     if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
       const filtered = allCourses.filter((course) =>
-        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (course.location && course.location.toLowerCase().includes(searchQuery.toLowerCase()))
+        course.name.toLowerCase().includes(query) ||
+        (course.location && course.location.toLowerCase().includes(query)) ||
+        matchesCountrySearch(course.location, query)
       );
       setFilteredCourses(filtered);
     } else {

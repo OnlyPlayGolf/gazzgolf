@@ -1,0 +1,1 @@
+UPDATE courses SET location = 'San Francisco, California' WHERE name = 'Presidio Golf Course';
