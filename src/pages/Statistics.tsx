@@ -354,7 +354,7 @@ export default function Statistics() {
             <SGStatRow label="Total" value={stats?.strokesGained.total ?? null} showBadge />
             <div className="h-px bg-border my-2" />
             <SGStatRow label="Off the Tee" value={stats?.strokesGained.offTheTee ?? null} showBadge />
-            <SGStatRow label="Approach" value={stats?.strokesGained.approach ?? null} showBadge />
+            <SGStatRow label="Approach" value={stats?.strokesGained.approach ?? null} showBadge onClick={() => navigate('/statistics/approach-detail')} />
             <SGStatRow label="Short Game" value={stats?.strokesGained.shortGame ?? null} showBadge />
             <SGStatRow label="Putting" value={stats?.strokesGained.putting ?? null} showBadge onClick={() => navigate('/statistics/putting-detail')} />
             <SGStatRow label="Other" value={stats?.strokesGained.other ?? null} showBadge />
