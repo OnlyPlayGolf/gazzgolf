@@ -310,10 +310,6 @@ export default function Statistics() {
               value={stats?.scoring.bestRound?.toString() ?? '-'}
             />
             <StatRow 
-              label="Worst Round" 
-              value={stats?.scoring.worstRound?.toString() ?? '-'}
-            />
-            <StatRow 
               label="Total Rounds" 
               value={stats?.scoring.totalRounds?.toString() ?? '0'}
             />
