@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TeeSelector } from "@/components/TeeSelector";
+import { formatHandicap, parseHandicap } from "@/lib/utils";
 
 interface Player {
   odId: string;
@@ -33,31 +34,14 @@ export function SetupPlayerEditSheet({
   const [handicap, setHandicap] = useState("");
   const [teeColor, setTeeColor] = useState("");
 
-  const formatHandicapForInput = (hcp: number | undefined): string => {
-    if (hcp === undefined) return "";
-    if (hcp < 0) return `+${Math.abs(hcp)}`;
-    return String(hcp);
-  };
-
   useEffect(() => {
     if (player) {
       setDisplayName(player.displayName);
-      setHandicap(formatHandicapForInput(player.handicap));
+      // Format handicap for display in input field
+      setHandicap(formatHandicap(player.handicap));
       setTeeColor(player.teeColor || "");
     }
   }, [player]);
-
-  const parseHandicapInput = (input: string): number | undefined => {
-    if (!input) return undefined;
-    const normalized = input.replace(',', '.').trim();
-    // If input starts with "+", it's a plus handicap - store as negative
-    if (normalized.startsWith('+')) {
-      const value = parseFloat(normalized.substring(1));
-      return isNaN(value) ? undefined : -value;
-    }
-    const value = parseFloat(normalized);
-    return isNaN(value) ? undefined : value;
-  };
 
   const handleSave = () => {
     if (!player) return;
@@ -67,7 +51,7 @@ export function SetupPlayerEditSheet({
       displayName: player.isTemporary || player.isCurrentUser
         ? (displayName.trim() || player.displayName)
         : player.displayName,
-      handicap: parseHandicapInput(handicap),
+      handicap: parseHandicap(handicap),
       teeColor: teeColor || player.teeColor,
     };
     
@@ -109,7 +93,7 @@ export function SetupPlayerEditSheet({
               id="player-handicap"
               value={handicap}
               onChange={(e) => setHandicap(e.target.value)}
-              placeholder="e.g. 15 or 2,4"
+              placeholder="e.g. 15 or +2.4"
             />
           </div>
 

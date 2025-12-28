@@ -272,9 +272,10 @@ const ProfileSettings = () => {
                 id="handicap"
                 value={formData.handicap}
                 onChange={(e) => setFormData(prev => ({ ...prev, handicap: e.target.value }))}
-                placeholder="e.g. 12.4"
+                placeholder="e.g. 12.4 or +2.4"
                 className="mt-1.5"
               />
+              <p className="text-xs text-muted-foreground mt-1">Use + for plus handicaps (e.g. +2.4)</p>
             </div>
             
             <div>

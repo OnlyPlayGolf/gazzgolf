@@ -1,5 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScoreInputGrid } from "./ScoreInputGrid";
+import { formatHandicapWithPrefix } from "@/lib/utils";
 
 interface PlayerScoreSheetProps {
   open: boolean;
@@ -26,14 +27,6 @@ export function PlayerScoreSheet({
   onMore,
   onEnterAndNext,
 }: PlayerScoreSheetProps) {
-  const formatHandicap = (hcp: number | string | null | undefined): string => {
-    if (hcp === null || hcp === undefined) return "";
-    const numHcp = typeof hcp === 'string' ? parseFloat(hcp) : hcp;
-    if (isNaN(numHcp)) return "";
-    if (numHcp < 0) return `HCP +${Math.abs(numHcp).toFixed(1)}`;
-    if (numHcp === 0) return "HCP 0";
-    return `HCP ${numHcp.toFixed(1)}`;
-  };
 
   const handleScoreSelect = (score: number | null) => {
     onScoreSelect(score);
@@ -69,7 +62,7 @@ export function PlayerScoreSheet({
           <div>
             <div className="text-lg font-bold">{playerName}</div>
             {handicap !== null && handicap !== undefined && (
-              <div className="text-sm opacity-80">{formatHandicap(handicap)}</div>
+              <div className="text-sm opacity-80">{formatHandicapWithPrefix(handicap)}</div>
             )}
           </div>
           <div className="flex flex-col items-center">

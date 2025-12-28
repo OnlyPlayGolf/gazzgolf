@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { parseHandicap } from "@/lib/utils";
 
 interface Player {
   odId: string;
@@ -29,23 +30,11 @@ export function SetupAddGuestSheet({
   const [name, setName] = useState("");
   const [handicap, setHandicap] = useState("");
 
-  const parseHandicapInput = (input: string): number | undefined => {
-    if (!input) return undefined;
-    const normalized = input.replace(',', '.').trim();
-    // If input starts with "+", it's a plus handicap - store as negative
-    if (normalized.startsWith('+')) {
-      const value = parseFloat(normalized.substring(1));
-      return isNaN(value) ? undefined : -value;
-    }
-    const value = parseFloat(normalized);
-    return isNaN(value) ? undefined : value;
-  };
-
   const handleAdd = () => {
     const player: Player = {
       odId: `temp_${Date.now()}`,
       displayName: name.trim() || "Guest Player",
-      handicap: parseHandicapInput(handicap),
+      handicap: parseHandicap(handicap),
       teeColor: defaultTee,
       isTemporary: true,
     };
@@ -80,7 +69,7 @@ export function SetupAddGuestSheet({
               id="guest-handicap"
               value={handicap}
               onChange={(e) => setHandicap(e.target.value)}
-              placeholder="e.g. 15 or 2,4"
+              placeholder="e.g. 15 or +2.4"
             />
           </div>
 

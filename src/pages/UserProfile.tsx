@@ -178,9 +178,9 @@ export default function UserProfile() {
   }
 
   const displayName = profile.display_name || profile.username || 'User';
-  const handicapValue = profile.handicap ? parseFloat(profile.handicap) : null;
-  const handicapDisplay = handicapValue !== null 
-    ? `HCP ${handicapValue > 0 ? '+' : ''}${handicapValue}`
+  // Display handicap exactly as stored in profile (user's input format)
+  const handicapDisplay = profile.handicap 
+    ? `HCP ${profile.handicap}`
     : 'HCP Not Set';
 
   return (
