@@ -22,6 +22,7 @@ interface Shot {
   type: 'tee' | 'approach' | 'putt';
   startDistance: number;
   startLie?: string;
+  endLie?: string;
   holed: boolean;
   endDistance?: number;
   strokesGained: number;
@@ -122,8 +123,7 @@ export default function DrivingStats() {
   const [sgStats, setSGStats] = useState<TeeSGStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-  const [proRoundsCount, setProRoundsCount] = useState(0);
-  const [roundsPlayed, setRoundsPlayed] = useState(0);
+  const [roundsAnalyzed, setRoundsAnalyzed] = useState(0);
 
   const getFilterLabel = () => {
     switch (timeFilter) {
@@ -153,84 +153,7 @@ export default function DrivingStats() {
           dateFilter = startOfDay(subYears(now, 1)).toISOString();
         }
 
-        // Fetch rounds
-        let roundsQuery = supabase
-          .from('rounds')
-          .select('id, date_played')
-          .eq('user_id', user.id)
-          .order('date_played', { ascending: false });
-
-        if (dateFilter) {
-          roundsQuery = roundsQuery.gte('date_played', dateFilter);
-        }
-
-        if (timeFilter === 'last5') {
-          roundsQuery = roundsQuery.limit(5);
-        } else if (timeFilter === 'last10') {
-          roundsQuery = roundsQuery.limit(10);
-        } else if (timeFilter === 'last20') {
-          roundsQuery = roundsQuery.limit(20);
-        } else if (timeFilter === 'last50') {
-          roundsQuery = roundsQuery.limit(50);
-        }
-
-        const { data: rounds } = await roundsQuery;
-
-        if (!rounds || rounds.length === 0) {
-          setStats(null);
-          setSGStats(null);
-          setRoundsPlayed(0);
-          setLoading(false);
-          return;
-        }
-
-        setRoundsPlayed(rounds.length);
-        const roundIds = rounds.map(r => r.id);
-
-        // Fetch holes data for par 4 and par 5 holes
-        const { data: drivingHoles } = await supabase
-          .from('holes')
-          .select('tee_result, par')
-          .in('round_id', roundIds)
-          .or('par.eq.4,par.eq.5');
-
-        // Calculate driving stats
-        let fairwaysHit = 0;
-        let totalFairways = 0;
-        let leftMissCount = 0;
-        let rightMissCount = 0;
-
-        (drivingHoles || []).forEach(hole => {
-          if (hole.tee_result) {
-            totalFairways++;
-            if (hole.tee_result === 'FIR') {
-              fairwaysHit++;
-            } else if (hole.tee_result === 'MissL') {
-              leftMissCount++;
-            } else if (hole.tee_result === 'MissR') {
-              rightMissCount++;
-            }
-          }
-        });
-
-        const totalMisses = leftMissCount + rightMissCount;
-        const accuracy = totalFairways > 0 ? (fairwaysHit / totalFairways) * 100 : null;
-        const leftMiss = totalMisses > 0 ? (leftMissCount / totalMisses) * 100 : null;
-        const rightMiss = totalMisses > 0 ? (rightMissCount / totalMisses) * 100 : null;
-
-        setStats({
-          accuracy,
-          totalFairways,
-          fairwaysHit,
-          avgDistance: null, // Would need distance data from shots
-          leftMiss,
-          rightMiss,
-          leftMissCount,
-          rightMissCount,
-          totalMisses
-        });
-
-        // Fetch pro stats rounds for SG data
+        // Fetch pro stats rounds (this is where our data comes from)
         let proRoundsQuery = supabase
           .from('pro_stats_rounds')
           .select('id, created_at')
@@ -253,41 +176,86 @@ export default function DrivingStats() {
 
         const { data: proRounds } = await proRoundsQuery;
 
-        if (proRounds && proRounds.length > 0) {
-          setProRoundsCount(proRounds.length);
-          const proRoundIds = proRounds.map(r => r.id);
-
-          const { data: proHoles } = await supabase
-            .from('pro_stats_holes')
-            .select('pro_shot_data')
-            .in('pro_round_id', proRoundIds);
-
-          if (proHoles) {
-            let sgOffTheTee = 0;
-            let teeShots = 0;
-
-            proHoles.forEach(hole => {
-              if (hole.pro_shot_data && Array.isArray(hole.pro_shot_data)) {
-                const shots = hole.pro_shot_data as unknown as Shot[];
-                shots.forEach(shot => {
-                  if (shot.type === 'tee') {
-                    sgOffTheTee += shot.strokesGained;
-                    teeShots++;
-                  }
-                });
-              }
-            });
-
-            // Calculate per-round average
-            const roundsCount = proRounds.length;
-            setSGStats({
-              sgOffTheTee: roundsCount > 0 ? sgOffTheTee / roundsCount : 0,
-              roundsCount
-            });
-          }
-        } else {
+        if (!proRounds || proRounds.length === 0) {
+          setStats(null);
           setSGStats(null);
-          setProRoundsCount(0);
+          setRoundsAnalyzed(0);
+          setLoading(false);
+          return;
+        }
+
+        setRoundsAnalyzed(proRounds.length);
+        const proRoundIds = proRounds.map(r => r.id);
+
+        const { data: proHoles } = await supabase
+          .from('pro_stats_holes')
+          .select('pro_shot_data')
+          .in('pro_round_id', proRoundIds);
+
+        if (proHoles && proHoles.length > 0) {
+          let sgOffTheTee = 0;
+          let teeShots = 0;
+          let fairwaysHit = 0;
+          let leftMissCount = 0;
+          let rightMissCount = 0;
+          let totalDistances = 0;
+          let distanceCount = 0;
+
+          proHoles.forEach(hole => {
+            if (hole.pro_shot_data && Array.isArray(hole.pro_shot_data)) {
+              const shots = hole.pro_shot_data as unknown as Shot[];
+              shots.forEach(shot => {
+                if (shot.type === 'tee') {
+                  sgOffTheTee += shot.strokesGained;
+                  teeShots++;
+                  
+                  // Calculate driving distance from tee shots
+                  if (shot.startDistance && shot.endDistance !== undefined) {
+                    totalDistances += shot.startDistance - shot.endDistance;
+                    distanceCount++;
+                  }
+                  
+                  // Determine fairway hit or miss based on endLie
+                  if (shot.endLie) {
+                    if (shot.endLie === 'fairway' || shot.endLie === 'green') {
+                      fairwaysHit++;
+                    } else if (shot.endLie === 'rough') {
+                      // We can't determine left vs right from the data, but we can count rough hits
+                      // For now, we'll just track total misses
+                      // The miss direction isn't available in current data
+                    }
+                  }
+                }
+              });
+            }
+          });
+
+          const totalFairways = teeShots;
+          const totalMisses = totalFairways - fairwaysHit;
+          const accuracy = totalFairways > 0 ? (fairwaysHit / totalFairways) * 100 : null;
+          const avgDistance = distanceCount > 0 ? totalDistances / distanceCount : null;
+
+          setStats({
+            accuracy,
+            totalFairways,
+            fairwaysHit,
+            avgDistance,
+            leftMiss: null, // Miss direction not available in current pro_shot_data
+            rightMiss: null,
+            leftMissCount: 0,
+            rightMissCount: 0,
+            totalMisses
+          });
+
+          // Calculate per-round average SG
+          const roundsCount = proRounds.length;
+          setSGStats({
+            sgOffTheTee: roundsCount > 0 ? sgOffTheTee / roundsCount : 0,
+            roundsCount
+          });
+        } else {
+          setStats(null);
+          setSGStats(null);
         }
 
       } catch (error) {
@@ -323,7 +291,7 @@ export default function DrivingStats() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Driving Statistics</h1>
             <p className="text-sm text-muted-foreground">
-              {roundsPlayed} {roundsPlayed === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
+              {roundsAnalyzed} {roundsAnalyzed === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
             </p>
           </div>
         </div>
@@ -361,7 +329,7 @@ export default function DrivingStats() {
         ) : (
           <>
             {/* Off the Tee SG Section */}
-            {sgStats && proRoundsCount > 0 && (
+            {sgStats && sgStats.roundsCount > 0 && (
               <Card className="mb-4">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -369,7 +337,7 @@ export default function DrivingStats() {
                     Strokes Gained - Off the Tee
                   </CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    Based on {proRoundsCount} pro stat {proRoundsCount !== 1 ? 'rounds' : 'round'}
+                    Based on {sgStats.roundsCount} pro stat {sgStats.roundsCount !== 1 ? 'rounds' : 'round'}
                   </p>
                 </CardHeader>
                 <CardContent>
