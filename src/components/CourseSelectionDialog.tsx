@@ -15,6 +15,58 @@ interface Course {
   tee_names?: Record<string, string> | null;
 }
 
+// Get country flag emoji from location string
+const getCountryFlag = (location: string): string => {
+  if (!location) return "🏌️";
+  
+  const loc = location.toLowerCase();
+  
+  // USA patterns
+  if (loc.includes("california") || loc.includes("usa") || loc.includes("united states") ||
+      loc.includes("florida") || loc.includes("texas") || loc.includes("arizona") ||
+      loc.includes("georgia") || loc.includes("new york") || loc.includes("nevada") ||
+      loc.includes("carolina") || loc.includes("michigan") || loc.includes("ohio") ||
+      loc.includes("oregon") || loc.includes("washington") || loc.includes("colorado") ||
+      loc.includes("hawaii") || loc.includes("pebble beach") || loc.includes(", ca") ||
+      loc.includes(", fl") || loc.includes(", tx") || loc.includes(", az") ||
+      loc.includes(", ny") || loc.includes(", nv") || loc.includes(", ga")) {
+    return "🇺🇸";
+  }
+  
+  // UK patterns
+  if (loc.includes("scotland") || loc.includes("england") || loc.includes("wales") ||
+      loc.includes("united kingdom") || loc.includes("uk") || loc.includes("ireland") ||
+      loc.includes("st andrews") || loc.includes("northern ireland")) {
+    return "🇬🇧";
+  }
+  
+  // Other countries
+  if (loc.includes("spain") || loc.includes("españa")) return "🇪🇸";
+  if (loc.includes("france")) return "🇫🇷";
+  if (loc.includes("germany") || loc.includes("deutschland")) return "🇩🇪";
+  if (loc.includes("italy") || loc.includes("italia")) return "🇮🇹";
+  if (loc.includes("portugal")) return "🇵🇹";
+  if (loc.includes("australia")) return "🇦🇺";
+  if (loc.includes("japan") || loc.includes("日本")) return "🇯🇵";
+  if (loc.includes("canada")) return "🇨🇦";
+  if (loc.includes("mexico") || loc.includes("méxico")) return "🇲🇽";
+  if (loc.includes("dubai") || loc.includes("uae") || loc.includes("emirates")) return "🇦🇪";
+  if (loc.includes("south africa")) return "🇿🇦";
+  if (loc.includes("sweden") || loc.includes("sverige")) return "🇸🇪";
+  if (loc.includes("denmark") || loc.includes("danmark")) return "🇩🇰";
+  if (loc.includes("norway") || loc.includes("norge")) return "🇳🇴";
+  if (loc.includes("netherlands") || loc.includes("holland")) return "🇳🇱";
+  if (loc.includes("belgium")) return "🇧🇪";
+  if (loc.includes("switzerland") || loc.includes("schweiz")) return "🇨🇭";
+  if (loc.includes("austria") || loc.includes("österreich")) return "🇦🇹";
+  if (loc.includes("thailand")) return "🇹🇭";
+  if (loc.includes("korea")) return "🇰🇷";
+  if (loc.includes("china") || loc.includes("中国")) return "🇨🇳";
+  if (loc.includes("new zealand")) return "🇳🇿";
+  
+  return "🏌️"; // Default golf flag for unknown locations
+};
+
 interface CourseSelectionDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -121,7 +173,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
       onClick={() => handleSelectCourse(course)}
       className="w-full p-3 rounded-lg hover:bg-accent transition-colors flex items-start gap-3 text-left border"
     >
-      <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-xl mt-0.5 shrink-0">{getCountryFlag(course.location)}</span>
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{course.name}</p>
         {course.location && (
