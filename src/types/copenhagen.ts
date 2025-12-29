@@ -57,6 +57,10 @@ export interface CopenhagenHole {
   player_2_running_total: number;
   player_3_running_total: number;
   
+  player_1_mulligan?: boolean;
+  player_2_mulligan?: boolean;
+  player_3_mulligan?: boolean;
+  
   is_sweep: boolean;
   sweep_winner: number | null; // 1, 2, or 3
 }

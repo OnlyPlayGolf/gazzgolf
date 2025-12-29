@@ -374,14 +374,17 @@ export type Database = {
           par: number
           player_1_gross_score: number | null
           player_1_hole_points: number
+          player_1_mulligan: boolean | null
           player_1_net_score: number | null
           player_1_running_total: number
           player_2_gross_score: number | null
           player_2_hole_points: number
+          player_2_mulligan: boolean | null
           player_2_net_score: number | null
           player_2_running_total: number
           player_3_gross_score: number | null
           player_3_hole_points: number
+          player_3_mulligan: boolean | null
           player_3_net_score: number | null
           player_3_running_total: number
           press_points: Json | null
@@ -397,14 +400,17 @@ export type Database = {
           par?: number
           player_1_gross_score?: number | null
           player_1_hole_points?: number
+          player_1_mulligan?: boolean | null
           player_1_net_score?: number | null
           player_1_running_total?: number
           player_2_gross_score?: number | null
           player_2_hole_points?: number
+          player_2_mulligan?: boolean | null
           player_2_net_score?: number | null
           player_2_running_total?: number
           player_3_gross_score?: number | null
           player_3_hole_points?: number
+          player_3_mulligan?: boolean | null
           player_3_net_score?: number | null
           player_3_running_total?: number
           press_points?: Json | null
@@ -420,14 +426,17 @@ export type Database = {
           par?: number
           player_1_gross_score?: number | null
           player_1_hole_points?: number
+          player_1_mulligan?: boolean | null
           player_1_net_score?: number | null
           player_1_running_total?: number
           player_2_gross_score?: number | null
           player_2_hole_points?: number
+          player_2_mulligan?: boolean | null
           player_2_net_score?: number | null
           player_2_running_total?: number
           player_3_gross_score?: number | null
           player_3_hole_points?: number
+          player_3_mulligan?: boolean | null
           player_3_net_score?: number | null
           player_3_running_total?: number
           press_points?: Json | null
