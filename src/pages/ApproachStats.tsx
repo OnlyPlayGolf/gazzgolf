@@ -39,12 +39,21 @@ interface ApproachDistanceStats {
 }
 
 interface ApproachSGStats {
+  // Shots 40m+ (all long game)
+  sgLongGame40Plus: number;
+  sgLongGame200Plus: number;
+  sgLongGame160to200: number;
+  sgLongGame120to160: number;
+  sgLongGame80to120: number;
+  sgLongGame40to80: number;
+  // Approach from Fairway
   sgApproachFw40Plus: number;
   sgApproachFw200Plus: number;
   sgApproachFw160to200: number;
   sgApproachFw120to160: number;
   sgApproachFw80to120: number;
   sgApproachFw40to80: number;
+  // Approach from Rough
   sgApproachRough40Plus: number;
   sgApproachRough200Plus: number;
   sgApproachRough160to200: number;
@@ -190,6 +199,12 @@ export default function ApproachStats() {
             .in('pro_round_id', roundIds);
 
           // Initialize SG stats
+          let sgLongGame40Plus = 0;
+          let sgLongGame200Plus = 0;
+          let sgLongGame160to200 = 0;
+          let sgLongGame120to160 = 0;
+          let sgLongGame80to120 = 0;
+          let sgLongGame40to80 = 0;
           let sgApproachFw40Plus = 0;
           let sgApproachFw200Plus = 0;
           let sgApproachFw160to200 = 0;
@@ -216,6 +231,14 @@ export default function ApproachStats() {
                 const isRough = lie === 'rough' || lie === 'first_cut';
 
                 if (!isTeeShot && dist >= 40 && shot.type !== 'putt') {
+                  // Track all long game shots 40m+
+                  sgLongGame40Plus += sg;
+                  if (dist >= 200) sgLongGame200Plus += sg;
+                  else if (dist >= 160) sgLongGame160to200 += sg;
+                  else if (dist >= 120) sgLongGame120to160 += sg;
+                  else if (dist >= 80) sgLongGame80to120 += sg;
+                  else sgLongGame40to80 += sg;
+
                   // Approach from fairway
                   if (isFairway) {
                     sgApproachFw40Plus += sg;
@@ -244,6 +267,12 @@ export default function ApproachStats() {
 
           if (validRounds > 0) {
             setSgStats({
+              sgLongGame40Plus: sgLongGame40Plus / validRounds,
+              sgLongGame200Plus: sgLongGame200Plus / validRounds,
+              sgLongGame160to200: sgLongGame160to200 / validRounds,
+              sgLongGame120to160: sgLongGame120to160 / validRounds,
+              sgLongGame80to120: sgLongGame80to120 / validRounds,
+              sgLongGame40to80: sgLongGame40to80 / validRounds,
               sgApproachFw40Plus: sgApproachFw40Plus / validRounds,
               sgApproachFw200Plus: sgApproachFw200Plus / validRounds,
               sgApproachFw160to200: sgApproachFw160to200 / validRounds,
@@ -327,6 +356,29 @@ export default function ApproachStats() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Shots 40m+ - Overall Long Game Section */}
+        {sgStats && proRoundsCount > 0 && (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Shots 40m+
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Based on {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <SGRow label="All (40m+)" value={sgStats.sgLongGame40Plus} isBold />
+              <SGRow label="200+ m" value={sgStats.sgLongGame200Plus} indent />
+              <SGRow label="160-200 m" value={sgStats.sgLongGame160to200} indent />
+              <SGRow label="120-160 m" value={sgStats.sgLongGame120to160} indent />
+              <SGRow label="80-120 m" value={sgStats.sgLongGame80to120} indent />
+              <SGRow label="40-80 m" value={sgStats.sgLongGame40to80} indent />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Approach from Fairway - SG Section */}
         {sgStats && proRoundsCount > 0 && (
