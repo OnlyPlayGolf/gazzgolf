@@ -175,56 +175,29 @@ export default function ScoringStats() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {/* Overview */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Target className="h-5 w-5 text-primary" />
-                  Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StatRow label="Rounds" value={stats.roundsCount.toString()} />
-                <StatRow label="Holes" value={stats.holesCount.toString()} />
-                <StatRow label="Score" value={stats.totalScore.toFixed(1)} />
-                <StatRow label="Score/par" value={stats.scoreToPar >= 0 ? `+${stats.scoreToPar.toFixed(1)}` : stats.scoreToPar.toFixed(1)} />
-              </CardContent>
-            </Card>
-
-            {/* Score by Par */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Target className="h-5 w-5 text-primary" />
-                  Score by Par
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StatRow label="Score par 3" value={stats.scorePar3.toFixed(1)} />
-                <StatRow label="Score par 4" value={stats.scorePar4.toFixed(1)} />
-                <StatRow label="Score par 5" value={stats.scorePar5.toFixed(1)} />
-              </CardContent>
-            </Card>
-
-            {/* Score Distribution */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Target className="h-5 w-5 text-primary" />
-                  Score Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StatRow label="Eagles" value={stats.eagles.toFixed(1)} />
-                <StatRow label="Birdies" value={stats.birdies.toFixed(1)} />
-                <StatRow label="Par" value={stats.pars.toFixed(1)} />
-                <StatRow label="Bogey" value={stats.bogeys.toFixed(1)} />
-                <StatRow label="Double" value={stats.doubles.toFixed(1)} />
-                <StatRow label="Triple or worse" value={stats.tripleOrWorse.toFixed(1)} />
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Target className="h-5 w-5 text-primary" />
+                Scoring Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StatRow label="Rounds" value={stats.roundsCount.toString()} />
+              <StatRow label="Holes" value={stats.holesCount.toString()} />
+              <StatRow label="Score" value={stats.totalScore.toFixed(1)} />
+              <StatRow label="Score/par" value={stats.scoreToPar >= 0 ? `+${stats.scoreToPar.toFixed(1)}` : stats.scoreToPar.toFixed(1)} />
+              <StatRow label="Score par 3" value={stats.scorePar3.toFixed(1)} />
+              <StatRow label="Score par 4" value={stats.scorePar4.toFixed(1)} />
+              <StatRow label="Score par 5" value={stats.scorePar5.toFixed(1)} />
+              <StatRow label="Eagles" value={stats.eagles.toFixed(1)} />
+              <StatRow label="Birdies" value={stats.birdies.toFixed(1)} />
+              <StatRow label="Par" value={stats.pars.toFixed(1)} />
+              <StatRow label="Bogey" value={stats.bogeys.toFixed(1)} />
+              <StatRow label="Double" value={stats.doubles.toFixed(1)} />
+              <StatRow label="Triple or worse" value={stats.tripleOrWorse.toFixed(1)} />
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
