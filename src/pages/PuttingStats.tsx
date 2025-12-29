@@ -294,7 +294,6 @@ export default function PuttingStats() {
               <StatRow 
                 label="3-Putt Avoidance" 
                 value={formatPercentage(sgStats.threePuttAvoidance)} 
-                isBold 
               />
             </CardContent>
           </Card>
