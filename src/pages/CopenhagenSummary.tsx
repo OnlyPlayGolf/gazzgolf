@@ -96,6 +96,12 @@ export default function CopenhagenSummary() {
     return hole.player_3_hole_points;
   };
 
+  const getPlayerMulliganForHole = (hole: CopenhagenHole, playerNum: number) => {
+    if (playerNum === 1) return hole.player_1_mulligan;
+    if (playerNum === 2) return hole.player_2_mulligan;
+    return hole.player_3_mulligan;
+  };
+
   const getScoreColor = (score: number | null, par: number) => {
     if (!score) return "";
     const diff = score - par;
@@ -191,11 +197,17 @@ export default function CopenhagenSummary() {
                           <td className="py-1 px-1 text-xs">Score</td>
                           {holes.map(h => {
                             const score = getPlayerScoreForHole(h, player.playerNum);
+                            const hasMulligan = getPlayerMulliganForHole(h, player.playerNum);
                             return (
                               <td key={h.hole_number} className="text-center px-1">
-                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-medium ${getScoreColor(score, h.par)}`}>
-                                  {score || '-'}
-                                </span>
+                                <div className="flex flex-col items-center">
+                                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-medium ${getScoreColor(score, h.par)}`}>
+                                    {score || '-'}
+                                  </span>
+                                  {hasMulligan && (
+                                    <span className="w-4 h-0.5 bg-foreground mt-0.5" />
+                                  )}
+                                </div>
                               </td>
                             );
                           })}
@@ -270,11 +282,17 @@ export default function CopenhagenSummary() {
                           </td>
                           {holes.map(h => {
                             const score = getPlayerScoreForHole(h, player.playerNum);
+                            const hasMulligan = getPlayerMulliganForHole(h, player.playerNum);
                             return (
                               <td key={h.hole_number} className="text-center px-1">
-                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-medium ${getScoreColor(score, h.par)}`}>
-                                  {score || '-'}
-                                </span>
+                                <div className="flex flex-col items-center">
+                                  <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-medium ${getScoreColor(score, h.par)}`}>
+                                    {score || '-'}
+                                  </span>
+                                  {hasMulligan && (
+                                    <span className="w-4 h-0.5 bg-foreground mt-0.5" />
+                                  )}
+                                </div>
                               </td>
                             );
                           })}
