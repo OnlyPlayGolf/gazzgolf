@@ -72,12 +72,19 @@ export default function UmbriagioSettings() {
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   // Game settings state
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
   const [teamRotation, setTeamRotation] = useState<TeamRotation>("none");
 
   useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    loadUser();
+    
     if (gameId) {
       fetchGame();
       fetchProgress();
@@ -348,7 +355,7 @@ export default function UmbriagioSettings() {
         </Card>
 
         <RoundActionsSection
-          isAdmin={true}
+          isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/umbriago/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
