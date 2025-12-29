@@ -34,6 +34,9 @@ export interface StrokesGainedStats {
 export interface AccuracyStats {
   fairwaysHit: number | null;
   greensInRegulation: number | null;
+  girPar3: number | null;
+  girPar4: number | null;
+  girPar5: number | null;
   scrambling: number | null;
   sandSaves: number | null;
 }
@@ -172,19 +175,64 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     totalHoles: validSummaries.reduce((sum, s) => sum + (s.holes_played || 0), 0),
   };
 
-  // Calculate accuracy stats
-  const accuracy: AccuracyStats = {
+  // Calculate accuracy stats - start with basic values from summaries
+  let accuracy: AccuracyStats = {
     fairwaysHit: validSummaries.length > 0 
       ? validSummaries.reduce((sum, s) => sum + (s.fir_percentage || 0), 0) / validSummaries.length 
       : null,
     greensInRegulation: validSummaries.length > 0 
       ? validSummaries.reduce((sum, s) => sum + (s.gir_percentage || 0), 0) / validSummaries.length 
       : null,
+    girPar3: null,
+    girPar4: null,
+    girPar5: null,
     scrambling: validSummaries.length > 0 
       ? validSummaries.reduce((sum, s) => sum + (s.updown_percentage || 0), 0) / validSummaries.length 
       : null,
     sandSaves: null, // Would need more detailed data
   };
+
+  // Fetch hole-level data for GIR by par type
+  if (validSummaries.length > 0) {
+    const roundIds = validSummaries.map(s => s.round_id);
+    const { data: holesData } = await supabase
+      .from('holes')
+      .select('par, score, putts')
+      .in('round_id', roundIds);
+
+    if (holesData && holesData.length > 0) {
+      const girByPar = {
+        par3: { gir: 0, total: 0 },
+        par4: { gir: 0, total: 0 },
+        par5: { gir: 0, total: 0 },
+      };
+
+      holesData.forEach(hole => {
+        if (hole.score && hole.par && hole.putts !== null) {
+          const strokesBeforePutt = hole.score - hole.putts;
+          const isGIR = strokesBeforePutt <= hole.par - 2;
+
+          if (hole.par === 3) {
+            girByPar.par3.total++;
+            if (isGIR) girByPar.par3.gir++;
+          } else if (hole.par === 4) {
+            girByPar.par4.total++;
+            if (isGIR) girByPar.par4.gir++;
+          } else if (hole.par === 5) {
+            girByPar.par5.total++;
+            if (isGIR) girByPar.par5.gir++;
+          }
+        }
+      });
+
+      accuracy = {
+        ...accuracy,
+        girPar3: girByPar.par3.total > 0 ? (girByPar.par3.gir / girByPar.par3.total) * 100 : null,
+        girPar4: girByPar.par4.total > 0 ? (girByPar.par4.gir / girByPar.par4.total) * 100 : null,
+        girPar5: girByPar.par5.total > 0 ? (girByPar.par5.gir / girByPar.par5.total) * 100 : null,
+      };
+    }
+  }
 
   // Calculate putting stats
   const putting: PuttingStats = {
