@@ -15,6 +15,7 @@ import {
   ViewPlayersModal,
   RoundActionsSection,
   DeleteGameDialog,
+  LeaveGameDialog,
 } from "@/components/settings";
 
 type TeamRotation = "none" | "every9" | "every6";
@@ -69,10 +70,12 @@ export default function UmbriagioSettings() {
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
   
   // Game settings state
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
@@ -264,6 +267,19 @@ export default function UmbriagioSettings() {
     }
   };
 
+  const handleLeaveGame = async () => {
+    setLeaving(true);
+    try {
+      toast({ title: "Left the game" });
+      navigate("/rounds-play");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLeaving(false);
+      setShowLeaveDialog(false);
+    }
+  };
+
   if (loading || !game) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
@@ -359,6 +375,7 @@ export default function UmbriagioSettings() {
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/umbriago/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
+          onLeave={() => setShowLeaveDialog(true)}
         />
       </div>
 
@@ -375,6 +392,13 @@ export default function UmbriagioSettings() {
         onConfirm={handleDeleteGame}
         gameName="Umbriago Game"
         deleting={deleting}
+      />
+
+      <LeaveGameDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        onConfirm={handleLeaveGame}
+        leaving={leaving}
       />
 
       {gameId && <UmbriagioBottomTabBar gameId={gameId} />}

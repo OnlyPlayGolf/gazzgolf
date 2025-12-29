@@ -16,6 +16,7 @@ import {
   ViewPlayersModal,
   RoundActionsSection,
   DeleteGameDialog,
+  LeaveGameDialog,
 } from "@/components/settings";
 
 export default function ScrambleSettings() {
@@ -27,9 +28,11 @@ export default function ScrambleSettings() {
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [scoringType, setScoringType] = useState<'gross' | 'net'>('gross');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -145,6 +148,19 @@ export default function ScrambleSettings() {
     navigate('/rounds-play');
   };
 
+  const handleLeaveGame = async () => {
+    setLeaving(true);
+    try {
+      toast.success("Left the game");
+      navigate("/rounds-play");
+    } catch (error) {
+      toast.error("Failed to leave game");
+    } finally {
+      setLeaving(false);
+      setShowLeaveDialog(false);
+    }
+  };
+
   if (loading || !game) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center pb-20">
@@ -246,6 +262,7 @@ export default function ScrambleSettings() {
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/scramble/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
+          onLeave={() => setShowLeaveDialog(true)}
         />
       </div>
 
@@ -261,6 +278,13 @@ export default function ScrambleSettings() {
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDeleteGame}
         gameName="Scramble Game"
+      />
+
+      <LeaveGameDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        onConfirm={handleLeaveGame}
+        leaving={leaving}
       />
 
       <ScrambleBottomTabBar gameId={gameId!} />

@@ -16,6 +16,7 @@ import {
   ViewPlayersModal,
   RoundActionsSection,
   DeleteGameDialog,
+  LeaveGameDialog,
 } from "@/components/settings";
 
 export default function BestBallSettings() {
@@ -25,9 +26,11 @@ export default function BestBallSettings() {
   const [game, setGame] = useState<BestBallGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -113,6 +116,19 @@ export default function BestBallSettings() {
       navigate("/rounds-play");
     } catch (error: any) {
       toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleLeaveGame = async () => {
+    setLeaving(true);
+    try {
+      toast({ title: "Left the game" });
+      navigate("/rounds-play");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLeaving(false);
+      setShowLeaveDialog(false);
     }
   };
 
@@ -243,6 +259,7 @@ export default function BestBallSettings() {
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/best-ball/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
+          onLeave={() => setShowLeaveDialog(true)}
         />
       </div>
 
@@ -258,6 +275,13 @@ export default function BestBallSettings() {
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDeleteGame}
         gameName="Best Ball Game"
+      />
+
+      <LeaveGameDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        onConfirm={handleLeaveGame}
+        leaving={leaving}
       />
 
       {gameId && <BestBallBottomTabBar gameId={gameId} />}

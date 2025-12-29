@@ -16,6 +16,7 @@ import {
   ViewPlayersModal,
   RoundActionsSection,
   DeleteGameDialog,
+  LeaveGameDialog,
 } from "@/components/settings";
 
 interface RoundData {
@@ -49,10 +50,12 @@ export default function SimpleSkinsSettings() {
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   // Game settings state
   const [teeColor, setTeeColor] = useState("white");
@@ -208,6 +211,19 @@ export default function SimpleSkinsSettings() {
     }
   };
 
+  const handleLeaveRound = async () => {
+    setLeaving(true);
+    try {
+      toast({ title: "Left the game" });
+      navigate("/rounds-play");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLeaving(false);
+      setShowLeaveDialog(false);
+    }
+  };
+
   if (loading || !round) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
@@ -342,6 +358,7 @@ export default function SimpleSkinsSettings() {
           onFinish={handleFinishRound}
           onSaveAndExit={() => navigate(`/simple-skins/${roundId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
+          onLeave={() => setShowLeaveDialog(true)}
           finishLabel="Finish Game"
         />
       </div>
@@ -359,6 +376,13 @@ export default function SimpleSkinsSettings() {
         onConfirm={handleDeleteRound}
         gameName="Game"
         deleting={deleting}
+      />
+
+      <LeaveGameDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        onConfirm={handleLeaveRound}
+        leaving={leaving}
       />
 
       <SkinsBottomTabBar roundId={roundId!} />
