@@ -26,6 +26,7 @@ interface RoundData {
   tee_set: string | null;
   round_name: string | null;
   origin: string | null;
+  user_id: string;
 }
 
 interface RoundPlayer {
@@ -51,6 +52,7 @@ export default function SimpleSkinsSettings() {
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Game settings state
   const [teeColor, setTeeColor] = useState("white");
@@ -59,6 +61,12 @@ export default function SimpleSkinsSettings() {
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
 
   useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    loadUser();
+    
     if (roundId) {
       fetchRound();
       fetchProgress();
@@ -330,7 +338,7 @@ export default function SimpleSkinsSettings() {
         </Card>
 
         <RoundActionsSection
-          isAdmin={true}
+          isAdmin={currentUserId === round.user_id}
           onFinish={handleFinishRound}
           onSaveAndExit={() => navigate(`/simple-skins/${roundId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}

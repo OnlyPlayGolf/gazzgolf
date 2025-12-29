@@ -32,8 +32,15 @@ export default function WolfSettings() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    loadUser();
+    
     if (gameId) {
       fetchGame();
       fetchProgress();
@@ -241,7 +248,7 @@ export default function WolfSettings() {
         </Card>
 
         <RoundActionsSection
-          isAdmin={true}
+          isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/wolf/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
