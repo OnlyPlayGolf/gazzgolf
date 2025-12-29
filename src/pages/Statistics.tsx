@@ -301,50 +301,6 @@ export default function Statistics() {
           </section>
         )}
 
-        {/* Basic Statistics Section */}
-        <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Crosshair className="h-5 w-5 text-primary" />
-              Basic Statistics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <StatRow 
-              label="Fairways Hit" 
-              value={formatPercentage(stats?.accuracy.fairwaysHit ?? null)}
-              level={stats?.accuracy.fairwaysHit !== null 
-                ? stats.accuracy.fairwaysHit >= 60 ? 'strength' 
-                : stats.accuracy.fairwaysHit <= 45 ? 'needs-improvement' 
-                : 'average' : undefined}
-            />
-            <StatRow 
-              label="Greens in Regulation" 
-              value={formatPercentage(stats?.accuracy.greensInRegulation ?? null)}
-              level={stats?.accuracy.greensInRegulation !== null 
-                ? stats.accuracy.greensInRegulation >= 55 ? 'strength' 
-                : stats.accuracy.greensInRegulation <= 35 ? 'needs-improvement' 
-                : 'average' : undefined}
-            />
-            <StatRow 
-              label="Scrambling" 
-              value={formatPercentage(stats?.accuracy.scrambling ?? null)}
-              level={stats?.accuracy.scrambling !== null 
-                ? stats.accuracy.scrambling >= 50 ? 'strength' 
-                : stats.accuracy.scrambling <= 30 ? 'needs-improvement' 
-                : 'average' : undefined}
-            />
-            <StatRow 
-              label="Putts per Round" 
-              value={stats?.putting.puttsPerRound?.toFixed(1) ?? '-'}
-              level={stats?.putting.puttsPerRound !== null 
-                ? stats.putting.puttsPerRound <= 30 ? 'strength' 
-                : stats.putting.puttsPerRound >= 34 ? 'needs-improvement' 
-                : 'average' : undefined}
-            />
-          </CardContent>
-        </Card>
-
         {/* Scoring Section */}
         <Card className="mb-4">
           <CardHeader className="pb-2">
