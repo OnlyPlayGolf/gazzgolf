@@ -13,7 +13,6 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { ArrowLeft, Circle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatsFilter } from "@/utils/statisticsCalculations";
-import { cn } from "@/lib/utils";
 
 type TimeFilter = StatsFilter;
 
@@ -36,25 +35,15 @@ const formatPercentage = (value: number | null): string => {
   return `${value.toFixed(1)}%`;
 };
 
-const StatRow = ({ 
-  label, 
-  value, 
-  subValue,
-  isHighlighted = false
-}: { 
+const PuttingRow = ({ label, value, subValue, isBold = false, indent = false }: { 
   label: string; 
   value: string;
   subValue?: string;
-  isHighlighted?: boolean;
+  isBold?: boolean;
+  indent?: boolean;
 }) => (
-  <div className={cn(
-    "flex items-center justify-between py-3 border-b border-border/50 last:border-0",
-    isHighlighted && "bg-muted/30 -mx-3 px-3"
-  )}>
-    <span className={cn(
-      "text-sm",
-      isHighlighted ? "font-semibold text-foreground" : "text-foreground"
-    )}>{label}</span>
+  <div className={`flex justify-between py-1 ${indent ? 'pl-3' : ''}`}>
+    <span className={`text-sm ${isBold ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
     <div className="flex items-center gap-3">
       {subValue && (
         <span className="text-xs text-muted-foreground">{subValue}</span>
@@ -188,62 +177,75 @@ export default function PuttingStats() {
               <Circle className="h-5 w-5 text-primary" />
               Putting by Distance
             </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Based on {roundsPlayed} {roundsPlayed === 1 ? 'round' : 'rounds'}
+            </p>
           </CardHeader>
-          <CardContent>
-            <StatRow 
+          <CardContent className="space-y-1">
+            <PuttingRow 
               label="All Putts"
               value={formatPercentage(stats?.allPutts.percentage ?? null)}
               subValue={stats?.allPutts.total ? `${stats.allPutts.made}/${stats.allPutts.total}` : undefined}
-              isHighlighted
+              isBold
             />
-            <StatRow 
+            <PuttingRow 
               label="0-1 m"
               value={formatPercentage(stats?.distance0to1m.percentage ?? null)}
               subValue={stats?.distance0to1m.total ? `${stats.distance0to1m.made}/${stats.distance0to1m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="1-2 m"
               value={formatPercentage(stats?.distance1to2m.percentage ?? null)}
               subValue={stats?.distance1to2m.total ? `${stats.distance1to2m.made}/${stats.distance1to2m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="2-4 m"
               value={formatPercentage(stats?.distance2to4m.percentage ?? null)}
               subValue={stats?.distance2to4m.total ? `${stats.distance2to4m.made}/${stats.distance2to4m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="4-6 m"
               value={formatPercentage(stats?.distance4to6m.percentage ?? null)}
               subValue={stats?.distance4to6m.total ? `${stats.distance4to6m.made}/${stats.distance4to6m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="6-8 m"
               value={formatPercentage(stats?.distance6to8m.percentage ?? null)}
               subValue={stats?.distance6to8m.total ? `${stats.distance6to8m.made}/${stats.distance6to8m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="8-10 m"
               value={formatPercentage(stats?.distance8to10m.percentage ?? null)}
               subValue={stats?.distance8to10m.total ? `${stats.distance8to10m.made}/${stats.distance8to10m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="10-14 m"
               value={formatPercentage(stats?.distance10to14m.percentage ?? null)}
               subValue={stats?.distance10to14m.total ? `${stats.distance10to14m.made}/${stats.distance10to14m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="14-18 m"
               value={formatPercentage(stats?.distance14to18m.percentage ?? null)}
               subValue={stats?.distance14to18m.total ? `${stats.distance14to18m.made}/${stats.distance14to18m.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="18+ m"
               value={formatPercentage(stats?.distance18plus.percentage ?? null)}
               subValue={stats?.distance18plus.total ? `${stats.distance18plus.made}/${stats.distance18plus.total}` : undefined}
+              indent
             />
-            <StatRow 
+            <PuttingRow 
               label="3-Putt Avoidance"
               value={formatPercentage(stats?.threePuttAvoidance ?? null)}
+              isBold
             />
           </CardContent>
         </Card>
