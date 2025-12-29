@@ -14,6 +14,7 @@ export default function CopenhagenSummary() {
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(null);
   const [showScorecard, setShowScorecard] = useState(false);
@@ -24,7 +25,7 @@ export default function CopenhagenSummary() {
       const shownKey = `copenhagen_completed_shown_${gameId}`;
       const wasShown = localStorage.getItem(shownKey);
       if (!wasShown) {
-        setShowShareDialog(true);
+        setShowCompletionDialog(true);
         localStorage.setItem(shownKey, "true");
       }
     }
@@ -130,6 +131,20 @@ export default function CopenhagenSummary() {
 
   return (
     <div className="min-h-screen pb-8 bg-background">
+      {/* Completion Dialog - shown once when first viewing finished game */}
+      <GameShareDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        gameType="Copenhagen"
+        courseName={game.course_name}
+        winner={players[0].name}
+        resultText={`${players[0].points} points`}
+        additionalInfo={`${game.player_1}, ${game.player_2}, ${game.player_3}`}
+        gameId={gameId}
+        onContinue={() => setShowCompletionDialog(false)}
+      />
+
+      {/* Share Dialog - opened from share button, goes directly to share form */}
       <GameShareDialog
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
@@ -140,6 +155,7 @@ export default function CopenhagenSummary() {
         additionalInfo={`${game.player_1}, ${game.player_2}, ${game.player_3}`}
         gameId={gameId}
         onContinue={() => setShowShareDialog(false)}
+        showShareFormOnly
       />
 
       {/* Top Navigation Bar */}

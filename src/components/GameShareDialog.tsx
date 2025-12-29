@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,7 @@ interface GameShareDialogProps {
   additionalInfo?: string;
   gameId?: string;
   onContinue: () => void;
+  showShareFormOnly?: boolean;
 }
 
 export function GameShareDialog({
@@ -28,11 +29,20 @@ export function GameShareDialog({
   additionalInfo,
   gameId,
   onContinue,
+  showShareFormOnly = false,
 }: GameShareDialogProps) {
-  const [showShareForm, setShowShareForm] = useState(false);
+  const [showShareForm, setShowShareForm] = useState(showShareFormOnly);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const { toast } = useToast();
+
+  // Reset share form state when dialog opens based on mode
+  useEffect(() => {
+    if (open) {
+      setShowShareForm(showShareFormOnly);
+      setComment("");
+    }
+  }, [open, showShareFormOnly]);
 
   const handleShare = async () => {
     setIsSharing(true);
