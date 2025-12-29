@@ -519,6 +519,14 @@ export const ProStatsAverages = () => {
             <StatRow label="Bogey" value={scoringStats.bogeys.toFixed(1)} />
             <StatRow label="Double" value={scoringStats.doubleBogeys.toFixed(1)} />
             <StatRow label="Triple or worse" value={scoringStats.tripleOrWorse.toFixed(1)} />
+            
+            {/* Strokes Gained Summary */}
+            <div className="pt-3 mt-2 border-t border-border">
+              <h4 className="text-sm font-semibold text-foreground mb-2">Strokes Gained</h4>
+              <SGRow label="Tee shots par 4/5" value={sgStats.sgTeePar45Total} isBold />
+              <SGRow label="Drive par 4/5" value={sgStats.sgDrivePar45} indent />
+              <SGRow label="Other par 4/5" value={sgStats.sgOtherPar45} indent />
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -594,6 +602,10 @@ export const ProStatsAverages = () => {
 
             {/* Other */}
             <SGSection title="Other">
+              <SGRow label="Tee shots par 4/5" value={sgStats.sgTeePar45Total} isBold />
+              <SGRow label="Drive par 4/5" value={sgStats.sgDrivePar45} indent />
+              <SGRow label="Other par 4/5" value={sgStats.sgOtherPar45} indent />
+              <div className="border-t border-border/30 my-1" />
               <SGRow label="Bunker 40-120m" value={sgStats.sgBunker40to120} />
               <SGRow label="Bunker 120-200m" value={sgStats.sgBunker120to200} />
               <SGRow label="Recovery 40-120m" value={sgStats.sgRecovery40to120} />
