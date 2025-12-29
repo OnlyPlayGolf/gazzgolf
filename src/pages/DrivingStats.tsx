@@ -34,6 +34,11 @@ interface DrivingSGStats {
   fairwaysHit: number;
   totalFairways: number;
   roundsCount: number;
+  leftMissPercentage: number | null;
+  rightMissPercentage: number | null;
+  leftMissCount: number;
+  rightMissCount: number;
+  totalMisses: number;
 }
 
 const getSGColor = (value: number) => {
@@ -171,6 +176,38 @@ export default function DrivingStats() {
           }
         }
 
+        // Fetch tee_result data from regular rounds for miss direction
+        const { data: regularRounds } = await supabase
+          .from('rounds')
+          .select('id')
+          .eq('user_id', user.id);
+
+        let leftMissCount = 0;
+        let rightMissCount = 0;
+        let totalMisses = 0;
+
+        if (regularRounds && regularRounds.length > 0) {
+          const regularRoundIds = regularRounds.map(r => r.id);
+          
+          const { data: teeResultData } = await supabase
+            .from('holes')
+            .select('tee_result')
+            .in('round_id', regularRoundIds)
+            .not('tee_result', 'is', null);
+
+          if (teeResultData) {
+            for (const hole of teeResultData) {
+              if (hole.tee_result === 'MissL') {
+                leftMissCount++;
+                totalMisses++;
+              } else if (hole.tee_result === 'MissR') {
+                rightMissCount++;
+                totalMisses++;
+              }
+            }
+          }
+        }
+
         // Normalize by rounds count
         const rounds = proRounds.length;
 
@@ -180,7 +217,12 @@ export default function DrivingStats() {
           fairwayPercentage: totalFairways > 0 ? (fairwaysHit / totalFairways) * 100 : null,
           fairwaysHit,
           totalFairways,
-          roundsCount: rounds
+          roundsCount: rounds,
+          leftMissPercentage: totalMisses > 0 ? (leftMissCount / totalMisses) * 100 : null,
+          rightMissPercentage: totalMisses > 0 ? (rightMissCount / totalMisses) * 100 : null,
+          leftMissCount,
+          rightMissCount,
+          totalMisses
         });
 
       } catch (error) {
@@ -273,6 +315,19 @@ export default function DrivingStats() {
                   label="Average Distance" 
                   value={formatDistance(sgStats.avgDistance)} 
                 />
+                {sgStats.totalMisses > 0 && (
+                  <>
+                    <div className="border-t border-border/30 my-2" />
+                    <StatRow 
+                      label="Left Miss" 
+                      value={formatPercentage(sgStats.leftMissPercentage)} 
+                    />
+                    <StatRow 
+                      label="Right Miss" 
+                      value={formatPercentage(sgStats.rightMissPercentage)} 
+                    />
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
