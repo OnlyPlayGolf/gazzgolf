@@ -29,7 +29,8 @@ export function AddPlayerDialog({
   const [searchQuery, setSearchQuery] = useState("");
   
   // Temp player form
-  const [tempName, setTempName] = useState("");
+  const [tempFirstName, setTempFirstName] = useState("");
+  const [tempLastName, setTempLastName] = useState("");
   const [tempHandicap, setTempHandicap] = useState("");
 
   useEffect(() => {
@@ -98,19 +99,24 @@ export function AddPlayerDialog({
   };
 
   const handleAddTempPlayer = () => {
-    const baseName = tempName.trim() || "Guest Player";
+    if (!tempFirstName.trim()) return;
+    
+    const displayName = tempLastName.trim() 
+      ? `${tempFirstName.trim()} ${tempLastName.trim()}`
+      : tempFirstName.trim();
     const normalizedHandicap = tempHandicap.replace(',', '.');
     
     const player: Player = {
       odId: `temp_${Date.now()}`,
       teeColor: defaultTee,
-      displayName: baseName,
-      username: baseName.toLowerCase().replace(/\s+/g, '_'),
+      displayName,
+      username: displayName.toLowerCase().replace(/\s+/g, '_'),
       isTemporary: true,
       handicap: normalizedHandicap ? parseFloat(normalizedHandicap) : undefined,
     };
     onAddPlayer(player);
-    setTempName("");
+    setTempFirstName("");
+    setTempLastName("");
     setTempHandicap("");
   };
 
@@ -191,12 +197,21 @@ export function AddPlayerDialog({
           
           <TabsContent value="guest" className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="guest-name">Player Name *</Label>
+              <Label htmlFor="guest-first-name">First Name *</Label>
               <Input
-                id="guest-name"
-                placeholder="e.g. John Doe"
-                value={tempName}
-                onChange={(e) => setTempName(e.target.value)}
+                id="guest-first-name"
+                placeholder="Enter first name"
+                value={tempFirstName}
+                onChange={(e) => setTempFirstName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="guest-last-name">Last Name (optional)</Label>
+              <Input
+                id="guest-last-name"
+                placeholder="Enter last name"
+                value={tempLastName}
+                onChange={(e) => setTempLastName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -210,7 +225,7 @@ export function AddPlayerDialog({
             </div>
             <Button
               onClick={handleAddTempPlayer}
-              disabled={!tempName.trim()}
+              disabled={!tempFirstName.trim()}
               className="w-full"
             >
               <UserPlus className="w-4 h-4 mr-2" />
