@@ -319,6 +319,10 @@ export default function DrivingStats() {
                   label="Right Miss" 
                   value={sgStats.totalMisses > 0 ? formatPercentage(sgStats.rightMissPercentage) : "N/A"} 
                 />
+                <StatRow 
+                  label="Average Driver Distance" 
+                  value={sgStats.avgDistance !== null ? formatDistance(sgStats.avgDistance) : "N/A"} 
+                />
               </div>
             </CardContent>
           </Card>
