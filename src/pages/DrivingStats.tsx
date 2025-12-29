@@ -10,10 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TopNavBar } from "@/components/TopNavBar";
-import { ArrowLeft, Target, TrendingUp } from "lucide-react";
+import { ArrowLeft, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatsFilter } from "@/utils/statisticsCalculations";
-import { cn } from "@/lib/utils";
 import { subYears, startOfDay } from "date-fns";
 
 type TimeFilter = StatsFilter;
@@ -28,32 +27,14 @@ interface Shot {
   strokesGained: number;
 }
 
-interface DrivingStats {
-  accuracy: number | null;
-  totalFairways: number;
-  fairwaysHit: number;
-  avgDistance: number | null;
-  leftMiss: number | null;
-  rightMiss: number | null;
-  leftMissCount: number;
-  rightMissCount: number;
-  totalMisses: number;
-}
-
-interface TeeSGStats {
+interface DrivingSGStats {
   sgOffTheTee: number;
+  avgDistance: number | null;
+  fairwayPercentage: number | null;
+  fairwaysHit: number;
+  totalFairways: number;
   roundsCount: number;
 }
-
-const formatPercentage = (value: number | null): string => {
-  if (value === null) return '-';
-  return `${value.toFixed(1)}%`;
-};
-
-const formatDistance = (value: number | null): string => {
-  if (value === null) return '-';
-  return `${Math.round(value)} m`;
-};
 
 const getSGColor = (value: number) => {
   if (value > 0.01) return "text-green-500";
@@ -66,75 +47,38 @@ const formatSG = (value: number) => {
   return value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
 };
 
-const StatRow = ({ 
-  label, 
-  value, 
-  subValue,
-  isHighlighted = false
-}: { 
-  label: string; 
-  value: string;
-  subValue?: string;
-  isHighlighted?: boolean;
-}) => (
-  <div className={cn(
-    "flex items-center justify-between py-3 border-b border-border/50 last:border-0",
-    isHighlighted && "bg-muted/30 -mx-3 px-3"
-  )}>
-    <span className={cn(
-      "text-sm",
-      isHighlighted ? "font-semibold text-foreground" : "text-foreground"
-    )}>{label}</span>
-    <div className="flex items-center gap-3">
-      {subValue && (
-        <span className="text-xs text-muted-foreground">{subValue}</span>
-      )}
-      <span className="text-sm font-medium text-foreground">{value}</span>
-    </div>
-  </div>
-);
+const formatPercentage = (value: number | null): string => {
+  if (value === null) return '-';
+  return `${value.toFixed(1)}%`;
+};
 
-const SGRow = ({ 
-  label, 
-  value,
-  isHighlighted = false
-}: { 
-  label: string; 
-  value: number;
-  isHighlighted?: boolean;
-}) => (
-  <div className={cn(
-    "flex items-center justify-between py-3 border-b border-border/50 last:border-0",
-    isHighlighted && "bg-muted/30 -mx-3 px-3"
-  )}>
-    <span className={cn(
-      "text-sm",
-      isHighlighted ? "font-semibold text-foreground" : "text-foreground"
-    )}>{label}</span>
-    <span className={cn("text-sm font-bold", getSGColor(value))}>
+const formatDistance = (value: number | null): string => {
+  if (value === null) return '-';
+  return `${Math.round(value)} m`;
+};
+
+const SGRow = ({ label, value, isBold = false, indent = false }: { label: string; value: number; isBold?: boolean; indent?: boolean }) => (
+  <div className={`flex justify-between py-1 ${indent ? 'pl-3' : ''}`}>
+    <span className={`text-sm ${isBold ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+    <span className={`text-sm font-medium ${getSGColor(value)}`}>
       {formatSG(value)}
     </span>
   </div>
 );
 
+const StatRow = ({ label, value, isBold = false }: { label: string; value: string; isBold?: boolean }) => (
+  <div className="flex justify-between py-1">
+    <span className={`text-sm ${isBold ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+    <span className={`text-sm ${isBold ? 'font-semibold' : 'font-medium'} text-foreground`}>{value}</span>
+  </div>
+);
+
 export default function DrivingStats() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DrivingStats | null>(null);
-  const [sgStats, setSGStats] = useState<TeeSGStats | null>(null);
+  const [sgStats, setSgStats] = useState<DrivingSGStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-  const [roundsAnalyzed, setRoundsAnalyzed] = useState(0);
-
-  const getFilterLabel = () => {
-    switch (timeFilter) {
-      case 'last5': return 'Last 5 Rounds';
-      case 'last10': return 'Last 10 Rounds';
-      case 'last20': return 'Last 20 Rounds';
-      case 'last50': return 'Last 50 Rounds';
-      case 'year': return 'This Year';
-      default: return 'All Time';
-    }
-  };
+  const [proRoundsCount, setProRoundsCount] = useState(0);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -146,127 +90,119 @@ export default function DrivingStats() {
       }
 
       try {
-        // Calculate date filter
-        let dateFilter: string | null = null;
-        const now = new Date();
-        if (timeFilter === 'year') {
-          dateFilter = startOfDay(subYears(now, 1)).toISOString();
-        }
+        // Fetch pro stats for SG driving data
+        const getDateFilter = () => {
+          const now = new Date();
+          switch (timeFilter) {
+            case 'year':
+              return startOfDay(subYears(now, 1)).toISOString();
+            case 'last50':
+            case 'last20':
+            case 'last10':
+            case 'last5':
+              return null; // Will limit by count instead
+            default:
+              return null;
+          }
+        };
 
-        // Fetch pro stats rounds (this is where our data comes from)
-        let proRoundsQuery = supabase
+        let query = supabase
           .from('pro_stats_rounds')
           .select('id, created_at')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .eq('holes_played', 18);
 
+        const dateFilter = getDateFilter();
         if (dateFilter) {
-          proRoundsQuery = proRoundsQuery.gte('created_at', dateFilter);
+          query = query.gte('created_at', dateFilter);
         }
 
-        if (timeFilter === 'last5') {
-          proRoundsQuery = proRoundsQuery.limit(5);
-        } else if (timeFilter === 'last10') {
-          proRoundsQuery = proRoundsQuery.limit(10);
-        } else if (timeFilter === 'last20') {
-          proRoundsQuery = proRoundsQuery.limit(20);
-        } else if (timeFilter === 'last50') {
-          proRoundsQuery = proRoundsQuery.limit(50);
-        }
+        const { data: proRounds, error: roundsError } = await query;
 
-        const { data: proRounds } = await proRoundsQuery;
+        if (roundsError) throw roundsError;
 
         if (!proRounds || proRounds.length === 0) {
-          setStats(null);
-          setSGStats(null);
-          setRoundsAnalyzed(0);
+          setSgStats(null);
+          setProRoundsCount(0);
           setLoading(false);
           return;
         }
 
-        setRoundsAnalyzed(proRounds.length);
-        const proRoundIds = proRounds.map(r => r.id);
+        setProRoundsCount(proRounds.length);
+        const roundIds = proRounds.map(r => r.id);
 
-        const { data: proHoles } = await supabase
+        const { data: holesData, error: holesError } = await supabase
           .from('pro_stats_holes')
-          .select('pro_shot_data')
-          .in('pro_round_id', proRoundIds);
+          .select('pro_round_id, hole_number, par, score, pro_shot_data')
+          .in('pro_round_id', roundIds);
 
-        if (proHoles && proHoles.length > 0) {
-          let sgOffTheTee = 0;
-          let teeShots = 0;
-          let fairwaysHit = 0;
-          let leftMissCount = 0;
-          let rightMissCount = 0;
-          let totalDistances = 0;
-          let distanceCount = 0;
+        if (holesError) throw holesError;
 
-          proHoles.forEach(hole => {
-            if (hole.pro_shot_data && Array.isArray(hole.pro_shot_data)) {
-              const shots = hole.pro_shot_data as unknown as Shot[];
-              shots.forEach(shot => {
-                if (shot.type === 'tee') {
-                  sgOffTheTee += shot.strokesGained;
-                  teeShots++;
-                  
-                  // Calculate driving distance from tee shots
-                  if (shot.startDistance && shot.endDistance !== undefined) {
-                    totalDistances += shot.startDistance - shot.endDistance;
-                    distanceCount++;
-                  }
-                  
-                  // Determine fairway hit or miss based on endLie
-                  if (shot.endLie) {
-                    if (shot.endLie === 'fairway' || shot.endLie === 'green') {
-                      fairwaysHit++;
-                    } else if (shot.endLie === 'rough') {
-                      // We can't determine left vs right from the data, but we can count rough hits
-                      // For now, we'll just track total misses
-                      // The miss direction isn't available in current data
-                    }
-                  }
+        // Initialize stats
+        let sgOffTheTee = 0;
+        let totalDistances = 0;
+        let distanceCount = 0;
+        let fairwaysHit = 0;
+        let totalFairways = 0;
+
+        // Process each hole's shot data
+        for (const hole of holesData || []) {
+          const shotData = hole.pro_shot_data as unknown as Shot[] | null;
+          if (!shotData) continue;
+
+          for (const shot of shotData) {
+            if (shot.type === 'tee') {
+              sgOffTheTee += shot.strokesGained || 0;
+              totalFairways++;
+
+              // Calculate driving distance from tee shots
+              if (shot.startDistance && shot.endDistance !== undefined) {
+                totalDistances += shot.startDistance - shot.endDistance;
+                distanceCount++;
+              }
+
+              // Determine fairway hit based on endLie
+              if (shot.endLie) {
+                if (shot.endLie === 'fairway' || shot.endLie === 'green') {
+                  fairwaysHit++;
                 }
-              });
+              }
             }
-          });
-
-          const totalFairways = teeShots;
-          const totalMisses = totalFairways - fairwaysHit;
-          const accuracy = totalFairways > 0 ? (fairwaysHit / totalFairways) * 100 : null;
-          const avgDistance = distanceCount > 0 ? totalDistances / distanceCount : null;
-
-          setStats({
-            accuracy,
-            totalFairways,
-            fairwaysHit,
-            avgDistance,
-            leftMiss: null, // Miss direction not available in current pro_shot_data
-            rightMiss: null,
-            leftMissCount: 0,
-            rightMissCount: 0,
-            totalMisses
-          });
-
-          // Calculate per-round average SG
-          const roundsCount = proRounds.length;
-          setSGStats({
-            sgOffTheTee: roundsCount > 0 ? sgOffTheTee / roundsCount : 0,
-            roundsCount
-          });
-        } else {
-          setStats(null);
-          setSGStats(null);
+          }
         }
 
+        // Normalize by rounds count
+        const rounds = proRounds.length;
+
+        setSgStats({
+          sgOffTheTee: sgOffTheTee / rounds,
+          avgDistance: distanceCount > 0 ? totalDistances / distanceCount : null,
+          fairwayPercentage: totalFairways > 0 ? (fairwaysHit / totalFairways) * 100 : null,
+          fairwaysHit,
+          totalFairways,
+          roundsCount: rounds
+        });
+
       } catch (error) {
-        console.error('Error loading driving stats:', error);
+        console.error('Error loading stats:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadStats();
-  }, [navigate, timeFilter]);
+  }, [timeFilter, navigate]);
+
+  const getFilterLabel = () => {
+    switch (timeFilter) {
+      case 'last5': return 'Last 5 Rounds';
+      case 'last10': return 'Last 10 Rounds';
+      case 'last20': return 'Last 20 Rounds';
+      case 'last50': return 'Last 50 Rounds';
+      case 'year': return 'This Year';
+      default: return 'All Time';
+    }
+  };
 
   if (loading) {
     return (
@@ -291,7 +227,7 @@ export default function DrivingStats() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Driving Statistics</h1>
             <p className="text-sm text-muted-foreground">
-              {roundsAnalyzed} {roundsAnalyzed === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
+              {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
             </p>
           </div>
         </div>
@@ -313,108 +249,43 @@ export default function DrivingStats() {
           </Select>
         </div>
 
-        {!stats || stats.totalFairways === 0 ? (
-          <Card className="bg-muted/50">
-            <CardContent className="p-6 text-center">
-              <TrendingUp className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-              <h3 className="font-semibold text-foreground mb-2">No Driving Data Yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Play some rounds tracking tee shots to see your driving statistics
+        {/* Driving Section */}
+        {sgStats && proRoundsCount > 0 ? (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Driving
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Based on {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'}
               </p>
-              <Button onClick={() => navigate('/rounds')}>
-                Start a Round
-              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+                <SGRow label="Off the tee" value={sgStats.sgOffTheTee} isBold />
+                <div className="border-t border-border/30 my-2" />
+                <StatRow 
+                  label="Fairways Hit" 
+                  value={formatPercentage(sgStats.fairwayPercentage)} 
+                />
+                <StatRow 
+                  label="Average Distance" 
+                  value={formatDistance(sgStats.avgDistance)} 
+                />
+              </div>
             </CardContent>
           </Card>
         ) : (
-          <>
-            {/* Off the Tee SG Section */}
-            {sgStats && sgStats.roundsCount > 0 && (
-              <Card className="mb-4">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    Strokes Gained - Off the Tee
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    Based on {sgStats.roundsCount} pro stat {sgStats.roundsCount !== 1 ? 'rounds' : 'round'}
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <SGRow 
-                    label="Off the Tee (per round)"
-                    value={sgStats.sgOffTheTee}
-                    isHighlighted
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Driving Accuracy Section */}
-            <Card className="mb-4">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Target className="h-5 w-5 text-primary" />
-                  Driving Accuracy
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StatRow 
-                  label="Fairways Hit"
-                  value={formatPercentage(stats.accuracy)}
-                  subValue={`${stats.fairwaysHit}/${stats.totalFairways}`}
-                  isHighlighted
-                />
-              </CardContent>
-            </Card>
-
-            {/* Miss Tendencies Section */}
-            {stats.totalMisses > 0 && (
-              <Card className="mb-4">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Target className="h-5 w-5 text-primary" />
-                    Miss Tendencies
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    Distribution of missed fairways
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <StatRow 
-                    label="Left Miss"
-                    value={formatPercentage(stats.leftMiss)}
-                    subValue={`${stats.leftMissCount} shots`}
-                  />
-                  <StatRow 
-                    label="Right Miss"
-                    value={formatPercentage(stats.rightMiss)}
-                    subValue={`${stats.rightMissCount} shots`}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Driving Distance Section - placeholder for future */}
-            <Card className="mb-4">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Target className="h-5 w-5 text-primary" />
-                  Driving Distance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StatRow 
-                  label="Average Distance"
-                  value={formatDistance(stats.avgDistance)}
-                  isHighlighted
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Distance tracking requires pro stats round data
-                </p>
-              </CardContent>
-            </Card>
-          </>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <TrendingUp className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground mb-2">No Data Available</h3>
+              <p className="text-sm text-muted-foreground">
+                Play some Pro Stats rounds to see detailed driving statistics
+              </p>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
