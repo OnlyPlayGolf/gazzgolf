@@ -10,55 +10,75 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TopNavBar } from "@/components/TopNavBar";
-import { ArrowLeft, Circle } from "lucide-react";
+import { ArrowLeft, TrendingUp, Circle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatsFilter } from "@/utils/statisticsCalculations";
+import { subYears, startOfDay } from "date-fns";
 
 type TimeFilter = StatsFilter;
 
-interface PuttingDistanceStats {
-  allPutts: { made: number; total: number; percentage: number | null };
-  distance0to1m: { made: number; total: number; percentage: number | null };
-  distance1to2m: { made: number; total: number; percentage: number | null };
-  distance2to4m: { made: number; total: number; percentage: number | null };
-  distance4to6m: { made: number; total: number; percentage: number | null };
-  distance6to8m: { made: number; total: number; percentage: number | null };
-  distance8to10m: { made: number; total: number; percentage: number | null };
-  distance10to14m: { made: number; total: number; percentage: number | null };
-  distance14to18m: { made: number; total: number; percentage: number | null };
-  distance18plus: { made: number; total: number; percentage: number | null };
-  threePuttAvoidance: number | null;
+interface Shot {
+  type: 'tee' | 'approach' | 'putt';
+  startDistance: number;
+  startLie?: string;
+  holed: boolean;
+  endDistance?: number;
+  strokesGained: number;
 }
+
+interface PuttingSGStats {
+  sgPuttingTotal: number;
+  sgPutting0to1: number;
+  sgPutting1to2: number;
+  sgPutting2to4: number;
+  sgPutting4to6: number;
+  sgPutting6to8: number;
+  sgPutting8to10: number;
+  sgPutting10to14: number;
+  sgPutting14to18: number;
+  sgPutting18Plus: number;
+  threePuttAvoidance: number | null;
+  roundsCount: number;
+}
+
+const getSGColor = (value: number) => {
+  if (value > 0.01) return "text-green-500";
+  if (value < -0.01) return "text-red-500";
+  return "text-muted-foreground";
+};
+
+const formatSG = (value: number) => {
+  if (Math.abs(value) < 0.005) return "0.00";
+  return value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
+};
 
 const formatPercentage = (value: number | null): string => {
   if (value === null) return '-';
   return `${value.toFixed(1)}%`;
 };
 
-const PuttingRow = ({ label, value, subValue, isBold = false, indent = false }: { 
-  label: string; 
-  value: string;
-  subValue?: string;
-  isBold?: boolean;
-  indent?: boolean;
-}) => (
+const SGRow = ({ label, value, isBold = false, indent = false }: { label: string; value: number; isBold?: boolean; indent?: boolean }) => (
   <div className={`flex justify-between py-1 ${indent ? 'pl-3' : ''}`}>
     <span className={`text-sm ${isBold ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
-    <div className="flex items-center gap-3">
-      {subValue && (
-        <span className="text-xs text-muted-foreground">{subValue}</span>
-      )}
-      <span className="text-sm font-medium text-foreground">{value}</span>
-    </div>
+    <span className={`text-sm font-medium ${getSGColor(value)}`}>
+      {formatSG(value)}
+    </span>
+  </div>
+);
+
+const StatRow = ({ label, value, isBold = false }: { label: string; value: string; isBold?: boolean }) => (
+  <div className="flex justify-between py-1">
+    <span className={`text-sm ${isBold ? 'font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+    <span className={`text-sm ${isBold ? 'font-semibold' : 'font-medium'} text-foreground`}>{value}</span>
   </div>
 );
 
 export default function PuttingStats() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<PuttingDistanceStats | null>(null);
+  const [sgStats, setSgStats] = useState<PuttingSGStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-  const [roundsPlayed, setRoundsPlayed] = useState(0);
+  const [proRoundsCount, setProRoundsCount] = useState(0);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -70,40 +90,117 @@ export default function PuttingStats() {
       }
 
       try {
-        // Fetch putting stats from holes data
-        // For now, we'll create placeholder structure - actual implementation depends on data tracking
-        const puttingStats: PuttingDistanceStats = {
-          allPutts: { made: 0, total: 0, percentage: null },
-          distance0to1m: { made: 0, total: 0, percentage: null },
-          distance1to2m: { made: 0, total: 0, percentage: null },
-          distance2to4m: { made: 0, total: 0, percentage: null },
-          distance4to6m: { made: 0, total: 0, percentage: null },
-          distance6to8m: { made: 0, total: 0, percentage: null },
-          distance8to10m: { made: 0, total: 0, percentage: null },
-          distance10to14m: { made: 0, total: 0, percentage: null },
-          distance14to18m: { made: 0, total: 0, percentage: null },
-          distance18plus: { made: 0, total: 0, percentage: null },
-          threePuttAvoidance: null,
+        // Fetch pro stats for SG putting data
+        const getDateFilter = () => {
+          const now = new Date();
+          switch (timeFilter) {
+            case 'year':
+              return startOfDay(subYears(now, 1)).toISOString();
+            case 'last50':
+            case 'last20':
+            case 'last10':
+            case 'last5':
+              return null; // Will limit by count instead
+            default:
+              return null;
+          }
         };
 
-        // Fetch rounds count
-        let roundsQuery = supabase
-          .from('rounds')
-          .select('id', { count: 'exact' })
-          .eq('user_id', user.id);
+        let proQuery = supabase
+          .from('pro_stats_rounds')
+          .select('id, created_at')
+          .eq('user_id', user.id)
+          .eq('holes_played', 18);
 
-        if (timeFilter === 'year') {
-          const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
-          roundsQuery = roundsQuery.gte('date_played', startOfYear);
+        const dateFilter = getDateFilter();
+        if (dateFilter) {
+          proQuery = proQuery.gte('created_at', dateFilter);
         }
 
-        const { count } = await roundsQuery;
-        setRoundsPlayed(count || 0);
+        const { data: proRounds } = await proQuery;
 
-        // TODO: Implement actual putting distance tracking from holes data
-        // This would require additional fields in the holes table to track putt distances
-        
-        setStats(puttingStats);
+        if (proRounds && proRounds.length > 0) {
+          const roundIds = proRounds.map(r => r.id);
+
+          const { data: holesData } = await supabase
+            .from('pro_stats_holes')
+            .select('pro_round_id, hole_number, par, score, putts, pro_shot_data')
+            .in('pro_round_id', roundIds);
+
+          // Initialize SG stats
+          let sgPuttingTotal = 0;
+          let sgPutting0to1 = 0;
+          let sgPutting1to2 = 0;
+          let sgPutting2to4 = 0;
+          let sgPutting4to6 = 0;
+          let sgPutting6to8 = 0;
+          let sgPutting8to10 = 0;
+          let sgPutting10to14 = 0;
+          let sgPutting14to18 = 0;
+          let sgPutting18Plus = 0;
+          let threePuttCount = 0;
+          let totalHolesWithPutts = 0;
+
+          holesData?.forEach(hole => {
+            // Count 3-putts
+            if (hole.putts && hole.putts >= 3) {
+              threePuttCount++;
+            }
+            if (hole.putts && hole.putts > 0) {
+              totalHolesWithPutts++;
+            }
+
+            if (hole.pro_shot_data) {
+              const shots = hole.pro_shot_data as unknown as Shot[];
+              
+              shots.forEach((shot) => {
+                const sg = shot.strokesGained || 0;
+                const dist = shot.startDistance || 0;
+
+                if (shot.type === 'putt') {
+                  sgPuttingTotal += sg;
+                  if (dist <= 1) sgPutting0to1 += sg;
+                  else if (dist <= 2) sgPutting1to2 += sg;
+                  else if (dist <= 4) sgPutting2to4 += sg;
+                  else if (dist <= 6) sgPutting4to6 += sg;
+                  else if (dist <= 8) sgPutting6to8 += sg;
+                  else if (dist <= 10) sgPutting8to10 += sg;
+                  else if (dist <= 14) sgPutting10to14 += sg;
+                  else if (dist <= 18) sgPutting14to18 += sg;
+                  else sgPutting18Plus += sg;
+                }
+              });
+            }
+          });
+
+          const validRounds = proRounds.length;
+          setProRoundsCount(validRounds);
+
+          // Calculate 3-putt avoidance percentage
+          const threePuttAvoidance = totalHolesWithPutts > 0 
+            ? ((totalHolesWithPutts - threePuttCount) / totalHolesWithPutts) * 100 
+            : null;
+
+          if (validRounds > 0) {
+            setSgStats({
+              sgPuttingTotal: sgPuttingTotal / validRounds,
+              sgPutting0to1: sgPutting0to1 / validRounds,
+              sgPutting1to2: sgPutting1to2 / validRounds,
+              sgPutting2to4: sgPutting2to4 / validRounds,
+              sgPutting4to6: sgPutting4to6 / validRounds,
+              sgPutting6to8: sgPutting6to8 / validRounds,
+              sgPutting8to10: sgPutting8to10 / validRounds,
+              sgPutting10to14: sgPutting10to14 / validRounds,
+              sgPutting14to18: sgPutting14to18 / validRounds,
+              sgPutting18Plus: sgPutting18Plus / validRounds,
+              threePuttAvoidance,
+              roundsCount: validRounds,
+            });
+          }
+        } else {
+          setProRoundsCount(0);
+          setSgStats(null);
+        }
       } catch (error) {
         console.error('Error loading putting stats:', error);
       } finally {
@@ -148,7 +245,7 @@ export default function PuttingStats() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Putting Statistics</h1>
             <p className="text-sm text-muted-foreground">
-              {roundsPlayed} {roundsPlayed === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
+              {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
             </p>
           </div>
         </div>
@@ -170,94 +267,47 @@ export default function PuttingStats() {
           </Select>
         </div>
 
-        {/* Putting by Distance Section */}
-        <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Circle className="h-5 w-5 text-primary" />
-              Putting by Distance
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Based on {roundsPlayed} {roundsPlayed === 1 ? 'round' : 'rounds'}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <PuttingRow 
-              label="All Putts"
-              value={formatPercentage(stats?.allPutts.percentage ?? null)}
-              subValue={stats?.allPutts.total ? `${stats.allPutts.made}/${stats.allPutts.total}` : undefined}
-              isBold
-            />
-            <PuttingRow 
-              label="0-1 m"
-              value={formatPercentage(stats?.distance0to1m.percentage ?? null)}
-              subValue={stats?.distance0to1m.total ? `${stats.distance0to1m.made}/${stats.distance0to1m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="1-2 m"
-              value={formatPercentage(stats?.distance1to2m.percentage ?? null)}
-              subValue={stats?.distance1to2m.total ? `${stats.distance1to2m.made}/${stats.distance1to2m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="2-4 m"
-              value={formatPercentage(stats?.distance2to4m.percentage ?? null)}
-              subValue={stats?.distance2to4m.total ? `${stats.distance2to4m.made}/${stats.distance2to4m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="4-6 m"
-              value={formatPercentage(stats?.distance4to6m.percentage ?? null)}
-              subValue={stats?.distance4to6m.total ? `${stats.distance4to6m.made}/${stats.distance4to6m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="6-8 m"
-              value={formatPercentage(stats?.distance6to8m.percentage ?? null)}
-              subValue={stats?.distance6to8m.total ? `${stats.distance6to8m.made}/${stats.distance6to8m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="8-10 m"
-              value={formatPercentage(stats?.distance8to10m.percentage ?? null)}
-              subValue={stats?.distance8to10m.total ? `${stats.distance8to10m.made}/${stats.distance8to10m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="10-14 m"
-              value={formatPercentage(stats?.distance10to14m.percentage ?? null)}
-              subValue={stats?.distance10to14m.total ? `${stats.distance10to14m.made}/${stats.distance10to14m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="14-18 m"
-              value={formatPercentage(stats?.distance14to18m.percentage ?? null)}
-              subValue={stats?.distance14to18m.total ? `${stats.distance14to18m.made}/${stats.distance14to18m.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="18+ m"
-              value={formatPercentage(stats?.distance18plus.percentage ?? null)}
-              subValue={stats?.distance18plus.total ? `${stats.distance18plus.made}/${stats.distance18plus.total}` : undefined}
-              indent
-            />
-            <PuttingRow 
-              label="3-Putt Avoidance"
-              value={formatPercentage(stats?.threePuttAvoidance ?? null)}
-              isBold
-            />
-          </CardContent>
-        </Card>
+        {/* Putting Section */}
+        {sgStats && proRoundsCount > 0 && (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Putting
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Based on {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <SGRow label="All putts" value={sgStats.sgPuttingTotal} isBold />
+              <SGRow label="0-1 m" value={sgStats.sgPutting0to1} indent />
+              <SGRow label="1-2 m" value={sgStats.sgPutting1to2} indent />
+              <SGRow label="2-4 m" value={sgStats.sgPutting2to4} indent />
+              <SGRow label="4-6 m" value={sgStats.sgPutting4to6} indent />
+              <SGRow label="6-8 m" value={sgStats.sgPutting6to8} indent />
+              <SGRow label="8-10 m" value={sgStats.sgPutting8to10} indent />
+              <SGRow label="10-14 m" value={sgStats.sgPutting10to14} indent />
+              <SGRow label="14-18 m" value={sgStats.sgPutting14to18} indent />
+              <SGRow label="18+ m" value={sgStats.sgPutting18Plus} indent />
+              <div className="border-t border-border/30 my-2" />
+              <StatRow 
+                label="3-Putt Avoidance" 
+                value={formatPercentage(sgStats.threePuttAvoidance)} 
+                isBold 
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* No data message */}
-        {roundsPlayed === 0 && (
+        {proRoundsCount === 0 && (
           <Card className="bg-muted/50">
             <CardContent className="p-6 text-center">
               <Circle className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <h3 className="font-semibold text-foreground mb-2">No Putting Data Yet</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Play some rounds with detailed putting tracking to see your statistics
+                Play some Pro Stats rounds with detailed putting tracking to see your statistics
               </p>
               <Button onClick={() => navigate('/rounds')}>
                 Start a Round
