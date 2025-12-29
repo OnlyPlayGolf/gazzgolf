@@ -48,7 +48,7 @@ export default function RoundSettings() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
   const [round, setRound] = useState<RoundData | null>(null);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,7 +205,7 @@ export default function RoundSettings() {
   };
 
   const renderBottomTabBar = () => {
-    if (!roundId) return null;
+    if (!roundId || isSpectatorLoading) return null;
     if (round?.origin === "skins") {
       return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
     }
@@ -216,7 +216,6 @@ export default function RoundSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {roundId && <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
       </div>
     );
   }
