@@ -315,19 +315,14 @@ export default function DrivingStats() {
                   label="Average Distance" 
                   value={formatDistance(sgStats.avgDistance)} 
                 />
-                {sgStats.totalMisses > 0 && (
-                  <>
-                    <div className="border-t border-border/30 my-2" />
-                    <StatRow 
-                      label="Left Miss" 
-                      value={formatPercentage(sgStats.leftMissPercentage)} 
-                    />
-                    <StatRow 
-                      label="Right Miss" 
-                      value={formatPercentage(sgStats.rightMissPercentage)} 
-                    />
-                  </>
-                )}
+                <StatRow 
+                  label="Left Miss" 
+                  value={sgStats.totalMisses > 0 ? formatPercentage(sgStats.leftMissPercentage) : "N/A"} 
+                />
+                <StatRow 
+                  label="Right Miss" 
+                  value={sgStats.totalMisses > 0 ? formatPercentage(sgStats.rightMissPercentage) : "N/A"} 
+                />
               </div>
             </CardContent>
           </Card>
