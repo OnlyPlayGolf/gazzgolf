@@ -348,6 +348,7 @@ export default function UmbriagioSettings() {
         </Card>
 
         <RoundActionsSection
+          isAdmin={true}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/umbriago/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}

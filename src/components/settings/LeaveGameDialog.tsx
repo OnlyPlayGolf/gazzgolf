@@ -9,43 +9,37 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface DeleteGameDialogProps {
+interface LeaveGameDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  gameName?: string;
-  deleting?: boolean;
+  leaving?: boolean;
 }
 
-export function DeleteGameDialog({
+export function LeaveGameDialog({
   open,
   onOpenChange,
   onConfirm,
-  gameName = "game",
-  deleting = false,
-}: DeleteGameDialogProps) {
-  const isRound = gameName.toLowerCase() === "round";
-  
+  leaving = false,
+}: LeaveGameDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {gameName}?</AlertDialogTitle>
+          <AlertDialogTitle>Leave Round?</AlertDialogTitle>
           <AlertDialogDescription>
-            {isRound 
-              ? "Are you sure you want to delete your round? This action cannot be undone."
-              : `This will permanently delete this ${gameName.toLowerCase()} and all its data. This action cannot be undone.`
-            }
+            Are you sure you want to leave this round? Your name will be hidden from 
+            score entry and leaderboard.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={leaving}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            disabled={deleting}
+            disabled={leaving}
           >
-            {deleting ? "Deleting..." : "Delete"}
+            {leaving ? "Leaving..." : "Leave Round"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -235,6 +235,7 @@ export default function ScrambleSettings() {
         </Card>
 
         <RoundActionsSection
+          isAdmin={true}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/scramble/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}

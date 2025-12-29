@@ -232,6 +232,7 @@ export default function BestBallSettings() {
         </Card>
 
         <RoundActionsSection
+          isAdmin={true}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/best-ball/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
