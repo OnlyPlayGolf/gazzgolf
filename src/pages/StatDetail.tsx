@@ -101,6 +101,9 @@ const CATEGORIES: Record<string, CategoryConfig> = {
     getStats: (stats) => [
       { label: 'SG Off the Tee', value: formatSG(stats.strokesGained.offTheTee), isPositive: (stats.strokesGained.offTheTee ?? 0) >= 0 },
       { label: 'Fairways Hit', value: formatPercentage(stats.accuracy.fairwaysHit) },
+      { label: 'Left Miss', value: stats.accuracy.leftMissPercentage !== null ? formatPercentage(stats.accuracy.leftMissPercentage) : '-' },
+      { label: 'Right Miss', value: stats.accuracy.rightMissPercentage !== null ? formatPercentage(stats.accuracy.rightMissPercentage) : '-' },
+      { label: 'Average Driver Distance', value: stats.accuracy.avgDriverDistance !== null ? `${Math.round(stats.accuracy.avgDriverDistance)} m` : '-' },
     ],
     getRelevantDrills: (recs) => recs.filter(d => ['Driving', 'Full Swing'].includes(d.category))
   },
@@ -138,7 +141,6 @@ const CATEGORIES: Record<string, CategoryConfig> = {
     getStats: (stats) => [
       { label: 'Total', value: formatSG(stats.strokesGained.total), isPositive: (stats.strokesGained.total ?? 0) >= 0 },
       { label: 'Off the Tee', value: formatSG(stats.strokesGained.offTheTee), isPositive: (stats.strokesGained.offTheTee ?? 0) >= 0 },
-      { label: 'Average Driver Distance', value: stats.accuracy.avgDriverDistance !== null ? `${Math.round(stats.accuracy.avgDriverDistance)} m` : '-' },
       { label: 'Approach', value: formatSG(stats.strokesGained.approach), isPositive: (stats.strokesGained.approach ?? 0) >= 0 },
       { label: 'Short Game', value: formatSG(stats.strokesGained.shortGame), isPositive: (stats.strokesGained.shortGame ?? 0) >= 0 },
       { label: 'Putting', value: formatSG(stats.strokesGained.putting), isPositive: (stats.strokesGained.putting ?? 0) >= 0 },
