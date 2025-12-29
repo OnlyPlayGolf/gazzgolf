@@ -378,7 +378,7 @@ export default function Statistics() {
                 ? stats.accuracy.fairwaysHit >= 60 ? 'strength' 
                 : stats.accuracy.fairwaysHit <= 45 ? 'needs-improvement' 
                 : 'average' : undefined}
-              onClick={() => navigate('/statistics/driving')}
+              onClick={() => navigate('/statistics/fairways')}
             />
             <StatRow 
               label="Greens in Regulation" 
