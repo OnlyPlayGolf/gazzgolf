@@ -15,12 +15,17 @@ import {
 import { TopNavBar } from "@/components/TopNavBar";
 import { PostBox } from "@/components/PostBox";
 import { FeedPost } from "@/components/FeedPost";
-import { RoundCard, RoundCardData } from "@/components/RoundCard";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
-interface FriendOnCourseRound extends RoundCardData {
+interface FriendOnCourseData {
+  friendId: string;
+  friendName: string;
+  friendAvatar: string | null;
+  gameId: string;
   gameType: GameType;
+  courseName: string;
   createdAt: string;
 }
 
@@ -33,7 +38,7 @@ const Index = () => {
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
   const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
-  const [friendsOnCourse, setFriendsOnCourse] = useState<FriendOnCourseRound[]>([]);
+  const [friendsOnCourse, setFriendsOnCourse] = useState<FriendOnCourseData[]>([]);
   const [friendsActivity, setFriendsActivity] = useState<any[]>([]);
   const [friendsPosts, setFriendsPosts] = useState<any[]>([]);
 
@@ -179,21 +184,7 @@ const Index = () => {
 
         // Fetch friends' games from last 12 hours for "Friends on Course"
         const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-        const friendsOnCourseRounds: FriendOnCourseRound[] = [];
-
-        const getGameModeName = (type: GameType): string => {
-          switch (type) {
-            case 'round': return 'Stroke Play';
-            case 'copenhagen': return 'Copenhagen';
-            case 'skins': return 'Skins';
-            case 'best_ball': return 'Best Ball';
-            case 'scramble': return 'Scramble';
-            case 'wolf': return 'Wolf';
-            case 'umbriago': return 'Umbriago';
-            case 'match_play': return 'Match Play';
-            default: return 'Round';
-          }
-        };
+        const friendsOnCourseData: FriendOnCourseData[] = [];
 
         // Fetch all game types from friends in parallel
         const [
@@ -216,160 +207,132 @@ const Index = () => {
           supabase.from('match_play_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
         ]);
 
+        // Collect all games with their owner user IDs
+        const allGames: { gameId: string; gameType: GameType; userId: string; courseName: string; createdAt: string }[] = [];
+
         // Process rounds
         for (const round of friendRoundsLive || []) {
-          const { count } = await supabase.from('round_players').select('*', { count: 'exact', head: true }).eq('round_id', round.id);
-          friendsOnCourseRounds.push({
-            id: round.id,
-            course_name: round.course_name,
-            round_name: round.round_name,
-            date: round.date_played,
-            score: 0,
-            playerCount: count || 1,
-            gameMode: getGameModeName('round'),
+          allGames.push({
+            gameId: round.id,
             gameType: 'round',
-            holesPlayed: round.holes_played,
-            teeSet: round.tee_set,
-            ownerUserId: round.user_id,
+            userId: round.user_id,
+            courseName: round.course_name,
             createdAt: round.created_at,
           });
         }
 
         // Process Copenhagen games
         for (const game of friendCopenhagen || []) {
-          friendsOnCourseRounds.push({
-            id: game.id,
-            course_name: game.course_name,
-            round_name: game.round_name,
-            date: game.date_played,
-            score: 0,
-            playerCount: 3,
-            gameMode: getGameModeName('copenhagen'),
+          allGames.push({
+            gameId: game.id,
             gameType: 'copenhagen',
-            holesPlayed: game.holes_played,
-            teeSet: game.tee_set,
-            ownerUserId: game.user_id,
+            userId: game.user_id,
+            courseName: game.course_name,
             createdAt: game.created_at,
           });
         }
 
         // Process Skins games
         for (const game of friendSkins || []) {
-          const players = Array.isArray(game.players) ? game.players : [];
-          friendsOnCourseRounds.push({
-            id: game.id,
-            course_name: game.course_name,
-            round_name: game.round_name,
-            date: game.date_played,
-            score: 0,
-            playerCount: players.length || 2,
-            gameMode: getGameModeName('skins'),
+          allGames.push({
+            gameId: game.id,
             gameType: 'skins',
-            holesPlayed: game.holes_played,
-            ownerUserId: game.user_id,
+            userId: game.user_id,
+            courseName: game.course_name,
             createdAt: game.created_at,
           });
         }
 
         // Process Best Ball games
         for (const game of friendBestBall || []) {
-          const teamA = Array.isArray(game.team_a_players) ? game.team_a_players : [];
-          const teamB = Array.isArray(game.team_b_players) ? game.team_b_players : [];
-          friendsOnCourseRounds.push({
-            id: game.id,
-            course_name: game.course_name,
-            round_name: game.round_name,
-            date: game.date_played,
-            score: 0,
-            playerCount: teamA.length + teamB.length,
-            gameMode: getGameModeName('best_ball'),
+          allGames.push({
+            gameId: game.id,
             gameType: 'best_ball',
-            holesPlayed: game.holes_played,
-            ownerUserId: game.user_id,
+            userId: game.user_id,
+            courseName: game.course_name,
             createdAt: game.created_at,
           });
         }
 
         // Process Scramble games
         for (const game of friendScramble || []) {
-          const teams = Array.isArray(game.teams) ? game.teams : [];
-          const playerCount = teams.reduce((sum: number, team: any) => {
-            const players = Array.isArray(team.players) ? team.players : [];
-            return sum + players.length;
-          }, 0);
-          friendsOnCourseRounds.push({
-            id: game.id,
-            course_name: game.course_name,
-            round_name: game.round_name,
-            date: game.date_played,
-            score: 0,
-            playerCount: playerCount || 2,
-            gameMode: getGameModeName('scramble'),
+          allGames.push({
+            gameId: game.id,
             gameType: 'scramble',
-            holesPlayed: game.holes_played,
-            teeSet: game.tee_set,
-            ownerUserId: game.user_id,
+            userId: game.user_id,
+            courseName: game.course_name,
             createdAt: game.created_at,
           });
         }
 
         // Process Wolf games
         for (const game of friendWolf || []) {
-          const playerCount = [game.player_1, game.player_2, game.player_3, game.player_4, game.player_5].filter(Boolean).length;
-          friendsOnCourseRounds.push({
-            id: game.id,
-            course_name: game.course_name,
-            round_name: game.round_name,
-            date: game.date_played,
-            score: 0,
-            playerCount,
-            gameMode: getGameModeName('wolf'),
+          allGames.push({
+            gameId: game.id,
             gameType: 'wolf',
-            holesPlayed: game.holes_played,
-            ownerUserId: game.user_id,
+            userId: game.user_id,
+            courseName: game.course_name,
             createdAt: game.created_at,
           });
         }
 
         // Process Umbriago games
         for (const game of friendUmbriago || []) {
-          friendsOnCourseRounds.push({
-            id: game.id,
-            course_name: game.course_name,
-            round_name: game.round_name,
-            date: game.date_played,
-            score: 0,
-            playerCount: 4,
-            gameMode: getGameModeName('umbriago'),
+          allGames.push({
+            gameId: game.id,
             gameType: 'umbriago',
-            holesPlayed: game.holes_played,
-            teeSet: game.tee_set,
-            ownerUserId: game.user_id,
+            userId: game.user_id,
+            courseName: game.course_name,
             createdAt: game.created_at,
           });
         }
 
         // Process Match Play games
         for (const game of friendMatchPlay || []) {
-          friendsOnCourseRounds.push({
-            id: game.id,
-            course_name: game.course_name,
-            round_name: game.round_name,
-            date: game.date_played,
-            score: 0,
-            playerCount: 2,
-            gameMode: getGameModeName('match_play'),
+          allGames.push({
+            gameId: game.id,
             gameType: 'match_play',
-            holesPlayed: game.holes_played,
-            teeSet: game.tee_set,
-            ownerUserId: game.user_id,
+            userId: game.user_id,
+            courseName: game.course_name,
             createdAt: game.created_at,
           });
         }
 
+        // Collect unique friend user IDs on course
+        const uniqueFriendIds = [...new Set(allGames.map(g => g.userId))];
+
+        // Fetch profiles for all friends on course
+        if (uniqueFriendIds.length > 0) {
+          const { data: onCourseProfiles } = await supabase
+            .from('profiles')
+            .select('id, display_name, username, avatar_url')
+            .in('id', uniqueFriendIds);
+
+          const profileMap = new Map(
+            (onCourseProfiles || []).map(p => [p.id, p])
+          );
+
+          // Create FriendOnCourseData entries
+          for (const game of allGames) {
+            const profile = profileMap.get(game.userId);
+            const displayName = profile?.display_name || profile?.username || 'Friend';
+            const firstName = displayName.split(' ')[0];
+            
+            friendsOnCourseData.push({
+              friendId: game.userId,
+              friendName: firstName,
+              friendAvatar: profile?.avatar_url || null,
+              gameId: game.gameId,
+              gameType: game.gameType,
+              courseName: game.courseName,
+              createdAt: game.createdAt,
+            });
+          }
+        }
+
         // Sort by most recently started (createdAt desc)
-        friendsOnCourseRounds.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setFriendsOnCourse(friendsOnCourseRounds);
+        friendsOnCourseData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setFriendsOnCourse(friendsOnCourseData);
       }
 
       // Load recent activity (rounds)
@@ -462,12 +425,76 @@ const Index = () => {
         {friendsOnCourse.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
-            {friendsOnCourse.map((round) => (
-              <RoundCard
-                key={`${round.gameType}-${round.id}`}
-                round={round}
-              />
-            ))}
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-4 pb-2">
+                {(() => {
+                  // Group friends by gameId + gameType to show friends in the same round together
+                  const gameGroups = new Map<string, FriendOnCourseData[]>();
+                  friendsOnCourse.forEach(friend => {
+                    const key = `${friend.gameType}-${friend.gameId}`;
+                    if (!gameGroups.has(key)) {
+                      gameGroups.set(key, []);
+                    }
+                    gameGroups.get(key)!.push(friend);
+                  });
+
+                  // Convert to array and sort by most recent
+                  const sortedGroups = Array.from(gameGroups.entries()).sort((a, b) => {
+                    const aDate = new Date(a[1][0].createdAt).getTime();
+                    const bDate = new Date(b[1][0].createdAt).getTime();
+                    return bDate - aDate;
+                  });
+
+                  return sortedGroups.map(([groupKey, friends]) => {
+                    const isGroup = friends.length > 1;
+                    
+                    return (
+                      <div 
+                        key={groupKey}
+                        className={`flex ${isGroup ? 'bg-muted/50 rounded-xl px-2 py-2 gap-1 border border-border/50' : ''}`}
+                      >
+                        {friends.map((friend, idx) => (
+                          <div 
+                            key={`${friend.friendId}-${idx}`}
+                            className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => navigate(`/profile/${friend.friendId}`)}
+                            style={{ width: '64px' }}
+                          >
+                            <div className={`relative ${isGroup && idx > 0 ? '-ml-3' : ''}`}>
+                              <Avatar className="h-14 w-14 border-2 border-background shadow-md">
+                                {friend.friendAvatar ? (
+                                  <img src={friend.friendAvatar} alt={friend.friendName} className="object-cover" />
+                                ) : (
+                                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                                    {friend.friendName.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                )}
+                              </Avatar>
+                              {/* Green "playing" indicator */}
+                              <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-background" />
+                            </div>
+                            <span 
+                              className="text-xs text-muted-foreground mt-1 truncate text-center"
+                              style={{ maxWidth: '56px' }}
+                            >
+                              {friend.friendName}
+                            </span>
+                          </div>
+                        ))}
+                        {isGroup && (
+                          <div className="flex items-center pl-1">
+                            <span className="text-[10px] text-muted-foreground/70 rotate-90 whitespace-nowrap">
+                              same round
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           </div>
         )}
 
