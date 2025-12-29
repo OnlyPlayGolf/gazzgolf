@@ -27,6 +27,13 @@ interface Shot {
   strokesGained: number;
 }
 
+interface GIRStats {
+  all: { gir: number; total: number; percentage: number | null };
+  par3: { gir: number; total: number; percentage: number | null };
+  par4: { gir: number; total: number; percentage: number | null };
+  par5: { gir: number; total: number; percentage: number | null };
+}
+
 interface ApproachDistanceStats {
   allApproaches: { gir: number; total: number; percentage: number | null };
   distance50to75: { gir: number; total: number; percentage: number | null };
@@ -119,6 +126,7 @@ const SGRow = ({ label, value, isBold = false, indent = false }: { label: string
 export default function ApproachStats() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<ApproachDistanceStats | null>(null);
+  const [girStats, setGirStats] = useState<GIRStats | null>(null);
   const [sgStats, setSgStats] = useState<ApproachSGStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
@@ -158,8 +166,63 @@ export default function ApproachStats() {
           roundsQuery = roundsQuery.gte('date_played', startOfYear);
         }
 
-        const { count } = await roundsQuery;
+        const { count, data: roundsData } = await roundsQuery;
         setRoundsPlayed(count || 0);
+
+        // Calculate GIR stats from holes data
+        const girStats: GIRStats = {
+          all: { gir: 0, total: 0, percentage: null },
+          par3: { gir: 0, total: 0, percentage: null },
+          par4: { gir: 0, total: 0, percentage: null },
+          par5: { gir: 0, total: 0, percentage: null },
+        };
+
+        if (roundsData && roundsData.length > 0) {
+          const roundIds = roundsData.map(r => r.id);
+          
+          const { data: holesForGIR } = await supabase
+            .from('holes')
+            .select('hole_number, par, score, putts')
+            .in('round_id', roundIds);
+
+          if (holesForGIR) {
+            holesForGIR.forEach(hole => {
+              if (hole.score && hole.par && hole.putts !== null) {
+                const strokesBeforePutt = hole.score - hole.putts;
+                const isGIR = strokesBeforePutt <= hole.par - 2;
+                
+                girStats.all.total++;
+                if (isGIR) girStats.all.gir++;
+                
+                if (hole.par === 3) {
+                  girStats.par3.total++;
+                  if (isGIR) girStats.par3.gir++;
+                } else if (hole.par === 4) {
+                  girStats.par4.total++;
+                  if (isGIR) girStats.par4.gir++;
+                } else if (hole.par === 5) {
+                  girStats.par5.total++;
+                  if (isGIR) girStats.par5.gir++;
+                }
+              }
+            });
+            
+            if (girStats.all.total > 0) {
+              girStats.all.percentage = (girStats.all.gir / girStats.all.total) * 100;
+            }
+            if (girStats.par3.total > 0) {
+              girStats.par3.percentage = (girStats.par3.gir / girStats.par3.total) * 100;
+            }
+            if (girStats.par4.total > 0) {
+              girStats.par4.percentage = (girStats.par4.gir / girStats.par4.total) * 100;
+            }
+            if (girStats.par5.total > 0) {
+              girStats.par5.percentage = (girStats.par5.gir / girStats.par5.total) * 100;
+            }
+          }
+        }
+        
+        setGirStats(girStats);
 
         // Fetch pro stats for SG approach data
         const getDateFilter = () => {
@@ -356,6 +419,41 @@ export default function ApproachStats() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Greens in Regulation Section */}
+        {girStats && girStats.all.total > 0 && (
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Crosshair className="h-5 w-5 text-primary" />
+                Greens in Regulation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-0">
+              <StatRow 
+                label="Greens in Regulation" 
+                value={formatPercentage(girStats.all.percentage)} 
+                subValue={`${girStats.all.gir}/${girStats.all.total}`}
+                isHighlighted 
+              />
+              <StatRow 
+                label="Greens in Regulation Par 3s" 
+                value={formatPercentage(girStats.par3.percentage)} 
+                subValue={`${girStats.par3.gir}/${girStats.par3.total}`}
+              />
+              <StatRow 
+                label="Greens in Regulation Par 4s" 
+                value={formatPercentage(girStats.par4.percentage)} 
+                subValue={`${girStats.par4.gir}/${girStats.par4.total}`}
+              />
+              <StatRow 
+                label="Greens in Regulation Par 5s" 
+                value={formatPercentage(girStats.par5.percentage)} 
+                subValue={`${girStats.par5.gir}/${girStats.par5.total}`}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Shots 40m+ - Overall Long Game Section */}
         {sgStats && proRoundsCount > 0 && (
