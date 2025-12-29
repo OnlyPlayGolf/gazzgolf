@@ -10,6 +10,7 @@ import { calculateCopenhagenPoints, calculateNetScore } from "@/utils/copenhagen
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -110,6 +111,15 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
 export default function CopenhagenPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('copenhagen', gameId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && gameId) {
+      navigate(`/copenhagen/${gameId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, gameId, navigate]);
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);

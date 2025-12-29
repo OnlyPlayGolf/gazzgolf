@@ -11,6 +11,7 @@ import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   calculateHoleResult,
   formatMatchStatusWithHoles,
@@ -116,6 +117,15 @@ export default function MatchPlayPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('match_play', gameId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && gameId) {
+      navigate(`/match-play/${gameId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, gameId, navigate]);
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<1 | 2 | null>(null);

@@ -10,6 +10,7 @@ import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBa
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   calculateBestBall,
   calculateHoleResult,
@@ -186,6 +187,15 @@ export default function BestBallPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('best_ball', gameId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && gameId) {
+      navigate(`/best-ball/${gameId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, gameId, navigate]);
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +61,15 @@ export default function SimpleSkinsTracker() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('skins', roundId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && roundId) {
+      navigate(`/round/${roundId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, roundId, navigate]);
   
   const [round, setRound] = useState<Round | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
