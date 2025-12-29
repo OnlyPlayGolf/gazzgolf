@@ -86,7 +86,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 2: copenhagen owned
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
@@ -149,17 +149,17 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const copenhagenParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
       .eq("player_1", name)
       .then((r) => r),
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
       .eq("player_2", name)
       .then((r) => r),
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
       .eq("player_3", name)
       .then((r) => r),
   ]);
@@ -414,8 +414,28 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     });
   }
 
-  // Copenhagen
+  // Copenhagen - calculate position based on points
   for (const game of copenhagenGames) {
+    // Find which player the target user is
+    let userPlayerIndex: number | null = null;
+    if (participantNames.some((n) => n === game.player_1)) userPlayerIndex = 1;
+    else if (participantNames.some((n) => n === game.player_2)) userPlayerIndex = 2;
+    else if (participantNames.some((n) => n === game.player_3)) userPlayerIndex = 3;
+    else if (game.user_id === targetUserId) userPlayerIndex = 1; // Owner defaults to player 1
+    
+    // Calculate position based on points
+    let position: number | null = null;
+    if (userPlayerIndex) {
+      const points = [
+        { player: 1, pts: game.player_1_total_points || 0 },
+        { player: 2, pts: game.player_2_total_points || 0 },
+        { player: 3, pts: game.player_3_total_points || 0 },
+      ];
+      // Sort by points descending (highest points = 1st place)
+      points.sort((a, b) => b.pts - a.pts);
+      position = points.findIndex((p) => p.player === userPlayerIndex) + 1;
+    }
+    
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
@@ -428,6 +448,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       holesPlayed: game.holes_played,
       teeSet: game.tee_set,
       ownerUserId: game.user_id || targetUserId,
+      position,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
