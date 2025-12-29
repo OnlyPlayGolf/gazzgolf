@@ -267,7 +267,7 @@ export default function DrivingStats() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Driving Statistics</h1>
+            <h1 className="text-2xl font-bold text-foreground">Tee Shot Statistics</h1>
             <p className="text-sm text-muted-foreground">
               {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
             </p>
