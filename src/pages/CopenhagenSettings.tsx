@@ -32,6 +32,7 @@ export default function CopenhagenSettings() {
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
+  const [sweepRuleEnabled, setSweepRuleEnabled] = useState(true);
 
   useEffect(() => {
     if (gameId) {
@@ -50,6 +51,7 @@ export default function CopenhagenSettings() {
       const settings = JSON.parse(savedSettings);
       setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
       setGimmesEnabled(settings.gimmesEnabled || false);
+      setSweepRuleEnabled(settings.sweepRuleEnabled !== false); // Default to true
     }
   };
 
@@ -91,7 +93,7 @@ export default function CopenhagenSettings() {
         .eq("id", gameId);
 
       // Save other settings to localStorage
-      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps };
+      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps, sweepRuleEnabled };
       localStorage.setItem(`copenhagenSettings_${gameId}`, JSON.stringify(settings));
 
       toast({ title: "Settings saved" });
@@ -103,10 +105,10 @@ export default function CopenhagenSettings() {
   // Auto-save settings when they change
   useEffect(() => {
     if (game && gameId) {
-      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps };
+      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps, sweepRuleEnabled };
       localStorage.setItem(`copenhagenSettings_${gameId}`, JSON.stringify(settings));
     }
-  }, [mulligansPerPlayer, gimmesEnabled, useHandicaps, gameId, game]);
+  }, [mulligansPerPlayer, gimmesEnabled, useHandicaps, sweepRuleEnabled, gameId, game]);
 
   const handleFinishGame = async () => {
     if (!game) return;
@@ -262,6 +264,21 @@ export default function CopenhagenSettings() {
                 id="gimmes"
                 checked={gimmesEnabled}
                 onCheckedChange={setGimmesEnabled}
+              />
+            </div>
+
+            {/* Sweep Rule toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="sweep">Sweep Rule</Label>
+                <p className="text-xs text-muted-foreground">
+                  One player wins all 6 points with the outright lowest net score
+                </p>
+              </div>
+              <Switch
+                id="sweep"
+                checked={sweepRuleEnabled}
+                onCheckedChange={setSweepRuleEnabled}
               />
             </div>
           </CardContent>
