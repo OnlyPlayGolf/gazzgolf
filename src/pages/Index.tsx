@@ -15,18 +15,13 @@ import {
 import { TopNavBar } from "@/components/TopNavBar";
 import { PostBox } from "@/components/PostBox";
 import { FeedPost } from "@/components/FeedPost";
-import { LiveRoundCard } from "@/components/LiveRoundCard";
+import { RoundCard, RoundCardData } from "@/components/RoundCard";
 
-interface LiveGame {
-  id: string;
-  gameType: 'round' | 'match_play' | 'umbriago' | 'wolf' | 'copenhagen';
-  ownerProfile: any;
-  courseName: string;
-  holesPlayed: number;
-  totalHoles: number;
-  status?: string;
+type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
+
+interface FriendOnCourseRound extends RoundCardData {
+  gameType: GameType;
   createdAt: string;
-  isParticipant?: boolean;
 }
 
 const Index = () => {
@@ -38,8 +33,7 @@ const Index = () => {
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
   const [friendsCount, setFriendsCount] = useState(0);
   const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
-  const [friendsOnCourse, setFriendsOnCourse] = useState<any[]>([]);
-  const [liveGames, setLiveGames] = useState<LiveGame[]>([]);
+  const [friendsOnCourse, setFriendsOnCourse] = useState<FriendOnCourseRound[]>([]);
   const [friendsActivity, setFriendsActivity] = useState<any[]>([]);
   const [friendsPosts, setFriendsPosts] = useState<any[]>([]);
 
@@ -183,97 +177,199 @@ const Index = () => {
           setFriendsActivity(activityWithDetails);
         }
 
-        // Fetch live games from friends (last 6 hours, not finished)
-        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
-        const allLiveGames: LiveGame[] = [];
+        // Fetch friends' games from last 12 hours for "Friends on Course"
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+        const friendsOnCourseRounds: FriendOnCourseRound[] = [];
 
-        // Fetch live rounds
-        const { data: liveRounds } = await supabase
-          .from('rounds')
-          .select('id, user_id, course_name, holes_played, created_at')
-          .in('user_id', friendIds)
-          .gte('created_at', sixHoursAgo)
-          .order('created_at', { ascending: false });
-
-        // Check which rounds user is a participant in
-        const { data: userRoundParticipation } = await supabase
-          .from('round_players')
-          .select('round_id')
-          .eq('user_id', user.id);
-        
-        const participatingRoundIds = new Set(userRoundParticipation?.map(rp => rp.round_id) || []);
-
-        if (liveRounds) {
-          for (const round of liveRounds) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('id, display_name, username, avatar_url')
-              .eq('id', round.user_id)
-              .single();
-
-            // Count completed holes
-            const { count } = await supabase
-              .from('holes')
-              .select('*', { count: 'exact', head: true })
-              .eq('round_id', round.id);
-
-            allLiveGames.push({
-              id: round.id,
-              gameType: 'round',
-              ownerProfile: profile,
-              courseName: round.course_name,
-              holesPlayed: count || 0,
-              totalHoles: round.holes_played,
-              createdAt: round.created_at,
-              isParticipant: participatingRoundIds.has(round.id),
-            });
+        const getGameModeName = (type: GameType): string => {
+          switch (type) {
+            case 'round': return 'Stroke Play';
+            case 'copenhagen': return 'Copenhagen';
+            case 'skins': return 'Skins';
+            case 'best_ball': return 'Best Ball';
+            case 'scramble': return 'Scramble';
+            case 'wolf': return 'Wolf';
+            case 'umbriago': return 'Umbriago';
+            case 'match_play': return 'Match Play';
+            default: return 'Round';
           }
+        };
+
+        // Fetch all game types from friends in parallel
+        const [
+          { data: friendRoundsLive },
+          { data: friendCopenhagen },
+          { data: friendSkins },
+          { data: friendBestBall },
+          { data: friendScramble },
+          { data: friendWolf },
+          { data: friendUmbriago },
+          { data: friendMatchPlay }
+        ] = await Promise.all([
+          supabase.from('rounds').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+          supabase.from('copenhagen_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+          supabase.from('skins_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+          supabase.from('best_ball_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+          supabase.from('scramble_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+          supabase.from('wolf_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+          supabase.from('umbriago_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+          supabase.from('match_play_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+        ]);
+
+        // Process rounds
+        for (const round of friendRoundsLive || []) {
+          const { count } = await supabase.from('round_players').select('*', { count: 'exact', head: true }).eq('round_id', round.id);
+          friendsOnCourseRounds.push({
+            id: round.id,
+            course_name: round.course_name,
+            round_name: round.round_name,
+            date: round.date_played,
+            score: 0,
+            playerCount: count || 1,
+            gameMode: getGameModeName('round'),
+            gameType: 'round',
+            holesPlayed: round.holes_played,
+            teeSet: round.tee_set,
+            ownerUserId: round.user_id,
+            createdAt: round.created_at,
+          });
         }
 
-        // Fetch live match play games
-        const { data: liveMatchPlay } = await supabase
-          .from('match_play_games')
-          .select('*')
-          .in('user_id', friendIds)
-          .eq('is_finished', false)
-          .gte('created_at', sixHoursAgo);
-
-        if (liveMatchPlay) {
-          for (const game of liveMatchPlay) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('id, display_name, username, avatar_url')
-              .eq('id', game.user_id)
-              .single();
-
-            const holesPlayed = game.holes_played - game.holes_remaining;
-            const status = game.match_status === 0 ? 'All Square' : 
-              game.match_status > 0 ? `${game.player_1} ${Math.abs(game.match_status)} Up` :
-              `${game.player_2} ${Math.abs(game.match_status)} Up`;
-
-            allLiveGames.push({
-              id: game.id,
-              gameType: 'match_play',
-              ownerProfile: profile,
-              courseName: game.course_name,
-              holesPlayed,
-              totalHoles: game.holes_played,
-              status,
-              createdAt: game.created_at,
-            });
-          }
+        // Process Copenhagen games
+        for (const game of friendCopenhagen || []) {
+          friendsOnCourseRounds.push({
+            id: game.id,
+            course_name: game.course_name,
+            round_name: game.round_name,
+            date: game.date_played,
+            score: 0,
+            playerCount: 3,
+            gameMode: getGameModeName('copenhagen'),
+            gameType: 'copenhagen',
+            holesPlayed: game.holes_played,
+            teeSet: game.tee_set,
+            ownerUserId: game.user_id,
+            createdAt: game.created_at,
+          });
         }
 
-        // Sort by most recent
-        allLiveGames.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setLiveGames(allLiveGames);
-        
-        // Set friends on course based on live games
-        const activeProfiles = allLiveGames.map(g => g.ownerProfile).filter(Boolean);
-        const uniqueProfiles = activeProfiles.filter((p, i, arr) => 
-          arr.findIndex(x => x.id === p.id) === i
-        );
-        setFriendsOnCourse(uniqueProfiles);
+        // Process Skins games
+        for (const game of friendSkins || []) {
+          const players = Array.isArray(game.players) ? game.players : [];
+          friendsOnCourseRounds.push({
+            id: game.id,
+            course_name: game.course_name,
+            round_name: game.round_name,
+            date: game.date_played,
+            score: 0,
+            playerCount: players.length || 2,
+            gameMode: getGameModeName('skins'),
+            gameType: 'skins',
+            holesPlayed: game.holes_played,
+            ownerUserId: game.user_id,
+            createdAt: game.created_at,
+          });
+        }
+
+        // Process Best Ball games
+        for (const game of friendBestBall || []) {
+          const teamA = Array.isArray(game.team_a_players) ? game.team_a_players : [];
+          const teamB = Array.isArray(game.team_b_players) ? game.team_b_players : [];
+          friendsOnCourseRounds.push({
+            id: game.id,
+            course_name: game.course_name,
+            round_name: game.round_name,
+            date: game.date_played,
+            score: 0,
+            playerCount: teamA.length + teamB.length,
+            gameMode: getGameModeName('best_ball'),
+            gameType: 'best_ball',
+            holesPlayed: game.holes_played,
+            ownerUserId: game.user_id,
+            createdAt: game.created_at,
+          });
+        }
+
+        // Process Scramble games
+        for (const game of friendScramble || []) {
+          const teams = Array.isArray(game.teams) ? game.teams : [];
+          const playerCount = teams.reduce((sum: number, team: any) => {
+            const players = Array.isArray(team.players) ? team.players : [];
+            return sum + players.length;
+          }, 0);
+          friendsOnCourseRounds.push({
+            id: game.id,
+            course_name: game.course_name,
+            round_name: game.round_name,
+            date: game.date_played,
+            score: 0,
+            playerCount: playerCount || 2,
+            gameMode: getGameModeName('scramble'),
+            gameType: 'scramble',
+            holesPlayed: game.holes_played,
+            teeSet: game.tee_set,
+            ownerUserId: game.user_id,
+            createdAt: game.created_at,
+          });
+        }
+
+        // Process Wolf games
+        for (const game of friendWolf || []) {
+          const playerCount = [game.player_1, game.player_2, game.player_3, game.player_4, game.player_5].filter(Boolean).length;
+          friendsOnCourseRounds.push({
+            id: game.id,
+            course_name: game.course_name,
+            round_name: game.round_name,
+            date: game.date_played,
+            score: 0,
+            playerCount,
+            gameMode: getGameModeName('wolf'),
+            gameType: 'wolf',
+            holesPlayed: game.holes_played,
+            ownerUserId: game.user_id,
+            createdAt: game.created_at,
+          });
+        }
+
+        // Process Umbriago games
+        for (const game of friendUmbriago || []) {
+          friendsOnCourseRounds.push({
+            id: game.id,
+            course_name: game.course_name,
+            round_name: game.round_name,
+            date: game.date_played,
+            score: 0,
+            playerCount: 4,
+            gameMode: getGameModeName('umbriago'),
+            gameType: 'umbriago',
+            holesPlayed: game.holes_played,
+            teeSet: game.tee_set,
+            ownerUserId: game.user_id,
+            createdAt: game.created_at,
+          });
+        }
+
+        // Process Match Play games
+        for (const game of friendMatchPlay || []) {
+          friendsOnCourseRounds.push({
+            id: game.id,
+            course_name: game.course_name,
+            round_name: game.round_name,
+            date: game.date_played,
+            score: 0,
+            playerCount: 2,
+            gameMode: getGameModeName('match_play'),
+            gameType: 'match_play',
+            holesPlayed: game.holes_played,
+            teeSet: game.tee_set,
+            ownerUserId: game.user_id,
+            createdAt: game.created_at,
+          });
+        }
+
+        // Sort by most recently started (createdAt desc)
+        friendsOnCourseRounds.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setFriendsOnCourse(friendsOnCourseRounds);
       }
 
       // Load recent activity (rounds)
@@ -362,22 +458,14 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
       <div className="p-4 space-y-6 pt-20">
-        {/* Live Friends Games Section */}
-        {liveGames.length > 0 && (
+        {/* Friends On Course Section */}
+        {friendsOnCourse.length > 0 && (
           <div className="space-y-3">
             <h2 className="text-lg font-semibold text-foreground">Friends on the course</h2>
-            {liveGames.map((game) => (
-              <LiveRoundCard
-                key={`${game.gameType}-${game.id}`}
-                gameId={game.id}
-                gameType={game.gameType}
-                ownerProfile={game.ownerProfile}
-                courseName={game.courseName}
-                holesPlayed={game.holesPlayed}
-                totalHoles={game.totalHoles}
-                status={game.status}
-                createdAt={game.createdAt}
-                isParticipant={game.isParticipant}
+            {friendsOnCourse.map((round) => (
+              <RoundCard
+                key={`${round.gameType}-${round.id}`}
+                round={round}
               />
             ))}
           </div>
