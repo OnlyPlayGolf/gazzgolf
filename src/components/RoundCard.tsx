@@ -21,6 +21,9 @@ export interface RoundCardData {
   totalScore?: number | null;
   totalPar?: number | null;
   ownerUserId?: string;
+  
+  // Copenhagen-specific: player's position (1, 2, or 3)
+  position?: number | null;
 }
 
 interface RoundCardProps {
@@ -51,6 +54,14 @@ export function RoundCard({ round, className }: RoundCardProps) {
 
   // Only show score for regular stroke play rounds
   const showScore = round.gameType === 'round' || !round.gameType;
+  
+  // Format position for Copenhagen games
+  const formatPosition = (pos: number) => {
+    if (pos === 1) return '1st';
+    if (pos === 2) return '2nd';
+    if (pos === 3) return '3rd';
+    return `${pos}th`;
+  };
 
   return (
     <Card 
@@ -59,9 +70,13 @@ export function RoundCard({ round, className }: RoundCardProps) {
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
-          {/* Left: Score */}
+          {/* Left: Score or Position */}
           <div className="flex-shrink-0 w-14 text-center">
-            {showScore ? (
+            {round.gameType === 'copenhagen' && round.position ? (
+              <div className={`text-2xl font-bold ${round.position === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
+                {formatPosition(round.position)}
+              </div>
+            ) : showScore ? (
               <div className={`text-2xl font-bold ${round.score <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
                 {formatScore(round.score)}
               </div>
