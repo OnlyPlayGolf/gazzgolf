@@ -9,6 +9,7 @@ import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,15 @@ interface CourseHole {
 export default function ScramblePlay() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('scramble', gameId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && gameId) {
+      navigate(`/scramble/${gameId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, gameId, navigate]);
   
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);

@@ -10,6 +10,7 @@ import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   calculateTeamLow,
   calculateIndividualLow,
@@ -163,6 +164,15 @@ export default function UmbriagioPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('umbriago', gameId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && gameId) {
+      navigate(`/umbriago/${gameId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, gameId, navigate]);
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activeScoreSheet, setActiveScoreSheet] = useState<keyof Pick<UmbriagioScores, 'teamAPlayer1' | 'teamAPlayer2' | 'teamBPlayer1' | 'teamBPlayer2'> | null>(null);

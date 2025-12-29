@@ -11,6 +11,7 @@ import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import { canEditGroupScores } from "@/types/gameGroups";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,6 +78,15 @@ export default function RoundTracker() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('round', roundId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && roundId) {
+      navigate(`/round/${roundId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, roundId, navigate]);
   
   const [round, setRound] = useState<Round | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);

@@ -11,6 +11,7 @@ import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { calculateWolfHoleScore, getWolfPlayerForHole } from "@/utils/wolfScoring";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -168,6 +169,15 @@ export default function WolfPlay() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check spectator status - redirect if not a participant or edit window expired
+  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('wolf', gameId);
+  
+  useEffect(() => {
+    if (!spectatorLoading && isSpectator && gameId) {
+      navigate(`/wolf/${gameId}/leaderboard`, { replace: true });
+    }
+  }, [isSpectator, spectatorLoading, gameId, navigate]);
   
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<number | null>(null);
