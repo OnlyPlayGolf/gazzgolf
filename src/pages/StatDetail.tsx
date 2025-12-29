@@ -77,6 +77,9 @@ const CATEGORIES: Record<string, CategoryConfig> = {
     getStats: (stats) => [
       { label: 'SG Approach', value: formatSG(stats.strokesGained.approach), isPositive: (stats.strokesGained.approach ?? 0) >= 0 },
       { label: 'Greens in Regulation', value: formatPercentage(stats.accuracy.greensInRegulation) },
+      { label: 'Greens in Regulation Par 3s', value: formatPercentage(stats.accuracy.girPar3) },
+      { label: 'Greens in Regulation Par 4s', value: formatPercentage(stats.accuracy.girPar4) },
+      { label: 'Greens in Regulation Par 5s', value: formatPercentage(stats.accuracy.girPar5) },
     ],
     getRelevantDrills: (recs) => recs.filter(d => ['Approach', 'Wedges'].includes(d.category))
   },
