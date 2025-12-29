@@ -3,8 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
-import { Trophy, Target } from "lucide-react";
+import { Trophy, Target, ChevronDown, ChevronUp } from "lucide-react";
 import { GameShareDialog } from "@/components/GameShareDialog";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function CopenhagenSummary() {
   const { gameId } = useParams();
@@ -13,6 +15,8 @@ export default function CopenhagenSummary() {
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(true);
+  const [expandedPlayer, setExpandedPlayer] = useState<number | null>(null);
+  const [showScorecard, setShowScorecard] = useState(false);
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -55,12 +59,56 @@ export default function CopenhagenSummary() {
   }
 
   const players = [
-    { name: game.player_1, points: game.player_1_total_points, color: "text-emerald-600", bg: "bg-emerald-500" },
-    { name: game.player_2, points: game.player_2_total_points, color: "text-blue-600", bg: "bg-blue-500" },
-    { name: game.player_3, points: game.player_3_total_points, color: "text-amber-600", bg: "bg-amber-500" },
+    { 
+      name: game.player_1, 
+      points: game.player_1_total_points, 
+      color: "text-emerald-600", 
+      bg: "bg-emerald-500",
+      playerNum: 1
+    },
+    { 
+      name: game.player_2, 
+      points: game.player_2_total_points, 
+      color: "text-blue-600", 
+      bg: "bg-blue-500",
+      playerNum: 2
+    },
+    { 
+      name: game.player_3, 
+      points: game.player_3_total_points, 
+      color: "text-amber-600", 
+      bg: "bg-amber-500",
+      playerNum: 3
+    },
   ].sort((a, b) => b.points - a.points);
 
   const sweeps = holes.filter(h => h.is_sweep);
+
+  const getPlayerScoreForHole = (hole: CopenhagenHole, playerNum: number) => {
+    if (playerNum === 1) return hole.player_1_gross_score;
+    if (playerNum === 2) return hole.player_2_gross_score;
+    return hole.player_3_gross_score;
+  };
+
+  const getPlayerPointsForHole = (hole: CopenhagenHole, playerNum: number) => {
+    if (playerNum === 1) return hole.player_1_hole_points;
+    if (playerNum === 2) return hole.player_2_hole_points;
+    return hole.player_3_hole_points;
+  };
+
+  const getScoreColor = (score: number | null, par: number) => {
+    if (!score) return "";
+    const diff = score - par;
+    if (diff <= -2) return "bg-yellow-400 text-yellow-900";
+    if (diff === -1) return "bg-red-500 text-white";
+    if (diff === 0) return "bg-emerald-500 text-white";
+    if (diff === 1) return "bg-blue-400 text-white";
+    if (diff >= 2) return "bg-blue-700 text-white";
+    return "";
+  };
+
+  const front9 = holes.filter(h => h.hole_number <= 9);
+  const back9 = holes.filter(h => h.hole_number > 9);
 
   return (
     <div className="min-h-screen pb-8 bg-background">
@@ -73,7 +121,7 @@ export default function CopenhagenSummary() {
         resultText={`${players[0].points} points`}
         additionalInfo={`${game.player_1}, ${game.player_2}, ${game.player_3}`}
         gameId={gameId}
-        onContinue={() => navigate("/rounds-play")}
+        onContinue={() => setShowShareDialog(false)}
       />
 
       <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
@@ -93,26 +141,153 @@ export default function CopenhagenSummary() {
           </CardContent>
         </Card>
 
-        {/* Final Standings */}
+        {/* Final Standings with expandable scorecards */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Final Standings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {players.map((player, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <span className={`w-8 h-8 rounded-full ${player.bg} flex items-center justify-center text-white font-bold`}>
-                    {i + 1}
-                  </span>
-                  <span className={`font-medium ${player.color}`}>{player.name}</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold">{player.points}</div>
-                </div>
-              </div>
+              <Collapsible 
+                key={i} 
+                open={expandedPlayer === i}
+                onOpenChange={(open) => setExpandedPlayer(open ? i : null)}
+              >
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-8 h-8 rounded-full ${player.bg} flex items-center justify-center text-white font-bold`}>
+                        {i + 1}
+                      </span>
+                      <span className={`font-medium ${player.color}`}>{player.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xl font-bold">{player.points}</div>
+                      {expandedPlayer === i ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <div className="bg-muted/30 rounded-lg p-3 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-muted-foreground text-xs">
+                          <th className="text-left py-1 px-1">Hole</th>
+                          {holes.map(h => (
+                            <th key={h.hole_number} className="text-center px-1 min-w-[28px]">{h.hole_number}</th>
+                          ))}
+                          <th className="text-center px-2 font-bold">Tot</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="text-muted-foreground text-xs">
+                          <td className="py-1 px-1">Par</td>
+                          {holes.map(h => (
+                            <td key={h.hole_number} className="text-center px-1">{h.par}</td>
+                          ))}
+                          <td className="text-center px-2 font-medium">{holes.reduce((t, h) => t + h.par, 0)}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-1 px-1 text-xs">Score</td>
+                          {holes.map(h => {
+                            const score = getPlayerScoreForHole(h, player.playerNum);
+                            return (
+                              <td key={h.hole_number} className="text-center px-1">
+                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-medium ${getScoreColor(score, h.par)}`}>
+                                  {score || '-'}
+                                </span>
+                              </td>
+                            );
+                          })}
+                          <td className="text-center px-2 font-bold">
+                            {holes.reduce((t, h) => t + (getPlayerScoreForHole(h, player.playerNum) || 0), 0)}
+                          </td>
+                        </tr>
+                        <tr className="text-muted-foreground">
+                          <td className="py-1 px-1 text-xs">Pts</td>
+                          {holes.map(h => {
+                            const pts = getPlayerPointsForHole(h, player.playerNum);
+                            return (
+                              <td key={h.hole_number} className="text-center px-1">
+                                <span className={`text-xs ${pts === 6 ? 'text-yellow-500 font-bold' : pts === 4 ? 'text-primary font-medium' : ''}`}>
+                                  {pts}
+                                </span>
+                              </td>
+                            );
+                          })}
+                          <td className="text-center px-2 font-bold text-primary">{player.points}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             ))}
           </CardContent>
+        </Card>
+
+        {/* Leaderboard / Scorecard Section */}
+        <Card>
+          <Collapsible open={showScorecard} onOpenChange={setShowScorecard}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Scorecard</CardTitle>
+                  {showScorecard ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-muted-foreground text-xs border-b">
+                      <th className="text-left py-2 px-1 sticky left-0 bg-card">Hole</th>
+                      {holes.map(h => (
+                        <th key={h.hole_number} className="text-center px-1 min-w-[32px]">
+                          {h.hole_number}
+                        </th>
+                      ))}
+                      <th className="text-center px-2 font-bold">Tot</th>
+                      <th className="text-center px-2 font-bold">Pts</th>
+                    </tr>
+                    <tr className="text-muted-foreground text-xs border-b">
+                      <td className="py-1 px-1 sticky left-0 bg-card">Par</td>
+                      {holes.map(h => (
+                        <td key={h.hole_number} className="text-center px-1">{h.par}</td>
+                      ))}
+                      <td className="text-center px-2 font-medium">{holes.reduce((t, h) => t + h.par, 0)}</td>
+                      <td className="text-center px-2">-</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {players.map((player, i) => {
+                      const totalStrokes = holes.reduce((t, h) => t + (getPlayerScoreForHole(h, player.playerNum) || 0), 0);
+                      return (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className={`py-2 px-1 sticky left-0 bg-card font-medium ${player.color}`}>
+                            {player.name}
+                          </td>
+                          {holes.map(h => {
+                            const score = getPlayerScoreForHole(h, player.playerNum);
+                            return (
+                              <td key={h.hole_number} className="text-center px-1">
+                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-medium ${getScoreColor(score, h.par)}`}>
+                                  {score || '-'}
+                                </span>
+                              </td>
+                            );
+                          })}
+                          <td className="text-center px-2 font-bold">{totalStrokes}</td>
+                          <td className="text-center px-2 font-bold text-primary">{player.points}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Stats */}
@@ -128,6 +303,14 @@ export default function CopenhagenSummary() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Home Button */}
+        <Button 
+          className="w-full" 
+          onClick={() => navigate("/rounds-play")}
+        >
+          Back to Rounds
+        </Button>
       </div>
     </div>
   );
