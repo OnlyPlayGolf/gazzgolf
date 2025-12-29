@@ -12,9 +12,9 @@ export function ScrambleBottomTabBar({ gameId, isSpectator = false }: ScrambleBo
   
   const allTabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/scramble/${gameId}/play`, hideForSpectator: true },
-    { id: "info", label: "Game info", icon: Info, path: `/scramble/${gameId}/info`, hideForSpectator: false },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/scramble/${gameId}/feed`, hideForSpectator: false },
     { id: "leaderboard", label: "Leaderboards", icon: List, path: `/scramble/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/scramble/${gameId}/feed`, hideForSpectator: false },
+    { id: "info", label: "Game info", icon: Info, path: `/scramble/${gameId}/info`, hideForSpectator: false },
     { id: "settings", label: "Settings", icon: Settings, path: `/scramble/${gameId}/settings`, hideForSpectator: false },
   ];
 

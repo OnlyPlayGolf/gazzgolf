@@ -12,9 +12,9 @@ export function BestBallBottomTabBar({ gameId, isSpectator = false }: BestBallBo
   
   const allTabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/best-ball/${gameId}/play`, hideForSpectator: true },
-    { id: "info", label: "Game info", icon: Info, path: `/best-ball/${gameId}/info`, hideForSpectator: false },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/best-ball/${gameId}/feed`, hideForSpectator: false },
     { id: "leaderboard", label: "Leaderboards", icon: List, path: `/best-ball/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/best-ball/${gameId}/feed`, hideForSpectator: false },
+    { id: "info", label: "Game info", icon: Info, path: `/best-ball/${gameId}/info`, hideForSpectator: false },
     { id: "settings", label: "Settings", icon: Settings, path: `/best-ball/${gameId}/settings`, hideForSpectator: false },
   ];
 

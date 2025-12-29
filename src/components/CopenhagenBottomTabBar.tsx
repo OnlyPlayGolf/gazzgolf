@@ -12,9 +12,9 @@ export function CopenhagenBottomTabBar({ gameId, isSpectator = false }: Copenhag
   
   const allTabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/copenhagen/${gameId}/play`, hideForSpectator: true },
-    { id: "info", label: "Game info", icon: Info, path: `/copenhagen/${gameId}/info`, hideForSpectator: false },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/copenhagen/${gameId}/feed`, hideForSpectator: false },
     { id: "leaderboard", label: "Leaderboards", icon: List, path: `/copenhagen/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/copenhagen/${gameId}/feed`, hideForSpectator: false },
+    { id: "info", label: "Game info", icon: Info, path: `/copenhagen/${gameId}/info`, hideForSpectator: false },
     { id: "settings", label: "Settings", icon: Settings, path: `/copenhagen/${gameId}/settings`, hideForSpectator: false },
   ];
 
