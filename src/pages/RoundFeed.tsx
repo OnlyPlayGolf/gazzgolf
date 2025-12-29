@@ -46,7 +46,7 @@ export default function RoundFeed() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
   const [origin, setOrigin] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -278,7 +278,7 @@ export default function RoundFeed() {
   };
 
   const renderBottomTabBar = () => {
-    if (!roundId) return null;
+    if (!roundId || isSpectatorLoading) return null;
     if (origin === "skins") {
       return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
     }

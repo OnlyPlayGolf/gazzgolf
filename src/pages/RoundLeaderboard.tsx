@@ -49,7 +49,7 @@ export default function RoundLeaderboard() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
   
   const [round, setRound] = useState<Round | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
@@ -541,10 +541,12 @@ export default function RoundLeaderboard() {
         })()}
       </div>
 
-      {round?.origin === "skins" ? (
-        <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
-      ) : (
-        <RoundBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+      {!isSpectatorLoading && (
+        round?.origin === "skins" ? (
+          <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+        ) : (
+          <RoundBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+        )
       )}
     </div>
   );

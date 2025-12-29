@@ -13,7 +13,7 @@ import { Info, ArrowLeft } from "lucide-react";
 export default function RoundInfo() {
   const { roundId } = useParams();
   const navigate = useNavigate();
-  const { isSpectator } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
   const [origin, setOrigin] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function RoundInfo() {
   }, [roundId]);
 
   const renderBottomTabBar = () => {
-    if (!roundId) return null;
+    if (!roundId || isSpectatorLoading) return null;
     if (origin === "skins") {
       return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
     }
