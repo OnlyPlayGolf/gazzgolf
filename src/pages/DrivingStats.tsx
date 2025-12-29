@@ -312,10 +312,6 @@ export default function DrivingStats() {
                   value={formatPercentage(sgStats.fairwayPercentage)} 
                 />
                 <StatRow 
-                  label="Average Distance" 
-                  value={formatDistance(sgStats.avgDistance)} 
-                />
-                <StatRow 
                   label="Left Miss" 
                   value={sgStats.totalMisses > 0 ? formatPercentage(sgStats.leftMissPercentage) : "N/A"} 
                 />
