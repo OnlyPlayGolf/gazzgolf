@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
-import { Trophy, Target, ChevronDown, ChevronUp } from "lucide-react";
+import { Trophy, Target, ChevronDown, ChevronUp, ArrowLeft, Share2 } from "lucide-react";
 import { GameShareDialog } from "@/components/GameShareDialog";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -14,9 +14,21 @@ export default function CopenhagenSummary() {
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showShareDialog, setShowShareDialog] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(null);
   const [showScorecard, setShowScorecard] = useState(false);
+
+  // Check if completion dialog was already shown for this game
+  useEffect(() => {
+    if (gameId) {
+      const shownKey = `copenhagen_completed_shown_${gameId}`;
+      const wasShown = localStorage.getItem(shownKey);
+      if (!wasShown) {
+        setShowShareDialog(true);
+        localStorage.setItem(shownKey, "true");
+      }
+    }
+  }, [gameId]);
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -130,10 +142,30 @@ export default function CopenhagenSummary() {
         onContinue={() => setShowShareDialog(false)}
       />
 
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-10 bg-background border-b">
+        <div className="flex items-center justify-between p-4 max-w-2xl mx-auto">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate("/rounds-play")}
+          >
+            <ArrowLeft size={24} />
+          </Button>
+          <h1 className="text-lg font-semibold">Copenhagen</h1>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setShowShareDialog(true)}
+          >
+            <Share2 size={24} />
+          </Button>
+        </div>
+      </div>
+
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Copenhagen</h1>
           <p className="text-muted-foreground">{game.course_name}</p>
           <p className="text-sm text-muted-foreground">{holes.length} holes played</p>
         </div>
