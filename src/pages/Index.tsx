@@ -457,15 +457,15 @@ const Index = () => {
                           // Determine the route based on game type
                           const getGameRoute = () => {
                             switch (friend.gameType) {
-                              case 'round': return `/round/${friend.gameId}/play`;
-                              case 'match_play': return `/match-play/${friend.gameId}/play`;
-                              case 'best_ball': return `/best-ball/${friend.gameId}/play`;
-                              case 'copenhagen': return `/copenhagen/${friend.gameId}/play`;
-                              case 'scramble': return `/scramble/${friend.gameId}/play`;
-                              case 'skins': return `/skins/${friend.gameId}`;
-                              case 'wolf': return `/wolf/${friend.gameId}/play`;
-                              case 'umbriago': return `/umbriago/${friend.gameId}/play`;
-                              default: return `/round/${friend.gameId}/play`;
+                              case 'round': return `/rounds/${friend.gameId}/leaderboard`;
+                              case 'match_play': return `/match-play/${friend.gameId}/leaderboard`;
+                              case 'best_ball': return `/best-ball/${friend.gameId}/leaderboard`;
+                              case 'copenhagen': return `/copenhagen/${friend.gameId}/leaderboard`;
+                              case 'scramble': return `/scramble/${friend.gameId}/leaderboard`;
+                              case 'skins': return `/skins/${friend.gameId}/leaderboard`;
+                              case 'wolf': return `/wolf/${friend.gameId}/leaderboard`;
+                              case 'umbriago': return `/umbriago/${friend.gameId}/leaderboard`;
+                              default: return `/rounds/${friend.gameId}/leaderboard`;
                             }
                           };
 
