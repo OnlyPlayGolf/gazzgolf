@@ -122,7 +122,6 @@ const CATEGORIES: Record<string, CategoryConfig> = {
       { label: 'Fairways Hit', value: formatPercentage(stats.accuracy.fairwaysHit) },
       { label: 'Left Miss', value: stats.accuracy.leftMissPercentage !== null ? formatPercentage(stats.accuracy.leftMissPercentage) : '-' },
       { label: 'Right Miss', value: stats.accuracy.rightMissPercentage !== null ? formatPercentage(stats.accuracy.rightMissPercentage) : '-' },
-      { label: 'Average Driver Distance', value: stats.accuracy.avgDriverDistance !== null ? `${Math.round(stats.accuracy.avgDriverDistance)} m` : '-' },
     ],
     getRelevantDrills: (recs) => recs.filter(d => ['Driving', 'Full Swing'].includes(d.category))
   },
