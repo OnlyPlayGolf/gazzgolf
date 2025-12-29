@@ -40,6 +40,8 @@ export interface AccuracyStats {
   scrambling: number | null;
   sandSaves: number | null;
   avgDriverDistance: number | null;
+  leftMissPercentage: number | null;
+  rightMissPercentage: number | null;
 }
 
 export interface PuttingStats {
@@ -193,9 +195,45 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     scrambling: validSummaries.length > 0 
       ? validSummaries.reduce((sum, s) => sum + (s.updown_percentage || 0), 0) / validSummaries.length 
       : null,
-    sandSaves: null, // Would need more detailed data
+    sandSaves: null,
     avgDriverDistance: null,
+    leftMissPercentage: null,
+    rightMissPercentage: null,
   };
+
+  // Calculate left/right miss percentages from hole data
+  if (validSummaries.length > 0) {
+    const roundIds = validSummaries.map(s => s.round_id);
+    const { data: teeResultData } = await supabase
+      .from('holes')
+      .select('tee_result')
+      .in('round_id', roundIds)
+      .not('tee_result', 'is', null);
+
+    if (teeResultData && teeResultData.length > 0) {
+      let leftMissCount = 0;
+      let rightMissCount = 0;
+      let totalMisses = 0;
+
+      teeResultData.forEach(hole => {
+        if (hole.tee_result === 'MissL') {
+          leftMissCount++;
+          totalMisses++;
+        } else if (hole.tee_result === 'MissR') {
+          rightMissCount++;
+          totalMisses++;
+        }
+      });
+
+      if (totalMisses > 0) {
+        accuracy = {
+          ...accuracy,
+          leftMissPercentage: (leftMissCount / totalMisses) * 100,
+          rightMissPercentage: (rightMissCount / totalMisses) * 100,
+        };
+      }
+    }
+  }
 
   // Fetch hole-level data for GIR by par type
   if (validSummaries.length > 0) {
