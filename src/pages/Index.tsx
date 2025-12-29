@@ -453,34 +453,51 @@ const Index = () => {
                         key={groupKey}
                         className={`flex ${isGroup ? 'bg-muted/50 rounded-xl px-2 py-2 gap-1 border border-border/50' : ''}`}
                       >
-                        {friends.map((friend, idx) => (
-                          <div 
-                            key={`${friend.friendId}-${idx}`}
-                            className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => navigate(`/profile/${friend.friendId}`)}
-                            style={{ width: '64px' }}
-                          >
-                            <div className={`relative ${isGroup && idx > 0 ? '-ml-3' : ''}`}>
-                              <Avatar className="h-14 w-14 border-2 border-background shadow-md">
-                                {friend.friendAvatar ? (
-                                  <img src={friend.friendAvatar} alt={friend.friendName} className="object-cover" />
-                                ) : (
-                                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                                    {friend.friendName.charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                )}
-                              </Avatar>
-                              {/* Green "playing" indicator */}
-                              <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-background" />
-                            </div>
-                            <span 
-                              className="text-xs text-muted-foreground mt-1 truncate text-center"
-                              style={{ maxWidth: '56px' }}
+                        {friends.map((friend, idx) => {
+                          // Determine the route based on game type
+                          const getGameRoute = () => {
+                            switch (friend.gameType) {
+                              case 'round': return `/round/${friend.gameId}/play`;
+                              case 'match_play': return `/match-play/${friend.gameId}/play`;
+                              case 'best_ball': return `/best-ball/${friend.gameId}/play`;
+                              case 'copenhagen': return `/copenhagen/${friend.gameId}/play`;
+                              case 'scramble': return `/scramble/${friend.gameId}/play`;
+                              case 'skins': return `/skins/${friend.gameId}`;
+                              case 'wolf': return `/wolf/${friend.gameId}/play`;
+                              case 'umbriago': return `/umbriago/${friend.gameId}/play`;
+                              default: return `/round/${friend.gameId}/play`;
+                            }
+                          };
+
+                          return (
+                            <div 
+                              key={`${friend.friendId}-${idx}`}
+                              className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => navigate(getGameRoute())}
+                              style={{ width: '64px' }}
                             >
-                              {friend.friendName}
-                            </span>
-                          </div>
-                        ))}
+                              <div className={`relative ${isGroup && idx > 0 ? '-ml-3' : ''}`}>
+                                <Avatar className="h-14 w-14 border-2 border-background shadow-md">
+                                  {friend.friendAvatar ? (
+                                    <img src={friend.friendAvatar} alt={friend.friendName} className="object-cover" />
+                                  ) : (
+                                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                                      {friend.friendName.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                                {/* Green "playing" indicator */}
+                                <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-background" />
+                              </div>
+                              <span 
+                                className="text-xs text-muted-foreground mt-1 truncate text-center"
+                                style={{ maxWidth: '56px' }}
+                              >
+                                {friend.friendName}
+                              </span>
+                            </div>
+                          );
+                        })}
                         {isGroup && (
                           <div className="flex items-center pl-1">
                             <span className="text-[10px] text-muted-foreground/70 rotate-90 whitespace-nowrap">
