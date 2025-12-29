@@ -44,6 +44,9 @@ export interface AccuracyStats {
 export interface PuttingStats {
   puttsPerRound: number | null;
   onePuttPercentage: number | null;
+  twoPuttPercentage: number | null;
+  threePuttPercentage: number | null;
+  fourPlusPuttPercentage: number | null;
   threePuttAvoidance: number | null;
   puttsPerGIR: number | null;
 }
@@ -234,17 +237,50 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     }
   }
 
-  // Calculate putting stats
-  const putting: PuttingStats = {
+  // Calculate putting stats - including putt distribution from hole data
+  let putting: PuttingStats = {
     puttsPerRound: validSummaries.length > 0 
       ? validSummaries.reduce((sum, s) => sum + (s.total_putts || 0), 0) / validSummaries.length 
       : null,
-    onePuttPercentage: null, // Would need hole-by-hole data
+    onePuttPercentage: null,
+    twoPuttPercentage: null,
+    threePuttPercentage: null,
+    fourPlusPuttPercentage: null,
     threePuttAvoidance: validSummaries.length > 0 
       ? 100 - (validSummaries.reduce((sum, s) => sum + (s.three_putts || 0), 0) / validSummaries.reduce((sum, s) => sum + (s.holes_played || 0), 0)) * 100
       : null,
     puttsPerGIR: null,
   };
+
+  // Calculate putt distribution from hole-level data
+  if (validSummaries.length > 0) {
+    const roundIds = validSummaries.map(s => s.round_id);
+    const { data: puttHolesData } = await supabase
+      .from('holes')
+      .select('putts')
+      .in('round_id', roundIds)
+      .not('putts', 'is', null);
+
+    if (puttHolesData && puttHolesData.length > 0) {
+      let onePutts = 0, twoPutts = 0, threePutts = 0, fourPlusPutts = 0;
+      
+      puttHolesData.forEach(hole => {
+        if (hole.putts === 1) onePutts++;
+        else if (hole.putts === 2) twoPutts++;
+        else if (hole.putts === 3) threePutts++;
+        else if (hole.putts !== null && hole.putts >= 4) fourPlusPutts++;
+      });
+
+      const totalHolesWithPutts = puttHolesData.length;
+      putting = {
+        ...putting,
+        onePuttPercentage: totalHolesWithPutts > 0 ? (onePutts / totalHolesWithPutts) * 100 : null,
+        twoPuttPercentage: totalHolesWithPutts > 0 ? (twoPutts / totalHolesWithPutts) * 100 : null,
+        threePuttPercentage: totalHolesWithPutts > 0 ? (threePutts / totalHolesWithPutts) * 100 : null,
+        fourPlusPuttPercentage: totalHolesWithPutts > 0 ? (fourPlusPutts / totalHolesWithPutts) * 100 : null,
+      };
+    }
+  }
 
   // Fetch strokes gained from pro_stats if available
   const { data: proRounds } = await supabase

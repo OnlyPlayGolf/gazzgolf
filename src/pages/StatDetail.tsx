@@ -42,6 +42,10 @@ const CATEGORIES: Record<string, CategoryConfig> = {
     getStats: (stats) => [
       { label: 'SG Putting', value: formatSG(stats.strokesGained.putting), isPositive: (stats.strokesGained.putting ?? 0) >= 0 },
       { label: 'Putts per Round', value: stats.putting.puttsPerRound?.toFixed(1) ?? '-' },
+      { label: '1-Putt per Hole', value: formatPercentage(stats.putting.onePuttPercentage) },
+      { label: '2-Putts per Hole', value: formatPercentage(stats.putting.twoPuttPercentage) },
+      { label: '3-Putts per Hole', value: formatPercentage(stats.putting.threePuttPercentage) },
+      { label: '4-Putts or Worse per Hole', value: formatPercentage(stats.putting.fourPlusPuttPercentage) },
       { label: '3-Putt Avoidance', value: formatPercentage(stats.putting.threePuttAvoidance) },
     ],
     getRelevantDrills: (recs) => recs.filter(d => d.category === 'Putting')
