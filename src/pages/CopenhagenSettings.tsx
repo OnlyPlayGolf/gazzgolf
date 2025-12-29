@@ -285,6 +285,7 @@ export default function CopenhagenSettings() {
         </Card>
 
         <RoundActionsSection
+          isAdmin={true}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/copenhagen/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}

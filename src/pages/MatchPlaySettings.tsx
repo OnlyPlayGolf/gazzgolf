@@ -234,6 +234,7 @@ export default function MatchPlaySettings() {
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
           <RoundActionsSection
+            isAdmin={true}
             onFinish={handleFinishGame}
             onSaveAndExit={() => navigate(`/match-play/${gameId}/summary`)}
             onDelete={() => setShowDeleteDialog(true)}

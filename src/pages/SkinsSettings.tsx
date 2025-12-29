@@ -330,6 +330,7 @@ export default function SimpleSkinsSettings() {
         </Card>
 
         <RoundActionsSection
+          isAdmin={true}
           onFinish={handleFinishRound}
           onSaveAndExit={() => navigate(`/simple-skins/${roundId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}

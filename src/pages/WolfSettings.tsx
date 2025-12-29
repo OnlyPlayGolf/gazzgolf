@@ -241,6 +241,7 @@ export default function WolfSettings() {
         </Card>
 
         <RoundActionsSection
+          isAdmin={true}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/wolf/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}

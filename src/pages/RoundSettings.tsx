@@ -20,10 +20,12 @@ import {
   ViewPlayersModal,
   RoundActionsSection,
   DeleteGameDialog,
+  LeaveGameDialog,
 } from "@/components/settings";
 
 interface RoundData {
   id: string;
+  user_id: string;
   course_name: string;
   date_played: string;
   holes_played: number;
@@ -53,9 +55,13 @@ export default function RoundSettings() {
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentPlayerRecord, setCurrentPlayerRecord] = useState<RoundPlayer | null>(null);
 
   // Game settings state
   const [teeColor, setTeeColor] = useState("white");
@@ -115,6 +121,12 @@ export default function RoundSettings() {
 
   const fetchRound = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+
       const { data: roundData } = await supabase
         .from("rounds")
         .select("*")
@@ -149,6 +161,13 @@ export default function RoundSettings() {
         }));
 
         setPlayers(playersWithProfiles as RoundPlayer[]);
+        
+        // Find current user's player record
+        if (user) {
+          const currentPlayer = playersWithProfiles.find(p => p.user_id === user.id);
+          setCurrentPlayerRecord(currentPlayer as RoundPlayer || null);
+        }
+        
         // Check if any player has handicap
         const hasHandicaps = playersData.some(p => p.handicap !== null);
         setHandicapEnabled(hasHandicaps);
@@ -203,6 +222,30 @@ export default function RoundSettings() {
       setShowDeleteDialog(false);
     }
   };
+
+  const handleLeaveRound = async () => {
+    if (!roundId || !currentPlayerRecord) return;
+    
+    setLeaving(true);
+    try {
+      // Delete player's holes
+      await supabase.from("holes").delete().eq("player_id", currentPlayerRecord.id);
+      // Delete player from round_players
+      const { error } = await supabase.from("round_players").delete().eq("id", currentPlayerRecord.id);
+
+      if (error) throw error;
+
+      toast({ title: "Left round successfully" });
+      navigate("/rounds-play");
+    } catch (error: any) {
+      toast({ title: "Error leaving round", description: error.message, variant: "destructive" });
+    } finally {
+      setLeaving(false);
+      setShowLeaveDialog(false);
+    }
+  };
+
+  const isAdmin = round?.user_id === currentUserId;
 
   const renderBottomTabBar = () => {
     if (!roundId || isSpectatorLoading) return null;
@@ -376,9 +419,11 @@ export default function RoundSettings() {
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
           <RoundActionsSection
+            isAdmin={isAdmin}
             onFinish={handleFinishRound}
             onSaveAndExit={() => navigate(`/rounds/${roundId}/summary`)}
-            onDelete={() => setShowDeleteDialog(true)}
+            onDelete={isAdmin ? () => setShowDeleteDialog(true) : undefined}
+            onLeave={!isAdmin ? () => setShowLeaveDialog(true) : undefined}
             finishLabel="Finish Round"
           />
         )}
@@ -397,6 +442,13 @@ export default function RoundSettings() {
         onConfirm={handleDeleteRound}
         gameName="Round"
         deleting={deleting}
+      />
+
+      <LeaveGameDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        onConfirm={handleLeaveRound}
+        leaving={leaving}
       />
 
       {renderBottomTabBar()}
