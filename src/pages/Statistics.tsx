@@ -362,12 +362,12 @@ export default function Statistics() {
           </CardContent>
         </Card>
 
-        {/* Accuracy Section */}
+        {/* Basic Statistics Section */}
         <Card className="mb-4">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Crosshair className="h-5 w-5 text-primary" />
-              Accuracy
+              Basic Statistics
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -398,18 +398,6 @@ export default function Statistics() {
                 : 'average' : undefined}
               onClick={() => navigate('/statistics/short-game')}
             />
-          </CardContent>
-        </Card>
-
-        {/* Putting Section */}
-        <Card className="mb-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Circle className="h-5 w-5 text-primary" />
-              Putting
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
             <StatRow 
               label="Putts per Round" 
               value={stats?.putting.puttsPerRound?.toFixed(1) ?? '-'}
@@ -418,14 +406,6 @@ export default function Statistics() {
                 : stats.putting.puttsPerRound >= 34 ? 'needs-improvement' 
                 : 'average' : undefined}
               onClick={() => navigate('/statistics/putting')}
-            />
-            <StatRow 
-              label="3-Putt Avoidance" 
-              value={formatPercentage(stats?.putting.threePuttAvoidance ?? null)}
-              level={stats?.putting.threePuttAvoidance !== null 
-                ? stats.putting.threePuttAvoidance >= 95 ? 'strength' 
-                : stats.putting.threePuttAvoidance <= 85 ? 'needs-improvement' 
-                : 'average' : undefined}
             />
           </CardContent>
         </Card>
