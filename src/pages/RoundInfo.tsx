@@ -94,14 +94,6 @@ export default function RoundInfo() {
               </ul>
             </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Tips</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Focus on avoiding big numbers</li>
-                <li>• Play smart on difficult holes</li>
-                <li>• Track your fairways, greens, and putts for improvement</li>
-              </ul>
-            </div>
           </CardContent>
         </Card>
       </div>
