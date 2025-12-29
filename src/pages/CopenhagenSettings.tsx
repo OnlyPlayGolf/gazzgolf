@@ -14,6 +14,7 @@ import {
   GameDetailsData,
   GamePlayer,
   ViewPlayersModal,
+  LeaveGameDialog,
   RoundActionsSection,
   DeleteGameDialog,
 } from "@/components/settings";
@@ -25,9 +26,11 @@ export default function CopenhagenSettings() {
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   // Game settings state
   const [useHandicaps, setUseHandicaps] = useState(false);
@@ -150,6 +153,21 @@ export default function CopenhagenSettings() {
       navigate("/rounds-play");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleLeaveGame = async () => {
+    setLeaving(true);
+    try {
+      // For Copenhagen, we can't really "leave" since players are just names, not user accounts
+      // But we could mark the game as left by this user in the future
+      toast({ title: "Left the game" });
+      navigate("/rounds-play");
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLeaving(false);
+      setShowLeaveDialog(false);
     }
   };
 
@@ -296,6 +314,7 @@ export default function CopenhagenSettings() {
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate(`/copenhagen/${gameId}/summary`)}
           onDelete={() => setShowDeleteDialog(true)}
+          onLeave={() => setShowLeaveDialog(true)}
         />
       </div>
 
@@ -311,6 +330,13 @@ export default function CopenhagenSettings() {
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDeleteGame}
         gameName="Copenhagen Game"
+      />
+
+      <LeaveGameDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        onConfirm={handleLeaveGame}
+        leaving={leaving}
       />
 
       {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
