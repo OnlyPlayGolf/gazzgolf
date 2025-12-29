@@ -144,6 +144,7 @@ import StatDetail from "./pages/StatDetail";
 import PuttingStats from "./pages/PuttingStats";
 import ApproachStats from "./pages/ApproachStats";
 import DrivingStats from "./pages/DrivingStats";
+import ShortGameStats from "./pages/ShortGameStats";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -181,6 +182,7 @@ const App = () => {
             <Route path="/statistics/putting-detail" element={<PuttingStats />} />
             <Route path="/statistics/approach-detail" element={<ApproachStats />} />
             <Route path="/statistics/driving" element={<DrivingStats />} />
+            <Route path="/statistics/short-game-detail" element={<ShortGameStats />} />
             <Route path="/statistics/:category" element={<StatDetail />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
