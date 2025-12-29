@@ -39,6 +39,7 @@ export interface AccuracyStats {
   girPar5: number | null;
   scrambling: number | null;
   sandSaves: number | null;
+  avgDriverDistance: number | null;
 }
 
 export interface PuttingStats {
@@ -193,6 +194,7 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
       ? validSummaries.reduce((sum, s) => sum + (s.updown_percentage || 0), 0) / validSummaries.length 
       : null,
     sandSaves: null, // Would need more detailed data
+    avgDriverDistance: null,
   };
 
   // Fetch hole-level data for GIR by par type
@@ -308,6 +310,8 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     if (holes && holes.length > 0) {
       let sgTee = 0, sgApproach = 0, sgShort = 0, sgPutt = 0, sgOther = 0, sgScoring = 0;
       let shotCount = 0;
+      let totalDriverDistance = 0;
+      let driverDistanceCount = 0;
 
       holes.forEach(hole => {
         if (hole.pro_shot_data && Array.isArray(hole.pro_shot_data)) {
@@ -316,6 +320,15 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
             const type = shot.type;
             const dist = shot.startDistance || 0;
             const category = shot.category; // Check for explicit category if available
+            
+            // Calculate driver distance from tee shots
+            if (type === 'tee' && shot.startDistance && shot.endDistance !== undefined) {
+              const driverDist = shot.startDistance - shot.endDistance;
+              if (driverDist > 0) {
+                totalDriverDistance += driverDist;
+                driverDistanceCount++;
+              }
+            }
             
             if (category === 'other') {
               sgOther += sg;
@@ -349,6 +362,14 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
           other: sgOther !== 0 ? sgOther / roundCount : null,
           scoring: sgScoring !== 0 ? sgScoring / roundCount : null,
         };
+        
+        // Update accuracy with driver distance
+        if (driverDistanceCount > 0) {
+          accuracy = {
+            ...accuracy,
+            avgDriverDistance: totalDriverDistance / driverDistanceCount,
+          };
+        }
       }
     }
   }
