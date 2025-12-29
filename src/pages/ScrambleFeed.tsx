@@ -71,23 +71,32 @@ export default function ScrambleFeed() {
     if (!newComment.trim() || !currentUserId) return;
 
     setLoading(true);
-    const { error } = await supabase
-      .from('round_comments')
-      .insert({
-        game_id: gameId,
-        round_id: gameId!, // Using gameId as round_id for compatibility
-        game_type: 'scramble',
-        user_id: currentUserId,
-        content: newComment.trim()
-      });
+    try {
+      const { data, error } = await supabase
+        .from('round_comments')
+        .insert({
+          game_id: gameId,
+          round_id: gameId!,
+          game_type: 'scramble',
+          user_id: currentUserId,
+          content: newComment.trim()
+        })
+        .select();
 
-    if (error) {
-      toast.error("Failed to post comment");
-    } else {
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        throw new Error("Comment was not saved. Please try again.");
+      }
+
       setNewComment("");
       fetchComments();
+    } catch (error: any) {
+      console.error("Error posting comment:", error);
+      toast.error(error.message || "Failed to post comment");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

@@ -132,20 +132,25 @@ export default function CopenhagenFeed() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("round_comments").insert({
+      const { data, error } = await supabase.from("round_comments").insert({
         round_id: gameId,
         game_id: gameId,
         user_id: currentUserId,
         content: newComment.trim(),
         game_type: "copenhagen",
-      });
+      }).select();
 
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        throw new Error("Comment was not saved. Please try again.");
+      }
 
       setNewComment("");
       fetchComments();
       toast({ title: "Comment posted" });
     } catch (error: any) {
+      console.error("Error posting comment:", error);
       toast({ title: "Error posting comment", description: error.message, variant: "destructive" });
     } finally {
       setSubmitting(false);
