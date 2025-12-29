@@ -107,6 +107,25 @@ const CATEGORIES: Record<string, CategoryConfig> = {
     ],
     getRelevantDrills: (recs) => recs.filter(d => ['Driving', 'Full Swing'].includes(d.category))
   },
+  'fairways': {
+    title: 'Fairways Hit',
+    icon: Target,
+    description: 'Accuracy off the tee',
+    whatItMeasures: 'Fairways Hit measures the percentage of times your tee shot lands in the fairway on par 4s and 5s. It\'s a key indicator of driving accuracy.',
+    whyItMatters: 'Hitting fairways gives you better angles and lies for approach shots. From the fairway, you have more control and can attack pins more aggressively.',
+    tips: [
+      'Prioritize fairways over distance',
+      'Develop a reliable shot shape',
+      'Have a go-to tee shot for pressure situations'
+    ],
+    getStats: (stats) => [
+      { label: 'Fairways Hit', value: formatPercentage(stats.accuracy.fairwaysHit) },
+      { label: 'Left Miss', value: stats.accuracy.leftMissPercentage !== null ? formatPercentage(stats.accuracy.leftMissPercentage) : '-' },
+      { label: 'Right Miss', value: stats.accuracy.rightMissPercentage !== null ? formatPercentage(stats.accuracy.rightMissPercentage) : '-' },
+      { label: 'Average Driver Distance', value: stats.accuracy.avgDriverDistance !== null ? `${Math.round(stats.accuracy.avgDriverDistance)} m` : '-' },
+    ],
+    getRelevantDrills: (recs) => recs.filter(d => ['Driving', 'Full Swing'].includes(d.category))
+  },
   'scoring': {
     title: 'Scoring',
     icon: TrendingUp,
