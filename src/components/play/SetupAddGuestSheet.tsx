@@ -27,20 +27,28 @@ export function SetupAddGuestSheet({
   onAddPlayer,
   defaultTee = DEFAULT_MEN_TEE,
 }: SetupAddGuestSheetProps) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [handicap, setHandicap] = useState("");
 
   const handleAdd = () => {
+    if (!firstName.trim()) return;
+    
+    const displayName = lastName.trim() 
+      ? `${firstName.trim()} ${lastName.trim()}`
+      : firstName.trim();
+    
     const player: Player = {
       odId: `temp_${Date.now()}`,
-      displayName: name.trim() || "Guest Player",
+      displayName,
       handicap: parseHandicap(handicap),
       teeColor: defaultTee,
       isTemporary: true,
     };
 
     onAddPlayer(player);
-    setName("");
+    setFirstName("");
+    setLastName("");
     setHandicap("");
     onClose();
   };
@@ -54,12 +62,22 @@ export function SetupAddGuestSheet({
 
         <div className="space-y-4 pb-6">
           <div className="space-y-2">
-            <Label htmlFor="guest-name">Name</Label>
+            <Label htmlFor="guest-first-name">First Name *</Label>
             <Input
-              id="guest-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter player name"
+              id="guest-first-name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter first name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="guest-last-name">Last Name (optional)</Label>
+            <Input
+              id="guest-last-name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter last name"
             />
           </div>
 
@@ -73,7 +91,7 @@ export function SetupAddGuestSheet({
             />
           </div>
 
-          <Button onClick={handleAdd} className="w-full">
+          <Button onClick={handleAdd} disabled={!firstName.trim()} className="w-full">
             Add Player
           </Button>
         </div>
