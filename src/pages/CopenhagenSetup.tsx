@@ -45,6 +45,7 @@ export default function CopenhagenSetup() {
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
+  const [sweepRuleEnabled, setSweepRuleEnabled] = useState(true);
   const [defaultTee, setDefaultTee] = useState(DEFAULT_MEN_TEE);
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -75,6 +76,7 @@ export default function CopenhagenSetup() {
         setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
         setUseHandicaps(settings.useHandicaps || false);
         setGimmesEnabled(settings.gimmesEnabled || false);
+        setSweepRuleEnabled(settings.sweepRuleEnabled !== false);
         savedDefaultTee = settings.defaultTee || DEFAULT_MEN_TEE;
         setDefaultTee(savedDefaultTee);
       }
@@ -189,7 +191,7 @@ export default function CopenhagenSetup() {
       if (error) throw error;
 
       // Save settings to game-specific localStorage and session storage
-      const copenhagenSettings = { mulligansPerPlayer, useHandicaps, gimmesEnabled, defaultTee };
+      const copenhagenSettings = { mulligansPerPlayer, useHandicaps, gimmesEnabled, sweepRuleEnabled, defaultTee };
       localStorage.setItem(`copenhagenSettings_${game.id}`, JSON.stringify(copenhagenSettings));
       sessionStorage.setItem('copenhagenSettings', JSON.stringify(copenhagenSettings));
 
@@ -348,6 +350,21 @@ export default function CopenhagenSetup() {
                 id="gimmes"
                 checked={gimmesEnabled}
                 onCheckedChange={setGimmesEnabled}
+              />
+            </div>
+
+            {/* Sweep Rule toggle */}
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="sweep">Sweep Rule</Label>
+                <p className="text-xs text-muted-foreground">
+                  One player wins all 6 points with the outright lowest net score
+                </p>
+              </div>
+              <Switch
+                id="sweep"
+                checked={sweepRuleEnabled}
+                onCheckedChange={setSweepRuleEnabled}
               />
             </div>
           </CardContent>
