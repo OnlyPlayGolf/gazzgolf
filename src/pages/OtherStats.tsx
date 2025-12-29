@@ -204,43 +204,19 @@ export default function OtherStats() {
               </CardContent>
             </Card>
 
-            {/* Bunker Shots */}
+            {/* Other Shot Types */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <TrendingUp className="h-5 w-5 text-primary" />
-                  Bunker Shots (40m+)
+                  Other Shot Types (40m+)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <SGRow label="Bunker 40-120m" value={stats.sgBunker40to120} />
                 <SGRow label="Bunker 120-200m" value={stats.sgBunker120to200} />
-              </CardContent>
-            </Card>
-
-            {/* Recovery */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Recovery Shots
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
                 <SGRow label="Recovery 40-120m" value={stats.sgRecovery40to120} />
                 <SGRow label="Recovery 120-240m" value={stats.sgRecovery120to240} />
-              </CardContent>
-            </Card>
-
-            {/* Layup */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Layup Shots
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
                 <SGRow label="Layup 40m+" value={stats.sgLayup40Plus} />
               </CardContent>
             </Card>
