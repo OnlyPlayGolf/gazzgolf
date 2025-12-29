@@ -12,9 +12,9 @@ export function UmbriagioBottomTabBar({ gameId, isSpectator = false }: Umbriagio
   
   const allTabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/umbriago/${gameId}/play`, hideForSpectator: true },
-    { id: "info", label: "Game info", icon: Info, path: `/umbriago/${gameId}/info`, hideForSpectator: false },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/umbriago/${gameId}/feed`, hideForSpectator: false },
     { id: "leaderboard", label: "Leaderboards", icon: List, path: `/umbriago/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/umbriago/${gameId}/feed`, hideForSpectator: false },
+    { id: "info", label: "Game info", icon: Info, path: `/umbriago/${gameId}/info`, hideForSpectator: false },
     { id: "settings", label: "Settings", icon: Settings, path: `/umbriago/${gameId}/settings`, hideForSpectator: false },
   ];
 

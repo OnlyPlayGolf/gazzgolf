@@ -12,9 +12,9 @@ export function RoundBottomTabBar({ roundId, isSpectator = false }: RoundBottomT
   
   const allTabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/rounds/${roundId}/track`, hideForSpectator: true },
-    { id: "info", label: "Game info", icon: Info, path: `/rounds/${roundId}/info`, hideForSpectator: false },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed`, hideForSpectator: false },
     { id: "leaderboard", label: "Leaderboards", icon: List, path: `/rounds/${roundId}/leaderboard`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed`, hideForSpectator: false },
+    { id: "info", label: "Game info", icon: Info, path: `/rounds/${roundId}/info`, hideForSpectator: false },
     { id: "settings", label: "Settings", icon: Settings, path: `/rounds/${roundId}/settings`, hideForSpectator: false },
   ];
 

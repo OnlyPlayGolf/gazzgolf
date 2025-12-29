@@ -12,9 +12,9 @@ export function MatchPlayBottomTabBar({ gameId, isSpectator = false }: MatchPlay
 
   const allTabs = [
     { id: "play", label: "Enter score", icon: Pencil, path: `/match-play/${gameId}/play`, hideForSpectator: true },
-    { id: "info", label: "Game info", icon: Info, path: `/match-play/${gameId}/info`, hideForSpectator: false },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/match-play/${gameId}/feed`, hideForSpectator: false },
     { id: "leaderboard", label: "Leaderboards", icon: List, path: `/match-play/${gameId}/leaderboard`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/match-play/${gameId}/feed`, hideForSpectator: false },
+    { id: "info", label: "Game info", icon: Info, path: `/match-play/${gameId}/info`, hideForSpectator: false },
     { id: "settings", label: "Settings", icon: Settings, path: `/match-play/${gameId}/settings`, hideForSpectator: false },
   ];
 
