@@ -101,6 +101,7 @@ const CATEGORIES: Record<string, CategoryConfig> = {
     getStats: (stats) => [
       { label: 'SG Off the Tee', value: formatSG(stats.strokesGained.offTheTee), isPositive: (stats.strokesGained.offTheTee ?? 0) >= 0 },
       { label: 'Fairways Hit', value: formatPercentage(stats.accuracy.fairwaysHit) },
+      { label: 'Average Driver Distance', value: stats.accuracy.avgDriverDistance !== null ? `${Math.round(stats.accuracy.avgDriverDistance)} m` : '-' },
     ],
     getRelevantDrills: (recs) => recs.filter(d => ['Driving', 'Full Swing'].includes(d.category))
   },
