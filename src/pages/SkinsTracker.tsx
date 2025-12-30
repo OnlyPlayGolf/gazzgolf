@@ -65,11 +65,10 @@ export default function SkinsTracker() {
   const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('skins', roundId);
   
   useEffect(() => {
-    // Only apply spectator redirect for "new" Skins games that exist in skins_games.
-    if (!spectatorLoading && skinsGameExists === true && isSpectator && roundId) {
+    if (!spectatorLoading && isSpectator && roundId) {
       navigate(`/skins/${roundId}/leaderboard`, { replace: true });
     }
-  }, [isSpectator, spectatorLoading, skinsGameExists, roundId, navigate]);
+  }, [isSpectator, spectatorLoading, roundId, navigate]);
   
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
