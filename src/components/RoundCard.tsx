@@ -24,6 +24,10 @@ export interface RoundCardData {
   
   // Copenhagen-specific: player's position (1, 2, or 3)
   position?: number | null;
+  
+  // Match Play specific: W/L/T result and final score (e.g., "3 & 2")
+  matchResult?: 'W' | 'L' | 'T' | null;
+  matchFinalScore?: string | null;
 }
 
 interface RoundCardProps {
@@ -60,12 +64,23 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   // Only show score for regular stroke play rounds
   const showScore = round.gameType === 'round' || !round.gameType;
   
+  // Check if this is a match play format (including best ball match play)
+  const isMatchPlay = round.gameType === 'match_play' || 
+    (round.gameType === 'best_ball' && round.matchResult);
+  
   // Format position for Copenhagen games
   const formatPosition = (pos: number) => {
     if (pos === 1) return '1st';
     if (pos === 2) return '2nd';
     if (pos === 3) return '3rd';
     return `${pos}th`;
+  };
+
+  // Get color for match result
+  const getMatchResultColor = (result: 'W' | 'L' | 'T') => {
+    if (result === 'W') return 'text-emerald-600';
+    if (result === 'L') return 'text-destructive';
+    return 'text-muted-foreground';
   };
 
   return (
@@ -75,11 +90,22 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
-          {/* Left: Score or Position */}
+          {/* Left: Score, Position, or Match Result */}
           <div className="flex-shrink-0 w-14 text-center">
             {round.gameType === 'copenhagen' && round.position ? (
               <div className={`text-2xl font-bold ${round.position === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
                 {formatPosition(round.position)}
+              </div>
+            ) : isMatchPlay && round.matchResult ? (
+              <div className="flex flex-col items-center">
+                <div className={`text-2xl font-bold ${getMatchResultColor(round.matchResult)}`}>
+                  {round.matchResult}
+                </div>
+                {round.matchFinalScore && (
+                  <div className="text-xs text-muted-foreground">
+                    {round.matchFinalScore}
+                  </div>
+                )}
               </div>
             ) : showScore ? (
               <div className={`text-2xl font-bold ${round.score <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
