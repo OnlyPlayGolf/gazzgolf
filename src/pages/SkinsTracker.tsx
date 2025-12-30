@@ -67,7 +67,7 @@ export default function SimpleSkinsTracker() {
   
   useEffect(() => {
     if (!spectatorLoading && isSpectator && roundId) {
-      navigate(`/round/${roundId}/leaderboard`, { replace: true });
+      navigate(`/skins/${roundId}/leaderboard`, { replace: true });
     }
   }, [isSpectator, spectatorLoading, roundId, navigate]);
   
