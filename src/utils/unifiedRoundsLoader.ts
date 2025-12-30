@@ -100,7 +100,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 4: best ball owned
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
@@ -128,7 +128,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 8: match play owned
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished")
       .eq("user_id", targetUserId)
       .then((r) => r),
   ];
@@ -168,12 +168,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const bestBallParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished")
       .contains("team_a_players", [{ name }])
       .then((r) => r),
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished")
       .contains("team_b_players", [{ name }])
       .then((r) => r),
   ]);
@@ -245,12 +245,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const matchPlayParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished")
       .eq("player_1", name)
       .then((r) => r),
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished")
       .eq("player_2", name)
       .then((r) => r),
   ]);
@@ -476,6 +476,33 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     const teamA = Array.isArray(game.team_a_players) ? game.team_a_players : [];
     const teamB = Array.isArray(game.team_b_players) ? game.team_b_players : [];
 
+    // Determine match result for match play best ball games
+    let matchResult: 'W' | 'L' | 'T' | null = null;
+    let matchFinalScore: string | null = null;
+    
+    if (game.game_type === 'match_play' && game.is_finished) {
+      // Find which team the user is on
+      const userInTeamA = teamA.some((p: any) => 
+        participantNames.includes(typeof p === 'string' ? p : p?.name)
+      );
+      const userInTeamB = teamB.some((p: any) => 
+        participantNames.includes(typeof p === 'string' ? p : p?.name)
+      );
+      
+      if (game.winner_team === null || game.winner_team === '') {
+        matchResult = 'T';
+      } else if (userInTeamA) {
+        matchResult = game.winner_team === 'team_a' ? 'W' : 'L';
+      } else if (userInTeamB) {
+        matchResult = game.winner_team === 'team_b' ? 'W' : 'L';
+      } else if (game.user_id === targetUserId) {
+        // Owner defaults to team A
+        matchResult = game.winner_team === 'team_a' ? 'W' : 'L';
+      }
+      
+      matchFinalScore = game.final_result || null;
+    }
+
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
@@ -483,10 +510,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       date: game.date_played,
       score: 0,
       playerCount: teamA.length + teamB.length,
-      gameMode: "Best Ball",
+      gameMode: game.game_type === 'match_play' ? "Best Ball Match Play" : "Best Ball",
       gameType: "best_ball",
       holesPlayed: game.holes_played,
       ownerUserId: game.user_id || targetUserId,
+      matchResult,
+      matchFinalScore,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
@@ -560,6 +589,29 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
 
   // Match Play
   for (const game of matchPlayGames) {
+    // Determine match result
+    let matchResult: 'W' | 'L' | 'T' | null = null;
+    let matchFinalScore: string | null = null;
+    
+    if (game.is_finished) {
+      // Check if user is player 1 or player 2
+      const isPlayer1 = participantNames.includes(game.player_1) || game.user_id === targetUserId;
+      const isPlayer2 = participantNames.includes(game.player_2);
+      
+      if (game.winner_player === null || game.winner_player === '') {
+        matchResult = 'T';
+      } else if (isPlayer1 && !isPlayer2) {
+        matchResult = game.winner_player === game.player_1 ? 'W' : 'L';
+      } else if (isPlayer2 && !isPlayer1) {
+        matchResult = game.winner_player === game.player_2 ? 'W' : 'L';
+      } else if (isPlayer1) {
+        // Default to player 1 perspective for owner
+        matchResult = game.winner_player === game.player_1 ? 'W' : 'L';
+      }
+      
+      matchFinalScore = game.final_result || null;
+    }
+
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
@@ -572,6 +624,8 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       holesPlayed: game.holes_played,
       teeSet: game.tee_set,
       ownerUserId: game.user_id || targetUserId,
+      matchResult,
+      matchFinalScore,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
