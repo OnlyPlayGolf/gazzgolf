@@ -135,6 +135,7 @@ import HowToPlayScramble from "./pages/HowToPlayScramble";
 import SkinsSetup from "./pages/SkinsSetup";
 import SkinsTracker from "./pages/SkinsTracker";
 import SkinsInfo from "./pages/SkinsInfo";
+import SkinsFeed from "./pages/SkinsFeed";
 import SkinsLeaderboard from "./pages/SkinsLeaderboard";
 import SkinsSettings from "./pages/SkinsSettings";
 import SkinsSummary from "./pages/SkinsSummary";
@@ -283,6 +284,7 @@ const App = () => {
             <Route path="/skins/setup" element={<SkinsSetup />} />
             <Route path="/skins/:roundId/track" element={<SkinsTracker />} />
             <Route path="/skins/:roundId/info" element={<SkinsInfo />} />
+            <Route path="/skins/:roundId/feed" element={<SkinsFeed />} />
             <Route path="/skins/:roundId/leaderboard" element={<SkinsLeaderboard />} />
             <Route path="/skins/:roundId/settings" element={<SkinsSettings />} />
             <Route path="/skins/:roundId/summary" element={<SkinsSummary />} />

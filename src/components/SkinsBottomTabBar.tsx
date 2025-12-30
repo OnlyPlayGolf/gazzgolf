@@ -13,7 +13,7 @@ export function SkinsBottomTabBar({ roundId, isSpectator = false }: SkinsBottomT
   const allTabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/skins/${roundId}/track`, hideForSpectator: true },
     { id: "leaderboard", label: "Leaderboard", icon: List, path: `/skins/${roundId}/leaderboard`, hideForSpectator: false },
-    { id: "feed", label: "Game feed", icon: Newspaper, path: `/rounds/${roundId}/feed`, hideForSpectator: false },
+    { id: "feed", label: "Game feed", icon: Newspaper, path: `/skins/${roundId}/feed`, hideForSpectator: false },
     { id: "info", label: "Game info", icon: Info, path: `/skins/${roundId}/info`, hideForSpectator: false },
     { id: "settings", label: "Settings", icon: Settings, path: `/skins/${roundId}/settings`, hideForSpectator: false },
   ];
