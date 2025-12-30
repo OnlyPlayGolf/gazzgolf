@@ -84,7 +84,7 @@ export default function RoundTracker() {
   
   useEffect(() => {
     if (!spectatorLoading && isSpectator && roundId) {
-      navigate(`/round/${roundId}/leaderboard`, { replace: true });
+      navigate(`/rounds/${roundId}/leaderboard`, { replace: true });
     }
   }, [isSpectator, spectatorLoading, roundId, navigate]);
   
