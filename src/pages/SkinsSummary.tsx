@@ -367,7 +367,7 @@ export default function SimpleSkinsSummary() {
       <RoundShareDialog
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
-        roundName={round.round_name || 'Simple Skins'}
+        roundName={round.round_name || 'Skins'}
         courseName={round.course_name}
         score={winnerSkins}
         scoreVsPar={0}

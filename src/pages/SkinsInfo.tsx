@@ -15,14 +15,14 @@ export default function SkinsInfo() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="text-primary" />
-              About Simple Skins
+              About Skins
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <h3 className="font-semibold text-sm">Overview</h3>
               <p className="text-sm text-muted-foreground">
-                Simple Skins is a fun and competitive format where players compete for "skins" on each hole. Each hole is worth one skin, and the player with the outright lowest score wins the skin for that hole.
+                Skins is a fun and competitive format where players compete for "skins" on each hole. Each hole is worth one skin, and the player with the outright lowest score wins the skin for that hole.
               </p>
             </div>
 

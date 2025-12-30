@@ -682,7 +682,7 @@ export default function SimpleSkinsTracker() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">{round.round_name || 'Simple Skins'}</h1>
+              <h1 className="text-xl font-bold">{round.round_name || 'Skins'}</h1>
               <p className="text-sm text-muted-foreground">{round.course_name}</p>
             </div>
             <div className="w-10" />

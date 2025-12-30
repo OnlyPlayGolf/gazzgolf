@@ -13,7 +13,7 @@ export default function HowToPlaySimpleSkins() {
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="p-2">
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-2xl font-bold">How to Play Simple Skins</h1>
+          <h1 className="text-2xl font-bold">How to Play Skins</h1>
         </div>
 
         <div className="space-y-4">
@@ -26,9 +26,8 @@ export default function HowToPlaySimpleSkins() {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>
-                Simple Skins is a fun and competitive format where players compete
-                for "skins" on each hole. It uses the same simple interface as Stroke Play
-                for easy score entry.
+                Skins is a fun and competitive format where players compete
+                for "skins" on each hole. It uses a simple interface for easy score entry.
               </p>
               <p>
                 Each hole is worth one skin. The player with the outright lowest score
@@ -98,16 +97,14 @@ export default function HowToPlaySimpleSkins() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Simple Skins vs Regular Skins</CardTitle>
+              <CardTitle className="text-lg">Tips</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>
-                <strong>Simple Skins:</strong> Uses the familiar Stroke Play interface. 
-                Just enter scores hole-by-hole with automatic skin calculation.
+                <strong>Strategy:</strong> Taking calculated risks can pay off, especially when multiple skins are on the line from carryovers.
               </p>
               <p>
-                <strong>Regular Skins:</strong> Offers more options like handicaps, 
-                net scoring, and custom skin values.
+                <strong>Pressure:</strong> Skins creates exciting high-stakes moments as carryovers accumulate!
               </p>
             </CardContent>
           </Card>

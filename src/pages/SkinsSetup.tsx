@@ -221,7 +221,7 @@ export default function SimpleSkinsSetup() {
       sessionStorage.removeItem('datePlayed');
 
       toast({ title: "Game started!", description: `Good luck at ${selectedCourse.name}` });
-      navigate(`/simple-skins/${round.id}/track`);
+      navigate(`/skins/${round.id}/track`);
     } catch (error: any) {
       toast({ title: "Error creating game", description: error.message, variant: "destructive" });
     } finally {
@@ -237,7 +237,7 @@ export default function SimpleSkinsSetup() {
           <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')} className="p-2">
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">Simple Skins Setup</h1>
+          <h1 className="text-2xl font-bold text-foreground">Skins Setup</h1>
         </div>
 
         {/* Course Info - Compact */}
