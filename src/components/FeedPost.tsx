@@ -144,49 +144,65 @@ const parseGameResult = (content: string) => {
 };
 
 // Drill Result Card Component - matches RoundCard layout
-const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick }: { 
+const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, date, onClick }: { 
   drillTitle: string; 
   score: string; 
   unit: string; 
   isPersonalBest: boolean;
+  date?: string;
   onClick?: () => void;
-}) => (
-  <Card 
-    className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all group"
-    onClick={onClick}
-  >
-    <CardContent className="p-4">
-      <div className="flex items-center gap-4">
-        {/* Left: Score */}
-        <div className="flex-shrink-0 w-14 text-center">
-          <div className="text-2xl font-bold text-primary">{score}</div>
-          <div className="text-xs text-muted-foreground">{unit}</div>
-        </div>
-        
-        {/* Middle: Details */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{drillTitle}</h3>
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-            <Target className="h-3 w-3" />
-            <span>Drill Result</span>
-            {isPersonalBest && (
-              <>
-                <span>·</span>
-                <span className="flex items-center gap-1 text-amber-600">
+}) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  return (
+    <Card 
+      className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all group"
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          {/* Left: Score */}
+          <div className="flex-shrink-0 w-14 text-center">
+            <div className="text-2xl font-bold text-primary">{score}</div>
+            <div className="text-xs text-muted-foreground">{unit}</div>
+          </div>
+          
+          {/* Middle: Details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground truncate">{drillTitle}</h3>
+              {isPersonalBest && (
+                <span className="flex items-center gap-1 text-xs text-amber-600 flex-shrink-0">
                   <Trophy className="h-3 w-3" />
                   PB
                 </span>
-              </>
-            )}
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+              <Target className="h-3 w-3" />
+              <span>Drill Result</span>
+              {date && (
+                <>
+                  <span>·</span>
+                  <span>{formatDate(date)}</span>
+                </>
+              )}
+            </div>
           </div>
+          
+          {/* Right: Chevron */}
+          <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
         </div>
-        
-        {/* Right: Chevron */}
-        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
 // Helper to convert game type string to RoundCard gameType
 const getGameTypeForCard = (gameType: string): RoundCardData['gameType'] => {
@@ -538,6 +554,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               score={drillResult.score}
               unit={drillResult.unit}
               isPersonalBest={drillResult.isPersonalBest}
+              date={post.created_at}
               onClick={async () => {
                 if (drillResult.resultId) {
                   navigate(`/drill-result/${drillResult.resultId}`);
