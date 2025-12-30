@@ -112,15 +112,31 @@ const parseUmbriagioResult = (content: string) => {
 
 // Parse game result from post content (for Best Ball, Match Play, Skins, etc.)
 const parseGameResult = (content: string) => {
-  const match = content?.match(/\[GAME_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/GAME_RESULT\]/);
-  if (match) {
+  // New format with roundName: [GAME_RESULT]gameType|courseName|roundName|winner|resultText|additionalInfo|gameId[/GAME_RESULT]
+  const newMatch = content?.match(/\[GAME_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/GAME_RESULT\]/);
+  if (newMatch) {
     return {
-      gameType: match[1],
-      courseName: match[2],
-      winner: match[3] || null,
-      resultText: match[4] || null,
-      additionalInfo: match[5] || null,
-      gameId: match[6] || null,
+      gameType: newMatch[1],
+      courseName: newMatch[2],
+      roundName: newMatch[3] || null,
+      winner: newMatch[4] || null,
+      resultText: newMatch[5] || null,
+      additionalInfo: newMatch[6] || null,
+      gameId: newMatch[7] || null,
+      textContent: content.replace(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/, '').trim()
+    };
+  }
+  // Old format without roundName (for backwards compatibility)
+  const oldMatch = content?.match(/\[GAME_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/GAME_RESULT\]/);
+  if (oldMatch) {
+    return {
+      gameType: oldMatch[1],
+      courseName: oldMatch[2],
+      roundName: null,
+      winner: oldMatch[3] || null,
+      resultText: oldMatch[4] || null,
+      additionalInfo: oldMatch[5] || null,
+      gameId: oldMatch[6] || null,
       textContent: content.replace(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/, '').trim()
     };
   }
@@ -525,7 +541,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             <RoundCard 
               round={{
                 id: gameResult.gameId || '',
-                round_name: gameResult.winner || gameResult.gameType,
+                round_name: gameResult.roundName || gameResult.gameType,
                 course_name: gameResult.courseName,
                 date: new Date().toISOString(),
                 score: 0,

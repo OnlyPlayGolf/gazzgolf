@@ -137,6 +137,7 @@ export default function CopenhagenSummary() {
         onOpenChange={setShowCompletionDialog}
         gameType="Copenhagen"
         courseName={game.course_name}
+        roundName={game.round_name || undefined}
         winner={players[0].name}
         resultText={`${players[0].points} points`}
         additionalInfo={`${game.player_1}, ${game.player_2}, ${game.player_3}`}
@@ -150,6 +151,7 @@ export default function CopenhagenSummary() {
         onOpenChange={setShowShareDialog}
         gameType="Copenhagen"
         courseName={game.course_name}
+        roundName={game.round_name || undefined}
         winner={players[0].name}
         resultText={`${players[0].points} points`}
         additionalInfo={`${game.player_1}, ${game.player_2}, ${game.player_3}`}

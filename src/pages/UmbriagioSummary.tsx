@@ -145,9 +145,11 @@ export default function UmbriagioSummary() {
         onOpenChange={setShowShareDialog}
         gameType="Umbriago"
         courseName={game.course_name}
+        roundName={game.round_name || undefined}
         winner={getWinnerName()}
         resultText={`${game.team_a_total_points} - ${game.team_b_total_points}`}
         additionalInfo={`Team A vs Team B`}
+        gameId={gameId}
         onContinue={() => navigate("/rounds-play")}
       />
 

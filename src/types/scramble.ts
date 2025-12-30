@@ -22,6 +22,7 @@ export interface ScrambleGame {
   holes_played: number;
   date_played: string;
   created_at: string;
+  round_name?: string | null;
   
   teams: ScrambleTeam[];
   
