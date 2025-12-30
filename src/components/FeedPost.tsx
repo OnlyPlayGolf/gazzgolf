@@ -233,14 +233,16 @@ const getTableFromGameType = (gameType: string): string => {
 };
 
 // Component that fetches game data and renders RoundCard
-const GameResultCardFromDB = ({ 
-  gameType, 
-  gameId, 
+const GameResultCardFromDB = ({
+  gameType,
+  gameId,
+  resultUserId,
   fallbackCourseName,
   fallbackRoundName,
-}: { 
-  gameType: string; 
-  gameId: string; 
+}: {
+  gameType: string;
+  gameId: string;
+  resultUserId: string;
   fallbackCourseName: string;
   fallbackRoundName: string | null;
 }) => {
@@ -256,26 +258,127 @@ const GameResultCardFromDB = ({
         return;
       }
 
+      const selectFields = (() => {
+        if (tableName === "match_play_games") {
+          return "id, course_name, round_name, date_played, holes_played, winner_player, final_result, is_finished, player_1, player_2";
+        }
+        if (tableName === "best_ball_games") {
+          return "id, course_name, round_name, date_played, holes_played, game_type, winner_team, final_result, is_finished, team_a_players, team_b_players";
+        }
+        return "id, course_name, round_name, date_played, holes_played";
+      })();
+
       try {
-        const { data, error } = await supabase
-          .from(tableName as any)
-          .select('id, course_name, round_name, date_played, holes_played')
-          .eq('id', gameId)
-          .single();
+        const [{ data, error }, { data: resultUserProfile }] = await Promise.all([
+          supabase
+            .from(tableName as any)
+            .select(selectFields)
+            .eq("id", gameId)
+            .single(),
+          supabase
+            .from("profiles")
+            .select("display_name, username")
+            .eq("id", resultUserId)
+            .maybeSingle(),
+        ]);
 
         if (error || !data) {
           setLoading(false);
           return;
         }
 
-        const gameRecord = data as unknown as { id: string; course_name: string; round_name: string | null; date_played: string; holes_played: number };
+        const participantNamesRaw = [
+          resultUserProfile?.display_name,
+          resultUserProfile?.username,
+        ]
+          .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+          .map((v) => v.trim());
+
+        const participantNames = Array.from(new Set(participantNamesRaw));
+
+        const extractPlayerNames = (playersJson: any): string[] => {
+          if (!Array.isArray(playersJson)) return [];
+          return playersJson
+            .map((p) => {
+              if (typeof p === "string") return p;
+              if (p && typeof p === "object" && typeof p.name === "string") return p.name;
+              return null;
+            })
+            .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+            .map((v) => v.trim());
+        };
+
+        const computeMatchPlayOutcome = (): {
+          matchResult: RoundCardData["matchResult"];
+          matchFinalScore: string | null;
+        } => {
+          // Default (not match play / can't determine)
+          let matchResult: RoundCardData["matchResult"] = null;
+          let matchFinalScore: string | null = null;
+
+          if (tableName === "match_play_games") {
+            const g = data as any;
+            if (!g?.is_finished) return { matchResult, matchFinalScore };
+
+            const userIsPlayer1 = participantNames.includes(g.player_1);
+            const userIsPlayer2 = participantNames.includes(g.player_2);
+            if (!userIsPlayer1 && !userIsPlayer2) return { matchResult, matchFinalScore };
+
+            if (!g.winner_player) {
+              matchResult = "T";
+              matchFinalScore = null;
+              return { matchResult, matchFinalScore };
+            }
+
+            matchResult = participantNames.includes(g.winner_player) ? "W" : "L";
+            matchFinalScore = matchResult === "T" ? null : (g.final_result ?? null);
+            return { matchResult, matchFinalScore };
+          }
+
+          if (tableName === "best_ball_games") {
+            const g = data as any;
+            if (g?.game_type !== "match_play") return { matchResult, matchFinalScore };
+            if (!g?.is_finished) return { matchResult, matchFinalScore };
+
+            const teamAPlayers = extractPlayerNames(g.team_a_players);
+            const teamBPlayers = extractPlayerNames(g.team_b_players);
+
+            const isOnTeamA = participantNames.some((n) => teamAPlayers.includes(n));
+            const isOnTeamB = participantNames.some((n) => teamBPlayers.includes(n));
+
+            const userTeam = isOnTeamA ? "A" : isOnTeamB ? "B" : null;
+            if (!userTeam) return { matchResult, matchFinalScore };
+
+            if (!g.winner_team) {
+              matchResult = "T";
+              matchFinalScore = null;
+              return { matchResult, matchFinalScore };
+            }
+
+            matchResult = g.winner_team === userTeam ? "W" : "L";
+            matchFinalScore = matchResult === "T" ? null : (g.final_result ?? null);
+            return { matchResult, matchFinalScore };
+          }
+
+          return { matchResult, matchFinalScore };
+        };
+
+        const { matchResult, matchFinalScore } = computeMatchPlayOutcome();
+
+        const gameRecord = data as unknown as {
+          id: string;
+          course_name: string;
+          round_name: string | null;
+          date_played: string;
+          holes_played: number;
+        };
 
         // Calculate player count based on game type
         let playerCount = 2;
-        if (gameType === 'Copenhagen') playerCount = 3;
-        else if (gameType === 'Wolf') playerCount = 4;
-        else if (gameType === 'Umbriago') playerCount = 4;
-        else if (gameType === 'Best Ball' || gameType === 'Scramble') playerCount = 4;
+        if (gameType === "Copenhagen") playerCount = 3;
+        else if (gameType === "Wolf") playerCount = 4;
+        else if (gameType === "Umbriago") playerCount = 4;
+        else if (gameType === "Best Ball" || gameType === "Scramble") playerCount = 4;
 
         setGameData({
           id: gameRecord.id,
@@ -287,28 +390,30 @@ const GameResultCardFromDB = ({
           gameMode: gameType,
           gameType: getGameTypeForCard(gameType),
           holesPlayed: gameRecord.holes_played,
+          matchResult,
+          matchFinalScore,
         });
       } catch (err) {
-        console.error('Error fetching game data:', err);
+        console.error("Error fetching game data:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchGameData();
-  }, [gameType, gameId]);
+  }, [gameType, gameId, resultUserId]);
 
   const handleClick = () => {
     if (gameId) {
-      const gameTypeLower = gameType.toLowerCase().replace(/\s+/g, '-');
+      const gameTypeLower = gameType.toLowerCase().replace(/\s+/g, "-");
       const routeMap: Record<string, string> = {
-        'best-ball': 'best-ball',
-        'match-play': 'match-play',
-        'skins': 'skins',
-        'wolf': 'wolf',
-        'copenhagen': 'copenhagen',
-        'scramble': 'scramble',
-        'umbriago': 'umbriago',
+        "best-ball": "best-ball",
+        "match-play": "match-play",
+        skins: "skins",
+        wolf: "wolf",
+        copenhagen: "copenhagen",
+        scramble: "scramble",
+        umbriago: "umbriago",
       };
       const route = routeMap[gameTypeLower] || gameTypeLower;
       navigate(`/${route}/${gameId}/summary`);
@@ -653,6 +758,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               <GameResultCardFromDB 
                 gameType="Umbriago"
                 gameId={umbriagioResult.gameId}
+                resultUserId={post.user_id}
                 fallbackCourseName={umbriagioResult.courseName}
                 fallbackRoundName={null}
               />
@@ -695,6 +801,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               <GameResultCardFromDB 
                 gameType={gameResult.gameType}
                 gameId={gameResult.gameId}
+                resultUserId={post.user_id}
                 fallbackCourseName={gameResult.courseName}
                 fallbackRoundName={gameResult.roundName}
               />
