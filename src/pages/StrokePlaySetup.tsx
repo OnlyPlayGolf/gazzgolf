@@ -182,6 +182,9 @@ export default function StrokePlaySetup() {
         return;
       }
 
+      // Determine starting hole based on selectedHoles
+      const startingHole = selectedHoles === 'back9' ? 10 : 1;
+
       // Create the round
       const { data: round, error } = await supabase
         .from("rounds")
@@ -191,6 +194,7 @@ export default function StrokePlaySetup() {
           round_name: roundName || null,
           tee_set: teeColor,
           holes_played: getHolesPlayed(),
+          starting_hole: startingHole,
           origin: 'play',
           date_played: datePlayed,
         })

@@ -247,10 +247,17 @@ export default function RoundTracker() {
           .order("hole_number");
 
         if (!holesError && holesData) {
-          // Filter holes based on holes_played
+          // Filter holes based on holes_played and starting_hole
           let filteredHoles = holesData;
           if (roundData.holes_played === 9) {
-            filteredHoles = holesData.slice(0, 9);
+            const startingHole = roundData.starting_hole || 1;
+            if (startingHole === 10) {
+              // Back 9: filter holes 10-18
+              filteredHoles = holesData.filter(h => h.hole_number >= 10);
+            } else {
+              // Front 9: filter holes 1-9
+              filteredHoles = holesData.filter(h => h.hole_number <= 9);
+            }
           }
           
           holesArray = filteredHoles;
@@ -261,10 +268,11 @@ export default function RoundTracker() {
       if (holesArray.length === 0) {
         const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5]; // Default 9-hole pars
         const numHoles = roundData.holes_played || 18;
+        const startingHole = roundData.starting_hole || 1;
         
         holesArray = Array.from({ length: numHoles }, (_, i) => ({
-          hole_number: i + 1,
-          par: i < 9 ? defaultPar[i] : defaultPar[i % 9],
+          hole_number: startingHole + i,
+          par: (startingHole + i - 1) < 9 ? defaultPar[(startingHole + i - 1) % 9] : defaultPar[(startingHole + i - 1) % 9],
           stroke_index: i + 1,
         }));
       }
