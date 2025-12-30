@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Send, Trophy, Target, MapPin, MoreHorizontal, Pencil, Trash2, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Send, Trophy, Target, MoreHorizontal, Pencil, Trash2, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +14,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { RoundCard, RoundCardData } from "./RoundCard";
+import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 
 // Parse drill result from post content
 const parseDrillResult = (content: string) => {
@@ -162,160 +164,23 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick }: {
   </div>
 );
 
-// Round Result Card Component
-const RoundResultCard = ({ roundName, courseName, score, scoreVsPar, holesPlayed, onClick }: { 
-  roundName: string;
-  courseName: string; 
-  score: number; 
-  scoreVsPar: number; 
-  holesPlayed: number;
-  onClick?: () => void;
-}) => {
-  const formatScoreVsPar = (diff: number) => {
-    if (diff === 0) return "E";
-    return diff > 0 ? `+${diff}` : `${diff}`;
+// Helper to convert game type string to RoundCard gameType
+const getGameTypeForCard = (gameType: string): RoundCardData['gameType'] => {
+  const typeMap: Record<string, RoundCardData['gameType']> = {
+    'Best Ball': 'best_ball',
+    'Match Play': 'match_play',
+    'Skins': 'skins',
+    'Wolf': 'wolf',
+    'Copenhagen': 'copenhagen',
+    'Scramble': 'scramble',
+    'Umbriago': 'umbriago',
   };
-
-  return (
-    <div 
-      className="bg-card border border-border rounded-xl p-4 transition-all cursor-pointer hover:bg-muted/50 group"
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-4">
-        {/* Left: Score */}
-        <div className="flex-shrink-0 w-14 text-center">
-          <div className={`text-2xl font-bold ${scoreVsPar <= 0 ? 'text-emerald-600' : 'text-foreground'}`}>
-            {formatScoreVsPar(scoreVsPar)}
-          </div>
-        </div>
-        
-        {/* Middle: Details */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">
-            {roundName || 'Round'}
-          </h3>
-          <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-            <span className="truncate">{courseName}</span>
-          </div>
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-            <span>Stroke Play</span>
-            <span>·</span>
-            <span>{holesPlayed} holes</span>
-          </div>
-        </div>
-        
-        {/* Right: Chevron */}
-        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
-      </div>
-    </div>
-  );
+  return typeMap[gameType] || 'round';
 };
 
-// Umbriago Result Card Component - styled to match RoundCard
-const UmbriagioResultCard = ({ courseName, teamAPoints, teamBPoints, winningTeam, teamAPlayers, teamBPlayers, onClick }: { 
-  courseName: string; 
-  teamAPoints: number; 
-  teamBPoints: number; 
-  winningTeam: string;
-  teamAPlayers: string;
-  teamBPlayers: string;
-  onClick?: () => void;
-}) => {
-  const getWinnerNames = () => {
-    if (winningTeam === 'TIE') return 'Tie Game';
-    if (winningTeam === 'A') return teamAPlayers;
-    if (winningTeam === 'B') return teamBPlayers;
-    return '';
-  };
-
-  const getResultText = () => {
-    if (winningTeam === 'TIE') return 'Tie';
-    const diff = Math.abs(teamAPoints - teamBPoints);
-    return `${diff} pts`;
-  };
-
-  return (
-    <div 
-      className="bg-card border border-border rounded-xl p-4 transition-all cursor-pointer hover:bg-muted/50 group"
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-4">
-        {/* Left: Result */}
-        <div className="flex-shrink-0 w-14 text-center">
-          <div className={`text-2xl font-bold ${winningTeam !== 'null' ? 'text-emerald-600' : 'text-foreground'}`}>
-            {getResultText()}
-          </div>
-        </div>
-        
-        {/* Middle: Details */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">
-            {getWinnerNames() || 'Umbriago'}
-          </h3>
-          <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-            <span className="truncate">{courseName}</span>
-          </div>
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-            <span>Umbriago</span>
-            <span>·</span>
-            <span>{teamAPoints} vs {teamBPoints}</span>
-          </div>
-        </div>
-        
-        {/* Right: Chevron */}
-        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
-      </div>
-    </div>
-  );
-};
-
-// Game Result Card Component (for Best Ball, Match Play, Skins, Wolf, Copenhagen, Scramble)
-// Styled to match RoundCard for consistency
-const GameResultCard = ({ gameType, courseName, winner, resultText, additionalInfo, onClick }: { 
-  gameType: string;
-  courseName: string; 
-  winner: string | null;
-  resultText: string | null;
-  additionalInfo: string | null;
-  onClick?: () => void;
-}) => {
-  return (
-    <div 
-      className="bg-card border border-border rounded-xl p-4 transition-all cursor-pointer hover:bg-muted/50 group"
-      onClick={onClick}
-    >
-      <div className="flex items-center gap-4">
-        {/* Left: Result */}
-        <div className="flex-shrink-0 w-14 text-center">
-          <div className={`text-lg font-bold ${winner ? 'text-emerald-600' : 'text-foreground'}`}>
-            {resultText || '—'}
-          </div>
-        </div>
-        
-        {/* Middle: Details */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">
-            {winner || gameType}
-          </h3>
-          <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-            <span className="truncate">{courseName}</span>
-          </div>
-          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-            <span>{gameType}</span>
-            {additionalInfo && (
-              <>
-                <span>·</span>
-                <span>{additionalInfo}</span>
-              </>
-            )}
-          </div>
-        </div>
-        
-        {/* Right: Chevron */}
-        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
-      </div>
-    </div>
-  );
+// Helper to get game mode label
+const getGameModeLabel = (gameType: string): string => {
+  return gameType;
 };
 
 interface FeedPostProps {
@@ -555,12 +420,18 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             {roundResult.textContent && (
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundResult.textContent}</p>
             )}
-            <RoundResultCard 
-              roundName={roundResult.roundName}
-              courseName={roundResult.courseName}
-              score={roundResult.score}
-              scoreVsPar={roundResult.scoreVsPar}
-              holesPlayed={roundResult.holesPlayed}
+            <RoundCard 
+              round={{
+                id: roundResult.roundId || '',
+                round_name: roundResult.roundName,
+                course_name: roundResult.courseName,
+                date: new Date().toISOString(),
+                score: roundResult.scoreVsPar,
+                playerCount: 1,
+                gameMode: 'Stroke Play',
+                gameType: 'round',
+                holesPlayed: roundResult.holesPlayed,
+              }}
               onClick={async () => {
                 if (roundResult.roundId) {
                   sessionStorage.setItem(`spectator_return_${roundResult.roundId}`, location.pathname);
@@ -612,13 +483,19 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             {umbriagioResult.textContent && (
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">{umbriagioResult.textContent}</p>
             )}
-            <UmbriagioResultCard 
-              courseName={umbriagioResult.courseName}
-              teamAPoints={umbriagioResult.teamAPoints}
-              teamBPoints={umbriagioResult.teamBPoints}
-              winningTeam={umbriagioResult.winningTeam}
-              teamAPlayers={umbriagioResult.teamAPlayers}
-              teamBPlayers={umbriagioResult.teamBPlayers}
+            <RoundCard 
+              round={{
+                id: umbriagioResult.gameId || '',
+                round_name: umbriagioResult.winningTeam === 'A' ? umbriagioResult.teamAPlayers : 
+                           umbriagioResult.winningTeam === 'B' ? umbriagioResult.teamBPlayers : 
+                           'Tie Game',
+                course_name: umbriagioResult.courseName,
+                date: new Date().toISOString(),
+                score: Math.abs(umbriagioResult.teamAPoints - umbriagioResult.teamBPoints),
+                playerCount: 4,
+                gameMode: 'Umbriago',
+                gameType: 'umbriago',
+              }}
               onClick={async () => {
                 if (umbriagioResult.gameId) {
                   navigate(`/umbriago/${umbriagioResult.gameId}/summary`);
@@ -645,12 +522,17 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             {gameResult.textContent && (
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">{gameResult.textContent}</p>
             )}
-            <GameResultCard 
-              gameType={gameResult.gameType}
-              courseName={gameResult.courseName}
-              winner={gameResult.winner}
-              resultText={gameResult.resultText}
-              additionalInfo={gameResult.additionalInfo}
+            <RoundCard 
+              round={{
+                id: gameResult.gameId || '',
+                round_name: gameResult.winner || gameResult.gameType,
+                course_name: gameResult.courseName,
+                date: new Date().toISOString(),
+                score: 0,
+                playerCount: 2,
+                gameMode: gameResult.gameType,
+                gameType: getGameTypeForCard(gameResult.gameType),
+              }}
               onClick={() => {
                 if (gameResult.gameId) {
                   // Route to appropriate summary based on game type
