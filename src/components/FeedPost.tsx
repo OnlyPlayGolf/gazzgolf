@@ -194,9 +194,134 @@ const getGameTypeForCard = (gameType: string): RoundCardData['gameType'] => {
   return typeMap[gameType] || 'round';
 };
 
-// Helper to get game mode label
-const getGameModeLabel = (gameType: string): string => {
-  return gameType;
+// Helper to get database table name from game type
+const getTableFromGameType = (gameType: string): string => {
+  const tableMap: Record<string, string> = {
+    'Best Ball': 'best_ball_games',
+    'Match Play': 'match_play_games',
+    'Skins': 'skins_games',
+    'Wolf': 'wolf_games',
+    'Copenhagen': 'copenhagen_games',
+    'Scramble': 'scramble_games',
+    'Umbriago': 'umbriago_games',
+  };
+  return tableMap[gameType] || '';
+};
+
+// Component that fetches game data and renders RoundCard
+const GameResultCardFromDB = ({ 
+  gameType, 
+  gameId, 
+  fallbackCourseName,
+  fallbackRoundName,
+}: { 
+  gameType: string; 
+  gameId: string; 
+  fallbackCourseName: string;
+  fallbackRoundName: string | null;
+}) => {
+  const navigate = useNavigate();
+  const [gameData, setGameData] = useState<RoundCardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGameData = async () => {
+      const tableName = getTableFromGameType(gameType);
+      if (!tableName || !gameId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from(tableName as any)
+          .select('id, course_name, round_name, date_played, holes_played')
+          .eq('id', gameId)
+          .single();
+
+        if (error || !data) {
+          setLoading(false);
+          return;
+        }
+
+        const gameRecord = data as unknown as { id: string; course_name: string; round_name: string | null; date_played: string; holes_played: number };
+
+        // Calculate player count based on game type
+        let playerCount = 2;
+        if (gameType === 'Copenhagen') playerCount = 3;
+        else if (gameType === 'Wolf') playerCount = 4;
+        else if (gameType === 'Umbriago') playerCount = 4;
+        else if (gameType === 'Best Ball' || gameType === 'Scramble') playerCount = 4;
+
+        setGameData({
+          id: gameRecord.id,
+          round_name: gameRecord.round_name,
+          course_name: gameRecord.course_name,
+          date: gameRecord.date_played,
+          score: 0,
+          playerCount,
+          gameMode: gameType,
+          gameType: getGameTypeForCard(gameType),
+          holesPlayed: gameRecord.holes_played,
+        });
+      } catch (err) {
+        console.error('Error fetching game data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGameData();
+  }, [gameType, gameId]);
+
+  const handleClick = () => {
+    if (gameId) {
+      const gameTypeLower = gameType.toLowerCase().replace(/\s+/g, '-');
+      const routeMap: Record<string, string> = {
+        'best-ball': 'best-ball',
+        'match-play': 'match-play',
+        'skins': 'skins',
+        'wolf': 'wolf',
+        'copenhagen': 'copenhagen',
+        'scramble': 'scramble',
+        'umbriago': 'umbriago',
+      };
+      const route = routeMap[gameTypeLower] || gameTypeLower;
+      navigate(`/${route}/${gameId}/summary`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="cursor-pointer hover:bg-muted/50 transition-colors border-border">
+        <CardContent className="p-4">
+          <div className="animate-pulse flex items-center gap-4">
+            <div className="w-14 h-8 bg-muted rounded" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-muted rounded w-1/3" />
+              <div className="h-3 bg-muted rounded w-1/2" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Use fetched data or fallback
+  const roundData: RoundCardData = gameData || {
+    id: gameId,
+    round_name: fallbackRoundName,
+    course_name: fallbackCourseName,
+    date: new Date().toISOString(),
+    score: 0,
+    playerCount: 2,
+    gameMode: gameType,
+    gameType: getGameTypeForCard(gameType),
+  };
+
+  return <RoundCard round={roundData} onClick={handleClick} />;
 };
 
 interface FeedPostProps {
@@ -499,23 +624,26 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             {umbriagioResult.textContent && (
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">{umbriagioResult.textContent}</p>
             )}
-            <RoundCard 
-              round={{
-                id: umbriagioResult.gameId || '',
-                round_name: umbriagioResult.winningTeam === 'A' ? umbriagioResult.teamAPlayers : 
-                           umbriagioResult.winningTeam === 'B' ? umbriagioResult.teamBPlayers : 
-                           'Tie Game',
-                course_name: umbriagioResult.courseName,
-                date: new Date().toISOString(),
-                score: Math.abs(umbriagioResult.teamAPoints - umbriagioResult.teamBPoints),
-                playerCount: 4,
-                gameMode: 'Umbriago',
-                gameType: 'umbriago',
-              }}
-              onClick={async () => {
-                if (umbriagioResult.gameId) {
-                  navigate(`/umbriago/${umbriagioResult.gameId}/summary`);
-                } else {
+            {umbriagioResult.gameId ? (
+              <GameResultCardFromDB 
+                gameType="Umbriago"
+                gameId={umbriagioResult.gameId}
+                fallbackCourseName={umbriagioResult.courseName}
+                fallbackRoundName={null}
+              />
+            ) : (
+              <RoundCard 
+                round={{
+                  id: '',
+                  round_name: 'Umbriago',
+                  course_name: umbriagioResult.courseName,
+                  date: new Date().toISOString(),
+                  score: Math.abs(umbriagioResult.teamAPoints - umbriagioResult.teamBPoints),
+                  playerCount: 4,
+                  gameMode: 'Umbriago',
+                  gameType: 'umbriago',
+                }}
+                onClick={async () => {
                   // Try to find the game by matching course and user
                   const { data: games } = await supabase
                     .from('umbriago_games')
@@ -529,45 +657,37 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                     return;
                   }
                   toast.error("Game details not found");
-                }
-              }}
-            />
+                }}
+              />
+            )}
           </div>
         ) : gameResult ? (
           <div className="space-y-3">
             {gameResult.textContent && (
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">{gameResult.textContent}</p>
             )}
-            <RoundCard 
-              round={{
-                id: gameResult.gameId || '',
-                round_name: gameResult.roundName || gameResult.gameType,
-                course_name: gameResult.courseName,
-                date: new Date().toISOString(),
-                score: 0,
-                playerCount: 2,
-                gameMode: gameResult.gameType,
-                gameType: getGameTypeForCard(gameResult.gameType),
-              }}
-              onClick={() => {
-                if (gameResult.gameId) {
-                  // Route to appropriate summary based on game type
-                  const gameType = gameResult.gameType.toLowerCase().replace(/\s+/g, '-');
-                  const routeMap: Record<string, string> = {
-                    'best-ball': 'best-ball',
-                    'match-play': 'match-play',
-                    'skins': 'skins',
-                    'wolf': 'wolf',
-                    'copenhagen': 'copenhagen',
-                    'scramble': 'scramble',
-                  };
-                  const route = routeMap[gameType] || gameType;
-                  navigate(`/${route}/${gameResult.gameId}/summary`);
-                } else {
-                  toast.error("Game details not found");
-                }
-              }}
-            />
+            {gameResult.gameId ? (
+              <GameResultCardFromDB 
+                gameType={gameResult.gameType}
+                gameId={gameResult.gameId}
+                fallbackCourseName={gameResult.courseName}
+                fallbackRoundName={gameResult.roundName}
+              />
+            ) : (
+              <RoundCard 
+                round={{
+                  id: '',
+                  round_name: gameResult.roundName || gameResult.gameType,
+                  course_name: gameResult.courseName,
+                  date: new Date().toISOString(),
+                  score: 0,
+                  playerCount: 2,
+                  gameMode: gameResult.gameType,
+                  gameType: getGameTypeForCard(gameResult.gameType),
+                }}
+                onClick={() => toast.error("Game details not found")}
+              />
+            )}
           </div>
         ) : post.content && (
           <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
