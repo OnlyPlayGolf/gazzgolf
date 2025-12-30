@@ -117,8 +117,10 @@ export function useIsSpectator(
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'skins') {
-          const { data } = await supabase.from('skins_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
-          isParticipant = data?.user_id === user.id;
+          const { data } = await supabase.from('skins_games').select('user_id, is_finished, created_at, players').eq('id', gameId).single();
+          // Check if user is owner OR in the players array
+          const players = Array.isArray(data?.players) ? data.players as { odId: string }[] : [];
+          isParticipant = data?.user_id === user.id || players.some(p => p.odId === user.id);
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'umbriago') {
