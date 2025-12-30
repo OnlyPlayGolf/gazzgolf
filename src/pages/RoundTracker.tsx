@@ -266,15 +266,18 @@ export default function RoundTracker() {
       
       // If no course data found, create default holes
       if (holesArray.length === 0) {
-        const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5]; // Default 9-hole pars
+        const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 5, 3, 4, 4, 5, 3, 4, 4]; // Default 18-hole pars
         const numHoles = roundData.holes_played || 18;
         const startingHole = roundData.starting_hole || 1;
         
-        holesArray = Array.from({ length: numHoles }, (_, i) => ({
-          hole_number: startingHole + i,
-          par: (startingHole + i - 1) < 9 ? defaultPar[(startingHole + i - 1) % 9] : defaultPar[(startingHole + i - 1) % 9],
-          stroke_index: i + 1,
-        }));
+        holesArray = Array.from({ length: numHoles }, (_, i) => {
+          const holeNumber = startingHole + i;
+          return {
+            hole_number: holeNumber,
+            par: defaultPar[(holeNumber - 1) % 18] || 4,
+            stroke_index: i + 1,
+          };
+        });
       }
       
       // Track planned holes from round data
