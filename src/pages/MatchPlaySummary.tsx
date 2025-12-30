@@ -78,6 +78,7 @@ export default function MatchPlaySummary() {
         onOpenChange={setShowShareDialog}
         gameType="Match Play"
         courseName={game.course_name}
+        roundName={game.round_name || undefined}
         winner={game.winner_player || undefined}
         resultText={game.final_result || `${player1HolesWon}-${player2HolesWon}`}
         additionalInfo={`${game.player_1} vs ${game.player_2}`}

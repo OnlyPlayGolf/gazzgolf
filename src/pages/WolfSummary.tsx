@@ -109,6 +109,7 @@ export default function WolfSummary() {
         onOpenChange={setShowShareDialog}
         gameType="Wolf"
         courseName={game.course_name}
+        roundName={game.round_name || undefined}
         winner={winner.name}
         resultText={`${winner.points} points`}
         additionalInfo={`${playerCount} players`}

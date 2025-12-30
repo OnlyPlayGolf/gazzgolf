@@ -131,6 +131,7 @@ export default function BestBallSummary() {
         onOpenChange={setShowShareDialog}
         gameType="Best Ball"
         courseName={game.course_name}
+        roundName={game.round_name || undefined}
         winner={winnerName}
         resultText={resultText}
         additionalInfo={`${game.team_a_name} vs ${game.team_b_name}`}

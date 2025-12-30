@@ -11,6 +11,7 @@ interface GameShareDialogProps {
   onOpenChange: (open: boolean) => void;
   gameType: string;
   courseName: string;
+  roundName?: string;
   winner?: string;
   resultText?: string;
   additionalInfo?: string;
@@ -24,6 +25,7 @@ export function GameShareDialog({
   onOpenChange,
   gameType,
   courseName,
+  roundName,
   winner,
   resultText,
   additionalInfo,
@@ -53,8 +55,8 @@ export function GameShareDialog({
         return;
       }
 
-      // Create structured game result marker
-      const gameResult = `[GAME_RESULT]${gameType}|${courseName}|${winner || ''}|${resultText || ''}|${additionalInfo || ''}|${gameId || ''}[/GAME_RESULT]`;
+      // Create structured game result marker (now includes roundName)
+      const gameResult = `[GAME_RESULT]${gameType}|${courseName}|${roundName || ''}|${winner || ''}|${resultText || ''}|${additionalInfo || ''}|${gameId || ''}[/GAME_RESULT]`;
       const postContent = comment.trim()
         ? `${comment}\n\n${gameResult}`
         : gameResult;

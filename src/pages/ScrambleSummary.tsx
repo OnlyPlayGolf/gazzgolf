@@ -91,6 +91,7 @@ export default function ScrambleSummary() {
         onOpenChange={setShowShareDialog}
         gameType="Scramble"
         courseName={game.course_name}
+        roundName={game.round_name || undefined}
         winner={winner?.name}
         resultText={winnerTotal > 0 ? `${winnerTotal} (${formatToPar(winnerTotal, totalPar)})` : undefined}
         additionalInfo={winner?.players.map(p => p.name).join(', ')}
