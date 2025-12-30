@@ -143,7 +143,7 @@ const parseGameResult = (content: string) => {
   return null;
 };
 
-// Drill Result Card Component
+// Drill Result Card Component - matches RoundCard layout
 const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick }: { 
   drillTitle: string; 
   score: string; 
@@ -151,33 +151,41 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, onClick }: {
   isPersonalBest: boolean;
   onClick?: () => void;
 }) => (
-  <div 
-    className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 transition-all cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
+  <Card 
+    className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all group"
     onClick={onClick}
   >
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded-lg bg-primary/10">
-          <Target className="h-4 w-4 text-primary" />
+    <CardContent className="p-4">
+      <div className="flex items-center gap-4">
+        {/* Left: Score */}
+        <div className="flex-shrink-0 w-14 text-center">
+          <div className="text-2xl font-bold text-primary">{score}</div>
+          <div className="text-xs text-muted-foreground">{unit}</div>
         </div>
-        <span className="text-sm font-medium text-muted-foreground">Drill Result</span>
+        
+        {/* Middle: Details */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-foreground truncate">{drillTitle}</h3>
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+            <Target className="h-3 w-3" />
+            <span>Drill Result</span>
+            {isPersonalBest && (
+              <>
+                <span>·</span>
+                <span className="flex items-center gap-1 text-amber-600">
+                  <Trophy className="h-3 w-3" />
+                  PB
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Right: Chevron */}
+        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
       </div>
-      <div className="flex items-center gap-2">
-        {isPersonalBest && (
-          <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full">
-            <Trophy className="h-3 w-3" />
-            PB
-          </span>
-        )}
-        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-      </div>
-    </div>
-    <h3 className="text-lg font-semibold text-foreground mb-2">{drillTitle}</h3>
-    <div className="flex items-baseline gap-2">
-      <span className="text-4xl font-bold text-primary">{score}</span>
-      <span className="text-sm text-muted-foreground font-medium">{unit}</span>
-    </div>
-  </div>
+    </CardContent>
+  </Card>
 );
 
 // Helper to convert game type string to RoundCard gameType
