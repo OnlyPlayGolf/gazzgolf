@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
-import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
@@ -22,47 +21,47 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface Round {
+interface SkinsGame {
   id: string;
   course_name: string;
-  tee_set: string;
   holes_played: number;
   date_played: string;
   round_name?: string | null;
-  origin?: string | null;
+  skin_value: number;
+  carryover_enabled: boolean;
+  players: PlayerData[];
+  is_finished: boolean;
+}
+
+interface PlayerData {
+  odId: string;
+  displayName: string;
+  handicap: number;
+  teeColor: string;
+  isTemporary?: boolean;
+  skinsWon?: number;
 }
 
 interface CourseHole {
   hole_number: number;
   par: number;
   stroke_index: number;
-  [key: string]: any;
 }
 
-interface RoundPlayer {
-  id: string;
-  user_id: string;
-  tee_color: string | null;
-  profiles: {
-    display_name: string | null;
-    username: string | null;
-  } | null;
+interface SkinsHoleData {
+  hole_number: number;
+  par: number;
+  player_scores: Record<string, number>;
+  winner_player: string | null;
+  skins_available: number;
+  is_carryover: boolean;
 }
 
-interface SkinResult {
-  holeNumber: number;
-  winnerId: string | null;
-  winnerName: string | null;
-  skinsWon: number;
-  isCarryover: boolean;
-}
-
-export default function SimpleSkinsTracker() {
+export default function SkinsTracker() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Check spectator status - redirect if not a participant or edit window expired
   const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('skins', roundId);
   
   useEffect(() => {
@@ -71,159 +70,94 @@ export default function SimpleSkinsTracker() {
     }
   }, [isSpectator, spectatorLoading, roundId, navigate]);
   
-  const [round, setRound] = useState<Round | null>(null);
+  const [game, setGame] = useState<SkinsGame | null>(null);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [currentHoleIndex, setCurrentHoleIndex] = useState(() => {
-    const saved = localStorage.getItem(`simpleSkinsCurrentHole_${roundId}`);
+    const saved = localStorage.getItem(`skinsCurrentHole_${roundId}`);
     return saved ? parseInt(saved, 10) : 0;
   });
-  const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
+  const [holeData, setHoleData] = useState<Map<number, SkinsHoleData>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
-  const [showMoreSheet, setShowMoreSheet] = useState(false);
-  const [skinResults, setSkinResults] = useState<SkinResult[]>([]);
   const [carryoverCount, setCarryoverCount] = useState(1);
-
-  // Mulligan and comment tracking
-  const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
-  // Map: playerId -> Set of hole numbers where mulligan was used
-  const [mulligansUsed, setMulligansUsed] = useState<Map<string, Set<number>>>(new Map());
-  // Map: playerId -> Map<holeNumber, comment>
-  const [holeComments, setHoleComments] = useState<Map<string, Map<number, string>>>(new Map());
-  // Current comment being edited in the More sheet
-  const [currentComment, setCurrentComment] = useState("");
-  // Track if mulligan was just added in current More sheet session
-  const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
-  // Track if user manually navigated (to prevent auto-advance)
   const [isManualNavigation, setIsManualNavigation] = useState(false);
 
   useEffect(() => {
     if (roundId) {
-      fetchRoundData();
-      loadSettings();
+      fetchGameData();
     }
   }, [roundId]);
 
-  // Save current hole index to localStorage
   useEffect(() => {
     if (roundId) {
-      localStorage.setItem(`simpleSkinsCurrentHole_${roundId}`, currentHoleIndex.toString());
+      localStorage.setItem(`skinsCurrentHole_${roundId}`, currentHoleIndex.toString());
     }
   }, [currentHoleIndex, roundId]);
 
-  // Calculate skin results whenever scores change
   useEffect(() => {
-    calculateSkinResults();
-  }, [scores, courseHoles, players]);
+    calculateCarryover();
+  }, [holeData, currentHoleIndex, courseHoles]);
 
-  // Auto-advance to next hole when all players have scores
-  // Skip if user manually navigated back to review scores
+  // Auto-advance logic
   useEffect(() => {
-    if (isManualNavigation) {
-      // Don't auto-advance when manually navigating
-      return;
-    }
-    if (!courseHoles.length || !players.length || loading) return;
+    if (isManualNavigation || !courseHoles.length || !game || loading) return;
     
-    const currentHoleNum = courseHoles[currentHoleIndex]?.hole_number;
-    if (!currentHoleNum) return;
+    const currentHole = courseHoles[currentHoleIndex];
+    if (!currentHole) return;
     
-    const allPlayersHaveScores = players.every(p => {
-      const playerScores = scores.get(p.id);
-      const score = playerScores?.get(currentHoleNum);
+    const currentHoleData = holeData.get(currentHole.hole_number);
+    const allPlayersHaveScores = game.players.every(p => {
+      const score = currentHoleData?.player_scores?.[p.odId];
       return score !== undefined && (score > 0 || score === -1);
     });
     
-    // Auto-advance if all players have scores and not at last hole
     if (allPlayersHaveScores && currentHoleIndex < courseHoles.length - 1) {
-      // Small delay for visual feedback before advancing
       const timer = setTimeout(() => {
         setCurrentHoleIndex(prev => prev + 1);
         setShowScoreSheet(false);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [scores, currentHoleIndex, courseHoles, players, loading, isManualNavigation]);
+  }, [holeData, currentHoleIndex, courseHoles, game, loading, isManualNavigation]);
 
-  const loadSettings = () => {
-    // First try round-specific settings (from localStorage for persistence)
-    const roundSettings = localStorage.getItem(`simpleSkinsRoundSettings_${roundId}`);
-    if (roundSettings) {
-      const settings = JSON.parse(roundSettings);
-      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-      return;
-    }
-    
-    // Fallback to session storage for new rounds
-    const savedSettings = sessionStorage.getItem('simpleSkinsSettings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-      // Save to round-specific storage for future
-      localStorage.setItem(`simpleSkinsRoundSettings_${roundId}`, JSON.stringify({
-        mulligansPerPlayer: settings.mulligansPerPlayer || 0,
-        skinValue: settings.skinValue || 1,
-        carryoverEnabled: settings.carryoverEnabled ?? true,
-      }));
-    }
-  };
-
-  const fetchRoundData = async () => {
+  const fetchGameData = async () => {
     try {
-      const { data: roundData, error: roundError } = await supabase
-        .from("rounds")
+      const { data: gameData, error: gameError } = await supabase
+        .from("skins_games")
         .select("*")
         .eq("id", roundId)
         .single();
 
-      if (roundError) throw roundError;
-      setRound(roundData);
-
-      const { data: playersData, error: playersError } = await supabase
-        .from("round_players")
-        .select("id, user_id, tee_color")
-        .eq("round_id", roundId);
-
-      if (playersError) throw playersError;
+      if (gameError) throw gameError;
       
-      if (playersData && playersData.length > 0) {
-        const userIds = playersData.map(p => p.user_id);
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, display_name, username")
-          .in("id", userIds);
-        
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-        const playersWithProfiles = playersData.map(player => ({
-          ...player,
-          profiles: profilesMap.get(player.user_id) || null
-        }));
-        
-        setPlayers(playersWithProfiles);
-      }
+      // Parse players from JSON
+      const players = Array.isArray(gameData.players) 
+        ? (gameData.players as unknown as PlayerData[])
+        : [];
+      setGame({ ...gameData, players });
 
+      // Fetch course holes
       const { data: courseData } = await supabase
         .from("courses")
         .select("id")
-        .eq("name", roundData.course_name)
+        .eq("name", gameData.course_name)
         .maybeSingle();
 
       let holesArray: CourseHole[] = [];
       
       if (courseData) {
-        const { data: holesData, error: holesError } = await supabase
+        const { data: holesData } = await supabase
           .from("course_holes")
-          .select("*")
+          .select("hole_number, par, stroke_index")
           .eq("course_id", courseData.id)
           .order("hole_number");
 
-        if (!holesError && holesData) {
+        if (holesData) {
           let filteredHoles = holesData;
-          if (roundData.holes_played === 9) {
+          if (gameData.holes_played === 9) {
             filteredHoles = holesData.slice(0, 9);
           }
           holesArray = filteredHoles;
@@ -232,7 +166,7 @@ export default function SimpleSkinsTracker() {
       
       if (holesArray.length === 0) {
         const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5];
-        const numHoles = roundData.holes_played || 18;
+        const numHoles = gameData.holes_played || 18;
         
         holesArray = Array.from({ length: numHoles }, (_, i) => ({
           hole_number: i + 1,
@@ -243,40 +177,30 @@ export default function SimpleSkinsTracker() {
       
       setCourseHoles(holesArray);
 
-      // Fetch existing hole scores and mulligans for all players
-      const { data: existingHoles, error: existingError } = await supabase
-        .from("holes")
-        .select("hole_number, score, player_id, mulligan")
-        .eq("round_id", roundId);
+      // Fetch existing skins_holes data
+      const { data: existingHoles } = await supabase
+        .from("skins_holes")
+        .select("*")
+        .eq("game_id", roundId);
 
-      if (!existingError && existingHoles) {
-        const scoresMap = new Map<string, Map<number, number>>();
-        const mulligansMap = new Map<string, Set<number>>();
-        
+      if (existingHoles) {
+        const holesMap = new Map<number, SkinsHoleData>();
         existingHoles.forEach((hole) => {
-          if (hole.player_id) {
-            // Scores
-            if (!scoresMap.has(hole.player_id)) {
-              scoresMap.set(hole.player_id, new Map());
-            }
-            scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
-            
-            // Mulligans
-            if (hole.mulligan) {
-              if (!mulligansMap.has(hole.player_id)) {
-                mulligansMap.set(hole.player_id, new Set());
-              }
-              mulligansMap.get(hole.player_id)!.add(hole.hole_number);
-            }
-          }
+          holesMap.set(hole.hole_number, {
+            hole_number: hole.hole_number,
+            par: hole.par,
+            player_scores: (hole.player_scores as Record<string, number>) || {},
+            winner_player: hole.winner_player,
+            skins_available: hole.skins_available,
+            is_carryover: hole.is_carryover,
+          });
         });
-        setScores(scoresMap);
-        setMulligansUsed(mulligansMap);
+        setHoleData(holesMap);
       }
     } catch (error: any) {
-      console.error("Error fetching round data:", error);
+      console.error("Error fetching game data:", error);
       toast({
-        title: "Error loading round",
+        title: "Error loading game",
         description: error.message,
         variant: "destructive",
       });
@@ -286,117 +210,117 @@ export default function SimpleSkinsTracker() {
     }
   };
 
-  const calculateSkinResults = () => {
-    const results: SkinResult[] = [];
-    let carryover = 0;
+  const calculateCarryover = () => {
+    if (!courseHoles.length) return;
     
-    for (const hole of courseHoles) {
-      const holeScores: { playerId: string; playerName: string; score: number }[] = [];
-      
-      for (const player of players) {
-        const playerScoreMap = scores.get(player.id);
-        const score = playerScoreMap?.get(hole.hole_number);
-        if (score && score > 0) {
-          holeScores.push({
-            playerId: player.id,
-            playerName: getPlayerName(player),
-            score
-          });
-        }
-      }
-      
-      // All players must have a score for the hole to count
-      if (holeScores.length < players.length || players.length === 0) {
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: null,
-          winnerName: null,
-          skinsWon: 0,
-          isCarryover: false
-        });
-        continue;
-      }
-      
-      // Find lowest score
-      const lowestScore = Math.min(...holeScores.map(s => s.score));
-      const playersWithLowest = holeScores.filter(s => s.score === lowestScore);
-      
-      if (playersWithLowest.length === 1) {
-        // One player wins the skin(s)
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: playersWithLowest[0].playerId,
-          winnerName: playersWithLowest[0].playerName,
-          skinsWon: 1 + carryover,
-          isCarryover: false
-        });
-        carryover = 0;
-      } else {
-        // Tie - carry over
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: null,
-          winnerName: null,
-          skinsWon: 0,
-          isCarryover: true
-        });
-        carryover += 1;
-      }
-    }
+    const currentHoleNum = courseHoles[currentHoleIndex]?.hole_number;
+    if (!currentHoleNum) return;
     
-    setSkinResults(results);
-    
-    // Calculate carryover for current hole
-    const currentHoleNum = currentHoleIndex + 1;
-    let currentCarryover = 1;
+    let carryover = 1;
     for (let i = currentHoleNum - 2; i >= 0; i--) {
-      if (results[i]?.isCarryover) {
-        currentCarryover++;
-      } else {
+      const hole = holeData.get(i + 1);
+      if (hole?.is_carryover) {
+        carryover++;
+      } else if (hole?.winner_player) {
         break;
       }
     }
-    setCarryoverCount(currentCarryover);
+    setCarryoverCount(carryover);
+  };
+
+  const calculateSkinResult = (holeNumber: number, scores: Record<string, number>): { winnerId: string | null; isCarryover: boolean } => {
+    if (!game) return { winnerId: null, isCarryover: false };
+    
+    const validScores = Object.entries(scores).filter(([_, score]) => score > 0);
+    
+    // All players must have a score
+    if (validScores.length < game.players.length) {
+      return { winnerId: null, isCarryover: false };
+    }
+    
+    const lowestScore = Math.min(...validScores.map(([_, s]) => s));
+    const playersWithLowest = validScores.filter(([_, s]) => s === lowestScore);
+    
+    if (playersWithLowest.length === 1) {
+      return { winnerId: playersWithLowest[0][0], isCarryover: false };
+    }
+    
+    return { winnerId: null, isCarryover: true };
   };
 
   const getPlayerSkinCount = (playerId: string): number => {
-    return skinResults
-      .filter(r => r.winnerId === playerId)
-      .reduce((sum, r) => sum + r.skinsWon, 0);
+    let count = 0;
+    holeData.forEach((hole) => {
+      if (hole.winner_player === playerId) {
+        count += hole.skins_available;
+      }
+    });
+    return count;
   };
 
   const currentHole = courseHoles[currentHoleIndex];
 
-  const getPlayerScore = (playerId: string) => {
-    const playerScores = scores.get(playerId) || new Map();
-    return playerScores.get(currentHole?.hole_number) || 0;
+  const getPlayerScore = (playerId: string): number => {
+    if (!currentHole) return 0;
+    const hole = holeData.get(currentHole.hole_number);
+    return hole?.player_scores?.[playerId] || 0;
   };
 
   const updateScore = async (playerId: string, newScore: number) => {
-    // Allow -1 (dash/conceded) and positive scores, reject 0 and other negatives
-    if (!currentHole || (newScore < 0 && newScore !== -1)) return;
+    if (!currentHole || !game || (newScore < 0 && newScore !== -1)) return;
     
-    // Reset manual navigation flag so auto-advance works after score update
     setIsManualNavigation(false);
 
-    const updatedScores = new Map(scores);
-    const playerScores = updatedScores.get(playerId) || new Map();
-    playerScores.set(currentHole.hole_number, newScore);
-    updatedScores.set(playerId, playerScores);
-    setScores(updatedScores);
+    const existingHole = holeData.get(currentHole.hole_number);
+    const updatedScores = {
+      ...(existingHole?.player_scores || {}),
+      [playerId]: newScore,
+    };
+
+    // Calculate skin result
+    const { winnerId, isCarryover } = calculateSkinResult(currentHole.hole_number, updatedScores);
+    
+    // Calculate skins available (including carryovers)
+    let skinsAvailable = 1;
+    for (let i = currentHole.hole_number - 2; i >= 0; i--) {
+      const prevHole = holeData.get(i + 1);
+      if (prevHole?.is_carryover) {
+        skinsAvailable++;
+      } else {
+        break;
+      }
+    }
+
+    const updatedHoleData: SkinsHoleData = {
+      hole_number: currentHole.hole_number,
+      par: currentHole.par,
+      player_scores: updatedScores,
+      winner_player: winnerId,
+      skins_available: skinsAvailable,
+      is_carryover: isCarryover,
+    };
+
+    // Update local state
+    setHoleData(prev => {
+      const updated = new Map(prev);
+      updated.set(currentHole.hole_number, updatedHoleData);
+      return updated;
+    });
 
     try {
       const { error } = await supabase
-        .from("holes")
+        .from("skins_holes")
         .upsert({
-          round_id: roundId,
-          player_id: playerId,
+          game_id: roundId,
           hole_number: currentHole.hole_number,
           par: currentHole.par,
-          score: newScore,
+          player_scores: updatedScores,
+          winner_player: winnerId,
+          skins_available: skinsAvailable,
+          is_carryover: isCarryover,
+          stroke_index: currentHole.stroke_index,
         }, {
-          onConflict: 'round_id,player_id,hole_number',
-          ignoreDuplicates: false
+          onConflict: 'game_id,hole_number',
         });
 
       if (error) throw error;
@@ -419,153 +343,25 @@ export default function SimpleSkinsTracker() {
     }
   };
 
-  const getPlayerName = (player: RoundPlayer) => {
-    return player.profiles?.display_name || player.profiles?.username || "Player";
+  const getCurrentHoleResult = () => {
+    if (!currentHole) return null;
+    return holeData.get(currentHole.hole_number);
   };
 
-  const getCurrentHoleSkinResult = (): SkinResult | null => {
-    return skinResults.find(r => r.holeNumber === currentHole?.hole_number) || null;
-  };
-
-  // Mulligan helpers
-  const getPlayerMulligansUsed = (playerId: string): number => {
-    return mulligansUsed.get(playerId)?.size || 0;
-  };
-
-  const hasPlayerUsedMulliganOnHole = (playerId: string, holeNumber: number): boolean => {
-    return mulligansUsed.get(playerId)?.has(holeNumber) || false;
-  };
-
-  const useMulliganOnHole = async (playerId: string, holeNumber: number) => {
-    setMulligansUsed(prev => {
-      const updated = new Map(prev);
-      const playerMulligans = new Set(prev.get(playerId) || []);
-      playerMulligans.add(holeNumber);
-      updated.set(playerId, playerMulligans);
-      return updated;
-    });
-
-    // Update mulligan in database
-    try {
-      await supabase
-        .from("holes")
-        .update({ mulligan: true })
-        .eq("round_id", roundId)
-        .eq("player_id", playerId)
-        .eq("hole_number", holeNumber);
-
-      // Mark that mulligan was just added (will be combined with comment on save)
-      setMulliganJustAdded(true);
-    } catch (error) {
-      console.error("Error saving mulligan:", error);
-    }
-  };
-
-  const removeMulliganFromHole = async (playerId: string, holeNumber: number) => {
-    setMulligansUsed(prev => {
-      const updated = new Map(prev);
-      const playerMulligans = new Set(prev.get(playerId) || []);
-      playerMulligans.delete(holeNumber);
-      updated.set(playerId, playerMulligans);
-      return updated;
-    });
-
-    // Update mulligan in database
-    try {
-      await supabase
-        .from("holes")
-        .update({ mulligan: false })
-        .eq("round_id", roundId)
-        .eq("player_id", playerId)
-        .eq("hole_number", holeNumber);
-    } catch (error) {
-      console.error("Error removing mulligan:", error);
-    }
-  };
-
-  // Comment helpers
-  const getHoleComment = (playerId: string, holeNumber: number): string => {
-    return holeComments.get(playerId)?.get(holeNumber) || "";
-  };
-
-  const setHoleComment = (playerId: string, holeNumber: number, comment: string) => {
-    setHoleComments(prev => {
-      const updated = new Map(prev);
-      const playerComments = new Map(prev.get(playerId) || []);
-      if (comment) {
-        playerComments.set(holeNumber, comment);
-      } else {
-        playerComments.delete(holeNumber);
-      }
-      updated.set(playerId, playerComments);
-      return updated;
-    });
-  };
-
-  // Handle opening the More sheet
-  const handleOpenMoreSheet = () => {
-    if (selectedPlayer && currentHole) {
-      setCurrentComment(getHoleComment(selectedPlayer.id, currentHole.hole_number));
-      setMulliganJustAdded(false); // Reset flag when opening sheet
-      setShowMoreSheet(true);
-    }
-  };
-
-  // Handle saving from More sheet
-  const handleSaveMore = async () => {
-    if (selectedPlayer && currentHole) {
-      const hasComment = currentComment.trim().length > 0;
-      const hasMulligan = mulliganJustAdded;
-      
-      // Only post if there's a comment or mulligan
-      if (hasComment || hasMulligan) {
-        if (hasComment) {
-          setHoleComment(selectedPlayer.id, currentHole.hole_number, currentComment);
-        }
-        
-        // Build combined content
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const playerName = getPlayerName(selectedPlayer);
-            let content = "";
-            
-            if (hasMulligan && hasComment) {
-              // Combined mulligan + comment
-              content = `🔄 ${playerName} used a mulligan on hole ${currentHole.hole_number}: "${currentComment.trim()}"`;
-            } else if (hasMulligan) {
-              // Mulligan only
-              content = `🔄 ${playerName} used a mulligan on hole ${currentHole.hole_number}`;
-            } else {
-              // Comment only
-              content = currentComment.trim();
-            }
-            
-            await supabase.from("round_comments").insert({
-              round_id: roundId,
-              user_id: user.id,
-              content,
-              hole_number: currentHole.hole_number,
-              game_type: "simple_skins",
-            });
-          }
-        } catch (error) {
-          console.error("Error saving to feed:", error);
-        }
-      }
-      
-      // Reset the flag
-      setMulliganJustAdded(false);
-    }
-  };
-
-  const handleShowCompletionDialog = () => {
-    setShowCompletionDialog(true);
-  };
-
-  const handleFinishRound = () => {
+  const handleFinishRound = async () => {
     setShowCompletionDialog(false);
-    navigate(`/simple-skins/${roundId}/summary`);
+    
+    // Mark game as finished
+    try {
+      await supabase
+        .from("skins_games")
+        .update({ is_finished: true })
+        .eq("id", roundId);
+    } catch (error) {
+      console.error("Error finishing game:", error);
+    }
+    
+    navigate(`/skins/${roundId}/summary`);
   };
 
   const handleContinuePlaying = async () => {
@@ -585,7 +381,7 @@ export default function SimpleSkinsTracker() {
     
     try {
       await supabase
-        .from("rounds")
+        .from("skins_games")
         .update({ holes_played: nextHoleNumber })
         .eq("id", roundId);
     } catch (error) {
@@ -594,47 +390,21 @@ export default function SimpleSkinsTracker() {
     
     toast({
       title: "Extra hole added",
-      description: `Hole ${nextHoleNumber} added to your round`,
+      description: `Hole ${nextHoleNumber} added to your game`,
     });
   };
 
-  const handleGoBack = () => {
-    setShowCompletionDialog(false);
-  };
-
-  const handleDeleteRound = async () => {
+  const handleDeleteGame = async () => {
     try {
-      const { error: holesError } = await supabase
-        .from("holes")
-        .delete()
-        .eq("round_id", roundId);
+      await supabase.from("skins_holes").delete().eq("game_id", roundId);
+      await supabase.from("skins_games").delete().eq("id", roundId);
 
-      if (holesError) throw holesError;
-
-      const { error: playersError } = await supabase
-        .from("round_players")
-        .delete()
-        .eq("round_id", roundId);
-
-      if (playersError) throw playersError;
-
-      const { error: roundError } = await supabase
-        .from("rounds")
-        .delete()
-        .eq("id", roundId);
-
-      if (roundError) throw roundError;
-
-      toast({
-        title: "Round deleted",
-        description: "The round has been deleted successfully.",
-      });
-
+      toast({ title: "Game deleted" });
       navigate("/");
     } catch (error: any) {
-      console.error("Error deleting round:", error);
+      console.error("Error deleting game:", error);
       toast({
-        title: "Error deleting round",
+        title: "Error deleting game",
         description: error.message,
         variant: "destructive",
       });
@@ -644,26 +414,25 @@ export default function SimpleSkinsTracker() {
   if (loading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-muted-foreground">Loading round...</div>
+        <div className="text-muted-foreground">Loading game...</div>
         {roundId && <SkinsBottomTabBar roundId={roundId} />}
       </div>
     );
   }
 
-  if (!round || !currentHole) {
+  if (!game || !currentHole) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-muted-foreground">Round not found</div>
+        <div className="text-muted-foreground">Game not found</div>
         {roundId && <SkinsBottomTabBar roundId={roundId} />}
       </div>
     );
   }
 
   const isAtLastHole = currentHoleIndex === courseHoles.length - 1;
-  const currentSkinResult = getCurrentHoleSkinResult();
-  const allPlayersHaveScores = players.every(p => {
-    const playerScores = scores.get(p.id);
-    const score = playerScores?.get(currentHole.hole_number);
+  const currentHoleResult = getCurrentHoleResult();
+  const allPlayersHaveScores = game.players.every(p => {
+    const score = currentHoleResult?.player_scores?.[p.odId];
     return score !== undefined && (score > 0 || score === -1);
   });
 
@@ -682,8 +451,8 @@ export default function SimpleSkinsTracker() {
               <ChevronLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">{round.round_name || 'Skins'}</h1>
-              <p className="text-sm text-muted-foreground">{round.course_name}</p>
+              <h1 className="text-xl font-bold">{game.round_name || 'Skins'}</h1>
+              <p className="text-sm text-muted-foreground">{game.course_name}</p>
             </div>
             <div className="w-10" />
           </div>
@@ -731,9 +500,11 @@ export default function SimpleSkinsTracker() {
                 {carryoverCount} Skin{carryoverCount > 1 ? 's' : ''} on this hole
               </span>
             </div>
-            {allPlayersHaveScores && currentSkinResult && (
-              <Badge variant={currentSkinResult.winnerId ? "default" : "secondary"} className="text-xs">
-                {currentSkinResult.winnerId ? `${currentSkinResult.winnerName} wins!` : "Tied - Carryover"}
+            {allPlayersHaveScores && currentHoleResult && (
+              <Badge variant={currentHoleResult.winner_player ? "default" : "secondary"} className="text-xs">
+                {currentHoleResult.winner_player 
+                  ? `${game.players.find(p => p.odId === currentHoleResult.winner_player)?.displayName} wins!` 
+                  : "Tied - Carryover"}
               </Badge>
             )}
           </div>
@@ -747,15 +518,14 @@ export default function SimpleSkinsTracker() {
 
       {/* Score Entry */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {players.map((player) => {
-          const playerScore = getPlayerScore(player.id);
-          const skinCount = getPlayerSkinCount(player.id);
+        {game.players.map((player) => {
+          const playerScore = getPlayerScore(player.odId);
+          const skinCount = getPlayerSkinCount(player.odId);
           const hasScore = playerScore > 0 || playerScore === -1;
-          const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
           
           return (
             <Card 
-              key={player.id} 
+              key={player.odId} 
               className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => {
                 setSelectedPlayer(player);
@@ -764,16 +534,9 @@ export default function SimpleSkinsTracker() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold">{getPlayerName(player)}</span>
-                    {hasMulliganOnHole && (
-                      <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                        Mulligan
-                      </Badge>
-                    )}
-                  </div>
+                  <span className="text-xl font-bold">{player.displayName}</span>
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
-                    <span>Tee: {player.tee_color || round.tee_set}</span>
+                    <span>Tee: {player.teeColor}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1 text-amber-600">
                       <Trophy size={14} />
@@ -795,12 +558,12 @@ export default function SimpleSkinsTracker() {
         {/* Complete Round Button */}
         {isAtLastHole && (
           <Button
-            onClick={handleShowCompletionDialog}
+            onClick={() => setShowCompletionDialog(true)}
             className="w-full bg-amber-600 hover:bg-amber-700 text-white"
             size="lg"
           >
             <Check size={20} className="mr-2" />
-            Complete Round
+            Complete Game
           </Button>
         )}
       </div>
@@ -810,69 +573,44 @@ export default function SimpleSkinsTracker() {
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
         holesPlayed={courseHoles.length}
-        plannedHoles={round.holes_played}
+        plannedHoles={game.holes_played}
         onFinishRound={handleFinishRound}
         onContinuePlaying={handleContinuePlaying}
-        onGoBack={handleGoBack}
+        onGoBack={() => setShowCompletionDialog(false)}
       />
 
       {/* Score Input Sheet */}
       {selectedPlayer && currentHole && (
-        <>
-          <PlayerScoreSheet
-            open={showScoreSheet}
-            onOpenChange={setShowScoreSheet}
-            playerName={getPlayerName(selectedPlayer)}
-            par={currentHole.par}
-            holeNumber={currentHole.hole_number}
-            currentScore={getPlayerScore(selectedPlayer.id)}
-            onScoreSelect={(score) => {
-              if (score !== null) {
-                updateScore(selectedPlayer.id, score);
+        <PlayerScoreSheet
+          open={showScoreSheet}
+          onOpenChange={setShowScoreSheet}
+          playerName={selectedPlayer.displayName}
+          par={currentHole.par}
+          holeNumber={currentHole.hole_number}
+          currentScore={getPlayerScore(selectedPlayer.odId)}
+          onScoreSelect={(score) => {
+            if (score !== null) {
+              updateScore(selectedPlayer.odId, score);
+            }
+          }}
+          onEnterAndNext={() => {
+            // Find next player without a score
+            const nextPlayer = game.players.find(p => {
+              if (p.odId === selectedPlayer.odId) return false;
+              const score = currentHoleResult?.player_scores?.[p.odId];
+              return !score || score === 0;
+            });
+            
+            if (nextPlayer) {
+              setSelectedPlayer(nextPlayer);
+            } else {
+              setShowScoreSheet(false);
+              if (currentHoleIndex >= courseHoles.length - 1) {
+                setShowCompletionDialog(true);
               }
-            }}
-            onMore={handleOpenMoreSheet}
-            onEnterAndNext={() => {
-              const currentHoleNum = currentHole.hole_number;
-              
-              // Find next player without a score for this hole
-              const nextPlayerWithoutScore = players.find(p => {
-                if (p.id === selectedPlayer.id) return false;
-                const playerScores = scores.get(p.id);
-                const score = playerScores?.get(currentHoleNum);
-                return !score || score === 0;
-              });
-              
-              if (nextPlayerWithoutScore) {
-                // Move to next player without a score
-                setSelectedPlayer(nextPlayerWithoutScore);
-              } else {
-                // All players have scores - close the sheet
-                setShowScoreSheet(false);
-                // Show completion dialog if at last hole
-                if (currentHoleIndex >= courseHoles.length - 1) {
-                  setShowCompletionDialog(true);
-                }
-              }
-            }}
-          />
-          
-          <ScoreMoreSheet
-            open={showMoreSheet}
-            onOpenChange={setShowMoreSheet}
-            holeNumber={currentHole.hole_number}
-            par={currentHole.par}
-            playerName={getPlayerName(selectedPlayer)}
-            comment={currentComment}
-            onCommentChange={setCurrentComment}
-            mulligansAllowed={mulligansPerPlayer}
-            mulligansUsed={getPlayerMulligansUsed(selectedPlayer.id)}
-            mulliganUsedOnThisHole={hasPlayerUsedMulliganOnHole(selectedPlayer.id, currentHole.hole_number)}
-            onUseMulligan={() => useMulliganOnHole(selectedPlayer.id, currentHole.hole_number)}
-            onRemoveMulligan={() => removeMulliganFromHole(selectedPlayer.id, currentHole.hole_number)}
-            onSave={handleSaveMore}
-          />
-        </>
+            }
+          }}
+        />
       )}
 
       <SkinsBottomTabBar roundId={roundId!} />
@@ -880,9 +618,9 @@ export default function SimpleSkinsTracker() {
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Exit Round</AlertDialogTitle>
+            <AlertDialogTitle>Exit Game</AlertDialogTitle>
             <AlertDialogDescription>
-              What would you like to do with this round?
+              What would you like to do with this game?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
@@ -898,11 +636,11 @@ export default function SimpleSkinsTracker() {
             <AlertDialogAction
               onClick={() => {
                 setShowExitDialog(false);
-                handleDeleteRound();
+                handleDeleteGame();
               }}
               className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Round
+              Delete Game
             </AlertDialogAction>
             <AlertDialogCancel className="w-full mt-0">Cancel</AlertDialogCancel>
           </AlertDialogFooter>

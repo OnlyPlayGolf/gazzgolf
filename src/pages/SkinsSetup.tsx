@@ -30,7 +30,7 @@ interface Player {
   isCurrentUser?: boolean;
 }
 
-export default function SimpleSkinsSetup() {
+export default function SkinsSetup() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -45,7 +45,7 @@ export default function SimpleSkinsSetup() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   
-  // Simple Skins specific settings
+  // Skins specific settings
   const [skinValue, setSkinValue] = useState(1);
   const [carryoverEnabled, setCarryoverEnabled] = useState(true);
 
@@ -124,8 +124,8 @@ export default function SimpleSkinsSetup() {
       
       setPlayers([currentUserPlayer, ...additionalPlayers]);
       
-      // Load simple skins settings if previously saved
-      const savedSettings = sessionStorage.getItem('simpleSkinsSettings');
+      // Load skins settings if previously saved
+      const savedSettings = sessionStorage.getItem('skinsSettings');
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         setSkinValue(settings.skinValue || 1);
@@ -163,14 +163,28 @@ export default function SimpleSkinsSetup() {
 
       const holesPlayed = parseInt(selectedHoles);
 
-      const { data: round, error } = await supabase
-        .from("rounds")
+      // Build players JSON for skins_games table
+      const playersJson = players.map(p => ({
+        odId: p.odId,
+        displayName: p.displayName,
+        handicap: p.handicap || 0,
+        teeColor: p.teeColor || teeColor,
+        isTemporary: p.isTemporary || false,
+        skinsWon: 0,
+      }));
+
+      const { data: skinsGame, error } = await supabase
+        .from("skins_games")
         .insert({
           user_id: user.id,
           course_name: selectedCourse.name,
-          tee_set: teeColor,
+          course_id: selectedCourse.id || null,
           holes_played: holesPlayed,
-          origin: 'simple_skins',
+          skin_value: skinValue,
+          carryover_enabled: carryoverEnabled,
+          use_handicaps: false,
+          handicap_mode: "none",
+          players: playersJson,
           date_played: new Date().toISOString().split('T')[0],
         })
         .select()
@@ -178,38 +192,11 @@ export default function SimpleSkinsSetup() {
 
       if (error) throw error;
 
-      // Add all players (filter out temp players for database)
-      const playersToAdd = players
-        .filter(p => !p.isTemporary)
-        .map(p => ({
-          round_id: round.id,
-          user_id: p.odId,
-          tee_color: p.teeColor || teeColor,
-          handicap: p.handicap,
-        }));
-
-      if (playersToAdd.length > 0) {
-        const { error: playersError } = await supabase
-          .from('round_players')
-          .insert(playersToAdd);
-
-        if (playersError) {
-          console.error("Error adding players:", playersError);
-        }
-      }
-
       // Save settings for the tracker
-      sessionStorage.setItem('simpleSkinsSettings', JSON.stringify({
+      sessionStorage.setItem('skinsSettings', JSON.stringify({
         skinValue,
         carryoverEnabled,
         holesPlayed,
-        players: players.map(p => ({
-          odId: p.odId,
-          displayName: p.displayName,
-          handicap: p.handicap,
-          teeColor: p.teeColor,
-          isTemporary: p.isTemporary,
-        })),
       }));
 
       // Clear setup sessionStorage
@@ -221,7 +208,7 @@ export default function SimpleSkinsSetup() {
       sessionStorage.removeItem('datePlayed');
 
       toast({ title: "Game started!", description: `Good luck at ${selectedCourse.name}` });
-      navigate(`/skins/${round.id}/track`);
+      navigate(`/skins/${skinsGame.id}/track`);
     } catch (error: any) {
       toast({ title: "Error creating game", description: error.message, variant: "destructive" });
     } finally {
@@ -338,7 +325,6 @@ export default function SimpleSkinsSetup() {
                   <SelectItem value="10">10 skins per hole</SelectItem>
                   <SelectItem value="20">20 skins per hole</SelectItem>
                   <SelectItem value="50">50 skins per hole</SelectItem>
-                  <SelectItem value="progressive">1 skin first 6, 2 skins next 6, 3 skins last 6</SelectItem>
                 </SelectContent>
               </Select>
             </div>
