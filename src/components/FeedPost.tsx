@@ -331,7 +331,7 @@ const GameResultCardFromDB = ({
             }
 
             matchResult = participantNames.includes(g.winner_player) ? "W" : "L";
-            matchFinalScore = matchResult === "T" ? null : (g.final_result ?? null);
+            matchFinalScore = g.final_result ?? null;
             return { matchResult, matchFinalScore };
           }
 
@@ -356,7 +356,7 @@ const GameResultCardFromDB = ({
             }
 
             matchResult = g.winner_team === userTeam ? "W" : "L";
-            matchFinalScore = matchResult === "T" ? null : (g.final_result ?? null);
+            matchFinalScore = g.final_result ?? null;
             return { matchResult, matchFinalScore };
           }
 
