@@ -29,9 +29,10 @@ export interface RoundCardData {
 interface RoundCardProps {
   round: RoundCardData;
   className?: string;
+  onClick?: () => void;
 }
 
-export function RoundCard({ round, className }: RoundCardProps) {
+export function RoundCard({ round, className, onClick }: RoundCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,8 +49,12 @@ export function RoundCard({ round, className }: RoundCardProps) {
   };
 
   const handleClick = () => {
-    const gameType = round.gameType || 'round';
-    navigate(getGameRoute(gameType, round.id, location.pathname));
+    if (onClick) {
+      onClick();
+    } else {
+      const gameType = round.gameType || 'round';
+      navigate(getGameRoute(gameType, round.id, location.pathname));
+    }
   };
 
   // Only show score for regular stroke play rounds

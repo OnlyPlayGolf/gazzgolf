@@ -206,20 +206,15 @@ const PlayedRounds = () => {
                   <h2 className="text-lg font-semibold text-foreground mb-2 px-1">{year}</h2>
                   <div className="space-y-3">
                     {roundsByYear[year].map((round) => (
-                      <div
+                      <RoundCard
                         key={`${round.gameType}-${round.id}`}
-                        onClick={() => {
-                          if (deleteMode) {
-                            setRoundToDelete(round);
-                            setDeleteDialogOpen(true);
-                          }
-                        }}
-                      >
-                        <RoundCard
-                          round={round}
-                          className={deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""}
-                        />
-                      </div>
+                        round={round}
+                        className={deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""}
+                        onClick={deleteMode ? () => {
+                          setRoundToDelete(round);
+                          setDeleteDialogOpen(true);
+                        } : undefined}
+                      />
                     ))}
                   </div>
                 </section>
