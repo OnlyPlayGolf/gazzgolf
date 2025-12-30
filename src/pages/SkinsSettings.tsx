@@ -249,7 +249,7 @@ export default function SimpleSkinsSettings() {
                   uniqueTees.length === 1 ? uniqueTees[0]! : "Mixed tees";
 
   const gameDetails: GameDetailsData = {
-    format: "Simple Skins",
+    format: "Skins",
     courseName: round.course_name,
     datePlayed: round.date_played,
     players: gamePlayers,
