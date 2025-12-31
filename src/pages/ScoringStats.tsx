@@ -2,10 +2,21 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TopNavBar } from "@/components/TopNavBar";
 import { ArrowLeft, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { StatsFilter } from "@/utils/statisticsCalculations";
+import { subYears, startOfDay } from "date-fns";
+
+type TimeFilter = StatsFilter;
 
 interface ScoringData {
   roundsCount: number;
@@ -27,10 +38,11 @@ export default function ScoringStats() {
   const navigate = useNavigate();
   const [stats, setStats] = useState<ScoringData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [timeFilter]);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -38,11 +50,28 @@ export default function ScoringStats() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: proRounds } = await supabase
+      const getDateFilter = () => {
+        const now = new Date();
+        switch (timeFilter) {
+          case 'year':
+            return startOfDay(subYears(now, 1)).toISOString();
+          default:
+            return null;
+        }
+      };
+
+      let proQuery = supabase
         .from('pro_stats_rounds')
-        .select('id')
+        .select('id, created_at')
         .eq('user_id', user.id)
         .eq('holes_played', 18);
+
+      const dateFilter = getDateFilter();
+      if (dateFilter) {
+        proQuery = proQuery.gte('created_at', dateFilter);
+      }
+
+      const { data: proRounds } = await proQuery;
 
       if (!proRounds || proRounds.length === 0) {
         setStats(null);
@@ -162,6 +191,23 @@ export default function ScoringStats() {
               {stats?.roundsCount || 0} rounds analyzed
             </p>
           </div>
+        </div>
+
+        {/* Time Filter */}
+        <div className="mb-6">
+          <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
+            <SelectTrigger className="w-full bg-card">
+              <SelectValue placeholder="Select time period" />
+            </SelectTrigger>
+            <SelectContent className="bg-card">
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="last50">Last 50 Rounds</SelectItem>
+              <SelectItem value="last20">Last 20 Rounds</SelectItem>
+              <SelectItem value="last10">Last 10 Rounds</SelectItem>
+              <SelectItem value="last5">Last 5 Rounds</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {!stats ? (
