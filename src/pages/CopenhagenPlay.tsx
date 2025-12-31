@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { calculateCopenhagenPoints, calculateNetScore } from "@/utils/copenhagenScoring";
+import { calculateCopenhagenPoints, calculateNetScore, normalizePoints } from "@/utils/copenhagenScoring";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -447,20 +447,29 @@ export default function CopenhagenPlay() {
         {/* Points Display */}
         <Card className="p-4">
           <h3 className="font-semibold mb-2">Points</h3>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className="text-sm text-muted-foreground truncate">{game.player_1}</div>
-              <div className="text-xl font-bold">{game.player_1_total_points}</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground truncate">{game.player_2}</div>
-              <div className="text-xl font-bold">{game.player_2_total_points}</div>
-            </div>
-            <div>
-              <div className="text-sm text-muted-foreground truncate">{game.player_3}</div>
-              <div className="text-xl font-bold">{game.player_3_total_points}</div>
-            </div>
-          </div>
+          {(() => {
+            const normalized = normalizePoints(
+              game.player_1_total_points,
+              game.player_2_total_points,
+              game.player_3_total_points
+            );
+            return (
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-sm text-muted-foreground truncate">{game.player_1}</div>
+                  <div className="text-xl font-bold">{normalized.player1}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground truncate">{game.player_2}</div>
+                  <div className="text-xl font-bold">{normalized.player2}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground truncate">{game.player_3}</div>
+                  <div className="text-xl font-bold">{normalized.player3}</div>
+                </div>
+              </div>
+            );
+          })()}
         </Card>
       </div>
 
