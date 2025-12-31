@@ -33,6 +33,7 @@ const ProRoundSetup = () => {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [teeSet, setTeeSet] = useState("");
   const [holesPlayed, setHolesPlayed] = useState<9 | 18>(18);
+  const [startingHole, setStartingHole] = useState<1 | 10>(1);
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<AvailableTee[]>([]);
 
@@ -154,6 +155,7 @@ const ProRoundSetup = () => {
             course_name: selectedCourse?.name || "",
             tee_set: selectedTeeDisplay,
             holes_played: holesPlayed,
+            starting_hole: startingHole,
             origin: 'pro_stats',
           },
         ])
@@ -240,21 +242,37 @@ const ProRoundSetup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Number of Holes</Label>
-              <div className="flex gap-4">
-                <Button
-                  variant={holesPlayed === 9 ? "default" : "outline"}
-                  onClick={() => setHolesPlayed(9)}
-                  className="flex-1"
-                >
-                  9 Holes
-                </Button>
+              <Label>Holes</Label>
+              <div className="flex gap-2">
                 <Button
                   variant={holesPlayed === 18 ? "default" : "outline"}
-                  onClick={() => setHolesPlayed(18)}
+                  onClick={() => {
+                    setHolesPlayed(18);
+                    setStartingHole(1);
+                  }}
                   className="flex-1"
                 >
-                  18 Holes
+                  Full 18
+                </Button>
+                <Button
+                  variant={holesPlayed === 9 && startingHole === 1 ? "default" : "outline"}
+                  onClick={() => {
+                    setHolesPlayed(9);
+                    setStartingHole(1);
+                  }}
+                  className="flex-1"
+                >
+                  Front 9
+                </Button>
+                <Button
+                  variant={holesPlayed === 9 && startingHole === 10 ? "default" : "outline"}
+                  onClick={() => {
+                    setHolesPlayed(9);
+                    setStartingHole(10);
+                  }}
+                  className="flex-1"
+                >
+                  Back 9
                 </Button>
               </div>
             </div>
