@@ -265,6 +265,9 @@ const GameResultCardFromDB = ({
         if (tableName === "best_ball_games") {
           return "id, course_name, round_name, date_played, holes_played, game_type, winner_team, final_result, is_finished, team_a_players, team_b_players";
         }
+        if (tableName === "copenhagen_games") {
+          return "id, course_name, round_name, date_played, holes_played, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points";
+        }
         return "id, course_name, round_name, date_played, holes_played";
       })();
 
@@ -365,6 +368,43 @@ const GameResultCardFromDB = ({
 
         const { matchResult, matchFinalScore } = computeMatchPlayOutcome();
 
+        // Compute Copenhagen position and final score
+        const computeCopenhagenData = (): { position: number | null; copenhagenFinalScore: string | null } => {
+          if (tableName !== "copenhagen_games") return { position: null, copenhagenFinalScore: null };
+          
+          const g = data as any;
+          const rawPoints = [
+            { player: 1, pts: g.player_1_total_points || 0, name: g.player_1 },
+            { player: 2, pts: g.player_2_total_points || 0, name: g.player_2 },
+            { player: 3, pts: g.player_3_total_points || 0, name: g.player_3 },
+          ];
+          
+          // Normalize points (subtract minimum so lowest is 0)
+          const minPts = Math.min(...rawPoints.map(p => p.pts));
+          const normalizedPoints = rawPoints.map(p => ({ ...p, pts: p.pts - minPts }));
+          
+          // Sort by points descending for position calculation
+          const sortedPoints = [...normalizedPoints].sort((a, b) => b.pts - a.pts);
+          
+          // Find which player the result user is
+          let userPlayerIndex: number | null = null;
+          if (participantNames.some(n => n === g.player_1)) userPlayerIndex = 1;
+          else if (participantNames.some(n => n === g.player_2)) userPlayerIndex = 2;
+          else if (participantNames.some(n => n === g.player_3)) userPlayerIndex = 3;
+          
+          let position: number | null = null;
+          if (userPlayerIndex) {
+            position = sortedPoints.findIndex((p) => p.player === userPlayerIndex) + 1;
+          }
+          
+          // Create final score string (e.g., "8-3-0") from sorted normalized points
+          const copenhagenFinalScore = sortedPoints.map(p => p.pts).join('-');
+          
+          return { position, copenhagenFinalScore };
+        };
+
+        const { position, copenhagenFinalScore } = computeCopenhagenData();
+
         const gameRecord = data as unknown as {
           id: string;
           course_name: string;
@@ -392,6 +432,8 @@ const GameResultCardFromDB = ({
           holesPlayed: gameRecord.holes_played,
           matchResult,
           matchFinalScore,
+          position,
+          copenhagenFinalScore,
         });
       } catch (err) {
         console.error("Error fetching game data:", err);

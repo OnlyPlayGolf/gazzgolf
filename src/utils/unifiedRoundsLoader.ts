@@ -423,18 +423,27 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     else if (participantNames.some((n) => n === game.player_3)) userPlayerIndex = 3;
     else if (game.user_id === targetUserId) userPlayerIndex = 1; // Owner defaults to player 1
     
-    // Calculate position based on points
+    // Calculate position based on points and normalized final score
     let position: number | null = null;
+    const rawPoints = [
+      { player: 1, pts: game.player_1_total_points || 0 },
+      { player: 2, pts: game.player_2_total_points || 0 },
+      { player: 3, pts: game.player_3_total_points || 0 },
+    ];
+    
+    // Normalize points (subtract minimum so lowest is 0)
+    const minPts = Math.min(...rawPoints.map(p => p.pts));
+    const normalizedPoints = rawPoints.map(p => ({ ...p, pts: p.pts - minPts }));
+    
+    // Sort by points descending for position calculation
+    const sortedPoints = [...normalizedPoints].sort((a, b) => b.pts - a.pts);
+    
     if (userPlayerIndex) {
-      const points = [
-        { player: 1, pts: game.player_1_total_points || 0 },
-        { player: 2, pts: game.player_2_total_points || 0 },
-        { player: 3, pts: game.player_3_total_points || 0 },
-      ];
-      // Sort by points descending (highest points = 1st place)
-      points.sort((a, b) => b.pts - a.pts);
-      position = points.findIndex((p) => p.player === userPlayerIndex) + 1;
+      position = sortedPoints.findIndex((p) => p.player === userPlayerIndex) + 1;
     }
+    
+    // Create final score string (e.g., "8-3-0") from sorted normalized points
+    const copenhagenFinalScore = sortedPoints.map(p => p.pts).join('-');
     
     allRounds.push({
       id: game.id,
@@ -449,6 +458,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       teeSet: game.tee_set,
       ownerUserId: game.user_id || targetUserId,
       position,
+      copenhagenFinalScore,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
