@@ -62,7 +62,6 @@ const CATEGORIES: Record<string, CategoryConfig> = {
       'Learn to control trajectory and spin'
     ],
     getStats: (stats) => [
-      { label: 'SG Short Game', value: formatSG(stats.strokesGained.shortGame), isPositive: (stats.strokesGained.shortGame ?? 0) >= 0 },
       { label: 'Scrambling', value: formatPercentage(stats.accuracy.scrambling) },
     ],
     getRelevantDrills: (recs) => recs.filter(d => d.category === 'Short Game')
