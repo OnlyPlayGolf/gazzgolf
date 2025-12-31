@@ -329,7 +329,7 @@ export default function Statistics() {
             />
             <StatRow 
               label="Scoring" 
-              value={formatSG(stats?.strokesGained.scoring ?? null)}
+              value={stats?.strokesGained.scoring !== null ? formatSG(stats?.strokesGained.scoring) : ''}
               onClick={() => navigate('/statistics/scoring-sg')}
             />
           </CardContent>
@@ -364,7 +364,7 @@ export default function Statistics() {
             <SGStatRow label="Putting" value={stats?.strokesGained.putting ?? null} showBadge onClick={() => navigate('/statistics/putting-detail')} />
             <StatRow 
               label="Other" 
-              value={formatSG(stats?.strokesGained.other ?? null)}
+              value={stats?.strokesGained.other !== null ? formatSG(stats?.strokesGained.other) : ''}
               onClick={() => navigate('/statistics/other')}
             />
           </CardContent>
