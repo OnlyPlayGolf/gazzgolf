@@ -649,7 +649,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     });
   }
 
-  // Umbriago - calculate position and normalized score
+  // Umbriago - calculate W/L/T result and normalized score
   for (const game of umbriagioGames) {
     // Determine user's team
     const userInTeamA = participantNames.includes(game.team_a_player_1) || 
@@ -658,8 +658,8 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     const userInTeamB = participantNames.includes(game.team_b_player_1) || 
                         participantNames.includes(game.team_b_player_2);
     
-    // Calculate position and normalized score
-    let umbriagioPosition: number | null = null;
+    // Calculate result and normalized score
+    let umbriagioResult: 'W' | 'L' | 'T' | null = null;
     let umbriagioFinalScore: string | null = null;
     
     if (game.is_finished) {
@@ -672,14 +672,16 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       const normalizedB = teamBPoints - minPoints;
       umbriagioFinalScore = `${normalizedA}-${normalizedB}`;
       
-      // Determine user's position
-      if (userInTeamA && !userInTeamB) {
-        umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+      // Determine user's result (W/L/T)
+      if (teamAPoints === teamBPoints) {
+        umbriagioResult = 'T';
+      } else if (userInTeamA && !userInTeamB) {
+        umbriagioResult = teamAPoints > teamBPoints ? 'W' : 'L';
       } else if (userInTeamB && !userInTeamA) {
-        umbriagioPosition = teamBPoints >= teamAPoints ? 1 : 2;
+        umbriagioResult = teamBPoints > teamAPoints ? 'W' : 'L';
       } else {
         // Owner defaults to Team A
-        umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+        umbriagioResult = teamAPoints > teamBPoints ? 'W' : 'L';
       }
     }
     
@@ -695,7 +697,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       holesPlayed: game.holes_played,
       teeSet: game.tee_set,
       ownerUserId: game.user_id || targetUserId,
-      umbriagioPosition,
+      umbriagioResult,
       umbriagioFinalScore,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });

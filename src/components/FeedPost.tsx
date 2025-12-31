@@ -500,25 +500,27 @@ const GameResultCardFromDB = ({
           const normalizedB = teamBPoints - minPoints;
           const umbriagioFinalScore = `${normalizedA}-${normalizedB}`;
           
-          // Determine user's team and position
+          // Determine user's result (W/L/T)
+          let umbriagioResult: 'W' | 'L' | 'T' | null = null;
           const userInTeamA = participantNames.includes(umbriagioData.team_a_player_1) || 
                               participantNames.includes(umbriagioData.team_a_player_2);
           const userInTeamB = participantNames.includes(umbriagioData.team_b_player_1) || 
                               participantNames.includes(umbriagioData.team_b_player_2);
           
-          let umbriagioPosition: number | null = null;
-          if (userInTeamA && !userInTeamB) {
-            umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+          if (teamAPoints === teamBPoints) {
+            umbriagioResult = 'T';
+          } else if (userInTeamA && !userInTeamB) {
+            umbriagioResult = teamAPoints > teamBPoints ? 'W' : 'L';
           } else if (userInTeamB && !userInTeamA) {
-            umbriagioPosition = teamBPoints >= teamAPoints ? 1 : 2;
+            umbriagioResult = teamBPoints > teamAPoints ? 'W' : 'L';
           } else {
-            umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+            umbriagioResult = teamAPoints > teamBPoints ? 'W' : 'L';
           }
           
-          return { umbriagioPosition, umbriagioFinalScore };
+          return { umbriagioResult, umbriagioFinalScore };
         };
         
-        const { umbriagioPosition, umbriagioFinalScore } = computeUmbriagioData();
+        const { umbriagioResult, umbriagioFinalScore } = computeUmbriagioData();
 
         const gameRecord = data as unknown as {
           id: string;
@@ -551,7 +553,7 @@ const GameResultCardFromDB = ({
           copenhagenFinalScore,
           scramblePosition,
           scrambleScoreToPar,
-          umbriagioPosition,
+          umbriagioResult,
           umbriagioFinalScore,
         });
       } catch (err) {

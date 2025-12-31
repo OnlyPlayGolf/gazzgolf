@@ -34,8 +34,8 @@ export interface RoundCardData {
   scramblePosition?: number | null;
   scrambleScoreToPar?: number | null;
   
-  // Umbriago-specific: team position (1 or 2) and final score (e.g., "5-0")
-  umbriagioPosition?: number | null;
+  // Umbriago-specific: W/L/T result and final score (e.g., "5-0")
+  umbriagioResult?: 'W' | 'L' | 'T' | null;
   umbriagioFinalScore?: string | null;
 }
 
@@ -80,8 +80,8 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   // Check if this is a scramble with position data
   const isScramble = round.gameType === 'scramble' && round.scramblePosition;
   
-  // Check if this is an umbriago with position data
-  const isUmbriago = round.gameType === 'umbriago' && round.umbriagioPosition;
+  // Check if this is an umbriago with result data
+  const isUmbriago = round.gameType === 'umbriago' && round.umbriagioResult;
   
   // Format position for Copenhagen games
   const formatPosition = (pos: number) => {
@@ -126,8 +126,8 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
               </div>
             ) : isUmbriago ? (
               <div className="flex flex-col items-center">
-                <div className={`text-2xl font-bold ${round.umbriagioPosition === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
-                  {formatPosition(round.umbriagioPosition!)}
+                <div className={`text-2xl font-bold ${getMatchResultColor(round.umbriagioResult!)}`}>
+                  {round.umbriagioResult}
                 </div>
                 {round.umbriagioFinalScore && (
                   <div className="text-xs text-muted-foreground">
