@@ -351,8 +351,8 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
                   Add New Course
                 </Button>
 
-                <ScrollArea className="flex-1">
-                  <div className="space-y-2 pr-4">
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="space-y-2 pr-2">
                     {filteredCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
                     ))}
@@ -362,13 +362,13 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
                       </p>
                     )}
                   </div>
-                </ScrollArea>
+                </div>
               </div>
             </TabsContent>
 
             <TabsContent value="favorites" className="flex-1 overflow-hidden mt-0 p-4">
-              <ScrollArea className="h-full">
-                <div className="space-y-2 pr-4">
+              <div className="h-full overflow-y-auto">
+                <div className="space-y-2 pr-2">
                   {favoriteCourses.length > 0 ? (
                     favoriteCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
@@ -381,12 +381,12 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </TabsContent>
 
             <TabsContent value="recent" className="flex-1 overflow-hidden mt-0 p-4">
-              <ScrollArea className="h-full">
-                <div className="space-y-2 pr-4">
+              <div className="h-full overflow-y-auto">
+                <div className="space-y-2 pr-2">
                   {recentCourses.length > 0 ? (
                     recentCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
@@ -399,7 +399,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </TabsContent>
 
           </Tabs>
