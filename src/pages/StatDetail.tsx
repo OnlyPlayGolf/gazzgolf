@@ -3,6 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TopNavBar } from "@/components/TopNavBar";
 import { 
   ArrowLeft, TrendingUp, Target, Play, 
@@ -12,9 +19,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   fetchUserStats, formatSG, formatPercentage,
   getSGLevel, getDrillRecommendations,
-  AllStats, DrillRecommendation 
+  AllStats, DrillRecommendation, StatsFilter 
 } from "@/utils/statisticsCalculations";
 import { cn } from "@/lib/utils";
+
+type TimeFilter = StatsFilter;
 
 interface CategoryConfig {
   title: string;
@@ -170,6 +179,7 @@ export default function StatDetail() {
   const [stats, setStats] = useState<AllStats | null>(null);
   const [drillRecs, setDrillRecs] = useState<DrillRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
 
   const config = category ? CATEGORIES[category] : null;
 
@@ -182,7 +192,7 @@ export default function StatDetail() {
       }
 
       try {
-        const data = await fetchUserStats(user.id);
+        const data = await fetchUserStats(user.id, timeFilter);
         setStats(data);
         setDrillRecs(getDrillRecommendations(data));
       } catch (error) {
@@ -193,7 +203,7 @@ export default function StatDetail() {
     };
 
     loadStats();
-  }, [navigate, category]);
+  }, [navigate, category, timeFilter]);
 
   if (!config) {
     return (
@@ -239,6 +249,23 @@ export default function StatDetail() {
               <p className="text-sm text-muted-foreground">{config.description}</p>
             </div>
           </div>
+        </div>
+
+        {/* Time Filter */}
+        <div className="mb-4">
+          <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
+            <SelectTrigger className="w-full bg-card">
+              <SelectValue placeholder="Select time period" />
+            </SelectTrigger>
+            <SelectContent className="bg-card">
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="last50">Last 50 Rounds</SelectItem>
+              <SelectItem value="last20">Last 20 Rounds</SelectItem>
+              <SelectItem value="last10">Last 10 Rounds</SelectItem>
+              <SelectItem value="last5">Last 5 Rounds</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Current Stats */}
