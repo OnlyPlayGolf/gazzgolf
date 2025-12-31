@@ -271,6 +271,9 @@ const GameResultCardFromDB = ({
         if (tableName === "scramble_games") {
           return "id, course_name, round_name, date_played, holes_played, teams, winning_team";
         }
+        if (tableName === "umbriago_games") {
+          return "id, course_name, round_name, date_played, holes_played, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished";
+        }
         return "id, course_name, round_name, date_played, holes_played";
       })();
 
@@ -482,6 +485,41 @@ const GameResultCardFromDB = ({
 
         const { scramblePosition, scrambleScoreToPar } = computeScrambleData();
 
+        // Compute Umbriago position and score
+        const computeUmbriagioData = () => {
+          if (tableName !== "umbriago_games") return { umbriagioPosition: null, umbriagioFinalScore: null };
+          const umbriagioData = data as any;
+          if (!umbriagioData.is_finished) return { umbriagioPosition: null, umbriagioFinalScore: null };
+          
+          const teamAPoints = umbriagioData.team_a_total_points || 0;
+          const teamBPoints = umbriagioData.team_b_total_points || 0;
+          
+          // Normalize points
+          const minPoints = Math.min(teamAPoints, teamBPoints);
+          const normalizedA = teamAPoints - minPoints;
+          const normalizedB = teamBPoints - minPoints;
+          const umbriagioFinalScore = `${normalizedA}-${normalizedB}`;
+          
+          // Determine user's team and position
+          const userInTeamA = participantNames.includes(umbriagioData.team_a_player_1) || 
+                              participantNames.includes(umbriagioData.team_a_player_2);
+          const userInTeamB = participantNames.includes(umbriagioData.team_b_player_1) || 
+                              participantNames.includes(umbriagioData.team_b_player_2);
+          
+          let umbriagioPosition: number | null = null;
+          if (userInTeamA && !userInTeamB) {
+            umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+          } else if (userInTeamB && !userInTeamA) {
+            umbriagioPosition = teamBPoints >= teamAPoints ? 1 : 2;
+          } else {
+            umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+          }
+          
+          return { umbriagioPosition, umbriagioFinalScore };
+        };
+        
+        const { umbriagioPosition, umbriagioFinalScore } = computeUmbriagioData();
+
         const gameRecord = data as unknown as {
           id: string;
           course_name: string;
@@ -513,6 +551,8 @@ const GameResultCardFromDB = ({
           copenhagenFinalScore,
           scramblePosition,
           scrambleScoreToPar,
+          umbriagioPosition,
+          umbriagioFinalScore,
         });
       } catch (err) {
         console.error("Error fetching game data:", err);

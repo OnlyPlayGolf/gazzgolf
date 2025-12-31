@@ -16,6 +16,7 @@ import {
   calculateIndividualLow,
   calculateBirdieEagle,
   calculateHolePoints,
+  normalizeUmbriagioPoints,
 } from "@/utils/umbriagioScoring";
 import {
   AlertDialog,
@@ -227,12 +228,15 @@ export default function UmbriagioPlay() {
   // Calculate the current segment range and segment-specific points
   const segmentInfo = useMemo(() => {
     if (!rotationSchedule || rotationSchedule.schedule.length <= 1) {
-      // No rotation or single segment - show total points
+      // No rotation or single segment - show total points (normalized)
+      const rawA = game?.team_a_total_points || 0;
+      const rawB = game?.team_b_total_points || 0;
+      const { normalizedA, normalizedB } = normalizeUmbriagioPoints(rawA, rawB);
       return {
         startHole: 1,
         endHole: totalHoles,
-        teamASegmentPoints: game?.team_a_total_points || 0,
-        teamBSegmentPoints: game?.team_b_total_points || 0,
+        teamASegmentPoints: normalizedA,
+        teamBSegmentPoints: normalizedB,
         isRotating: false,
       };
     }
@@ -253,11 +257,14 @@ export default function UmbriagioPlay() {
       }
     });
     
+    // Normalize segment points
+    const { normalizedA, normalizedB } = normalizeUmbriagioPoints(teamASegmentPoints, teamBSegmentPoints);
+    
     return {
       startHole,
       endHole,
-      teamASegmentPoints,
-      teamBSegmentPoints,
+      teamASegmentPoints: normalizedA,
+      teamBSegmentPoints: normalizedB,
       isRotating: true,
       segmentIndex: segmentIndex + 1,
       totalSegments: rotationSchedule.schedule.length,

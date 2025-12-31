@@ -33,6 +33,10 @@ export interface RoundCardData {
   // Scramble-specific: team position and score to par (e.g., "-5")
   scramblePosition?: number | null;
   scrambleScoreToPar?: number | null;
+  
+  // Umbriago-specific: team position (1 or 2) and final score (e.g., "5-0")
+  umbriagioPosition?: number | null;
+  umbriagioFinalScore?: string | null;
 }
 
 interface RoundCardProps {
@@ -76,6 +80,9 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   // Check if this is a scramble with position data
   const isScramble = round.gameType === 'scramble' && round.scramblePosition;
   
+  // Check if this is an umbriago with position data
+  const isUmbriago = round.gameType === 'umbriago' && round.umbriagioPosition;
+  
   // Format position for Copenhagen games
   const formatPosition = (pos: number) => {
     if (pos === 1) return '1st';
@@ -114,6 +121,17 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
                 {round.copenhagenFinalScore && (
                   <div className="text-xs text-muted-foreground">
                     {round.copenhagenFinalScore}
+                  </div>
+                )}
+              </div>
+            ) : isUmbriago ? (
+              <div className="flex flex-col items-center">
+                <div className={`text-2xl font-bold ${round.umbriagioPosition === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
+                  {formatPosition(round.umbriagioPosition!)}
+                </div>
+                {round.umbriagioFinalScore && (
+                  <div className="text-xs text-muted-foreground">
+                    {round.umbriagioFinalScore}
                   </div>
                 )}
               </div>
