@@ -22,8 +22,9 @@ export interface RoundCardData {
   totalPar?: number | null;
   ownerUserId?: string;
   
-  // Copenhagen-specific: player's position (1, 2, or 3)
+  // Copenhagen-specific: player's position (1, 2, or 3) and final score (e.g., "8-3-0")
   position?: number | null;
+  copenhagenFinalScore?: string | null;
   
   // Match Play specific: W/L/T result and final score (e.g., "3 & 2")
   matchResult?: 'W' | 'L' | 'T' | null;
@@ -93,8 +94,15 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
           {/* Left: Score, Position, or Match Result */}
           <div className="flex-shrink-0 w-14 text-center">
             {round.gameType === 'copenhagen' && round.position ? (
-              <div className={`text-2xl font-bold ${round.position === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
-                {formatPosition(round.position)}
+              <div className="flex flex-col items-center">
+                <div className={`text-2xl font-bold ${round.position === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
+                  {formatPosition(round.position)}
+                </div>
+                {round.copenhagenFinalScore && (
+                  <div className="text-xs text-muted-foreground">
+                    {round.copenhagenFinalScore}
+                  </div>
+                )}
               </div>
             ) : isMatchPlay && round.matchResult ? (
               <div className="flex flex-col items-center">
