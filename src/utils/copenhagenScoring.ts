@@ -158,3 +158,21 @@ export function calculatePointDifferentials(
     player3: player3Points - averagePoints,
   };
 }
+
+/**
+ * Normalize points by subtracting the lowest score from all players
+ * Example: 10-5-5 becomes 5-0-0
+ */
+export function normalizePoints(
+  player1Points: number,
+  player2Points: number,
+  player3Points: number
+): { player1: number; player2: number; player3: number } {
+  const minPoints = Math.min(player1Points, player2Points, player3Points);
+  
+  return {
+    player1: player1Points - minPoints,
+    player2: player2Points - minPoints,
+    player3: player3Points - minPoints,
+  };
+}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
+import { normalizePoints } from "@/utils/copenhagenScoring";
 import { Trophy, Target, ChevronDown, ChevronUp, ArrowLeft, Share2 } from "lucide-react";
 import { GameShareDialog } from "@/components/GameShareDialog";
 import { Button } from "@/components/ui/button";
@@ -71,24 +72,30 @@ export default function CopenhagenSummary() {
     );
   }
 
+  const normalizedPts = normalizePoints(
+    game.player_1_total_points,
+    game.player_2_total_points,
+    game.player_3_total_points
+  );
+
   const players = [
     { 
       name: game.player_1, 
-      points: game.player_1_total_points, 
+      points: normalizedPts.player1, 
       color: "text-emerald-600", 
       bg: "bg-emerald-500",
       playerNum: 1
     },
     { 
       name: game.player_2, 
-      points: game.player_2_total_points, 
+      points: normalizedPts.player2, 
       color: "text-blue-600", 
       bg: "bg-blue-500",
       playerNum: 2
     },
     { 
       name: game.player_3, 
-      points: game.player_3_total_points, 
+      points: normalizedPts.player3, 
       color: "text-amber-600", 
       bg: "bg-amber-500",
       playerNum: 3

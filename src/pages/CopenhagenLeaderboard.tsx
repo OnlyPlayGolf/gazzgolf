@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
+import { normalizePoints } from "@/utils/copenhagenScoring";
 import { ChevronDown } from "lucide-react";
 import {
   Table,
@@ -92,10 +93,16 @@ export default function CopenhagenLeaderboard() {
     );
   }
 
+  const normalizedPts = normalizePoints(
+    game.player_1_total_points,
+    game.player_2_total_points,
+    game.player_3_total_points
+  );
+
   const players = [
-    { index: 1, name: game.player_1, points: game.player_1_total_points },
-    { index: 2, name: game.player_2, points: game.player_2_total_points },
-    { index: 3, name: game.player_3, points: game.player_3_total_points },
+    { index: 1, name: game.player_1, points: normalizedPts.player1 },
+    { index: 2, name: game.player_2, points: normalizedPts.player2 },
+    { index: 3, name: game.player_3, points: normalizedPts.player3 },
   ];
 
   const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
