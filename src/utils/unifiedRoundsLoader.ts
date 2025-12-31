@@ -107,7 +107,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 5: scramble owned
     supabase
       .from("scramble_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams, winning_team")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
@@ -183,7 +183,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     ? [
         supabase
           .from("scramble_games")
-          .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams")
+          .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams, winning_team")
           .then((r) => r),
       ]
     : [];
@@ -530,13 +530,81 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     });
   }
 
-  // Scramble
+  // Scramble - fetch holes data to calculate positions and scores
+  const scrambleGameIds = scrambleGames.map((g: any) => g.id);
+  let scrambleHolesMap = new Map<string, any[]>();
+  
+  if (scrambleGameIds.length > 0) {
+    const { data: scrambleHoles } = await supabase
+      .from("scramble_holes")
+      .select("game_id, par, team_scores")
+      .in("game_id", scrambleGameIds);
+    
+    for (const hole of scrambleHoles || []) {
+      const existing = scrambleHolesMap.get(hole.game_id) || [];
+      existing.push(hole);
+      scrambleHolesMap.set(hole.game_id, existing);
+    }
+  }
+  
   for (const game of scrambleGames) {
     const teams = Array.isArray(game.teams) ? game.teams : [];
     const playerCount = teams.reduce((sum: number, team: any) => {
       const players = Array.isArray(team.players) ? team.players : [];
       return sum + players.length;
     }, 0);
+
+    // Find which team the user is on
+    let userTeamId: string | null = null;
+    for (const team of teams) {
+      const players = Array.isArray(team.players) ? team.players : [];
+      for (const p of players) {
+        const pName = typeof p === "string" ? p : p?.name;
+        if (pName && participantNames.includes(pName)) {
+          userTeamId = team.id;
+          break;
+        }
+      }
+      if (userTeamId) break;
+    }
+    
+    // If not found in teams but user owns the game, default to first team
+    if (!userTeamId && game.user_id === targetUserId && teams.length > 0) {
+      userTeamId = teams[0].id;
+    }
+
+    // Calculate team scores from holes
+    const holes = scrambleHolesMap.get(game.id) || [];
+    const teamTotals: Record<string, { score: number; par: number }> = {};
+    
+    for (const hole of holes) {
+      const teamScores = hole.team_scores || {};
+      for (const [teamId, score] of Object.entries(teamScores)) {
+        if (!teamTotals[teamId]) {
+          teamTotals[teamId] = { score: 0, par: 0 };
+        }
+        teamTotals[teamId].score += score as number;
+        teamTotals[teamId].par += hole.par;
+      }
+    }
+    
+    // Calculate score to par for each team and sort for position
+    const teamResults = Object.entries(teamTotals).map(([teamId, data]) => ({
+      teamId,
+      scoreToPar: data.score - data.par,
+    })).sort((a, b) => a.scoreToPar - b.scoreToPar); // Lower is better
+    
+    // Find user's position and score
+    let scramblePosition: number | null = null;
+    let scrambleScoreToPar: number | null = null;
+    
+    if (userTeamId) {
+      const userTeamIndex = teamResults.findIndex(t => t.teamId === userTeamId);
+      if (userTeamIndex !== -1) {
+        scramblePosition = userTeamIndex + 1;
+        scrambleScoreToPar = teamResults[userTeamIndex].scoreToPar;
+      }
+    }
 
     allRounds.push({
       id: game.id,
@@ -550,6 +618,8 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       holesPlayed: game.holes_played,
       teeSet: game.tee_set,
       ownerUserId: game.user_id || targetUserId,
+      scramblePosition,
+      scrambleScoreToPar,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }

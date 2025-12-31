@@ -268,10 +268,14 @@ const GameResultCardFromDB = ({
         if (tableName === "copenhagen_games") {
           return "id, course_name, round_name, date_played, holes_played, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points";
         }
+        if (tableName === "scramble_games") {
+          return "id, course_name, round_name, date_played, holes_played, teams, winning_team";
+        }
         return "id, course_name, round_name, date_played, holes_played";
       })();
 
       try {
+        // First fetch the game data
         const [{ data, error }, { data: resultUserProfile }] = await Promise.all([
           supabase
             .from(tableName as any)
@@ -288,6 +292,16 @@ const GameResultCardFromDB = ({
         if (error || !data) {
           setLoading(false);
           return;
+        }
+
+        // Fetch scramble holes if needed
+        let scrambleHoles: any[] = [];
+        if (tableName === "scramble_games") {
+          const { data: holesData } = await supabase
+            .from("scramble_holes")
+            .select("game_id, par, team_scores")
+            .eq("game_id", gameId);
+          scrambleHoles = holesData || [];
         }
 
         const participantNamesRaw = [
@@ -405,6 +419,69 @@ const GameResultCardFromDB = ({
 
         const { position, copenhagenFinalScore } = computeCopenhagenData();
 
+        // Compute Scramble position and score to par
+        const computeScrambleData = (): { scramblePosition: number | null; scrambleScoreToPar: number | null } => {
+          if (tableName !== "scramble_games") return { scramblePosition: null, scrambleScoreToPar: null };
+          
+          const g = data as any;
+          const teams = Array.isArray(g.teams) ? g.teams : [];
+          
+          // Find which team the user is on
+          let userTeamId: string | null = null;
+          for (const team of teams) {
+            const players = Array.isArray(team.players) ? team.players : [];
+            for (const p of players) {
+              const pName = typeof p === "string" ? p : p?.name;
+              if (pName && participantNames.includes(pName)) {
+                userTeamId = team.id;
+                break;
+              }
+            }
+            if (userTeamId) break;
+          }
+          
+          // If not found, default to first team
+          if (!userTeamId && teams.length > 0) {
+            userTeamId = teams[0].id;
+          }
+          
+          // Calculate team scores from holes
+          const teamTotals: Record<string, { score: number; par: number }> = {};
+          
+          for (const hole of scrambleHoles) {
+            const teamScores = hole.team_scores || {};
+            for (const [teamId, score] of Object.entries(teamScores)) {
+              if (!teamTotals[teamId]) {
+                teamTotals[teamId] = { score: 0, par: 0 };
+              }
+              teamTotals[teamId].score += score as number;
+              teamTotals[teamId].par += hole.par;
+            }
+          }
+          
+          // Calculate score to par for each team and sort for position
+          const teamResults = Object.entries(teamTotals).map(([teamId, teamData]) => ({
+            teamId,
+            scoreToPar: teamData.score - teamData.par,
+          })).sort((a, b) => a.scoreToPar - b.scoreToPar); // Lower is better
+          
+          // Find user's position and score
+          let scramblePosition: number | null = null;
+          let scrambleScoreToPar: number | null = null;
+          
+          if (userTeamId) {
+            const userTeamIndex = teamResults.findIndex(t => t.teamId === userTeamId);
+            if (userTeamIndex !== -1) {
+              scramblePosition = userTeamIndex + 1;
+              scrambleScoreToPar = teamResults[userTeamIndex].scoreToPar;
+            }
+          }
+          
+          return { scramblePosition, scrambleScoreToPar };
+        };
+
+        const { scramblePosition, scrambleScoreToPar } = computeScrambleData();
+
         const gameRecord = data as unknown as {
           id: string;
           course_name: string;
@@ -434,6 +511,8 @@ const GameResultCardFromDB = ({
           matchFinalScore,
           position,
           copenhagenFinalScore,
+          scramblePosition,
+          scrambleScoreToPar,
         });
       } catch (err) {
         console.error("Error fetching game data:", err);

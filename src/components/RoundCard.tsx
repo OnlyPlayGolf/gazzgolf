@@ -29,6 +29,10 @@ export interface RoundCardData {
   // Match Play specific: W/L/T result and final score (e.g., "3 & 2")
   matchResult?: 'W' | 'L' | 'T' | null;
   matchFinalScore?: string | null;
+  
+  // Scramble-specific: team position and score to par (e.g., "-5")
+  scramblePosition?: number | null;
+  scrambleScoreToPar?: number | null;
 }
 
 interface RoundCardProps {
@@ -69,6 +73,9 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   const isMatchPlay = round.gameType === 'match_play' || 
     (round.gameType === 'best_ball' && round.matchResult);
   
+  // Check if this is a scramble with position data
+  const isScramble = round.gameType === 'scramble' && round.scramblePosition;
+  
   // Format position for Copenhagen games
   const formatPosition = (pos: number) => {
     if (pos === 1) return '1st';
@@ -82,6 +89,12 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
     if (result === 'W') return 'text-emerald-600';
     if (result === 'L') return 'text-destructive';
     return 'text-muted-foreground';
+  };
+  
+  // Format score to par
+  const formatScoreToPar = (score: number) => {
+    if (score === 0) return 'E';
+    return score > 0 ? `+${score}` : `${score}`;
   };
 
   return (
@@ -101,6 +114,17 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
                 {round.copenhagenFinalScore && (
                   <div className="text-xs text-muted-foreground">
                     {round.copenhagenFinalScore}
+                  </div>
+                )}
+              </div>
+            ) : isScramble ? (
+              <div className="flex flex-col items-center">
+                <div className={`text-2xl font-bold ${round.scramblePosition === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
+                  {formatPosition(round.scramblePosition!)}
+                </div>
+                {round.scrambleScoreToPar !== undefined && round.scrambleScoreToPar !== null && (
+                  <div className="text-xs text-muted-foreground">
+                    {formatScoreToPar(round.scrambleScoreToPar)}
                   </div>
                 )}
               </div>
