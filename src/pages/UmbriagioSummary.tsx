@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
-import { calculatePayout } from "@/utils/umbriagioScoring";
+import { calculatePayout, normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { GameShareDialog } from "@/components/GameShareDialog";
 
@@ -147,7 +147,10 @@ export default function UmbriagioSummary() {
         courseName={game.course_name}
         roundName={game.round_name || undefined}
         winner={getWinnerName()}
-        resultText={`${game.team_a_total_points} - ${game.team_b_total_points}`}
+        resultText={(() => {
+          const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
+          return `${normalizedA} - ${normalizedB}`;
+        })()}
         additionalInfo={`Team A vs Team B`}
         gameId={gameId}
         onContinue={() => navigate("/rounds-play")}
@@ -194,23 +197,28 @@ export default function UmbriagioSummary() {
             <CardTitle>Final Score</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex justify-between items-center">
-              <div className="text-center flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Team A</div>
-                <div className="text-sm text-muted-foreground">
-                  {game.team_a_player_1} & {game.team_a_player_2}
+            {(() => {
+              const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
+              return (
+                <div className="flex justify-between items-center">
+                  <div className="text-center flex-1">
+                    <div className="text-sm text-muted-foreground mb-1">Team A</div>
+                    <div className="text-sm text-muted-foreground">
+                      {game.team_a_player_1} & {game.team_a_player_2}
+                    </div>
+                    <div className="text-4xl font-bold text-blue-500 mt-2">{normalizedA}</div>
+                  </div>
+                  <div className="text-2xl font-bold text-muted-foreground">vs</div>
+                  <div className="text-center flex-1">
+                    <div className="text-sm text-muted-foreground mb-1">Team B</div>
+                    <div className="text-sm text-muted-foreground">
+                      {game.team_b_player_1} & {game.team_b_player_2}
+                    </div>
+                    <div className="text-4xl font-bold text-red-500 mt-2">{normalizedB}</div>
+                  </div>
                 </div>
-                <div className="text-4xl font-bold text-blue-500 mt-2">{game.team_a_total_points}</div>
-              </div>
-              <div className="text-2xl font-bold text-muted-foreground">vs</div>
-              <div className="text-center flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Team B</div>
-                <div className="text-sm text-muted-foreground">
-                  {game.team_b_player_1} & {game.team_b_player_2}
-                </div>
-                <div className="text-4xl font-bold text-red-500 mt-2">{game.team_b_total_points}</div>
-              </div>
-            </div>
+              );
+            })()}
           </CardContent>
         </Card>
 

@@ -4,6 +4,7 @@ import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
+import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { ChevronDown } from "lucide-react";
 import {
   Table,
@@ -479,16 +480,18 @@ export default function UmbriagioLeaderboard() {
   const renderTeamCard = (team: 'A' | 'B') => {
     const isExpanded = expandedTeam === team;
     const isLeader = leader === team;
-    const totalPoints = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
+    const rawPoints = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
+    const otherRawPoints = team === 'A' ? game.team_b_total_points : game.team_a_total_points;
+    const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
+    const totalPoints = team === 'A' ? normalizedA : normalizedB;
     const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
     const player1 = team === 'A' ? game.team_a_player_1 : game.team_b_player_1;
     const player2 = team === 'A' ? game.team_a_player_2 : game.team_b_player_2;
-    const otherTeamPoints = team === 'A' ? game.team_b_total_points : game.team_a_total_points;
 
-    // Determine position with tie handling
+    // Determine position with tie handling (use raw points for position comparison)
     const getTeamPositionLabel = (): string => {
-      if (totalPoints > otherTeamPoints) return '1';
-      if (totalPoints < otherTeamPoints) return '2';
+      if (rawPoints > otherRawPoints) return '1';
+      if (rawPoints < otherRawPoints) return '2';
       return 'T1'; // Tied
     };
 

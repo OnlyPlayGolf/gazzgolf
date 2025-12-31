@@ -121,7 +121,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 7: umbriago owned
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
@@ -221,22 +221,22 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const umbriagioParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
       .eq("team_a_player_1", name)
       .then((r) => r),
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
       .eq("team_a_player_2", name)
       .then((r) => r),
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
       .eq("team_b_player_1", name)
       .then((r) => r),
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
       .eq("team_b_player_2", name)
       .then((r) => r),
   ]);
@@ -649,8 +649,40 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     });
   }
 
-  // Umbriago
+  // Umbriago - calculate position and normalized score
   for (const game of umbriagioGames) {
+    // Determine user's team
+    const userInTeamA = participantNames.includes(game.team_a_player_1) || 
+                        participantNames.includes(game.team_a_player_2) ||
+                        game.user_id === targetUserId;
+    const userInTeamB = participantNames.includes(game.team_b_player_1) || 
+                        participantNames.includes(game.team_b_player_2);
+    
+    // Calculate position and normalized score
+    let umbriagioPosition: number | null = null;
+    let umbriagioFinalScore: string | null = null;
+    
+    if (game.is_finished) {
+      const teamAPoints = game.team_a_total_points || 0;
+      const teamBPoints = game.team_b_total_points || 0;
+      
+      // Normalize points (lower becomes 0)
+      const minPoints = Math.min(teamAPoints, teamBPoints);
+      const normalizedA = teamAPoints - minPoints;
+      const normalizedB = teamBPoints - minPoints;
+      umbriagioFinalScore = `${normalizedA}-${normalizedB}`;
+      
+      // Determine user's position
+      if (userInTeamA && !userInTeamB) {
+        umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+      } else if (userInTeamB && !userInTeamA) {
+        umbriagioPosition = teamBPoints >= teamAPoints ? 1 : 2;
+      } else {
+        // Owner defaults to Team A
+        umbriagioPosition = teamAPoints >= teamBPoints ? 1 : 2;
+      }
+    }
+    
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
@@ -663,6 +695,8 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       holesPlayed: game.holes_played,
       teeSet: game.tee_set,
       ownerUserId: game.user_id || targetUserId,
+      umbriagioPosition,
+      umbriagioFinalScore,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }

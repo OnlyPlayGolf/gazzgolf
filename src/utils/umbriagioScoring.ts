@@ -8,6 +8,15 @@ export interface HoleScores {
   par: number;
 }
 
+// Normalize points by subtracting the minimum so the losing team shows 0
+export function normalizeUmbriagioPoints(teamAPoints: number, teamBPoints: number): { normalizedA: number; normalizedB: number } {
+  const minPoints = Math.min(teamAPoints, teamBPoints);
+  return {
+    normalizedA: teamAPoints - minPoints,
+    normalizedB: teamBPoints - minPoints,
+  };
+}
+
 export interface CategoryResults {
   teamLowWinner: 'A' | 'B' | null;
   individualLowWinner: 'A' | 'B' | null;
