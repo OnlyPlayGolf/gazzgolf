@@ -70,11 +70,11 @@ const Practice = () => {
           >
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-3 text-foreground">
-                <div className="p-3 bg-primary/10 rounded-lg">
+              <div className="p-3 bg-primary/10 rounded-lg">
                   <BarChart3 size={32} className="text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl">Pro Stats</div>
+                  <div className="text-2xl">Add Stats</div>
                   <div className="text-sm font-normal text-muted-foreground mt-1">
                     Track strokes gained
                   </div>
