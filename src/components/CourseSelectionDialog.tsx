@@ -330,8 +330,8 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="search" className="flex-1 overflow-hidden mt-0 p-4 pt-4">
-              <div className="space-y-4 h-full flex flex-col">
+            <TabsContent value="search" className="flex-1 min-h-0 overflow-hidden mt-0 p-4 pt-4">
+              <div className="h-full flex flex-col">
                 <div className="relative shrink-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                   <Input
@@ -345,14 +345,14 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
                 <Button
                   variant="outline"
                   onClick={() => setShowAddCourse(true)}
-                  className="w-full shrink-0"
+                  className="w-full shrink-0 mt-4"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Course
                 </Button>
 
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="space-y-2 pr-2">
+                <div className="flex-1 min-h-0 overflow-y-auto mt-4">
+                  <div className="space-y-2 pr-2 pb-4">
                     {filteredCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
                     ))}
@@ -366,9 +366,9 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               </div>
             </TabsContent>
 
-            <TabsContent value="favorites" className="flex-1 overflow-hidden mt-0 p-4">
+            <TabsContent value="favorites" className="flex-1 min-h-0 overflow-hidden mt-0 p-4">
               <div className="h-full overflow-y-auto">
-                <div className="space-y-2 pr-2">
+                <div className="space-y-2 pr-2 pb-4">
                   {favoriteCourses.length > 0 ? (
                     favoriteCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
@@ -384,9 +384,9 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               </div>
             </TabsContent>
 
-            <TabsContent value="recent" className="flex-1 overflow-hidden mt-0 p-4">
+            <TabsContent value="recent" className="flex-1 min-h-0 overflow-hidden mt-0 p-4">
               <div className="h-full overflow-y-auto">
-                <div className="space-y-2 pr-2">
+                <div className="space-y-2 pr-2 pb-4">
                   {recentCourses.length > 0 ? (
                     recentCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
