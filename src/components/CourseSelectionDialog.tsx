@@ -309,7 +309,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md max-h-[85vh] flex flex-col p-0">
+        <DialogContent className="max-w-md h-[80vh] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="p-4 pb-0 shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary" />
@@ -317,7 +317,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="grid grid-cols-3 mx-4 shrink-0">
               <TabsTrigger value="search" className="text-xs">
                 <Search className="w-4 h-4" />
@@ -330,45 +330,43 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="search" className="flex-1 min-h-0 overflow-hidden mt-0 p-4 pt-4">
-              <div className="h-full flex flex-col">
-                <div className="relative shrink-0">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                  <Input
-                    placeholder="Search courses..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddCourse(true)}
-                  className="w-full shrink-0 mt-4"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Course
-                </Button>
+            <TabsContent value="search" className="flex-1 flex flex-col min-h-0 mt-0 p-4 pt-4 data-[state=inactive]:hidden">
+              <div className="relative shrink-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input
+                  placeholder="Search courses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              
+              <Button
+                variant="outline"
+                onClick={() => setShowAddCourse(true)}
+                className="w-full shrink-0 mt-4"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Course
+              </Button>
 
-                <div className="flex-1 min-h-0 overflow-y-auto mt-4">
-                  <div className="space-y-2 pr-2 pb-4">
-                    {filteredCourses.map((course) => (
-                      <CourseItem key={course.id} course={course} />
-                    ))}
-                    {filteredCourses.length === 0 && (
-                      <p className="text-center text-muted-foreground py-8">
-                        No courses found
-                      </p>
-                    )}
-                  </div>
+              <div className="flex-1 min-h-0 overflow-y-auto mt-4">
+                <div className="space-y-2 pb-4">
+                  {filteredCourses.map((course) => (
+                    <CourseItem key={course.id} course={course} />
+                  ))}
+                  {filteredCourses.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">
+                      No courses found
+                    </p>
+                  )}
                 </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="favorites" className="flex-1 min-h-0 overflow-hidden mt-0 p-4">
+            <TabsContent value="favorites" className="flex-1 min-h-0 mt-0 p-4 data-[state=inactive]:hidden">
               <div className="h-full overflow-y-auto">
-                <div className="space-y-2 pr-2 pb-4">
+                <div className="space-y-2 pb-4">
                   {favoriteCourses.length > 0 ? (
                     favoriteCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
@@ -384,9 +382,9 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               </div>
             </TabsContent>
 
-            <TabsContent value="recent" className="flex-1 min-h-0 overflow-hidden mt-0 p-4">
+            <TabsContent value="recent" className="flex-1 min-h-0 mt-0 p-4 data-[state=inactive]:hidden">
               <div className="h-full overflow-y-auto">
-                <div className="space-y-2 pr-2 pb-4">
+                <div className="space-y-2 pb-4">
                   {recentCourses.length > 0 ? (
                     recentCourses.map((course) => (
                       <CourseItem key={course.id} course={course} />
