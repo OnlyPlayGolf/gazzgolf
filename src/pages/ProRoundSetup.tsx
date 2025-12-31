@@ -199,7 +199,7 @@ const ProRoundSetup = () => {
 
         <Card className="border-primary">
           <CardHeader>
-            <CardTitle>Start Pro Round (Strokes Gained)</CardTitle>
+            <CardTitle>Strokes Gained</CardTitle>
             <p className="text-sm text-muted-foreground">
               Track exact distances and get detailed strokes gained analysis
             </p>
@@ -283,7 +283,7 @@ const ProRoundSetup = () => {
               className="w-full"
               size="lg"
             >
-              {loading ? "Starting..." : "Start Pro Round"}
+              {loading ? "Starting..." : "Add Stats"}
             </Button>
           </CardContent>
         </Card>
