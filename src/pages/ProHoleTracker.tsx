@@ -621,7 +621,7 @@ const ProHoleTracker = () => {
             )}
 
             <div>
-              <Label>Start Distance (m)</Label>
+              <Label>Shot {currentData.shots.length + 1} - Start Distance (m)</Label>
               <Input
                 type="number"
                 value={startDistance}
