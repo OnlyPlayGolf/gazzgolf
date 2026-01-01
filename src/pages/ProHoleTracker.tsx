@@ -611,6 +611,10 @@ const ProHoleTracker = () => {
         {/* Shot Entry */}
         <Card className="border-primary">
           <CardContent className="pt-6 space-y-4">
+            <div className="text-center">
+              <span className="text-lg font-semibold">Shot {currentData.shots.length + 1}</span>
+            </div>
+
             {currentData.shots.length > 0 && (
               <div>
                 <Label>Shot Type (auto)</Label>
@@ -621,7 +625,7 @@ const ProHoleTracker = () => {
             )}
 
             <div>
-              <Label>Shot {currentData.shots.length + 1} - Start Distance (m)</Label>
+              <Label>Start Distance (m)</Label>
               <Input
                 type="number"
                 value={startDistance}
