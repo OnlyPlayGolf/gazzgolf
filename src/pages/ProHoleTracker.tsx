@@ -621,7 +621,7 @@ const ProHoleTracker = () => {
           <div className="text-center">
             <h1 className="text-xl font-bold">{round?.course_name}</h1>
             <p className="text-sm text-muted-foreground">
-              Par {par} • {currentData.shots.length} shots
+              Hole {currentHole} • Par {par}
             </p>
           </div>
         </div>
