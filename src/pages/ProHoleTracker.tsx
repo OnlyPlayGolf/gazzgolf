@@ -737,15 +737,36 @@ const ProHoleTracker = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4">
-        <Button onClick={finishHole} size="lg" className="w-full">
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="flex-1"
+            disabled={currentHole <= 1}
+            onClick={() => {
+              const prevHole = currentHole - 1;
+              setCurrentHole(prevHole);
+              setPar(getHolePar(prevHole));
+              setShotType('tee');
+              setStartLie('tee');
+              const prevDistance = getHoleDistance(prevHole);
+              setStartDistance(prevDistance ? String(prevDistance) : "");
+              setEndDistance("");
+              setEndLie('');
+            }}
+          >
+            Previous Hole
+          </Button>
           {currentHole < round?.holes_played ? (
-            <>
-              Finish Hole <ChevronRight size={20} className="ml-2" />
-            </>
+            <Button onClick={finishHole} size="lg" className="flex-1">
+              Next Hole <ChevronRight size={20} className="ml-2" />
+            </Button>
           ) : (
-            "Complete Round"
+            <Button onClick={finishHole} size="lg" className="flex-1">
+              Finish Round
+            </Button>
           )}
-        </Button>
+        </div>
       </div>
     </div>
   );
