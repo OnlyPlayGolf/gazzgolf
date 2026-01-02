@@ -103,14 +103,24 @@ const ProHoleTracker = () => {
 
   // Auto-add shot when all fields are filled
   useEffect(() => {
-    if (startDistance && endDistance && endLie && sgCalculator) {
+    if (startDistance && endDistance && sgCalculator) {
       const start = parseFloat(startDistance);
       const end = parseFloat(endDistance);
       
-      // Don't auto-add if we're putting (start on green) - need to select holed/missed
+      // For putting (on green), auto-add if end distance > 0 (missed putt stays on green)
       if (startLie === 'green') {
+        if (!isNaN(start) && !isNaN(end) && end > 0) {
+          const timer = setTimeout(() => {
+            setEndLie('green'); // Missed putts stay on green
+            addShot();
+          }, 300);
+          return () => clearTimeout(timer);
+        }
         return;
       }
+      
+      // For non-putting shots, require endLie to be selected
+      if (!endLie) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // Small delay to allow UI to update
@@ -120,7 +130,7 @@ const ProHoleTracker = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [endLie, startDistance, endDistance]);
+  }, [endLie, startDistance, endDistance, startLie]);
 
   const loadBaselineData = async () => {
     try {
