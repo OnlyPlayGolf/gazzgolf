@@ -669,7 +669,7 @@ const ProHoleTracker = () => {
                 <Label>Result</Label>
                 <div className="flex gap-2 mt-2">
                   <Button
-                    variant={holed ? "default" : "outline"}
+                    variant="outline"
                     onClick={() => {
                       setHoled(true);
                       setTimeout(() => {
@@ -681,7 +681,7 @@ const ProHoleTracker = () => {
                     Holed
                   </Button>
                   <Button
-                    variant={!holed ? "default" : "outline"}
+                    variant="outline"
                     onClick={() => {
                       setHoled(false);
                       setEndLie('green'); // Missed putts stay on green
