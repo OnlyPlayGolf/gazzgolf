@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { parsePuttingBaseline, parseLongGameBaseline, type LieType } from "@/utils/csvParser";
 import { createStrokesGainedCalculator } from "@/utils/strokesGained";
@@ -566,18 +566,23 @@ const ProHoleTracker = () => {
   const totalSG = currentData.shots.reduce((sum, shot) => sum + shot.strokesGained, 0);
 
   return (
-    <div className="pb-24 min-h-screen bg-background">
+    <div className="pb-20 min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <Button variant="ghost" size="sm" onClick={() => navigate(`/rounds/${roundId}/pro-summary`)}>
               <ArrowLeft className="mr-2" size={18} />
               Exit
             </Button>
-            <div className="text-center flex-1">
-              <h1 className="text-xl font-bold">{round?.course_name}</h1>
-            </div>
-            <div className="w-16" />
+            <Badge variant="outline" className="text-lg px-3 py-1">
+              Hole {currentHole} of {round?.holes_played}
+            </Badge>
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-bold">{round?.course_name}</h1>
+            <p className="text-sm text-muted-foreground">
+              Par {par} • {currentData.shots.length} shots
+            </p>
           </div>
         </div>
       </div>
@@ -731,12 +736,13 @@ const ProHoleTracker = () => {
         )}
       </div>
 
-      {/* Bottom Hole Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[hsl(120,20%,85%)] py-4 px-4 z-10">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4">
+        <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="flex-1"
+            disabled={currentHole <= 1}
             onClick={() => {
               const prevHole = currentHole - 1;
               setCurrentHole(prevHole);
@@ -748,35 +754,16 @@ const ProHoleTracker = () => {
               setEndDistance("");
               setEndLie('');
             }}
-            disabled={currentHole <= 1}
-            className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)] disabled:opacity-50"
           >
-            <ChevronLeft size={24} />
+            Previous Hole
           </Button>
-
-          <div className="text-center">
-            <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
-            <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
-            <div className="text-sm text-[hsl(120,20%,40%)]">{currentData.shots.length} shots</div>
-          </div>
-
-          {currentHole < (round?.holes_played || 18) ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={finishHole}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
-            >
-              <ChevronRight size={24} />
+          {currentHole < round?.holes_played ? (
+            <Button onClick={finishHole} size="lg" className="flex-1">
+              Next Hole <ChevronRight size={20} className="ml-2" />
             </Button>
           ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={finishHole}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
-            >
-              Finish
+            <Button onClick={finishHole} size="lg" className="flex-1">
+              Finish Round
             </Button>
           )}
         </div>
