@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { parsePuttingBaseline, parseLongGameBaseline, type LieType } from "@/utils/csvParser";
 import { createStrokesGainedCalculator } from "@/utils/strokesGained";
@@ -574,9 +574,48 @@ const ProHoleTracker = () => {
               <ArrowLeft className="mr-2" size={18} />
               Exit
             </Button>
-            <Badge variant="outline" className="text-lg px-3 py-1">
-              Hole {currentHole} of {round?.holes_played}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  if (currentHole > 1) {
+                    const prevHole = currentHole - 1;
+                    setCurrentHole(prevHole);
+                    setPar(getHolePar(prevHole));
+                    const prevDistance = getHoleDistance(prevHole);
+                    // Load existing data for previous hole if available
+                    const prevData = holeData[prevHole];
+                    if (prevData && prevData.shots.length > 0) {
+                      // Resume from last shot's end position
+                      const lastShot = prevData.shots[prevData.shots.length - 1];
+                      if (lastShot.holed) {
+                        setStartDistance(prevDistance ? String(prevDistance) : "");
+                        setStartLie('tee');
+                        setShotType('tee');
+                      } else {
+                        setStartDistance(lastShot.endDistance ? String(lastShot.endDistance) : "");
+                        setStartLie(lastShot.endLie || 'tee');
+                        setShotType(lastShot.endLie === 'green' ? 'putt' : 'approach');
+                      }
+                    } else {
+                      setStartDistance(prevDistance ? String(prevDistance) : "");
+                      setStartLie('tee');
+                      setShotType('tee');
+                    }
+                    setEndDistance("");
+                    setEndLie('');
+                  }
+                }}
+                disabled={currentHole <= 1}
+                className="h-8 w-8"
+              >
+                <ChevronLeft size={18} />
+              </Button>
+              <Badge variant="outline" className="text-lg px-3 py-1">
+                Hole {currentHole} of {round?.holes_played}
+              </Badge>
+            </div>
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold">{round?.course_name}</h1>
