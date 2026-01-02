@@ -107,12 +107,14 @@ const ProHoleTracker = () => {
       const start = parseFloat(startDistance);
       const end = parseFloat(endDistance);
       
-      // For putting (on green), auto-add if end distance > 0 (missed putt stays on green)
+      // For putting (on green), auto-add for any valid end distance
       if (startLie === 'green') {
-        if (!isNaN(start) && !isNaN(end) && end > 0) {
+        if (!isNaN(start) && !isNaN(end)) {
           const timer = setTimeout(() => {
-            setEndLie('green'); // Missed putts stay on green
-            addShot();
+            if (end > 0) {
+              setEndLie('green'); // Missed putts stay on green
+            }
+            addShot(); // addShot handles end=0 as holed
           }, 300);
           return () => clearTimeout(timer);
         }
