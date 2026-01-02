@@ -311,16 +311,58 @@ const ProHoleTracker = () => {
       return;
     }
     
-    // For non-holed shots, validate end lie
-    if (!endLie) {
-      toast({ title: "Select end lie", variant: "destructive" });
-      return;
-    }
-    
     // Validate end distance
     const end = parseFloat(endDistance);
     if (isNaN(end)) {
       toast({ title: "Enter end distance", variant: "destructive" });
+      return;
+    }
+
+    // If end distance is 0, treat as holed shot
+    if (end === 0) {
+      const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+      const sg = sgCalculator.calculateStrokesGained(
+        drillType,
+        start,
+        startLie,
+        true,
+        'green',
+        0
+      );
+
+      const newShot: Shot = {
+        type: shotType,
+        startDistance: start,
+        startLie,
+        holed: true,
+        endDistance: undefined,
+        endLie: undefined,
+        strokesGained: sg,
+      };
+
+      const currentData = getCurrentHoleData();
+      setHoleData({
+        ...holeData,
+        [currentHole]: {
+          par,
+          shots: [...currentData.shots, newShot],
+        },
+      });
+
+      // Reset and auto-finish hole
+      setStartDistance("");
+      setEndDistance("");
+      setHoled(false);
+      
+      setTimeout(() => {
+        finishHoleAfterUpdate([...currentData.shots, newShot]);
+      }, 100);
+      return;
+    }
+    
+    // For non-holed shots, validate end lie
+    if (!endLie) {
+      toast({ title: "Select end lie", variant: "destructive" });
       return;
     }
 
@@ -354,29 +396,17 @@ const ProHoleTracker = () => {
     });
 
     // Reset inputs and set next shot's start to this shot's end
-    if (holed) {
-      // Hole is complete, automatically finish
-      setStartDistance("");
-      setEndDistance("");
-      setHoled(false);
-      
-      // Auto-finish hole after a short delay to allow state to update
-      setTimeout(() => {
-        finishHoleAfterUpdate([...currentData.shots, newShot]);
-      }, 100);
+    setStartDistance(endDistance); // Next shot starts where this one ended
+    setStartLie(endLie as LieType | 'green'); // Next shot starts from this lie
+    setEndDistance("");
+    setEndLie(''); // Reset end lie for next shot
+    setHoled(false);
+    
+    // Auto-set next shot type
+    if (endLie === 'green') {
+      setShotType('putt');
     } else {
-      setStartDistance(endDistance); // Next shot starts where this one ended
-      setStartLie(endLie as LieType | 'green'); // Next shot starts from this lie
-      setEndDistance("");
-      setEndLie(''); // Reset end lie for next shot
-      setHoled(false);
-      
-      // Auto-set next shot type
-      if (endLie === 'green') {
-        setShotType('putt');
-      } else {
-        setShotType('approach');
-      }
+      setShotType('approach');
     }
   };
 
