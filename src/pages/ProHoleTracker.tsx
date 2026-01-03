@@ -687,19 +687,17 @@ const ProHoleTracker = () => {
                   placeholder="Distance to hole"
                   className="flex-1"
                 />
-                {startLie === 'green' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setHoled(true);
-                      setTimeout(() => {
-                        addHoledShot();
-                      }, 50);
-                    }}
-                  >
-                    Holed
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setHoled(true);
+                    setTimeout(() => {
+                      addHoledShot();
+                    }, 50);
+                  }}
+                >
+                  Holed
+                </Button>
               </div>
             </div>
 
