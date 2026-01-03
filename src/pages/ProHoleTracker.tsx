@@ -679,13 +679,28 @@ const ProHoleTracker = () => {
 
             <div>
               <Label>End Distance (m)</Label>
-              <Input
-                type="number"
-                value={endDistance}
-                onChange={(e) => setEndDistance(e.target.value)}
-                placeholder="Distance to hole"
-                className="mt-2"
-              />
+              <div className="flex gap-2 mt-2">
+                <Input
+                  type="number"
+                  value={endDistance}
+                  onChange={(e) => setEndDistance(e.target.value)}
+                  placeholder="Distance to hole"
+                  className="flex-1"
+                />
+                {startLie === 'green' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setHoled(true);
+                      setTimeout(() => {
+                        addHoledShot();
+                      }, 50);
+                    }}
+                  >
+                    Holed
+                  </Button>
+                )}
+              </div>
             </div>
 
             {startLie !== 'green' && (
@@ -702,26 +717,6 @@ const ProHoleTracker = () => {
                       {lie.charAt(0).toUpperCase() + lie.slice(1)}
                     </Button>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {startLie === 'green' && (
-              <div>
-                <Label>Result</Label>
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setHoled(true);
-                      setTimeout(() => {
-                        addHoledShot();
-                      }, 50);
-                    }}
-                    className="flex-1"
-                  >
-                    Holed
-                  </Button>
                 </div>
               </div>
             )}
