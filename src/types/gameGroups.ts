@@ -22,9 +22,9 @@ export interface GroupPlayer {
 }
 
 // Player count requirements per game format
-export const GAME_FORMAT_PLAYER_REQUIREMENTS: Record<string, { min: number; max: number; exact?: number }> = {
+export const GAME_FORMAT_PLAYER_REQUIREMENTS: Record<string, { min: number; max: number; exact?: number; allowedCounts?: number[] }> = {
   stroke_play: { min: 1, max: 100 },
-  match_play: { min: 2, max: 2, exact: 2 },
+  match_play: { min: 2, max: 4, allowedCounts: [2, 4] },
   copenhagen: { min: 3, max: 3, exact: 3 },
   skins: { min: 2, max: 8 },
   best_ball: { min: 3, max: 8 },

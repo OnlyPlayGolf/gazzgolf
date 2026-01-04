@@ -41,6 +41,18 @@ export function validateGroupForFormat(
   const formatName = format.replace(/_/g, " ");
   const capitalizedFormat = formatName.charAt(0).toUpperCase() + formatName.slice(1);
 
+  // Check for allowed counts (e.g., match play: 2 or 4)
+  if (req.allowedCounts && !req.allowedCounts.includes(playerCount)) {
+    const allowedStr = req.allowedCounts.join(" or ");
+    return {
+      valid: false,
+      groupId: group.id,
+      groupName: group.name,
+      playerCount,
+      message: `${group.name} needs exactly ${allowedStr} players (has ${playerCount})`,
+    };
+  }
+
   if (req.exact && playerCount !== req.exact) {
     return {
       valid: false,
