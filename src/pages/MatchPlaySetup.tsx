@@ -72,7 +72,7 @@ export default function MatchPlaySetup() {
       const userHandicap = parseHandicap(profile?.handicap);
       
       // Load groups from sessionStorage (set by RoundsPlay)
-      const savedGroups = sessionStorage.getItem('roundGroups');
+      const savedGroups = sessionStorage.getItem('playGroups');
       
       if (savedGroups) {
         const parsedGroups: PlayerGroup[] = JSON.parse(savedGroups);
