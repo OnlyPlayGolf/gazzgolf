@@ -25,6 +25,7 @@ export default function MatchPlaySettings() {
   const { toast } = useToast();
   const { isSpectator } = useIsSpectator('match_play', gameId);
   const [game, setGame] = useState<MatchPlayGame | null>(null);
+  const [allGamesInEvent, setAllGamesInEvent] = useState<MatchPlayGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -56,6 +57,21 @@ export default function MatchPlaySettings() {
 
       if (data) {
         setGame(data as MatchPlayGame);
+        
+        // If this game is part of an event, fetch all games in that event
+        if (data.event_id) {
+          const { data: eventGames } = await supabase
+            .from("match_play_games")
+            .select("*")
+            .eq("event_id", data.event_id)
+            .order("created_at");
+          
+          if (eventGames) {
+            setAllGamesInEvent(eventGames as MatchPlayGame[]);
+          }
+        } else {
+          setAllGamesInEvent([data as MatchPlayGame]);
+        }
       }
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -132,18 +148,24 @@ export default function MatchPlaySettings() {
     );
   }
 
-  const players: GamePlayer[] = [
-    { 
-      name: game.player_1, 
-      handicap: game.use_handicaps ? game.player_1_handicap : undefined,
-      tee: game.player_1_tee 
-    },
-    { 
-      name: game.player_2, 
-      handicap: game.use_handicaps ? game.player_2_handicap : undefined,
-      tee: game.player_2_tee 
-    },
-  ];
+  // Build players list from ALL games in the event (all groups)
+  const players: GamePlayer[] = allGamesInEvent.flatMap((g, gameIndex) => {
+    const groupLabel = allGamesInEvent.length > 1 ? `Match ${gameIndex + 1}` : undefined;
+    return [
+      { 
+        name: g.player_1, 
+        handicap: g.use_handicaps ? g.player_1_handicap : undefined,
+        tee: g.player_1_tee,
+        team: groupLabel,
+      },
+      { 
+        name: g.player_2, 
+        handicap: g.use_handicaps ? g.player_2_handicap : undefined,
+        tee: g.player_2_tee,
+        team: groupLabel,
+      },
+    ];
+  });
 
   const teeInfo = (() => {
     if (game.player_1_tee && game.player_2_tee) {

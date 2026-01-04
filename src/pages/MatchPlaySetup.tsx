@@ -185,38 +185,74 @@ export default function MatchPlaySetup() {
       }
 
       const savedRoundName = sessionStorage.getItem('roundName');
+      
+      let eventId: string | null = null;
+      
+      // Create an event if there are multiple groups to link all matches together
+      if (groups.length > 1) {
+        const { data: event, error: eventError } = await supabase
+          .from("events")
+          .insert({
+            creator_id: user.id,
+            name: savedRoundName || "Match Play Event",
+            game_type: "match_play",
+            course_name: selectedCourse?.name || null,
+            course_id: selectedCourseId || null,
+            date_played: new Date().toISOString().split('T')[0],
+          })
+          .select()
+          .single();
+        
+        if (eventError) throw eventError;
+        eventId = event.id;
+      }
 
-      // For now, start the first group as a game (multi-group support can be extended later)
-      const firstGroup = groups[0];
-      if (firstGroup.players.length < 2) {
-        toast({ title: "Not enough players", description: "Need at least 2 players", variant: "destructive" });
+      // Create a match play game for each group
+      const createdGames: { id: string; groupIndex: number }[] = [];
+      
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
+        if (group.players.length < 2) continue;
+
+        const { data: game, error } = await supabase
+          .from("match_play_games")
+          .insert({
+            user_id: user.id,
+            course_name: selectedCourse?.name || "Match Play Game",
+            course_id: selectedCourseId || null,
+            round_name: savedRoundName || null,
+            holes_played: 18,
+            player_1: group.players[0].displayName,
+            player_1_handicap: group.players[0].handicap || null,
+            player_2: group.players[1].displayName,
+            player_2_handicap: group.players[1].handicap || null,
+            use_handicaps: useHandicaps,
+            mulligans_per_player: mulligansPerPlayer,
+            match_status: 0,
+            holes_remaining: 18,
+            event_id: eventId,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        createdGames.push({ id: game.id, groupIndex: i });
+      }
+
+      if (createdGames.length === 0) {
+        toast({ title: "No valid matches", description: "Could not create any matches", variant: "destructive" });
         return;
       }
 
-      const { data: game, error } = await supabase
-        .from("match_play_games")
-        .insert({
-          user_id: user.id,
-          course_name: selectedCourse?.name || "Match Play Game",
-          course_id: selectedCourseId || null,
-          round_name: savedRoundName || null,
-          holes_played: 18,
-          player_1: firstGroup.players[0].displayName,
-          player_1_handicap: firstGroup.players[0].handicap || null,
-          player_2: firstGroup.players[1].displayName,
-          player_2_handicap: firstGroup.players[1].handicap || null,
-          use_handicaps: useHandicaps,
-          mulligans_per_player: mulligansPerPlayer,
-          match_status: 0,
-          holes_remaining: 18,
-        })
-        .select()
-        .single();
+      // Store event_id in session so other pages can load related games
+      if (eventId) {
+        sessionStorage.setItem('matchPlayEventId', eventId);
+      }
 
-      if (error) throw error;
-
-      toast({ title: "Match Play game started!" });
-      navigate(`/match-play/${game.id}/play`);
+      toast({ title: `${createdGames.length > 1 ? `${createdGames.length} matches` : "Match"} started!` });
+      
+      // Navigate to the first match (user's match)
+      navigate(`/match-play/${createdGames[0].id}/play`);
     } catch (error: any) {
       toast({ title: "Error creating game", description: error.message, variant: "destructive" });
     } finally {
