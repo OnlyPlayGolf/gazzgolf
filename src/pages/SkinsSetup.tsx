@@ -13,6 +13,7 @@ import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
   id: string;
@@ -142,14 +143,24 @@ export default function SkinsSetup() {
     setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
   };
 
+  // Validate player count
+  const req = GAME_FORMAT_PLAYER_REQUIREMENTS["skins"];
+  const playerCount = players.length;
+  const isValidPlayerCount = playerCount >= req.min && playerCount <= req.max;
+  const validationMessage = !isValidPlayerCount
+    ? playerCount < req.min
+      ? `Need at least ${req.min} players (have ${playerCount})`
+      : `Maximum ${req.max} players allowed (have ${playerCount})`
+    : null;
+
   const handleStartRound = async () => {
     if (!selectedCourse) {
       toast({ title: "Course required", description: "Please go back and select a course", variant: "destructive" });
       return;
     }
 
-    if (players.length < 2) {
-      toast({ title: "More players needed", description: "Skins requires at least 2 players", variant: "destructive" });
+    if (!isValidPlayerCount) {
+      toast({ title: "Invalid player count", description: validationMessage, variant: "destructive" });
       return;
     }
 
@@ -346,7 +357,11 @@ export default function SkinsSetup() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleStartRound} disabled={loading || !selectedCourse} className="w-full" size="lg">
+        {!isValidPlayerCount && validationMessage && (
+          <p className="text-sm text-destructive text-center">{validationMessage}</p>
+        )}
+
+        <Button onClick={handleStartRound} disabled={loading || !selectedCourse || !isValidPlayerCount} className="w-full" size="lg">
           {loading ? "Starting..." : "Start Game"}
         </Button>
       </div>

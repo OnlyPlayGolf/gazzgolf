@@ -15,6 +15,7 @@ import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { Player as PlaySetupPlayer } from "@/types/playSetup";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
   id: string;
@@ -209,9 +210,16 @@ export default function UmbriagioSetup() {
     toast({ title: "Teams randomized!" });
   };
 
+  // Validate player count
+  const req = GAME_FORMAT_PLAYER_REQUIREMENTS["umbriago"];
+  const isValidPlayerCount = req.exact ? players.length === req.exact : players.length >= req.min && players.length <= req.max;
+  const validationMessage = !isValidPlayerCount
+    ? `Umbriago requires exactly ${req.exact} players (have ${players.length})`
+    : null;
+
   const handleStartGame = async () => {
-    if (players.length !== 4) {
-      toast({ title: "Need exactly 4 players", variant: "destructive" });
+    if (!isValidPlayerCount) {
+      toast({ title: "Invalid player count", description: validationMessage, variant: "destructive" });
       return;
     }
 
@@ -571,7 +579,11 @@ export default function UmbriagioSetup() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleStartGame} disabled={loading || players.length !== 4} className="w-full" size="lg">
+        {!isValidPlayerCount && validationMessage && (
+          <p className="text-sm text-destructive text-center">{validationMessage}</p>
+        )}
+
+        <Button onClick={handleStartGame} disabled={loading || !isValidPlayerCount} className="w-full" size="lg">
           {loading ? "Starting..." : "Start Umbriago"}
         </Button>
       </div>

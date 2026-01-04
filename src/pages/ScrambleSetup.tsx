@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrambleTeam, ScramblePlayer } from "@/types/scramble";
 import { formatHandicap } from "@/lib/utils";
 import { TeeSelector, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
   id: string;
@@ -103,21 +104,44 @@ export default function ScrambleSetup() {
     }
   };
 
+  // Validate each team individually
+  const validateTeams = () => {
+    const teamsWithPlayers = teams.filter(t => t.players.length > 0);
+    const req = GAME_FORMAT_PLAYER_REQUIREMENTS["scramble"];
+    
+    if (teamsWithPlayers.length === 0) {
+      return { valid: false, message: "Add at least one team with players" };
+    }
+
+    for (const team of teamsWithPlayers) {
+      if (team.players.length < req.min) {
+        return { 
+          valid: false, 
+          message: `${team.name} needs at least ${req.min} players (has ${team.players.length})` 
+        };
+      }
+      if (team.players.length > req.max) {
+        return { 
+          valid: false, 
+          message: `${team.name} can have at most ${req.max} players (has ${team.players.length})` 
+        };
+      }
+    }
+    
+    return { valid: true, message: null };
+  };
+
+  const teamValidation = validateTeams();
+  const teamsWithPlayers = teams.filter(t => t.players.length > 0);
+
   const startGame = async () => {
     if (!selectedCourse) {
       toast({ title: "Course required", description: "Please go back and select a course", variant: "destructive" });
       return;
     }
 
-    const totalPlayers = teams.reduce((sum, t) => sum + t.players.length, 0);
-    if (totalPlayers < 2) {
-      toast({ title: "Not enough players", description: "Please add at least 2 players in groups", variant: "destructive" });
-      return;
-    }
-
-    const teamsWithPlayers = teams.filter(t => t.players.length > 0);
-    if (teamsWithPlayers.length < 1) {
-      toast({ title: "No teams", description: "At least 1 team must have players", variant: "destructive" });
+    if (!teamValidation.valid) {
+      toast({ title: "Invalid team setup", description: teamValidation.message, variant: "destructive" });
       return;
     }
 
@@ -299,7 +323,11 @@ export default function ScrambleSetup() {
           </CardContent>
         </Card>
 
-        <Button onClick={startGame} disabled={loading || !selectedCourse} className="w-full" size="lg">
+        {!teamValidation.valid && teamValidation.message && (
+          <p className="text-sm text-destructive text-center">{teamValidation.message}</p>
+        )}
+
+        <Button onClick={startGame} disabled={loading || !selectedCourse || !teamValidation.valid} className="w-full" size="lg">
           {loading ? "Starting..." : "Start Scramble"}
         </Button>
       </div>
