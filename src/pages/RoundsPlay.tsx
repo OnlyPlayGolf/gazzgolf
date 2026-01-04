@@ -592,12 +592,11 @@ export default function RoundsPlay() {
 
   const getAllPlayerIds = () => setupState.groups.flatMap(g => g.players.map(p => p.odId));
 
-  // Validation for player requirements per game format - now validates per group
+  // Validation for player requirements per game format - validates per group for all formats
   const getPlayerValidationError = (): string | null => {
     const format = setupState.gameFormat;
     const groups = setupState.groups;
     const nonEmptyGroups = groups.filter(g => g.players.length > 0);
-    const totalPlayers = getTotalPlayers();
     
     if (nonEmptyGroups.length === 0) {
       return "Add at least 1 player to continue.";
@@ -606,28 +605,24 @@ export default function RoundsPlay() {
     const req = GAME_FORMAT_PLAYER_REQUIREMENTS[format];
     if (!req) return null;
 
-    // For formats that support multiple groups (stroke_play, scramble, skins), 
-    // validate each group individually
-    if (formatSupportsMultipleGroups(format)) {
-      const validation = validateAllGroupsForFormat(groups, format);
-      return validation.errorMessage;
-    }
+    const formatName = format.replace(/_/g, " ");
+    const capitalizedFormat = formatName.charAt(0).toUpperCase() + formatName.slice(1);
 
-    // For formats that don't support multiple groups, validate total players
-    // but treat all players as one group
-    if (req.exact && totalPlayers !== req.exact) {
-      const formatName = format.replace(/_/g, " ");
-      return `${formatName.charAt(0).toUpperCase() + formatName.slice(1)} requires exactly ${req.exact} players. You have ${totalPlayers}.`;
-    }
-
-    if (totalPlayers < req.min) {
-      const formatName = format.replace(/_/g, " ");
-      return `${formatName.charAt(0).toUpperCase() + formatName.slice(1)} requires at least ${req.min} players. You have ${totalPlayers}.`;
-    }
-
-    if (totalPlayers > req.max) {
-      const formatName = format.replace(/_/g, " ");
-      return `${formatName.charAt(0).toUpperCase() + formatName.slice(1)} allows at most ${req.max} players. You have ${totalPlayers}.`;
+    // ALL formats now validate per group - each group must meet the requirements
+    for (const group of nonEmptyGroups) {
+      const playerCount = group.players.length;
+      
+      if (req.exact && playerCount !== req.exact) {
+        return `${group.name} needs exactly ${req.exact} players for ${capitalizedFormat} (has ${playerCount})`;
+      }
+      
+      if (playerCount < req.min) {
+        return `${group.name} needs at least ${req.min} players for ${capitalizedFormat} (has ${playerCount})`;
+      }
+      
+      if (playerCount > req.max) {
+        return `${group.name} can have at most ${req.max} players for ${capitalizedFormat} (has ${playerCount})`;
+      }
     }
 
     return null;
