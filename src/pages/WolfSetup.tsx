@@ -17,6 +17,7 @@ import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
   id: string;
@@ -171,9 +172,18 @@ export default function WolfSetup() {
     toast({ title: "Player order randomized!" });
   };
 
+  // Validate player count
+  const req = GAME_FORMAT_PLAYER_REQUIREMENTS["wolf"];
+  const isValidPlayerCount = players.length >= req.min && players.length <= req.max;
+  const validationMessage = !isValidPlayerCount
+    ? players.length < req.min
+      ? `Wolf requires at least ${req.min} players (have ${players.length})`
+      : `Wolf allows at most ${req.max} players (have ${players.length})`
+    : null;
+
   const handleStartGame = async () => {
-    if (players.length < 4) {
-      toast({ title: "At least 4 players required", variant: "destructive" });
+    if (!isValidPlayerCount) {
+      toast({ title: "Invalid player count", description: validationMessage, variant: "destructive" });
       return;
     }
     
@@ -411,15 +421,19 @@ export default function WolfSetup() {
           </CardContent>
         </Card>
 
-        {!shuffled && players.length >= 4 && (
+        {!shuffled && isValidPlayerCount && (
           <p className="text-sm text-muted-foreground text-center">
             Tap "Randomize Order" above to set the tee-off order before starting
           </p>
         )}
+
+        {!isValidPlayerCount && validationMessage && (
+          <p className="text-sm text-destructive text-center">{validationMessage}</p>
+        )}
         
         <Button 
           onClick={handleStartGame} 
-          disabled={loading || players.length < 4 || !shuffled} 
+          disabled={loading || !isValidPlayerCount || !shuffled} 
           className="w-full" 
           size="lg"
         >

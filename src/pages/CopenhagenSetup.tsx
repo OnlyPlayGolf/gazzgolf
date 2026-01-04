@@ -17,6 +17,7 @@ import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
   id: string;
@@ -149,9 +150,16 @@ export default function CopenhagenSetup() {
     setPlayers(prev => prev.filter(p => p.odId !== odId));
   };
 
+  // Validate player count
+  const req = GAME_FORMAT_PLAYER_REQUIREMENTS["copenhagen"];
+  const isValidPlayerCount = req.exact ? players.length === req.exact : players.length >= req.min && players.length <= req.max;
+  const validationMessage = !isValidPlayerCount
+    ? `Copenhagen requires exactly ${req.exact} players (have ${players.length})`
+    : null;
+
   const handleStartGame = async () => {
-    if (players.length !== 3) {
-      toast({ title: "Need exactly 3 players", description: "Copenhagen requires 3 players", variant: "destructive" });
+    if (!isValidPlayerCount) {
+      toast({ title: "Invalid player count", description: validationMessage, variant: "destructive" });
       return;
     }
 
@@ -371,9 +379,13 @@ export default function CopenhagenSetup() {
         </Card>
 
         {/* Start Button */}
+        {!isValidPlayerCount && validationMessage && (
+          <p className="text-sm text-destructive text-center">{validationMessage}</p>
+        )}
+
         <Button
           onClick={handleStartGame}
-          disabled={loading || players.length !== 3}
+          disabled={loading || !isValidPlayerCount}
           className="w-full h-12 text-lg font-semibold"
         >
           {loading ? "Starting..." : "Start Copenhagen Game"}

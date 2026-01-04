@@ -24,6 +24,8 @@ import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlay
 import { cn, parseHandicap } from "@/lib/utils";
 import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import { CourseScorecard } from "@/components/CourseScorecard";
+import { validateAllGroupsForFormat, formatSupportsMultipleGroups } from "@/utils/groupValidation";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -590,57 +592,44 @@ export default function RoundsPlay() {
 
   const getAllPlayerIds = () => setupState.groups.flatMap(g => g.players.map(p => p.odId));
 
-  // Validation for player requirements per game format
+  // Validation for player requirements per game format - now validates per group
   const getPlayerValidationError = (): string | null => {
-    const totalPlayers = getTotalPlayers();
     const format = setupState.gameFormat;
-
-    switch (format) {
-      case "umbriago":
-        if (totalPlayers !== 4) {
-          return `Umbriago requires exactly 4 players. You have ${totalPlayers}.`;
-        }
-        break;
-      case "wolf":
-        if (totalPlayers < 4 || totalPlayers > 6) {
-          return `Wolf requires 4-6 players. You have ${totalPlayers}.`;
-        }
-        break;
-      case "copenhagen":
-        if (totalPlayers !== 3) {
-          return `Copenhagen requires exactly 3 players. You have ${totalPlayers}.`;
-        }
-        break;
-      case "match_play":
-        if (totalPlayers !== 2) {
-          return `Match Play requires exactly 2 players. You have ${totalPlayers}.`;
-        }
-        break;
-      case "best_ball":
-        if (totalPlayers < 3) {
-          return `Best Ball requires at least 3 players. You have ${totalPlayers}.`;
-        }
-        break;
-      case "scramble":
-        if (totalPlayers < 2) {
-          return `Scramble requires at least 2 players. You have ${totalPlayers}.`;
-        }
-        break;
-      case "skins":
-        if (totalPlayers < 2) {
-          return `Skins requires at least 2 players. You have ${totalPlayers}.`;
-        }
-        break;
-      case "stroke_play":
-        if (totalPlayers < 1) {
-          return `Add at least 1 player to continue.`;
-        }
-        break;
-      default:
-        if (totalPlayers < 1) {
-          return `Add at least 1 player to continue.`;
-        }
+    const groups = setupState.groups;
+    const nonEmptyGroups = groups.filter(g => g.players.length > 0);
+    const totalPlayers = getTotalPlayers();
+    
+    if (nonEmptyGroups.length === 0) {
+      return "Add at least 1 player to continue.";
     }
+
+    const req = GAME_FORMAT_PLAYER_REQUIREMENTS[format];
+    if (!req) return null;
+
+    // For formats that support multiple groups (stroke_play, scramble, skins), 
+    // validate each group individually
+    if (formatSupportsMultipleGroups(format)) {
+      const validation = validateAllGroupsForFormat(groups, format);
+      return validation.errorMessage;
+    }
+
+    // For formats that don't support multiple groups, validate total players
+    // but treat all players as one group
+    if (req.exact && totalPlayers !== req.exact) {
+      const formatName = format.replace(/_/g, " ");
+      return `${formatName.charAt(0).toUpperCase() + formatName.slice(1)} requires exactly ${req.exact} players. You have ${totalPlayers}.`;
+    }
+
+    if (totalPlayers < req.min) {
+      const formatName = format.replace(/_/g, " ");
+      return `${formatName.charAt(0).toUpperCase() + formatName.slice(1)} requires at least ${req.min} players. You have ${totalPlayers}.`;
+    }
+
+    if (totalPlayers > req.max) {
+      const formatName = format.replace(/_/g, " ");
+      return `${formatName.charAt(0).toUpperCase() + formatName.slice(1)} allows at most ${req.max} players. You have ${totalPlayers}.`;
+    }
+
     return null;
   };
 

@@ -14,6 +14,7 @@ import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
   id: string;
@@ -128,9 +129,16 @@ export default function MatchPlaySetup() {
     setPlayers(prev => prev.map(p => p.odId === updatedPlayer.odId ? updatedPlayer : p));
   };
 
+  // Validate player count
+  const req = GAME_FORMAT_PLAYER_REQUIREMENTS["match_play"];
+  const isValidPlayerCount = req.exact ? players.length === req.exact : players.length >= req.min && players.length <= req.max;
+  const validationMessage = !isValidPlayerCount
+    ? `Match Play requires exactly ${req.exact} players (have ${players.length})`
+    : null;
+
   const handleStartGame = async () => {
-    if (players.length !== 2) {
-      toast({ title: "Need exactly 2 players", variant: "destructive" });
+    if (!isValidPlayerCount) {
+      toast({ title: "Invalid player count", description: validationMessage, variant: "destructive" });
       return;
     }
 
@@ -312,10 +320,14 @@ export default function MatchPlaySetup() {
           </CardContent>
         </Card>
 
+        {!isValidPlayerCount && validationMessage && (
+          <p className="text-sm text-destructive text-center">{validationMessage}</p>
+        )}
+
         <Button
           className="w-full h-14 text-lg font-semibold"
           onClick={handleStartGame}
-          disabled={loading || players.length !== 2}
+          disabled={loading || !isValidPlayerCount}
         >
           {loading ? "Starting..." : "Start Match"}
         </Button>

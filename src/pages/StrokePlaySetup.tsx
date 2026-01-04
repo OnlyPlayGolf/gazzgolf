@@ -14,6 +14,7 @@ import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 import { PlayerGroup } from "@/types/playSetup";
+import { validateAllGroupsForFormat, getFormatPlayerRequirementText } from "@/utils/groupValidation";
 
 interface Course {
   id: string;
@@ -162,15 +163,17 @@ export default function StrokePlaySetup() {
     })));
   };
 
+  // Validate groups for stroke play
+  const groupValidation = validateAllGroupsForFormat(groups, "stroke_play");
+
   const handleStartRound = async () => {
     if (!selectedCourse) {
       toast({ title: "Course required", description: "Please go back and select a course", variant: "destructive" });
       return;
     }
 
-    const allPlayers = getAllPlayers();
-    if (allPlayers.length === 0) {
-      toast({ title: "No players", description: "Add at least one player to start", variant: "destructive" });
+    if (!groupValidation.allValid) {
+      toast({ title: "Invalid setup", description: groupValidation.errorMessage, variant: "destructive" });
       return;
     }
 
@@ -449,7 +452,11 @@ export default function StrokePlaySetup() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleStartRound} disabled={loading || !selectedCourse || totalPlayerCount === 0} className="w-full" size="lg">
+        {!groupValidation.allValid && groupValidation.errorMessage && (
+          <p className="text-sm text-destructive text-center">{groupValidation.errorMessage}</p>
+        )}
+
+        <Button onClick={handleStartRound} disabled={loading || !selectedCourse || !groupValidation.allValid} className="w-full" size="lg">
           {loading ? "Starting..." : "Start Round"}
         </Button>
       </div>

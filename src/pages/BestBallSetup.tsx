@@ -16,6 +16,7 @@ import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { BestBallPlayer, BestBallGameType } from "@/types/bestBall";
+import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
   id: string;
@@ -205,9 +206,31 @@ export default function BestBallSetup() {
     }
   };
 
+  // Validate teams - Best Ball requires at least 1 player per team and 3-8 total
+  const req = GAME_FORMAT_PLAYER_REQUIREMENTS["best_ball"];
+  const totalPlayers = teamA.length + teamB.length;
+  
+  const validateTeams = () => {
+    if (teamA.length === 0) {
+      return { valid: false, message: "Team A needs at least 1 player" };
+    }
+    if (teamB.length === 0) {
+      return { valid: false, message: "Team B needs at least 1 player" };
+    }
+    if (totalPlayers < req.min) {
+      return { valid: false, message: `Need at least ${req.min} total players (have ${totalPlayers})` };
+    }
+    if (totalPlayers > req.max) {
+      return { valid: false, message: `Maximum ${req.max} total players allowed (have ${totalPlayers})` };
+    }
+    return { valid: true, message: null };
+  };
+
+  const teamValidation = validateTeams();
+
   const handleStartGame = async () => {
-    if (teamA.length === 0 || teamB.length === 0) {
-      toast({ title: "Each team needs at least 1 player", variant: "destructive" });
+    if (!teamValidation.valid) {
+      toast({ title: "Invalid team setup", description: teamValidation.message, variant: "destructive" });
       return;
     }
 
@@ -441,10 +464,14 @@ export default function BestBallSetup() {
         </Card>
 
         {/* Start Button */}
+        {!teamValidation.valid && teamValidation.message && (
+          <p className="text-sm text-destructive text-center">{teamValidation.message}</p>
+        )}
+
         <Button
           className="w-full h-14 text-lg font-bold"
           onClick={handleStartGame}
-          disabled={loading || teamA.length === 0 || teamB.length === 0}
+          disabled={loading || !teamValidation.valid}
         >
           {loading ? "Starting..." : "Start Best Ball"}
         </Button>
