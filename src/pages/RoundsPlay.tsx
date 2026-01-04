@@ -612,6 +612,12 @@ export default function RoundsPlay() {
     for (const group of nonEmptyGroups) {
       const playerCount = group.players.length;
       
+      // Check for allowed counts (e.g., match play: 2 or 4)
+      if (req.allowedCounts && !req.allowedCounts.includes(playerCount)) {
+        const allowedStr = req.allowedCounts.join(" or ");
+        return `${group.name} needs exactly ${allowedStr} players for ${capitalizedFormat} (has ${playerCount})`;
+      }
+      
       if (req.exact && playerCount !== req.exact) {
         return `${group.name} needs exactly ${req.exact} players for ${capitalizedFormat} (has ${playerCount})`;
       }
