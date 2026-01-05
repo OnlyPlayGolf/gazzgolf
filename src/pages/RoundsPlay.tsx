@@ -889,89 +889,6 @@ export default function RoundsPlay() {
                 ))}
               </div>
             </div>
-
-            {/* Game Format */}
-            <div className="space-y-3">
-              <Label className="text-xs">Game Format</Label>
-              
-              {/* Individual Games */}
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Individual</p>
-                {[
-                  { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
-                  { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
-                  { id: "skins", label: "Skins", desc: "Win holes for skins" },
-                  { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
-                ].map((fmt) => (
-                  <div key={fmt.id} className="relative">
-                    <button
-                      onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
-                      className={cn(
-                        "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
-                        setupState.gameFormat === fmt.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      )}
-                    >
-                      <p className="font-semibold text-sm">{fmt.label}</p>
-                      <p className="text-xs text-muted-foreground">{fmt.desc}</p>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        saveState();
-                        if (fmt.id === "stroke_play") navigate('/stroke-play/how-to-play');
-                        else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
-                        else if (fmt.id === "skins") navigate('/skins/how-to-play');
-                        else navigate('/copenhagen/how-to-play');
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
-                    >
-                      <Info size={16} className="text-muted-foreground" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Team Games */}
-              <div className="space-y-2 pt-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Teams</p>
-                {[
-                  { id: "best_ball", label: "Best Ball", desc: "Team match play or stroke play" },
-                  { id: "scramble", label: "Scramble", desc: "Team plays best shot" },
-                  { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
-                  { id: "wolf", label: "🐺 Wolf", desc: "4-6 players, various teams" },
-                ].map((fmt) => (
-                  <div key={fmt.id} className="relative">
-                    <button
-                      onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
-                      className={cn(
-                        "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
-                        setupState.gameFormat === fmt.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      )}
-                    >
-                      <p className="font-semibold text-sm">{fmt.label}</p>
-                      <p className="text-xs text-muted-foreground">{fmt.desc}</p>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        saveState();
-                        if (fmt.id === "best_ball") navigate('/best-ball/how-to-play');
-                        else if (fmt.id === "scramble") navigate('/scramble/how-to-play');
-                        else if (fmt.id === "wolf") navigate('/wolf/how-to-play');
-                        else navigate('/umbriago/how-to-play');
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
-                    >
-                      <Info size={16} className="text-muted-foreground" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -1056,6 +973,89 @@ export default function RoundsPlay() {
                     teeCount={teeCount}
                     courseTeeNames={courseTeeNames}
                   />
+                </div>
+
+                {/* Game Format */}
+                <div className="space-y-3">
+                  <Label className="text-xs">Game Format</Label>
+                  
+                  {/* Individual Games */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Individual</p>
+                    {[
+                      { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
+                      { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
+                      { id: "skins", label: "Skins", desc: "Win holes for skins" },
+                      { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
+                    ].map((fmt) => (
+                      <div key={fmt.id} className="relative">
+                        <button
+                          onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
+                          className={cn(
+                            "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
+                            setupState.gameFormat === fmt.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <p className="font-semibold text-sm">{fmt.label}</p>
+                          <p className="text-xs text-muted-foreground">{fmt.desc}</p>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveState();
+                            if (fmt.id === "stroke_play") navigate('/stroke-play/how-to-play');
+                            else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
+                            else if (fmt.id === "skins") navigate('/skins/how-to-play');
+                            else navigate('/copenhagen/how-to-play');
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
+                        >
+                          <Info size={16} className="text-muted-foreground" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Team Games */}
+                  <div className="space-y-2 pt-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Teams</p>
+                    {[
+                      { id: "best_ball", label: "Best Ball", desc: "Team match play or stroke play" },
+                      { id: "scramble", label: "Scramble", desc: "Team plays best shot" },
+                      { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
+                      { id: "wolf", label: "🐺 Wolf", desc: "4-6 players, various teams" },
+                    ].map((fmt) => (
+                      <div key={fmt.id} className="relative">
+                        <button
+                          onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
+                          className={cn(
+                            "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
+                            setupState.gameFormat === fmt.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <p className="font-semibold text-sm">{fmt.label}</p>
+                          <p className="text-xs text-muted-foreground">{fmt.desc}</p>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveState();
+                            if (fmt.id === "best_ball") navigate('/best-ball/how-to-play');
+                            else if (fmt.id === "scramble") navigate('/scramble/how-to-play');
+                            else if (fmt.id === "wolf") navigate('/wolf/how-to-play');
+                            else navigate('/umbriago/how-to-play');
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
+                        >
+                          <Info size={16} className="text-muted-foreground" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </CollapsibleContent>
