@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Calendar, MapPin, Hash, ChevronRight } from "lucide-react";
+import { Loader2, Calendar, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
 interface StatsRound {
@@ -97,11 +97,17 @@ export const StatsRoundsHistory = () => {
     navigate(`/rounds/${roundId}/pro-summary`);
   };
 
-  const formatScoreDisplay = (round: StatsRound) => {
-    if (round.total_score === undefined) return "No scores";
+  const formatScore = (round: StatsRound) => {
+    if (round.total_score === undefined) return "—";
     const diff = round.total_score - (round.total_par || 0);
-    const diffStr = diff === 0 ? "E" : diff > 0 ? `+${diff}` : `${diff}`;
-    return `${round.total_score} (${diffStr})`;
+    if (diff === 0) return "E";
+    return diff > 0 ? `+${diff}` : `${diff}`;
+  };
+
+  const getScoreColor = (round: StatsRound) => {
+    if (round.total_score === undefined) return "text-muted-foreground";
+    const diff = round.total_score - (round.total_par || 0);
+    return diff <= 0 ? "text-emerald-600" : "text-foreground";
   };
 
   if (loading) {
@@ -140,40 +146,46 @@ export const StatsRoundsHistory = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {rounds.map((round) => (
-              <div
+              <Card
                 key={round.id}
                 onClick={() => handleRoundClick(round.id)}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="font-medium text-sm truncate">
-                      {round.course_name}
-                    </span>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    {/* Left: Score */}
+                    <div className="flex-shrink-0 w-14 text-center">
+                      <div className={`text-2xl font-bold ${getScoreColor(round)}`}>
+                        {formatScore(round)}
+                      </div>
+                    </div>
+                    
+                    {/* Middle: Details */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">
+                        {round.course_name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+                        <span>{format(new Date(round.date_played), "MMM d, yyyy")}</span>
+                        <span>·</span>
+                        <span>{round.holes_played} holes</span>
+                      </div>
+                      {round.round_type && (
+                        <div className="mt-1">
+                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
+                            {roundTypeLabels[round.round_type] || round.round_type}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Right: Chevron */}
+                    <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{format(new Date(round.date_played), "MMM d, yyyy")}</span>
-                    <span className="flex items-center gap-1">
-                      <Hash className="h-3 w-3" />
-                      {round.holes_played} holes
-                    </span>
-                    {round.round_type && (
-                      <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
-                        {roundTypeLabels[round.round_type] || round.round_type}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">
-                    {formatScoreDisplay(round)}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
