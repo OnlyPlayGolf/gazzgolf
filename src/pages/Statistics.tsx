@@ -260,45 +260,120 @@ export default function Statistics() {
           </Select>
         </div>
 
-        {/* Key Insights */}
-        {insights.length > 0 && (
-          <section className="mb-6">
-            <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Key Insights
-            </h2>
-            <div className="space-y-3">
-              {insights.slice(0, 4).map((insight, index) => (
-                <InsightCard 
-                  key={index} 
-                  insight={insight}
-                  onClick={() => navigate(`/statistics/${insight.category}`)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+        {/* Key Insights - Matches PerformanceSnapshot design */}
+        {stats && (stats.strokesGained.putting !== null || stats.strokesGained.shortGame !== null || 
+          stats.strokesGained.approach !== null || stats.strokesGained.offTheTee !== null) && (
+          <Card className="mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Key Insights</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* SG Stats Grid */}
+              {(() => {
+                const sgStatsList: { label: string; value: number; category: string; isStrength: boolean }[] = [];
+                
+                if (stats.strokesGained.putting !== null) {
+                  sgStatsList.push({
+                    label: 'Putting',
+                    value: stats.strokesGained.putting,
+                    category: 'putting',
+                    isStrength: stats.strokesGained.putting >= 0.1,
+                  });
+                }
+                if (stats.strokesGained.shortGame !== null) {
+                  sgStatsList.push({
+                    label: 'Short Game',
+                    value: stats.strokesGained.shortGame,
+                    category: 'short-game',
+                    isStrength: stats.strokesGained.shortGame >= 0.1,
+                  });
+                }
+                if (stats.strokesGained.approach !== null) {
+                  sgStatsList.push({
+                    label: 'Approach',
+                    value: stats.strokesGained.approach,
+                    category: 'approach',
+                    isStrength: stats.strokesGained.approach >= 0.2,
+                  });
+                }
+                if (stats.strokesGained.offTheTee !== null) {
+                  sgStatsList.push({
+                    label: 'Off the Tee',
+                    value: stats.strokesGained.offTheTee,
+                    category: 'driving',
+                    isStrength: stats.strokesGained.offTheTee >= 0.2,
+                  });
+                }
 
-        {/* Recommended Drills */}
-        {drillRecs.length > 0 && (
-          <section className="mb-6">
-            <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Recommended Drills
-            </h2>
-            <p className="text-sm text-muted-foreground mb-3">
-              Based on your stats, focus on these areas
-            </p>
-            <div className="space-y-3">
-              {drillRecs.map((drill, index) => (
-                <DrillCard 
-                  key={index} 
-                  drill={drill}
-                  onClick={() => navigate(drill.path)}
-                />
-              ))}
-            </div>
-          </section>
+                sgStatsList.sort((a, b) => b.value - a.value);
+                
+                const bestStat = sgStatsList.length >= 1 ? sgStatsList[0] : null;
+                const worstStats = sgStatsList.length >= 3 
+                  ? [sgStatsList[sgStatsList.length - 2], sgStatsList[sgStatsList.length - 1]]
+                  : sgStatsList.length === 2 ? [sgStatsList[1]] : [];
+
+                return (
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Best stat (left) */}
+                    {bestStat && (
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <TrendingUp size={14} className="text-green-500" />
+                          <span className="text-[10px] uppercase tracking-wide text-green-600 font-medium">Best</span>
+                        </div>
+                        <p className="text-lg font-bold text-green-600">{formatSG(bestStat.value)}</p>
+                        <p className="text-xs text-muted-foreground">{bestStat.label}</p>
+                      </div>
+                    )}
+                    
+                    {/* Worst stats (middle and right) */}
+                    {worstStats.map((stat) => (
+                      <div key={stat.category} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <ArrowDown size={14} className="text-red-500" />
+                          <span className="text-[10px] uppercase tracking-wide text-red-600 font-medium">Focus</span>
+                        </div>
+                        <p className="text-lg font-bold text-red-600">{formatSG(stat.value)}</p>
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                      </div>
+                    ))}
+                    
+                    {/* Fill empty slots if not enough data */}
+                    {bestStat && worstStats.length < 2 && (
+                      <div className="bg-muted/50 border border-border rounded-lg p-3 text-center flex items-center justify-center">
+                        <p className="text-xs text-muted-foreground">Play more to see</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Recommended Drills */}
+              {drillRecs.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recommended Drills</p>
+                  <div className="space-y-2">
+                    {drillRecs.slice(0, 3).map((drill) => (
+                      <div
+                        key={drill.path}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
+                        onClick={() => navigate(drill.path)}
+                      >
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <Target size={16} className="text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{drill.drillTitle}</p>
+                          <p className="text-xs text-muted-foreground truncate">{drill.reason}</p>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Scoring Section */}
