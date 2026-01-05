@@ -317,33 +317,20 @@ export default function StrokePlaySetup() {
           <h1 className="text-2xl font-bold text-foreground">Stroke Play Setup</h1>
         </div>
 
-        {/* Round Setup Section */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MapPin size={20} className="text-primary" />
-              Round Setup
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Course Info */}
-            {selectedCourse && (
-              <div className="p-3 rounded-lg border bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium">{selectedCourse.name}</span>
-                    <span className="text-muted-foreground text-sm ml-2">
-                      {selectedHoles === "18" ? "18 holes" : selectedHoles === "front9" ? "Front 9" : "Back 9"}
-                    </span>
-                  </div>
-                </div>
+        {/* Course Info - Compact */}
+        {selectedCourse && (
+          <div className="p-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium">{selectedCourse.name}</span>
+                <span className="text-muted-foreground text-sm ml-2">
+                  {selectedHoles === "18" ? "18 holes" : selectedHoles === "front9" ? "Front 9" : "Back 9"}
+                </span>
               </div>
-            )}
-
-            {/* Round Type */}
-            <RoundTypeSelector value={roundType} onChange={setRoundType} />
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        )}
 
         {/* Groups & Players Section */}
         <Card>
@@ -466,6 +453,8 @@ export default function StrokePlaySetup() {
               />
             </div>
 
+            {/* Round Type */}
+            <RoundTypeSelector value={roundType} onChange={setRoundType} />
           </CardContent>
         </Card>
 
