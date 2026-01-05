@@ -670,10 +670,19 @@ export const getStatInsights = (stats: AllStats): StatInsight[] => {
     }
   }
 
-  // Sort: weaknesses first, then strengths
-  return insights.sort((a, b) => {
-    if (a.status === 'weakness' && b.status === 'strength') return -1;
-    if (a.status === 'strength' && b.status === 'weakness') return 1;
-    return 0;
+  // Separate strengths and weaknesses
+  const strengths = insights.filter(i => i.status === 'strength');
+  const weaknesses = insights.filter(i => i.status === 'weakness');
+  
+  // Sort strengths by value (highest first) and keep only the best one
+  strengths.sort((a, b) => {
+    const aVal = parseFloat(a.value.replace('+', '').replace('%', ''));
+    const bVal = parseFloat(b.value.replace('+', '').replace('%', ''));
+    return bVal - aVal;
   });
+  
+  const bestStrength = strengths.length > 0 ? [strengths[0]] : [];
+  
+  // Return best strength first, then weaknesses
+  return [...bestStrength, ...weaknesses];
 };
