@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -542,11 +542,11 @@ const Friends = () => {
                                 navigate(`/user/${result.id}`);
                               }}
                             >
-                              <Avatar>
-                                <AvatarFallback>
-                                  {(result.display_name || result.username || '?')[0].toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
+                              <ProfilePhoto
+                                alt={result.display_name || result.username || "?"}
+                                fallback={result.display_name || result.username || "?"}
+                                size="md"
+                              />
                               <div>
                                 <p className="font-medium">{result.display_name || result.username}</p>
                                 {result.display_name && <p className="text-sm text-muted-foreground">@{result.username}</p>}
@@ -600,11 +600,11 @@ const Friends = () => {
                         className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
                         onClick={() => navigate(`/user/${request.id}`)}
                       >
-                        <Avatar>
-                          <AvatarFallback>
-                            {(request.display_name || request.username || '?')[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <ProfilePhoto
+                          alt={request.display_name || request.username || "?"}
+                          fallback={request.display_name || request.username || "?"}
+                          size="md"
+                        />
                         <div>
                           <p className="font-medium">{request.display_name || request.username}</p>
                           {request.display_name && <p className="text-sm text-muted-foreground">@{request.username}</p>}
@@ -656,11 +656,11 @@ const Friends = () => {
                         className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
                         onClick={() => navigate(`/user/${request.id}`)}
                       >
-                        <Avatar>
-                          <AvatarFallback>
-                            {(request.display_name || request.username || '?')[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <ProfilePhoto
+                          alt={request.display_name || request.username || "?"}
+                          fallback={request.display_name || request.username || "?"}
+                          size="md"
+                        />
                         <div>
                           <p className="font-medium">{request.display_name || request.username}</p>
                           {request.display_name && <p className="text-sm text-muted-foreground">@{request.username}</p>}
@@ -728,11 +728,12 @@ const Friends = () => {
                             className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => navigate(`/user/${friend.id}`)}
                           >
-                            <Avatar className="w-12 h-12 flex-shrink-0">
-                              <AvatarFallback>
-                                {(friend.display_name || friend.username || '?')[0].toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                            <ProfilePhoto
+                              alt={friend.display_name || friend.username || "?"}
+                              fallback={friend.display_name || friend.username || "?"}
+                              size="lg"
+                              className="h-12 w-12"
+                            />
                             
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-base truncate">{friend.display_name || friend.username}</h3>

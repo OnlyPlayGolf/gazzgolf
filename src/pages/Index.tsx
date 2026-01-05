@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -478,15 +478,13 @@ const Index = () => {
                               style={{ width: '64px' }}
                             >
                               <div className={`relative ${isGroup && idx > 0 ? '-ml-3' : ''}`}>
-                                <Avatar className="h-14 w-14 border-2 border-background shadow-md">
-                                  {friend.friendAvatar ? (
-                                    <img src={friend.friendAvatar} alt={friend.friendName} className="object-cover" />
-                                  ) : (
-                                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                                      {friend.friendName.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
+                                <ProfilePhoto
+                                  src={friend.friendAvatar}
+                                  alt={friend.friendName}
+                                  fallback={friend.friendName}
+                                  size="lg"
+                                  className="border-2 border-background shadow-md h-14 w-14"
+                                />
                                 {/* Green "playing" indicator */}
                                 <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 rounded-full border-2 border-background" />
                               </div>
@@ -554,15 +552,13 @@ const Index = () => {
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => navigate(`/rounds/${activity.id}/summary`)}
                       >
-                        <Avatar className="h-10 w-10 border border-border">
-                          {activity.profile?.avatar_url ? (
-                            <img src={activity.profile.avatar_url} alt={friendName} className="object-cover" />
-                          ) : (
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {friendName.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
+                        <ProfilePhoto
+                          src={activity.profile?.avatar_url}
+                          alt={friendName}
+                          fallback={friendName}
+                          size="md"
+                          className="border border-border"
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-foreground">
                             <span className="font-semibold">{friendName}</span> completed a round

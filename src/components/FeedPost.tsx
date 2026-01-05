@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, MessageCircle, Send, Trophy, Target, MoreHorizontal, Pencil, Trash2, ChevronRight } from "lucide-react";
 import {
@@ -761,18 +761,13 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       <CardContent className="p-4 space-y-4">
         {/* Post Header */}
         <div className="flex items-center gap-3">
-          <Avatar 
-            className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
+          <ProfilePhoto
+            src={post.profile?.avatar_url}
+            alt={displayName}
+            fallback={displayName}
+            size="md"
             onClick={() => handleProfileClick(post.user_id)}
-          >
-            {post.profile?.avatar_url ? (
-              <img src={post.profile.avatar_url} alt={displayName} className="object-cover" />
-            ) : (
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {initials}
-              </AvatarFallback>
-            )}
-          </Avatar>
+          />
           <div className="flex-1">
             <p 
               className="font-semibold text-foreground cursor-pointer hover:underline"
@@ -1029,22 +1024,13 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
               return (
                 <div key={comment.id} className="flex gap-2">
-                  <Avatar 
-                    className="h-8 w-8 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                  <ProfilePhoto
+                    src={comment.profiles?.avatar_url}
+                    alt={commentName}
+                    fallback={commentName}
+                    size="sm"
                     onClick={() => handleProfileClick(comment.user_id)}
-                  >
-                    {comment.profiles?.avatar_url ? (
-                      <img
-                        src={comment.profiles.avatar_url}
-                        alt={commentName}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {commentInitials}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+                  />
                   <div className="flex-1">
                     <div className="bg-muted rounded-lg p-2">
                       <p 

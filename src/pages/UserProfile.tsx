@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Camera, QrCode, Users, Menu, ChevronRight, User as UserIcon, Settings as SettingsIcon, Info, MessageSquare, Crown, LogOut, HelpCircle } from "lucide-react";
 import { StatisticsOverview } from "@/components/statistics/StatisticsOverview";
 import { supabase } from "@/integrations/supabase/client";
@@ -395,12 +395,13 @@ export default function UserProfile() {
         {/* Profile photo */}
         <div className="flex flex-col items-center">
           <div className="relative">
-            <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profile.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                {displayName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <ProfilePhoto
+              src={profile.avatar_url}
+              alt={displayName}
+              fallback={displayName}
+              size="2xl"
+              className="border-4 border-background shadow-lg"
+            />
             <label className="absolute bottom-0 right-0 h-10 w-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
               <Camera size={20} className="text-primary-foreground" />
               <input
@@ -433,14 +434,16 @@ export default function UserProfile() {
           >
             <div className="flex -space-x-2 p-1">
               {friends.length > 0 ? (
-                friends.slice(0, 3).map((friend, index) => (
-                  <Avatar key={friend.id} className="h-8 w-8 border-2 border-background">
-                    <AvatarImage src={friend.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                      {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                ))
+                  friends.slice(0, 3).map((friend) => (
+                    <ProfilePhoto
+                      key={friend.id}
+                      src={friend.avatar_url}
+                      alt={friend.display_name || friend.username || "U"}
+                      fallback={friend.display_name || friend.username || "U"}
+                      size="sm"
+                      className="border-2 border-background"
+                    />
+                  ))
               ) : (
                 <>
                   <div className="h-8 w-8 rounded-full bg-primary/20 border-2 border-background" />
