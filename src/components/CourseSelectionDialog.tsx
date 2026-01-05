@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { AddCourseDialog } from "./AddCourseDialog";
+import { AddCourseMethodDialog } from "./AddCourseMethodDialog";
+import { ScanScorecardDialog } from "./ScanScorecardDialog";
+import { ScorecardPreviewDialog } from "./ScorecardPreviewDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 interface Course {
@@ -101,6 +104,10 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
   const [favoriteCourses, setFavoriteCourses] = useState<Course[]>([]);
   const [favoriteCourseIds, setFavoriteCourseIds] = useState<Set<string>>(new Set());
   const [showAddCourse, setShowAddCourse] = useState(false);
+  const [showAddMethodDialog, setShowAddMethodDialog] = useState(false);
+  const [showScanDialog, setShowScanDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [scannedData, setScannedData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("search");
 
   useEffect(() => {
@@ -268,9 +275,26 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
 
   const handleCourseAdded = (course: Course) => {
     setShowAddCourse(false);
+    setShowPreviewDialog(false);
     // Refresh courses list and select the new course
     fetchCourses();
     handleSelectCourse(course);
+  };
+
+  const handleScanComplete = (data: any) => {
+    setScannedData(data);
+    setShowScanDialog(false);
+    setShowPreviewDialog(true);
+  };
+
+  const handleOpenScan = () => {
+    setShowAddMethodDialog(false);
+    setShowScanDialog(true);
+  };
+
+  const handleOpenManual = () => {
+    setShowAddMethodDialog(false);
+    setShowAddCourse(true);
   };
 
   const CourseItem = ({ course }: { course: Course }) => {
@@ -343,7 +367,7 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
               
               <Button
                 variant="outline"
-                onClick={() => setShowAddCourse(true)}
+                onClick={() => setShowAddMethodDialog(true)}
                 className="w-full shrink-0 mt-4"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -403,6 +427,26 @@ export function CourseSelectionDialog({ isOpen, onClose, onSelectCourse }: Cours
           </Tabs>
         </DialogContent>
       </Dialog>
+
+      <AddCourseMethodDialog
+        isOpen={showAddMethodDialog}
+        onClose={() => setShowAddMethodDialog(false)}
+        onScanScorecard={handleOpenScan}
+        onManualEntry={handleOpenManual}
+      />
+
+      <ScanScorecardDialog
+        isOpen={showScanDialog}
+        onClose={() => setShowScanDialog(false)}
+        onScanComplete={handleScanComplete}
+      />
+
+      <ScorecardPreviewDialog
+        isOpen={showPreviewDialog}
+        onClose={() => setShowPreviewDialog(false)}
+        scannedData={scannedData}
+        onCourseAdded={handleCourseAdded}
+      />
 
       <AddCourseDialog
         isOpen={showAddCourse}
