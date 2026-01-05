@@ -119,7 +119,7 @@ export const PostBox = ({ profile, userId, onPostCreated }: PostBoxProps) => {
               placeholder="What's on your golf mind?"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="min-h-[80px] resize-none border-0 bg-muted/50 focus-visible:ring-1"
+              className="min-h-[40px] h-10 py-2 resize-none border-0 bg-muted/50 focus-visible:ring-1"
             />
             
             {imagePreview && (
