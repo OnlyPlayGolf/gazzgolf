@@ -156,7 +156,7 @@ export const PerformanceSnapshot = ({ userId }: PerformanceSnapshotProps) => {
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Performance Snapshot</CardTitle>
+          <CardTitle className="text-lg">Key Insights</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-3 gap-3">
@@ -178,7 +178,7 @@ export const PerformanceSnapshot = ({ userId }: PerformanceSnapshotProps) => {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center justify-between">
-          <span>Performance Snapshot</span>
+          <span>Key Insights</span>
           <Button
             variant="ghost"
             size="sm"
