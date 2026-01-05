@@ -16,6 +16,7 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { PostBox } from "@/components/PostBox";
 import { FeedPost } from "@/components/FeedPost";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
@@ -517,6 +518,9 @@ const Index = () => {
 
         {/* Post Box */}
         <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
+
+        {/* Performance Snapshot */}
+        <PerformanceSnapshot userId={user.id} />
 
         {/* Friends Activity Feed */}
         {(friendsPosts.length > 0 || friendsActivity.length > 0) && (
