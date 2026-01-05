@@ -15,7 +15,6 @@ import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 import { PlayerGroup } from "@/types/playSetup";
 import { validateAllGroupsForFormat, getFormatPlayerRequirementText } from "@/utils/groupValidation";
-import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
 
 interface Course {
   id: string;
@@ -54,7 +53,6 @@ export default function StrokePlaySetup() {
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
-  const [roundType, setRoundType] = useState<RoundType>("fun_practice");
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -202,7 +200,6 @@ export default function StrokePlaySetup() {
           starting_hole: startingHole,
           origin: 'play',
           date_played: datePlayed,
-          round_type: roundType,
         })
         .select()
         .single();
@@ -452,9 +449,6 @@ export default function StrokePlaySetup() {
                 onCheckedChange={setGimmesEnabled}
               />
             </div>
-
-            {/* Round Type */}
-            <RoundTypeSelector value={roundType} onChange={setRoundType} />
           </CardContent>
         </Card>
 
