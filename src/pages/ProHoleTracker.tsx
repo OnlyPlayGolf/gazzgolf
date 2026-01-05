@@ -731,8 +731,8 @@ const ProHoleTracker = () => {
                   Delete Last
                 </Button>
               </div>
-              {currentData.shots.map((shot, idx) => (
-                <div key={idx} className="p-3 border rounded-lg text-sm">
+              {[...currentData.shots].reverse().map((shot, idx) => (
+                <div key={currentData.shots.length - 1 - idx} className="p-3 border rounded-lg text-sm">
                   <div className="flex justify-between">
                     <span className="font-medium">
                       {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
