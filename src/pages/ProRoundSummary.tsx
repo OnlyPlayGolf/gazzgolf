@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Calendar, MapPin, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Edit, Trash2, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -363,7 +363,10 @@ const ProRoundSummary = () => {
         </Button>
 
         {/* Header Card - matches StatsRoundsHistory design */}
-        <Card className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20">
+        <Card 
+          onClick={() => navigate(`/rounds/${roundId}/pro-track`)}
+          className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all"
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               {/* Left: Score */}
@@ -381,21 +384,19 @@ const ProRoundSummary = () => {
                   {summary.course_name}
                 </h3>
                 <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                  <span>{format(new Date(summary.date_played), "MMM d, yyyy")}</span>
+                  <span>{format(new Date(summary.date_played), "MMM d")}</span>
                   <span>·</span>
                   <span>{summary.holes_played} holes</span>
                 </div>
+                <div className="mt-1">
+                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
+                    Fun/Practice
+                  </span>
+                </div>
               </div>
               
-              {/* Right: Edit button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/rounds/${roundId}/pro-track`)}
-                className="flex-shrink-0"
-              >
-                <Edit size={16} />
-              </Button>
+              {/* Right: Chevron */}
+              <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
