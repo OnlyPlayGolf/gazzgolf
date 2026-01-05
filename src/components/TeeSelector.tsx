@@ -96,13 +96,27 @@ function getOptions(courseTeeNames?: Record<string, string> | null): { value: st
     normalizedNames[key.toLowerCase()] = value;
   });
   
-  // Return options in standard order, using course-specific names
-  return STANDARD_TEE_ORDER
-    .filter(key => normalizedNames[key]) // Only include tees that have names
-    .map(key => ({
-      value: key,
-      label: normalizedNames[key] || DEFAULT_TEE_NAMES[key] || key,
-    }));
+  // Build options from course tee names, maintaining standard order for known tees
+  const orderedOptions: { value: string; label: string }[] = [];
+  
+  // First add tees in standard order
+  STANDARD_TEE_ORDER.forEach(key => {
+    if (normalizedNames[key]) {
+      orderedOptions.push({
+        value: key,
+        label: normalizedNames[key],
+      });
+    }
+  });
+  
+  // Then add any custom tees not in standard order
+  Object.entries(normalizedNames).forEach(([key, label]) => {
+    if (!STANDARD_TEE_ORDER.includes(key) && !orderedOptions.some(opt => opt.value === key)) {
+      orderedOptions.push({ value: key, label });
+    }
+  });
+  
+  return orderedOptions;
 }
 
 // Normalize legacy values (difficulty-based) to color-based system
