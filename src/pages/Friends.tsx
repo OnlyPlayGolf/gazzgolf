@@ -21,6 +21,7 @@ interface Friend {
   username: string | null;
   handicap: string | null;
   home_club: string | null;
+  avatar_url: string | null;
   status: 'accepted' | 'pending' | 'blocked';
   is_requester: boolean;
 }
@@ -112,7 +113,7 @@ const Friends = () => {
           const friendId = friendship.requester === user.id ? friendship.addressee : friendship.requester;
           const { data: friendProfile } = await supabase
             .from('profiles')
-            .select('display_name, username, handicap, home_club')
+            .select('display_name, username, handicap, home_club, avatar_url')
             .eq('id', friendId)
             .single();
 
@@ -123,6 +124,7 @@ const Friends = () => {
               username: friendProfile.username,
               handicap: friendProfile.handicap,
               home_club: friendProfile.home_club,
+              avatar_url: friendProfile.avatar_url,
               status: 'accepted',
               is_requester: friendship.requester === user.id
             });
@@ -131,7 +133,7 @@ const Friends = () => {
           if (friendship.addressee === user.id) {
             const { data: requesterProfile } = await supabase
               .from('profiles')
-              .select('display_name, username')
+              .select('display_name, username, avatar_url')
               .eq('id', friendship.requester)
               .single();
 
@@ -142,6 +144,7 @@ const Friends = () => {
                 username: requesterProfile.username,
                 handicap: null,
                 home_club: null,
+                avatar_url: requesterProfile.avatar_url,
                 status: 'pending',
                 is_requester: false
               });
@@ -149,7 +152,7 @@ const Friends = () => {
           } else {
             const { data: addresseeProfile } = await supabase
               .from('profiles')
-              .select('display_name, username')
+              .select('display_name, username, avatar_url')
               .eq('id', friendship.addressee)
               .single();
 
@@ -160,6 +163,7 @@ const Friends = () => {
                 username: addresseeProfile.username,
                 handicap: null,
                 home_club: null,
+                avatar_url: addresseeProfile.avatar_url,
                 status: 'pending',
                 is_requester: true
               });
@@ -601,6 +605,7 @@ const Friends = () => {
                         onClick={() => navigate(`/user/${request.id}`)}
                       >
                         <ProfilePhoto
+                          src={request.avatar_url}
                           alt={request.display_name || request.username || "?"}
                           fallback={request.display_name || request.username || "?"}
                           size="md"
@@ -657,6 +662,7 @@ const Friends = () => {
                         onClick={() => navigate(`/user/${request.id}`)}
                       >
                         <ProfilePhoto
+                          src={request.avatar_url}
                           alt={request.display_name || request.username || "?"}
                           fallback={request.display_name || request.username || "?"}
                           size="md"
@@ -729,10 +735,10 @@ const Friends = () => {
                             onClick={() => navigate(`/user/${friend.id}`)}
                           >
                             <ProfilePhoto
+                              src={friend.avatar_url}
                               alt={friend.display_name || friend.username || "?"}
                               fallback={friend.display_name || friend.username || "?"}
                               size="lg"
-                              className="h-12 w-12"
                             />
                             
                             <div className="flex-1 min-w-0">
