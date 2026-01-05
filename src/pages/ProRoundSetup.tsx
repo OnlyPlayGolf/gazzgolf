@@ -70,7 +70,7 @@ const ProRoundSetup = () => {
       // Get course holes to see which tees have distance data
       const { data: holes, error } = await supabase
         .from("course_holes")
-        .select("white_distance, yellow_distance, blue_distance, red_distance, orange_distance")
+        .select("black_distance, white_distance, silver_distance, gold_distance, yellow_distance, blue_distance, red_distance, orange_distance")
         .eq("course_id", selectedCourseId)
         .limit(1);
 
@@ -88,7 +88,10 @@ const ProRoundSetup = () => {
 
       const hole = holes[0];
       const teeMapping: { key: string; distanceKey: keyof typeof hole; defaultName: string }[] = [
+        { key: "black", distanceKey: "black_distance", defaultName: "Black" },
         { key: "white", distanceKey: "white_distance", defaultName: "White" },
+        { key: "silver", distanceKey: "silver_distance", defaultName: "Silver" },
+        { key: "gold", distanceKey: "gold_distance", defaultName: "Gold" },
         { key: "yellow", distanceKey: "yellow_distance", defaultName: "Yellow" },
         { key: "blue", distanceKey: "blue_distance", defaultName: "Blue" },
         { key: "red", distanceKey: "red_distance", defaultName: "Red" },
