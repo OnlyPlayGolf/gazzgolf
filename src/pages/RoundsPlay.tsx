@@ -20,7 +20,7 @@ import { GroupCard } from "@/components/play/GroupCard";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
-import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState } from "@/types/playSetup";
+import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState, RoundType } from "@/types/playSetup";
 import { cn, parseHandicap } from "@/lib/utils";
 import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import { CourseScorecard } from "@/components/CourseScorecard";
@@ -888,6 +888,24 @@ export default function RoundsPlay() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Round Type */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Round Type</Label>
+              <Select 
+                value={setupState.roundType} 
+                onValueChange={(v) => setSetupState(prev => ({ ...prev, roundType: v as RoundType }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select round type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fun_practice">Fun/Practice</SelectItem>
+                  <SelectItem value="qualifying">Qualifying</SelectItem>
+                  <SelectItem value="tournament">Tournament</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
