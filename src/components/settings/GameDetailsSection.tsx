@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, MapPin, Calendar, Flag, Hash, Trophy } from "lucide-react";
+import { Users, MapPin, Calendar, Flag, Hash, Trophy, Tag } from "lucide-react";
 import { format } from "date-fns";
 
 export interface GamePlayer {
@@ -10,6 +10,12 @@ export interface GamePlayer {
   team?: string | null;
   avatarUrl?: string | null;
 }
+
+const roundTypeLabels: Record<string, string> = {
+  fun_practice: "Fun/Practice",
+  qualifying: "Qualifying",
+  tournament: "Tournament",
+};
 
 export interface GameDetailsData {
   format: string;
@@ -22,6 +28,7 @@ export interface GameDetailsData {
   currentHole?: number;
   scoring: string;
   roundName?: string | null;
+  roundType?: string | null;
 }
 
 interface GameDetailsSectionProps {
@@ -118,6 +125,16 @@ export function GameDetailsSection({ data, onViewPlayers }: GameDetailsSectionPr
               <p className="font-medium">{holesDisplay}</p>
             </div>
           </div>
+
+          {data.roundType && (
+            <div className="flex items-start gap-2">
+              <Tag className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-muted-foreground text-xs">Type</p>
+                <p className="font-medium">{roundTypeLabels[data.roundType] || data.roundType}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="pt-2 border-t">

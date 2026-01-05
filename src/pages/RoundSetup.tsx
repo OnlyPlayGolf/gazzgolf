@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
+import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
 
 const RoundSetup = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const RoundSetup = () => {
   const [teeSet, setTeeSet] = useState("");
   const [holesPlayed, setHolesPlayed] = useState<9 | 18>(18);
   const [loading, setLoading] = useState(false);
+  const [roundType, setRoundType] = useState<RoundType>("fun_practice");
 
   useEffect(() => {
     const fetchRoundCount = async () => {
@@ -65,6 +67,7 @@ const RoundSetup = () => {
             tee_set: teeSet,
             holes_played: holesPlayed,
             origin: 'tracker',
+            round_type: roundType,
           },
         ])
         .select()
@@ -155,6 +158,8 @@ const RoundSetup = () => {
                 </Button>
               </div>
             </div>
+
+            <RoundTypeSelector value={roundType} onChange={setRoundType} />
 
             <Button
               onClick={handleStartRound}

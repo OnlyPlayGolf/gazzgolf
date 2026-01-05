@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProStatsAverages } from "@/components/ProStatsAverages";
+import { StatsRoundsHistory } from "@/components/StatsRoundsHistory";
+import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
 interface Course {
   id: string;
   name: string;
@@ -36,6 +37,7 @@ const ProRoundSetup = () => {
   const [startingHole, setStartingHole] = useState<1 | 10>(1);
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<AvailableTee[]>([]);
+  const [roundType, setRoundType] = useState<RoundType>("fun_practice");
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -157,6 +159,7 @@ const ProRoundSetup = () => {
             holes_played: holesPlayed,
             starting_hole: startingHole,
             origin: 'pro_stats',
+            round_type: roundType,
           },
         ])
         .select()
@@ -277,6 +280,8 @@ const ProRoundSetup = () => {
               </div>
             </div>
 
+            <RoundTypeSelector value={roundType} onChange={setRoundType} />
+
             <Button
               onClick={handleStartRound}
               disabled={loading}
@@ -288,7 +293,7 @@ const ProRoundSetup = () => {
           </CardContent>
         </Card>
 
-        <ProStatsAverages />
+        <StatsRoundsHistory />
       </div>
     </div>
   );
