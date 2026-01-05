@@ -363,10 +363,7 @@ const ProRoundSummary = () => {
         </Button>
 
         {/* Header Card - matches StatsRoundsHistory design */}
-        <Card 
-          onClick={() => navigate(`/rounds/${roundId}/pro-track`)}
-          className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all"
-        >
+        <Card className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               {/* Left: Score */}
@@ -394,9 +391,6 @@ const ProRoundSummary = () => {
                   </span>
                 </div>
               </div>
-              
-              {/* Right: Chevron */}
-              <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
             </div>
           </CardContent>
         </Card>
