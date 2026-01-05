@@ -312,66 +312,107 @@ export default function Statistics() {
                   ? [sgStatsList[sgStatsList.length - 2], sgStatsList[sgStatsList.length - 1]]
                   : sgStatsList.length === 2 ? [sgStatsList[1]] : [];
 
+                // Drill recommendations based on weakest categories (same logic as PerformanceSnapshot)
+                const drillsByCategory: Record<string, { id: string; title: string; description: string }[]> = {
+                  'putting': [
+                    { id: 'pga-tour-18', title: 'PGA Tour 18 Holes', description: 'Overall putting practice against tour standards' },
+                    { id: 'aggressive-putting', title: 'Aggressive Putting', description: 'Commit with confidence inside 6 meters' },
+                  ],
+                  'short-game': [
+                    { id: '8-ball-drill', title: '8-Ball Drill', description: 'Complete 8 chip/pitch/lob/bunker stations' },
+                    { id: 'easy-chip', title: 'Easy Chip Drill', description: 'Build consistency on simple chip shots' },
+                  ],
+                  'approach': [
+                    { id: 'wedges-2-laps', title: 'Wedge Point Game', description: 'Dial in wedges from 40-80 meters' },
+                    { id: 'approach-control', title: 'Approach Control', description: '14 approach shots from 130-180m' },
+                  ],
+                  'driving': [
+                    { id: 'driver-control', title: 'Driver Control Drill', description: '14 tee shots testing fairway accuracy' },
+                    { id: 'shot-shape-master', title: 'Shot Shape Master', description: 'Master draws, fades, and fairway finding' },
+                  ],
+                };
+
+                // Get weak categories from insights or worst stats
+                const weakCategories = new Set<string>();
+                const weaknesses = insights.filter(i => i.status === 'weakness');
+                weaknesses.forEach(w => weakCategories.add(w.category));
+                
+                if (weakCategories.size === 0 && sgStatsList.length >= 2) {
+                  weakCategories.add(sgStatsList[sgStatsList.length - 1].category);
+                  if (sgStatsList.length >= 3) {
+                    weakCategories.add(sgStatsList[sgStatsList.length - 2].category);
+                  }
+                }
+
+                const recommendedDrills: { id: string; title: string; description: string }[] = [];
+                weakCategories.forEach(category => {
+                  const categoryDrills = drillsByCategory[category] || [];
+                  recommendedDrills.push(...categoryDrills.slice(0, 2));
+                });
+                const displayDrills = recommendedDrills.slice(0, 3);
+
                 return (
-                  <div className="grid grid-cols-3 gap-3">
-                    {/* Best stat (left) */}
-                    {bestStat && (
-                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <TrendingUp size={14} className="text-green-500" />
-                          <span className="text-[10px] uppercase tracking-wide text-green-600 font-medium">Best</span>
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      {/* Best stat (left) */}
+                      {bestStat && (
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <TrendingUp size={14} className="text-green-500" />
+                            <span className="text-[10px] uppercase tracking-wide text-green-600 font-medium">Best</span>
+                          </div>
+                          <p className="text-lg font-bold text-green-600">{formatSG(bestStat.value)}</p>
+                          <p className="text-xs text-muted-foreground">{bestStat.label}</p>
                         </div>
-                        <p className="text-lg font-bold text-green-600">{formatSG(bestStat.value)}</p>
-                        <p className="text-xs text-muted-foreground">{bestStat.label}</p>
+                      )}
+                      
+                      {/* Worst stats (middle and right) */}
+                      {worstStats.map((stat) => (
+                        <div key={stat.category} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <ArrowDown size={14} className="text-red-500" />
+                            <span className="text-[10px] uppercase tracking-wide text-red-600 font-medium">Focus</span>
+                          </div>
+                          <p className="text-lg font-bold text-red-600">{formatSG(stat.value)}</p>
+                          <p className="text-xs text-muted-foreground">{stat.label}</p>
+                        </div>
+                      ))}
+                      
+                      {/* Fill empty slots if not enough data */}
+                      {bestStat && worstStats.length < 2 && (
+                        <div className="bg-muted/50 border border-border rounded-lg p-3 text-center flex items-center justify-center">
+                          <p className="text-xs text-muted-foreground">Play more to see</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recommended Drills */}
+                    {displayDrills.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recommended Drills</p>
+                        <div className="space-y-2">
+                          {displayDrills.map((drill) => (
+                            <div
+                              key={drill.id}
+                              className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
+                              onClick={() => navigate(`/drill/${drill.id}/score`)}
+                            >
+                              <div className="p-2 bg-primary/10 rounded-full">
+                                <Target size={16} className="text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{drill.title}</p>
+                                <p className="text-xs text-muted-foreground truncate">{drill.description}</p>
+                              </div>
+                              <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    
-                    {/* Worst stats (middle and right) */}
-                    {worstStats.map((stat) => (
-                      <div key={stat.category} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
-                        <div className="flex items-center justify-center gap-1 mb-1">
-                          <ArrowDown size={14} className="text-red-500" />
-                          <span className="text-[10px] uppercase tracking-wide text-red-600 font-medium">Focus</span>
-                        </div>
-                        <p className="text-lg font-bold text-red-600">{formatSG(stat.value)}</p>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      </div>
-                    ))}
-                    
-                    {/* Fill empty slots if not enough data */}
-                    {bestStat && worstStats.length < 2 && (
-                      <div className="bg-muted/50 border border-border rounded-lg p-3 text-center flex items-center justify-center">
-                        <p className="text-xs text-muted-foreground">Play more to see</p>
-                      </div>
-                    )}
-                  </div>
+                  </>
                 );
               })()}
-
-              {/* Recommended Drills */}
-              {drillRecs.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recommended Drills</p>
-                  <div className="space-y-2">
-                    {drillRecs.slice(0, 3).map((drill) => (
-                      <div
-                        key={drill.path}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                        onClick={() => navigate(drill.path)}
-                      >
-                        <div className="p-2 bg-primary/10 rounded-full">
-                          <Target size={16} className="text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{drill.drillTitle}</p>
-                          <p className="text-xs text-muted-foreground truncate">{drill.reason}</p>
-                        </div>
-                        <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
