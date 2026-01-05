@@ -362,51 +362,40 @@ const ProRoundSummary = () => {
           Back to Practice
         </Button>
 
-        {/* Header */}
-        <Card className="bg-primary/10 border-primary">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin size={18} className="text-primary" />
-                  <CardTitle>{summary.course_name}</CardTitle>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar size={14} />
-                  <span>{format(new Date(summary.date_played), "MMMM d, yyyy")}</span>
-                  {summary.tee_set && (
-                    <>
-                      <span>•</span>
-                      <span>{summary.tee_set} Tees</span>
-                    </>
-                  )}
-                  <span>•</span>
-                  <span>{summary.holes_played} holes</span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/rounds/${roundId}/pro-track`)}
-              >
-                <Edit size={16} />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Score</div>
-                <div className="text-4xl font-bold">{summary.total_score}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground mb-1">vs Par</div>
-                <div className={`text-4xl font-bold ${getScoreColor(summary.score_vs_par)}`}>
+        {/* Header Card - matches StatsRoundsHistory design */}
+        <Card className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              {/* Left: Score */}
+              <div className="flex-shrink-0 w-14 text-center">
+                <div className={`text-2xl font-bold ${summary.score_vs_par <= 0 ? "text-emerald-600" : "text-foreground"}`}>
                   {summary.score_vs_par === 0 ? "E" : 
                    summary.score_vs_par > 0 ? `+${summary.score_vs_par}` : 
                    summary.score_vs_par}
                 </div>
               </div>
+              
+              {/* Middle: Details */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground truncate">
+                  {summary.course_name}
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+                  <span>{format(new Date(summary.date_played), "MMM d, yyyy")}</span>
+                  <span>·</span>
+                  <span>{summary.holes_played} holes</span>
+                </div>
+              </div>
+              
+              {/* Right: Edit button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/rounds/${roundId}/pro-track`)}
+                className="flex-shrink-0"
+              >
+                <Edit size={16} />
+              </Button>
             </div>
           </CardContent>
         </Card>
