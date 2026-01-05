@@ -5,8 +5,11 @@ export const STANDARD_TEE_OPTIONS = [
   { value: "black", label: "Black" },
   { value: "blue", label: "Blue" },
   { value: "white", label: "White" },
+  { value: "silver", label: "Silver" },
+  { value: "gold", label: "Gold" },
   { value: "yellow", label: "Yellow" },
   { value: "red", label: "Red" },
+  { value: "orange", label: "Orange" },
 ];
 
 // Default tee names mapping (used when no course-specific names available)
@@ -14,12 +17,15 @@ const DEFAULT_TEE_NAMES: Record<string, string> = {
   black: "Black",
   blue: "Blue",
   white: "White",
+  silver: "Silver",
+  gold: "Gold",
   yellow: "Yellow",
   red: "Red",
+  orange: "Orange",
 };
 
 // Standard tee order from longest to shortest
-const STANDARD_TEE_ORDER = ["black", "blue", "white", "yellow", "red"];
+const STANDARD_TEE_ORDER = ["black", "blue", "white", "silver", "gold", "yellow", "red", "orange"];
 
 // Default tee for men (second farthest = blue)
 export const DEFAULT_MEN_TEE = "blue";

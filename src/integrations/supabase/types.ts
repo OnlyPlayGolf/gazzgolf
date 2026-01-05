@@ -455,40 +455,49 @@ export type Database = {
       }
       course_holes: {
         Row: {
+          black_distance: number | null
           blue_distance: number | null
           course_id: string
           created_at: string
+          gold_distance: number | null
           hole_number: number
           id: string
           orange_distance: number | null
           par: number
           red_distance: number | null
+          silver_distance: number | null
           stroke_index: number
           white_distance: number | null
           yellow_distance: number | null
         }
         Insert: {
+          black_distance?: number | null
           blue_distance?: number | null
           course_id: string
           created_at?: string
+          gold_distance?: number | null
           hole_number: number
           id?: string
           orange_distance?: number | null
           par: number
           red_distance?: number | null
+          silver_distance?: number | null
           stroke_index: number
           white_distance?: number | null
           yellow_distance?: number | null
         }
         Update: {
+          black_distance?: number | null
           blue_distance?: number | null
           course_id?: string
           created_at?: string
+          gold_distance?: number | null
           hole_number?: number
           id?: string
           orange_distance?: number | null
           par?: number
           red_distance?: number | null
+          silver_distance?: number | null
           stroke_index?: number
           white_distance?: number | null
           yellow_distance?: number | null
