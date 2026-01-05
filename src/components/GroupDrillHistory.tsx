@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -242,12 +242,12 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
               className="p-3 rounded-lg bg-secondary/30 space-y-2"
             >
               <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={result.avatar_url || undefined} />
-                  <AvatarFallback className="text-xs">
-                    {(result.display_name || result.username || 'U').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <ProfilePhoto
+                  src={result.avatar_url}
+                  alt={result.display_name || result.username || "U"}
+                  fallback={result.display_name || result.username || "U"}
+                  size="sm"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">
                     {result.display_name || result.username || 'Unknown'}

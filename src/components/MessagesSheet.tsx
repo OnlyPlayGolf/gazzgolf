@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, Send, ArrowLeft, Users, Search, Plus } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -649,11 +649,11 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
                       className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                     >
                       <div className="flex items-start gap-3">
-                        <Avatar>
-                          <AvatarFallback>
-                            {conv.type === 'group' ? <Users size={18} /> : conv.name[0]?.toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <ProfilePhoto
+                          alt={conv.name}
+                          fallback={conv.type === 'group' ? conv.name : conv.name}
+                          size="md"
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <h4 className="font-medium truncate">

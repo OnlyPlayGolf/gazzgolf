@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { ChevronRight, MapPin, Flag } from "lucide-react";
 
 interface LiveRoundCardProps {
@@ -83,15 +83,13 @@ export function LiveRoundCard({
     >
       <div className="flex items-center gap-3">
         {/* Avatar */}
-        <Avatar className="h-12 w-12 border-2 border-primary/20">
-          {ownerProfile.avatar_url ? (
-            <img src={ownerProfile.avatar_url} alt={displayName} className="object-cover" />
-          ) : (
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {initials}
-            </AvatarFallback>
-          )}
-        </Avatar>
+        <ProfilePhoto
+          src={ownerProfile.avatar_url}
+          alt={displayName}
+          fallback={displayName}
+          size="lg"
+          className="h-12 w-12 border-2 border-primary/20"
+        />
 
         {/* Info */}
         <div className="flex-1 min-w-0">

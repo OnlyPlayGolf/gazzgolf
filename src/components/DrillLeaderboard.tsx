@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Users, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -229,15 +229,13 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                           `#${index + 1}`
                         )}
                       </div>
-                      <Avatar 
-                        className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity"
+                      <ProfilePhoto
+                        src={entry.avatar_url}
+                        alt={entry.display_name || entry.username || "User"}
+                        fallback={entry.display_name || entry.username || "?"}
+                        size="sm"
                         onClick={() => handleProfileClick(entry.user_id)}
-                      >
-                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name || entry.username || "User"} />}
-                        <AvatarFallback className="bg-primary/20 text-primary">
-                          {(entry.display_name || entry.username || "?").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      />
                       <span 
                         className={cn(
                           "font-medium cursor-pointer hover:underline",

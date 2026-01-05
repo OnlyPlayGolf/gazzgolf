@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Image, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -105,15 +105,12 @@ export const PostBox = ({ profile, userId, onPostCreated }: PostBoxProps) => {
     <Card>
       <CardContent className="p-4">
         <div className="flex gap-3">
-          <Avatar className="h-10 w-10 flex-shrink-0">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={displayName} className="object-cover" />
-            ) : (
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {initials}
-              </AvatarFallback>
-            )}
-          </Avatar>
+          <ProfilePhoto
+            src={profile?.avatar_url}
+            alt={displayName}
+            fallback={displayName}
+            size="md"
+          />
           <div className="flex-1 space-y-3">
             <Textarea
               placeholder="What's on your golf mind?"

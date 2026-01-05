@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -216,15 +216,12 @@ const Leaderboards = () => {
                             <Badge variant="outline" className="w-8 text-center">
                               {index + 1}
                             </Badge>
-                            <Avatar className="h-8 w-8">
-                              {entry.avatar_url ? (
-                                <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                              ) : (
-                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                  {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
+                            <ProfilePhoto
+                              src={entry.avatar_url}
+                              alt={entry.display_name || entry.username || "User"}
+                              fallback={entry.display_name || entry.username || "?"}
+                              size="sm"
+                            />
                             <div>
                               <p className="font-medium text-foreground text-sm">
                                 {entry.display_name || entry.username || 'Unknown'}
@@ -273,15 +270,12 @@ const Leaderboards = () => {
                             <Badge variant="outline" className="w-8 text-center">
                               {index + 1}
                             </Badge>
-                            <Avatar className="h-8 w-8">
-                              {entry.avatar_url ? (
-                                <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                              ) : (
-                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                  {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
+                            <ProfilePhoto
+                              src={entry.avatar_url}
+                              alt={entry.display_name || entry.username || "User"}
+                              fallback={entry.display_name || entry.username || "?"}
+                              size="sm"
+                            />
                             <div>
                               <p className="font-medium text-foreground text-sm">
                                 {entry.display_name || entry.username || 'Unknown'}
@@ -394,15 +388,12 @@ const Leaderboards = () => {
                                 <Badge variant="outline" className="w-8 text-center">
                                   {index + 1}
                                 </Badge>
-                                <Avatar className="h-8 w-8">
-                                  {entry.avatar_url ? (
-                                    <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                                  ) : (
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                      {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
+                                <ProfilePhoto
+                                  src={entry.avatar_url}
+                                  alt={entry.display_name || entry.username || "User"}
+                                  fallback={entry.display_name || entry.username || "?"}
+                                  size="sm"
+                                />
                                 <div>
                                   <p className="font-medium text-foreground text-sm">
                                     {entry.display_name || entry.username || 'Unknown'}
@@ -441,15 +432,12 @@ const Leaderboards = () => {
                                 <Badge variant="outline" className="w-8 text-center">
                                   {index + 1}
                                 </Badge>
-                                <Avatar className="h-8 w-8">
-                                  {entry.avatar_url ? (
-                                    <img src={entry.avatar_url} alt={entry.username || 'User'} className="object-cover" />
-                                  ) : (
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                      {entry.display_name?.charAt(0) || entry.username?.charAt(0) || '?'}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
+                                <ProfilePhoto
+                                  src={entry.avatar_url}
+                                  alt={entry.display_name || entry.username || "User"}
+                                  fallback={entry.display_name || entry.username || "?"}
+                                  size="sm"
+                                />
                                 <div>
                                   <p className="font-medium text-foreground text-sm">
                                     {entry.display_name || entry.username || 'Unknown'}
