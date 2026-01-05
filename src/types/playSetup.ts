@@ -18,6 +18,8 @@ export interface PlayerGroup {
   teeTime?: string;
 }
 
+export type RoundType = "fun_practice" | "qualifying" | "tournament";
+
 export interface PlaySetupState {
   roundName: string;
   datePlayed: string;
@@ -39,6 +41,7 @@ export interface PlaySetupState {
   aiConfigApplied: boolean;
   aiConfigSummary?: string;
   aiAssumptions?: string[];
+  roundType: RoundType;
 }
 
 export const createDefaultGroup = (index: number): PlayerGroup => ({
@@ -76,5 +79,6 @@ export const getInitialPlaySetupState = (): PlaySetupState => {
       gimmesEnabled: false,
     },
     aiConfigApplied: false,
+    roundType: "fun_practice",
   };
 };
