@@ -146,47 +146,67 @@ export const StatsRoundsHistory = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {rounds.map((round) => (
-              <Card
-                key={round.id}
-                onClick={() => handleRoundClick(round.id)}
-                className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all"
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    {/* Left: Score */}
-                    <div className="flex-shrink-0 w-14 text-center">
-                      <div className={`text-2xl font-bold ${getScoreColor(round)}`}>
-                        {formatScore(round)}
-                      </div>
-                    </div>
-                    
-                    {/* Middle: Details */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">
-                        {round.course_name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                        <span>{format(new Date(round.date_played), "MMM d, yyyy")}</span>
-                        <span>·</span>
-                        <span>{round.holes_played} holes</span>
-                      </div>
-                      {round.round_type && (
-                        <div className="mt-1">
-                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
-                            {roundTypeLabels[round.round_type] || round.round_type}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Right: Chevron */}
-                    <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
+          <div className="space-y-4">
+            {(() => {
+              // Group rounds by year
+              const roundsByYear = rounds.reduce((acc, round) => {
+                const year = new Date(round.date_played).getFullYear().toString();
+                if (!acc[year]) acc[year] = [];
+                acc[year].push(round);
+                return acc;
+              }, {} as Record<string, StatsRound[]>);
+
+              // Sort years descending (most recent first)
+              const sortedYears = Object.keys(roundsByYear).sort((a, b) => parseInt(b) - parseInt(a));
+
+              return sortedYears.map((year) => (
+                <section key={year}>
+                  <h2 className="text-lg font-semibold text-foreground mb-2 px-1">{year}</h2>
+                  <div className="space-y-3">
+                    {roundsByYear[year].map((round) => (
+                      <Card
+                        key={round.id}
+                        onClick={() => handleRoundClick(round.id)}
+                        className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-4">
+                            {/* Left: Score */}
+                            <div className="flex-shrink-0 w-14 text-center">
+                              <div className={`text-2xl font-bold ${getScoreColor(round)}`}>
+                                {formatScore(round)}
+                              </div>
+                            </div>
+                            
+                            {/* Middle: Details */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-foreground truncate">
+                                {round.course_name}
+                              </h3>
+                              <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+                                <span>{format(new Date(round.date_played), "MMM d")}</span>
+                                <span>·</span>
+                                <span>{round.holes_played} holes</span>
+                              </div>
+                              {round.round_type && (
+                                <div className="mt-1">
+                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
+                                    {roundTypeLabels[round.round_type] || round.round_type}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Right: Chevron */}
+                            <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </section>
+              ));
+            })()}
           </div>
         )}
       </CardContent>
