@@ -325,7 +325,7 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   // Fetch strokes gained from pro_stats if available
   const { data: proRounds } = await supabase
     .from('pro_stats_rounds')
-    .select('id')
+    .select('id, holes_played')
     .eq('user_id', userId);
 
   let strokesGained: StrokesGainedStats = {
@@ -338,26 +338,45 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     scoring: null,
   };
 
+  // Variables to accumulate pro stats data for Basic Stats
+  let proFairwaysHit = 0;
+  let proFairwayAttempts = 0;
+  let proGIRCount = 0;
+  let proGIRAttempts = 0;
+  let proScramblingSuccess = 0;
+  let proScramblingAttempts = 0;
+  let proTotalPutts = 0;
+  let proHolesWithPutts = 0;
+  let proOnePutts = 0;
+  let proTwoPutts = 0;
+  let proThreePutts = 0;
+  let proFourPlusPutts = 0;
+
   if (proRounds && proRounds.length > 0) {
     const roundIds = proRounds.map(r => r.id);
     const { data: holes } = await supabase
       .from('pro_stats_holes')
-      .select('pro_shot_data')
+      .select('par, score, putts, pro_shot_data')
       .in('pro_round_id', roundIds);
 
     if (holes && holes.length > 0) {
       let sgTee = 0, sgApproach = 0, sgShort = 0, sgPutt = 0, sgOther = 0, sgScoring = 0;
-      let shotCount = 0;
       let totalDriverDistance = 0;
       let driverDistanceCount = 0;
 
       holes.forEach(hole => {
-        if (hole.pro_shot_data && Array.isArray(hole.pro_shot_data)) {
-          (hole.pro_shot_data as any[]).forEach((shot, idx) => {
+        const par = hole.par;
+        const putts = hole.putts;
+        const shots = hole.pro_shot_data as any[] | null;
+        
+        if (shots && Array.isArray(shots)) {
+          // Calculate strokes gained by category
+          shots.forEach((shot, idx) => {
             const sg = shot.strokesGained || 0;
             const type = shot.type;
             const dist = shot.startDistance || 0;
-            const category = shot.category; // Check for explicit category if available
+            const startLie = shot.startLie;
+            const category = shot.category;
             
             // Calculate driver distance from tee shots
             if (type === 'tee' && shot.startDistance && shot.endDistance !== undefined) {
@@ -368,11 +387,12 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
               }
             }
             
+            // Categorize strokes gained
             if (category === 'other') {
               sgOther += sg;
             } else if (category === 'scoring') {
               sgScoring += sg;
-            } else if (type === 'putt') {
+            } else if (type === 'putt' || startLie === 'green') {
               sgPutt += sg;
             } else if (idx === 0 && dist >= 200) {
               sgTee += sg;
@@ -383,8 +403,67 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
             } else {
               sgOther += sg;
             }
-            shotCount++;
           });
+
+          // Calculate fairways hit (for par 4s and 5s)
+          if (par >= 4) {
+            const teeShot = shots.find(s => s.type === 'tee');
+            if (teeShot && teeShot.endLie) {
+              proFairwayAttempts++;
+              if (teeShot.endLie === 'fairway') {
+                proFairwaysHit++;
+              }
+            }
+          }
+
+          // Calculate GIR
+          let strokeCount = 0;
+          let hitGreen = false;
+          const girTarget = par - 2;
+          
+          for (const shot of shots) {
+            if (shot.isOB || shot.type === 'penalty') continue;
+            strokeCount++;
+            if (shot.endLie === 'green' || shot.holed) {
+              hitGreen = true;
+              break;
+            }
+          }
+          
+          if (hitGreen || shots.some(s => s.endLie === 'green' || s.holed)) {
+            proGIRAttempts++;
+            if (strokeCount <= girTarget) {
+              proGIRCount++;
+            }
+          }
+
+          // Calculate scrambling (up and down when missed GIR)
+          const missedGIR = strokeCount > girTarget || !hitGreen;
+          if (missedGIR) {
+            // Find if they got up and down
+            const nonGreenShots = shots.filter(s => s.startLie !== 'green' && s.type !== 'putt');
+            const lastNonGreenShotIdx = shots.findIndex(s => s.endLie === 'green' || s.holed);
+            
+            if (lastNonGreenShotIdx > 0) {
+              proScramblingAttempts++;
+              // Check if they holed out in 2 strokes or less after reaching green area
+              const shotsAfterMiss = shots.slice(lastNonGreenShotIdx);
+              const puttCount = shotsAfterMiss.filter(s => s.type === 'putt' || s.startLie === 'green').length;
+              if (puttCount <= 1 || shotsAfterMiss.some(s => s.holed && puttCount <= 1)) {
+                proScramblingSuccess++;
+              }
+            }
+          }
+        }
+
+        // Calculate putting stats
+        if (putts !== null && putts !== undefined) {
+          proTotalPutts += putts;
+          proHolesWithPutts++;
+          if (putts === 1) proOnePutts++;
+          else if (putts === 2) proTwoPutts++;
+          else if (putts === 3) proThreePutts++;
+          else if (putts >= 4) proFourPlusPutts++;
         }
       });
 
@@ -412,12 +491,51 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     }
   }
 
+  // Merge pro stats into accuracy and putting if we have pro data
+  // Pro stats take precedence if available, otherwise fall back to regular round data
+  if (proFairwayAttempts > 0) {
+    accuracy = {
+      ...accuracy,
+      fairwaysHit: (proFairwaysHit / proFairwayAttempts) * 100,
+    };
+  }
+  
+  if (proGIRAttempts > 0) {
+    accuracy = {
+      ...accuracy,
+      greensInRegulation: (proGIRCount / proGIRAttempts) * 100,
+    };
+  }
+  
+  if (proScramblingAttempts > 0) {
+    accuracy = {
+      ...accuracy,
+      scrambling: (proScramblingSuccess / proScramblingAttempts) * 100,
+    };
+  }
+  
+  if (proHolesWithPutts > 0) {
+    const proRoundCount = proRounds?.length || 1;
+    putting = {
+      ...putting,
+      puttsPerRound: proTotalPutts / proRoundCount,
+      onePuttPercentage: (proOnePutts / proHolesWithPutts) * 100,
+      twoPuttPercentage: (proTwoPutts / proHolesWithPutts) * 100,
+      threePuttPercentage: (proThreePutts / proHolesWithPutts) * 100,
+      fourPlusPuttPercentage: (proFourPlusPutts / proHolesWithPutts) * 100,
+      threePuttAvoidance: 100 - ((proThreePutts + proFourPlusPutts) / proHolesWithPutts) * 100,
+    };
+  }
+
+  // Update roundsPlayed to include pro stats rounds if no regular rounds
+  const totalRoundsPlayed = roundsPlayed > 0 ? roundsPlayed : (proRounds?.length || 0);
+
   return {
     scoring,
     strokesGained,
     accuracy,
     putting,
-    roundsPlayed,
+    roundsPlayed: totalRoundsPlayed,
   };
 }
 
