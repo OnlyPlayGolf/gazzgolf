@@ -48,11 +48,19 @@ const Auth = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        // Only redirect if user is confirmed (email_confirmed_at exists)
-        // This prevents auto-login before email confirmation
-        if (session?.user && session.user.email_confirmed_at) {
-          // Check for pending invite code
+
+        const isConfirmed = Boolean(session?.user?.email_confirmed_at);
+        const currentEmail = session?.user?.email ?? "";
+
+        // If the user exists but isn't confirmed yet, keep them signed in but show the confirmation screen
+        if (session?.user && !isConfirmed) {
+          if (currentEmail) setPendingConfirmationEmail(currentEmail);
+          setView('confirmation');
+          return;
+        }
+
+        // If confirmed, redirect into the app
+        if (session?.user && isConfirmed) {
           const pendingInviteCode = localStorage.getItem('pending_invite_code');
           if (pendingInviteCode) {
             localStorage.removeItem('pending_invite_code');
@@ -68,9 +76,18 @@ const Auth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
+      const isConfirmed = Boolean(session?.user?.email_confirmed_at);
+      const currentEmail = session?.user?.email ?? "";
+
+      if (session?.user && !isConfirmed) {
+        if (currentEmail) setPendingConfirmationEmail(currentEmail);
+        setView('confirmation');
+        return;
+      }
+
       // If already authenticated AND confirmed, redirect
-      if (session?.user && session.user.email_confirmed_at) {
+      if (session?.user && isConfirmed) {
         const pendingInviteCode = localStorage.getItem('pending_invite_code');
         if (pendingInviteCode) {
           localStorage.removeItem('pending_invite_code');
@@ -86,7 +103,6 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       const validatedData = baseAuthSchema.parse({ email, password });
       setLoading(true);
@@ -179,9 +195,6 @@ const Auth = () => {
 
       // Store the email for confirmation screen
       setPendingConfirmationEmail(validatedData.email);
-      
-      // Sign out immediately to prevent auto-login before email confirmation
-      await supabase.auth.signOut();
       
       // Clear form
       setPassword('');
