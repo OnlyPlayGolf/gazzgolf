@@ -529,7 +529,7 @@ const ProHoleTracker = () => {
     }, 50);
   };
 
-  // OB handler - adds shot and resets to same start distance for penalty replay
+  // OB handler - adds OB shot + penalty stroke, then advances to next shot
   const addOBShot = () => {
     if (!sgCalculator) {
       toast({ title: "Baseline data not loaded", variant: "destructive" });
@@ -541,9 +541,8 @@ const ProHoleTracker = () => {
       return;
     }
 
-    // OB shot gets a penalty stroke, no strokes gained calculation needed
-    // We'll record it with strokesGained of 0 (neutral) since it's a penalty situation
-    const newShot: Shot = {
+    // Shot 1: The OB shot itself
+    const obShot: Shot = {
       type: shotType,
       startDistance: start,
       startLie,
@@ -554,16 +553,28 @@ const ProHoleTracker = () => {
       isOB: true,
     };
 
+    // Shot 2: Auto-penalty stroke (stroke and distance penalty)
+    const penaltyShot: Shot = {
+      type: shotType, // Same shot type as original
+      startDistance: start, // Same distance
+      startLie, // Same lie
+      holed: false,
+      endDistance: start, // Returns to same spot
+      endLie: startLie, // Back to same lie for replay
+      strokesGained: 0, // Penalty stroke, no SG
+      isOB: false, // This is the penalty, not OB itself
+    };
+
     const currentData = getCurrentHoleData();
     setHoleData({
       ...holeData,
       [currentHole]: {
         par,
-        shots: [...currentData.shots, newShot],
+        shots: [...currentData.shots, obShot, penaltyShot],
       },
     });
 
-    // Reset for next shot - start distance stays the same (replay from same spot)
+    // Reset for next shot (Shot 3) - start distance stays the same (replay from same spot)
     // Keep the same start lie since we're replaying
     setEndDistance("");
     setEndLie('');
@@ -807,7 +818,7 @@ const ProHoleTracker = () => {
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {(startLie === 'green' 
                   ? ['green'] as const
-                  : ['green', 'fairway', 'rough', 'sand'] as const
+                  : ['green', 'fairway', 'rough'] as const
                 ).map((lie) => (
                   <Button
                     key={lie}
@@ -818,27 +829,51 @@ const ProHoleTracker = () => {
                     {lie.charAt(0).toUpperCase() + lie.slice(1)}
                   </Button>
                 ))}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setHoled(true);
-                    setTimeout(() => {
-                      addHoledShot();
-                    }, 50);
-                  }}
-                  size="sm"
-                >
-                  Holed
-                </Button>
+                {startLie !== 'green' && (
+                  <>
+                    <Button
+                      variant={endLie === 'sand' ? "default" : "outline"}
+                      onClick={() => setEndLie('sand')}
+                      size="sm"
+                    >
+                      Sand
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setHoled(true);
+                        setTimeout(() => {
+                          addHoledShot();
+                        }, 50);
+                      }}
+                      size="sm"
+                    >
+                      Holed
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={addOBShot}
+                      size="sm"
+                    >
+                      OB
+                    </Button>
+                  </>
+                )}
+                {startLie === 'green' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setHoled(true);
+                      setTimeout(() => {
+                        addHoledShot();
+                      }, 50);
+                    }}
+                    size="sm"
+                  >
+                    Holed
+                  </Button>
+                )}
               </div>
-              <Button
-                variant="destructive"
-                onClick={addOBShot}
-                size="sm"
-                className="w-full mt-2"
-              >
-                OB (Out of Bounds)
-              </Button>
             </div>
           </CardContent>
         </Card>
