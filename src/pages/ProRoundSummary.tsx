@@ -363,37 +363,54 @@ const ProRoundSummary = () => {
         </Button>
 
         {/* Header Card - matches StatsRoundsHistory design */}
-        <Card className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              {/* Left: Score */}
-              <div className="flex-shrink-0 w-14 text-center">
-                <div className={`text-2xl font-bold ${summary.score_vs_par <= 0 ? "text-emerald-600" : "text-foreground"}`}>
-                  {summary.score_vs_par === 0 ? "E" : 
-                   summary.score_vs_par > 0 ? `+${summary.score_vs_par}` : 
-                   summary.score_vs_par}
+        {(() => {
+          // Consider round finished if holes_played >= 18 (full round) or if there's no more holes to play
+          const isFinished = summary.holes_played >= 18;
+          const cardContent = (
+            <Card className={`bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 ${!isFinished ? 'cursor-pointer hover:border-primary/40 transition-colors' : ''}`}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  {/* Left: Score */}
+                  <div className="flex-shrink-0 w-14 text-center">
+                    <div className={`text-2xl font-bold ${summary.score_vs_par <= 0 ? "text-emerald-600" : "text-foreground"}`}>
+                      {summary.score_vs_par === 0 ? "E" : 
+                       summary.score_vs_par > 0 ? `+${summary.score_vs_par}` : 
+                       summary.score_vs_par}
+                    </div>
+                  </div>
+                  
+                  {/* Middle: Details */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">
+                      {summary.course_name}
+                    </h3>
+                    <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+                      <span>{format(new Date(summary.date_played), "MMM d")}</span>
+                      <span>·</span>
+                      <span>{summary.holes_played} holes</span>
+                    </div>
+                    <div className="mt-1">
+                      <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
+                        Fun/Practice
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right: Chevron for unfinished rounds */}
+                  {!isFinished && (
+                    <ChevronRight className="text-muted-foreground" size={20} />
+                  )}
                 </div>
-              </div>
-              
-              {/* Middle: Details */}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground truncate">
-                  {summary.course_name}
-                </h3>
-                <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                  <span>{format(new Date(summary.date_played), "MMM d")}</span>
-                  <span>·</span>
-                  <span>{summary.holes_played} holes</span>
-                </div>
-                <div className="mt-1">
-                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
-                    Fun/Practice
-                  </span>
-                </div>
-              </div>
+              </CardContent>
+            </Card>
+          );
+
+          return isFinished ? cardContent : (
+            <div onClick={() => navigate(`/rounds/${roundId}/pro-track`)}>
+              {cardContent}
             </div>
-          </CardContent>
-        </Card>
+          );
+        })()}
 
         {/* Traditional Stats */}
         {traditionalStats && (
