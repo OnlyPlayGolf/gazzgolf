@@ -158,24 +158,24 @@ export default function RunDrill() {
 
     try {
       if (drill.type === 'putting') {
-        // For putting, endDistance is the leave distance in meters
+        // For putting, pass meters - strokesGained.ts handles conversion
         sg = calculator.calculateStrokesGained(
           'putting',
-          currentDistanceMeters * 3.28084, // Convert to feet for baseline
+          currentDistanceMeters, // Pass meters, not pre-converted
           'tee', // Not used for putting
           holed,
           holed ? 'green' : 'green',
-          holed ? 0 : (endDistanceMeters! * 3.28084) // Convert to feet for baseline
+          holed ? 0 : endDistanceMeters! // Pass meters
         );
       } else {
-        // For long game, proximity is distance to hole in meters
+        // For long game, pass meters - strokesGained.ts handles conversion
         sg = calculator.calculateStrokesGained(
           'longGame',
-          currentDistanceMeters * 1.09361, // Convert to yards for baseline
+          currentDistanceMeters, // Pass meters, not pre-converted
           drill.lie || 'fairway',
           proximityMeters === 0, // Holed if proximity is 0
           proximityMeters === 0 ? 'green' : 'green',
-          proximityMeters === 0 ? 0 : (proximityMeters! * 3.28084) // Convert to feet for putting baseline
+          proximityMeters === 0 ? 0 : proximityMeters! // Pass meters
         );
       }
     } catch (error) {
