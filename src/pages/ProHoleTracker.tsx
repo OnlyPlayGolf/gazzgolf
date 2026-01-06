@@ -840,27 +840,39 @@ const ProHoleTracker = () => {
                   Delete Last
                 </Button>
               </div>
-              {[...currentData.shots].reverse().map((shot, idx) => (
-                <div key={currentData.shots.length - 1 - idx} className={`p-3 border rounded-lg text-sm ${shot.isOB ? 'border-destructive bg-destructive/10' : ''}`}>
-                  <div className="flex justify-between">
-                    <span className="font-medium">
-                      {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
-                      {shot.holed && " • Holed"}
-                      {shot.isOB && " • OB"}
-                    </span>
+              {[...currentData.shots].reverse().map((shot, idx) => {
+                const shotNumber = currentData.shots.length - idx;
+                const runningScore = currentData.shots.length - idx;
+                return (
+                  <div key={currentData.shots.length - 1 - idx} className={`p-3 border rounded-lg text-sm ${shot.isOB ? 'border-destructive bg-destructive/10' : ''}`}>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                          {shotNumber}
+                        </span>
+                        <span className="font-medium">
+                          {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
+                          {shot.holed && " • Holed"}
+                          {shot.isOB && " • OB"}
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground text-sm">
+                        Score: {runningScore}
+                      </span>
+                    </div>
+                    {!shot.holed && !shot.isOB && (
+                      <div className="text-muted-foreground text-xs mt-1 ml-8">
+                        → {shot.endDistance}m ({shot.endLie})
+                      </div>
+                    )}
+                    {shot.isOB && (
+                      <div className="text-destructive text-xs mt-1 ml-8">
+                        Replay from {shot.startDistance}m
+                      </div>
+                    )}
                   </div>
-                  {!shot.holed && !shot.isOB && (
-                    <div className="text-muted-foreground text-xs mt-1">
-                      → {shot.endDistance}m ({shot.endLie})
-                    </div>
-                  )}
-                  {shot.isOB && (
-                    <div className="text-destructive text-xs mt-1">
-                      Replay from {shot.startDistance}m
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}
