@@ -4,16 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { StatsRoundsHistory } from "@/components/StatsRoundsHistory";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
 interface Course {
   id: string;
@@ -38,6 +45,7 @@ const ProRoundSetup = () => {
   const [loading, setLoading] = useState(false);
   const [availableTees, setAvailableTees] = useState<AvailableTee[]>([]);
   const [roundType, setRoundType] = useState<RoundType>("fun_practice");
+  const [courseSearchOpen, setCourseSearchOpen] = useState(false);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -213,18 +221,49 @@ const ProRoundSetup = () => {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>Course</Label>
-              <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a course" />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id}>
-                      {course.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={courseSearchOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedCourseId
+                      ? courses.find((course) => course.id === selectedCourseId)?.name
+                      : "Select a course..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search courses..." />
+                    <CommandList>
+                      <CommandEmpty>No course found.</CommandEmpty>
+                      <CommandGroup>
+                        {courses.map((course) => (
+                          <CommandItem
+                            key={course.id}
+                            value={course.name}
+                            onSelect={() => {
+                              setSelectedCourseId(course.id);
+                              setCourseSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedCourseId === course.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {course.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
