@@ -737,14 +737,31 @@ const ProHoleTracker = () => {
 
             <div>
               <Label>End Distance (m)</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  type="number"
-                  value={endDistance}
-                  onChange={(e) => setEndDistance(e.target.value)}
-                  placeholder="Distance to hole"
-                  className="flex-1"
-                />
+              <Input
+                type="number"
+                value={endDistance}
+                onChange={(e) => setEndDistance(e.target.value)}
+                placeholder="Distance to hole"
+                className="mt-2"
+              />
+            </div>
+
+            <div>
+              <Label>End Lie</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {(startLie === 'green' 
+                  ? ['green'] as const
+                  : ['green', 'fairway', 'rough', 'sand'] as const
+                ).map((lie) => (
+                  <Button
+                    key={lie}
+                    variant={endLie === lie ? "default" : "outline"}
+                    onClick={() => setEndLie(lie)}
+                    size="sm"
+                  >
+                    {lie.charAt(0).toUpperCase() + lie.slice(1)}
+                  </Button>
+                ))}
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -753,29 +770,12 @@ const ProHoleTracker = () => {
                       addHoledShot();
                     }, 50);
                   }}
+                  size="sm"
                 >
                   Holed
                 </Button>
               </div>
             </div>
-
-            {startLie !== 'green' && (
-              <div>
-                <Label>End Lie</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
-                    <Button
-                      key={lie}
-                      variant={endLie === lie ? "default" : "outline"}
-                      onClick={() => setEndLie(lie)}
-                      size="sm"
-                    >
-                      {lie.charAt(0).toUpperCase() + lie.slice(1)}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
