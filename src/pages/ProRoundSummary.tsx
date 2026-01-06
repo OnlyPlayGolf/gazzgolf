@@ -175,10 +175,27 @@ const ProRoundSummary = () => {
       const shots = hole.pro_shot_data as Shot[];
       shots.forEach((shot) => {
         const sg = shot.strokesGained;
+        
+        // Skip OB shots and penalty strokes for SG categorization
+        if (shot.isOB) return;
 
-        if (shot.type === 'tee' && hole.par >= 4) {
+        // Putting: shots that start on the green
+        if (shot.startLie === 'green' || shot.type === 'putt') {
+          const dist = shot.startDistance;
+          if (dist <= 2) {
+            putting0_2 += sg;
+          } else if (dist <= 7) {
+            putting2_7 += sg;
+          } else {
+            putting7Plus += sg;
+          }
+        }
+        // Tee shots on par 4/5
+        else if (shot.type === 'tee' && hole.par >= 4 && shot.startLie === 'tee') {
           offTheTee += sg;
-        } else if (shot.type === 'approach') {
+        }
+        // Approach and short game shots (not from tee, not on green)
+        else if (shot.type === 'approach' || (shot.startLie && shot.startLie !== 'tee' && shot.startLie !== 'green')) {
           const dist = shot.startDistance;
           if (dist >= 200) {
             approach200Plus += sg;
@@ -187,17 +204,12 @@ const ProRoundSummary = () => {
           } else if (dist >= 40) {
             approach40_120 += sg;
           } else {
-            // Short game approach
-            shortGameFairwayRough += sg;
-          }
-        } else if (shot.type === 'putt') {
-          const dist = shot.startDistance;
-          if (dist <= 2) {
-            putting0_2 += sg;
-          } else if (dist <= 7) {
-            putting2_7 += sg;
-          } else {
-            putting7Plus += sg;
+            // Short game (under 40m)
+            if (shot.startLie === 'sand') {
+              shortGameBunker += sg;
+            } else {
+              shortGameFairwayRough += sg;
+            }
           }
         }
       });
