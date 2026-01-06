@@ -68,10 +68,16 @@ const ProHoleTracker = () => {
     fetchCourseData();
   }, [roundId]);
 
-  // Ensure a Pro Stats round exists for this route and user
+  // Ensure a Pro Stats round exists for this route and user, then load existing holes
   useEffect(() => {
-    if (!proRoundId) {
-      ensureProRound();
+    const initializeRound = async () => {
+      const prId = await ensureProRound();
+      if (prId) {
+        await loadExistingHoles(prId);
+      }
+    };
+    if (round && !proRoundId) {
+      initializeRound();
     }
   }, [roundId, round]);
 
@@ -296,6 +302,62 @@ const ProHoleTracker = () => {
 
     if (!error && data) {
       setCourseHoles(data);
+    }
+  };
+
+  // Load existing holes from database for editing
+  const loadExistingHoles = async (prId: string) => {
+    const { data: existingHoles, error } = await supabase
+      .from("pro_stats_holes")
+      .select("hole_number, par, pro_shot_data")
+      .eq("pro_round_id", prId)
+      .order("hole_number");
+
+    if (error || !existingHoles || existingHoles.length === 0) {
+      return;
+    }
+
+    // Build holeData from existing holes
+    const loadedHoleData: Record<number, ProHoleData> = {};
+    let lastCompletedHole = 0;
+
+    existingHoles.forEach((hole) => {
+      if (hole.pro_shot_data && Array.isArray(hole.pro_shot_data)) {
+        const shots = hole.pro_shot_data as unknown as Shot[];
+        loadedHoleData[hole.hole_number] = {
+          par: hole.par,
+          shots: shots,
+        };
+        // Check if hole is complete (has a holed shot)
+        const hasHoledShot = shots.some(s => s.holed);
+        if (hasHoledShot) {
+          lastCompletedHole = Math.max(lastCompletedHole, hole.hole_number);
+        }
+      }
+    });
+
+    setHoleData(loadedHoleData);
+
+    // Set current hole to first incomplete hole or next hole after last completed
+    const totalHoles = round?.holes_played || 18;
+    const nextHole = lastCompletedHole + 1;
+    
+    if (nextHole <= totalHoles) {
+      setCurrentHole(nextHole);
+      setPar(getHolePar(nextHole));
+      const holeDistance = getHoleDistance(nextHole);
+      if (holeDistance) {
+        setStartDistance(String(holeDistance));
+      }
+      setStartLie('tee');
+      setShotType('tee');
+    } else {
+      // All holes complete, go to last hole for review/edit
+      setCurrentHole(lastCompletedHole);
+      const lastHoleData = loadedHoleData[lastCompletedHole];
+      if (lastHoleData) {
+        setPar(lastHoleData.par);
+      }
     }
   };
 
@@ -939,11 +1001,33 @@ const ProHoleTracker = () => {
             onClick={() => {
               const prevHole = currentHole - 1;
               setCurrentHole(prevHole);
-              setPar(getHolePar(prevHole));
-              setShotType('tee');
-              setStartLie('tee');
-              const prevDistance = getHoleDistance(prevHole);
-              setStartDistance(prevDistance ? String(prevDistance) : "");
+              
+              // Load existing data for the previous hole
+              const existingData = holeData[prevHole];
+              if (existingData && existingData.shots.length > 0) {
+                setPar(existingData.par);
+                // Set inputs based on last shot in the hole
+                const lastShot = existingData.shots[existingData.shots.length - 1];
+                if (lastShot.holed) {
+                  // Hole is complete - show review state
+                  setStartDistance("");
+                  setEndDistance("");
+                  setStartLie('tee');
+                  setShotType('tee');
+                } else if (lastShot.endDistance !== undefined && lastShot.endLie) {
+                  // Continue from last shot
+                  setStartDistance(String(lastShot.endDistance));
+                  setStartLie(lastShot.endLie === 'OB' ? 'tee' : lastShot.endLie as LieType | 'green');
+                  setShotType(lastShot.endLie === 'green' ? 'putt' : 'approach');
+                }
+              } else {
+                // No existing data - fresh hole
+                setPar(getHolePar(prevHole));
+                setShotType('tee');
+                setStartLie('tee');
+                const prevDistance = getHoleDistance(prevHole);
+                setStartDistance(prevDistance ? String(prevDistance) : "");
+              }
               setEndDistance("");
               setEndLie('');
             }}

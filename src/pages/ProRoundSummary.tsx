@@ -509,11 +509,21 @@ const ProRoundSummary = () => {
         )}
 
         <div className="flex gap-3">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="flex-1"
+            onClick={() => navigate(`/rounds/${roundId}/pro-track`)}
+          >
+            <Edit className="mr-2" size={18} />
+            Edit Round
+          </Button>
+          
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="lg" className="flex-1">
                 <Trash2 className="mr-2" size={18} />
-                Delete Round
+                Delete
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -531,15 +541,15 @@ const ProRoundSummary = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          
-          <Button 
-            onClick={() => navigate("/rounds")} 
-            className="flex-1" 
-            size="lg"
-          >
-            Done
-          </Button>
         </div>
+        
+        <Button 
+          onClick={() => navigate("/practice")} 
+          className="w-full" 
+          size="lg"
+        >
+          Done
+        </Button>
       </div>
     </div>
   );
