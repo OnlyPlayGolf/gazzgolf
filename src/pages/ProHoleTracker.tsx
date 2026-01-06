@@ -17,8 +17,9 @@ interface Shot {
   startLie: LieType | 'green';
   holed: boolean;
   endDistance?: number;
-  endLie?: LieType | 'green';
+  endLie?: LieType | 'green' | 'OB';
   strokesGained: number;
+  isOB?: boolean;
 }
 
 interface ProHoleData {
@@ -528,6 +529,48 @@ const ProHoleTracker = () => {
     }, 50);
   };
 
+  // OB handler - adds shot and resets to same start distance for penalty replay
+  const addOBShot = () => {
+    if (!sgCalculator) {
+      toast({ title: "Baseline data not loaded", variant: "destructive" });
+      return;
+    }
+    const start = parseFloat(startDistance.replace(',', '.'));
+    if (isNaN(start)) {
+      toast({ title: "Enter start distance first", variant: "destructive" });
+      return;
+    }
+
+    // OB shot gets a penalty stroke, no strokes gained calculation needed
+    // We'll record it with strokesGained of 0 (neutral) since it's a penalty situation
+    const newShot: Shot = {
+      type: shotType,
+      startDistance: start,
+      startLie,
+      holed: false,
+      endDistance: start, // Same distance (replaying from same spot)
+      endLie: 'OB',
+      strokesGained: 0, // Penalty shot, no SG calculation
+      isOB: true,
+    };
+
+    const currentData = getCurrentHoleData();
+    setHoleData({
+      ...holeData,
+      [currentHole]: {
+        par,
+        shots: [...currentData.shots, newShot],
+      },
+    });
+
+    // Reset for next shot - start distance stays the same (replay from same spot)
+    // Keep the same start lie since we're replaying
+    setEndDistance("");
+    setEndLie('');
+    setHoled(false);
+    // Start distance and lie remain unchanged for the replay
+  };
+
   const finishHoleAfterUpdate = async (shots: Shot[]) => {
     const totalScore = shots.length;
 
@@ -775,6 +818,14 @@ const ProHoleTracker = () => {
                   Holed
                 </Button>
               </div>
+              <Button
+                variant="destructive"
+                onClick={addOBShot}
+                size="sm"
+                className="w-full mt-2"
+              >
+                OB (Out of Bounds)
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -790,16 +841,22 @@ const ProHoleTracker = () => {
                 </Button>
               </div>
               {[...currentData.shots].reverse().map((shot, idx) => (
-                <div key={currentData.shots.length - 1 - idx} className="p-3 border rounded-lg text-sm">
+                <div key={currentData.shots.length - 1 - idx} className={`p-3 border rounded-lg text-sm ${shot.isOB ? 'border-destructive bg-destructive/10' : ''}`}>
                   <div className="flex justify-between">
                     <span className="font-medium">
                       {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
                       {shot.holed && " • Holed"}
+                      {shot.isOB && " • OB"}
                     </span>
                   </div>
-                  {!shot.holed && (
+                  {!shot.holed && !shot.isOB && (
                     <div className="text-muted-foreground text-xs mt-1">
                       → {shot.endDistance}m ({shot.endLie})
+                    </div>
+                  )}
+                  {shot.isOB && (
+                    <div className="text-destructive text-xs mt-1">
+                      Replay from {shot.startDistance}m
                     </div>
                   )}
                 </div>
