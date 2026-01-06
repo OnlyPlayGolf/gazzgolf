@@ -634,6 +634,9 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
+  const [isEditingPost, setIsEditingPost] = useState(false);
+  const [editPostContent, setEditPostContent] = useState("");
+  const [isSavingPost, setIsSavingPost] = useState(false);
 
   const isOwnPost = post.user_id === currentUserId;
 
@@ -661,6 +664,69 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleEditPost = () => {
+    // Extract just the text content (without special result tags)
+    const drillResult = parseDrillResult(post.content);
+    const roundResult = parseRoundResult(post.content);
+    const umbriagioResult = parseUmbriagioResult(post.content);
+    const gameResult = parseGameResult(post.content);
+    
+    let textContent = post.content || "";
+    if (drillResult) textContent = drillResult.textContent;
+    else if (roundResult) textContent = roundResult.textContent;
+    else if (umbriagioResult) textContent = umbriagioResult.textContent;
+    else if (gameResult) textContent = gameResult.textContent;
+    
+    setEditPostContent(textContent);
+    setIsEditingPost(true);
+  };
+
+  const handleSavePost = async () => {
+    setIsSavingPost(true);
+    try {
+      // Preserve special result tags if they exist
+      let newContent = editPostContent.trim();
+      
+      const drillMatch = post.content?.match(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/);
+      const roundMatch = post.content?.match(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/);
+      const umbriagioMatch = post.content?.match(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/);
+      const gameMatch = post.content?.match(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/);
+      
+      if (drillMatch) {
+        newContent = newContent ? `${newContent}\n${drillMatch[0]}` : drillMatch[0];
+      } else if (roundMatch) {
+        newContent = newContent ? `${newContent}\n${roundMatch[0]}` : roundMatch[0];
+      } else if (umbriagioMatch) {
+        newContent = newContent ? `${newContent}\n${umbriagioMatch[0]}` : umbriagioMatch[0];
+      } else if (gameMatch) {
+        newContent = newContent ? `${newContent}\n${gameMatch[0]}` : gameMatch[0];
+      }
+
+      const { error } = await supabase
+        .from("posts")
+        .update({ content: newContent || null })
+        .eq("id", post.id)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      // Update local state
+      post.content = newContent || null;
+      setIsEditingPost(false);
+      toast.success("Post updated");
+    } catch (error) {
+      console.error("Error updating post:", error);
+      toast.error("Failed to update post");
+    } finally {
+      setIsSavingPost(false);
+    }
+  };
+
+  const handleCancelEditPost = () => {
+    setIsEditingPost(false);
+    setEditPostContent("");
   };
 
   useEffect(() => {
@@ -838,7 +904,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => toast.info("Edit feature coming soon!")}>
+                <DropdownMenuItem onClick={handleEditPost}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
@@ -856,7 +922,67 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
         </div>
 
         {/* Post Content */}
-        {drillResult ? (
+        {isEditingPost ? (
+          <div className="space-y-3">
+            <Textarea
+              value={editPostContent}
+              onChange={(e) => setEditPostContent(e.target.value)}
+              placeholder="What's on your golf mind?"
+              className="min-h-[80px] resize-none"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelEditPost}
+                disabled={isSavingPost}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSavePost}
+                disabled={isSavingPost}
+              >
+                {isSavingPost ? "Saving..." : "Save"}
+              </Button>
+            </div>
+            {/* Show the result card in read-only mode during edit */}
+            {drillResult && (
+              <DrillResultCard 
+                drillTitle={drillResult.drillTitle}
+                score={drillResult.score}
+                unit={drillResult.unit}
+                isPersonalBest={drillResult.isPersonalBest}
+                date={post.created_at}
+              />
+            )}
+            {roundResult && (
+              <RoundCard 
+                round={{
+                  id: roundResult.roundId || '',
+                  round_name: roundResult.roundName,
+                  course_name: roundResult.courseName,
+                  date: new Date().toISOString(),
+                  score: roundResult.scoreVsPar,
+                  playerCount: 1,
+                  gameMode: 'Stroke Play',
+                  gameType: 'round',
+                  holesPlayed: roundResult.holesPlayed,
+                }}
+              />
+            )}
+            {gameResult && gameResult.gameId && (
+              <GameResultCardFromDB 
+                gameType={gameResult.gameType}
+                gameId={gameResult.gameId}
+                resultUserId={post.user_id}
+                fallbackCourseName={gameResult.courseName}
+                fallbackRoundName={gameResult.roundName}
+              />
+            )}
+          </div>
+        ) : drillResult ? (
           <div className="space-y-3">
             {drillResult.textContent && (
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">{drillResult.textContent}</p>
@@ -932,25 +1058,25 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                       for (const round of rounds) {
                         const { data: summary } = await supabase
                           .from('round_summaries')
-                          .select('total_score')
+                          .select('total_score, score_vs_par')
                           .eq('round_id', round.id)
-                          .single();
+                          .maybeSingle();
                         
-                        if (summary?.total_score === roundResult.score) {
+                        if (summary && summary.total_score === roundResult.score) {
                           sessionStorage.setItem(`spectator_return_${round.id}`, location.pathname);
                           navigate(`/rounds/${round.id}/leaderboard`);
                           return;
                         }
                       }
-                      // If no exact score match, navigate to first match by course
+                      // Fallback to first round if no exact match
                       sessionStorage.setItem(`spectator_return_${rounds[0].id}`, location.pathname);
                       navigate(`/rounds/${rounds[0].id}/leaderboard`);
                       return;
                     }
                     toast.error("Round details not found");
-                  } catch (error) {
-                    console.error('Error finding round:', error);
-                    toast.error("Round details not found");
+                  } catch (err) {
+                    console.error("Error finding round:", err);
+                    toast.error("Error finding round details");
                   }
                 }
               }}
@@ -976,7 +1102,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                   round_name: 'Umbriago',
                   course_name: umbriagioResult.courseName,
                   date: new Date().toISOString(),
-                  score: Math.abs(umbriagioResult.teamAPoints - umbriagioResult.teamBPoints),
+                  score: 0,
                   playerCount: 4,
                   gameMode: 'Umbriago',
                   gameType: 'umbriago',
