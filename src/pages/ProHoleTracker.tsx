@@ -754,8 +754,9 @@ const ProHoleTracker = () => {
         {/* Shot Entry */}
         <Card className="border-primary">
           <CardContent className="pt-6 space-y-4">
-            <div className="text-center">
+            <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Shot {currentData.shots.length + 1}</span>
+              <span className="text-muted-foreground">Score: {currentData.shots.length + 1}</span>
             </div>
 
             {currentData.shots.length > 0 && (
