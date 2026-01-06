@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,6 +57,9 @@ const ProHoleTracker = () => {
   const [holed, setHoled] = useState(false);
   const [endDistance, setEndDistance] = useState("");
   const [endLie, setEndLie] = useState<LieType | 'green' | ''>(''); // No preset
+  
+  // Ref for the 2-second auto-advance timer when user enters 0
+  const zeroInputTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadBaselineData();
@@ -103,13 +106,45 @@ const ProHoleTracker = () => {
 
   // Auto-add shot when all fields are filled
   useEffect(() => {
+    // Clean up zero input timer on unmount or when dependencies change
+    return () => {
+      if (zeroInputTimerRef.current) {
+        clearTimeout(zeroInputTimerRef.current);
+        zeroInputTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (startDistance && endDistance && sgCalculator) {
-      const start = parseFloat(startDistance);
-      const end = parseFloat(endDistance);
+      // Normalize decimal separator: replace comma with period
+      const normalizedEnd = endDistance.replace(',', '.');
+      const start = parseFloat(startDistance.replace(',', '.'));
+      const end = parseFloat(normalizedEnd);
       
       // For putting (on green), auto-add for any valid end distance
       if (startLie === 'green') {
         if (!isNaN(start) && !isNaN(end)) {
+          // If end distance is exactly 0 (user typed "0"), use 2-second delay
+          if (normalizedEnd === '0') {
+            // Clear any existing timer
+            if (zeroInputTimerRef.current) {
+              clearTimeout(zeroInputTimerRef.current);
+            }
+            // Start 2-second delay - if user doesn't continue typing, advance
+            zeroInputTimerRef.current = setTimeout(() => {
+              zeroInputTimerRef.current = null;
+              addShot(); // addShot handles end=0 as holed
+            }, 2000);
+            return () => {
+              if (zeroInputTimerRef.current) {
+                clearTimeout(zeroInputTimerRef.current);
+                zeroInputTimerRef.current = null;
+              }
+            };
+          }
+          
+          // For non-zero values, use normal 300ms delay
           const timer = setTimeout(() => {
             if (end > 0) {
               setEndLie('green'); // Missed putts stay on green
@@ -125,7 +160,26 @@ const ProHoleTracker = () => {
       if (!endLie) return;
       
       if (!isNaN(start) && !isNaN(end)) {
-        // Small delay to allow UI to update
+        // If end distance is exactly 0 (user typed "0"), use 2-second delay
+        if (normalizedEnd === '0') {
+          // Clear any existing timer
+          if (zeroInputTimerRef.current) {
+            clearTimeout(zeroInputTimerRef.current);
+          }
+          // Start 2-second delay
+          zeroInputTimerRef.current = setTimeout(() => {
+            zeroInputTimerRef.current = null;
+            addShot();
+          }, 2000);
+          return () => {
+            if (zeroInputTimerRef.current) {
+              clearTimeout(zeroInputTimerRef.current);
+              zeroInputTimerRef.current = null;
+            }
+          };
+        }
+        
+        // Small delay to allow UI to update for non-zero values
         const timer = setTimeout(() => {
           addShot();
         }, 300);
@@ -274,7 +328,11 @@ const ProHoleTracker = () => {
       return;
     }
 
-    const start = parseFloat(startDistance);
+    // Normalize decimal separators (accept both . and ,)
+    const normalizedStartDistance = startDistance.replace(',', '.');
+    const normalizedEndDistance = endDistance.replace(',', '.');
+    
+    const start = parseFloat(normalizedStartDistance);
     
     if (isNaN(start)) {
       toast({ title: "Invalid start distance", variant: "destructive" });
@@ -323,8 +381,8 @@ const ProHoleTracker = () => {
       return;
     }
     
-    // Validate end distance
-    const end = parseFloat(endDistance);
+    // Validate end distance (using normalized value)
+    const end = parseFloat(normalizedEndDistance);
     if (isNaN(end)) {
       toast({ title: "Enter end distance", variant: "destructive" });
       return;
