@@ -360,66 +360,17 @@ const Friends = () => {
     if (!user) return;
 
     try {
-      // Check if conversation already exists
-      const { data: existingConversation } = await supabase
-        .from('conversations')
-        .select('id, conversation_participants!inner(user_id)')
-        .eq('type', 'friend')
-        .or(`conversation_participants.user_id.eq.${user.id},conversation_participants.user_id.eq.${friendId}`);
+      // Use the database function that handles RLS properly
+      const { data: conversationId, error } = await supabase
+        .rpc('ensure_friend_conversation', { friend_id: friendId });
 
-      let conversationId: string;
+      if (error) {
+        console.error('Error creating/finding conversation:', error);
+        throw error;
+      }
 
-      if (existingConversation && existingConversation.length > 0) {
-        // Find conversation where both users are participants
-        const conv = existingConversation.find(c => {
-          const participants = c.conversation_participants as any[];
-          return participants.some(p => p.user_id === user.id) && 
-                 participants.some(p => p.user_id === friendId);
-        });
-        
-        if (conv) {
-          conversationId = conv.id;
-        } else {
-          // Create new conversation
-          const { data: newConv, error: convError } = await supabase
-            .from('conversations')
-            .insert({ type: 'friend' })
-            .select()
-            .single();
-
-          if (convError) throw convError;
-          conversationId = newConv.id;
-
-          // Add participants
-          const { error: participantsError } = await supabase
-            .from('conversation_participants')
-            .insert([
-              { conversation_id: conversationId, user_id: user.id },
-              { conversation_id: conversationId, user_id: friendId }
-            ]);
-
-          if (participantsError) throw participantsError;
-        }
-      } else {
-        // Create new conversation
-        const { data: newConv, error: convError } = await supabase
-          .from('conversations')
-          .insert({ type: 'friend' })
-          .select()
-          .single();
-
-        if (convError) throw convError;
-        conversationId = newConv.id;
-
-        // Add participants
-        const { error: participantsError } = await supabase
-          .from('conversation_participants')
-          .insert([
-            { conversation_id: conversationId, user_id: user.id },
-            { conversation_id: conversationId, user_id: friendId }
-          ]);
-
-        if (participantsError) throw participantsError;
+      if (!conversationId) {
+        throw new Error('No conversation ID returned');
       }
 
       // Navigate to messages page with conversation ID
