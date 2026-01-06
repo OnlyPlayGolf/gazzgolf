@@ -109,13 +109,53 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
   // Auto-select conversation from URL parameter
   useEffect(() => {
     const conversationId = searchParams.get('conversation');
-    if (conversationId && conversations.length > 0) {
+    if (conversationId) {
+      // First check if it's in the loaded conversations
       const conversation = conversations.find(c => c.id === conversationId);
       if (conversation) {
         setSelectedConversation(conversation);
+      } else if (conversations.length > 0 || !selectedConversation) {
+        // If conversation not found but we have a valid ID, load it directly
+        loadConversationById(conversationId);
       }
     }
   }, [searchParams, conversations]);
+
+  const loadConversationById = async (conversationId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    try {
+      // Fetch the specific conversation details
+      const { data, error } = await (supabase as any).rpc('conversations_overview');
+      if (error) throw error;
+
+      const conversation = (data || []).find((row: any) => row.id === conversationId);
+      if (conversation) {
+        const mapped: Conversation = {
+          id: conversation.id,
+          type: conversation.type === 'group' ? 'group' : 'friend',
+          name: conversation.name || 'Unknown',
+          group_id: conversation.group_id || undefined,
+          other_user_id: conversation.other_user_id || undefined,
+          last_message: conversation.last_message || undefined,
+          last_message_time: conversation.last_message_time || undefined,
+          updated_at: conversation.updated_at,
+          unread_count: 0,
+        };
+        setSelectedConversation(mapped);
+        // Also update the conversations list
+        setConversations(prev => {
+          if (!prev.find(c => c.id === conversationId)) {
+            return [...prev, mapped];
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error('Error loading conversation by ID:', error);
+    }
+  };
 
   useEffect(() => {
     if (selectedConversation) {
