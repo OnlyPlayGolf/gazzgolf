@@ -632,6 +632,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
 
   const isOwnPost = post.user_id === currentUserId;
 
@@ -743,6 +745,53 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       toast.error("Failed to add comment");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEditComment = (commentId: string, currentContent: string) => {
+    setEditingCommentId(commentId);
+    setEditCommentContent(currentContent);
+  };
+
+  const handleSaveEditComment = async (commentId: string) => {
+    if (!editCommentContent.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("post_comments")
+        .update({ content: editCommentContent.trim() })
+        .eq("id", commentId)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      setEditingCommentId(null);
+      setEditCommentContent("");
+      await loadComments();
+      toast.success("Comment updated");
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      toast.error("Failed to update comment");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("post_comments")
+        .delete()
+        .eq("id", commentId)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      await loadComments();
+      toast.success("Comment deleted");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error("Failed to delete comment");
     }
   };
 
@@ -1022,6 +1071,9 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               const commentInitials = commentName.charAt(0).toUpperCase();
               const commentTime = formatDistanceToNow(new Date(comment.created_at), { addSuffix: true });
 
+              const isOwnComment = comment.user_id === currentUserId;
+              const isEditing = editingCommentId === comment.id;
+
               return (
                 <div key={comment.id} className="flex gap-2">
                   <ProfilePhoto
@@ -1032,16 +1084,76 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                     onClick={() => handleProfileClick(comment.user_id)}
                   />
                   <div className="flex-1">
-                    <div className="bg-muted rounded-lg p-2">
-                      <p 
-                        className="text-sm font-semibold cursor-pointer hover:underline"
-                        onClick={() => handleProfileClick(comment.user_id)}
-                      >
-                        {commentName}
-                      </p>
-                      <p className="text-sm text-foreground">{comment.content}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 ml-2">{commentTime}</p>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editCommentContent}
+                          onChange={(e) => setEditCommentContent(e.target.value)}
+                          className="min-h-[60px] resize-none"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveEditComment(comment.id)}
+                            disabled={!editCommentContent.trim()}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingCommentId(null);
+                              setEditCommentContent("");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="bg-muted rounded-lg p-2 flex justify-between items-start">
+                          <div className="flex-1">
+                            <p 
+                              className="text-sm font-semibold cursor-pointer hover:underline"
+                              onClick={() => handleProfileClick(comment.user_id)}
+                            >
+                              {commentName}
+                            </p>
+                            <p className="text-sm text-foreground">{comment.content}</p>
+                          </div>
+                          {isOwnComment && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground"
+                                >
+                                  <MoreHorizontal size={14} />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleEditComment(comment.id, comment.content)}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 ml-2">{commentTime}</p>
+                      </>
+                    )}
                   </div>
                 </div>
               );
