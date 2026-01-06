@@ -705,13 +705,44 @@ const ProHoleTracker = () => {
     const currentData = getCurrentHoleData();
     if (currentData.shots.length === 0) return;
 
+    const newShots = currentData.shots.slice(0, -1);
+    
     setHoleData({
       ...holeData,
       [currentHole]: {
         ...currentData,
-        shots: currentData.shots.slice(0, -1),
+        shots: newShots,
       },
     });
+
+    // Update start distance, start lie, and shot type based on remaining shots
+    if (newShots.length === 0) {
+      // No shots left - reset to hole start
+      const holeDistance = getHoleDistance(currentHole);
+      setStartDistance(holeDistance ? String(holeDistance) : "");
+      setStartLie('tee');
+      setShotType('tee');
+    } else {
+      // Set start to the end of the last remaining shot
+      const lastShot = newShots[newShots.length - 1];
+      if (lastShot.endDistance !== undefined) {
+        setStartDistance(String(lastShot.endDistance));
+      }
+      if (lastShot.endLie && lastShot.endLie !== 'OB') {
+        setStartLie(lastShot.endLie as LieType | 'green');
+        // Auto-set shot type based on lie
+        if (lastShot.endLie === 'green') {
+          setShotType('putt');
+        } else {
+          setShotType('approach');
+        }
+      }
+    }
+    
+    // Reset end inputs
+    setEndDistance("");
+    setEndLie('');
+    setHoled(false);
   };
 
   if (loading) return <div className="p-4">Loading...</div>;
