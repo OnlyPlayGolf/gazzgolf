@@ -21,9 +21,12 @@ import { format } from "date-fns";
 interface Shot {
   type: 'tee' | 'approach' | 'putt';
   startDistance: number;
+  startLie?: string;
   holed: boolean;
   endDistance?: number;
+  endLie?: string;
   strokesGained: number;
+  isOB?: boolean;
 }
 
 interface DBHoleData {
@@ -242,25 +245,28 @@ const ProRoundSummary = () => {
       // Count fairways (par 4 and 5 only)
       if (hole.par >= 4) {
         totalFairways++;
-        const teeShot = shots.find(s => s.type === 'tee');
-        // Assume fairway hit if tee shot exists and didn't hole out (reasonable assumption for pro stats)
-        if (teeShot && !teeShot.holed) {
+        // Find the first non-OB, non-penalty tee shot
+        const teeShot = shots.find(s => s.type === 'tee' && !s.isOB && s.endLie !== 'OB');
+        // Check if the tee shot ended in fairway
+        if (teeShot && teeShot.endLie === 'fairway') {
           fairwaysHit++;
         }
       }
 
       // GIR: reached green in regulation (par - 2 strokes or less)
-      const strokesUsed = shots.length;
       const regulationStrokes = hole.par - 2;
       
-      // Find if green was reached in regulation
+      // Count actual strokes (excluding penalty strokes that return to same spot)
+      let strokeCount = 0;
       let reachedGreenInReg = false;
-      let strokesBeforeGreen = 0;
+      
       for (const shot of shots) {
-        strokesBeforeGreen++;
-        if (shot.type === 'putt' || shot.holed) {
-          // Reached green
-          if (strokesBeforeGreen <= regulationStrokes) {
+        strokeCount++;
+        
+        // Check if this shot reached the green
+        if (shot.endLie === 'green' || shot.type === 'putt' || shot.holed) {
+          // Check if we reached it within regulation
+          if (strokeCount <= regulationStrokes) {
             reachedGreenInReg = true;
           }
           break;
