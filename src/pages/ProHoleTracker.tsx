@@ -816,10 +816,7 @@ const ProHoleTracker = () => {
             <div>
               <Label>End Lie</Label>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                {(startLie === 'green' 
-                  ? ['green'] as const
-                  : ['green', 'fairway', 'rough'] as const
-                ).map((lie) => (
+                {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
                   <Button
                     key={lie}
                     variant={endLie === lie ? "default" : "outline"}
@@ -829,50 +826,25 @@ const ProHoleTracker = () => {
                     {lie.charAt(0).toUpperCase() + lie.slice(1)}
                   </Button>
                 ))}
-                {startLie !== 'green' && (
-                  <>
-                    <Button
-                      variant={endLie === 'sand' ? "default" : "outline"}
-                      onClick={() => setEndLie('sand')}
-                      size="sm"
-                    >
-                      Sand
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setHoled(true);
-                        setTimeout(() => {
-                          addHoledShot();
-                        }, 50);
-                      }}
-                      size="sm"
-                    >
-                      Holed
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={addOBShot}
-                      size="sm"
-                    >
-                      OB
-                    </Button>
-                  </>
-                )}
-                {startLie === 'green' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setHoled(true);
-                      setTimeout(() => {
-                        addHoledShot();
-                      }, 50);
-                    }}
-                    size="sm"
-                  >
-                    Holed
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setHoled(true);
+                    setTimeout(() => {
+                      addHoledShot();
+                    }, 50);
+                  }}
+                  size="sm"
+                >
+                  Holed
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={addOBShot}
+                  size="sm"
+                >
+                  OB
+                </Button>
               </div>
             </div>
           </CardContent>
