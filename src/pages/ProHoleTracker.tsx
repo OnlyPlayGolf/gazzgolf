@@ -708,13 +708,17 @@ const ProHoleTracker = () => {
   const currentData = getCurrentHoleData();
   const totalSG = currentData.shots.reduce((sum, shot) => sum + shot.strokesGained, 0);
   
-  // Calculate total round score (all completed holes + current hole shots)
-  const totalRoundScore = Object.entries(holeData).reduce((total, [hole, data]) => {
+  // Calculate score to par (all completed holes + current hole)
+  const scoreToPar = Object.entries(holeData).reduce((total, [hole, data]) => {
     if (parseInt(hole) === currentHole) {
-      return total + data.shots.length + 1; // Current hole: shots so far + current shot being entered
+      // Current hole: shots so far + current shot being entered - par
+      return total + (data.shots.length + 1 - data.par);
     }
-    return total + data.shots.length; // Completed holes
+    // Completed holes: shots - par
+    return total + (data.shots.length - data.par);
   }, 0);
+  
+  const scoreToParDisplay = scoreToPar === 0 ? 'E' : scoreToPar > 0 ? `+${scoreToPar}` : `${scoreToPar}`;
 
   return (
     <div className="pb-20 min-h-screen bg-background">
@@ -764,7 +768,7 @@ const ProHoleTracker = () => {
           <CardContent className="pt-6 space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Shot {currentData.shots.length + 1}</span>
-              <span className="text-muted-foreground">Round Score: {totalRoundScore}</span>
+              <span className="text-muted-foreground">{scoreToParDisplay}</span>
             </div>
 
             {currentData.shots.length > 0 && (
