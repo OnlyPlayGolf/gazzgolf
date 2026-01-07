@@ -163,32 +163,51 @@ export default function RoundTracker() {
       if (roundError) throw roundError;
       setRound(roundData);
 
-      // Fetch players in the round (including group_id)
+      // Fetch all players for this round (including guests via is_guest flag)
       const { data: playersData, error: playersError } = await supabase
         .from("round_players")
-        .select("id, user_id, tee_color, group_id")
+        .select("id, user_id, tee_color, group_id, handicap, is_guest, guest_name")
         .eq("round_id", roundId);
 
       if (playersError) throw playersError;
-      
-      // Fetch profile data for each player
+
       let allPlayers: RoundPlayer[] = [];
-      if (playersData && playersData.length > 0) {
-        const userIds = playersData.map(p => p.user_id);
+      
+      // Separate registered users and guests
+      const registeredPlayerData = playersData?.filter(p => !p.is_guest && p.user_id) || [];
+      const guestPlayerData = playersData?.filter(p => p.is_guest) || [];
+
+      if (registeredPlayerData.length > 0) {
+        const userIds = registeredPlayerData.map(p => p.user_id);
         const { data: profilesData } = await supabase
           .from("profiles")
           .select("id, display_name, username")
           .in("id", userIds);
         
         const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-        const playersWithProfiles = playersData.map(player => ({
+        const playersWithProfiles = registeredPlayerData.map(player => ({
           ...player,
-          profiles: profilesMap.get(player.user_id) || null,
+          profiles: profilesMap.get(player.user_id!) || null,
           isGuest: false,
         }));
         
         allPlayers = playersWithProfiles;
       }
+
+      // Add guest players from database
+      guestPlayerData.forEach(g => {
+        allPlayers.push({
+          id: g.id,
+          user_id: g.id, // Use the round_player id as user_id for consistency
+          tee_color: g.tee_color,
+          group_id: g.group_id,
+          profiles: {
+            display_name: g.guest_name,
+            username: null,
+          },
+          isGuest: true,
+        });
+      });
 
       // Fetch game groups for this round
       const { data: groupsData } = await supabase
@@ -199,24 +218,6 @@ export default function RoundTracker() {
 
       const gameGroups: GameGroup[] = groupsData || [];
       setGroups(gameGroups);
-
-      // Load guest players from localStorage
-      const guestPlayersJson = localStorage.getItem(`roundGuestPlayers_${roundId}`);
-      if (guestPlayersJson) {
-        const guestPlayers = JSON.parse(guestPlayersJson);
-        const guestRoundPlayers: RoundPlayer[] = guestPlayers.map((g: any) => ({
-          id: g.odId,
-          user_id: g.odId,
-          tee_color: g.teeColor || null,
-          group_id: g.groupId || null,
-          profiles: {
-            display_name: g.displayName,
-            username: null,
-          },
-          isGuest: true,
-        }));
-        allPlayers = [...allPlayers, ...guestRoundPlayers];
-      }
 
       setPlayers(allPlayers);
 
@@ -318,18 +319,6 @@ export default function RoundTracker() {
         });
       }
 
-      // Load guest scores from localStorage
-      const guestScoresJson = localStorage.getItem(`roundGuestScores_${roundId}`);
-      if (guestScoresJson) {
-        const guestScoresObj = JSON.parse(guestScoresJson);
-        Object.entries(guestScoresObj).forEach(([playerId, scores]) => {
-          const playerScoresMap = new Map<number, number>();
-          Object.entries(scores as Record<string, number>).forEach(([hole, score]) => {
-            playerScoresMap.set(parseInt(hole), score);
-          });
-          scoresMap.set(playerId, playerScoresMap);
-        });
-      }
 
       setScores(scoresMap);
       setMulligansUsed(mulligansMap);
@@ -395,58 +384,33 @@ export default function RoundTracker() {
     updatedScores.set(playerId, playerScores);
     setScores(updatedScores);
 
-    // Check if this is a guest player
-    const player = players.find(p => p.id === playerId);
-    const isGuest = player?.isGuest;
-
-    if (isGuest) {
-      // Save guest scores to localStorage
-      saveGuestScores(updatedScores);
-    } else {
-      // Save to database for registered players
-      try {
-        const { error } = await supabase
-          .from("holes")
-          .upsert({
-            round_id: roundId,
-            player_id: playerId,
-            hole_number: currentHole.hole_number,
-            par: currentHole.par,
-            score: newScore,
-          }, {
-            onConflict: 'round_id,player_id,hole_number',
-            ignoreDuplicates: false
-          });
-
-        if (error) {
-          console.error("Upsert error:", error);
-          throw error;
-        }
-      } catch (error: any) {
-        console.error("Error saving score:", error);
-        toast({
-          title: "Error saving score",
-          description: error.message,
-          variant: "destructive",
+    // Save to database for all players (guests now have real round_player IDs)
+    try {
+      const { error } = await supabase
+        .from("holes")
+        .upsert({
+          round_id: roundId,
+          player_id: playerId,
+          hole_number: currentHole.hole_number,
+          par: currentHole.par,
+          score: newScore,
+        }, {
+          onConflict: 'round_id,player_id,hole_number',
+          ignoreDuplicates: false
         });
+
+      if (error) {
+        console.error("Upsert error:", error);
+        throw error;
       }
+    } catch (error: any) {
+      console.error("Error saving score:", error);
+      toast({
+        title: "Error saving score",
+        description: error.message,
+        variant: "destructive",
+      });
     }
-  };
-
-  const saveGuestScores = (allScores: Map<string, Map<number, number>>) => {
-    // Get guest player IDs
-    const guestPlayerIds = players.filter(p => p.isGuest).map(p => p.id);
-    
-    // Extract guest scores
-    const guestScoresObj: Record<string, Record<number, number>> = {};
-    guestPlayerIds.forEach(playerId => {
-      const playerScores = allScores.get(playerId);
-      if (playerScores) {
-        guestScoresObj[playerId] = Object.fromEntries(playerScores);
-      }
-    });
-
-    localStorage.setItem(`roundGuestScores_${roundId}`, JSON.stringify(guestScoresObj));
   };
 
   const navigateHole = (direction: "prev" | "next") => {

@@ -1565,32 +1565,38 @@ export type Database = {
         Row: {
           created_at: string
           group_id: string | null
+          guest_name: string | null
           handicap: number | null
           id: string
+          is_guest: boolean | null
           round_id: string
           starting_hole: number | null
           tee_color: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           group_id?: string | null
+          guest_name?: string | null
           handicap?: number | null
           id?: string
+          is_guest?: boolean | null
           round_id: string
           starting_hole?: number | null
           tee_color?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           group_id?: string | null
+          guest_name?: string | null
           handicap?: number | null
           id?: string
+          is_guest?: boolean | null
           round_id?: string
           starting_hole?: number | null
           tee_color?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
