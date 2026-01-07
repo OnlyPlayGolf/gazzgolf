@@ -274,6 +274,9 @@ const GameResultCardFromDB = ({
         if (tableName === "umbriago_games") {
           return "id, course_name, round_name, date_played, holes_played, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished";
         }
+        if (tableName === "wolf_games") {
+          return "id, course_name, round_name, date_played, holes_played, player_1, player_2, player_3, player_4, player_5, player_6, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished";
+        }
         return "id, course_name, round_name, date_played, holes_played";
       })();
 
@@ -522,6 +525,52 @@ const GameResultCardFromDB = ({
         
         const { umbriagioResult, umbriagioFinalScore } = computeUmbriagioData();
 
+        // Compute Wolf position and final score
+        const computeWolfData = (): { wolfPosition: number | null; wolfFinalScore: string | null } => {
+          if (tableName !== "wolf_games") return { wolfPosition: null, wolfFinalScore: null };
+          
+          const g = data as any;
+          if (!g.is_finished) return { wolfPosition: null, wolfFinalScore: null };
+          
+          // Get all players with their points
+          const players = [
+            { index: 1, name: g.player_1, pts: g.player_1_points || 0 },
+            { index: 2, name: g.player_2, pts: g.player_2_points || 0 },
+            { index: 3, name: g.player_3, pts: g.player_3_points || 0 },
+          ];
+          if (g.player_4) players.push({ index: 4, name: g.player_4, pts: g.player_4_points || 0 });
+          if (g.player_5) players.push({ index: 5, name: g.player_5, pts: g.player_5_points || 0 });
+          if (g.player_6) players.push({ index: 6, name: g.player_6, pts: g.player_6_points || 0 });
+          
+          // Normalize points (subtract minimum so lowest is 0)
+          const minPts = Math.min(...players.map(p => p.pts));
+          const normalizedPlayers = players.map(p => ({ ...p, pts: p.pts - minPts }));
+          
+          // Sort by points descending
+          const sortedPlayers = [...normalizedPlayers].sort((a, b) => b.pts - a.pts);
+          
+          // Find user's position
+          let userPlayerIndex: number | null = null;
+          for (const p of players) {
+            if (participantNames.includes(p.name)) {
+              userPlayerIndex = p.index;
+              break;
+            }
+          }
+          
+          let wolfPosition: number | null = null;
+          if (userPlayerIndex) {
+            wolfPosition = sortedPlayers.findIndex(p => p.index === userPlayerIndex) + 1;
+          }
+          
+          // Create final score string (e.g., "8-5-3-0")
+          const wolfFinalScore = sortedPlayers.map(p => p.pts).join('-');
+          
+          return { wolfPosition, wolfFinalScore };
+        };
+
+        const { wolfPosition, wolfFinalScore } = computeWolfData();
+
         const gameRecord = data as unknown as {
           id: string;
           course_name: string;
@@ -555,6 +604,8 @@ const GameResultCardFromDB = ({
           scrambleScoreToPar,
           umbriagioResult,
           umbriagioFinalScore,
+          wolfPosition,
+          wolfFinalScore,
         });
       } catch (err) {
         console.error("Error fetching game data:", err);
