@@ -57,7 +57,8 @@ const ProHoleTracker = () => {
   const [startLie, setStartLie] = useState<LieType | 'green'>('tee');
   const [holed, setHoled] = useState(false);
   const [endDistance, setEndDistance] = useState("");
-  const [endLie, setEndLie] = useState<LieType | 'green' | ''>(''); // No preset
+  const [endLie, setEndLie] = useState<LieType | 'green' | 'OB' | ''>(''); // No preset
+  const [missedSide, setMissedSide] = useState<'left' | 'right' | ''>('');
   
   // Ref for the 2-second auto-advance timer when user enters 0
   const zeroInputTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -94,9 +95,13 @@ const ProHoleTracker = () => {
   }, [courseHoles, teeSet, currentHole]);
 
   // Reset holed state when end lie changes away from green
+  // Clear missedSide when end lie is not 'rough' or 'ob'
   useEffect(() => {
     if (endLie !== 'green') {
       setHoled(false);
+    }
+    if (endLie !== 'rough' && endLie !== 'OB') {
+      setMissedSide('');
     }
   }, [endLie]);
 
@@ -533,6 +538,7 @@ const ProHoleTracker = () => {
     setStartLie(endLie as LieType | 'green'); // Next shot starts from this lie
     setEndDistance("");
     setEndLie(''); // Reset end lie for next shot
+    setMissedSide(''); // Reset missed side
     setHoled(false);
     
     // Auto-set next shot type
@@ -640,6 +646,7 @@ const ProHoleTracker = () => {
     // Keep the same start lie since we're replaying
     setEndDistance("");
     setEndLie('');
+    setMissedSide('');
     setHoled(false);
     // Start distance and lie remain unchanged for the replay
   };
@@ -804,6 +811,7 @@ const ProHoleTracker = () => {
     // Reset end inputs
     setEndDistance("");
     setEndLie('');
+    setMissedSide('');
     setHoled(false);
   };
 
@@ -933,13 +941,50 @@ const ProHoleTracker = () => {
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={addOBShot}
+                  onClick={() => {
+                    setEndLie('OB');
+                  }}
                   size="sm"
                 >
                   OB
                 </Button>
               </div>
             </div>
+
+            {/* Missed Side - shown when End Lie is OB or Rough */}
+            {(endLie === 'rough' || endLie === 'OB') && (
+              <div>
+                <Label>Missed Side</Label>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    variant={missedSide === 'left' ? "default" : "outline"}
+                    onClick={() => {
+                      setMissedSide('left');
+                      if (endLie === 'OB') {
+                        setTimeout(() => addOBShot(), 50);
+                      }
+                    }}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    Left
+                  </Button>
+                  <Button
+                    variant={missedSide === 'right' ? "default" : "outline"}
+                    onClick={() => {
+                      setMissedSide('right');
+                      if (endLie === 'OB') {
+                        setTimeout(() => addOBShot(), 50);
+                      }
+                    }}
+                    size="sm"
+                    className="flex-1"
+                  >
+                    Right
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
