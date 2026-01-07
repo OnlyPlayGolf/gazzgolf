@@ -53,6 +53,7 @@ import RoundSummary from "./pages/RoundSummary";
 import ProRoundSetup from "./pages/ProRoundSetup";
 import ProHoleTracker from "./pages/ProHoleTracker";
 import ProRoundSummary from "./pages/ProRoundSummary";
+import BasicStatsTracker from "./pages/BasicStatsTracker";
 import ManagePlayers from "./pages/ManagePlayers";
 import RoundLeaderboard from "./pages/RoundLeaderboard";
 import RoundInfo from "./pages/RoundInfo";
@@ -229,6 +230,7 @@ const App = () => {
             <Route path="/rounds/:roundId" element={<RoundSummary />} />
             <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
             <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
+            <Route path="/rounds/:roundId/basic-track" element={<BasicStatsTracker />} />
             <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
             <Route path="/umbriago/how-to-play" element={<HowToPlayUmbriago />} />
             <Route path="/umbriago/setup" element={<UmbriagioSetup />} />

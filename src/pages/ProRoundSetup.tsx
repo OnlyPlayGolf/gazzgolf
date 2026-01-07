@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown, TrendingUp, ClipboardList } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatsRoundsHistory } from "@/components/StatsRoundsHistory";
 import {
@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
+
+type StatsMode = "strokes_gained" | "basic_stats";
+
 interface Course {
   id: string;
   name: string;
@@ -37,6 +40,7 @@ interface AvailableTee {
 const ProRoundSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [statsMode, setStatsMode] = useState<StatsMode | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [teeSet, setTeeSet] = useState("");
@@ -140,10 +144,29 @@ const ProRoundSetup = () => {
   }, [selectedCourseId, courses]);
 
   const handleStartRound = async () => {
+    if (!statsMode) {
+      toast({
+        title: "Select stats mode",
+        description: "Choose Strokes Gained or Basic Stats",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!selectedCourseId) {
       toast({
         title: "Course required",
         description: "Please select a course",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Tee set only required for Strokes Gained mode
+    if (statsMode === "strokes_gained" && !teeSet) {
+      toast({
+        title: "Tee set required",
+        description: "Please select a tee set for Strokes Gained tracking",
         variant: "destructive",
       });
       return;
@@ -166,10 +189,10 @@ const ProRoundSetup = () => {
           {
             user_id: user.id,
             course_name: selectedCourse?.name || "",
-            tee_set: selectedTeeDisplay,
+            tee_set: selectedTeeDisplay || null,
             holes_played: holesPlayed,
             starting_hole: startingHole,
-            origin: 'pro_stats',
+            origin: statsMode === "strokes_gained" ? 'pro_stats' : 'basic_stats',
             round_type: roundType,
           },
         ])
@@ -181,13 +204,20 @@ const ProRoundSetup = () => {
       // Store course_id in sessionStorage for the tracker to use
       sessionStorage.setItem('proStatsCourseId', selectedCourseId);
       sessionStorage.setItem('proStatsTeeSet', teeSet);
+      sessionStorage.setItem('statsMode', statsMode);
 
+      const modeName = statsMode === "strokes_gained" ? "Strokes Gained" : "Basic Stats";
       toast({
-        title: "Pro Round started!",
-        description: `Good luck tracking strokes gained at ${selectedCourse?.name}`,
+        title: `${modeName} round started!`,
+        description: `Good luck at ${selectedCourse?.name}`,
       });
 
-      navigate(`/rounds/${round.id}/pro-track`);
+      // Navigate to appropriate tracker
+      if (statsMode === "strokes_gained") {
+        navigate(`/rounds/${round.id}/pro-track`);
+      } else {
+        navigate(`/rounds/${round.id}/basic-track`);
+      }
     } catch (error: any) {
       toast({
         title: "Error creating round",
@@ -211,129 +241,181 @@ const ProRoundSetup = () => {
           Back
         </Button>
 
-        <Card className="border-primary">
-          <CardHeader>
-            <CardTitle>Strokes Gained</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Track exact distances and get detailed strokes gained analysis
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Course</Label>
-              <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={courseSearchOpen}
-                    className="w-full justify-between font-normal"
-                  >
-                    {selectedCourseId
-                      ? courses.find((course) => course.id === selectedCourseId)?.name
-                      : "Select a course..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search courses..." />
-                    <CommandList>
-                      <CommandEmpty>No course found.</CommandEmpty>
-                      <CommandGroup>
-                        {courses.map((course) => (
-                          <CommandItem
-                            key={course.id}
-                            value={course.name}
-                            onSelect={() => {
-                              setSelectedCourseId(course.id);
-                              setCourseSearchOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedCourseId === course.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {course.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Tee Set</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableTees.length > 0 ? (
-                  availableTees.map((tee) => (
-                    <Button
-                      key={tee.key}
-                      variant={teeSet === tee.key ? "default" : "outline"}
-                      onClick={() => setTeeSet(tee.key)}
-                      className="flex-1 min-w-[80px]"
-                    >
-                      {tee.name}
-                    </Button>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">Select a course first</p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Holes</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={holesPlayed === 18 ? "default" : "outline"}
-                  onClick={() => {
-                    setHolesPlayed(18);
-                    setStartingHole(1);
-                  }}
-                  className="flex-1"
-                >
-                  Full 18
-                </Button>
-                <Button
-                  variant={holesPlayed === 9 && startingHole === 1 ? "default" : "outline"}
-                  onClick={() => {
-                    setHolesPlayed(9);
-                    setStartingHole(1);
-                  }}
-                  className="flex-1"
-                >
-                  Front 9
-                </Button>
-                <Button
-                  variant={holesPlayed === 9 && startingHole === 10 ? "default" : "outline"}
-                  onClick={() => {
-                    setHolesPlayed(9);
-                    setStartingHole(10);
-                  }}
-                  className="flex-1"
-                >
-                  Back 9
-                </Button>
-              </div>
-            </div>
-
-            <RoundTypeSelector value={roundType} onChange={setRoundType} />
-
-            <Button
-              onClick={handleStartRound}
-              disabled={loading}
-              className="w-full"
-              size="lg"
+        {/* Stats Mode Selector */}
+        <div className="mb-6">
+          <Label className="text-lg font-semibold mb-3 block">Choose Stats Mode</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <Card 
+              className={cn(
+                "cursor-pointer transition-all",
+                statsMode === "strokes_gained" 
+                  ? "border-primary ring-2 ring-primary" 
+                  : "hover:border-primary/50"
+              )}
+              onClick={() => setStatsMode("strokes_gained")}
             >
-              {loading ? "Starting..." : "Add Stats"}
-            </Button>
-          </CardContent>
-        </Card>
+              <CardContent className="p-4 text-center">
+                <TrendingUp className="mx-auto mb-2 text-primary" size={32} />
+                <h3 className="font-semibold">Strokes Gained</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Track exact distances for detailed SG analysis
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className={cn(
+                "cursor-pointer transition-all",
+                statsMode === "basic_stats" 
+                  ? "border-primary ring-2 ring-primary" 
+                  : "hover:border-primary/50"
+              )}
+              onClick={() => setStatsMode("basic_stats")}
+            >
+              <CardContent className="p-4 text-center">
+                <ClipboardList className="mx-auto mb-2 text-primary" size={32} />
+                <h3 className="font-semibold">Basic Stats</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Track fairways, GIR, putts & chips
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {statsMode && (
+          <Card className="border-primary">
+            <CardHeader>
+              <CardTitle>
+                {statsMode === "strokes_gained" ? "Strokes Gained" : "Basic Stats"}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {statsMode === "strokes_gained" 
+                  ? "Track exact distances and get detailed strokes gained analysis"
+                  : "Quick entry for fairways, greens in regulation, and putting"
+                }
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label>Course</Label>
+                <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={courseSearchOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {selectedCourseId
+                        ? courses.find((course) => course.id === selectedCourseId)?.name
+                        : "Select a course..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search courses..." />
+                      <CommandList>
+                        <CommandEmpty>No course found.</CommandEmpty>
+                        <CommandGroup>
+                          {courses.map((course) => (
+                            <CommandItem
+                              key={course.id}
+                              value={course.name}
+                              onSelect={() => {
+                                setSelectedCourseId(course.id);
+                                setCourseSearchOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCourseId === course.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {course.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Tee Set - only for Strokes Gained */}
+              {statsMode === "strokes_gained" && (
+                <div className="space-y-2">
+                  <Label>Tee Set</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableTees.length > 0 ? (
+                      availableTees.map((tee) => (
+                        <Button
+                          key={tee.key}
+                          variant={teeSet === tee.key ? "default" : "outline"}
+                          onClick={() => setTeeSet(tee.key)}
+                          className="flex-1 min-w-[80px]"
+                        >
+                          {tee.name}
+                        </Button>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Select a course first</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Holes</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={holesPlayed === 18 ? "default" : "outline"}
+                    onClick={() => {
+                      setHolesPlayed(18);
+                      setStartingHole(1);
+                    }}
+                    className="flex-1"
+                  >
+                    Full 18
+                  </Button>
+                  <Button
+                    variant={holesPlayed === 9 && startingHole === 1 ? "default" : "outline"}
+                    onClick={() => {
+                      setHolesPlayed(9);
+                      setStartingHole(1);
+                    }}
+                    className="flex-1"
+                  >
+                    Front 9
+                  </Button>
+                  <Button
+                    variant={holesPlayed === 9 && startingHole === 10 ? "default" : "outline"}
+                    onClick={() => {
+                      setHolesPlayed(9);
+                      setStartingHole(10);
+                    }}
+                    className="flex-1"
+                  >
+                    Back 9
+                  </Button>
+                </div>
+              </div>
+
+              <RoundTypeSelector value={roundType} onChange={setRoundType} />
+
+              <Button
+                onClick={handleStartRound}
+                disabled={loading}
+                className="w-full"
+                size="lg"
+              >
+                {loading ? "Starting..." : "Add Stats"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <StatsRoundsHistory />
       </div>
