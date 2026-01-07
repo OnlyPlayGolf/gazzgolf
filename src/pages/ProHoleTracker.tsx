@@ -952,7 +952,7 @@ const ProHoleTracker = () => {
             </div>
 
             {/* Missed Side - shown when End Lie is OB or Rough */}
-            {(endLie === 'rough' || endLie === 'OB') && (
+            {startLie === 'tee' && (endLie === 'rough' || endLie === 'OB') && (
               <div>
                 <Label>Missed Side</Label>
                 <div className="flex gap-2 mt-2">
