@@ -171,8 +171,8 @@ const ProHoleTracker = () => {
       // For non-putting shots, require endLie to be selected
       if (!endLie) return;
       
-      // If tee shot and end lie is rough or OB, require missed side to be selected
-      if (startLie === 'tee' && (endLie === 'rough' || endLie === 'OB') && !missedSide) return;
+      // If tee shot and end lie is rough, bunker or OB, require missed side to be selected
+      if (startLie === 'tee' && (endLie === 'rough' || endLie === 'sand' || endLie === 'OB') && !missedSide) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // If end distance is exactly 0 (user typed "0"), use 2-second delay
@@ -955,7 +955,7 @@ const ProHoleTracker = () => {
             </div>
 
             {/* Missed Side - shown when End Lie is OB or Rough */}
-            {startLie === 'tee' && (endLie === 'rough' || endLie === 'OB') && (
+            {startLie === 'tee' && (endLie === 'rough' || endLie === 'sand' || endLie === 'OB') && (
               <div>
                 <Label>Missed Side</Label>
                 <div className="flex gap-2 mt-2">
