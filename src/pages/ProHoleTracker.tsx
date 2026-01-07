@@ -171,6 +171,9 @@ const ProHoleTracker = () => {
       // For non-putting shots, require endLie to be selected
       if (!endLie) return;
       
+      // If tee shot and end lie is rough or OB, require missed side to be selected
+      if (startLie === 'tee' && (endLie === 'rough' || endLie === 'OB') && !missedSide) return;
+      
       if (!isNaN(start) && !isNaN(end)) {
         // If end distance is exactly 0 (user typed "0"), use 2-second delay
         if (normalizedEnd === '0') {
@@ -198,7 +201,7 @@ const ProHoleTracker = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [endLie, startDistance, endDistance, startLie]);
+  }, [endLie, startDistance, endDistance, startLie, missedSide]);
 
   const loadBaselineData = async () => {
     try {
