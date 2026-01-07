@@ -916,7 +916,7 @@ const ProHoleTracker = () => {
                     onClick={() => setEndLie(lie)}
                     size="sm"
                   >
-                    {lie.charAt(0).toUpperCase() + lie.slice(1)}
+                    {lie === 'sand' ? 'Bunker' : lie.charAt(0).toUpperCase() + lie.slice(1)}
                   </Button>
                 ))}
                 <Button
