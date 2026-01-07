@@ -208,7 +208,6 @@ export default function StrokePlaySetup() {
 
       // Create game groups and add players with group references
       const hasMultipleGroups = groups.length > 1;
-      const allGuestPlayers: Player[] = [];
 
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i];
@@ -239,40 +238,38 @@ export default function StrokePlaySetup() {
         const registeredPlayers = group.players.filter(p => !p.isTemporary);
         const guestPlayers = group.players.filter(p => p.isTemporary);
 
-        const playersToAdd = registeredPlayers.map(p => ({
+        // Add registered players to database
+        const registeredPlayersToAdd = registeredPlayers.map(p => ({
           round_id: round.id,
           user_id: p.odId,
           tee_color: p.teeColor || teeColor,
           handicap: p.handicap,
           group_id: gameGroupId,
+          is_guest: false,
         }));
 
-        if (playersToAdd.length > 0) {
+        // Add guest players to database
+        const guestPlayersToAdd = guestPlayers.map(p => ({
+          round_id: round.id,
+          user_id: null,
+          tee_color: p.teeColor || teeColor,
+          handicap: p.handicap,
+          group_id: gameGroupId,
+          guest_name: p.displayName,
+          is_guest: true,
+        }));
+
+        const allPlayersToAdd = [...registeredPlayersToAdd, ...guestPlayersToAdd];
+
+        if (allPlayersToAdd.length > 0) {
           const { error: playersError } = await supabase
             .from('round_players')
-            .insert(playersToAdd);
+            .insert(allPlayersToAdd);
 
           if (playersError) {
             console.error("Error adding players:", playersError);
           }
         }
-
-        // Collect guest players with group info
-        guestPlayers.forEach(p => {
-          allGuestPlayers.push({
-            ...p,
-            odId: p.odId,
-            displayName: p.displayName,
-            handicap: p.handicap,
-            teeColor: p.teeColor,
-            isTemporary: true,
-          });
-        });
-      }
-
-      // Store guest players in localStorage for this round
-      if (allGuestPlayers.length > 0) {
-        localStorage.setItem(`roundGuestPlayers_${round.id}`, JSON.stringify(allGuestPlayers));
       }
 
       // Save settings to round-specific localStorage

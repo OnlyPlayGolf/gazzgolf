@@ -100,16 +100,20 @@ export default function RoundLeaderboard() {
       
       setCourseHoles(filteredHoles);
 
-      // Fetch players and their scores
+      // Fetch players (including guests via is_guest flag)
       const { data: playersData, error: playersError } = await supabase
         .from("round_players")
-        .select("id, user_id, tee_color, handicap")
+        .select("id, user_id, tee_color, handicap, is_guest, guest_name")
         .eq("round_id", roundId);
 
       if (playersError) throw playersError;
 
-      // Fetch profiles for each player
-      const userIds = playersData.map(p => p.user_id);
+      // Separate registered players and guests
+      const registeredPlayerData = playersData?.filter(p => !p.is_guest && p.user_id) || [];
+      const guestPlayerData = playersData?.filter(p => p.is_guest) || [];
+
+      // Fetch profiles for registered players
+      const userIds = registeredPlayerData.map(p => p.user_id!);
       const { data: profilesData } = await supabase
         .from("profiles")
         .select("id, display_name, username, handicap")
@@ -144,25 +148,12 @@ export default function RoundLeaderboard() {
         }
       });
 
-      // Load guest scores from localStorage
-      const guestScoresJson = localStorage.getItem(`roundGuestScores_${roundId}`);
-      if (guestScoresJson) {
-        const guestScoresObj = JSON.parse(guestScoresJson);
-        Object.entries(guestScoresObj).forEach(([playerId, scores]) => {
-          const playerScoresMap = new Map<number, number>();
-          Object.entries(scores as Record<string, number>).forEach(([hole, score]) => {
-            playerScoresMap.set(parseInt(hole), score);
-          });
-          scoresMap.set(playerId, playerScoresMap);
-        });
-      }
-
-      // Combine all player data
-      const playersWithScores: PlayerData[] = playersData.map(player => {
-        const profile = profilesMap.get(player.user_id);
+      // Combine registered player data
+      const playersWithScores: PlayerData[] = registeredPlayerData.map(player => {
+        const profile = profilesMap.get(player.user_id!);
         return {
           id: player.id,
-          user_id: player.user_id,
+          user_id: player.user_id!,
           tee_color: player.tee_color,
           handicap: player.handicap || (profile?.handicap ? parseFloat(profile.handicap) : null),
           display_name: profile?.display_name || profile?.username || "Player",
@@ -172,23 +163,19 @@ export default function RoundLeaderboard() {
         };
       });
 
-      // Load guest players from localStorage
-      const guestPlayersJson = localStorage.getItem(`roundGuestPlayers_${roundId}`);
-      if (guestPlayersJson) {
-        const guestPlayers = JSON.parse(guestPlayersJson);
-        guestPlayers.forEach((g: any) => {
-          playersWithScores.push({
-            id: g.odId,
-            user_id: g.odId,
-            tee_color: g.teeColor || null,
-            handicap: null,
-            display_name: g.displayName,
-            username: null,
-            scores: scoresMap.get(g.odId) || new Map(),
-            mulligans: new Set(),
-          });
+      // Add guest players from database
+      guestPlayerData.forEach(g => {
+        playersWithScores.push({
+          id: g.id,
+          user_id: g.id, // Use round_player id for consistency
+          tee_color: g.tee_color,
+          handicap: g.handicap,
+          display_name: g.guest_name || "Guest",
+          username: null,
+          scores: scoresMap.get(g.id) || new Map(),
+          mulligans: mulligansMap.get(g.id) || new Set(),
         });
-      }
+      });
 
       setPlayers(playersWithScores);
       
