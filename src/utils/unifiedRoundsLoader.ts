@@ -695,10 +695,9 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
 
   // Umbriago - calculate W/L/T result and normalized score
   for (const game of umbriagioGames) {
-    // Determine user's team
+    // Determine user's team based on player names only
     const userInTeamA = participantNames.includes(game.team_a_player_1) || 
-                        participantNames.includes(game.team_a_player_2) ||
-                        game.user_id === targetUserId;
+                        participantNames.includes(game.team_a_player_2);
     const userInTeamB = participantNames.includes(game.team_b_player_1) || 
                         participantNames.includes(game.team_b_player_2);
     
