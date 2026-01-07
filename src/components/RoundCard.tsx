@@ -37,6 +37,10 @@ export interface RoundCardData {
   // Umbriago-specific: W/L/T result and final score (e.g., "5-0")
   umbriagioResult?: 'W' | 'L' | 'T' | null;
   umbriagioFinalScore?: string | null;
+  
+  // Wolf-specific: player's position and final score (e.g., "8-5-3-0")
+  wolfPosition?: number | null;
+  wolfFinalScore?: string | null;
 }
 
 interface RoundCardProps {
@@ -83,7 +87,10 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   // Check if this is an umbriago with result data
   const isUmbriago = round.gameType === 'umbriago' && round.umbriagioResult;
   
-  // Format position for Copenhagen games
+  // Check if this is a wolf with position data
+  const isWolf = round.gameType === 'wolf' && round.wolfPosition;
+  
+  // Format position for Copenhagen/Wolf games
   const formatPosition = (pos: number) => {
     if (pos === 1) return '1st';
     if (pos === 2) return '2nd';
@@ -113,7 +120,7 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
         <div className="flex items-center gap-4">
           {/* Left: Score, Position, or Match Result */}
           <div className="flex-shrink-0 w-14 text-center">
-            {round.gameType === 'copenhagen' && round.position ? (
+          {round.gameType === 'copenhagen' && round.position ? (
               <div className="flex flex-col items-center">
                 <div className={`text-2xl font-bold ${round.position === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
                   {formatPosition(round.position)}
@@ -121,6 +128,17 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
                 {round.copenhagenFinalScore && (
                   <div className="text-xs text-muted-foreground">
                     {round.copenhagenFinalScore}
+                  </div>
+                )}
+              </div>
+            ) : isWolf ? (
+              <div className="flex flex-col items-center">
+                <div className={`text-2xl font-bold ${round.wolfPosition === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
+                  {formatPosition(round.wolfPosition!)}
+                </div>
+                {round.wolfFinalScore && (
+                  <div className="text-xs text-muted-foreground">
+                    {round.wolfFinalScore}
                   </div>
                 )}
               </div>

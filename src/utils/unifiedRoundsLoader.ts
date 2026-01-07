@@ -114,7 +114,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 6: wolf owned
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
@@ -192,27 +192,27 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const wolfParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
       .eq("player_1", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
       .eq("player_2", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
       .eq("player_3", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
       .eq("player_4", name)
       .then((r) => r),
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
       .eq("player_5", name)
       .then((r) => r),
   ]);
@@ -624,15 +624,57 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     });
   }
 
-  // Wolf
+  // Wolf - calculate position based on points (like Copenhagen)
   for (const game of wolfGames) {
-    const playerCount = [
-      game.player_1,
-      game.player_2,
-      game.player_3,
-      game.player_4,
-      game.player_5,
-    ].filter((p) => p && String(p).trim() !== "").length;
+    const players = [
+      { name: game.player_1, pts: game.player_1_points || 0 },
+      { name: game.player_2, pts: game.player_2_points || 0 },
+      { name: game.player_3, pts: game.player_3_points || 0 },
+      { name: game.player_4, pts: game.player_4_points || 0 },
+      { name: game.player_5, pts: game.player_5_points || 0 },
+      { name: game.player_6, pts: game.player_6_points || 0 },
+    ].filter((p) => p.name && String(p.name).trim() !== "");
+
+    const playerCount = players.length;
+    
+    // Find which player the target user is
+    let userPlayerIndex: number | null = null;
+    for (let i = 0; i < players.length; i++) {
+      if (participantNames.some((n) => n === players[i].name)) {
+        userPlayerIndex = i;
+        break;
+      }
+    }
+    if (userPlayerIndex === null && game.user_id === targetUserId) {
+      userPlayerIndex = 0; // Owner defaults to player 1
+    }
+    
+    // Calculate position and normalized final score
+    let wolfPosition: number | null = null;
+    let wolfFinalScore: string | null = null;
+    
+    if (game.is_finished && players.length > 0) {
+      // Normalize points (subtract minimum so lowest is 0)
+      const minPts = Math.min(...players.map(p => p.pts));
+      const normalizedPoints = players.map(p => ({ ...p, pts: p.pts - minPts }));
+      
+      // Sort by points descending for position calculation
+      const sortedPoints = [...normalizedPoints].sort((a, b) => b.pts - a.pts);
+      
+      if (userPlayerIndex !== null) {
+        const userPts = normalizedPoints[userPlayerIndex].pts;
+        // Find position (1-based, accounting for ties)
+        let pos = 1;
+        for (const p of sortedPoints) {
+          if (p.pts > userPts) pos++;
+          else break;
+        }
+        wolfPosition = pos;
+      }
+      
+      // Final score string: sorted points descending (e.g., "8-5-3-0")
+      wolfFinalScore = sortedPoints.map(p => p.pts).join("-");
+    }
 
     allRounds.push({
       id: game.id,
@@ -645,6 +687,8 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       gameType: "wolf",
       holesPlayed: game.holes_played,
       ownerUserId: game.user_id || targetUserId,
+      wolfPosition,
+      wolfFinalScore,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
