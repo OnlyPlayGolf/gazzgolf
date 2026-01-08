@@ -9,7 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
 import { calculatePayout, normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { GameShareDialog } from "@/components/GameShareDialog";
+import { UmbriagioShareDialogWithScorecard } from "@/components/UmbriagioShareDialogWithScorecard";
+
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
 
 export default function UmbriagioSummary() {
   const { gameId } = useParams();
@@ -18,9 +24,11 @@ export default function UmbriagioSummary() {
   
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [holes, setHoles] = useState<UmbriagioHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showHoleDetails, setShowHoleDetails] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(true);
+  const [currentUserTeam, setCurrentUserTeam] = useState<'A' | 'B' | null>(null);
 
   useEffect(() => {
     if (gameId) {
@@ -46,6 +54,41 @@ export default function UmbriagioSummary() {
       };
       
       setGame(typedGame);
+
+      // Fetch course holes for scorecard
+      if (gameData.course_id) {
+        const { data: courseHolesData } = await supabase
+          .from("course_holes")
+          .select("hole_number, par, stroke_index")
+          .eq("course_id", gameData.course_id)
+          .order("hole_number");
+
+        if (courseHolesData) {
+          const filteredHoles = gameData.holes_played === 9 
+            ? courseHolesData.slice(0, 9) 
+            : courseHolesData;
+          setCourseHoles(filteredHoles);
+        }
+      }
+
+      // Determine current user's team
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name, username")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          const userName = profile.display_name || profile.username || '';
+          if (userName === gameData.team_a_player_1 || userName === gameData.team_a_player_2) {
+            setCurrentUserTeam('A');
+          } else if (userName === gameData.team_b_player_1 || userName === gameData.team_b_player_2) {
+            setCurrentUserTeam('B');
+          }
+        }
+      }
 
       const { data: holesData, error: holesError } = await supabase
         .from("umbriago_holes")
@@ -140,19 +183,13 @@ export default function UmbriagioSummary() {
     <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
       <TopNavBar />
       
-      <GameShareDialog
+      <UmbriagioShareDialogWithScorecard
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
-        gameType="Umbriago"
-        courseName={game.course_name}
-        roundName={game.round_name || undefined}
-        winner={getWinnerName()}
-        resultText={(() => {
-          const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
-          return `${normalizedA} - ${normalizedB}`;
-        })()}
-        additionalInfo={`Team A vs Team B`}
-        gameId={gameId}
+        game={game}
+        holes={holes}
+        courseHoles={courseHoles}
+        currentUserTeam={currentUserTeam}
         onContinue={() => navigate("/rounds-play")}
       />
 
