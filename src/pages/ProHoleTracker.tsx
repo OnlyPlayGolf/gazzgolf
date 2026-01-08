@@ -134,41 +134,7 @@ const ProHoleTracker = () => {
       const start = parseFloat(startDistance.replace(',', '.'));
       const end = parseFloat(normalizedEnd);
       
-      // For putting (on green), auto-add for any valid end distance
-      if (startLie === 'green') {
-        if (!isNaN(start) && !isNaN(end)) {
-          // If end distance is exactly 0 (user typed "0"), use 2-second delay
-          if (normalizedEnd === '0') {
-            // Clear any existing timer
-            if (zeroInputTimerRef.current) {
-              clearTimeout(zeroInputTimerRef.current);
-            }
-            // Start 2-second delay - if user doesn't continue typing, advance
-            zeroInputTimerRef.current = setTimeout(() => {
-              zeroInputTimerRef.current = null;
-              addShot(); // addShot handles end=0 as holed
-            }, 2000);
-            return () => {
-              if (zeroInputTimerRef.current) {
-                clearTimeout(zeroInputTimerRef.current);
-                zeroInputTimerRef.current = null;
-              }
-            };
-          }
-          
-          // For non-zero values, use normal 300ms delay
-          const timer = setTimeout(() => {
-            if (end > 0) {
-              setEndLie('green'); // Missed putts stay on green
-            }
-            addShot(); // addShot handles end=0 as holed
-          }, 300);
-          return () => clearTimeout(timer);
-        }
-        return;
-      }
-      
-      // For non-putting shots, require endLie to be selected
+      // For ALL shots (including putting), require endLie to be selected
       if (!endLie) return;
       
       // If tee shot and end lie is rough, bunker or OB, require missed side to be selected
@@ -194,10 +160,10 @@ const ProHoleTracker = () => {
           };
         }
         
-        // Small delay to allow UI to update for non-zero values
+        // Use 1.5 second delay to prevent accidental misclicks
         const timer = setTimeout(() => {
           addShot();
-        }, 300);
+        }, 1500);
         return () => clearTimeout(timer);
       }
     }
