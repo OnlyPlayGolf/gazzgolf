@@ -82,11 +82,9 @@ export function UmbriagioSharedScorecard({
         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
           {totalForNine !== 0 ? totalForNine : ''}
         </TableCell>
-        {showTotal && (
-          <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
-            {grandTotal}
-          </TableCell>
-        )}
+        <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+          {showTotal ? grandTotal : ''}
+        </TableCell>
       </TableRow>
     );
   };
@@ -113,9 +111,9 @@ export function UmbriagioSharedScorecard({
                 </TableHead>
               ))}
               <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Out</TableHead>
-              {!hasBackNine && (
-                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Tot</TableHead>
-              )}
+              <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+                {hasBackNine ? '' : 'Tot'}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -129,11 +127,9 @@ export function UmbriagioSharedScorecard({
               <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                 {frontNine.reduce((sum, h) => sum + h.par, 0)}
               </TableCell>
-              {!hasBackNine && (
-                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                  {frontNine.reduce((sum, h) => sum + h.par, 0)}
-                </TableCell>
-              )}
+              <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                {hasBackNine ? '' : frontNine.reduce((sum, h) => sum + h.par, 0)}
+              </TableCell>
             </TableRow>
             {renderTeamRow('A', frontNine, !hasBackNine)}
             {renderTeamRow('B', frontNine, !hasBackNine)}
