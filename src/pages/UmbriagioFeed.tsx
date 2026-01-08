@@ -6,19 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Newspaper, Trophy, Sparkles, Heart, MessageCircle, Send } from "lucide-react";
+import { Heart, MessageCircle, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
-interface UmbriagioHole {
-  id: string;
-  hole_number: number;
-  is_umbriago: boolean;
-  team_a_hole_points: number;
-  team_b_hole_points: number;
-  multiplier: number;
-}
 
 interface GameData {
   team_a_player_1: string;
@@ -59,7 +51,7 @@ interface Reply {
 export default function UmbriagioFeed() {
   const { gameId } = useParams();
   const { toast } = useToast();
-  const [umbriagioHoles, setUmbriagioHoles] = useState<UmbriagioHole[]>([]);
+  
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -96,17 +88,6 @@ export default function UmbriagioFeed() {
       setGameData(game);
     }
 
-    // Fetch holes where umbriago occurred
-    const { data: holes } = await supabase
-      .from("umbriago_holes")
-      .select("id, hole_number, is_umbriago, team_a_hole_points, team_b_hole_points, multiplier")
-      .eq("game_id", gameId)
-      .eq("is_umbriago", true)
-      .order("hole_number", { ascending: true });
-
-    if (holes) {
-      setUmbriagioHoles(holes);
-    }
 
     setLoading(false);
   };
@@ -310,23 +291,6 @@ export default function UmbriagioFeed() {
     return name.substring(0, 2).toUpperCase();
   };
 
-  const getWinningTeam = (hole: UmbriagioHole) => {
-    if (hole.team_a_hole_points > hole.team_b_hole_points) {
-      return {
-        team: "Team A",
-        players: gameData ? `${gameData.team_a_player_1} & ${gameData.team_a_player_2}` : "Team A",
-        color: "text-blue-500",
-        bgColor: "bg-blue-500/10 border-blue-500/30"
-      };
-    } else {
-      return {
-        team: "Team B",
-        players: gameData ? `${gameData.team_b_player_1} & ${gameData.team_b_player_2}` : "Team B",
-        color: "text-red-500",
-        bgColor: "bg-red-500/10 border-red-500/30"
-      };
-    }
-  };
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -355,7 +319,7 @@ export default function UmbriagioFeed() {
           </Card>
         )}
 
-        {/* Umbriago Events */}
+        {/* Comments Section */}
         {loading ? (
           <Card>
             <CardContent className="p-8 text-center">
@@ -363,168 +327,115 @@ export default function UmbriagioFeed() {
             </CardContent>
           </Card>
         ) : (
-          <>
-            {umbriagioHoles.length > 0 && (
-              <div className="space-y-3">
-                <h2 className="text-lg font-semibold text-foreground">Umbriago Moments</h2>
-                {umbriagioHoles.map((hole) => {
-                  const winner = getWinningTeam(hole);
-                  return (
-                    <Card key={hole.id} className={`border-2 ${winner.bgColor}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-full ${winner.bgColor}`}>
-                            <Sparkles className={`${winner.color}`} size={24} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <Trophy className={`${winner.color}`} size={16} />
-                              <span className={`font-bold ${winner.color}`}>UMBRIAGO!</span>
-                              {hole.multiplier > 1 && (
-                                <span className="text-xs bg-yellow-500/20 text-yellow-600 px-2 py-0.5 rounded-full font-semibold">
-                                  {hole.multiplier}x
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm font-medium mt-1">
-                              {winner.players}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Hole {hole.hole_number} • Won all 4 categories • {hole.team_a_hole_points > hole.team_b_hole_points ? hole.team_a_hole_points : hole.team_b_hole_points} points
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Comments Section */}
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">Comments</h2>
-              {comments.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <MessageCircle className="mx-auto text-muted-foreground mb-4" size={48} />
-                    <h2 className="text-lg font-semibold mb-2">No comments yet</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Be the first to comment on this game!
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <Card key={comment.id}>
-                      <CardContent className="p-4">
-                        {/* Comment Header */}
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                            <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
-                              {comment.hole_number && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Hole {comment.hole_number}
-                                </Badge>
-                              )}
-                              <span className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                              </span>
-                            </div>
-                            
-                            <p className="mt-1 text-sm">{comment.content}</p>
-
-                            {/* Actions */}
-                            <div className="flex items-center gap-4 mt-3">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
-                                onClick={() => handleLike(comment.id, comment.user_has_liked)}
-                              >
-                                <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
-                                {comment.likes_count > 0 && comment.likes_count}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="gap-1"
-                                onClick={() => toggleReplies(comment.id)}
-                              >
-                                <MessageCircle size={16} />
-                                {comment.replies_count > 0 && comment.replies_count}
-                              </Button>
-                            </div>
-
-                            {/* Replies Section */}
-                            {expandedReplies.has(comment.id) && (
-                              <div className="mt-4 space-y-3 border-l-2 border-muted pl-4">
-                                {replies.get(comment.id)?.map((reply) => (
-                                  <div key={reply.id} className="flex items-start gap-2">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarImage src={reply.profiles?.avatar_url || undefined} />
-                                      <AvatarFallback className="text-xs">{getInitials(reply.profiles)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-semibold text-sm">{getDisplayName(reply.profiles)}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                          {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
-                                        </span>
-                                      </div>
-                                      <p className="text-sm">{reply.content}</p>
-                                    </div>
-                                  </div>
-                                ))}
-
-                                {/* Reply Input */}
-                                {currentUserId && (
-                                  <div className="flex gap-2 mt-2">
-                                    <Textarea
-                                      placeholder="Write a reply..."
-                                      value={replyText.get(comment.id) || ""}
-                                      onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
-                                      className="min-h-[60px]"
-                                    />
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleSubmitReply(comment.id)}
-                                      disabled={!replyText.get(comment.id)?.trim()}
-                                    >
-                                      <Send size={14} />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Show empty state for both if nothing */}
-            {umbriagioHoles.length === 0 && comments.length === 0 && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold text-foreground">Comments</h2>
+            {comments.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
-                  <Newspaper className="mx-auto text-muted-foreground mb-4" size={48} />
-                  <h2 className="text-lg font-semibold mb-2">No Activity Yet</h2>
+                  <MessageCircle className="mx-auto text-muted-foreground mb-4" size={48} />
+                  <h2 className="text-lg font-semibold mb-2">No comments yet</h2>
                   <p className="text-sm text-muted-foreground">
-                    When a team wins all 4 categories on a hole, it will appear here!
+                    Be the first to comment on this game!
                   </p>
                 </CardContent>
               </Card>
+            ) : (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <Card key={comment.id}>
+                    <CardContent className="p-4">
+                      {/* Comment Header */}
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
+                            {comment.hole_number && (
+                              <Badge variant="secondary" className="text-xs">
+                                Hole {comment.hole_number}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                            </span>
+                          </div>
+                          
+                          <p className="mt-1 text-sm">{comment.content}</p>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-4 mt-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
+                              onClick={() => handleLike(comment.id, comment.user_has_liked)}
+                            >
+                              <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
+                              {comment.likes_count > 0 && comment.likes_count}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => toggleReplies(comment.id)}
+                            >
+                              <MessageCircle size={16} />
+                              {comment.replies_count > 0 && comment.replies_count}
+                            </Button>
+                          </div>
+
+                          {/* Replies Section */}
+                          {expandedReplies.has(comment.id) && (
+                            <div className="mt-4 space-y-3 border-l-2 border-muted pl-4">
+                              {replies.get(comment.id)?.map((reply) => (
+                                <div key={reply.id} className="flex items-start gap-2">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={reply.profiles?.avatar_url || undefined} />
+                                    <AvatarFallback className="text-xs">{getInitials(reply.profiles)}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-sm">{getDisplayName(reply.profiles)}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm">{reply.content}</p>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Reply Input */}
+                              {currentUserId && (
+                                <div className="flex gap-2 mt-2">
+                                  <Textarea
+                                    placeholder="Write a reply..."
+                                    value={replyText.get(comment.id) || ""}
+                                    onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
+                                    className="min-h-[60px] text-sm"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleSubmitReply(comment.id)}
+                                    disabled={!replyText.get(comment.id)?.trim()}
+                                  >
+                                    <Send size={14} />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
-          </>
+          </div>
         )}
       </div>
       {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={gameData?.is_finished} />}
