@@ -97,8 +97,8 @@ export function UmbriagioShareDialogWithScorecard({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 overflow-hidden">
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button]:hidden">
         <DialogHeader className="p-4 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-primary" />
