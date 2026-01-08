@@ -1,21 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Trophy, DollarSign, History, ChevronDown, ChevronUp } from "lucide-react";
+import { TopNavBar } from "@/components/TopNavBar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
+import { calculatePayout, normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { UmbriagioShareDialogWithScorecard } from "@/components/UmbriagioShareDialogWithScorecard";
-import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
-import { Card } from "@/components/ui/card";
-import { ChevronDown } from "lucide-react";
-import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface CourseHole {
   hole_number: number;
@@ -32,11 +26,9 @@ export default function UmbriagioSummary() {
   const [holes, setHoles] = useState<UmbriagioHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showHoleDetails, setShowHoleDetails] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(true);
   const [currentUserTeam, setCurrentUserTeam] = useState<'A' | 'B' | null>(null);
-  const [expandedTeam, setExpandedTeam] = useState<string | null>('A');
-  const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
-  const [currentHole, setCurrentHole] = useState(1);
 
   useEffect(() => {
     if (gameId) {
@@ -117,7 +109,6 @@ export default function UmbriagioSummary() {
       }));
       
       setHoles(typedHoles);
-      setCurrentHole(typedHoles.length > 0 ? typedHoles.length : 1);
 
       if (!typedGame.is_finished && typedHoles.length === typedGame.holes_played) {
         await finishGame(typedGame, typedHoles);
@@ -130,7 +121,6 @@ export default function UmbriagioSummary() {
   };
 
   const finishGame = async (gameData: UmbriagioGame, holesData: UmbriagioHole[]) => {
-    const { calculatePayout } = await import("@/utils/umbriagioScoring");
     const finalStake = gameData.stake_per_point;
 
     const { winner, payout } = calculatePayout(
@@ -163,83 +153,6 @@ export default function UmbriagioSummary() {
     }
   };
 
-  // Create map for hole data lookup
-  const holesMap = useMemo(() => new Map(holes.map(h => [h.hole_number, h])), [holes]);
-  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
-  const backNine = courseHoles.filter(h => h.hole_number > 9);
-  const totalHoles = game?.holes_played || 18;
-
-  const getPlayerScore = (holeNumber: number, playerId: string): number | null => {
-    const hole = holesMap.get(holeNumber);
-    if (!hole) return null;
-    switch (playerId) {
-      case 'team_a_player_1': return hole.team_a_player_1_score;
-      case 'team_a_player_2': return hole.team_a_player_2_score;
-      case 'team_b_player_1': return hole.team_b_player_1_score;
-      case 'team_b_player_2': return hole.team_b_player_2_score;
-      default: return null;
-    }
-  };
-
-  const getPlayerPointsForHole = (holeNumber: number, playerId: string): number | null => {
-    const hole = holesMap.get(holeNumber);
-    if (!hole) return null;
-    if (playerId.startsWith('team_a')) return hole.team_a_hole_points;
-    if (playerId.startsWith('team_b')) return hole.team_b_hole_points;
-    return null;
-  };
-
-  const allPlayers = useMemo(() => {
-    if (!game) return [];
-    return [
-      { id: 'team_a_player_1', name: game.team_a_player_1 },
-      { id: 'team_a_player_2', name: game.team_a_player_2 },
-      { id: 'team_b_player_1', name: game.team_b_player_1 },
-      { id: 'team_b_player_2', name: game.team_b_player_2 },
-    ];
-  }, [game]);
-
-  const getPlayerStats = (playerId: string) => {
-    let totalScore = 0;
-    let totalPar = 0;
-    let holesPlayed = 0;
-    let totalPoints = 0;
-
-    holes.forEach(hole => {
-      const score = getPlayerScore(hole.hole_number, playerId);
-      if (score && score > 0) {
-        totalScore += score;
-        totalPar += hole.par;
-        holesPlayed++;
-      }
-      const points = getPlayerPointsForHole(hole.hole_number, playerId);
-      if (points !== null) {
-        totalPoints += points;
-      }
-    });
-
-    return { totalScore, totalPar, holesPlayed, totalPoints };
-  };
-
-  const rankedPlayers = useMemo(() => {
-    const playersWithStats = allPlayers.map(player => ({
-      ...player,
-      stats: getPlayerStats(player.id)
-    }));
-    return playersWithStats.sort((a, b) => b.stats.totalPoints - a.stats.totalPoints);
-  }, [allPlayers, holes]);
-
-  const getPlayerPositionLabel = (playerId: string): string => {
-    const index = rankedPlayers.findIndex(p => p.id === playerId);
-    if (index === -1) return "0";
-    const playerPoints = rankedPlayers[index].stats.totalPoints;
-    const playersAhead = rankedPlayers.filter(p => p.stats.totalPoints > playerPoints).length;
-    const position = playersAhead + 1;
-    const samePointsCount = rankedPlayers.filter(p => p.stats.totalPoints === playerPoints).length;
-    if (samePointsCount > 1) return `T${position}`;
-    return `${position}`;
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -256,87 +169,20 @@ export default function UmbriagioSummary() {
     );
   }
 
-  const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
-  const leader = game.team_a_total_points > game.team_b_total_points ? 'A' : game.team_b_total_points > game.team_a_total_points ? 'B' : null;
-
-  const renderPlayerCard = (player: { id: string; name: string }, positionLabel: string) => {
-    const isExpanded = expandedPlayer === player.id;
-    const stats = getPlayerStats(player.id);
-    const isLeader = positionLabel === '1';
-
-    return (
-      <Card key={player.id} className="overflow-hidden pointer-events-none">
-        <div className="bg-card border-b border-border p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ChevronDown 
-                size={20} 
-                className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
-              />
-              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
-                isLeader ? 'bg-amber-500/20 text-amber-600' : ''
-              }`}>
-                {positionLabel}
-              </div>
-              <div>
-                <div className="text-xl font-bold">{player.name}</div>
-                <div className="text-sm text-muted-foreground">
-                  {stats.holesPlayed} holes played
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold">{stats.totalPoints}</div>
-              <div className="text-sm text-muted-foreground">POINTS</div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
+  const getWinnerName = () => {
+    if (game.winning_team === 'A') return `${game.team_a_player_1} & ${game.team_a_player_2}`;
+    if (game.winning_team === 'B') return `${game.team_b_player_1} & ${game.team_b_player_2}`;
+    return undefined;
   };
 
-  const renderTeamCard = (team: 'A' | 'B') => {
-    const isExpanded = expandedTeam === team;
-    const teamName = team === 'A' ? 'Team A' : 'Team B';
-    const teamPlayers = team === 'A' 
-      ? `${game.team_a_player_1} & ${game.team_a_player_2}`
-      : `${game.team_b_player_1} & ${game.team_b_player_2}`;
-    const teamPoints = team === 'A' ? normalizedA : normalizedB;
-    const isLeading = leader === team;
-    const teamColor = team === 'A' ? 'text-blue-500' : 'text-red-500';
-
-    return (
-      <Card key={team} className="overflow-hidden pointer-events-none">
-        <div className="bg-card border-b border-border p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ChevronDown 
-                size={20} 
-                className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
-              />
-              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
-                isLeading ? 'bg-amber-500/20 text-amber-600' : ''
-              }`}>
-                {isLeading ? '1' : '2'}
-              </div>
-              <div>
-                <div className={`text-xl font-bold ${teamColor}`}>{teamName}</div>
-                <div className="text-sm text-muted-foreground">{teamPlayers}</div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className={`text-3xl font-bold ${teamColor}`}>{teamPoints}</div>
-              <div className="text-sm text-muted-foreground">POINTS</div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
+  const getFinalStake = () => {
+    return game.stake_per_point;
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-background">
-      {/* Completion Modal */}
+    <div className="min-h-screen pb-20 bg-gradient-to-b from-background to-muted/20">
+      <TopNavBar />
+      
       <UmbriagioShareDialogWithScorecard
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
@@ -347,51 +193,193 @@ export default function UmbriagioSummary() {
         onContinue={() => navigate("/rounds-play")}
       />
 
-      {/* Spectator Mode Background - Read-only in-round view */}
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Hole {currentHole} of {totalHoles}</span>
-          </div>
-          <div className="text-center">
-            <h2 className="text-lg font-bold">{game.course_name}</h2>
-            <p className="text-sm opacity-90">Umbriago</p>
-          </div>
-          <div className="w-16" />
-        </div>
-        
-        {/* Score summary */}
-        <div className="flex justify-center gap-6 mt-4">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-200">{normalizedA}</div>
-            <div className="text-xs opacity-75">Team A</div>
-          </div>
-          <div className="text-2xl font-bold self-center opacity-50">vs</div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-red-200">{normalizedB}</div>
-            <div className="text-xs opacity-75">Team B</div>
+      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/rounds-play')}>
+            <ArrowLeft size={20} />
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold">Umbriago Summary</h1>
+            <p className="text-sm text-muted-foreground">{game.course_name}</p>
           </div>
         </div>
+
+        {/* Winner Banner */}
+        {game.is_finished && (
+          <Card className={`${
+            game.winning_team === 'A' ? 'bg-blue-500/20 border-blue-500' :
+            game.winning_team === 'B' ? 'bg-red-500/20 border-red-500' :
+            'bg-muted'
+          }`}>
+            <CardContent className="p-6 text-center">
+              <Trophy className="mx-auto mb-2 text-yellow-500" size={40} />
+              <h2 className="text-2xl font-bold">
+                {game.winning_team === 'TIE' ? 'Tie Game!' : `Team ${game.winning_team} Wins!`}
+              </h2>
+              {game.winning_team !== 'TIE' && (
+                <p className="text-lg mt-2">
+                  {game.winning_team === 'A' 
+                    ? `${game.team_a_player_1} & ${game.team_a_player_2}`
+                    : `${game.team_b_player_1} & ${game.team_b_player_2}`}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Final Score */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Final Score</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
+              return (
+                <div className="flex justify-between items-center">
+                  <div className="text-center flex-1">
+                    <div className="text-sm text-muted-foreground mb-1">Team A</div>
+                    <div className="text-sm text-muted-foreground">
+                      {game.team_a_player_1} & {game.team_a_player_2}
+                    </div>
+                    <div className="text-4xl font-bold text-blue-500 mt-2">{normalizedA}</div>
+                  </div>
+                  <div className="text-2xl font-bold text-muted-foreground">vs</div>
+                  <div className="text-center flex-1">
+                    <div className="text-sm text-muted-foreground mb-1">Team B</div>
+                    <div className="text-sm text-muted-foreground">
+                      {game.team_b_player_1} & {game.team_b_player_2}
+                    </div>
+                    <div className="text-4xl font-bold text-red-500 mt-2">{normalizedB}</div>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Payout */}
+        {game.is_finished && game.final_payout !== null && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign size={20} className="text-primary" />
+                Payout
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Stake per point:</span>
+                <span className="font-semibold">{getFinalStake()} SEK</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Payout mode:</span>
+                <span className="font-semibold capitalize">{game.payout_mode}</span>
+              </div>
+              <div className="border-t pt-3">
+                <div className="flex justify-between text-lg">
+                  <span className="font-semibold">
+                    {game.winning_team === 'TIE' ? 'No payout' : `Team ${game.winning_team === 'A' ? 'B' : 'A'} pays:`}
+                  </span>
+                  <span className="font-bold text-primary">{game.final_payout} SEK</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Roll History */}
+        {game.roll_history.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History size={20} className="text-primary" />
+                Roll History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {game.roll_history.map((roll, idx) => (
+                  <div key={idx} className="flex justify-between text-sm p-2 bg-muted rounded-lg">
+                    <span>Team {roll.team} - Hole {roll.hole}</span>
+                    <span>
+                      Points: {roll.points_before} → {roll.points_after}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hole-by-Hole Details */}
+        <Collapsible open={showHoleDetails} onOpenChange={setShowHoleDetails}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer">
+                <CardTitle className="flex items-center justify-between">
+                  <span>Hole-by-Hole Summary</span>
+                  {showHoleDetails ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3">
+                {holes.map((hole) => (
+                  <div key={hole.hole_number} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">Hole {hole.hole_number}</span>
+                      <div className="flex items-center gap-2">
+                        {hole.is_umbriago && (
+                          <span className="text-xs bg-yellow-500/20 text-yellow-600 px-2 py-0.5 rounded-full">
+                            UMBRIAGO
+                          </span>
+                        )}
+                        {hole.multiplier > 1 && (
+                          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                            ×{hole.multiplier}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="text-muted-foreground">Par {hole.par}</div>
+                      <div className="text-right">
+                        <span className="text-blue-500 font-semibold">{hole.team_a_hole_points}</span>
+                        {' - '}
+                        <span className="text-red-500 font-semibold">{hole.team_b_hole_points}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                      <div>Team Low: {hole.team_low_winner || 'Tie'}</div>
+                      <div>Individual: {hole.individual_low_winner || 'Tie'}</div>
+                      <div>Closest: {hole.closest_to_pin_winner || 'Tie'}</div>
+                      <div>Birdie: {hole.birdie_eagle_winner || 'Tie'}</div>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground pt-1 border-t">
+                      Running: 
+                      <span className="text-blue-500 ml-1">{hole.team_a_running_total}</span>
+                      {' - '}
+                      <span className="text-red-500">{hole.team_b_running_total}</span>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Continue Playing */}
+        {!game.is_finished && holes.length < game.holes_played && (
+          <Button onClick={() => navigate(`/umbriago/${game.id}/play`)} className="w-full" size="lg">
+            Continue Playing
+          </Button>
+        )}
       </div>
-
-      {/* Read-only leaderboard content */}
-      <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {/* Team Cards */}
-        {renderTeamCard('A')}
-        {renderTeamCard('B')}
-
-        {/* Individual Player Cards */}
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-3">Individual Standings</h3>
-          <div className="space-y-3">
-            {rankedPlayers.map(player => renderPlayerCard(player, getPlayerPositionLabel(player.id)))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Tab Bar - Spectator mode (no Enter Score tab) */}
-      <UmbriagioBottomTabBar gameId={gameId!} isSpectator={true} />
     </div>
   );
 }

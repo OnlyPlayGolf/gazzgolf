@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, ArrowLeft } from "lucide-react";
+import { ThumbsUp, MessageSquare, BarChart3, ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RoundCompletionModal } from "@/components/RoundCompletionModal";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
@@ -63,7 +63,6 @@ const RoundSummary = () => {
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   const [courseName, setCourseName] = useState<string>("");
-  const [currentHole, setCurrentHole] = useState(1);
 
   useEffect(() => {
     fetchSummary();
@@ -306,12 +305,17 @@ const RoundSummary = () => {
             const positionLabel = getPositionLabel(scoreToPar, hasConceded);
 
             return (
-              <Card key={player.id} className="overflow-hidden pointer-events-none">
+              <Card key={player.id} className="overflow-hidden">
                 <div 
-                  className="bg-card border-b border-border p-4"
+                  className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
+                      <ChevronDown 
+                        size={20} 
+                        className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+                      />
                       <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
                         {positionLabel}
                       </div>
@@ -331,7 +335,7 @@ const RoundSummary = () => {
                   </div>
                 </div>
 
-                {true && (
+                {isExpanded && (
                   <>
                     {/* Front 9 */}
                     <div className="w-full">
@@ -511,7 +515,23 @@ const RoundSummary = () => {
                       </div>
                     )}
 
-                    {/* Action buttons hidden in spectator mode */}
+                    {/* Action Buttons - Disabled in spectator mode */}
+                    <div className="border-t p-4">
+                      <div className="flex items-center justify-around opacity-50">
+                        <Button variant="ghost" size="sm" className="flex-col h-auto gap-1 pointer-events-none">
+                          <ThumbsUp size={20} className="text-primary" />
+                          <span className="text-xs">Like</span>
+                        </Button>
+                        <Button variant="ghost" size="sm" className="flex-col h-auto gap-1 pointer-events-none">
+                          <MessageSquare size={20} className="text-primary" />
+                          <span className="text-xs">Comment to<br/>Game Feed</span>
+                        </Button>
+                        <Button variant="ghost" size="sm" className="flex-col h-auto gap-1 pointer-events-none">
+                          <BarChart3 size={20} className="text-primary" />
+                          <span className="text-xs">Statistics</span>
+                        </Button>
+                      </div>
+                    </div>
                   </>
                 )}
               </Card>
