@@ -8,6 +8,7 @@ import { UmbriagioShareDialogWithScorecard } from "@/components/UmbriagioShareDi
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { UmbriagioSharedScorecard } from "@/components/UmbriagioSharedScorecard";
 import { Card } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 
 interface CourseHole {
   hole_number: number;
@@ -194,9 +195,17 @@ export default function UmbriagioSummary() {
 
       {/* Header - Matches UmbriagioLeaderboard exactly */}
       <div className="bg-primary text-primary-foreground p-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold">{game.course_name}</h2>
-          <p className="text-sm opacity-90">Umbriago</p>
+        <div className="relative flex items-center justify-center">
+          <button
+            onClick={() => navigate('/rounds')}
+            className="absolute left-0 p-2 -ml-2 hover:bg-primary-foreground/10 rounded-full transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="text-center">
+            <h2 className="text-lg font-bold">{game.course_name}</h2>
+            <p className="text-sm opacity-90">Umbriago</p>
+          </div>
         </div>
       </div>
 
