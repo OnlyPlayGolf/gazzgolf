@@ -123,8 +123,8 @@ export function RoundCompletionModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
         {/* Green Header */}
         <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
           <div className="text-center mb-3">
