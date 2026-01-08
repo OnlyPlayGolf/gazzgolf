@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Share2, Loader2 } from "lucide-react";
+import { Share2, Loader2, Trophy } from "lucide-react";
 import { UmbriagioGame, UmbriagioHole } from "@/types/umbriago";
 import { UmbriagioScorecard } from "@/components/UmbriagioScorecard";
 import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";

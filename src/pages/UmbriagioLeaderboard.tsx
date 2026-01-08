@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { UmbriagioSharedScorecard } from "@/components/UmbriagioSharedScorecard";
 
 interface CourseHole {
   hole_number: number;
@@ -679,10 +680,59 @@ export default function UmbriagioLeaderboard() {
             {rankedPlayers.map((player, index) => renderPlayerCard(player, getPlayerPositionLabel(player.id)))}
           </>
         ) : (
-          // Show team scorecards when not rotating
+          // Show shared team scorecard when not rotating
           <>
-            {renderTeamCard('A')}
-            {renderTeamCard('B')}
+            {/* Team Standings */}
+            <div className="space-y-2">
+              {(['A', 'B'] as const).map(team => {
+                const isLeader = leader === team;
+                const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
+                const totalPoints = team === 'A' ? normalizedA : normalizedB;
+                const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
+                const player1 = team === 'A' ? game.team_a_player_1 : game.team_b_player_1;
+                const player2 = team === 'A' ? game.team_a_player_2 : game.team_b_player_2;
+                const rawPoints = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
+                const otherRawPoints = team === 'A' ? game.team_b_total_points : game.team_a_total_points;
+                const positionLabel = rawPoints > otherRawPoints ? '1' : rawPoints < otherRawPoints ? '2' : 'T1';
+
+                return (
+                  <Card key={team} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
+                          isLeader ? 'bg-amber-500/20 text-amber-600' : ''
+                        }`}>
+                          {positionLabel}
+                        </div>
+                        <div>
+                          <div className="text-xl font-bold">{teamName}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {player1} & {player2}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold">
+                          {totalPoints}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {isLeader ? 'LEADING' : 'POINTS'}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+            
+            {/* Shared Scorecard */}
+            {courseHoles.length > 0 && (
+              <UmbriagioSharedScorecard
+                game={game}
+                holes={holes}
+                courseHoles={courseHoles}
+              />
+            )}
             
             {leader === null && game.team_a_total_points === game.team_b_total_points && holes.length > 0 && (
               <div className="text-center text-muted-foreground py-2">
