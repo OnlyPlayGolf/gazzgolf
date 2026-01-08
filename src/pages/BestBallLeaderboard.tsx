@@ -219,32 +219,34 @@ export default function BestBallLeaderboard() {
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="border-t">
+            <div className="p-2">
               {/* Front 9 */}
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="border rounded-lg overflow-hidden w-full">
+                <Table className="table-fixed w-full">
                   <TableHeader>
                     <TableRow className="bg-primary/5">
-                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10 w-[40px]">Hole</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
                       {frontNine.map(hole => (
-                        <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[28px]">
+                        <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
                           {hole.hole_number}
                         </TableHead>
                       ))}
-                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Out</TableHead>
+                      {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10"></TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
                       {frontNine.map(hole => (
-                        <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                        <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
                           {hole.par}
                         </TableCell>
                       ))}
-                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                         {frontNinePar}
                       </TableCell>
+                      {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                     </TableRow>
                     {/* Player Score Rows */}
                     {(team === 'A' ? game.team_a_players : game.team_b_players).map((player, playerIndex) => {
@@ -256,7 +258,7 @@ export default function BestBallLeaderboard() {
                       
                       return (
                         <TableRow key={player.odId || playerIndex} className="text-muted-foreground">
-                          <TableCell className="text-xs px-1 py-1 sticky left-0 bg-background z-10 truncate max-w-[50px]">
+                          <TableCell className="text-[10px] px-0.5 py-1 w-[44px] truncate">
                             {player.displayName.split(' ')[0]}
                           </TableCell>
                           {frontNine.map(hole => {
@@ -268,7 +270,7 @@ export default function BestBallLeaderboard() {
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
-                                className={`text-center text-xs px-1 py-1 ${
+                                className={`text-center text-[10px] px-0 py-1 ${
                                   isLowest ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold' : ''
                                 }`}
                               >
@@ -276,28 +278,30 @@ export default function BestBallLeaderboard() {
                               </TableCell>
                             );
                           })}
-                          <TableCell className="text-center text-xs px-1 py-1 bg-muted">
+                          <TableCell className="text-center text-[10px] px-0 py-1 bg-muted">
                             {playerTotals || ''}
                           </TableCell>
+                          {backNine.length > 0 && <TableCell className="text-center text-[10px] px-0 py-1 bg-muted"></TableCell>}
                         </TableRow>
                       );
                     })}
                     <TableRow className="font-bold">
-                      <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                      <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
                       {frontNine.map(hole => {
                         const score = getTeamBestScore(hole.hole_number, team);
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className="text-center font-bold text-xs px-1 py-1.5"
+                            className="text-center font-bold text-[10px] px-0 py-1"
                           >
                             {score || ''}
                           </TableCell>
                         );
                       })}
-                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                         {frontNineTotal || ''}
                       </TableCell>
+                      {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -305,34 +309,43 @@ export default function BestBallLeaderboard() {
 
               {/* Back 9 */}
               {backNine.length > 0 && (
-                <div className="border-t">
-                  <Table>
+                <div className="border rounded-lg overflow-hidden w-full mt-2">
+                  <Table className="table-fixed w-full">
                     <TableHeader>
                       <TableRow className="bg-primary/5">
-                        <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10 w-[40px]">Hole</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
                         {backNine.map(hole => (
-                          <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[28px]">
+                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
                             {hole.hole_number}
                           </TableHead>
                         ))}
-                        <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">In</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Tot</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       <TableRow>
-                        <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
                         {backNine.map(hole => (
-                          <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                          <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
                             {hole.par}
                           </TableCell>
                         ))}
-                        <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {backNinePar}
+                        </TableCell>
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                          {frontNinePar + backNinePar}
                         </TableCell>
                       </TableRow>
                       {/* Player Score Rows */}
                       {(team === 'A' ? game.team_a_players : game.team_b_players).map((player, playerIndex) => {
-                        const playerTotals = backNine.reduce((sum, h) => {
+                        const frontPlayerTotals = frontNine.reduce((sum, h) => {
+                          const scores = getPlayerScoresForHole(h.hole_number, team);
+                          const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                          return sum + (playerScore?.grossScore || 0);
+                        }, 0);
+                        const backPlayerTotals = backNine.reduce((sum, h) => {
                           const scores = getPlayerScoresForHole(h.hole_number, team);
                           const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
                           return sum + (playerScore?.grossScore || 0);
@@ -340,7 +353,7 @@ export default function BestBallLeaderboard() {
                         
                         return (
                           <TableRow key={player.odId || playerIndex} className="text-muted-foreground">
-                            <TableCell className="text-xs px-1 py-1 sticky left-0 bg-background z-10 truncate max-w-[50px]">
+                            <TableCell className="text-[10px] px-0.5 py-1 w-[44px] truncate">
                               {player.displayName.split(' ')[0]}
                             </TableCell>
                             {backNine.map(hole => {
@@ -352,7 +365,7 @@ export default function BestBallLeaderboard() {
                               return (
                                 <TableCell 
                                   key={hole.hole_number} 
-                                  className={`text-center text-xs px-1 py-1 ${
+                                  className={`text-center text-[10px] px-0 py-1 ${
                                     isLowest ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold' : ''
                                   }`}
                                 >
@@ -360,27 +373,33 @@ export default function BestBallLeaderboard() {
                                 </TableCell>
                               );
                             })}
-                            <TableCell className="text-center text-xs px-1 py-1 bg-muted">
-                              {playerTotals || ''}
+                            <TableCell className="text-center text-[10px] px-0 py-1 bg-muted">
+                              {backPlayerTotals || ''}
+                            </TableCell>
+                            <TableCell className="text-center text-[10px] px-0 py-1 bg-muted">
+                              {(frontPlayerTotals + backPlayerTotals) || ''}
                             </TableCell>
                           </TableRow>
                         );
                       })}
                       <TableRow className="font-bold">
-                        <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
                         {backNine.map(hole => {
                           const score = getTeamBestScore(hole.hole_number, team);
                           return (
                             <TableCell 
                               key={hole.hole_number} 
-                              className="text-center font-bold text-xs px-1 py-1.5"
+                              className="text-center font-bold text-[10px] px-0 py-1"
                             >
                               {score || ''}
                             </TableCell>
                           );
                         })}
-                        <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {backNineTotal || ''}
+                        </TableCell>
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                          {(frontNineTotal + backNineTotal) || ''}
                         </TableCell>
                       </TableRow>
                     </TableBody>
