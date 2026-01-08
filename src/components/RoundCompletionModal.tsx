@@ -101,7 +101,6 @@ export function RoundCompletionModal({
 
   const handleContinue = () => {
     onOpenChange(false);
-    onContinue();
   };
 
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
