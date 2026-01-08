@@ -199,81 +199,104 @@ export default function MatchPlayLeaderboard() {
       return displayScore;
     };
 
-    const renderNine = (nineHoles: CourseHole[]) => {
+    const renderNine = (nineHoles: CourseHole[], isBackNine: boolean = false) => {
       if (nineHoles.length === 0) return null;
 
+      const hasBackNine = backNine.length > 0;
+      const nineLabel = isBackNine ? 'In' : 'Out';
+
       return (
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="text-left font-bold text-[10px] px-1 py-1.5 sticky left-0 bg-muted/50 z-10 w-[50px]">HOLE</TableHead>
-              {nineHoles.map(hole => (
-                <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0.5 py-1.5 w-[28px]">
-                  {hole.hole_number}
+        <div className="w-full">
+          <Table className="w-full table-fixed">
+            <TableHeader>
+              <TableRow className="bg-primary/5">
+                <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+                {nineHoles.map(hole => (
+                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                    {hole.hole_number}
+                  </TableHead>
+                ))}
+                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">{nineLabel}</TableHead>
+                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+                  {isBackNine ? 'Tot' : (hasBackNine ? '' : 'Tot')}
                 </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium text-muted-foreground text-[10px] px-1 py-1 sticky left-0 bg-background z-10">PAR</TableCell>
-              {nineHoles.map(hole => (
-                <TableCell key={hole.hole_number} className="text-center text-[10px] px-0.5 py-1">
-                  {hole.par}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
+                {nineHoles.map(hole => (
+                  <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                    {hole.par}
+                  </TableCell>
+                ))}
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                  {nineHoles.reduce((sum, h) => sum + h.par, 0)}
                 </TableCell>
-              ))}
-            </TableRow>
-
-            <TableRow>
-              <TableCell className="px-1 py-1 sticky left-0 bg-background z-10">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>
-                  <span className="font-medium text-[10px] truncate text-blue-500">{game.player_1.split(' ')[0]}</span>
-                </div>
-              </TableCell>
-              {nineHoles.map(hole => (
-                <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-0.5 py-1">
-                  {renderScoreCell(hole.hole_number, 1)}
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                  {isBackNine ? courseHoles.reduce((sum, h) => sum + h.par, 0) : (hasBackNine ? '' : nineHoles.reduce((sum, h) => sum + h.par, 0))}
                 </TableCell>
-              ))}
-            </TableRow>
+              </TableRow>
 
-            <TableRow className="bg-muted/30">
-              <TableCell className="font-medium text-muted-foreground text-[10px] px-1 py-1 sticky left-0 bg-muted/30 z-10">Score</TableCell>
-              {nineHoles.map(hole => {
-                const holeData = holesMap.get(hole.hole_number);
-                if (!holeData) {
+              <TableRow>
+                <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate text-blue-500">
+                  {game.player_1.split(' ')[0]}
+                </TableCell>
+                {nineHoles.map(hole => (
+                  <TableCell key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                    {renderScoreCell(hole.hole_number, 1)}
+                  </TableCell>
+                ))}
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                  {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 1) || 0), 0) || ''}
+                </TableCell>
+                <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                  {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_1_gross_score || 0), 0) || '') : ''}
+                </TableCell>
+              </TableRow>
+
+              <TableRow className="bg-muted/30">
+                <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-muted/30">Score</TableCell>
+                {nineHoles.map(hole => {
+                  const holeData = holesMap.get(hole.hole_number);
+                  if (!holeData) {
+                    return (
+                      <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                      </TableCell>
+                    );
+                  }
+                  const status = getMatchStatusDisplay(hole.hole_number);
                   return (
-                    <TableCell key={hole.hole_number} className="text-center text-[9px] px-0.5 py-0.5">
+                    <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                      <span className={`inline-flex items-center justify-center px-0.5 py-0 rounded text-[8px] font-bold ${status.color}`}>
+                        {status.text}
+                      </span>
                     </TableCell>
                   );
-                }
-                const status = getMatchStatusDisplay(hole.hole_number);
-                return (
-                  <TableCell key={hole.hole_number} className="text-center text-[9px] px-0 py-0.5">
-                    <span className={`inline-flex items-center justify-center px-1 py-0.5 rounded text-[8px] font-bold ${status.color}`}>
-                      {status.text}
-                    </span>
-                  </TableCell>
-                );
-              })}
-            </TableRow>
+                })}
+                <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                <TableCell className="text-center bg-primary/10 text-[10px] px-0 py-1"></TableCell>
+              </TableRow>
 
-            <TableRow>
-              <TableCell className="px-1 py-1 sticky left-0 bg-background z-10">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-destructive flex-shrink-0"></span>
-                  <span className="font-medium text-[10px] truncate text-destructive">{game.player_2.split(' ')[0]}</span>
-                </div>
-              </TableCell>
-              {nineHoles.map(hole => (
-                <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-0.5 py-1">
-                  {renderScoreCell(hole.hole_number, 2)}
+              <TableRow>
+                <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate text-destructive">
+                  {game.player_2.split(' ')[0]}
                 </TableCell>
-              ))}
-            </TableRow>
-          </TableBody>
-        </Table>
+                {nineHoles.map(hole => (
+                  <TableCell key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                    {renderScoreCell(hole.hole_number, 2)}
+                  </TableCell>
+                ))}
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                  {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 2) || 0), 0) || ''}
+                </TableCell>
+                <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                  {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_2_gross_score || 0), 0) || '') : ''}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       );
     };
 
@@ -298,13 +321,15 @@ export default function MatchPlayLeaderboard() {
         </div>
 
         {/* Scorecard */}
-        {renderNine(frontNine)}
-        
-        {backNine.length > 0 && (
-          <div className="border-t">
-            {renderNine(backNine)}
-          </div>
-        )}
+        <div className="border rounded-lg overflow-hidden w-full m-0">
+          {renderNine(frontNine, false)}
+          
+          {backNine.length > 0 && (
+            <div className="border-t">
+              {renderNine(backNine, true)}
+            </div>
+          )}
+        </div>
 
         {/* Action Buttons */}
         <div className="border-t p-4">

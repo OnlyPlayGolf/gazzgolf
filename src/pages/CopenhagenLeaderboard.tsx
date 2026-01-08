@@ -184,65 +184,78 @@ export default function CopenhagenLeaderboard() {
         {isExpanded && courseHoles.length > 0 && (
           <>
             {/* Front 9 */}
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="w-full">
+              <Table className="w-full table-fixed">
                 <TableHeader>
                   <TableRow className="bg-primary/5">
-                    <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
                     {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
                         {hole.hole_number}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Out</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+                      {backNine.length > 0 ? '' : 'Tot'}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">HCP</TableCell>
                     {frontNine.map(hole => (
-                      <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                      <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
                         {hole.stroke_index}
                       </TableCell>
                     ))}
-                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                    <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                    <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
                     {frontNine.map(hole => (
-                      <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                      <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
                         {hole.par}
                       </TableCell>
                     ))}
-                    <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {frontNine.reduce((sum, h) => sum + h.par, 0)}
+                    </TableCell>
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                      {backNine.length > 0 ? '' : frontNine.reduce((sum, h) => sum + h.par, 0)}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
                     {frontNine.map(hole => {
                       const score = getPlayerGrossScore(hole.hole_number, player.index);
                       return (
-                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                        <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
                           {score === -1 ? '–' : score !== null ? score : ''}
                         </TableCell>
                       );
                     })}
-                    <TableCell className="text-center bg-muted text-xs px-1 py-1.5">
+                    <TableCell className="text-center bg-muted text-[10px] px-0 py-1">
                       {frontNine.reduce((sum, h) => {
                         const s = getPlayerGrossScore(h.hole_number, player.index);
                         return sum + (s !== null && s > 0 ? s : 0);
                       }, 0) || ''}
                     </TableCell>
+                    <TableCell className="text-center bg-muted text-[10px] px-0 py-1">
+                      {backNine.length > 0 ? '' : (frontNine.reduce((sum, h) => {
+                        const s = getPlayerGrossScore(h.hole_number, player.index);
+                        return sum + (s !== null && s > 0 ? s : 0);
+                      }, 0) || '')}
+                    </TableCell>
                   </TableRow>
                   <TableRow className="font-bold">
-                    <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
+                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Points</TableCell>
                     {frontNine.map(hole => {
                       const points = getPlayerPoints(hole.hole_number, player.index);
                       return (
                         <TableCell 
                           key={hole.hole_number} 
-                          className={`text-center font-bold text-xs px-1 py-1.5 ${
+                          className={`text-center font-bold text-[10px] px-0 py-1 ${
                             points !== null && points >= 6 ? 'text-emerald-600' : 
                             points !== null && points >= 4 ? 'text-blue-600' : 
                             points === 0 ? 'text-red-600' : ''
@@ -252,8 +265,11 @@ export default function CopenhagenLeaderboard() {
                         </TableCell>
                       );
                     })}
-                    <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {frontNine.reduce((sum, h) => sum + (getPlayerPoints(h.hole_number, player.index) || 0), 0) || ''}
+                    </TableCell>
+                    <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                      {backNine.length > 0 ? '' : player.points}
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -262,65 +278,77 @@ export default function CopenhagenLeaderboard() {
 
             {/* Back 9 */}
             {backNine.length > 0 && (
-              <div className="overflow-x-auto border-t">
-                <Table>
+              <div className="w-full border-t">
+                <Table className="w-full table-fixed">
                   <TableHeader>
                     <TableRow className="bg-primary/5">
-                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
                       {backNine.map(hole => (
-                        <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                        <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
                           {hole.hole_number}
                         </TableHead>
                       ))}
-                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">In</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Tot</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">HCP</TableCell>
                       {backNine.map(hole => (
-                        <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                        <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
                           {hole.stroke_index}
                         </TableCell>
                       ))}
-                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
+                      <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                      <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
                       {backNine.map(hole => (
-                        <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
+                        <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
                           {hole.par}
                         </TableCell>
                       ))}
-                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                         {backNine.reduce((sum, h) => sum + h.par, 0)}
+                      </TableCell>
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                        {courseHoles.reduce((sum, h) => sum + h.par, 0)}
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
                       {backNine.map(hole => {
                         const score = getPlayerGrossScore(hole.hole_number, player.index);
                         return (
-                          <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
+                          <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
                             {score === -1 ? '–' : score !== null ? score : ''}
                           </TableCell>
                         );
                       })}
-                      <TableCell className="text-center bg-muted text-xs px-1 py-1.5">
+                      <TableCell className="text-center bg-muted text-[10px] px-0 py-1">
                         {backNine.reduce((sum, h) => {
                           const s = getPlayerGrossScore(h.hole_number, player.index);
                           return sum + (s !== null && s > 0 ? s : 0);
                         }, 0) || ''}
                       </TableCell>
+                      <TableCell className="text-center bg-muted text-[10px] px-0 py-1">
+                        {holes.reduce((sum, h) => {
+                          const holeIdx = player.index;
+                          const s = holeIdx === 1 ? h.player_1_gross_score : holeIdx === 2 ? h.player_2_gross_score : h.player_3_gross_score;
+                          return sum + (s !== null && s > 0 ? s : 0);
+                        }, 0) || ''}
+                      </TableCell>
                     </TableRow>
                     <TableRow className="font-bold">
-                      <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Points</TableCell>
+                      <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Points</TableCell>
                       {backNine.map(hole => {
                         const points = getPlayerPoints(hole.hole_number, player.index);
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className={`text-center font-bold text-xs px-1 py-1.5 ${
+                            className={`text-center font-bold text-[10px] px-0 py-1 ${
                               points !== null && points >= 6 ? 'text-emerald-600' : 
                               points !== null && points >= 4 ? 'text-blue-600' : 
                               points === 0 ? 'text-red-600' : ''
@@ -330,8 +358,11 @@ export default function CopenhagenLeaderboard() {
                           </TableCell>
                         );
                       })}
-                      <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                         {backNine.reduce((sum, h) => sum + (getPlayerPoints(h.hole_number, player.index) || 0), 0) || ''}
+                      </TableCell>
+                      <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                        {player.points}
                       </TableCell>
                     </TableRow>
                   </TableBody>
