@@ -93,7 +93,6 @@ export function UmbriagioShareDialogWithScorecard({
 
   const handleContinue = () => {
     onOpenChange(false);
-    onContinue();
   };
 
   return (
