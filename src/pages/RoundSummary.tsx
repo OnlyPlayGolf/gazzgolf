@@ -15,6 +15,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ArrowLeft, Calendar, MapPin, Edit, Trash2, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -37,6 +45,18 @@ interface Summary {
   total_penalties: number;
 }
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
+
+interface HoleScore {
+  hole_number: number;
+  score: number;
+  par: number;
+}
+
 const RoundSummary = () => {
   const { roundId } = useParams();
   const navigate = useNavigate();
@@ -46,6 +66,8 @@ const RoundSummary = () => {
   const [loading, setLoading] = useState(true);
   const [roundOrigin, setRoundOrigin] = useState<string | null>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
+  const [holeScores, setHoleScores] = useState<Map<number, number>>(new Map());
 
   useEffect(() => {
     fetchSummary();
@@ -65,7 +87,7 @@ const RoundSummary = () => {
       // Also fetch the round's origin and round_name, with fallback to pro_stats mapping
       const { data: roundData } = await supabase
         .from('rounds')
-        .select('origin, round_name')
+        .select('origin, round_name, course_name, user_id')
         .eq('id', roundId)
         .maybeSingle();
 
@@ -82,6 +104,56 @@ const RoundSummary = () => {
 
       if (proLink?.id) origin = 'pro_stats';
       setRoundOrigin(origin);
+
+      // Fetch course holes for scorecard
+      if (roundData?.course_name) {
+        const { data: courseData } = await supabase
+          .from("courses")
+          .select("id")
+          .eq("name", roundData.course_name)
+          .single();
+
+        if (courseData) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", courseData.id)
+            .order("hole_number");
+
+          if (holesData) {
+            // Filter based on holes_played
+            const filteredHoles = data.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
+      }
+
+      // Fetch hole scores for the current user
+      if (roundData?.user_id) {
+        // First get the round_player id for this user
+        const { data: playerData } = await supabase
+          .from("round_players")
+          .select("id")
+          .eq("round_id", roundId)
+          .eq("user_id", roundData.user_id)
+          .single();
+
+        if (playerData) {
+          const { data: scoresData } = await supabase
+            .from("holes")
+            .select("hole_number, score")
+            .eq("round_id", roundId)
+            .eq("player_id", playerData.id);
+
+          if (scoresData) {
+            const scoresMap = new Map<number, number>();
+            scoresData.forEach(h => scoresMap.set(h.hole_number, h.score));
+            setHoleScores(scoresMap);
+          }
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error loading summary",
@@ -100,6 +172,12 @@ const RoundSummary = () => {
     if (diff <= 0) return "text-green-500";
     if (diff <= 5) return "text-yellow-500";
     return "text-red-500";
+  };
+
+  const formatScoreVsPar = (diff: number) => {
+    if (diff === 0) return "E";
+    if (diff > 0) return `+${diff}`;
+    return diff.toString();
   };
 
   const handleDelete = async () => {
@@ -133,6 +211,24 @@ const RoundSummary = () => {
     }
   };
 
+  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
+  const backNine = courseHoles.filter(h => h.hole_number > 9);
+  const hasBackNine = backNine.length > 0;
+
+  const getFrontNineTotal = () => {
+    return frontNine.reduce((sum, h) => {
+      const score = holeScores.get(h.hole_number);
+      return sum + (score && score > 0 ? score : 0);
+    }, 0);
+  };
+
+  const getBackNineTotal = () => {
+    return backNine.reduce((sum, h) => {
+      const score = holeScores.get(h.hole_number);
+      return sum + (score && score > 0 ? score : 0);
+    }, 0);
+  };
+
   const StatCard = ({ title, value, subtitle, progress }: any) => (
     <Card>
       <CardContent className="pt-6">
@@ -156,54 +252,136 @@ const RoundSummary = () => {
           Back to Rounds
         </Button>
 
-        {/* Header */}
-        <Card className="bg-primary/10 border-primary">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <MapPin size={18} className="text-primary" />
-                  <CardTitle>{summary.course_name}</CardTitle>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar size={14} />
-                  <span>{format(new Date(summary.date_played), "MMMM d, yyyy")}</span>
-                  {summary.tee_set && (
-                    <>
-                      <span>•</span>
-                      <span>{summary.tee_set} Tees</span>
-                    </>
-                  )}
-                  <span>•</span>
-                  <span>{summary.holes_played} holes</span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/rounds/${roundId}/${roundOrigin === 'pro_stats' ? 'pro-track' : 'stats'}`)}
-              >
-                <Edit size={16} />
-              </Button>
+        {/* Final Result Header */}
+        <div className="bg-primary text-primary-foreground rounded-lg p-4">
+          <div className="text-center mb-2">
+            <p className="text-sm opacity-90">{summary.course_name}</p>
+            <p className="text-xs opacity-75">{format(new Date(summary.date_played), "MMMM d, yyyy")} • {summary.holes_played} holes</p>
+          </div>
+          <div className="flex items-center justify-center gap-8">
+            <div className="text-center">
+              <p className="text-4xl font-bold">{summary.total_score}</p>
+              <p className="text-xs opacity-75">SCORE</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">Score</div>
-                <div className="text-4xl font-bold">{summary.total_score}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-muted-foreground mb-1">vs Par</div>
-                <div className={`text-4xl font-bold ${getScoreColor(summary.score_vs_par)}`}>
-                  {summary.score_vs_par === 0 ? "E" : 
-                   summary.score_vs_par > 0 ? `+${summary.score_vs_par}` : 
-                   summary.score_vs_par}
-                </div>
-              </div>
+            <div className="text-center">
+              <p className={`text-4xl font-bold ${summary.score_vs_par <= 0 ? 'text-green-300' : ''}`}>
+                {formatScoreVsPar(summary.score_vs_par)}
+              </p>
+              <p className="text-xs opacity-75">VS PAR</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Scorecard */}
+        {courseHoles.length > 0 && (
+          <div className="border rounded-lg overflow-hidden w-full">
+            {/* Front 9 */}
+            <div className="w-full">
+              <Table className="w-full table-fixed">
+                <TableHeader>
+                  <TableRow className="bg-primary/5">
+                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+                    {frontNine.map(hole => (
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                        {hole.hole_number}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Out</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+                      {hasBackNine ? '' : 'Tot'}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                        {hole.par}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                      {frontNine.reduce((sum, h) => sum + h.par, 0)}
+                    </TableCell>
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                      {hasBackNine ? '' : summary.total_par}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow className="font-bold">
+                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                    {frontNine.map(hole => {
+                      const score = holeScores.get(hole.hole_number);
+                      return (
+                        <TableCell key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                          {score && score > 0 ? score : ''}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                      {getFrontNineTotal() > 0 ? getFrontNineTotal() : ''}
+                    </TableCell>
+                    <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                      {hasBackNine ? '' : summary.total_score}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Back 9 */}
+            {hasBackNine && (
+              <div className="w-full border-t">
+                <Table className="w-full table-fixed">
+                  <TableHeader>
+                    <TableRow className="bg-primary/5">
+                      <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+                      {backNine.map(hole => (
+                        <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                          {hole.hole_number}
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">In</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Tot</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                          {hole.par}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                        {backNine.reduce((sum, h) => sum + h.par, 0)}
+                      </TableCell>
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                        {summary.total_par}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow className="font-bold">
+                      <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                      {backNine.map(hole => {
+                        const score = holeScores.get(hole.hole_number);
+                        return (
+                          <TableCell key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                            {score && score > 0 ? score : ''}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                        {getBackNineTotal() > 0 ? getBackNineTotal() : ''}
+                      </TableCell>
+                      <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                        {summary.total_score}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3">
