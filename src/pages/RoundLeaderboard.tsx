@@ -333,7 +333,7 @@ export default function RoundLeaderboard() {
                     <div>
                       <div className="text-xl font-bold">{player.display_name}</div>
                       <div className="text-sm text-muted-foreground">
-                        HCP {player.handicap ? `+${player.handicap}` : "+0"}
+                        HCP +{player.handicap ? Math.abs(Number(player.handicap)) : 0}
                       </div>
                     </div>
                   </div>
