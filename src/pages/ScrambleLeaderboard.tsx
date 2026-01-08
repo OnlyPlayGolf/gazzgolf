@@ -128,6 +128,21 @@ export default function ScrambleLeaderboard() {
 
   const teamScores = calculateTeamScores();
 
+  // Calculate positions with tie handling
+  const getPositionLabel = (index: number): string => {
+    if (teamScores[index].total === 0) return '-';
+    
+    const currentScore = teamScores[index].total;
+    const firstWithSameScore = teamScores.findIndex(ts => ts.total === currentScore);
+    const lastWithSameScore = teamScores.filter(ts => ts.total === currentScore).length;
+    const position = firstWithSameScore + 1;
+    
+    if (lastWithSameScore > 1) {
+      return `T${position}`;
+    }
+    return position.toString();
+  };
+
   // Create a map for quick hole data lookup
   const holesMap = new Map(holes.map(h => [h.hole_number, h]));
 
@@ -175,7 +190,7 @@ export default function ScrambleLeaderboard() {
               <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
                 isLeader ? 'bg-amber-500/20 text-amber-600' : ''
               }`}>
-                {ts.thru || "-"}
+                {getPositionLabel(index)}
               </div>
               <div>
                 <div className="text-xl font-bold">{ts.team.name}</div>
@@ -336,25 +351,6 @@ export default function ScrambleLeaderboard() {
               </div>
             )}
 
-            {/* Summary */}
-            <div className="border-t bg-muted/30 p-4">
-              <div className="flex items-center justify-around text-center">
-                <div>
-                  <div className="text-sm text-muted-foreground">Score</div>
-                  <div className="text-2xl font-bold">{ts.total || '-'}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">To Par</div>
-                  <div className="text-2xl font-bold">{ts.thru > 0 ? formatToPar(ts.toPar) : '-'}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Position</div>
-                  <div className="text-2xl font-bold">
-                    {index + 1}{index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}
-                  </div>
-                </div>
-              </div>
-            </div>
           </>
         )}
       </Card>
