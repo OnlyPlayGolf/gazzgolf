@@ -25,6 +25,7 @@ interface GameData {
   team_a_player_2: string;
   team_b_player_1: string;
   team_b_player_2: string;
+  is_finished: boolean;
 }
 
 interface Comment {
@@ -87,7 +88,7 @@ export default function UmbriagioFeed() {
     // Fetch game data for team names
     const { data: game } = await supabase
       .from("umbriago_games")
-      .select("team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+      .select("team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, is_finished")
       .eq("id", gameId)
       .single();
 
@@ -526,7 +527,7 @@ export default function UmbriagioFeed() {
           </>
         )}
       </div>
-      {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
+      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={gameData?.is_finished} />}
     </div>
   );
 }

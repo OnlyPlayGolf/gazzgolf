@@ -284,7 +284,7 @@ export default function UmbriagioSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
+        {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={game?.is_finished} />}
       </div>
     );
   }
@@ -401,7 +401,7 @@ export default function UmbriagioSettings() {
         leaving={leaving}
       />
 
-      {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
+      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={game?.is_finished} />}
     </div>
   );
 }

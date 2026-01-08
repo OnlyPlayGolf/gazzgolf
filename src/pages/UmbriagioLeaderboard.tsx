@@ -742,7 +742,7 @@ export default function UmbriagioLeaderboard() {
           </>
         )}
       </div>
-      {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
+      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={game?.is_finished} />}
     </div>
   );
 }
