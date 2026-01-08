@@ -344,7 +344,7 @@ export default function PublicProfile() {
   const displayName = profile.display_name || profile.username || 'User';
   const handicapValue = profile.handicap ? parseFloat(profile.handicap) : null;
   const handicapDisplay = handicapValue !== null 
-    ? `HCP ${handicapValue > 0 ? '+' : ''}${handicapValue}`
+    ? `HCP ${handicapValue < 0 ? '+' : ''}${Math.abs(handicapValue)}`
     : 'HCP Not Set';
 
   const isFriend = friendshipStatus === 'accepted';

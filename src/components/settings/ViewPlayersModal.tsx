@@ -17,7 +17,7 @@ interface ViewPlayersModalProps {
 
 function formatHandicap(handicap: number | null | undefined): string {
   if (handicap === null || handicap === undefined) return "-";
-  if (handicap > 0) return `+${handicap}`;
+  if (handicap < 0) return `+${Math.abs(handicap)}`;
   return handicap.toString();
 }
 
