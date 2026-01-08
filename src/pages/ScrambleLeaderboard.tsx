@@ -203,9 +203,6 @@ export default function ScrambleLeaderboard() {
               <div className="text-3xl font-bold">
                 {ts.thru > 0 ? formatToPar(ts.toPar) : 'E'}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {isLeader ? 'LEADING' : 'TO PAR'}
-              </div>
             </div>
           </div>
         </div>
