@@ -161,9 +161,9 @@ export function RoundCompletionModal({
                       </TableHead>
                     ))}
                     <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Out</TableHead>
-                    {!hasBackNine && (
-                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Tot</TableHead>
-                    )}
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+                      {!hasBackNine ? 'Tot' : ''}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -177,11 +177,9 @@ export function RoundCompletionModal({
                     <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {frontNine.reduce((sum, h) => sum + h.par, 0)}
                     </TableCell>
-                    {!hasBackNine && (
-                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                        {totalPar}
-                      </TableCell>
-                    )}
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                      {!hasBackNine ? totalPar : ''}
+                    </TableCell>
                   </TableRow>
                   <TableRow className="font-bold">
                     <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
@@ -196,11 +194,9 @@ export function RoundCompletionModal({
                     <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {getFrontNineTotal() > 0 ? getFrontNineTotal() : ''}
                     </TableCell>
-                    {!hasBackNine && (
-                      <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
-                        {totalScore}
-                      </TableCell>
-                    )}
+                    <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                      {!hasBackNine ? totalScore : ''}
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
