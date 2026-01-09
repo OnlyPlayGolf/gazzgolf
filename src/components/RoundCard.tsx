@@ -178,7 +178,7 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
             ) : showScore ? (
               <div className="flex flex-col items-center">
                 <div className="text-2xl font-bold text-foreground">
-                  {round.totalScore || '—'}
+                  {round.totalScore !== null && round.totalScore !== undefined ? round.totalScore : '—'}
                 </div>
                 <div className={`text-xs ${round.score <= 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                   {formatScore(round.score)}
