@@ -81,22 +81,43 @@ export default function WolfSettings() {
     setHolesCompleted(count || 0);
   };
 
-  const handleSaveSettings = async () => {
+  const saveSettings = async (updates: Record<string, any>) => {
     try {
       await supabase
         .from("wolf_games" as any)
-        .update({
-          lone_wolf_win_points: loneWolfWinPoints,
-          lone_wolf_loss_points: loneWolfLossPoints,
-          team_win_points: teamWinPoints,
-          double_enabled: doubleEnabled,
-          wolf_position: wolfPosition,
-        })
+        .update(updates)
         .eq("id", gameId);
-      toast({ title: "Settings saved" });
     } catch (error: any) {
       toast({ title: "Error saving settings", description: error.message, variant: "destructive" });
     }
+  };
+
+  const handleDoubleChange = (value: boolean) => {
+    setDoubleEnabled(value);
+    saveSettings({ double_enabled: value });
+  };
+
+  const handleWolfPositionChange = (value: 'first' | 'last') => {
+    setWolfPosition(value);
+    saveSettings({ wolf_position: value });
+  };
+
+  const handleLoneWolfWinChange = (value: string) => {
+    const points = parseInt(value);
+    setLoneWolfWinPoints(points);
+    saveSettings({ lone_wolf_win_points: points });
+  };
+
+  const handleLoneWolfLossChange = (value: string) => {
+    const points = parseInt(value);
+    setLoneWolfLossPoints(points);
+    saveSettings({ lone_wolf_loss_points: points });
+  };
+
+  const handleTeamWinChange = (value: string) => {
+    const points = parseInt(value);
+    setTeamWinPoints(points);
+    saveSettings({ team_win_points: points });
   };
 
   const handleFinishGame = async () => {
@@ -199,12 +220,12 @@ export default function WolfSettings() {
                   Allow teams to double the points on a hole
                 </p>
               </div>
-              <Switch checked={doubleEnabled} onCheckedChange={setDoubleEnabled} />
+              <Switch checked={doubleEnabled} onCheckedChange={handleDoubleChange} />
             </div>
 
             <div className="space-y-2">
               <Label>Wolf Position</Label>
-              <Select value={wolfPosition} onValueChange={(v) => setWolfPosition(v as 'first' | 'last')}>
+              <Select value={wolfPosition} onValueChange={(v) => handleWolfPositionChange(v as 'first' | 'last')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -217,7 +238,7 @@ export default function WolfSettings() {
 
             <div className="space-y-2">
               <Label>Lone Wolf Win Points</Label>
-              <Select value={loneWolfWinPoints.toString()} onValueChange={(v) => setLoneWolfWinPoints(parseInt(v))}>
+              <Select value={loneWolfWinPoints.toString()} onValueChange={handleLoneWolfWinChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -231,7 +252,7 @@ export default function WolfSettings() {
 
             <div className="space-y-2">
               <Label>Lone Wolf Loss Points (per opponent)</Label>
-              <Select value={loneWolfLossPoints.toString()} onValueChange={(v) => setLoneWolfLossPoints(parseInt(v))}>
+              <Select value={loneWolfLossPoints.toString()} onValueChange={handleLoneWolfLossChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -245,7 +266,7 @@ export default function WolfSettings() {
 
             <div className="space-y-2">
               <Label>Team Win Points (per player)</Label>
-              <Select value={teamWinPoints.toString()} onValueChange={(v) => setTeamWinPoints(parseInt(v))}>
+              <Select value={teamWinPoints.toString()} onValueChange={handleTeamWinChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -257,9 +278,6 @@ export default function WolfSettings() {
               </Select>
             </div>
 
-            <Button onClick={handleSaveSettings} className="w-full">
-              Save Rules
-            </Button>
           </CardContent>
         </Card>
 
