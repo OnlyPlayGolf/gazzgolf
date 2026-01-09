@@ -74,9 +74,9 @@ export function GameDetailsSection({ data, onViewPlayers }: GameDetailsSectionPr
             </div>
           </div>
 
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-2 min-w-0">
             <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-            <div>
+            <div className="min-w-0 overflow-hidden">
               <p className="text-muted-foreground text-xs">Course</p>
               <p className="font-medium truncate">{data.courseName}</p>
             </div>
