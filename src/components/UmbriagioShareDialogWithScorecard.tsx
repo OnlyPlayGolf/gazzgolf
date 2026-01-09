@@ -74,11 +74,33 @@ export function UmbriagioShareDialogWithScorecard({
         return;
       }
 
-      // Create structured game result marker
-      const gameResult = `[GAME_RESULT]Umbriago|${game.course_name}|${game.round_name || ''}|${getWinnerName() || ''}|${normalizedA} - ${normalizedB}|Team A vs Team B|${game.id}[/GAME_RESULT]`;
+      // Build scorecard data for the post
+      const holePointsData: Record<number, { teamA: number; teamB: number }> = {};
+      const holeParsData: Record<number, number> = {};
+      
+      holes.forEach(hole => {
+        holePointsData[hole.hole_number] = {
+          teamA: hole.team_a_hole_points,
+          teamB: hole.team_b_hole_points
+        };
+      });
+      
+      courseHoles.forEach(hole => {
+        holeParsData[hole.hole_number] = hole.par;
+      });
+
+      const scorecardJson = JSON.stringify({
+        holePoints: holePointsData,
+        holePars: holeParsData
+      });
+
+      // Create structured umbriago scorecard marker
+      // Format: [UMBRIAGO_SCORECARD]roundName|courseName|date|teamAName|teamBName|normalizedA|normalizedB|winningTeam|currentUserTeam|gameId|scorecardJson[/UMBRIAGO_SCORECARD]
+      const umbriagioScorecard = `[UMBRIAGO_SCORECARD]${game.round_name || 'Umbriago'}|${game.course_name}|${game.date_played}|${game.team_a_name}|${game.team_b_name}|${normalizedA}|${normalizedB}|${game.winning_team || ''}|${currentUserTeam || ''}|${game.id}|${scorecardJson}[/UMBRIAGO_SCORECARD]`;
+      
       const postContent = comment.trim()
-        ? `${comment}\n\n${gameResult}`
-        : gameResult;
+        ? `${comment}\n\n${umbriagioScorecard}`
+        : umbriagioScorecard;
 
       const { error } = await supabase.from("posts").insert({
         user_id: user.id,
@@ -113,7 +135,7 @@ export function UmbriagioShareDialogWithScorecard({
             <div className="flex-shrink-0 w-14 text-center">
               <div className={`text-2xl font-bold ${
                 game.winning_team === currentUserTeam ? 'text-emerald-300' : 
-                game.winning_team && game.winning_team !== 'TIE' ? 'text-red-300' : 
+                game.winning_team && game.winning_team !== 'TIE' ? 'text-red-400' : 
                 'text-primary-foreground'
               }`}>
                 {game.winning_team === 'TIE' ? 'T' : 
