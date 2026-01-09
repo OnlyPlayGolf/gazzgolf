@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -211,7 +212,17 @@ export default function ScrambleSettings() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Game Rules</CardTitle>
+            <CardTitle className="flex items-center justify-between text-lg">
+              <span>Game Rules</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(`/game-settings/scramble/${gameId}?returnPath=/scramble/${gameId}/settings`)}
+                className="h-8 w-8"
+              >
+                <Settings size={16} />
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">

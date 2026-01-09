@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
+import { Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -210,7 +211,17 @@ export default function WolfSettings() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Game Rules</CardTitle>
+            <CardTitle className="flex items-center justify-between text-lg">
+              <span>Game Rules</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(`/game-settings/wolf/${gameId}?returnPath=/wolf/${gameId}/settings`)}
+                className="h-8 w-8"
+              >
+                <Settings size={16} />
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">

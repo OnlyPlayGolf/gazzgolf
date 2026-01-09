@@ -320,9 +320,19 @@ export default function RoundSettings() {
         {/* Game Settings - Read-only for spectators */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Settings size={20} className="text-primary" />
-              Game Settings
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-primary" />
+                Game Settings
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
+                className="h-8 w-8"
+              >
+                <Settings size={16} />
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
