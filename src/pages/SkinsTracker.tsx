@@ -459,22 +459,22 @@ export default function SkinsTracker() {
         </div>
 
         {/* Hole Navigation Bar */}
-        <div className="bg-amber-100 dark:bg-amber-950/30 py-4 px-4">
+        <div className="bg-green-600 py-4 px-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
-              className="text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900"
+              className="text-white hover:bg-green-700 disabled:text-white/50"
             >
               <ChevronLeft size={24} />
             </Button>
 
             <div className="text-center">
-              <div className="text-sm text-amber-700 dark:text-amber-300">PAR {currentHole.par}</div>
-              <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">Hole {currentHole.hole_number}</div>
-              <div className="text-sm text-amber-700 dark:text-amber-300">HCP {currentHole.stroke_index}</div>
+              <div className="text-sm text-white/90">PAR {currentHole.par}</div>
+              <div className="text-2xl font-bold text-white">Hole {currentHole.hole_number}</div>
+              <div className="text-sm text-white/90">HCP {currentHole.stroke_index}</div>
             </div>
 
             <Button
@@ -482,7 +482,7 @@ export default function SkinsTracker() {
               size="icon"
               onClick={() => navigateHole("next")}
               disabled={currentHoleIndex === courseHoles.length - 1}
-              className="text-amber-800 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900"
+              className="text-white hover:bg-green-700 disabled:text-white/50"
             >
               <ChevronRight size={24} />
             </Button>
