@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
-import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { PlayerGroup } from "@/types/playSetup";
 import { validateAllGroupsForFormat, getFormatPlayerRequirementText } from "@/utils/groupValidation";
 
@@ -41,7 +42,7 @@ export default function StrokePlaySetup() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "front9" | "back9">("18");
-  const [teeColor, setTeeColor] = useState(DEFAULT_MEN_TEE);
+  const [teeColor, setTeeColor] = useState(() => getDefaultTeeFromPreferences());
   const [roundName, setRoundName] = useState<string>("");
   const [datePlayed, setDatePlayed] = useState<string>(new Date().toISOString().split('T')[0]);
   

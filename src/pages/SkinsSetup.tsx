@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
-import { TeeSelector, STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
@@ -40,7 +41,7 @@ export default function SkinsSetup() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [selectedHoles, setSelectedHoles] = useState<"18" | "9">("18");
-  const [teeColor, setTeeColor] = useState(DEFAULT_MEN_TEE);
+  const [teeColor, setTeeColor] = useState(() => getDefaultTeeFromPreferences());
   
   // Players (including current user)
   const [players, setPlayers] = useState<Player[]>([]);
@@ -98,12 +99,14 @@ export default function SkinsSetup() {
         setTeeColor(savedTee);
       }
       
+      const prefDefaultTee = getDefaultTeeFromPreferences();
+      
       // Initialize with current user
       const currentUserPlayer: Player = {
         odId: user.id,
         displayName: userName,
         handicap: userHandicap,
-        teeColor: savedTee || DEFAULT_MEN_TEE,
+        teeColor: savedTee || prefDefaultTee,
         isTemporary: false,
         isCurrentUser: true,
       };
@@ -117,7 +120,7 @@ export default function SkinsSetup() {
           odId: p.odId || p.userId || `temp_${Date.now()}`,
           displayName: p.displayName,
           handicap: p.handicap,
-          teeColor: p.teeColor || savedTee || DEFAULT_MEN_TEE,
+          teeColor: p.teeColor || savedTee || prefDefaultTee,
           isTemporary: p.isTemporary || false,
           isCurrentUser: false,
         }));
