@@ -49,6 +49,17 @@ export default function ScrambleSettings() {
     }
   }, [gameId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        fetchGame();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [gameId]);
+
   const fetchGame = async () => {
     try {
       const { data } = await supabase
@@ -172,19 +183,33 @@ export default function ScrambleSettings() {
     );
   }
 
-  // Use tee_set as authoritative source for player tees
-  const playerTee = game.tee_set;
+  // Use individual player tees from the teams array - these are set per-player in Game Settings
+  const defaultTee = game.tee_set || 'white';
   const players: GamePlayer[] = game.teams.flatMap((team) =>
     team.players.map(p => ({
       name: p.name,
       handicap: useHandicaps ? p.handicap : undefined,
-      tee: playerTee,
+      tee: p.tee || defaultTee, // Individual player tee from DB, fallback to default
       team: team.name,
     }))
   );
 
-  // Use tee_set as the authoritative source (set in Game Settings)
-  const teeInfo = game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified";
+  // tee_set is the "Default Tee" - display it in Game Details
+  // If all players have same tee, show that; if different, show "Combo"
+  const allPlayerTees = players.map(p => p.tee);
+  const uniqueTees = [...new Set(allPlayerTees)];
+  const teeInfo = (() => {
+    if (game.tee_set && uniqueTees.length === 1 && uniqueTees[0] === game.tee_set) {
+      return getTeeDisplayName(game.tee_set);
+    }
+    if (uniqueTees.length === 1) {
+      return getTeeDisplayName(uniqueTees[0]!);
+    }
+    if (uniqueTees.length > 1) {
+      return "Combo";
+    }
+    return game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified";
+  })();
 
   const scoringParts = [scoringType === 'net' ? 'Net scoring' : 'Gross scoring'];
   if (minDrives !== 'none') scoringParts.push(`Min ${minDrives} drives/player`);

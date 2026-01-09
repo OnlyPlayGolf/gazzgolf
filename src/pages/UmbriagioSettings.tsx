@@ -96,6 +96,17 @@ export default function UmbriagioSettings() {
     }
   }, [gameId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        fetchGame();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [gameId]);
+
   const fetchGame = async () => {
     try {
       const { data } = await supabase
