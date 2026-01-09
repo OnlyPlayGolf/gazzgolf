@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Dice5, RefreshCw } from "lucide-react";
+import { Dice5, RefreshCw, Settings } from "lucide-react";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame } from "@/types/umbriago";
@@ -321,9 +322,19 @@ export default function UmbriagioSettings() {
         {/* Game Settings */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Dice5 size={20} className="text-primary" />
-              Game Settings
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Dice5 size={20} className="text-primary" />
+                Game Settings
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(`/game-settings/umbriago/${gameId}?returnPath=/umbriago/${gameId}/settings`)}
+                className="h-8 w-8"
+              >
+                <Settings size={16} />
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

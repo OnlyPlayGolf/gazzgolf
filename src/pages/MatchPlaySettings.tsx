@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame } from "@/types/matchPlay";
+import { Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -232,7 +234,19 @@ export default function MatchPlaySettings() {
         {!isSpectator && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Game Settings</CardTitle>
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  Game Settings
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/match-play/${gameId}?returnPath=/match-play/${gameId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
