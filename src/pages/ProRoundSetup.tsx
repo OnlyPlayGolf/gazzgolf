@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
+import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 
 type StatsMode = "strokes_gained" | "basic_stats";
 
@@ -136,8 +137,30 @@ const ProRoundSetup = () => {
         setAvailableTees(available);
       }
 
-      // Reset tee selection when course changes
-      setTeeSet("");
+      // Set default tee based on user preference
+      const prefTee = getDefaultTeeFromPreferences();
+      // Map difficulty-based preference to available color-based tees
+      const difficultyToColorMap: Record<string, string[]> = {
+        "longest": ["black", "gold"],
+        "long": ["blue", "white"],
+        "medium": ["white", "yellow"],
+        "short": ["yellow", "red"],
+        "shortest": ["red", "orange"],
+      };
+      const preferredColors = difficultyToColorMap[prefTee] || ["blue", "white"];
+      const teesToCheck = available.length > 0 ? available : [
+        { key: "white", name: "White" },
+        { key: "yellow", name: "Yellow" },
+        { key: "blue", name: "Blue" },
+        { key: "red", name: "Red" },
+      ];
+      const matchedTee = teesToCheck.find(t => preferredColors.includes(t.key));
+      if (matchedTee) {
+        setTeeSet(matchedTee.key);
+      } else if (teesToCheck.length > 0) {
+        // Fallback to first available
+        setTeeSet(teesToCheck[0].key);
+      }
     };
 
     fetchAvailableTees();

@@ -16,7 +16,8 @@ import { SetupAddPlayerButtons } from "@/components/play/SetupAddPlayerButtons";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
-import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 
 interface Course {
@@ -47,7 +48,7 @@ export default function CopenhagenSetup() {
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
   const [sweepRuleEnabled, setSweepRuleEnabled] = useState(true);
-  const [defaultTee, setDefaultTee] = useState(DEFAULT_MEN_TEE);
+  const [defaultTee, setDefaultTee] = useState(() => getDefaultTeeFromPreferences());
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
@@ -71,14 +72,15 @@ export default function CopenhagenSetup() {
       
       // Load saved settings
       const savedSettings = sessionStorage.getItem('copenhagenSettings');
-      let savedDefaultTee = DEFAULT_MEN_TEE;
+      const prefDefaultTee = getDefaultTeeFromPreferences();
+      let savedDefaultTee = prefDefaultTee;
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
         setUseHandicaps(settings.useHandicaps || false);
         setGimmesEnabled(settings.gimmesEnabled || false);
         setSweepRuleEnabled(settings.sweepRuleEnabled !== false);
-        savedDefaultTee = settings.defaultTee || DEFAULT_MEN_TEE;
+        savedDefaultTee = settings.defaultTee || prefDefaultTee;
         setDefaultTee(savedDefaultTee);
       }
 
@@ -405,14 +407,14 @@ export default function CopenhagenSetup() {
           onClose={() => setShowAddFriend(false)}
           onAddPlayer={handleAddPlayer}
           existingPlayerIds={existingPlayerIds}
-          defaultTee={DEFAULT_MEN_TEE}
+          defaultTee={defaultTee}
         />
 
         <SetupAddGuestSheet
           isOpen={showAddGuest}
           onClose={() => setShowAddGuest(false)}
           onAddPlayer={handleAddPlayer}
-          defaultTee={DEFAULT_MEN_TEE}
+          defaultTee={defaultTee}
         />
       </div>
     </div>

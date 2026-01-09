@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
-import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
+import { STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 import { PlayerGroup, Player as SetupPlayer } from "@/types/playSetup";
 
@@ -76,6 +77,7 @@ export default function MatchPlaySetup() {
       
       if (savedGroups) {
         const parsedGroups: PlayerGroup[] = JSON.parse(savedGroups);
+        const defaultTee = getDefaultTeeFromPreferences();
         const matchGroups: MatchGroup[] = parsedGroups.map(g => ({
           id: g.id,
           name: g.name,
@@ -83,7 +85,7 @@ export default function MatchPlaySetup() {
             odId: p.odId,
             displayName: p.displayName,
             handicap: p.handicap,
-            teeColor: p.teeColor || DEFAULT_MEN_TEE,
+            teeColor: p.teeColor || defaultTee,
             isTemporary: p.isTemporary || false,
             isCurrentUser: p.odId === user.id,
           })),
@@ -95,7 +97,7 @@ export default function MatchPlaySetup() {
           odId: user.id,
           displayName: userName,
           handicap: userHandicap,
-          teeColor: DEFAULT_MEN_TEE,
+          teeColor: getDefaultTeeFromPreferences(),
           isTemporary: false,
           isCurrentUser: true,
         };

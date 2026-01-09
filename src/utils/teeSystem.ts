@@ -268,6 +268,24 @@ export const DEFAULT_TEE_OPTIONS = getStandardTeeOptions(5);
 export const DEFAULT_MEN_TEE = "long";
 
 /**
+ * Get user's preferred default tee from app preferences
+ */
+export function getDefaultTeeFromPreferences(): string {
+  try {
+    const savedPrefs = localStorage.getItem('appPreferences');
+    if (savedPrefs) {
+      const prefs = JSON.parse(savedPrefs);
+      if (prefs.defaultTee) {
+        return prefs.defaultTee;
+      }
+    }
+  } catch (e) {
+    console.error("Error reading app preferences for tee:", e);
+  }
+  return DEFAULT_MEN_TEE;
+}
+
+/**
  * Legacy color options for backwards compatibility with database
  */
 export const LEGACY_TEE_COLORS = ["White", "Yellow", "Blue", "Red", "Orange"];
