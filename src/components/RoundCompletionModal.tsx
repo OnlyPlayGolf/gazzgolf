@@ -124,24 +124,30 @@ export function RoundCompletionModal({
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
-        {/* Green Header */}
+        {/* Green Header - Round Card Style */}
         <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
-          <div className="text-center mb-3">
-            <p className="text-base font-semibold">{courseName}</p>
-            <p className="text-sm opacity-90">
-              {format(new Date(datePlayed), "MMMM d, yyyy")} • {holesPlayed} holes
-            </p>
-          </div>
-          <div className="flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-5xl font-bold">{totalScore}</p>
-              <p className="text-xs opacity-75 mt-1">SCORE</p>
-            </div>
-            <div className="text-center">
-              <p className={`text-5xl font-bold ${scoreVsPar <= 0 ? 'text-green-200' : ''}`}>
+          <div className="flex items-center gap-4">
+            {/* Left: Score with vs par below */}
+            <div className="flex-shrink-0 w-14 text-center">
+              <div className="text-3xl font-bold">{totalScore}</div>
+              <div className={`text-sm ${scoreVsPar <= 0 ? 'text-green-200' : 'opacity-75'}`}>
                 {formatScoreVsPar(scoreVsPar)}
-              </p>
-              <p className="text-xs opacity-75 mt-1">VS PAR</p>
+              </div>
+            </div>
+            
+            {/* Right: Round Details */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold truncate">
+                {roundName || 'Round'}
+              </h3>
+              <div className="flex items-center gap-1.5 mt-1 text-sm opacity-90">
+                <span className="truncate">{courseName}</span>
+                <span>·</span>
+                <span className="flex-shrink-0">{format(new Date(datePlayed), "MMM d")}</span>
+              </div>
+              <div className="text-xs opacity-75 mt-1">
+                Stroke Play · {holesPlayed} holes
+              </div>
             </div>
           </div>
         </div>
