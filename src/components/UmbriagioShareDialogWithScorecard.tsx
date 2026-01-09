@@ -109,14 +109,20 @@ export function UmbriagioShareDialogWithScorecard({
         {/* Green Header - Round Card Style */}
         <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
           <div className="flex items-center gap-4">
-            {/* Left: Score */}
-            <div className="flex-shrink-0 w-20 text-center">
-              <div className="text-2xl font-bold">{getScoreDisplay()}</div>
-              {game.winning_team && (
-                <div className="text-xs opacity-75 mt-0.5">
-                  {game.winning_team === 'A' ? game.team_a_name : game.team_b_name} wins
-                </div>
-              )}
+            {/* Left: W/L/T Result with score below - matching RoundCard */}
+            <div className="flex-shrink-0 w-14 text-center">
+              <div className={`text-2xl font-bold ${
+                game.winning_team === currentUserTeam ? 'text-emerald-300' : 
+                game.winning_team && game.winning_team !== 'TIE' ? 'text-red-300' : 
+                'text-primary-foreground'
+              }`}>
+                {game.winning_team === 'TIE' ? 'T' : 
+                 game.winning_team === currentUserTeam ? 'W' : 
+                 game.winning_team ? 'L' : '—'}
+              </div>
+              <div className="text-xs opacity-75 mt-0.5">
+                {getScoreDisplay()}
+              </div>
             </div>
             
             {/* Right: Round Details */}
@@ -129,8 +135,10 @@ export function UmbriagioShareDialogWithScorecard({
                 <span>·</span>
                 <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
               </div>
-              <div className="text-xs opacity-75 mt-1">
-                Umbriago · {game.holes_played} holes
+              <div className="flex items-center gap-1.5 text-xs opacity-75 mt-1">
+                <span>Umbriago</span>
+                <span>·</span>
+                <span>4 players</span>
               </div>
             </div>
           </div>

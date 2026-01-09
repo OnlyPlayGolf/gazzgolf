@@ -161,7 +161,7 @@ export function RoundCompletionModal({
                 <span className="flex-shrink-0">{format(new Date(datePlayed), "MMM d")}</span>
               </div>
               <div className="text-xs opacity-75 mt-1">
-                Stroke Play · {holesPlayed} holes
+                Stroke Play · 1 player
               </div>
             </div>
           </div>
