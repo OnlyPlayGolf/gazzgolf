@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { TeeSelector, STANDARD_TEE_OPTIONS, getTeeDisplayName } from "@/components/TeeSelector";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
@@ -275,8 +275,8 @@ export default function RoundSettings() {
 
   const tees = players.map(p => p.tee_color).filter(Boolean);
   const uniqueTees = [...new Set(tees)];
-  const teeInfo = uniqueTees.length === 0 ? (round.tee_set || "Not specified") :
-                  uniqueTees.length === 1 ? uniqueTees[0]! : "Mixed tees";
+  const teeInfo = uniqueTees.length === 0 ? (round.tee_set ? getTeeDisplayName(round.tee_set) : "Not specified") :
+                  uniqueTees.length === 1 ? getTeeDisplayName(uniqueTees[0]!) : "Mixed tees";
 
   const hasHandicaps = players.some(p => p.handicap !== null);
 

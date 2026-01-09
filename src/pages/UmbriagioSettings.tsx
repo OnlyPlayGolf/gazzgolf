@@ -18,6 +18,7 @@ import {
   DeleteGameDialog,
   LeaveGameDialog,
 } from "@/components/settings";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 type TeamRotation = "none" | "every9" | "every6";
 
@@ -302,7 +303,7 @@ export default function UmbriagioSettings() {
     courseName: game.course_name,
     datePlayed: game.date_played,
     players,
-    teeInfo: game.tee_set || "Not specified",
+    teeInfo: game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified",
     holesPlayed: game.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
     scoring: `${game.stake_per_point} per point • ${game.payout_mode}`,

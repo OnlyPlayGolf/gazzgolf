@@ -19,6 +19,7 @@ import {
   DeleteGameDialog,
   LeaveGameDialog,
 } from "@/components/settings";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 export default function ScrambleSettings() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -182,8 +183,8 @@ export default function ScrambleSettings() {
 
   const allTees = game.teams.flatMap(t => t.players.map(p => (p as any).tee_color)).filter(Boolean);
   const uniqueTees = [...new Set(allTees)];
-  const teeInfo = uniqueTees.length === 0 ? (game.tee_set || "Not specified") :
-                  uniqueTees.length === 1 ? String(uniqueTees[0]) : "Mixed tees";
+  const teeInfo = uniqueTees.length === 0 ? (game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified") :
+                  uniqueTees.length === 1 ? getTeeDisplayName(String(uniqueTees[0])) : "Mixed tees";
 
   const scoringParts = [scoringType === 'net' ? 'Net scoring' : 'Gross scoring'];
   if (minDrives !== 'none') scoringParts.push(`Min ${minDrives} drives/player`);
