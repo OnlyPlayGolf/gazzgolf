@@ -171,11 +171,6 @@ const PlayedRounds = () => {
           </p>
         )}
 
-        {/* New Round Button */}
-        <Button onClick={() => navigate("/rounds-play")} className="w-full mb-4">
-          <Plus className="mr-2" size={18} />
-          New Round
-        </Button>
 
         {/* Rounds List */}
         {loading ? (
