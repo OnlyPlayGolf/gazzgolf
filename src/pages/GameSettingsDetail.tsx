@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Users, Plus, ChevronDown, ChevronUp, Info, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +55,14 @@ export default function GameSettingsDetail() {
   const [settingsExpanded, setSettingsExpanded] = useState(true);
   const [defaultTee, setDefaultTee] = useState("white");
   const [gameFormat, setGameFormat] = useState("stroke_play");
+  
+  // Use refs to always have latest values for save (avoids stale closure issues)
+  const defaultTeeRef = useRef(defaultTee);
+  const groupsRef = useRef(groups);
+  
+  // Keep refs in sync with state
+  useEffect(() => { defaultTeeRef.current = defaultTee; }, [defaultTee]);
+  useEffect(() => { groupsRef.current = groups; }, [groups]);
   
   // Player management
   const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
@@ -452,6 +460,8 @@ export default function GameSettingsDetail() {
   const saveRoundChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
     const startingHole = selectedHoles === "back9" ? 10 : 1;
+    const currentDefaultTee = defaultTeeRef.current;
+    const currentGroups = groupsRef.current;
     
     await supabase
       .from("rounds")
@@ -461,13 +471,13 @@ export default function GameSettingsDetail() {
         course_name: selectedCourse?.name || "",
         holes_played: holesPlayed,
         starting_hole: startingHole,
-        tee_set: defaultTee,
+        tee_set: currentDefaultTee,
         round_type: roundType,
       })
       .eq("id", gameId);
 
     // Update player tees
-    for (const group of groups) {
+    for (const group of currentGroups) {
       for (const player of group.players) {
         await supabase
           .from("round_players")
@@ -480,7 +490,14 @@ export default function GameSettingsDetail() {
 
   const saveMatchPlayChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
-    const players = groups[0]?.players || [];
+    // Use refs to get latest values (avoids stale closure)
+    const currentGroups = groupsRef.current;
+    const currentDefaultTee = defaultTeeRef.current;
+    const players = currentGroups[0]?.players || [];
+    
+    // Get player tees, falling back to defaultTee if not set
+    const player1Tee = players[0]?.teeColor || currentDefaultTee;
+    const player2Tee = players[1]?.teeColor || currentDefaultTee;
     
     await supabase
       .from("match_play_games")
@@ -489,10 +506,12 @@ export default function GameSettingsDetail() {
         date_played: datePlayed,
         course_name: selectedCourse?.name || "",
         holes_played: holesPlayed,
-        tee_set: defaultTee,
-        player_1_tee: players[0]?.teeColor || defaultTee,
+        tee_set: currentDefaultTee,
+        player_1: players[0]?.displayName,
+        player_1_tee: player1Tee,
         player_1_handicap: players[0]?.handicap,
-        player_2_tee: players[1]?.teeColor || defaultTee,
+        player_2: players[1]?.displayName,
+        player_2_tee: player2Tee,
         player_2_handicap: players[1]?.handicap,
       })
       .eq("id", gameId);
@@ -500,6 +519,7 @@ export default function GameSettingsDetail() {
 
   const saveBestBallChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const currentGroups = groupsRef.current;
     
     // Get current game data to preserve team structure
     const { data: currentGame } = await supabase
@@ -511,7 +531,7 @@ export default function GameSettingsDetail() {
     if (currentGame) {
       const teamAPlayers = Array.isArray(currentGame.team_a_players) ? currentGame.team_a_players : [];
       const teamBPlayers = Array.isArray(currentGame.team_b_players) ? currentGame.team_b_players : [];
-      const allPlayers = groups[0]?.players || [];
+      const allPlayers = currentGroups[0]?.players || [];
       
       // Update tees in existing team structures
       const updatedTeamA = teamAPlayers.map((p: any) => {
@@ -539,7 +559,9 @@ export default function GameSettingsDetail() {
 
   const saveCopenhagenChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
-    const players = groups[0]?.players || [];
+    const currentGroups = groupsRef.current;
+    const currentDefaultTee = defaultTeeRef.current;
+    const players = currentGroups[0]?.players || [];
     
     await supabase
       .from("copenhagen_games")
@@ -548,12 +570,12 @@ export default function GameSettingsDetail() {
         date_played: datePlayed,
         course_name: selectedCourse?.name || "",
         holes_played: holesPlayed,
-        tee_set: defaultTee,
-        player_1_tee: players[0]?.teeColor || defaultTee,
+        tee_set: currentDefaultTee,
+        player_1_tee: players[0]?.teeColor || currentDefaultTee,
         player_1_handicap: players[0]?.handicap,
-        player_2_tee: players[1]?.teeColor || defaultTee,
+        player_2_tee: players[1]?.teeColor || currentDefaultTee,
         player_2_handicap: players[1]?.handicap,
-        player_3_tee: players[2]?.teeColor || defaultTee,
+        player_3_tee: players[2]?.teeColor || currentDefaultTee,
         player_3_handicap: players[2]?.handicap,
       })
       .eq("id", gameId);
