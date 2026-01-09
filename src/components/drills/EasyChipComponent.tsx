@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
+import { useNavigate } from "react-router-dom";
 
 interface EasyChipComponentProps {
   onTabChange?: (tab: string) => void;
@@ -14,7 +16,11 @@ interface EasyChipComponentProps {
 const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps) => {
   const [consecutiveMakes, setConsecutiveMakes] = useState<string>('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedScore, setSavedScore] = useState<number>(0);
+  const [savedResultId, setSavedResultId] = useState<string | undefined>();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -56,22 +62,22 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
         return;
       }
 
-      const { error: resultError } = await (supabase as any)
+      const { data: resultData, error: resultError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
           user_id: userId,
           total_points: score,
           attempts_json: { consecutive_makes: score }
-        });
+        })
+        .select('id')
+        .single();
 
       if (resultError) throw resultError;
 
-      toast({
-        title: "Score saved!",
-        description: `${score} consecutive chip${score !== 1 ? 's' : ''} recorded.`,
-      });
-
+      setSavedScore(score);
+      setSavedResultId(resultData?.id);
+      setShowCompletionDialog(true);
       setConsecutiveMakes('');
       onScoreSaved?.();
     } catch (error) {
@@ -84,55 +90,71 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
     }
   };
 
+  const handleCompletionContinue = () => {
+    navigate('/drills');
+  };
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="text-primary" size={20} />
-            Easy Chip Drill
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="p-3 bg-primary/10 rounded-md text-center">
-            <div className="text-sm text-muted-foreground">Distance</div>
-            <div className="text-2xl font-bold text-primary">10 meters from fairway</div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              How many chips in a row stopped within one wedge length of the hole?
-            </label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={consecutiveMakes}
-              onChange={(e) => setConsecutiveMakes(e.target.value)}
-              placeholder="Enter number"
-              className="text-center text-2xl h-14"
-            />
-          </div>
-
-          {userId ? (
-            <Button 
-              onClick={saveScore} 
-              className="w-full"
-              disabled={!consecutiveMakes}
-            >
-              Save Score
-            </Button>
-          ) : (
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-2">Sign in to save your score</p>
-              <Button onClick={() => window.location.href = '/auth'} variant="outline" className="w-full">
-                Sign In
-              </Button>
+    <>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="text-primary" size={20} />
+              Easy Chip Drill
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-3 bg-primary/10 rounded-md text-center">
+              <div className="text-sm text-muted-foreground">Distance</div>
+              <div className="text-2xl font-bold text-primary">10 meters from fairway</div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                How many chips in a row stopped within one wedge length of the hole?
+              </label>
+              <Input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={consecutiveMakes}
+                onChange={(e) => setConsecutiveMakes(e.target.value)}
+                placeholder="Enter number"
+                className="text-center text-2xl h-14"
+              />
+            </div>
+
+            {userId ? (
+              <Button 
+                onClick={saveScore} 
+                className="w-full"
+                disabled={!consecutiveMakes}
+              >
+                Save Score
+              </Button>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">Sign in to save your score</p>
+                <Button onClick={() => window.location.href = '/auth'} variant="outline" className="w-full">
+                  Sign In
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Easy Chip Drill"
+        score={savedScore}
+        unit="consecutive chips"
+        resultId={savedResultId}
+        onContinue={handleCompletionContinue}
+      />
+    </>
   );
 };
 
