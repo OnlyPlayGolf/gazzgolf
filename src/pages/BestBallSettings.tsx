@@ -152,27 +152,26 @@ export default function BestBallSettings() {
     );
   }
 
+  // Use first player's tee as authoritative source for all players
+  const authorityTee = game.team_a_players[0]?.teeColor || game.team_b_players[0]?.teeColor;
   const players: GamePlayer[] = [
     ...game.team_a_players.map(p => ({
       name: p.displayName,
       handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
-      tee: (p as any).teeColor,
+      tee: authorityTee,
       team: game.team_a_name,
     })),
     ...game.team_b_players.map(p => ({
       name: p.displayName,
       handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
-      tee: (p as any).teeColor,
+      tee: authorityTee,
       team: game.team_b_name,
     })),
   ];
 
-  const allTees = [...game.team_a_players, ...game.team_b_players]
-    .map(p => (p as any).teeColor)
-    .filter(Boolean);
-  const uniqueTees = [...new Set(allTees)];
-  const teeInfo = uniqueTees.length === 0 ? "Not specified" :
-                  uniqueTees.length === 1 ? getTeeDisplayName(uniqueTees[0]!) : "Mixed tees";
+  // Use first player's tee as the authoritative source (set in Game Settings)
+  const firstPlayerTee = game.team_a_players[0]?.teeColor || game.team_b_players[0]?.teeColor;
+  const teeInfo = firstPlayerTee ? getTeeDisplayName(firstPlayerTee) : "Not specified";
 
   const gameDetails: GameDetailsData = {
     format: `Best Ball ${game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}`,

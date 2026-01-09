@@ -291,11 +291,13 @@ export default function UmbriagioSettings() {
     );
   }
 
+  // Use tee_set as authoritative source for player tees
+  const playerTee = game.tee_set;
   const players: GamePlayer[] = [
-    { name: game.team_a_player_1, team: "Team A" },
-    { name: game.team_a_player_2, team: "Team A" },
-    { name: game.team_b_player_1, team: "Team B" },
-    { name: game.team_b_player_2, team: "Team B" },
+    { name: game.team_a_player_1, team: "Team A", tee: playerTee },
+    { name: game.team_a_player_2, team: "Team A", tee: playerTee },
+    { name: game.team_b_player_1, team: "Team B", tee: playerTee },
+    { name: game.team_b_player_2, team: "Team B", tee: playerTee },
   ];
 
   const gameDetails: GameDetailsData = {

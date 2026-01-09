@@ -172,19 +172,19 @@ export default function ScrambleSettings() {
     );
   }
 
+  // Use tee_set as authoritative source for player tees
+  const playerTee = game.tee_set;
   const players: GamePlayer[] = game.teams.flatMap((team) =>
     team.players.map(p => ({
       name: p.name,
       handicap: useHandicaps ? p.handicap : undefined,
-      tee: (p as any).tee_color,
+      tee: playerTee,
       team: team.name,
     }))
   );
 
-  const allTees = game.teams.flatMap(t => t.players.map(p => (p as any).tee_color)).filter(Boolean);
-  const uniqueTees = [...new Set(allTees)];
-  const teeInfo = uniqueTees.length === 0 ? (game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified") :
-                  uniqueTees.length === 1 ? getTeeDisplayName(String(uniqueTees[0])) : "Mixed tees";
+  // Use tee_set as the authoritative source (set in Game Settings)
+  const teeInfo = game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified";
 
   const scoringParts = [scoringType === 'net' ? 'Net scoring' : 'Gross scoring'];
   if (minDrives !== 'none') scoringParts.push(`Min ${minDrives} drives/player`);

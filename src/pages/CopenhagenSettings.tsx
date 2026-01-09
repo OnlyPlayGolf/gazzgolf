@@ -182,28 +182,28 @@ export default function CopenhagenSettings() {
     );
   }
 
+  // Use tee_set as authoritative source for player tees
+  const playerTee = game.tee_set || game.player_1_tee;
   const players: GamePlayer[] = [
     { 
       name: game.player_1, 
       handicap: useHandicaps ? game.player_1_handicap : undefined,
-      tee: game.player_1_tee 
+      tee: playerTee 
     },
     { 
       name: game.player_2, 
       handicap: useHandicaps ? game.player_2_handicap : undefined,
-      tee: game.player_2_tee 
+      tee: playerTee 
     },
     { 
       name: game.player_3, 
       handicap: useHandicaps ? game.player_3_handicap : undefined,
-      tee: game.player_3_tee 
+      tee: playerTee 
     },
   ];
 
-  const tees = [game.player_1_tee, game.player_2_tee, game.player_3_tee].filter(Boolean);
-  const uniqueTees = [...new Set(tees)];
-  const teeInfo = uniqueTees.length === 0 ? (game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified") :
-                  uniqueTees.length === 1 ? getTeeDisplayName(uniqueTees[0]!) : "Mixed tees";
+  // Use tee_set as the authoritative source (set in Game Settings)
+  const teeInfo = game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified";
 
   const stake = (game as any).stake_per_point ?? 1;
   const gameDetails: GameDetailsData = {
