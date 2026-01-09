@@ -303,7 +303,7 @@ export default function MatchPlaySettings() {
           <RoundActionsSection
             isAdmin={currentUserId === game.user_id}
             onFinish={handleFinishGame}
-            onSaveAndExit={() => navigate(`/match-play/${gameId}/summary`)}
+            onSaveAndExit={() => navigate('/profile')}
             onDelete={() => setShowDeleteDialog(true)}
             onLeave={() => setShowLeaveDialog(true)}
           />
