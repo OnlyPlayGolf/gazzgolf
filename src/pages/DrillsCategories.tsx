@@ -10,7 +10,7 @@ const categories = [
   { id: 'putting', name: 'Putting', icon: Target, enabled: true, description: 'Precision on the green' },
   { id: 'shortgame', name: 'Short Game', icon: Zap, enabled: true, description: 'Chipping, pitching, and bunker shots' },
   { id: 'approach', name: 'Approach', icon: Activity, enabled: true, description: 'Wedges and approach shots' },
-  { id: 'teeshots', name: 'Tee Shots', icon: Target, enabled: true, description: 'Driving and tee shot accuracy' },
+  { id: 'teeshots', name: 'Off the Tee', icon: Target, enabled: true, description: 'Driving and tee shot accuracy' },
 ];
 
 const DrillsCategories = () => {
