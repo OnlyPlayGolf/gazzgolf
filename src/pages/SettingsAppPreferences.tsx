@@ -49,7 +49,15 @@ const SettingsAppPreferences = () => {
   };
 
   const handleSave = () => {
-    localStorage.setItem('appPreferences', JSON.stringify(preferences));
+    // Create a fresh object to ensure all values are saved
+    const prefsToSave = {
+      defaultGameFormat: preferences.defaultGameFormat,
+      defaultTee: preferences.defaultTee,
+      defaultHoles: preferences.defaultHoles,
+      defaultScoring: preferences.defaultScoring
+    };
+    localStorage.setItem('appPreferences', JSON.stringify(prefsToSave));
+    console.log('Saved preferences:', prefsToSave);
     toast({
       title: "Preferences saved",
       description: "Your app preferences have been updated.",
