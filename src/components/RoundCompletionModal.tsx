@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,6 +53,7 @@ export function RoundCompletionModal({
   roundName,
   onContinue,
 }: RoundCompletionModalProps) {
+  const navigate = useNavigate();
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
@@ -102,7 +104,7 @@ export function RoundCompletionModal({
       setShowShareForm(false);
       setComment("");
       onOpenChange(false);
-      onContinue();
+      navigate("/");
     } catch (error) {
       console.error('Error sharing round:', error);
       toast({ title: "Error", description: "Failed to share round", variant: "destructive" });
@@ -113,6 +115,7 @@ export function RoundCompletionModal({
 
   const handleContinue = () => {
     onOpenChange(false);
+    navigate("/");
   };
 
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
