@@ -43,6 +43,7 @@ const SettingsPrivacy = () => {
       title: "Privacy settings saved",
       description: "Your privacy preferences have been updated.",
     });
+    navigate("/settings");
   };
 
   return (

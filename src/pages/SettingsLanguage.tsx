@@ -31,6 +31,7 @@ const SettingsLanguage = () => {
       title: "Language updated",
       description: "Your language preference has been saved.",
     });
+    navigate("/settings");
   };
 
   return (

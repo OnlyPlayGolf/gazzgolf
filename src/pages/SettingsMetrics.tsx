@@ -25,6 +25,7 @@ const SettingsMetrics = () => {
       title: "Settings saved",
       description: "Your metric preferences have been updated.",
     });
+    navigate("/settings");
   };
 
   return (
