@@ -54,6 +54,7 @@ const SettingsAppPreferences = () => {
       title: "Preferences saved",
       description: "Your app preferences have been updated.",
     });
+    navigate("/settings");
   };
 
   return (
