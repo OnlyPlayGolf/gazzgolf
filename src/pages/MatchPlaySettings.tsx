@@ -152,40 +152,38 @@ export default function MatchPlaySettings() {
   }
 
   // Build players list from ALL games in the event (all groups)
-  // Use tee_set as authoritative source for player tees
+  // Use individual player tees from the database (these are set per-player in Game Settings)
   const players: GamePlayer[] = allGamesInEvent.flatMap((g, gameIndex) => {
     const groupLabel = allGamesInEvent.length > 1 ? `Match ${gameIndex + 1}` : undefined;
-    const playerTee = g.tee_set || g.player_1_tee; // Use tee_set as authoritative
     return [
       { 
         name: g.player_1, 
         handicap: g.use_handicaps ? g.player_1_handicap : undefined,
-        tee: playerTee,
+        tee: g.player_1_tee || g.tee_set, // Individual player tee, fallback to tee_set
         team: groupLabel,
       },
       { 
         name: g.player_2, 
         handicap: g.use_handicaps ? g.player_2_handicap : undefined,
-        tee: playerTee,
+        tee: g.player_2_tee || g.tee_set, // Individual player tee, fallback to tee_set
         team: groupLabel,
       },
     ];
   });
 
-  // Use tee_set as the authoritative source (set in Game Settings)
-  // Only show "Mixed tees" if players have explicitly different tees AND no tee_set is defined
+  // tee_set is the "Default Tee" from Game Settings - display it in Game Details
   const teeInfo = (() => {
-    // If tee_set is defined, use it as the authoritative value
     if (game.tee_set) {
       return getTeeDisplayName(game.tee_set);
     }
-    // Fallback: check individual player tees
+    // Fallback: if no tee_set, check individual tees
     if (game.player_1_tee && game.player_2_tee) {
       if (game.player_1_tee === game.player_2_tee) {
         return getTeeDisplayName(game.player_1_tee);
       }
-      return "Mixed tees";
+      return "Combo";
     }
+    if (game.player_1_tee) return getTeeDisplayName(game.player_1_tee);
     return "Not specified";
   })();
 
