@@ -237,7 +237,12 @@ export default function GameSettingsDetail() {
       setRoundName(data.round_name || "");
       setDatePlayed(data.date_played);
       setSelectedHoles(data.holes_played === 18 ? "18" : "front9");
-      setDefaultTee("white");
+      
+      const teamAPlayersData = Array.isArray(data.team_a_players) ? data.team_a_players : [];
+      const teamBPlayersData = Array.isArray(data.team_b_players) ? data.team_b_players : [];
+      // Extract tee from first player if available, otherwise use default
+      const firstPlayerTee = (teamAPlayersData[0] as any)?.teeColor || (teamBPlayersData[0] as any)?.teeColor || "white";
+      setDefaultTee(firstPlayerTee);
       setGameFormat("best_ball");
 
       const { data: courseData } = await supabase
@@ -251,13 +256,10 @@ export default function GameSettingsDetail() {
       } else {
         setSelectedCourse({ id: "", name: data.course_name, location: "" });
       }
-
-      const teamAPlayers = Array.isArray(data.team_a_players) ? data.team_a_players : [];
-      const teamBPlayers = Array.isArray(data.team_b_players) ? data.team_b_players : [];
       
       const allPlayers: Player[] = [
-        ...teamAPlayers.map((p: any) => ({ odId: p.odId || p.id, displayName: p.displayName, username: "", teeColor: p.teeColor || defaultTee, handicap: p.handicap, isTemporary: false })),
-        ...teamBPlayers.map((p: any) => ({ odId: p.odId || p.id, displayName: p.displayName, username: "", teeColor: p.teeColor || defaultTee, handicap: p.handicap, isTemporary: false })),
+        ...teamAPlayersData.map((p: any) => ({ odId: p.odId || p.id, displayName: p.displayName, username: "", teeColor: p.teeColor || firstPlayerTee, handicap: p.handicap, isTemporary: false })),
+        ...teamBPlayersData.map((p: any) => ({ odId: p.odId || p.id, displayName: p.displayName, username: "", teeColor: p.teeColor || firstPlayerTee, handicap: p.handicap, isTemporary: false })),
       ];
       setGroups([{ ...createDefaultGroup(0), players: allPlayers }]);
     }
@@ -407,8 +409,221 @@ export default function GameSettingsDetail() {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    await saveChanges();
     navigate(returnPath);
+  };
+
+  const saveChanges = async () => {
+    setSaving(true);
+    try {
+      switch (gameType) {
+        case "round":
+        case "skins":
+          await saveRoundChanges();
+          break;
+        case "match-play":
+          await saveMatchPlayChanges();
+          break;
+        case "best-ball":
+          await saveBestBallChanges();
+          break;
+        case "copenhagen":
+          await saveCopenhagenChanges();
+          break;
+        case "wolf":
+          await saveWolfChanges();
+          break;
+        case "scramble":
+          await saveScrambleChanges();
+          break;
+        case "umbriago":
+          await saveUmbriagioChanges();
+          break;
+      }
+    } catch (error) {
+      console.error("Error saving changes:", error);
+      toast({ title: "Error", description: "Failed to save changes", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const saveRoundChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const startingHole = selectedHoles === "back9" ? 10 : 1;
+    
+    await supabase
+      .from("rounds")
+      .update({
+        round_name: roundName || null,
+        date_played: datePlayed,
+        course_name: selectedCourse?.name || "",
+        holes_played: holesPlayed,
+        starting_hole: startingHole,
+        tee_set: defaultTee,
+        round_type: roundType,
+      })
+      .eq("id", gameId);
+
+    // Update player tees
+    for (const group of groups) {
+      for (const player of group.players) {
+        await supabase
+          .from("round_players")
+          .update({ tee_color: player.teeColor, handicap: player.handicap })
+          .eq("round_id", gameId)
+          .or(`user_id.eq.${player.odId},id.eq.${player.odId}`);
+      }
+    }
+  };
+
+  const saveMatchPlayChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const players = groups[0]?.players || [];
+    
+    await supabase
+      .from("match_play_games")
+      .update({
+        round_name: roundName || null,
+        date_played: datePlayed,
+        course_name: selectedCourse?.name || "",
+        holes_played: holesPlayed,
+        tee_set: defaultTee,
+        player_1_tee: players[0]?.teeColor || defaultTee,
+        player_1_handicap: players[0]?.handicap,
+        player_2_tee: players[1]?.teeColor || defaultTee,
+        player_2_handicap: players[1]?.handicap,
+      })
+      .eq("id", gameId);
+  };
+
+  const saveBestBallChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    
+    // Get current game data to preserve team structure
+    const { data: currentGame } = await supabase
+      .from("best_ball_games")
+      .select("team_a_players, team_b_players")
+      .eq("id", gameId)
+      .single();
+
+    if (currentGame) {
+      const teamAPlayers = Array.isArray(currentGame.team_a_players) ? currentGame.team_a_players : [];
+      const teamBPlayers = Array.isArray(currentGame.team_b_players) ? currentGame.team_b_players : [];
+      const allPlayers = groups[0]?.players || [];
+      
+      // Update tees in existing team structures
+      const updatedTeamA = teamAPlayers.map((p: any) => {
+        const updated = allPlayers.find(ap => ap.odId === p.odId || ap.odId === p.id);
+        return updated ? { ...p, teeColor: updated.teeColor, handicap: updated.handicap } : p;
+      });
+      const updatedTeamB = teamBPlayers.map((p: any) => {
+        const updated = allPlayers.find(ap => ap.odId === p.odId || ap.odId === p.id);
+        return updated ? { ...p, teeColor: updated.teeColor, handicap: updated.handicap } : p;
+      });
+
+      await supabase
+        .from("best_ball_games")
+        .update({
+          round_name: roundName || null,
+          date_played: datePlayed,
+          course_name: selectedCourse?.name || "",
+          holes_played: holesPlayed,
+          team_a_players: updatedTeamA,
+          team_b_players: updatedTeamB,
+        })
+        .eq("id", gameId);
+    }
+  };
+
+  const saveCopenhagenChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const players = groups[0]?.players || [];
+    
+    await supabase
+      .from("copenhagen_games")
+      .update({
+        round_name: roundName || null,
+        date_played: datePlayed,
+        course_name: selectedCourse?.name || "",
+        holes_played: holesPlayed,
+        tee_set: defaultTee,
+        player_1_tee: players[0]?.teeColor || defaultTee,
+        player_1_handicap: players[0]?.handicap,
+        player_2_tee: players[1]?.teeColor || defaultTee,
+        player_2_handicap: players[1]?.handicap,
+        player_3_tee: players[2]?.teeColor || defaultTee,
+        player_3_handicap: players[2]?.handicap,
+      })
+      .eq("id", gameId);
+  };
+
+  const saveWolfChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    
+    await supabase
+      .from("wolf_games" as any)
+      .update({
+        round_name: roundName || null,
+        date_played: datePlayed,
+        course_name: selectedCourse?.name || "",
+        holes_played: holesPlayed,
+        tee_set: defaultTee,
+      })
+      .eq("id", gameId);
+  };
+
+  const saveScrambleChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    
+    // Get current game data to preserve team structure
+    const { data: currentGame } = await supabase
+      .from("scramble_games")
+      .select("teams")
+      .eq("id", gameId)
+      .single();
+
+    if (currentGame) {
+      const teams = Array.isArray(currentGame.teams) ? currentGame.teams : [];
+      const allPlayers = groups[0]?.players || [];
+      
+      // Update tees in existing team structures
+      const updatedTeams = teams.map((team: any) => ({
+        ...team,
+        players: team.players?.map((p: any) => {
+          const updated = allPlayers.find(ap => ap.odId === p.id || ap.odId === p.odId);
+          return updated ? { ...p, tee: updated.teeColor, handicap: updated.handicap } : p;
+        }) || []
+      }));
+
+      await supabase
+        .from("scramble_games")
+        .update({
+          round_name: roundName || null,
+          date_played: datePlayed,
+          course_name: selectedCourse?.name || "",
+          holes_played: holesPlayed,
+          tee_set: defaultTee,
+          teams: updatedTeams,
+        })
+        .eq("id", gameId);
+    }
+  };
+
+  const saveUmbriagioChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    
+    await supabase
+      .from("umbriago_games")
+      .update({
+        round_name: roundName || null,
+        date_played: datePlayed,
+        course_name: selectedCourse?.name || "",
+        holes_played: holesPlayed,
+        tee_set: defaultTee,
+      })
+      .eq("id", gameId);
   };
 
   // Group management
