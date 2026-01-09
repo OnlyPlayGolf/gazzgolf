@@ -37,6 +37,7 @@ const SettingsNotifications = () => {
       title: "Settings saved",
       description: "Your notification preferences have been updated.",
     });
+    navigate("/settings");
   };
 
   const notificationOptions = [
