@@ -91,6 +91,8 @@ export function UmbriagioScorecardCard({
     if (onClick) {
       onClick();
     } else if (gameId) {
+      // Mark as coming from feed to prevent share dialog
+      sessionStorage.setItem(`spectator_umbriago_${gameId}`, 'true');
       navigate(`/umbriago/${gameId}/summary`);
     }
   };

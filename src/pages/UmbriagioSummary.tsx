@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
@@ -19,13 +19,17 @@ interface CourseHole {
 export default function UmbriagioSummary() {
   const { gameId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Check if user is coming from feed (spectator) - don't show dialog
+  const isFromFeed = location.state?.fromFeed === true || sessionStorage.getItem(`spectator_umbriago_${gameId}`) === 'true';
   
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [holes, setHoles] = useState<UmbriagioHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showShareDialog, setShowShareDialog] = useState(true);
+  const [showShareDialog, setShowShareDialog] = useState(!isFromFeed);
   const [currentUserTeam, setCurrentUserTeam] = useState<'A' | 'B' | null>(null);
 
   useEffect(() => {
