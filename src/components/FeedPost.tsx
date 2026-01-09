@@ -1082,6 +1082,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 course_name: roundResult.courseName,
                 date: new Date().toISOString(),
                 score: roundResult.scoreVsPar,
+                totalScore: roundResult.score,
                 playerCount: 1,
                 gameMode: 'Stroke Play',
                 gameType: 'round',
