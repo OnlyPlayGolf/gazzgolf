@@ -41,9 +41,9 @@ const outcomePoints = {
 
 const outcomeLabels = {
   holed: 'Holed',
-  '1m': '≤1m',
-  '2m': '≤2m',
-  '3m': '≤3m',
+  '1m': '1m',
+  '2m': '2m',
+  '3m': '3m',
   miss: 'Miss',
 };
 
