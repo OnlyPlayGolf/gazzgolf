@@ -8,7 +8,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { getSpectatorReturnPath } from "@/utils/unifiedRoundsLoader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, MessageSquare, BarChart3, ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
+import { MessageSquare, ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -529,18 +529,15 @@ export default function RoundLeaderboard() {
 
                   {/* Action Buttons */}
                   <div className="border-t p-4">
-                    <div className="flex items-center justify-around">
-                      <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
-                        <ThumbsUp size={20} className="text-primary" />
-                        <span className="text-xs">Like</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="flex-col h-auto gap-1"
+                        onClick={() => navigate(`/rounds/${roundId}/feed`)}
+                      >
                         <MessageSquare size={20} className="text-primary" />
-                        <span className="text-xs">Comment to<br/>Game Feed</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
-                        <BarChart3 size={20} className="text-primary" />
-                        <span className="text-xs">Statistics</span>
+                        <span className="text-xs">View Game Feed</span>
                       </Button>
                     </div>
                   </div>

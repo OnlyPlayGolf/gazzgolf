@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
-import { ThumbsUp, MessageSquare, BarChart3, Swords } from "lucide-react";
+import { MessageSquare, Swords } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -31,6 +31,7 @@ interface GameWithHoles {
 
 export default function MatchPlayLeaderboard() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const [currentGame, setCurrentGame] = useState<MatchPlayGame | null>(null);
   const [allGamesWithHoles, setAllGamesWithHoles] = useState<GameWithHoles[]>([]);
   const [loading, setLoading] = useState(true);
@@ -333,18 +334,15 @@ export default function MatchPlayLeaderboard() {
 
         {/* Action Buttons */}
         <div className="border-t p-4">
-          <div className="flex items-center justify-around">
-            <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
-              <ThumbsUp size={20} className="text-primary" />
-              <span className="text-xs">Like</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
+          <div className="flex items-center justify-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex-col h-auto gap-1"
+              onClick={() => navigate(`/match-play/${game.id}/feed`)}
+            >
               <MessageSquare size={20} className="text-primary" />
-              <span className="text-xs text-center">Comment</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="flex-col h-auto gap-1">
-              <BarChart3 size={20} className="text-primary" />
-              <span className="text-xs">Statistics</span>
+              <span className="text-xs">View Game Feed</span>
             </Button>
           </div>
         </div>
