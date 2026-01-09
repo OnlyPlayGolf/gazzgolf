@@ -1342,7 +1342,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[60px] resize-none"
+                className="min-h-[40px] h-10 py-2 resize-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
