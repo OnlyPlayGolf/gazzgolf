@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Share2, Loader2, Trophy } from "lucide-react";
+import { Share2, Loader2 } from "lucide-react";
 import { UmbriagioGame, UmbriagioHole } from "@/types/umbriago";
 import { UmbriagioScorecard } from "@/components/UmbriagioScorecard";
 import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
+import { format } from "date-fns";
 
 interface CourseHole {
   hole_number: number;
@@ -35,6 +37,7 @@ export function UmbriagioShareDialogWithScorecard({
   currentUserTeam,
   onContinue,
 }: UmbriagioShareDialogWithScorecardProps) {
+  const navigate = useNavigate();
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
@@ -53,6 +56,15 @@ export function UmbriagioShareDialogWithScorecard({
     return undefined;
   };
 
+  const { normalizedA, normalizedB } = normalizeUmbriagioPoints(
+    game.team_a_total_points, 
+    game.team_b_total_points
+  );
+
+  const getScoreDisplay = () => {
+    return `${normalizedA} - ${normalizedB}`;
+  };
+
   const handleShare = async () => {
     setIsSharing(true);
     try {
@@ -61,11 +73,6 @@ export function UmbriagioShareDialogWithScorecard({
         toast({ title: "Please sign in to share", variant: "destructive" });
         return;
       }
-
-      const { normalizedA, normalizedB } = normalizeUmbriagioPoints(
-        game.team_a_total_points, 
-        game.team_b_total_points
-      );
 
       // Create structured game result marker
       const gameResult = `[GAME_RESULT]Umbriago|${game.course_name}|${game.round_name || ''}|${getWinnerName() || ''}|${normalizedA} - ${normalizedB}|Team A vs Team B|${game.id}[/GAME_RESULT]`;
@@ -82,7 +89,7 @@ export function UmbriagioShareDialogWithScorecard({
 
       toast({ title: "Shared to feed!" });
       onOpenChange(false);
-      onContinue();
+      navigate("/");
     } catch (error) {
       console.error("Error sharing:", error);
       toast({ title: "Failed to share", variant: "destructive" });
@@ -93,23 +100,44 @@ export function UmbriagioShareDialogWithScorecard({
 
   const handleContinue = () => {
     onOpenChange(false);
+    navigate("/");
   };
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button]:hidden">
-        <DialogHeader className="p-4 pb-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-primary" />
-            Round Complete!
-          </DialogTitle>
-          <DialogDescription>
-            {game.course_name}
-          </DialogDescription>
-        </DialogHeader>
+        {/* Green Header - Round Card Style */}
+        <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
+          <div className="flex items-center gap-4">
+            {/* Left: Score */}
+            <div className="flex-shrink-0 w-20 text-center">
+              <div className="text-2xl font-bold">{getScoreDisplay()}</div>
+              {game.winning_team && (
+                <div className="text-xs opacity-75 mt-0.5">
+                  {game.winning_team === 'A' ? game.team_a_name : game.team_b_name} wins
+                </div>
+              )}
+            </div>
+            
+            {/* Right: Round Details */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold truncate">
+                {game.round_name || 'Umbriago'}
+              </h3>
+              <div className="flex items-center gap-1.5 mt-1 text-sm opacity-90">
+                <span className="truncate">{game.course_name}</span>
+                <span>·</span>
+                <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
+              </div>
+              <div className="text-xs opacity-75 mt-1">
+                Umbriago · {game.holes_played} holes
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <ScrollArea className="max-h-[calc(90vh-140px)] px-4">
-          <div className="space-y-4 pb-4">
+        <ScrollArea className="max-h-[calc(90vh-180px)] px-4">
+          <div className="space-y-4 pb-4 pt-4">
             {/* Scorecard - same design as leaderboard */}
             <UmbriagioScorecard
               game={game}
