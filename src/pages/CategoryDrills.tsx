@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Target, Zap, Hammer, Activity, Star } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -21,7 +20,6 @@ const allDrills = [
     shortDescription: 'The Aggressive Putting drill helps you commit with confidence inside six meters. We\'re training speed and confidence - no hesitant strokes.',
     category: 'putting', 
     icon: Target,
-    statCategories: ['Putting 0–3m', 'Putting 3–6m'],
   },
   {
     id: 'pga-tour-18',
@@ -29,7 +27,6 @@ const allDrills = [
     shortDescription: '18 putts that represent an average putting round on the PGA Tour. A great drill to use for overall putting practice, compete with friends, test yourself against tour standards or dial in your speed control.',
     category: 'putting',
     icon: Target,
-    statCategories: ['Putting 0–3m', 'Putting 3–6m', 'Putting 6–12m'],
   },
   {
     id: 'short-putting-test',
@@ -37,7 +34,6 @@ const allDrills = [
     shortDescription: "A confidence-building putting drill where you make as many putts in a row as possible to improve consistency, handle pressure, and sharpen your must-make routine.",
     category: 'putting',
     icon: Target,
-    statCategories: ['Putting 0–3m'],
   },
   {
     id: 'up-down-putting',
@@ -45,7 +41,6 @@ const allDrills = [
     shortDescription: 'A speed control test that challenges you on both uphill and downhill putts. Learn how elevation changes affect your pace and break.',
     category: 'putting',
     icon: Target,
-    statCategories: ['Putting 3–6m', 'Putting 6–12m'],
   },
   {
     id: 'jason-day-lag',
@@ -53,7 +48,6 @@ const allDrills = [
     shortDescription: '18 putts from 8-20 meters randomized. Score points based on proximity - holed putts earn 3 points, within 2 feet earns 2 points. Get as many points as possible!',
     category: 'putting',
     icon: Target,
-    statCategories: ['Putting 6–12m', 'Putting 12m+'],
   },
   {
     id: 'easy-chip',
@@ -61,7 +55,6 @@ const allDrills = [
     shortDescription: 'Build consistency on simple chip shots. See how many chips in a row you can land inside one wedge length from the hole.',
     category: 'shortgame',
     icon: Zap,
-    statCategories: ['Short Game 0–20m', 'Fairway'],
   },
   {
     id: '8-ball-drill',
@@ -69,7 +62,6 @@ const allDrills = [
     shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',
     category: 'shortgame',
     icon: Zap,
-    statCategories: ['Short Game 0–20m', 'Short Game 20–40m', 'Fairway', 'Rough', 'Bunker'],
   },
   {
     id: 'wedges-2-laps',
@@ -77,7 +69,6 @@ const allDrills = [
     shortDescription: 'Dial in your wedges with 18 pressure shots from 40–80 meters. One shot per distance, 2 laps (18 total shots) and score points by hitting it close.',
     category: 'approach',
     icon: Hammer,
-    statCategories: ['Approach 40–80m', 'Fairway'],
   },
   {
     id: 'wedges-progression',
@@ -85,7 +76,6 @@ const allDrills = [
     shortDescription: 'Test your distance control across 13 distances (60-120m). Hit within 3m to advance. Score is total shots needed.',
     category: 'approach',
     icon: Hammer,
-    statCategories: ['Approach 60–120m', 'Fairway'],
   },
   {
     id: 'shot-shape-master',
@@ -93,7 +83,6 @@ const allDrills = [
     shortDescription: '14 tee shots testing your ability to shape shots on command. Master draws, fades, and fairway finding with bonus streaks.',
     category: 'teeshots',
     icon: Target,
-    statCategories: ['Off the Tee', 'Shot Shaping'],
   },
   {
     id: 'approach-control',
@@ -101,7 +90,6 @@ const allDrills = [
     shortDescription: '14 randomized approach shots from 130-180 meters. Test your precision and control with PGA Tour-based scoring.',
     category: 'approach',
     icon: Activity,
-    statCategories: ['Approach 130–180m', 'Fairway'],
   },
   {
     id: 'tw-9-windows',
@@ -109,7 +97,6 @@ const allDrills = [
     shortDescription: 'Hit all 9 shot combinations (3 trajectories × 3 shapes) with a 7 iron. Count shots needed to complete all windows.',
     category: 'approach',
     icon: Target,
-    statCategories: ['Approach', 'Shot Shaping'],
   },
   {
     id: 'driver-control',
@@ -117,7 +104,6 @@ const allDrills = [
     shortDescription: '14 tee shots testing fairway accuracy. Earn points for hitting fairways, with bonus streaks for consistency.',
     category: 'teeshots',
     icon: Target,
-    statCategories: ['Off the Tee', 'Fairway Accuracy'],
   },
   {
     id: 'up-downs-test',
@@ -125,7 +111,6 @@ const allDrills = [
     shortDescription: '18 randomized short game stations from bunkers, rough, and fairway. Track total shots needed for all stations.',
     category: 'shortgame',
     icon: Zap,
-    statCategories: ['Short Game 0–20m', 'Fairway', 'Rough', 'Bunker', 'Scrambling'],
   },
 ];
 
@@ -133,37 +118,8 @@ const categoryNames = {
   putting: 'Putting',
   shortgame: 'Short Game',
   approach: 'Approach',
-  teeshots: 'Off the Tee',
+  teeshots: 'Tee Shots',
   favorites: 'Favorites',
-};
-
-const MAX_VISIBLE_TAGS = 3;
-
-const StatCategoryTags = ({ categories }: { categories: string[] }) => {
-  const visibleCategories = categories.slice(0, MAX_VISIBLE_TAGS);
-  const remainingCount = categories.length - MAX_VISIBLE_TAGS;
-
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {visibleCategories.map((cat) => (
-        <Badge 
-          key={cat} 
-          variant="secondary" 
-          className="text-xs font-normal px-2 py-0.5"
-        >
-          {cat}
-        </Badge>
-      ))}
-      {remainingCount > 0 && (
-        <Badge 
-          variant="outline" 
-          className="text-xs font-normal px-2 py-0.5 text-muted-foreground"
-        >
-          +{remainingCount} more
-        </Badge>
-      )}
-    </div>
-  );
 };
 
 const CategoryDrills = () => {
@@ -270,7 +226,7 @@ const CategoryDrills = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {drills.map((drill) => {
               if (!drill) return null;
               const Icon = drill.icon;
@@ -308,25 +264,23 @@ const CategoryDrills = () => {
                   className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer"
                   onClick={handleDrillClick}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                        <Icon size={20} className="text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-foreground">{drill.title}</h3>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-3 text-foreground">
+                      <Icon size={24} className="text-primary" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span>{drill.title}</span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="p-1 h-7 w-7 shrink-0"
+                            className="p-1 h-8 w-8"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleFavorite(drill);
                             }}
                           >
                             <Star 
-                              size={14} 
+                              size={16} 
                               className={cn(
                                 "transition-colors",
                                 drillIsFavorite 
@@ -336,9 +290,23 @@ const CategoryDrills = () => {
                             />
                           </Button>
                         </div>
-                        <StatCategoryTags categories={drill.statCategories} />
                       </div>
-                    </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      {drill.shortDescription}
+                    </p>
+                    
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDrillClick();
+                      }}
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      Start
+                    </Button>
                   </CardContent>
                 </Card>
               );
