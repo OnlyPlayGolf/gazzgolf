@@ -263,20 +263,20 @@ export default function RoundSettings() {
     );
   }
 
+  // Use tee_set as authoritative source for player tees
+  const playerTee = round.tee_set;
   const gamePlayers: GamePlayer[] = players.map(p => {
     const profile = p.profiles;
     return {
       name: profile?.display_name || profile?.username || "Player",
       handicap: p.handicap,
-      tee: p.tee_color,
+      tee: playerTee,
       avatarUrl: profile?.avatar_url,
     };
   });
 
-  const tees = players.map(p => p.tee_color).filter(Boolean);
-  const uniqueTees = [...new Set(tees)];
-  const teeInfo = uniqueTees.length === 0 ? (round.tee_set ? getTeeDisplayName(round.tee_set) : "Not specified") :
-                  uniqueTees.length === 1 ? getTeeDisplayName(uniqueTees[0]!) : "Mixed tees";
+  // Use tee_set as the authoritative source (set in Game Settings)
+  const teeInfo = round.tee_set ? getTeeDisplayName(round.tee_set) : "Not specified";
 
   const hasHandicaps = players.some(p => p.handicap !== null);
 
