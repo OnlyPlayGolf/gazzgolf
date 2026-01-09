@@ -1261,6 +1261,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               holePars={umbriagioScorecardResult.holePars}
               onClick={() => {
                 if (umbriagioScorecardResult.gameId) {
+                  // Mark as spectator to prevent share dialog
+                  sessionStorage.setItem(`spectator_umbriago_${umbriagioScorecardResult.gameId}`, 'true');
                   navigate(`/umbriago/${umbriagioScorecardResult.gameId}/summary`);
                 } else {
                   toast.error("Game details not found");
