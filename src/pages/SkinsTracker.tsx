@@ -459,14 +459,14 @@ export default function SkinsTracker() {
         </div>
 
         {/* Hole Navigation Bar */}
-        <div className="bg-green-600 py-4 px-4">
+        <div className="bg-primary py-4 px-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
-              className="text-white hover:bg-green-700 disabled:text-white/50"
+              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
             >
               <ChevronLeft size={24} />
             </Button>
@@ -482,7 +482,7 @@ export default function SkinsTracker() {
               size="icon"
               onClick={() => navigateHole("next")}
               disabled={currentHoleIndex === courseHoles.length - 1}
-              className="text-white hover:bg-green-700 disabled:text-white/50"
+              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
             >
               <ChevronRight size={24} />
             </Button>
