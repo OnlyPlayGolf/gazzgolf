@@ -70,9 +70,21 @@ export function RoundCompletionModal({
         return;
       }
 
-      const roundResult = roundId 
-        ? `[ROUND_RESULT]${roundName}|${courseName}|${totalScore}|${scoreVsPar}|${holesPlayed}|${roundId}[/ROUND_RESULT]`
-        : `[ROUND_RESULT]${roundName}|${courseName}|${totalScore}|${scoreVsPar}|${holesPlayed}[/ROUND_RESULT]`;
+      // Prepare scorecard data as JSON for the extended format
+      const holeScoresObj: Record<number, number> = {};
+      const holeParsObj: Record<number, number> = {};
+      courseHoles.forEach(hole => {
+        const score = holeScores.get(hole.hole_number);
+        if (score && score > 0) {
+          holeScoresObj[hole.hole_number] = score;
+        }
+        holeParsObj[hole.hole_number] = hole.par;
+      });
+      
+      const scorecardData = JSON.stringify({ scores: holeScoresObj, pars: holeParsObj, totalPar });
+
+      // Extended format with scorecard: [ROUND_SCORECARD]name|course|date|score|vspar|holes|totalPar|roundId|scorecardJson[/ROUND_SCORECARD]
+      const roundResult = `[ROUND_SCORECARD]${roundName}|${courseName}|${datePlayed}|${totalScore}|${scoreVsPar}|${holesPlayed}|${totalPar}|${roundId || ''}|${scorecardData}[/ROUND_SCORECARD]`;
       const postContent = comment.trim()
         ? `${comment}\n\n${roundResult}`
         : roundResult;

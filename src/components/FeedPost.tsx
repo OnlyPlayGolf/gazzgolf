@@ -15,7 +15,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
+import { StrokePlayScorecardCard } from "./StrokePlayScorecardCard";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
+
+// Parse round scorecard result from post content (new format with scorecard data)
+const parseRoundScorecardResult = (content: string) => {
+  // Format: [ROUND_SCORECARD]name|course|date|score|vspar|holes|totalPar|roundId|scorecardJson[/ROUND_SCORECARD]
+  const match = content?.match(/\[ROUND_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_SCORECARD\]/);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[9]);
+      return {
+        roundName: match[1],
+        courseName: match[2],
+        datePlayed: match[3],
+        score: parseInt(match[4]),
+        scoreVsPar: parseInt(match[5]),
+        holesPlayed: parseInt(match[6]),
+        totalPar: parseInt(match[7]),
+        roundId: match[8] || null,
+        holeScores: scorecardData.scores as Record<number, number>,
+        holePars: scorecardData.pars as Record<number, number>,
+        textContent: content.replace(/\[ROUND_SCORECARD\].+?\[\/ROUND_SCORECARD\]/, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
 
 // Parse drill result from post content
 const parseDrillResult = (content: string) => {
@@ -720,12 +749,14 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const handleEditPost = () => {
     // Extract just the text content (without special result tags)
     const drillResult = parseDrillResult(post.content);
+    const roundScorecardResult = parseRoundScorecardResult(post.content);
     const roundResult = parseRoundResult(post.content);
     const umbriagioResult = parseUmbriagioResult(post.content);
     const gameResult = parseGameResult(post.content);
     
     let textContent = post.content || "";
     if (drillResult) textContent = drillResult.textContent;
+    else if (roundScorecardResult) textContent = roundScorecardResult.textContent;
     else if (roundResult) textContent = roundResult.textContent;
     else if (umbriagioResult) textContent = umbriagioResult.textContent;
     else if (gameResult) textContent = gameResult.textContent;
@@ -741,12 +772,15 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       let newContent = editPostContent.trim();
       
       const drillMatch = post.content?.match(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/);
+      const roundScorecardMatch = post.content?.match(/\[ROUND_SCORECARD\].+?\[\/ROUND_SCORECARD\]/);
       const roundMatch = post.content?.match(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/);
       const umbriagioMatch = post.content?.match(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/);
       const gameMatch = post.content?.match(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/);
       
       if (drillMatch) {
         newContent = newContent ? `${newContent}\n${drillMatch[0]}` : drillMatch[0];
+      } else if (roundScorecardMatch) {
+        newContent = newContent ? `${newContent}\n${roundScorecardMatch[0]}` : roundScorecardMatch[0];
       } else if (roundMatch) {
         newContent = newContent ? `${newContent}\n${roundMatch[0]}` : roundMatch[0];
       } else if (umbriagioMatch) {
@@ -918,7 +952,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
   // Check if this post contains a drill result, round result, umbriago result, or game result
   const drillResult = parseDrillResult(post.content);
-  const roundResult = parseRoundResult(post.content);
+  const roundScorecardResult = parseRoundScorecardResult(post.content);
+  const roundResult = !roundScorecardResult ? parseRoundResult(post.content) : null;
   const umbriagioResult = parseUmbriagioResult(post.content);
   const gameResult = parseGameResult(post.content);
 
@@ -1008,6 +1043,20 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 date={post.created_at}
               />
             )}
+            {roundScorecardResult && (
+              <StrokePlayScorecardCard 
+                roundId={roundScorecardResult.roundId || undefined}
+                roundName={roundScorecardResult.roundName}
+                courseName={roundScorecardResult.courseName}
+                datePlayed={roundScorecardResult.datePlayed}
+                holesPlayed={roundScorecardResult.holesPlayed}
+                totalScore={roundScorecardResult.score}
+                scoreVsPar={roundScorecardResult.scoreVsPar}
+                totalPar={roundScorecardResult.totalPar}
+                holeScores={roundScorecardResult.holeScores}
+                holePars={roundScorecardResult.holePars}
+              />
+            )}
             {roundResult && (
               <RoundCard 
                 round={{
@@ -1066,6 +1115,32 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                     }
                   }
                   toast.error("Result details not found");
+                }
+              }}
+            />
+          </div>
+        ) : roundScorecardResult ? (
+          <div className="space-y-3">
+            {roundScorecardResult.textContent && (
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundScorecardResult.textContent}</p>
+            )}
+            <StrokePlayScorecardCard 
+              roundId={roundScorecardResult.roundId || undefined}
+              roundName={roundScorecardResult.roundName}
+              courseName={roundScorecardResult.courseName}
+              datePlayed={roundScorecardResult.datePlayed}
+              holesPlayed={roundScorecardResult.holesPlayed}
+              totalScore={roundScorecardResult.score}
+              scoreVsPar={roundScorecardResult.scoreVsPar}
+              totalPar={roundScorecardResult.totalPar}
+              holeScores={roundScorecardResult.holeScores}
+              holePars={roundScorecardResult.holePars}
+              onClick={() => {
+                if (roundScorecardResult.roundId) {
+                  sessionStorage.setItem(`spectator_return_${roundScorecardResult.roundId}`, location.pathname);
+                  navigate(`/rounds/${roundScorecardResult.roundId}/leaderboard`);
+                } else {
+                  toast.error("Round details not found");
                 }
               }}
             />
