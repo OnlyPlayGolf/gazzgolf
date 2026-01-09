@@ -65,15 +65,17 @@ export default function GameSettingsDetail() {
 
   useEffect(() => {
     if (gameId && gameType) {
+      // Set loading false immediately to show UI, data will populate as it loads
+      setLoading(false);
       fetchGameData();
     }
   }, [gameId, gameType]);
 
   useEffect(() => {
-    if (selectedCourse) {
+    if (selectedCourse?.id) {
       fetchCourseTees(selectedCourse.id);
     }
-  }, [selectedCourse]);
+  }, [selectedCourse?.id]);
 
   const fetchCourseTees = async (courseId: string) => {
     try {
@@ -124,8 +126,6 @@ export default function GameSettingsDetail() {
       }
     } catch (error) {
       console.error("Error fetching game data:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -692,13 +692,6 @@ export default function GameSettingsDetail() {
     return groups.flatMap(g => g.players.map(p => p.odId));
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
