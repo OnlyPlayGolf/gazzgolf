@@ -774,29 +774,29 @@ export default function RoundTracker() {
         </div>
 
         {/* Hole Navigation Bar */}
-        <div className="bg-[hsl(120,20%,85%)] py-4 px-4">
+        <div className="bg-green-600 py-4 px-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+              className="text-white hover:bg-green-700 disabled:text-white/50"
             >
               <ChevronLeft size={24} />
             </Button>
 
             <div className="text-center">
-              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {currentHole.par}</div>
+              <div className="text-sm text-white/90">PAR {currentHole.par}</div>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole.hole_number}</span>
+                <span className="text-2xl font-bold text-white">Hole {currentHole.hole_number}</span>
                 {currentHole.hole_number > roundState.plannedHoles && (
-                  <Badge variant="secondary" className="text-xs bg-[hsl(120,20%,80%)] text-[hsl(120,20%,30%)]">
+                  <Badge variant="secondary" className="text-xs bg-white/20 text-white">
                     Extra
                   </Badge>
                 )}
               </div>
-              <div className="text-sm text-[hsl(120,20%,40%)]">HCP {currentHole.stroke_index}</div>
+              <div className="text-sm text-white/90">HCP {currentHole.stroke_index}</div>
             </div>
 
             <Button
@@ -804,7 +804,7 @@ export default function RoundTracker() {
               size="icon"
               onClick={() => navigateHole("next")}
               disabled={currentHoleIndex === courseHoles.length - 1}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+              className="text-white hover:bg-green-700 disabled:text-white/50"
             >
               <ChevronRight size={24} />
             </Button>

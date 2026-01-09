@@ -628,23 +628,23 @@ export default function UmbriagioPlay() {
         </div>
 
         {/* Hole Navigation Bar */}
-        <div className="bg-[hsl(120,20%,85%)] py-4 px-4">
+        <div className="bg-green-600 py-4 px-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+              className="text-white hover:bg-green-700 disabled:text-white/50"
             >
               <ChevronLeft size={24} />
             </Button>
 
             <div className="text-center">
-              <div className="text-sm text-[hsl(120,20%,40%)]">PAR {par}</div>
-              <div className="text-2xl font-bold text-[hsl(120,20%,25%)]">Hole {currentHole}</div>
+              <div className="text-sm text-white/90">PAR {par}</div>
+              <div className="text-2xl font-bold text-white">Hole {currentHole}</div>
               {scores.multiplier > 1 && (
-                <div className="text-sm font-bold text-amber-600">×{scores.multiplier}</div>
+                <div className="text-sm font-bold text-amber-300">×{scores.multiplier}</div>
               )}
             </div>
 
@@ -653,7 +653,7 @@ export default function UmbriagioPlay() {
               size="icon"
               onClick={() => navigateHole("next")}
               disabled={currentHole > holes.length || currentHole >= totalHoles}
-              className="text-[hsl(120,20%,30%)] hover:bg-[hsl(120,20%,80%)]"
+              className="text-white hover:bg-green-700 disabled:text-white/50"
             >
               <ChevronRight size={24} />
             </Button>
