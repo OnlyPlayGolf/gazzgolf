@@ -19,6 +19,7 @@ import {
   RoundActionsSection,
   DeleteGameDialog,
 } from "@/components/settings";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 export default function CopenhagenSettings() {
   const { gameId } = useParams();
@@ -201,8 +202,8 @@ export default function CopenhagenSettings() {
 
   const tees = [game.player_1_tee, game.player_2_tee, game.player_3_tee].filter(Boolean);
   const uniqueTees = [...new Set(tees)];
-  const teeInfo = uniqueTees.length === 0 ? (game.tee_set || "Not specified") :
-                  uniqueTees.length === 1 ? uniqueTees[0]! : "Mixed tees";
+  const teeInfo = uniqueTees.length === 0 ? (game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified") :
+                  uniqueTees.length === 1 ? getTeeDisplayName(uniqueTees[0]!) : "Mixed tees";
 
   const stake = (game as any).stake_per_point ?? 1;
   const gameDetails: GameDetailsData = {

@@ -19,6 +19,7 @@ import {
   DeleteGameDialog,
   LeaveGameDialog,
 } from "@/components/settings";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 export default function BestBallSettings() {
   const { gameId } = useParams();
@@ -171,7 +172,7 @@ export default function BestBallSettings() {
     .filter(Boolean);
   const uniqueTees = [...new Set(allTees)];
   const teeInfo = uniqueTees.length === 0 ? "Not specified" :
-                  uniqueTees.length === 1 ? uniqueTees[0]! : "Mixed tees";
+                  uniqueTees.length === 1 ? getTeeDisplayName(uniqueTees[0]!) : "Mixed tees";
 
   const gameDetails: GameDetailsData = {
     format: `Best Ball ${game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}`,

@@ -20,6 +20,7 @@ import {
   DeleteGameDialog,
   LeaveGameDialog,
 } from "@/components/settings";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 export default function MatchPlaySettings() {
   const { gameId } = useParams();
@@ -172,11 +173,11 @@ export default function MatchPlaySettings() {
   const teeInfo = (() => {
     if (game.player_1_tee && game.player_2_tee) {
       if (game.player_1_tee === game.player_2_tee) {
-        return game.player_1_tee;
+        return getTeeDisplayName(game.player_1_tee);
       }
       return "Mixed tees";
     }
-    return game.tee_set || "Not specified";
+    return game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified";
   })();
 
   const gameDetails: GameDetailsData = {
