@@ -19,6 +19,7 @@ import {
   DeleteGameDialog,
   LeaveGameDialog,
 } from "@/components/settings";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 
 export default function WolfSettings() {
   const { gameId } = useParams();
@@ -49,6 +50,17 @@ export default function WolfSettings() {
       fetchGame();
       fetchProgress();
     }
+  }, [gameId]);
+
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        fetchGame();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [gameId]);
 
   const fetchGame = async () => {
@@ -185,14 +197,20 @@ export default function WolfSettings() {
     game.player_5,
   ].filter(Boolean) as string[];
 
-  const players: GamePlayer[] = playerNames.map(name => ({ name }));
+  // Wolf doesn't have individual player tees, use tee_set from database if available
+  const gameTeeSet = (game as any).tee_set;
+  const teeInfo = gameTeeSet ? getTeeDisplayName(gameTeeSet) : "Standard";
+  const players: GamePlayer[] = playerNames.map(name => ({ 
+    name,
+    tee: gameTeeSet || undefined,
+  }));
 
   const gameDetails: GameDetailsData = {
     format: "Wolf",
     courseName: game.course_name,
     datePlayed: game.date_played,
     players,
-    teeInfo: "Standard",
+    teeInfo,
     holesPlayed: game.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
     scoring: `Lone Wolf: ${loneWolfWinPoints}/${loneWolfLossPoints} pts • Team: ${teamWinPoints} pts`,

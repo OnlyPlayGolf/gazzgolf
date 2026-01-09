@@ -78,6 +78,17 @@ export default function SimpleSkinsSettings() {
     }
   }, [roundId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (roundId) {
+        fetchRound();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [roundId]);
+
   const loadSettings = () => {
     // First try round-specific settings (from localStorage for persistence)
     const roundSettings = localStorage.getItem(`simpleSkinsRoundSettings_${roundId}`);
@@ -234,20 +245,34 @@ export default function SimpleSkinsSettings() {
     );
   }
 
-  // Use tee_set as authoritative source for player tees
-  const playerTee = round.tee_set;
+  // Use individual player tees from DB - these are the actual per-player tees set in Game Settings
+  const defaultTee = round.tee_set || 'white';
   const gamePlayers: GamePlayer[] = players.map(p => {
     const profile = p.profiles;
     return {
       name: profile?.display_name || profile?.username || "Player",
       handicap: p.handicap,
-      tee: playerTee,
+      tee: p.tee_color || defaultTee, // Individual player tee from DB, fallback to default
       avatarUrl: profile?.avatar_url,
     };
   });
 
-  // Use tee_set as the authoritative source (set in Game Settings)
-  const teeInfo = round.tee_set ? getTeeDisplayName(round.tee_set) : "Not specified";
+  // tee_set is the "Default Tee" - display it in Game Details
+  // If all players have same tee, show that; if different, show "Combo"
+  const allPlayerTees = gamePlayers.map(p => p.tee);
+  const uniqueTees = [...new Set(allPlayerTees)];
+  const teeInfo = (() => {
+    if (round.tee_set && uniqueTees.length === 1 && uniqueTees[0] === round.tee_set) {
+      return getTeeDisplayName(round.tee_set);
+    }
+    if (uniqueTees.length === 1) {
+      return getTeeDisplayName(uniqueTees[0]!);
+    }
+    if (uniqueTees.length > 1) {
+      return "Combo";
+    }
+    return round.tee_set ? getTeeDisplayName(round.tee_set) : "Not specified";
+  })();
 
   const gameDetails: GameDetailsData = {
     format: "Skins",

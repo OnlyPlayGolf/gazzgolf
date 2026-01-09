@@ -54,6 +54,17 @@ export default function CopenhagenSettings() {
     }
   }, [gameId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        fetchGame();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [gameId]);
+
   const loadSettings = () => {
     if (!gameId) return;
     
@@ -182,28 +193,51 @@ export default function CopenhagenSettings() {
     );
   }
 
-  // Use tee_set as authoritative source for player tees
-  const playerTee = game.tee_set || game.player_1_tee;
+  // Use individual player tees from DB - these are the actual per-player tees set in Game Settings
+  const defaultTee = game.tee_set || 'white';
+  const player1Tee = game.player_1_tee || defaultTee;
+  const player2Tee = game.player_2_tee || defaultTee;
+  const player3Tee = game.player_3_tee || defaultTee;
+  
   const players: GamePlayer[] = [
     { 
       name: game.player_1, 
       handicap: useHandicaps ? game.player_1_handicap : undefined,
-      tee: playerTee 
+      tee: player1Tee
     },
     { 
       name: game.player_2, 
       handicap: useHandicaps ? game.player_2_handicap : undefined,
-      tee: playerTee 
+      tee: player2Tee
     },
     { 
       name: game.player_3, 
       handicap: useHandicaps ? game.player_3_handicap : undefined,
-      tee: playerTee 
+      tee: player3Tee
     },
   ];
 
-  // Use tee_set as the authoritative source (set in Game Settings)
-  const teeInfo = game.tee_set ? getTeeDisplayName(game.tee_set) : "Not specified";
+  // tee_set is the "Default Tee" - display it in Game Details
+  // If all players have same tee, show that; if different, show "Combo"
+  const teeInfo = (() => {
+    if (game.tee_set) {
+      // Check if all players are using the default tee
+      const allSameTee = player1Tee === game.tee_set && player2Tee === game.tee_set && player3Tee === game.tee_set;
+      if (allSameTee || (!game.player_1_tee && !game.player_2_tee && !game.player_3_tee)) {
+        return getTeeDisplayName(game.tee_set);
+      }
+      // Check if all players have the same (non-default) tee
+      if (player1Tee === player2Tee && player2Tee === player3Tee) {
+        return getTeeDisplayName(player1Tee);
+      }
+      return "Combo";
+    }
+    // Fallback: check individual tees
+    if (player1Tee === player2Tee && player2Tee === player3Tee) {
+      return getTeeDisplayName(player1Tee);
+    }
+    return "Combo";
+  })();
 
   const stake = (game as any).stake_per_point ?? 1;
   const gameDetails: GameDetailsData = {

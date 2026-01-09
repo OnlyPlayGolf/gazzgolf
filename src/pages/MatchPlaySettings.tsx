@@ -50,6 +50,17 @@ export default function MatchPlaySettings() {
     }
   }, [gameId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        fetchGame();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [gameId]);
+
   const fetchGame = async () => {
     try {
       const { data } = await supabase
@@ -152,38 +163,54 @@ export default function MatchPlaySettings() {
   }
 
   // Build players list from ALL games in the event (all groups)
-  // Use individual player tees from the database (these are set per-player in Game Settings)
+  // Use individual player tees from the database - these are the actual per-player tees set in Game Settings
   const players: GamePlayer[] = allGamesInEvent.flatMap((g, gameIndex) => {
     const groupLabel = allGamesInEvent.length > 1 ? `Match ${gameIndex + 1}` : undefined;
+    const defaultTee = g.tee_set || 'white';
     return [
       { 
         name: g.player_1, 
         handicap: g.use_handicaps ? g.player_1_handicap : undefined,
-        tee: g.player_1_tee || g.tee_set, // Individual player tee, fallback to tee_set
+        tee: g.player_1_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
       },
       { 
         name: g.player_2, 
         handicap: g.use_handicaps ? g.player_2_handicap : undefined,
-        tee: g.player_2_tee || g.tee_set, // Individual player tee, fallback to tee_set
+        tee: g.player_2_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
       },
     ];
   });
 
-  // tee_set is the "Default Tee" from Game Settings - display it in Game Details
+  // tee_set is the "Default Tee" from Game Settings - this controls Game Details display
+  // If all players have the same tee, show that; if different tees, show "Combo"
   const teeInfo = (() => {
+    // Get all unique player tees
+    const player1Tee = game.player_1_tee || game.tee_set;
+    const player2Tee = game.player_2_tee || game.tee_set;
+    
+    // If tee_set is defined, use it as the primary display
     if (game.tee_set) {
-      return getTeeDisplayName(game.tee_set);
-    }
-    // Fallback: if no tee_set, check individual tees
-    if (game.player_1_tee && game.player_2_tee) {
-      if (game.player_1_tee === game.player_2_tee) {
-        return getTeeDisplayName(game.player_1_tee);
+      // Check if all players are using the default tee
+      const allSameTee = player1Tee === game.tee_set && player2Tee === game.tee_set;
+      if (allSameTee || (!game.player_1_tee && !game.player_2_tee)) {
+        return getTeeDisplayName(game.tee_set);
+      }
+      // Players have different tees from default
+      if (player1Tee === player2Tee) {
+        return getTeeDisplayName(player1Tee!);
       }
       return "Combo";
     }
-    if (game.player_1_tee) return getTeeDisplayName(game.player_1_tee);
+    // Fallback: if no tee_set, check individual tees
+    if (player1Tee && player2Tee) {
+      if (player1Tee === player2Tee) {
+        return getTeeDisplayName(player1Tee);
+      }
+      return "Combo";
+    }
+    if (player1Tee) return getTeeDisplayName(player1Tee);
     return "Not specified";
   })();
 

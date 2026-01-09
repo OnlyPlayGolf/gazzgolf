@@ -47,6 +47,17 @@ export default function BestBallSettings() {
     }
   }, [gameId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        fetchGame();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [gameId]);
+
   const fetchGame = async () => {
     try {
       const { data } = await supabase
@@ -152,26 +163,38 @@ export default function BestBallSettings() {
     );
   }
 
-  // Use first player's tee as authoritative source for all players
-  const authorityTee = game.team_a_players[0]?.teeColor || game.team_b_players[0]?.teeColor;
+  // Use individual player tees from the teams - these are per-player tees set in Game Settings
+  const allPlayers = [...game.team_a_players, ...game.team_b_players];
+  const defaultTee = allPlayers.find(p => p.teeColor)?.teeColor || 'white';
+  
   const players: GamePlayer[] = [
     ...game.team_a_players.map(p => ({
       name: p.displayName,
       handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
-      tee: authorityTee,
+      tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_a_name,
     })),
     ...game.team_b_players.map(p => ({
       name: p.displayName,
       handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
-      tee: authorityTee,
+      tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_b_name,
     })),
   ];
 
-  // Use first player's tee as the authoritative source (set in Game Settings)
-  const firstPlayerTee = game.team_a_players[0]?.teeColor || game.team_b_players[0]?.teeColor;
-  const teeInfo = firstPlayerTee ? getTeeDisplayName(firstPlayerTee) : "Not specified";
+  // tee_set is the "Default Tee" - display it in Game Details
+  // If all players have same tee, show that; if different, show "Combo"
+  const allPlayerTees = players.map(p => p.tee);
+  const uniqueTees = [...new Set(allPlayerTees)];
+  const teeInfo = (() => {
+    if (uniqueTees.length === 1) {
+      return getTeeDisplayName(uniqueTees[0]!);
+    }
+    if (uniqueTees.length > 1) {
+      return "Combo";
+    }
+    return defaultTee ? getTeeDisplayName(defaultTee) : "Not specified";
+  })();
 
   const gameDetails: GameDetailsData = {
     format: `Best Ball ${game.game_type === 'match' ? 'Match Play' : 'Stroke Play'}`,
