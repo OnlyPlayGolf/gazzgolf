@@ -358,7 +358,7 @@ export default function CopenhagenSettings() {
         <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate(`/copenhagen/${gameId}/summary`)}
+          onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
           onLeave={() => setShowLeaveDialog(true)}
         />

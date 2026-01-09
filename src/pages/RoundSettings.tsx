@@ -456,7 +456,7 @@ export default function RoundSettings() {
           <RoundActionsSection
             isAdmin={isAdmin}
             onFinish={handleFinishRound}
-            onSaveAndExit={() => navigate(`/rounds/${roundId}/summary`)}
+            onSaveAndExit={() => navigate('/profile')}
             onDelete={isAdmin ? () => setShowDeleteDialog(true) : undefined}
             onLeave={!isAdmin ? () => setShowLeaveDialog(true) : undefined}
             finishLabel="Finish Round"

@@ -313,7 +313,7 @@ export default function WolfSettings() {
         <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate(`/wolf/${gameId}/summary`)}
+          onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
           onLeave={() => setShowLeaveDialog(true)}
         />

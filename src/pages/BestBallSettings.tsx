@@ -291,7 +291,7 @@ export default function BestBallSettings() {
         <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate(`/best-ball/${gameId}/summary`)}
+          onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
           onLeave={() => setShowLeaveDialog(true)}
         />
