@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
 import { StrokePlayScorecardCard } from "./StrokePlayScorecardCard";
+import { UmbriagioScorecardCard } from "./UmbriagioScorecardCard";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 
 // Parse round scorecard result from post content (new format with scorecard data)
@@ -106,7 +107,37 @@ const parseRoundResult = (content: string) => {
   return null;
 };
 
-// Parse Umbriago result from post content
+// Parse Umbriago scorecard result from post content (new format with scorecard data)
+const parseUmbriagioScorecardResult = (content: string) => {
+  // Format: [UMBRIAGO_SCORECARD]roundName|courseName|date|teamAName|teamBName|normalizedA|normalizedB|winningTeam|currentUserTeam|gameId|scorecardJson[/UMBRIAGO_SCORECARD]
+  const match = content?.match(/\[UMBRIAGO_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/UMBRIAGO_SCORECARD\]/);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[11]);
+      return {
+        roundName: match[1],
+        courseName: match[2],
+        datePlayed: match[3],
+        teamAName: match[4],
+        teamBName: match[5],
+        normalizedA: parseInt(match[6]),
+        normalizedB: parseInt(match[7]),
+        winningTeam: (match[8] === 'A' || match[8] === 'B' || match[8] === 'TIE') ? match[8] as 'A' | 'B' | 'TIE' : null,
+        currentUserTeam: (match[9] === 'A' || match[9] === 'B') ? match[9] as 'A' | 'B' : null,
+        gameId: match[10] || null,
+        holePoints: scorecardData.holePoints as Record<number, { teamA: number; teamB: number }>,
+        holePars: scorecardData.holePars as Record<number, number>,
+        textContent: content.replace(/\[UMBRIAGO_SCORECARD\].+?\[\/UMBRIAGO_SCORECARD\]/, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing umbriago scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Parse Umbriago result from post content (legacy format)
 const parseUmbriagioResult = (content: string) => {
   // Extended format with gameId
   const extendedMatch = content?.match(/\[UMBRIAGO_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/UMBRIAGO_RESULT\]/);
@@ -954,7 +985,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const drillResult = parseDrillResult(post.content);
   const roundScorecardResult = parseRoundScorecardResult(post.content);
   const roundResult = !roundScorecardResult ? parseRoundResult(post.content) : null;
-  const umbriagioResult = parseUmbriagioResult(post.content);
+  const umbriagioScorecardResult = parseUmbriagioScorecardResult(post.content);
+  const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(post.content) : null;
   const gameResult = parseGameResult(post.content);
 
   return (
@@ -1205,6 +1237,33 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                     console.error("Error finding round:", err);
                     toast.error("Error finding round details");
                   }
+                }
+              }}
+            />
+          </div>
+        ) : umbriagioScorecardResult ? (
+          <div className="space-y-3">
+            {umbriagioScorecardResult.textContent && (
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{umbriagioScorecardResult.textContent}</p>
+            )}
+            <UmbriagioScorecardCard
+              gameId={umbriagioScorecardResult.gameId || ''}
+              roundName={umbriagioScorecardResult.roundName}
+              courseName={umbriagioScorecardResult.courseName}
+              datePlayed={umbriagioScorecardResult.datePlayed}
+              teamAName={umbriagioScorecardResult.teamAName}
+              teamBName={umbriagioScorecardResult.teamBName}
+              normalizedA={umbriagioScorecardResult.normalizedA}
+              normalizedB={umbriagioScorecardResult.normalizedB}
+              winningTeam={umbriagioScorecardResult.winningTeam}
+              currentUserTeam={umbriagioScorecardResult.currentUserTeam}
+              holePoints={umbriagioScorecardResult.holePoints}
+              holePars={umbriagioScorecardResult.holePars}
+              onClick={() => {
+                if (umbriagioScorecardResult.gameId) {
+                  navigate(`/umbriago/${umbriagioScorecardResult.gameId}/summary`);
+                } else {
+                  toast.error("Game details not found");
                 }
               }}
             />
