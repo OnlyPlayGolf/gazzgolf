@@ -128,7 +128,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 8: match play owned
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status")
       .eq("user_id", targetUserId)
       .then((r) => r),
   ];
@@ -245,12 +245,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const matchPlayParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status")
       .eq("player_1", name)
       .then((r) => r),
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status")
       .eq("player_2", name)
       .then((r) => r),
   ]);
@@ -757,18 +757,32 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       const isPlayer1 = participantNames.includes(game.player_1) || game.user_id === targetUserId;
       const isPlayer2 = participantNames.includes(game.player_2);
       
+      // Get match status from user's perspective
+      // match_status > 0 means player 1 is winning
+      const matchStatus = game.match_status || 0;
+      
       if (game.winner_player === null || game.winner_player === '') {
         matchResult = 'T';
+        // No score displayed for ties
       } else if (isPlayer1 && !isPlayer2) {
         matchResult = game.winner_player === game.player_1 ? 'W' : 'L';
+        // From player 1's perspective: positive status = UP, negative = DOWN
+        if (matchStatus !== 0) {
+          matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
+        }
       } else if (isPlayer2 && !isPlayer1) {
         matchResult = game.winner_player === game.player_2 ? 'W' : 'L';
+        // From player 2's perspective: invert the status
+        if (matchStatus !== 0) {
+          matchFinalScore = matchStatus < 0 ? `${Math.abs(matchStatus)} UP` : `${matchStatus} DOWN`;
+        }
       } else if (isPlayer1) {
         // Default to player 1 perspective for owner
         matchResult = game.winner_player === game.player_1 ? 'W' : 'L';
+        if (matchStatus !== 0) {
+          matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
+        }
       }
-      
-      matchFinalScore = game.final_result || null;
     }
 
     allRounds.push({
