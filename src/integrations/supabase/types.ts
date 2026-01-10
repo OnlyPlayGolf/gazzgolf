@@ -781,6 +781,30 @@ export type Database = {
           },
         ]
       }
+      game_likes: {
+        Row: {
+          created_at: string
+          game_id: string
+          game_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          game_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          game_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       group_invites: {
         Row: {
           code: string
