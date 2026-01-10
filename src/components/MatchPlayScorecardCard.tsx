@@ -220,17 +220,9 @@ export function MatchPlayScorecardCard({
         </div>
       </div>
 
-      {/* Winner Section */}
-      {winnerPlayer && (
-        <div className="px-3 py-2 text-center border-b">
-          <p className="text-xs text-muted-foreground">Winner</p>
-          <p className="text-sm font-bold text-primary">{winnerPlayer}</p>
-        </div>
-      )}
-
       {/* Scorecard */}
       <CardContent className="p-0">
-        <div className="border-t">
+        <div>
           {renderNine(frontNine, false)}
 
           {hasBackNine && (
