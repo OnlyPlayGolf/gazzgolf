@@ -319,8 +319,8 @@ export default function RoundFeed() {
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="mb-3 min-h-[60px] py-3"
-                rows={2}
+                className="mb-3 min-h-[40px] py-2"
+                rows={1}
               />
               <Button 
                 onClick={handleSubmitComment} 
