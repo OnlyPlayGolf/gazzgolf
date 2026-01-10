@@ -270,14 +270,16 @@ export function MatchPlayCompletionModal({
         {/* Green Header - Match Card Style */}
         <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
           <div className="flex items-center gap-4">
-            {/* Left: Match Result */}
+            {/* Left: W/L/T with match status */}
             <div className="flex-shrink-0 w-16 text-center">
               <div className="text-2xl font-bold">
-                {game.final_result || `${player1HolesWon}-${player2HolesWon}`}
+                {game.match_status > 0 ? "W" : game.match_status < 0 ? "L" : "T"}
               </div>
-              <div className="text-xs opacity-75">
-                {game.winner_player ? "Winner" : "Halved"}
-              </div>
+              {game.match_status !== 0 && (
+                <div className="text-xs opacity-75">
+                  {Math.abs(game.match_status)} {game.match_status > 0 ? "UP" : "DOWN"}
+                </div>
+              )}
             </div>
             
             {/* Right: Round Details */}

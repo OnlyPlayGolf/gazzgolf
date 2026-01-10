@@ -55,6 +55,13 @@ const parseMatchPlayScorecardResult = (content: string) => {
   if (match) {
     try {
       const scorecardData = JSON.parse(match[9]);
+      const holeScores = scorecardData.holeScores as Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }>;
+      
+      // Get the final match status from the last hole played
+      const holeNumbers = Object.keys(holeScores).map(Number).sort((a, b) => a - b);
+      const lastHole = holeNumbers[holeNumbers.length - 1];
+      const matchStatus = lastHole ? holeScores[lastHole]?.statusAfter || 0 : 0;
+      
       return {
         roundName: match[1],
         courseName: match[2],
@@ -64,8 +71,9 @@ const parseMatchPlayScorecardResult = (content: string) => {
         finalResult: match[6],
         winnerPlayer: match[7] || null,
         gameId: match[8] || null,
-        holeScores: scorecardData.holeScores as Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }>,
+        holeScores,
         holePars: scorecardData.holePars as Record<number, number>,
+        matchStatus,
         textContent: content.replace(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/s, '').trim()
       };
     } catch (e) {
@@ -1133,6 +1141,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 player2Name={matchPlayScorecardResult.player2Name}
                 finalResult={matchPlayScorecardResult.finalResult}
                 winnerPlayer={matchPlayScorecardResult.winnerPlayer}
+                matchStatus={matchPlayScorecardResult.matchStatus}
                 holeScores={matchPlayScorecardResult.holeScores}
                 holePars={matchPlayScorecardResult.holePars}
               />
@@ -1239,6 +1248,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               player2Name={matchPlayScorecardResult.player2Name}
               finalResult={matchPlayScorecardResult.finalResult}
               winnerPlayer={matchPlayScorecardResult.winnerPlayer}
+              matchStatus={matchPlayScorecardResult.matchStatus}
               holeScores={matchPlayScorecardResult.holeScores}
               holePars={matchPlayScorecardResult.holePars}
               onClick={() => {

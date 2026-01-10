@@ -19,6 +19,7 @@ interface MatchPlayScorecardCardProps {
   player2Name: string;
   finalResult: string;
   winnerPlayer: string | null;
+  matchStatus: number;
   holeScores: Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }>;
   holePars: Record<number, number>;
   onClick?: () => void;
@@ -32,6 +33,7 @@ export function MatchPlayScorecardCard({
   player2Name,
   finalResult,
   winnerPlayer,
+  matchStatus,
   holeScores,
   holePars,
   onClick,
@@ -196,12 +198,16 @@ export function MatchPlayScorecardCard({
       {/* Green Header - Match Card Style */}
       <div className="bg-primary text-primary-foreground p-3">
         <div className="flex items-center gap-3">
-          {/* Left: Match Result */}
+          {/* Left: W/L/T with match status */}
           <div className="flex-shrink-0 w-14 text-center">
-            <div className="text-xl font-bold">{finalResult}</div>
-            <div className="text-xs opacity-75">
-              {winnerPlayer ? "Winner" : "Halved"}
+            <div className="text-xl font-bold">
+              {matchStatus > 0 ? "W" : matchStatus < 0 ? "L" : "T"}
             </div>
+            {matchStatus !== 0 && (
+              <div className="text-xs opacity-75">
+                {Math.abs(matchStatus)} {matchStatus > 0 ? "UP" : "DOWN"}
+              </div>
+            )}
           </div>
 
           {/* Right: Round Details */}
