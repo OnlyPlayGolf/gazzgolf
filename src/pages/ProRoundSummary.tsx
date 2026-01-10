@@ -179,8 +179,9 @@ const ProRoundSummary = () => {
         // Skip OB shots and penalty strokes for SG categorization
         if (shot.isOB) return;
 
-        // Putting: shots that start on the green
-        if (shot.startLie === 'green' || shot.type === 'putt') {
+        // Putting: ONLY shots with type 'putt' (not just startLie === 'green')
+        // This prevents approach shots that incorrectly have green as startLie from being counted
+        if (shot.type === 'putt') {
           const dist = shot.startDistance;
           if (dist <= 2) {
             putting0_2 += sg;
@@ -194,8 +195,8 @@ const ProRoundSummary = () => {
         else if (shot.type === 'tee' && hole.par >= 4 && shot.startLie === 'tee') {
           offTheTee += sg;
         }
-        // Approach and short game shots (not from tee, not on green)
-        else if (shot.type === 'approach' || (shot.startLie && shot.startLie !== 'tee' && shot.startLie !== 'green')) {
+        // Approach and short game shots (not from tee)
+        else if (shot.type === 'approach' || shot.type === 'tee') {
           const dist = shot.startDistance;
           if (dist >= 200) {
             approach200Plus += sg;
@@ -205,7 +206,7 @@ const ProRoundSummary = () => {
             approach40_120 += sg;
           } else {
             // Short game (under 40m)
-            if (shot.startLie === 'sand') {
+            if (shot.startLie === 'sand' || shot.startLie === 'bunker') {
               shortGameBunker += sg;
             } else {
               shortGameFairwayRough += sg;
