@@ -51,7 +51,7 @@ const parseRoundScorecardResult = (content: string) => {
 // Parse match play scorecard result from post content
 const parseMatchPlayScorecardResult = (content: string) => {
   // Format: [MATCH_PLAY_SCORECARD]roundName|courseName|date|player1|player2|finalResult|winnerPlayer|gameId|scorecardJson[/MATCH_PLAY_SCORECARD]
-  const match = content?.match(/\[MATCH_PLAY_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/MATCH_PLAY_SCORECARD\]/);
+  const match = content?.match(/\[MATCH_PLAY_SCORECARD\]([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]*)\|([^|]+)\|(.+?)\[\/MATCH_PLAY_SCORECARD\]/s);
   if (match) {
     try {
       const scorecardData = JSON.parse(match[9]);
@@ -66,7 +66,7 @@ const parseMatchPlayScorecardResult = (content: string) => {
         gameId: match[8] || null,
         holeScores: scorecardData.holeScores as Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }>,
         holePars: scorecardData.holePars as Record<number, number>,
-        textContent: content.replace(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/, '').trim()
+        textContent: content.replace(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/s, '').trim()
       };
     } catch (e) {
       console.error('Error parsing match play scorecard data:', e);
