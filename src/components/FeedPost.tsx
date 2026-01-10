@@ -17,6 +17,7 @@ import { formatDistanceToNow } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
 import { StrokePlayScorecardCard } from "./StrokePlayScorecardCard";
 import { UmbriagioScorecardCard } from "./UmbriagioScorecardCard";
+import { MatchPlayScorecardCard } from "./MatchPlayScorecardCard";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 
 // Parse round scorecard result from post content (new format with scorecard data)
@@ -47,7 +48,34 @@ const parseRoundScorecardResult = (content: string) => {
   return null;
 };
 
-// Parse drill result from post content
+// Parse match play scorecard result from post content
+const parseMatchPlayScorecardResult = (content: string) => {
+  // Format: [MATCH_PLAY_SCORECARD]roundName|courseName|date|player1|player2|finalResult|winnerPlayer|gameId|scorecardJson[/MATCH_PLAY_SCORECARD]
+  const match = content?.match(/\[MATCH_PLAY_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/MATCH_PLAY_SCORECARD\]/);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[9]);
+      return {
+        roundName: match[1],
+        courseName: match[2],
+        datePlayed: match[3],
+        player1Name: match[4],
+        player2Name: match[5],
+        finalResult: match[6],
+        winnerPlayer: match[7] || null,
+        gameId: match[8] || null,
+        holeScores: scorecardData.holeScores as Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }>,
+        holePars: scorecardData.holePars as Record<number, number>,
+        textContent: content.replace(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing match play scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
 const parseDrillResult = (content: string) => {
   // Extended format with resultId: [DRILL_RESULT]title|score|unit|isPB|resultId[/DRILL_RESULT]
   const extendedMatch = content?.match(/\[DRILL_RESULT\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/DRILL_RESULT\]/);
@@ -781,6 +809,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     // Extract just the text content (without special result tags)
     const drillResult = parseDrillResult(post.content);
     const roundScorecardResult = parseRoundScorecardResult(post.content);
+    const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
     const roundResult = parseRoundResult(post.content);
     const umbriagioResult = parseUmbriagioResult(post.content);
     const gameResult = parseGameResult(post.content);
@@ -788,6 +817,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     let textContent = post.content || "";
     if (drillResult) textContent = drillResult.textContent;
     else if (roundScorecardResult) textContent = roundScorecardResult.textContent;
+    else if (matchPlayScorecardResult) textContent = matchPlayScorecardResult.textContent;
     else if (roundResult) textContent = roundResult.textContent;
     else if (umbriagioResult) textContent = umbriagioResult.textContent;
     else if (gameResult) textContent = gameResult.textContent;
@@ -804,6 +834,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       
       const drillMatch = post.content?.match(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/);
       const roundScorecardMatch = post.content?.match(/\[ROUND_SCORECARD\].+?\[\/ROUND_SCORECARD\]/);
+      const matchPlayScorecardMatch = post.content?.match(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/);
       const roundMatch = post.content?.match(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/);
       const umbriagioMatch = post.content?.match(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/);
       const gameMatch = post.content?.match(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/);
@@ -812,6 +843,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
         newContent = newContent ? `${newContent}\n${drillMatch[0]}` : drillMatch[0];
       } else if (roundScorecardMatch) {
         newContent = newContent ? `${newContent}\n${roundScorecardMatch[0]}` : roundScorecardMatch[0];
+      } else if (matchPlayScorecardMatch) {
+        newContent = newContent ? `${newContent}\n${matchPlayScorecardMatch[0]}` : matchPlayScorecardMatch[0];
       } else if (roundMatch) {
         newContent = newContent ? `${newContent}\n${roundMatch[0]}` : roundMatch[0];
       } else if (umbriagioMatch) {
@@ -981,13 +1014,14 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const initials = displayName.charAt(0).toUpperCase();
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
-  // Check if this post contains a drill result, round result, umbriago result, or game result
+  // Check if this post contains a drill result, round result, umbriago result, match play result, or game result
   const drillResult = parseDrillResult(post.content);
   const roundScorecardResult = parseRoundScorecardResult(post.content);
+  const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
   const roundResult = !roundScorecardResult ? parseRoundResult(post.content) : null;
   const umbriagioScorecardResult = parseUmbriagioScorecardResult(post.content);
   const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(post.content) : null;
-  const gameResult = parseGameResult(post.content);
+  const gameResult = !matchPlayScorecardResult ? parseGameResult(post.content) : null;
 
   return (
     <Card>
@@ -1089,6 +1123,20 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 holePars={roundScorecardResult.holePars}
               />
             )}
+            {matchPlayScorecardResult && (
+              <MatchPlayScorecardCard
+                gameId={matchPlayScorecardResult.gameId || undefined}
+                roundName={matchPlayScorecardResult.roundName}
+                courseName={matchPlayScorecardResult.courseName}
+                datePlayed={matchPlayScorecardResult.datePlayed}
+                player1Name={matchPlayScorecardResult.player1Name}
+                player2Name={matchPlayScorecardResult.player2Name}
+                finalResult={matchPlayScorecardResult.finalResult}
+                winnerPlayer={matchPlayScorecardResult.winnerPlayer}
+                holeScores={matchPlayScorecardResult.holeScores}
+                holePars={matchPlayScorecardResult.holePars}
+              />
+            )}
             {roundResult && (
               <RoundCard 
                 round={{
@@ -1173,6 +1221,32 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                   navigate(`/rounds/${roundScorecardResult.roundId}/leaderboard`);
                 } else {
                   toast.error("Round details not found");
+                }
+              }}
+            />
+          </div>
+        ) : matchPlayScorecardResult ? (
+          <div className="space-y-3">
+            {matchPlayScorecardResult.textContent && (
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{matchPlayScorecardResult.textContent}</p>
+            )}
+            <MatchPlayScorecardCard
+              gameId={matchPlayScorecardResult.gameId || undefined}
+              roundName={matchPlayScorecardResult.roundName}
+              courseName={matchPlayScorecardResult.courseName}
+              datePlayed={matchPlayScorecardResult.datePlayed}
+              player1Name={matchPlayScorecardResult.player1Name}
+              player2Name={matchPlayScorecardResult.player2Name}
+              finalResult={matchPlayScorecardResult.finalResult}
+              winnerPlayer={matchPlayScorecardResult.winnerPlayer}
+              holeScores={matchPlayScorecardResult.holeScores}
+              holePars={matchPlayScorecardResult.holePars}
+              onClick={() => {
+                if (matchPlayScorecardResult.gameId) {
+                  sessionStorage.setItem(`spectator_match_play_${matchPlayScorecardResult.gameId}`, 'true');
+                  navigate(`/match-play/${matchPlayScorecardResult.gameId}/summary`);
+                } else {
+                  toast.error("Game details not found");
                 }
               }}
             />
