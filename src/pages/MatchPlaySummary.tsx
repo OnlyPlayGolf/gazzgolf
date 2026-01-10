@@ -4,7 +4,7 @@ import { Trophy } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
-import { GameShareDialog } from "@/components/GameShareDialog";
+import { MatchPlayCompletionModal } from "@/components/MatchPlayCompletionModal";
 import {
   Table,
   TableBody,
@@ -27,7 +27,7 @@ export default function MatchPlaySummary() {
   const [holes, setHoles] = useState<MatchPlayHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showShareDialog, setShowShareDialog] = useState(true);
+  const [showCompletionModal, setShowCompletionModal] = useState(true);
 
   useEffect(() => {
     if (gameId) {
@@ -118,16 +118,12 @@ export default function MatchPlaySummary() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-8">
-      <GameShareDialog
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-        gameType="Match Play"
-        courseName={game.course_name}
-        roundName={game.round_name || undefined}
-        winner={game.winner_player || undefined}
-        resultText={game.final_result || `${player1HolesWon}-${player2HolesWon}`}
-        additionalInfo={`${game.player_1} vs ${game.player_2}`}
-        gameId={gameId}
+      <MatchPlayCompletionModal
+        open={showCompletionModal}
+        onOpenChange={setShowCompletionModal}
+        game={game}
+        holes={holes}
+        courseHoles={courseHoles}
         onContinue={() => navigate("/rounds-play")}
       />
 
