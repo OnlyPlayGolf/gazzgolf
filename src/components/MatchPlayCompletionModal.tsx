@@ -272,7 +272,7 @@ export function MatchPlayCompletionModal({
                 <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
               </div>
               <div className="text-xs opacity-75 mt-1">
-                Match Play · {game.player_1} vs {game.player_2}
+                Match Play · 2 players
               </div>
             </div>
           </div>
