@@ -44,10 +44,10 @@ export function MatchPlayScorecardCard({
     }
   };
 
-  // Build hole arrays from the scores
-  const holeNumbers = Object.keys(holeScores).map(Number).sort((a, b) => a - b);
-  const frontNine = holeNumbers.filter(h => h <= 9);
-  const backNine = holeNumbers.filter(h => h > 9);
+  // Build hole arrays from pars (which contains all 18 holes) - not from scores (which may only have played holes)
+  const allHoleNumbers = Object.keys(holePars).map(Number).sort((a, b) => a - b);
+  const frontNine = allHoleNumbers.filter(h => h <= 9);
+  const backNine = allHoleNumbers.filter(h => h > 9);
   const hasBackNine = backNine.length > 0;
 
   const getMatchStatusDisplay = (status: number) => {
@@ -85,7 +85,7 @@ export function MatchPlayScorecardCard({
   };
 
   const getTotalScore = (playerNum: 1 | 2) => {
-    return holeNumbers.reduce((sum, h) => {
+    return allHoleNumbers.reduce((sum, h) => {
       const holeData = holeScores[h];
       if (!holeData) return sum;
       const score = playerNum === 1 ? holeData.player1 : holeData.player2;
@@ -126,7 +126,7 @@ export function MatchPlayScorecardCard({
               {nineHoles.reduce((sum, h) => sum + (holePars[h] || 0), 0)}
             </TableCell>
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-              {isBackNine ? holeNumbers.reduce((sum, h) => sum + (holePars[h] || 0), 0) : (hasBackNine ? "" : nineHoles.reduce((sum, h) => sum + (holePars[h] || 0), 0))}
+              {isBackNine ? allHoleNumbers.reduce((sum, h) => sum + (holePars[h] || 0), 0) : (hasBackNine ? "" : nineHoles.reduce((sum, h) => sum + (holePars[h] || 0), 0))}
             </TableCell>
           </TableRow>
 
