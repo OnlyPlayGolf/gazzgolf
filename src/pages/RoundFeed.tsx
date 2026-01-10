@@ -315,21 +315,22 @@ export default function RoundFeed() {
         {currentUserId && (
           <Card>
             <CardContent className="p-4">
-              <Textarea
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="mb-3 min-h-[40px] py-2"
-                rows={1}
-              />
-              <Button 
-                onClick={handleSubmitComment} 
-                disabled={!newComment.trim() || submitting}
-                className="w-full"
-              >
-                <Send size={16} className="mr-2" />
-                Post Comment
-              </Button>
+              <div className="flex items-center gap-2">
+                <Textarea
+                  placeholder="Write a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="min-h-[44px] py-2 flex-1 resize-none"
+                  rows={1}
+                />
+                <Button 
+                  onClick={handleSubmitComment} 
+                  disabled={!newComment.trim() || submitting}
+                  className="h-11 w-11 rounded-lg bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 p-0 shrink-0"
+                >
+                  <Send size={20} className="text-primary-foreground" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
