@@ -437,6 +437,22 @@ export default function BestBallLeaderboard() {
     if (courseHoles.length === 0) return null;
 
     const matchScore = getMatchScoreDisplay();
+    
+    // Calculate totals for each team
+    const teamAFrontTotal = frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0);
+    const teamBFrontTotal = frontNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0);
+    const teamABackTotal = backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'A') || 0), 0);
+    const teamBBackTotal = backNine.reduce((sum, h) => sum + (getTeamBestScore(h.hole_number, 'B') || 0), 0);
+    const frontNinePar = frontNine.reduce((sum, h) => sum + h.par, 0);
+    const backNinePar = backNine.reduce((sum, h) => sum + h.par, 0);
+    
+    // Get score color based on par comparison
+    const getScoreColor = (score: number | null, par: number) => {
+      if (score === null) return '';
+      if (score < par) return 'text-red-600 font-bold'; // birdie or better
+      if (score > par) return 'text-foreground'; // bogey or worse
+      return 'text-foreground'; // par
+    };
 
     return (
       <Card className="overflow-hidden">
@@ -505,187 +521,262 @@ export default function BestBallLeaderboard() {
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            {/* Front 9 */}
-            <div className="overflow-x-auto border-t">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-primary/5">
-                <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
-                {frontNine.map(hole => (
-                  <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
-                    {hole.hole_number}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
-                {frontNine.map(hole => (
-                  <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
-                    {hole.par}
-                  </TableCell>
-                ))}
-              </TableRow>
-              {/* Team A Player Score Rows */}
-              {game.team_a_players.map((player, playerIndex) => (
-                <TableRow key={player.odId || playerIndex}>
-                  <TableCell className="text-xs px-1 py-1.5 sticky left-0 bg-background z-10">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span className="truncate max-w-[50px]">{player.displayName.split(' ')[0]}</span>
-                    </div>
-                  </TableCell>
-                  {frontNine.map(hole => {
-                    const scores = getPlayerScoresForHole(hole.hole_number, 'A');
-                    const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
-                    return (
-                      <TableCell 
-                        key={hole.hole_number} 
-                        className="text-center text-xs px-1 py-1.5"
-                      >
-                        {playerScore?.grossScore || ''}
+            {/* Front 9 - Match Play Style */}
+            <div className="border rounded-lg overflow-hidden mx-2 mb-2">
+              <Table className="table-fixed w-full">
+                <TableHeader>
+                  <TableRow className="bg-primary/5">
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
+                    {frontNine.map(hole => (
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                        {hole.hole_number}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Out</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {/* Par Row */}
+                  <TableRow>
+                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
+                    {frontNine.map(hole => (
+                      <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                        {hole.par}
                       </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
-              {/* Match Status Row */}
-              <TableRow className="bg-muted/50">
-                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Score</TableCell>
-                {frontNine.map(hole => {
-                  const { text, leadingTeam } = getMatchStatusAfterHole(hole.hole_number);
-                  return (
-                    <TableCell 
-                      key={hole.hole_number} 
-                      className={`text-center font-bold text-xs px-1 py-1 ${
-                        leadingTeam === 'A' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
-                        leadingTeam === 'B' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : ''
-                      }`}
-                    >
-                      {text}
+                    ))}
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                      {frontNinePar}
                     </TableCell>
-                  );
-                })}
-              </TableRow>
-              {/* Team B Player Score Rows */}
-              {game.team_b_players.map((player, playerIndex) => (
-                <TableRow key={player.odId || playerIndex}>
-                  <TableCell className="text-xs px-1 py-1.5 sticky left-0 bg-background z-10">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                      <span className="truncate max-w-[50px]">{player.displayName.split(' ')[0]}</span>
-                    </div>
-                  </TableCell>
-                  {frontNine.map(hole => {
-                    const scores = getPlayerScoresForHole(hole.hole_number, 'B');
-                    const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                  </TableRow>
+                  
+                  {/* Team A Players */}
+                  {game.team_a_players.map((player, playerIndex) => {
+                    const playerFrontTotal = frontNine.reduce((sum, h) => {
+                      const scores = getPlayerScoresForHole(h.hole_number, 'A');
+                      const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                      return sum + (playerScore?.grossScore || 0);
+                    }, 0);
+                    
                     return (
-                      <TableCell 
-                        key={hole.hole_number} 
-                        className="text-center text-xs px-1 py-1.5"
-                      >
-                        {playerScore?.grossScore || ''}
-                      </TableCell>
+                      <TableRow key={player.odId || playerIndex}>
+                        <TableCell className="font-medium text-blue-600 text-[10px] px-0.5 py-1 w-[44px] truncate">
+                          {player.displayName.split(' ')[0]}
+                        </TableCell>
+                        {frontNine.map(hole => {
+                          const scores = getPlayerScoresForHole(hole.hole_number, 'A');
+                          const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                          const score = playerScore?.grossScore;
+                          return (
+                            <TableCell 
+                              key={hole.hole_number} 
+                              className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}
+                            >
+                              {score || ''}
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                          {playerFrontTotal || ''}
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                  
+                  {/* Match Status Row */}
+                  <TableRow className="bg-muted/30">
+                    <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                    {frontNine.map(hole => {
+                      const { text, leadingTeam } = getMatchStatusAfterHole(hole.hole_number);
+                      return (
+                        <TableCell 
+                          key={hole.hole_number} 
+                          className={`text-center font-bold text-[10px] px-0 py-1 ${
+                            leadingTeam === 'A' ? 'bg-blue-500 text-white' :
+                            leadingTeam === 'B' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : ''
+                          }`}
+                        >
+                          {text}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                  </TableRow>
+                  
+                  {/* Team B Players */}
+                  {game.team_b_players.map((player, playerIndex) => {
+                    const playerFrontTotal = frontNine.reduce((sum, h) => {
+                      const scores = getPlayerScoresForHole(h.hole_number, 'B');
+                      const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                      return sum + (playerScore?.grossScore || 0);
+                    }, 0);
+                    
+                    return (
+                      <TableRow key={player.odId || playerIndex}>
+                        <TableCell className="font-medium text-red-600 text-[10px] px-0.5 py-1 w-[44px] truncate">
+                          {player.displayName.split(' ')[0]}
+                        </TableCell>
+                        {frontNine.map(hole => {
+                          const scores = getPlayerScoresForHole(hole.hole_number, 'B');
+                          const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                          const score = playerScore?.grossScore;
+                          return (
+                            <TableCell 
+                              key={hole.hole_number} 
+                              className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}
+                            >
+                              {score || ''}
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                          {playerFrontTotal || ''}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
 
-        {/* Back 9 */}
-        {backNine.length > 0 && (
-          <div className="border-t">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-primary/5">
-                  <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
-                  {backNine.map(hole => (
-                    <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[28px]">
-                      {hole.hole_number}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
-                  {backNine.map(hole => (
-                    <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
-                      {hole.par}
-                    </TableCell>
-                  ))}
-                </TableRow>
-                {/* Team A Player Score Rows */}
-                {game.team_a_players.map((player, playerIndex) => (
-                  <TableRow key={player.odId || playerIndex}>
-                    <TableCell className="text-xs px-1 py-1.5 sticky left-0 bg-background z-10">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        <span className="truncate max-w-[50px]">{player.displayName.split(' ')[0]}</span>
-                      </div>
-                    </TableCell>
-                    {backNine.map(hole => {
-                      const scores = getPlayerScoresForHole(hole.hole_number, 'A');
-                      const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
-                      return (
-                        <TableCell 
-                          key={hole.hole_number} 
-                          className="text-center text-xs px-1 py-1.5"
-                        >
-                          {playerScore?.grossScore || ''}
+            {/* Back 9 */}
+            {backNine.length > 0 && (
+              <div className="border rounded-lg overflow-hidden mx-2 mb-2">
+                <Table className="table-fixed w-full">
+                  <TableHeader>
+                    <TableRow className="bg-primary/5">
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
+                      {backNine.map(hole => (
+                        <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                          {hole.hole_number}
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">In</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Tot</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Par Row */}
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
+                      {backNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                          {hole.par}
                         </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-                {/* Match Status Row */}
-                <TableRow className="bg-muted/50">
-                  <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1 sticky left-0 bg-muted/50 z-10">Score</TableCell>
-                  {backNine.map(hole => {
-                    const { text, leadingTeam } = getMatchStatusAfterHole(hole.hole_number);
-                    return (
-                      <TableCell 
-                        key={hole.hole_number} 
-                        className={`text-center font-bold text-xs px-1 py-1 ${
-                          leadingTeam === 'A' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
-                          leadingTeam === 'B' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : ''
-                        }`}
-                      >
-                        {text}
+                      ))}
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                        {backNinePar}
                       </TableCell>
-                    );
-                  })}
-                </TableRow>
-                {/* Team B Player Score Rows */}
-                {game.team_b_players.map((player, playerIndex) => (
-                  <TableRow key={player.odId || playerIndex}>
-                    <TableCell className="text-xs px-1 py-1.5 sticky left-0 bg-background z-10">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-red-500" />
-                        <span className="truncate max-w-[50px]">{player.displayName.split(' ')[0]}</span>
-                      </div>
-                    </TableCell>
-                    {backNine.map(hole => {
-                      const scores = getPlayerScoresForHole(hole.hole_number, 'B');
-                      const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                        {frontNinePar + backNinePar}
+                      </TableCell>
+                    </TableRow>
+                    
+                    {/* Team A Players */}
+                    {game.team_a_players.map((player, playerIndex) => {
+                      const playerFrontTotal = frontNine.reduce((sum, h) => {
+                        const scores = getPlayerScoresForHole(h.hole_number, 'A');
+                        const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                        return sum + (playerScore?.grossScore || 0);
+                      }, 0);
+                      const playerBackTotal = backNine.reduce((sum, h) => {
+                        const scores = getPlayerScoresForHole(h.hole_number, 'A');
+                        const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                        return sum + (playerScore?.grossScore || 0);
+                      }, 0);
+                      
                       return (
-                        <TableCell 
-                          key={hole.hole_number} 
-                          className="text-center text-xs px-1 py-1.5"
-                        >
-                          {playerScore?.grossScore || ''}
-                        </TableCell>
+                        <TableRow key={player.odId || playerIndex}>
+                          <TableCell className="font-medium text-blue-600 text-[10px] px-0.5 py-1 w-[44px] truncate">
+                            {player.displayName.split(' ')[0]}
+                          </TableCell>
+                          {backNine.map(hole => {
+                            const scores = getPlayerScoresForHole(hole.hole_number, 'A');
+                            const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                            const score = playerScore?.grossScore;
+                            return (
+                              <TableCell 
+                                key={hole.hole_number} 
+                                className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}
+                              >
+                                {score || ''}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {playerBackTotal || ''}
+                          </TableCell>
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {(playerFrontTotal + playerBackTotal) || ''}
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                    
+                    {/* Match Status Row */}
+                    <TableRow className="bg-muted/30">
+                      <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                      {backNine.map(hole => {
+                        const { text, leadingTeam } = getMatchStatusAfterHole(hole.hole_number);
+                        return (
+                          <TableCell 
+                            key={hole.hole_number} 
+                            className={`text-center font-bold text-[10px] px-0 py-1 ${
+                              leadingTeam === 'A' ? 'bg-blue-500 text-white' :
+                              leadingTeam === 'B' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : ''
+                            }`}
+                          >
+                            {text}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                    </TableRow>
+                    
+                    {/* Team B Players */}
+                    {game.team_b_players.map((player, playerIndex) => {
+                      const playerFrontTotal = frontNine.reduce((sum, h) => {
+                        const scores = getPlayerScoresForHole(h.hole_number, 'B');
+                        const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                        return sum + (playerScore?.grossScore || 0);
+                      }, 0);
+                      const playerBackTotal = backNine.reduce((sum, h) => {
+                        const scores = getPlayerScoresForHole(h.hole_number, 'B');
+                        const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                        return sum + (playerScore?.grossScore || 0);
+                      }, 0);
+                      
+                      return (
+                        <TableRow key={player.odId || playerIndex}>
+                          <TableCell className="font-medium text-red-600 text-[10px] px-0.5 py-1 w-[44px] truncate">
+                            {player.displayName.split(' ')[0]}
+                          </TableCell>
+                          {backNine.map(hole => {
+                            const scores = getPlayerScoresForHole(hole.hole_number, 'B');
+                            const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
+                            const score = playerScore?.grossScore;
+                            return (
+                              <TableCell 
+                                key={hole.hole_number} 
+                                className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}
+                              >
+                                {score || ''}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {playerBackTotal || ''}
+                          </TableCell>
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {(playerFrontTotal + playerBackTotal) || ''}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </Card>
