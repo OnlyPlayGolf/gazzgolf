@@ -113,9 +113,28 @@ export function MatchPlayCompletionModal({
         return;
       }
 
+      // Build scorecard data for the post
+      const holeScoresObj: Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }> = {};
+      const holeParsObj: Record<number, number> = {};
+      
+      holes.forEach(hole => {
+        holeScoresObj[hole.hole_number] = {
+          player1: hole.player_1_gross_score,
+          player2: hole.player_2_gross_score,
+          result: hole.hole_result,
+          statusAfter: hole.match_status_after,
+        };
+      });
+      
+      courseHoles.forEach(hole => {
+        holeParsObj[hole.hole_number] = hole.par;
+      });
+
+      const scorecardData = JSON.stringify({ holeScores: holeScoresObj, holePars: holeParsObj });
       const resultText = game.final_result || `${player1HolesWon}-${player2HolesWon}`;
-      const winnerText = game.winner_player ? `Winner: ${game.winner_player}` : "Match Halved";
-      const roundResult = `[MATCH_PLAY]${game.round_name || 'Match Play'}|${game.course_name}|${game.date_played}|${resultText}|${winnerText}|${game.player_1} vs ${game.player_2}|${game.id}[/MATCH_PLAY]`;
+
+      // Format: [MATCH_PLAY_SCORECARD]roundName|courseName|date|player1|player2|finalResult|winnerPlayer|gameId|scorecardJson[/MATCH_PLAY_SCORECARD]
+      const roundResult = `[MATCH_PLAY_SCORECARD]${game.round_name || 'Match Play'}|${game.course_name}|${game.date_played}|${game.player_1}|${game.player_2}|${resultText}|${game.winner_player || ''}|${game.id}|${scorecardData}[/MATCH_PLAY_SCORECARD]`;
       const postContent = comment.trim()
         ? `${comment}\n\n${roundResult}`
         : roundResult;
