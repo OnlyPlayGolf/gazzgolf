@@ -297,13 +297,6 @@ export function MatchPlayCompletionModal({
           </div>
         </div>
 
-        {/* Winner Section */}
-        {game.winner_player && (
-          <div className="px-4 pt-3 text-center">
-            <p className="text-sm text-muted-foreground">Winner</p>
-            <p className="text-lg font-bold text-primary">{game.winner_player}</p>
-          </div>
-        )}
 
         {/* Scorecard */}
         {courseHoles.length > 0 && (
