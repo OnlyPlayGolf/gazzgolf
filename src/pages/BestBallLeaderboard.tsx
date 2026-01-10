@@ -533,6 +533,7 @@ export default function BestBallLeaderboard() {
                       </TableHead>
                     ))}
                     <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Out</TableHead>
+                    {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -547,6 +548,7 @@ export default function BestBallLeaderboard() {
                     <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {frontNinePar}
                     </TableCell>
+                    {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                   </TableRow>
                   
                   {/* Team A Players */}
@@ -578,6 +580,7 @@ export default function BestBallLeaderboard() {
                         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {playerFrontTotal || ''}
                         </TableCell>
+                        {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                       </TableRow>
                     );
                   })}
@@ -600,6 +603,7 @@ export default function BestBallLeaderboard() {
                       );
                     })}
                     <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                    {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                   </TableRow>
                   
                   {/* Team B Players */}
@@ -631,6 +635,7 @@ export default function BestBallLeaderboard() {
                         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {playerFrontTotal || ''}
                         </TableCell>
+                        {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                       </TableRow>
                     );
                   })}
