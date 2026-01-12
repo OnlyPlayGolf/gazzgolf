@@ -1253,8 +1253,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               holePars={matchPlayScorecardResult.holePars}
               onClick={() => {
                 if (matchPlayScorecardResult.gameId) {
-                  sessionStorage.setItem(`spectator_match_play_${matchPlayScorecardResult.gameId}`, 'true');
-                  navigate(`/match-play/${matchPlayScorecardResult.gameId}/summary`);
+                  navigate(`/match-play/${matchPlayScorecardResult.gameId}/play`);
                 } else {
                   toast.error("Game details not found");
                 }
