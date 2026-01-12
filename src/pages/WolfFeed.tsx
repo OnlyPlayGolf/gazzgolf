@@ -11,6 +11,7 @@ import { Heart, MessageCircle, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { GameHeader } from "@/components/GameHeader";
 
 interface Comment {
   id: string;
@@ -44,6 +45,7 @@ export default function WolfFeed() {
   const { gameId } = useParams();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
+  const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -52,6 +54,19 @@ export default function WolfFeed() {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    const fetchGameData = async () => {
+      if (!gameId) return;
+      const { data } = await supabase
+        .from("wolf_games" as any)
+        .select("round_name, course_name")
+        .eq("id", gameId)
+        .single();
+      if (data) setGameData(data as unknown as { round_name: string | null; course_name: string });
+    };
+    fetchGameData();
+  }, [gameId]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -272,8 +287,12 @@ export default function WolfFeed() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Feed</h1>
+      <GameHeader
+        gameTitle={gameData?.round_name || "Wolf"}
+        courseName={gameData?.course_name || ""}
+        pageTitle="Game feed"
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         {/* New Comment Box */}
         {currentUserId && (

@@ -8,6 +8,7 @@ import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
 import { Swords } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { GameHeader } from "@/components/GameHeader";
 import {
   Table,
   TableBody,
@@ -347,17 +348,11 @@ export default function MatchPlayLeaderboard() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold">{currentGame.course_name}</h2>
-          <p className="text-sm opacity-90">
-            {allGamesWithHoles.length > 1 
-              ? `Match Play • ${allGamesWithHoles.length} Matches` 
-              : "Match Play"}
-          </p>
-        </div>
-      </div>
+      <GameHeader
+        gameTitle={currentGame.round_name || "Match Play"}
+        courseName={currentGame.course_name}
+        pageTitle="Leaderboard"
+      />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {/* If multiple matches, show tabs or all matches */}

@@ -10,9 +10,12 @@ import { Heart, MessageCircle, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { GameHeader } from "@/components/GameHeader";
 
 
 interface GameData {
+  round_name: string | null;
+  course_name: string;
   team_a_player_1: string;
   team_a_player_2: string;
   team_b_player_1: string;
@@ -77,10 +80,10 @@ export default function UmbriagioFeed() {
   }, [gameId, currentUserId]);
 
   const fetchData = async () => {
-    // Fetch game data for team names
+    // Fetch game data for team names and header info
     const { data: game } = await supabase
       .from("umbriago_games")
-      .select("team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, is_finished")
+      .select("round_name, course_name, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, is_finished")
       .eq("id", gameId)
       .single();
 
@@ -294,8 +297,12 @@ export default function UmbriagioFeed() {
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-xl font-bold text-foreground mb-4">Game Feed</h1>
+      <GameHeader
+        gameTitle={gameData?.round_name || "Umbriago"}
+        courseName={gameData?.course_name || ""}
+        pageTitle="Game feed"
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         {/* New Comment Box */}
         {currentUserId && (

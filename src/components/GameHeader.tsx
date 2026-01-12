@@ -13,7 +13,7 @@ export function GameHeader({ gameTitle, courseName, pageTitle }: GameHeaderProps
         <p className="text-sm text-primary-foreground/80">{courseName}</p>
       </div>
       {/* Page title below */}
-      <div className="px-4 pt-3 pb-2">
+      <div className="px-4 pt-3 pb-2 text-center">
         <span className="text-sm text-muted-foreground">{pageTitle}</span>
       </div>
     </div>
