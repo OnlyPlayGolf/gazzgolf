@@ -38,7 +38,7 @@ interface SkinsHole {
   hole_number: number;
   par: number;
   stroke_index: number | null;
-  player_scores: Record<string, { gross_score: number; net_score?: number; mulligan?: boolean }>;
+  player_scores: Record<string, number>; // player_id -> score directly
   winner_player: string | null;
   skins_available: number;
   is_carryover: boolean;
@@ -106,9 +106,10 @@ export default function SkinsLeaderboard() {
         };
         setGame(typedGame);
 
-        // Set first player as expanded by default
+        // Set first player as expanded by default - use odId or name
         if (typedGame.players.length > 0) {
-          setExpandedPlayerId(typedGame.players[0].id || typedGame.players[0].name);
+          const firstPlayer = typedGame.players[0];
+          setExpandedPlayerId(firstPlayer.odId || firstPlayer.id || firstPlayer.name);
         }
 
         // Fetch course holes
@@ -141,7 +142,7 @@ export default function SkinsLeaderboard() {
           hole_number: h.hole_number,
           par: h.par,
           stroke_index: h.stroke_index,
-          player_scores: (h.player_scores as Record<string, { gross_score: number; net_score?: number; mulligan?: boolean }>) || {},
+          player_scores: (h.player_scores as Record<string, number>) || {},
           winner_player: h.winner_player,
           skins_available: h.skins_available,
           is_carryover: h.is_carryover,
@@ -157,7 +158,8 @@ export default function SkinsLeaderboard() {
     if (!game) return;
 
     const results: PlayerSkinResult[] = game.players.map(player => {
-      const playerId = player.id || player.name;
+      // Use odId (from skins format) or fallback to id/name
+      const playerId = player.odId || player.id || player.name;
       let skinsWon = 0;
       let totalScore = 0;
       let holesPlayed = 0;
@@ -169,20 +171,18 @@ export default function SkinsLeaderboard() {
           skinsWon += hole.skins_available;
         }
 
-        const playerScore = hole.player_scores[playerId];
-        if (playerScore && playerScore.gross_score > 0) {
-          totalScore += playerScore.gross_score;
+        // player_scores is directly { playerId: score }
+        const score = hole.player_scores[playerId];
+        if (score && score > 0) {
+          totalScore += score;
           holesPlayed++;
-          scores.set(hole.hole_number, playerScore.gross_score);
-          if (playerScore.mulligan) {
-            mulligans.add(hole.hole_number);
-          }
+          scores.set(hole.hole_number, score);
         }
       });
 
       return {
         playerId,
-        name: player.name,
+        name: player.displayName || player.name || 'Player',
         handicap: player.handicap ?? null,
         skinsWon,
         totalScore,
