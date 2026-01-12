@@ -24,6 +24,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
+import { StatsMode } from "@/pages/StrokePlaySetup";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
+
 interface Round {
   id: string;
   course_name: string;
@@ -33,6 +36,7 @@ interface Round {
   round_name?: string | null;
   origin?: string | null;
   user_id: string;
+  stats_mode?: string | null;
 }
 
 // Track original planned holes vs actual holes played
@@ -846,41 +850,56 @@ export default function RoundTracker() {
                       const playerScore = getPlayerScore(player.id);
                       const hasScore = hasPlayerEnteredScore(player.id);
                       const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
+                      const isCurrentPlayerUser = player.user_id === currentUserId;
                       return (
-                        <Card 
-                          key={player.id} 
-                          className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
-                          onClick={() => {
-                            setSelectedPlayer(player);
-                            setShowScoreSheet(true);
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold">{getPlayerName(player)}</span>
-                                {hasMulliganOnHole && (
-                                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                                    Mulligan
-                                  </Badge>
-                                )}
+                        <div key={player.id}>
+                          <Card 
+                            className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => {
+                              setSelectedPlayer(player);
+                              setShowScoreSheet(true);
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                                  {hasMulliganOnHole && (
+                                    <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                                      Mulligan
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Tee: {player.tee_color || round.tee_set}
+                                </div>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                Tee: {player.tee_color || round.tee_set}
+                              <div className="flex items-center gap-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
+                                  <div className="text-xs text-muted-foreground">Strokes</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
+                                  <div className="text-xs text-muted-foreground font-bold">To Par</div>
+                                </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
-                                <div className="text-xs text-muted-foreground">Strokes</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
-                                <div className="text-xs text-muted-foreground font-bold">To Par</div>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
+                          </Card>
+                          
+                          {/* In-round stats entry for current user only */}
+                          {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && round.stats_mode && round.stats_mode !== 'none' && (
+                            <InRoundStatsEntry
+                              statsMode={round.stats_mode as StatsMode}
+                              roundId={round.id}
+                              holeNumber={currentHole.hole_number}
+                              par={currentHole.par}
+                              score={playerScore}
+                              playerId={player.id}
+                              isCurrentUser={true}
+                            />
+                          )}
+                        </div>
                       );
                     })}
                   </div>
@@ -893,41 +912,56 @@ export default function RoundTracker() {
             const playerScore = getPlayerScore(player.id);
             const hasScore = hasPlayerEnteredScore(player.id);
             const hasMulliganOnHole = hasPlayerUsedMulliganOnHole(player.id, currentHole?.hole_number || 0);
+            const isCurrentPlayerUser = player.user_id === currentUserId;
             return (
-              <Card 
-                key={player.id} 
-                className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => {
-                  setSelectedPlayer(player);
-                  setShowScoreSheet(true);
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold">{getPlayerName(player)}</span>
-                      {hasMulliganOnHole && (
-                        <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
-                          Mulligan
-                        </Badge>
-                      )}
+              <div key={player.id}>
+                <Card 
+                  className="p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => {
+                    setSelectedPlayer(player);
+                    setShowScoreSheet(true);
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                        {hasMulliganOnHole && (
+                          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                            Mulligan
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Tee: {player.tee_color || round.tee_set}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Tee: {player.tee_color || round.tee_set}
+                    <div className="flex items-center gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
+                        <div className="text-xs text-muted-foreground">Strokes</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
+                        <div className="text-xs text-muted-foreground font-bold">To Par</div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-muted-foreground">{hasScore ? (playerScore === -1 ? "-" : playerScore) : 0}</div>
-                      <div className="text-xs text-muted-foreground">Strokes</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">{getScoreDisplay(player.id)}</div>
-                      <div className="text-xs text-muted-foreground font-bold">To Par</div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+                
+                {/* In-round stats entry for current user only */}
+                {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && round.stats_mode && round.stats_mode !== 'none' && (
+                  <InRoundStatsEntry
+                    statsMode={round.stats_mode as StatsMode}
+                    roundId={round.id}
+                    holeNumber={currentHole.hole_number}
+                    par={currentHole.par}
+                    score={playerScore}
+                    playerId={player.id}
+                    isCurrentUser={true}
+                  />
+                )}
+              </div>
             );
           })
         )}

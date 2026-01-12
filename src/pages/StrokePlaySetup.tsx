@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, MapPin, Settings } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Settings, BarChart3 } from "lucide-react";
 import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,8 @@ interface Player {
   isCurrentUser?: boolean;
 }
 
+export type StatsMode = 'none' | 'basic' | 'strokes_gained';
+
 export default function StrokePlaySetup() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -54,6 +56,7 @@ export default function StrokePlaySetup() {
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -201,6 +204,7 @@ export default function StrokePlaySetup() {
           starting_hole: startingHole,
           origin: 'play',
           date_played: datePlayed,
+          stats_mode: statsMode,
         })
         .select()
         .single();
@@ -446,6 +450,32 @@ export default function StrokePlaySetup() {
                 checked={gimmesEnabled}
                 onCheckedChange={setGimmesEnabled}
               />
+            </div>
+
+            {/* Stats Mode */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <BarChart3 size={16} className="text-primary" />
+                In-Round Stats
+              </Label>
+              <Select 
+                value={statsMode} 
+                onValueChange={(value) => setStatsMode(value as StatsMode)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stats mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="basic">Basic Stats (Fairways, GIR, Putts)</SelectItem>
+                  <SelectItem value="strokes_gained">Strokes Gained</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {statsMode === 'none' && "Track only scores during the round"}
+                {statsMode === 'basic' && "Track fairways, putts, and GIR while playing"}
+                {statsMode === 'strokes_gained' && "Full shot-by-shot tracking for strokes gained analysis"}
+              </p>
             </div>
           </CardContent>
         </Card>
