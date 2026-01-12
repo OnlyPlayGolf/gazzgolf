@@ -443,22 +443,22 @@ export default function SkinsTracker() {
       />
 
       {/* Hole Navigation Bar */}
-      <div className="bg-primary py-4 px-4">
+      <div className="bg-muted py-4 px-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigateHole("prev")}
             disabled={currentHoleIndex === 0}
-            className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
+            className="text-foreground hover:bg-muted-foreground/20 disabled:text-muted-foreground/50"
           >
             <ChevronLeft size={24} />
           </Button>
 
           <div className="text-center">
-            <div className="text-sm text-white/90">PAR {currentHole.par}</div>
-            <div className="text-2xl font-bold text-white">Hole {currentHole.hole_number}</div>
-            <div className="text-sm text-white/90">HCP {currentHole.stroke_index}</div>
+            <div className="text-sm text-muted-foreground">PAR {currentHole.par}</div>
+            <div className="text-2xl font-bold text-foreground">Hole {currentHole.hole_number}</div>
+            <div className="text-sm text-muted-foreground">HCP {currentHole.stroke_index}</div>
           </div>
 
           <Button
@@ -466,7 +466,7 @@ export default function SkinsTracker() {
             size="icon"
             onClick={() => navigateHole("next")}
             disabled={currentHoleIndex === courseHoles.length - 1}
-            className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
+            className="text-foreground hover:bg-muted-foreground/20 disabled:text-muted-foreground/50"
           >
             <ChevronRight size={24} />
           </Button>

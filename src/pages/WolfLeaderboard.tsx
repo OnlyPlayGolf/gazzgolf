@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
 import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { WolfGame, WolfHole } from "@/types/wolf";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
@@ -29,6 +31,8 @@ interface CourseHole {
 
 export default function WolfLeaderboard() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [game, setGame] = useState<WolfGame | null>(null);
   const [holes, setHoles] = useState<WolfHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
@@ -38,6 +42,7 @@ export default function WolfLeaderboard() {
   
   // Check spectator status for leaderboard sorting
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
+  const { isAdmin } = useGameAdminStatus('wolf', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'wolf');
 
   useEffect(() => {
@@ -176,6 +181,21 @@ export default function WolfLeaderboard() {
 
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
   const backNine = courseHoles.filter(h => h.hole_number > 9);
+
+  const handleFinishGame = async () => {
+    if (!gameId) return;
+    await supabase.from("wolf_games").update({ is_finished: true }).eq("id", gameId);
+    toast({ title: "Game finished!" });
+    navigate(`/wolf/${gameId}/summary`);
+  };
+
+  const handleDeleteGame = async () => {
+    if (!gameId) return;
+    await supabase.from("wolf_holes").delete().eq("game_id", gameId);
+    await supabase.from("wolf_games").delete().eq("id", gameId);
+    toast({ title: "Game deleted" });
+    navigate("/");
+  };
 
   if (loading) {
     return (
@@ -486,6 +506,11 @@ export default function WolfLeaderboard() {
         gameTitle={game.round_name || "Wolf"}
         courseName={game.course_name}
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Wolf Game"
       />
 
       <LeaderboardModeTabs
