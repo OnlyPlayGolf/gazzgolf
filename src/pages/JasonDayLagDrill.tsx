@@ -7,6 +7,7 @@ import JasonDayLagFeed from "./JasonDayLagFeed";
 import JasonDayLagMessages from "./JasonDayLagMessages";
 import JasonDayLagInfo from "./JasonDayLagInfo";
 import { DrillBottomTabBar } from "@/components/DrillBottomTabBar";
+import { DrillHighScores } from "@/components/DrillHighScores";
 
 const JasonDayLagDrill = () => {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ const JasonDayLagDrill = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4 pt-6">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -25,7 +26,7 @@ const JasonDayLagDrill = () => {
           </Button>
           <h1 className="text-xl font-bold text-foreground">Jason Day's Lag Drill</h1>
         </div>
-
+        <DrillHighScores drillName="Jason Day's Lag Drill" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<JasonDayLagScore />} />

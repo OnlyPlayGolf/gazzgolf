@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, Routes, Route, Navigate } from "react-router-dom";
 import { DrillBottomTabBar } from "@/components/DrillBottomTabBar";
+import { DrillHighScores } from "@/components/DrillHighScores";
 import { migrateStorageKeys } from "@/utils/storageManager";
 import EightBallScore from "./EightBallScore";
 import EightBallLeaderboard from "./EightBallLeaderboard";
@@ -40,6 +41,7 @@ const EightBallDrill = () => {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <DrillHighScores drillName="8-Ball Drill" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<EightBallScore />} />
