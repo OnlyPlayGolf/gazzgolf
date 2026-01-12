@@ -10,6 +10,7 @@ import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
+import { GameHeader } from "@/components/GameHeader";
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ interface Round {
   date_played: string;
   user_id: string;
   origin: string | null;
+  round_name: string | null;
 }
 
 interface CourseHole {
@@ -265,25 +267,11 @@ export default function RoundLeaderboard() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {/* Single Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="relative flex items-center justify-center">
-          {isSpectator && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={handleBack}
-            >
-              <ArrowLeft size={20} />
-            </Button>
-          )}
-          <div className="text-center">
-            <h2 className="text-lg font-bold">{round.course_name}</h2>
-            <p className="text-sm opacity-90">Stroke Play NET</p>
-          </div>
-        </div>
-      </div>
+      <GameHeader
+        gameTitle={round.round_name || "Stroke Play"}
+        courseName={round.course_name}
+        pageTitle="Leaderboard"
+      />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {(() => {

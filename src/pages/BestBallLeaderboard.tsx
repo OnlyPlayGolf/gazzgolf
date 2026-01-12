@@ -8,6 +8,7 @@ import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { formatMatchStatus } from "@/utils/bestBallScoring";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { GameHeader } from "@/components/GameHeader";
 import {
   Collapsible,
   CollapsibleContent,
@@ -795,13 +796,11 @@ export default function BestBallLeaderboard() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="bg-primary text-primary-foreground px-4 py-3">
-        <h1 className="text-xl font-bold">{game.round_name || 'Best Ball'}</h1>
-        <p className="text-sm text-primary-foreground/80">{game.course_name}</p>
-      </div>
-      <div className="px-4 pt-3 pb-2">
-        <span className="text-sm text-muted-foreground">Leaderboard</span>
-      </div>
+      <GameHeader
+        gameTitle={game.round_name || 'Best Ball'}
+        courseName={game.course_name}
+        pageTitle="Leaderboard"
+      />
 
       <div className="max-w-4xl mx-auto px-4 space-y-4">
         {isMatchPlay ? (
