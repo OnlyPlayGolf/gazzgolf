@@ -1,17 +1,39 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { supabase } from "@/integrations/supabase/client";
+import { GameHeader } from "@/components/GameHeader";
 
 export default function UmbriagioInfo() {
   const { gameId } = useParams();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
+  const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
+
+  useEffect(() => {
+    if (gameId) {
+      const fetchGameData = async () => {
+        const { data } = await supabase
+          .from("umbriago_games")
+          .select("round_name, course_name")
+          .eq("id", gameId)
+          .maybeSingle();
+        if (data) setGameData(data);
+      };
+      fetchGameData();
+    }
+  }, [gameId]);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Info</h1>
+      <GameHeader 
+        gameTitle={gameData?.round_name || "Umbriago"} 
+        courseName={gameData?.course_name || ""} 
+        pageTitle="Game info" 
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
