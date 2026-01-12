@@ -10,6 +10,9 @@ import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
+import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
+import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   Table,
   TableBody,
@@ -32,9 +35,11 @@ export default function CopenhagenLeaderboard() {
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
+  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'copenhagen');
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -387,6 +392,21 @@ export default function CopenhagenLeaderboard() {
     );
   };
 
+  // Prepare stroke play players
+  const strokePlayPlayers = [1, 2, 3].map(idx => {
+    const playerName = idx === 1 ? game.player_1 : idx === 2 ? game.player_2 : game.player_3;
+    return {
+      id: `player_${idx}`,
+      name: playerName,
+      scores: new Map(
+        holes.map(h => {
+          const score = idx === 1 ? h.player_1_gross_score : idx === 2 ? h.player_2_gross_score : h.player_3_gross_score;
+          return [h.hole_number, score && score > 0 ? score : 0];
+        }).filter(([_, score]) => score > 0) as [number, number][]
+      ),
+    };
+  });
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
@@ -395,8 +415,23 @@ export default function CopenhagenLeaderboard() {
         pageTitle="Leaderboard"
       />
 
+      <LeaderboardModeTabs
+        primaryLabel="Copenhagen"
+        activeMode={leaderboardMode}
+        onModeChange={setLeaderboardMode}
+        strokePlayEnabled={strokePlayEnabled}
+      />
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {sortedPlayers.map((player, index) => renderPlayerCard(player, index))}
+        {leaderboardMode === 'stroke_play' ? (
+          <StrokePlayLeaderboardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+            isSpectator={isSpectator}
+          />
+        ) : (
+          sortedPlayers.map((player, index) => renderPlayerCard(player, index))
+        )}
 
         {/* Like and Comment Actions */}
         <LeaderboardActions 

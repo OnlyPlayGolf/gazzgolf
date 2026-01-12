@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   GameDetailsSection,
   GameDetailsData,

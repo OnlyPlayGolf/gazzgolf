@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   GameDetailsSection,
   GameDetailsData,

@@ -9,6 +9,9 @@ import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
+import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
+import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   Table,
   TableBody,
@@ -38,9 +41,11 @@ export default function ScrambleLeaderboard() {
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
+  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'scramble');
 
   useEffect(() => {
     if (gameId) fetchData();
@@ -367,6 +372,20 @@ export default function ScrambleLeaderboard() {
     );
   };
 
+  // Prepare stroke play players from teams
+  const strokePlayPlayers = teams.flatMap(team => 
+    team.players.map(p => ({
+      id: `${team.id}_${p.name}`,
+      name: p.name,
+      scores: new Map(
+        holes.map(h => {
+          const score = h.team_scores[team.id];
+          return [h.hole_number, score && score > 0 ? score : 0];
+        }).filter(([_, score]) => score > 0) as [number, number][]
+      ),
+    }))
+  );
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <GameHeader
@@ -375,8 +394,23 @@ export default function ScrambleLeaderboard() {
         pageTitle="Leaderboard"
       />
 
+      <LeaderboardModeTabs
+        primaryLabel="Scramble"
+        activeMode={leaderboardMode}
+        onModeChange={setLeaderboardMode}
+        strokePlayEnabled={strokePlayEnabled}
+      />
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {teamScores.map((ts, index) => renderTeamCard(ts, index))}
+        {leaderboardMode === 'stroke_play' ? (
+          <StrokePlayLeaderboardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+            isSpectator={isSpectator}
+          />
+        ) : (
+          teamScores.map((ts, index) => renderTeamCard(ts, index))
+        )}
 
         {/* Like and Comment Actions */}
         <LeaderboardActions 

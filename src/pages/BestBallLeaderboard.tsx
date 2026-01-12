@@ -11,6 +11,9 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
+import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
+import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,9 +45,11 @@ export default function BestBallLeaderboard() {
   const [expandedTeam, setExpandedTeam] = useState<'A' | 'B' | null>(null);
   const [scorecardOpen, setScorecardOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
+  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'best_ball');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -837,6 +842,30 @@ export default function BestBallLeaderboard() {
     );
   };
 
+  // Prepare stroke play players from teams
+  const strokePlayPlayers = [
+    ...game.team_a_players.map(p => ({
+      id: p.odId,
+      name: p.displayName,
+      scores: new Map(
+        holes.map(h => {
+          const playerScore = (h.team_a_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
+          return [h.hole_number, playerScore?.grossScore || 0];
+        }).filter(([_, score]) => score > 0) as [number, number][]
+      ),
+    })),
+    ...game.team_b_players.map(p => ({
+      id: p.odId,
+      name: p.displayName,
+      scores: new Map(
+        holes.map(h => {
+          const playerScore = (h.team_b_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
+          return [h.hole_number, playerScore?.grossScore || 0];
+        }).filter(([_, score]) => score > 0) as [number, number][]
+      ),
+    })),
+  ];
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
@@ -850,8 +879,21 @@ export default function BestBallLeaderboard() {
         gameName="Best Ball Game"
       />
 
+      <LeaderboardModeTabs
+        primaryLabel="Best Ball"
+        activeMode={leaderboardMode}
+        onModeChange={setLeaderboardMode}
+        strokePlayEnabled={strokePlayEnabled}
+      />
+
       <div className="max-w-4xl mx-auto px-4 space-y-4">
-        {isMatchPlay ? (
+        {leaderboardMode === 'stroke_play' ? (
+          <StrokePlayLeaderboardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+            isSpectator={isSpectator}
+          />
+        ) : isMatchPlay ? (
           // For match play, render combined scorecard (side-by-side format with arrow indicating leader)
           renderCombinedScorecard()
         ) : (
