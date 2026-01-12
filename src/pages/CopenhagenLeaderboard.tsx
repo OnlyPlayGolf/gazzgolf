@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { normalizePoints } from "@/utils/copenhagenScoring";
 import { ChevronDown } from "lucide-react";
@@ -395,6 +396,13 @@ export default function CopenhagenLeaderboard() {
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {sortedPlayers.map((player, index) => renderPlayerCard(player, index))}
+
+        {/* Like and Comment Actions */}
+        <LeaderboardActions 
+          gameId={gameId!} 
+          gameType="copenhagen" 
+          feedPath={`/copenhagen/${gameId}/feed`} 
+        />
       </div>
 
       {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}

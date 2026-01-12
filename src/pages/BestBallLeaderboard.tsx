@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { formatMatchStatus } from "@/utils/bestBallScoring";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
@@ -840,6 +841,13 @@ export default function BestBallLeaderboard() {
             })()}
           </>
         )}
+
+        {/* Like and Comment Actions */}
+        <LeaderboardActions 
+          gameId={gameId} 
+          gameType="best_ball" 
+          feedPath={`/best-ball/${gameId}/feed`} 
+        />
       </div>
 
       {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}

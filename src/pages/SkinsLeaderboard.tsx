@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Trophy, ChevronDown, RotateCcw } from "lucide-react";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -581,6 +582,13 @@ export default function SimpleSkinsLeaderboard() {
             })}
           </TabsContent>
         </Tabs>
+
+        {/* Like and Comment Actions */}
+        <LeaderboardActions 
+          gameId={roundId!} 
+          gameType="skins" 
+          feedPath={`/skins/${roundId}/feed`} 
+        />
       </div>
 
       {roundId && <SkinsBottomTabBar roundId={roundId} />}

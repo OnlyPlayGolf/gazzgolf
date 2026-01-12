@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
+import { ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -537,20 +538,12 @@ export default function RoundLeaderboard() {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="border-t p-4">
-                    <div className="flex items-center justify-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="flex-col h-auto gap-1"
-                        onClick={() => navigate(`/rounds/${roundId}/feed`)}
-                      >
-                        <MessageSquare size={20} className="text-primary" />
-                        <span className="text-xs">View Game Feed</span>
-                      </Button>
-                    </div>
-                  </div>
+                  {/* Like and Comment Actions */}
+                  <LeaderboardActions 
+                    gameId={roundId!} 
+                    gameType={round?.origin === "skins" ? "skins" : "round"} 
+                    feedPath={`/rounds/${roundId}/feed`} 
+                  />
                 </>
               )}
               </Card>
