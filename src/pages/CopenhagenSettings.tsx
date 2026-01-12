@@ -283,8 +283,8 @@ export default function CopenhagenSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* My Stats Settings */}
-        {currentUserId && !statsModeLoading && (
+        {/* My Stats Settings - Available for all participants (not spectators) */}
+        {!isSpectator && currentUserId && !statsModeLoading && (
           <MyStatsSettings
             currentMode={playerStatsMode}
             onModeChange={setPlayerStatsMode}
