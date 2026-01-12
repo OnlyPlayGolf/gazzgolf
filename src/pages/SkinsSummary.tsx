@@ -8,29 +8,42 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { RoundShareDialog } from "@/components/RoundShareDialog";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
+import { GameHeader } from "@/components/GameHeader";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
-interface Round {
+interface SkinsGame {
   id: string;
   course_name: string;
   date_played: string;
-  tee_set: string;
   holes_played: number;
-  round_name?: string | null;
-}
-
-interface RoundPlayer {
-  id: string;
+  round_name: string | null;
   user_id: string;
-  tee_color: string | null;
-  profiles: {
-    display_name: string | null;
-    username: string | null;
-  } | null;
+  is_finished: boolean;
+  skin_value: number;
+  carryover_enabled: boolean;
+  use_handicaps: boolean;
+  players: any;
 }
 
-interface CourseHole {
+interface SkinsHole {
+  id: string;
+  game_id: string;
   hole_number: number;
   par: number;
+  player_scores: Record<string, number>;
+  winner_player: string | null;
+  skins_available: number;
+  is_carryover: boolean;
+}
+
+interface SkinsPlayer {
+  id?: string;
+  odId?: string;
+  name: string;
+  displayName?: string;
+  handicap?: number | null;
+  tee?: string | null;
+  avatarUrl?: string | null;
 }
 
 interface SkinResult {
@@ -45,10 +58,10 @@ export default function SimpleSkinsSummary() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [round, setRound] = useState<Round | null>(null);
-  const [players, setPlayers] = useState<RoundPlayer[]>([]);
-  const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
-  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
+  const { isSpectator } = useIsSpectator('skins', roundId);
+  const [game, setGame] = useState<SkinsGame | null>(null);
+  const [players, setPlayers] = useState<SkinsPlayer[]>([]);
+  const [holes, setHoles] = useState<SkinsHole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [skinResults, setSkinResults] = useState<SkinResult[]>([]);
@@ -58,86 +71,56 @@ export default function SimpleSkinsSummary() {
   }, [roundId]);
 
   useEffect(() => {
-    if (players.length > 0 && courseHoles.length > 0) {
+    if (players.length > 0 && holes.length > 0) {
       calculateSkinResults();
     }
-  }, [scores, courseHoles, players]);
+  }, [holes, players]);
 
   const fetchData = async () => {
     try {
-      const { data: roundData, error: roundError } = await supabase
-        .from("rounds")
+      // Fetch from skins_games table
+      const { data: gameData, error: gameError } = await supabase
+        .from("skins_games")
         .select("*")
         .eq("id", roundId)
-        .single();
-
-      if (roundError) throw roundError;
-      setRound(roundData);
-
-      const { data: playersData } = await supabase
-        .from("round_players")
-        .select("id, user_id, tee_color")
-        .eq("round_id", roundId);
-
-      if (playersData && playersData.length > 0) {
-        const userIds = playersData.map(p => p.user_id);
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, display_name, username")
-          .in("id", userIds);
-        
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-        const playersWithProfiles = playersData.map(player => ({
-          ...player,
-          profiles: profilesMap.get(player.user_id) || null
-        }));
-        setPlayers(playersWithProfiles);
-      }
-
-      const { data: courseData } = await supabase
-        .from("courses")
-        .select("id")
-        .eq("name", roundData.course_name)
         .maybeSingle();
 
-      let holesArray: CourseHole[] = [];
-      if (courseData) {
-        const { data: holesData } = await supabase
-          .from("course_holes")
-          .select("hole_number, par")
-          .eq("course_id", courseData.id)
-          .order("hole_number");
-        
-        if (holesData) {
-          holesArray = holesData.slice(0, roundData.holes_played);
-        }
+      if (gameError) throw gameError;
+      if (!gameData) {
+        setLoading(false);
+        return;
       }
-      
-      if (holesArray.length === 0) {
-        const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5];
-        holesArray = Array.from({ length: roundData.holes_played }, (_, i) => ({
-          hole_number: i + 1,
-          par: i < 9 ? defaultPar[i] : defaultPar[i % 9],
+
+      setGame(gameData);
+
+      // Parse players from JSON
+      const rawPlayers = gameData.players;
+      const parsedPlayers: SkinsPlayer[] = Array.isArray(rawPlayers) 
+        ? rawPlayers.map((p: any) => ({
+            id: p.id,
+            odId: p.odId,
+            name: p.name || 'Player',
+            displayName: p.displayName,
+            handicap: p.handicap,
+            tee: p.tee,
+            avatarUrl: p.avatarUrl,
+          }))
+        : [];
+      setPlayers(parsedPlayers);
+
+      // Fetch holes from skins_holes table
+      const { data: holesData } = await supabase
+        .from("skins_holes")
+        .select("*")
+        .eq("game_id", roundId)
+        .order("hole_number");
+
+      if (holesData) {
+        const typedHoles: SkinsHole[] = holesData.map(h => ({
+          ...h,
+          player_scores: (h.player_scores as Record<string, number>) || {},
         }));
-      }
-      setCourseHoles(holesArray);
-
-      const { data: existingHoles } = await supabase
-        .from("holes")
-        .select("hole_number, score, player_id")
-        .eq("round_id", roundId);
-
-      if (existingHoles) {
-        const scoresMap = new Map<string, Map<number, number>>();
-        existingHoles.forEach((hole) => {
-          if (hole.player_id) {
-            if (!scoresMap.has(hole.player_id)) {
-              scoresMap.set(hole.player_id, new Map());
-            }
-            scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
-          }
-        });
-        setScores(scoresMap);
+        setHoles(typedHoles);
       }
     } catch (error: any) {
       toast({
@@ -152,98 +135,94 @@ export default function SimpleSkinsSummary() {
 
   const calculateSkinResults = () => {
     const results: SkinResult[] = [];
-    let carryover = 0;
     
-    for (const hole of courseHoles) {
-      const holeScores: { playerId: string; playerName: string; score: number }[] = [];
+    for (const hole of holes) {
+      const winnerPlayerId = hole.winner_player;
+      let winnerName: string | null = null;
       
-      for (const player of players) {
-        const playerScoreMap = scores.get(player.id);
-        const score = playerScoreMap?.get(hole.hole_number);
-        if (score && score > 0) {
-          holeScores.push({
-            playerId: player.id,
-            playerName: getPlayerName(player),
-            score
-          });
-        }
+      if (winnerPlayerId) {
+        const winner = players.find(p => 
+          p.id === winnerPlayerId || 
+          p.odId === winnerPlayerId || 
+          p.name === winnerPlayerId
+        );
+        winnerName = winner?.displayName || winner?.name || winnerPlayerId;
       }
       
-      if (holeScores.length < players.length || players.length === 0) {
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: null,
-          winnerName: null,
-          skinsWon: 0,
-          isCarryover: false
-        });
-        continue;
-      }
-      
-      const lowestScore = Math.min(...holeScores.map(s => s.score));
-      const playersWithLowest = holeScores.filter(s => s.score === lowestScore);
-      
-      if (playersWithLowest.length === 1) {
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: playersWithLowest[0].playerId,
-          winnerName: playersWithLowest[0].playerName,
-          skinsWon: 1 + carryover,
-          isCarryover: false
-        });
-        carryover = 0;
-      } else {
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: null,
-          winnerName: null,
-          skinsWon: 0,
-          isCarryover: true
-        });
-        carryover += 1;
-      }
+      results.push({
+        holeNumber: hole.hole_number,
+        winnerId: winnerPlayerId,
+        winnerName: winnerName,
+        skinsWon: hole.winner_player ? hole.skins_available : 0,
+        isCarryover: hole.is_carryover,
+      });
     }
     
     setSkinResults(results);
   };
 
-  const getPlayerName = (player: RoundPlayer) => {
-    return player.profiles?.display_name || player.profiles?.username || "Player";
+  const getPlayerName = (player: SkinsPlayer) => {
+    return player.displayName || player.name || "Player";
   };
 
-  const getPlayerSkinCount = (playerId: string): number => {
+  const getPlayerId = (player: SkinsPlayer) => {
+    return player.odId || player.id || player.name;
+  };
+
+  const getPlayerSkinCount = (player: SkinsPlayer): number => {
+    const playerId = getPlayerId(player);
     return skinResults
       .filter(r => r.winnerId === playerId)
       .reduce((sum, r) => sum + r.skinsWon, 0);
   };
 
-  const getPlayerTotalScore = (playerId: string): number => {
-    const playerScores = scores.get(playerId);
-    if (!playerScores) return 0;
+  const getPlayerTotalScore = (player: SkinsPlayer): number => {
+    const playerId = getPlayerId(player);
     let total = 0;
-    playerScores.forEach(score => { total += score; });
+    for (const hole of holes) {
+      const score = hole.player_scores[playerId];
+      if (score && score > 0) {
+        total += score;
+      }
+    }
     return total;
   };
 
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (!round) return <div className="p-4">Round not found</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-24 flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
+      </div>
+    );
+  }
+
+  if (!game) {
+    return (
+      <div className="min-h-screen pb-24 flex items-center justify-center">
+        <div className="text-muted-foreground">Game not found</div>
+        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
+      </div>
+    );
+  }
 
   // Sort players by skin count (descending)
   const sortedPlayers = [...players].sort((a, b) => 
-    getPlayerSkinCount(b.id) - getPlayerSkinCount(a.id)
+    getPlayerSkinCount(b) - getPlayerSkinCount(a)
   );
 
   const winner = sortedPlayers[0];
-  const winnerSkins = getPlayerSkinCount(winner?.id || '');
+  const winnerSkins = winner ? getPlayerSkinCount(winner) : 0;
 
   return (
     <div className="pb-24 min-h-screen bg-background">
-      <div className="p-4 space-y-4 max-w-2xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate("/rounds")}>
-          <ArrowLeft className="mr-2" size={20} />
-          Back to Rounds
-        </Button>
+      <GameHeader
+        gameTitle={game.round_name || "Skins"}
+        courseName={game.course_name}
+        pageTitle="Summary"
+      />
 
+      <div className="p-4 space-y-4 max-w-2xl mx-auto">
         {/* Header Card */}
         <Card className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
           <CardHeader>
@@ -251,13 +230,13 @@ export default function SimpleSkinsSummary() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <MapPin size={18} className="text-amber-600" />
-                  <CardTitle>{round.course_name}</CardTitle>
+                  <CardTitle className="truncate">{game.course_name}</CardTitle>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar size={14} />
-                  <span>{format(new Date(round.date_played), "MMMM d, yyyy")}</span>
+                  <span>{format(new Date(game.date_played), "MMMM d, yyyy")}</span>
                   <span>•</span>
-                  <span>{round.holes_played} holes</span>
+                  <span>{game.holes_played} holes</span>
                 </div>
               </div>
             </div>
@@ -283,12 +262,12 @@ export default function SimpleSkinsSummary() {
           </CardHeader>
           <CardContent className="space-y-3">
             {sortedPlayers.map((player, index) => {
-              const skinCount = getPlayerSkinCount(player.id);
-              const totalScore = getPlayerTotalScore(player.id);
+              const skinCount = getPlayerSkinCount(player);
+              const totalScore = getPlayerTotalScore(player);
               
               return (
                 <div 
-                  key={player.id}
+                  key={getPlayerId(player)}
                   className={`flex items-center justify-between p-3 rounded-lg ${
                     index === 0 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-muted/50'
                   }`}
@@ -299,7 +278,7 @@ export default function SimpleSkinsSummary() {
                     </span>
                     <div>
                       <p className="font-medium">{getPlayerName(player)}</p>
-                      <p className="text-sm text-muted-foreground">Total: {totalScore}</p>
+                      <p className="text-sm text-muted-foreground">Total: {totalScore || '–'}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -337,6 +316,9 @@ export default function SimpleSkinsSummary() {
                   </span>
                 </div>
               ))}
+              {skinResults.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">No holes played yet</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -362,16 +344,16 @@ export default function SimpleSkinsSummary() {
         </div>
       </div>
 
-      <SkinsBottomTabBar roundId={roundId!} />
+      <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
 
       <RoundShareDialog
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
-        roundName={round.round_name || 'Skins'}
-        courseName={round.course_name}
+        roundName={game.round_name || 'Skins'}
+        courseName={game.course_name}
         score={winnerSkins}
         scoreVsPar={0}
-        holesPlayed={round.holes_played}
+        holesPlayed={game.holes_played}
         roundId={roundId}
         onContinue={() => navigate("/rounds")}
       />
