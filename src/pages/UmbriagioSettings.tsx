@@ -335,75 +335,80 @@ export default function UmbriagioSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* Game Settings */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-lg">
-              <div className="flex items-center gap-2">
-                <Dice5 size={20} className="text-primary" />
-                Game Settings
+        {/* Game Settings - Hidden for spectators */}
+        {!isSpectator && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Dice5 size={20} className="text-primary" />
+                  Game Settings
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/umbriago/${gameId}?returnPath=/umbriago/${gameId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Rolls per Team</Label>
+                <Select value={rollsPerTeam.toString()} onValueChange={handleRollsChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No Rolls</SelectItem>
+                    <SelectItem value="1">1 Roll</SelectItem>
+                    <SelectItem value="2">2 Rolls</SelectItem>
+                    <SelectItem value="3">3 Rolls</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  A Roll halves your team's points and doubles the next hole
+                </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/game-settings/umbriago/${gameId}?returnPath=/umbriago/${gameId}/settings`)}
-                className="h-8 w-8"
-              >
-                <Settings size={16} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Rolls per Team</Label>
-              <Select value={rollsPerTeam.toString()} onValueChange={handleRollsChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">No Rolls</SelectItem>
-                  <SelectItem value="1">1 Roll</SelectItem>
-                  <SelectItem value="2">2 Rolls</SelectItem>
-                  <SelectItem value="3">3 Rolls</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                A Roll halves your team's points and doubles the next hole
-              </p>
-            </div>
 
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <RefreshCw size={14} />
-                Team Rotation
-              </Label>
-              <Select value={teamRotation} onValueChange={(v) => handleRotationChange(v as TeamRotation)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Rotation (Fixed Teams)</SelectItem>
-                  <SelectItem value="every9">Rotate Every 9 Holes</SelectItem>
-                  <SelectItem value="every6">Rotate Every 6 Holes</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {teamRotation === "none" && "Teams stay the same for all 18 holes"}
-                {teamRotation === "every9" && "Teams shuffle randomly after 9 holes"}
-                {teamRotation === "every6" && "Teams shuffle randomly every 6 holes"}
-              </p>
-              {getRotationPreview()}
-            </div>
-          </CardContent>
-        </Card>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <RefreshCw size={14} />
+                  Team Rotation
+                </Label>
+                <Select value={teamRotation} onValueChange={(v) => handleRotationChange(v as TeamRotation)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Rotation (Fixed Teams)</SelectItem>
+                    <SelectItem value="every9">Rotate Every 9 Holes</SelectItem>
+                    <SelectItem value="every6">Rotate Every 6 Holes</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {teamRotation === "none" && "Teams stay the same for all 18 holes"}
+                  {teamRotation === "every9" && "Teams shuffle randomly after 9 holes"}
+                  {teamRotation === "every6" && "Teams shuffle randomly every 6 holes"}
+                </p>
+                {getRotationPreview()}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        <RoundActionsSection
+        {/* Round Actions - Hidden for spectators */}
+        {!isSpectator && (
+          <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
-          onLeave={() => setShowLeaveDialog(true)}
-        />
+            onLeave={() => setShowLeaveDialog(true)}
+          />
+        )}
       </div>
 
       <ViewPlayersModal
@@ -428,7 +433,7 @@ export default function UmbriagioSettings() {
         leaving={leaving}
       />
 
-      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={game?.is_finished} />}
+      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

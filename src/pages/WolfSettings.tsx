@@ -229,96 +229,102 @@ export default function WolfSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center justify-between text-lg">
-              <span>Game Rules</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/game-settings/wolf/${gameId}?returnPath=/wolf/${gameId}/settings`)}
-                className="h-8 w-8"
-              >
-                <Settings size={16} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Double</Label>
-                <p className="text-xs text-muted-foreground">
-                  Allow teams to double the points on a hole
-                </p>
+        {/* Game Rules - Hidden for spectators */}
+        {!isSpectator && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <span>Game Rules</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/wolf/${gameId}?returnPath=/wolf/${gameId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Double</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow teams to double the points on a hole
+                  </p>
+                </div>
+                <Switch checked={doubleEnabled} onCheckedChange={handleDoubleChange} />
               </div>
-              <Switch checked={doubleEnabled} onCheckedChange={handleDoubleChange} />
-            </div>
 
-            <div className="space-y-2">
-              <Label>Wolf Position</Label>
-              <Select value={wolfPosition} onValueChange={(v) => handleWolfPositionChange(v as 'first' | 'last')}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="last">Wolf tees off Last</SelectItem>
-                  <SelectItem value="first">Wolf tees off First</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label>Wolf Position</Label>
+                <Select value={wolfPosition} onValueChange={(v) => handleWolfPositionChange(v as 'first' | 'last')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="last">Wolf tees off Last</SelectItem>
+                    <SelectItem value="first">Wolf tees off First</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Lone Wolf Win Points</Label>
-              <Select value={loneWolfWinPoints.toString()} onValueChange={handleLoneWolfWinChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5, 6].map(n => (
-                    <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label>Lone Wolf Win Points</Label>
+                <Select value={loneWolfWinPoints.toString()} onValueChange={handleLoneWolfWinChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6].map(n => (
+                      <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Lone Wolf Loss Points (per opponent)</Label>
-              <Select value={loneWolfLossPoints.toString()} onValueChange={handleLoneWolfLossChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5, 6].map(n => (
-                    <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label>Lone Wolf Loss Points (per opponent)</Label>
+                <Select value={loneWolfLossPoints.toString()} onValueChange={handleLoneWolfLossChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6].map(n => (
+                      <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Team Win Points (per player)</Label>
-              <Select value={teamWinPoints.toString()} onValueChange={handleTeamWinChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5, 6].map(n => (
-                    <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label>Team Win Points (per player)</Label>
+                <Select value={teamWinPoints.toString()} onValueChange={handleTeamWinChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6].map(n => (
+                      <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <RoundActionsSection
+        {/* Round Actions - Hidden for spectators */}
+        {!isSpectator && (
+          <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
-          onLeave={() => setShowLeaveDialog(true)}
-        />
+            onLeave={() => setShowLeaveDialog(true)}
+          />
+        )}
       </div>
 
       <ViewPlayersModal
@@ -342,7 +348,7 @@ export default function WolfSettings() {
         leaving={leaving}
       />
 
-      {gameId && <WolfBottomTabBar gameId={gameId} />}
+      {gameId && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

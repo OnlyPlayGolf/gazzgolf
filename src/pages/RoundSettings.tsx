@@ -349,74 +349,60 @@ export default function RoundSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* Game Settings - Read-only for spectators */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-lg">
-              <div className="flex items-center gap-2">
-                <Settings size={20} className="text-primary" />
-                Game Settings
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
-                className="h-8 w-8"
-              >
-                <Settings size={16} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Default Tee */}
-            <div className="space-y-2">
-              <Label>Default Tee Box</Label>
-              {isSpectator ? (
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <span className="capitalize">{teeColor}</span>
+        {/* Game Settings - Hidden for spectators */}
+        {!isSpectator && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Settings size={20} className="text-primary" />
+                  Game Settings
                 </div>
-              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Default Tee */}
+              <div className="space-y-2">
+                <Label>Default Tee Box</Label>
                 <TeeSelector
                   value={teeColor}
                   onValueChange={handleTeeChange}
                   teeCount={5}
                   courseTeeNames={null}
                 />
-              )}
-            </div>
-
-            {/* Handicap toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply player handicaps to scoring
-                </p>
               </div>
-              {isSpectator ? (
-                <span className="text-sm text-muted-foreground">{handicapEnabled ? "Yes" : "No"}</span>
-              ) : (
+
+              {/* Handicap toggle */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="handicap">Use Handicaps</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Apply player handicaps to scoring
+                  </p>
+                </div>
                 <Switch
                   id="handicap"
                   checked={handicapEnabled}
                   onCheckedChange={setHandicapEnabled}
                 />
-              )}
-            </div>
-
-            {/* Mulligans */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="space-y-0.5">
-                <Label>Mulligans per Player</Label>
-                <p className="text-xs text-muted-foreground">
-                  Extra shots allowed per player
-                </p>
               </div>
-              {isSpectator ? (
-                <span className="text-sm text-muted-foreground">
-                  {mulligansPerPlayer === 0 ? "None" : mulligansPerPlayer === 9 ? "1 per 9 holes" : mulligansPerPlayer}
-                </span>
-              ) : (
+
+              {/* Mulligans */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label>Mulligans per Player</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Extra shots allowed per player
+                  </p>
+                </div>
                 <Select 
                   value={mulligansPerPlayer.toString()} 
                   onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
@@ -434,29 +420,25 @@ export default function RoundSettings() {
                     <SelectItem value="9">1 per 9 holes</SelectItem>
                   </SelectContent>
                 </Select>
-              )}
-            </div>
-
-            {/* Gimmes toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="gimmes">Allow Gimmes</Label>
-                <p className="text-xs text-muted-foreground">
-                  Short putts can be conceded
-                </p>
               </div>
-              {isSpectator ? (
-                <span className="text-sm text-muted-foreground">{gimmesEnabled ? "Yes" : "No"}</span>
-              ) : (
+
+              {/* Gimmes toggle */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label htmlFor="gimmes">Allow Gimmes</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Short putts can be conceded
+                  </p>
+                </div>
                 <Switch
                   id="gimmes"
                   checked={gimmesEnabled}
                   onCheckedChange={setGimmesEnabled}
                 />
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
