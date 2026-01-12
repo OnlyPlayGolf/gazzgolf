@@ -10,6 +10,9 @@ import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,9 +67,24 @@ export default function ScramblePlay() {
   const [currentComment, setCurrentComment] = useState("");
   // Map: teamId -> Map<holeNumber, comment>
   const [holeComments, setHoleComments] = useState<Map<string, Map<number, string>>>(new Map());
+  const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
+  
+  // Per-player stats mode
+  const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(gameId, 'scramble');
 
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+
+  // Show stats mode dialog on first load if not set
+  useEffect(() => {
+    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
+      const hasShownDialog = sessionStorage.getItem(`scrambleStatsModeShown_${gameId}`);
+      if (!hasShownDialog) {
+        setShowStatsModeDialog(true);
+        sessionStorage.setItem(`scrambleStatsModeShown_${gameId}`, 'true');
+      }
+    }
+  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   useEffect(() => {
     if (gameId) {
@@ -610,6 +628,28 @@ export default function ScramblePlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stats Mode Dialog */}
+      <PlayerStatsModeDialog
+        open={showStatsModeDialog}
+        onOpenChange={setShowStatsModeDialog}
+        onSelect={setStatsMode}
+        saving={statsModeSaving}
+      />
+
+      {/* Per-player stats entry */}
+      {teams[0] && (
+        <InRoundStatsEntry
+          statsMode={statsMode}
+          roundId={gameId}
+          holeNumber={currentHole}
+          par={getCurrentHolePar()}
+          score={teamScores[teams[0].id] ?? 0}
+          holeDistance={holeDistance}
+          playerId={teams[0].id}
+          isCurrentUser={true}
+        />
+      )}
     </div>
   );
 }

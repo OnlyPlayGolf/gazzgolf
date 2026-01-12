@@ -11,6 +11,9 @@ import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import {
   calculateTeamLow,
   calculateIndividualLow,
@@ -179,6 +182,10 @@ export default function UmbriagioPlay() {
   const [activeScoreSheet, setActiveScoreSheet] = useState<keyof Pick<UmbriagioScores, 'teamAPlayer1' | 'teamAPlayer2' | 'teamBPlayer1' | 'teamBPlayer2'> | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [currentComment, setCurrentComment] = useState("");
+  const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
+  
+  // Per-player stats mode
+  const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(gameId, 'umbriago');
   
   const config = createUmbriagioConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -199,6 +206,17 @@ export default function UmbriagioPlay() {
     return typeof distance === 'number' ? distance : undefined;
   };
   const holeDistance = getHoleDistance();
+
+  // Show stats mode dialog on first load if not set
+  useEffect(() => {
+    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
+      const hasShownDialog = sessionStorage.getItem(`umbriagioStatsModeShown_${gameId}`);
+      if (!hasShownDialog) {
+        setShowStatsModeDialog(true);
+        sessionStorage.setItem(`umbriagioStatsModeShown_${gameId}`, 'true');
+      }
+    }
+  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   // Load rotation schedule from sessionStorage
   const rotationSchedule = useMemo<RotationSchedule | null>(() => {
@@ -876,6 +894,26 @@ export default function UmbriagioPlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stats Mode Dialog */}
+      <PlayerStatsModeDialog
+        open={showStatsModeDialog}
+        onOpenChange={setShowStatsModeDialog}
+        onSelect={setStatsMode}
+        saving={statsModeSaving}
+      />
+
+      {/* Per-player stats entry */}
+      <InRoundStatsEntry
+        statsMode={statsMode}
+        roundId={gameId}
+        holeNumber={currentHole}
+        par={par}
+        score={scores.teamAPlayer1 ?? 0}
+        holeDistance={holeDistance}
+        playerId="teamAPlayer1"
+        isCurrentUser={true}
+      />
     </div>
   );
 }
