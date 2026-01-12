@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
 import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { ChevronDown } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   Table,
   TableBody,
@@ -38,6 +39,9 @@ export default function UmbriagioLeaderboard() {
   const [expandedTeam, setExpandedTeam] = useState<string | null>('A');
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Check spectator status - for sorting leaderboard by position
+  const { isSpectator } = useIsSpectator('umbriago', gameId);
 
   // Load rotation schedule from sessionStorage
   const rotationSchedule = useMemo<RotationSchedule | null>(() => {
@@ -225,30 +229,41 @@ export default function UmbriagioLeaderboard() {
     return { totalScore, toPar, toParDisplay, holesPlayed, totalPoints };
   };
 
-  // Get sorted players by points for ranking
-  const rankedPlayers = useMemo(() => {
-    const playersWithStats = allPlayers.map(player => ({
+  // Get players with stats for ranking (always sorted for position calculation)
+  const playersWithStats = useMemo(() => {
+    return allPlayers.map(player => ({
       ...player,
       stats: getPlayerStats(player.id)
     }));
-    
-    // Sort by points (highest first)
-    return playersWithStats.sort((a, b) => b.stats.totalPoints - a.stats.totalPoints);
   }, [allPlayers, holes]);
 
+  // Sorted players for position calculation
+  const sortedPlayersForRanking = useMemo(() => {
+    return [...playersWithStats].sort((a, b) => b.stats.totalPoints - a.stats.totalPoints);
+  }, [playersWithStats]);
+
+  // Display order: sorted in spectator mode, original order otherwise
+  const rankedPlayers = useMemo(() => {
+    if (isSpectator) {
+      return sortedPlayersForRanking;
+    }
+    return playersWithStats;
+  }, [isSpectator, playersWithStats, sortedPlayersForRanking]);
+
   // Get player's position label in leaderboard (with T prefix for ties)
+  // Always use sortedPlayersForRanking to calculate correct position
   const getPlayerPositionLabel = (playerId: string): string => {
-    const index = rankedPlayers.findIndex(p => p.id === playerId);
-    if (index === -1) return "0";
+    const player = playersWithStats.find(p => p.id === playerId);
+    if (!player) return "0";
     
-    const playerPoints = rankedPlayers[index].stats.totalPoints;
+    const playerPoints = player.stats.totalPoints;
     
     // Count players with higher points to determine position
-    const playersAhead = rankedPlayers.filter(p => p.stats.totalPoints > playerPoints).length;
+    const playersAhead = sortedPlayersForRanking.filter(p => p.stats.totalPoints > playerPoints).length;
     const position = playersAhead + 1;
     
     // Check if there are ties at this position
-    const samePointsCount = rankedPlayers.filter(p => p.stats.totalPoints === playerPoints).length;
+    const samePointsCount = sortedPlayersForRanking.filter(p => p.stats.totalPoints === playerPoints).length;
     
     if (samePointsCount > 1) {
       return `T${position}`;
@@ -684,16 +699,26 @@ export default function UmbriagioLeaderboard() {
           <>
             {/* Team Standings */}
             <div className="space-y-2">
-              {(['A', 'B'] as const).map(team => {
-                const isLeader = leader === team;
-                const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
-                const totalPoints = team === 'A' ? normalizedA : normalizedB;
-                const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
-                const player1 = team === 'A' ? game.team_a_player_1 : game.team_b_player_1;
-                const player2 = team === 'A' ? game.team_a_player_2 : game.team_b_player_2;
-                const rawPoints = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
-                const otherRawPoints = team === 'A' ? game.team_b_total_points : game.team_a_total_points;
-                const positionLabel = rawPoints > otherRawPoints ? '1' : rawPoints < otherRawPoints ? '2' : 'T1';
+              {(() => {
+                const teamsData = (['A', 'B'] as const).map(team => {
+                  const { normalizedA, normalizedB } = normalizeUmbriagioPoints(game.team_a_total_points, game.team_b_total_points);
+                  const totalPoints = team === 'A' ? normalizedA : normalizedB;
+                  const rawPoints = team === 'A' ? game.team_a_total_points : game.team_b_total_points;
+                  const otherRawPoints = team === 'A' ? game.team_b_total_points : game.team_a_total_points;
+                  const positionLabel = rawPoints > otherRawPoints ? '1' : rawPoints < otherRawPoints ? '2' : 'T1';
+                  return { team, totalPoints, rawPoints, positionLabel };
+                });
+
+                // Sort only in spectator mode
+                const orderedTeams = isSpectator 
+                  ? [...teamsData].sort((a, b) => b.rawPoints - a.rawPoints)
+                  : teamsData;
+
+                return orderedTeams.map(({ team, totalPoints, positionLabel }) => {
+                  const isLeader = leader === team;
+                  const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
+                  const player1 = team === 'A' ? game.team_a_player_1 : game.team_b_player_1;
+                  const player2 = team === 'A' ? game.team_a_player_2 : game.team_b_player_2;
 
                 return (
                   <Card key={team} className="p-4">
@@ -722,7 +747,8 @@ export default function UmbriagioLeaderboard() {
                     </div>
                   </Card>
                 );
-              })}
+              });
+              })()}
             </div>
             
             {/* Shared Scorecard */}
