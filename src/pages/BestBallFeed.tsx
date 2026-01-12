@@ -85,13 +85,13 @@ export default function BestBallFeed() {
 
       if (error) throw error;
       
-      // Filter: show activity items OR comments without scorecard_player_id (regular feed comments)
-      const filteredComments = (commentsData || []).filter(c => 
-        c.is_activity_item || !c.scorecard_player_id
+      // Filter: show activity items OR regular feed comments (exclude scorecard-thread comments)
+      const filteredComments = (commentsData || []).filter(c =>
+        c.is_activity_item || !c.scorecard_player_name
       );
 
       // Get unique user IDs and fetch profiles
-      const userIds = [...new Set((commentsData || []).map(c => c.user_id))];
+      const userIds = [...new Set(filteredComments.map(c => c.user_id))];
       let profilesMap = new Map<string, Profile>();
       
       if (userIds.length > 0) {
