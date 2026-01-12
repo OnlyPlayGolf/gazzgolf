@@ -9,6 +9,9 @@ import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
+import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
+import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   Table,
   TableBody,
@@ -31,9 +34,11 @@ export default function WolfLeaderboard() {
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status for leaderboard sorting
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
+  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'wolf');
 
   useEffect(() => {
     if (gameId) fetchGameData();
@@ -458,6 +463,23 @@ export default function WolfLeaderboard() {
     );
   };
 
+  // Build stroke play players from wolf data
+  const strokePlayPlayers: StrokePlayPlayer[] = game ? Array.from({ length: playerCount }, (_, i) => {
+    const playerNum = i + 1;
+    const scoresMap = new Map<number, number>();
+    holes.forEach(hole => {
+      const score = getHoleScore(hole.hole_number, playerNum);
+      if (score !== null && score !== -1) {
+        scoresMap.set(hole.hole_number, score);
+      }
+    });
+    return {
+      id: `player_${playerNum}`,
+      name: getPlayerName(playerNum),
+      scores: scoresMap,
+    };
+  }) : [];
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
@@ -466,8 +488,25 @@ export default function WolfLeaderboard() {
         pageTitle="Leaderboard"
       />
 
+      <LeaderboardModeTabs
+        primaryLabel="Wolf"
+        activeMode={leaderboardMode}
+        onModeChange={setLeaderboardMode}
+        strokePlayEnabled={strokePlayEnabled}
+      />
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {players.map((player) => renderPlayerCard(player))}
+        {leaderboardMode === 'primary' ? (
+          <>
+            {players.map((player) => renderPlayerCard(player))}
+          </>
+        ) : (
+          <StrokePlayLeaderboardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+            isSpectator={isSpectator}
+          />
+        )}
 
         {/* Like and Comment Actions */}
         <LeaderboardActions 

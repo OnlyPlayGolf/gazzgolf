@@ -10,6 +10,9 @@ import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
+import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
+import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   Table,
   TableBody,
@@ -42,9 +45,11 @@ export default function UmbriagioLeaderboard() {
   const [expandedTeam, setExpandedTeam] = useState<string | null>('A');
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
+  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'umbriago');
 
   // Load rotation schedule from sessionStorage
   const rotationSchedule = useMemo<RotationSchedule | null>(() => {
@@ -682,6 +687,25 @@ export default function UmbriagioLeaderboard() {
     );
   };
 
+  // Build stroke play players from umbriago data
+  const strokePlayPlayers: StrokePlayPlayer[] = useMemo(() => {
+    if (!game) return [];
+    return allPlayers.map(player => {
+      const scoresMap = new Map<number, number>();
+      holes.forEach(hole => {
+        const score = getPlayerScore(hole.hole_number, player.id);
+        if (score !== null && score > 0) {
+          scoresMap.set(hole.hole_number, score);
+        }
+      });
+      return {
+        id: player.id,
+        name: player.name,
+        scores: scoresMap,
+      };
+    });
+  }, [game, holes, allPlayers]);
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
@@ -690,8 +714,21 @@ export default function UmbriagioLeaderboard() {
         pageTitle="Leaderboard"
       />
 
+      <LeaderboardModeTabs
+        primaryLabel="Umbriago"
+        activeMode={leaderboardMode}
+        onModeChange={setLeaderboardMode}
+        strokePlayEnabled={strokePlayEnabled}
+      />
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {isRotating ? (
+        {leaderboardMode === 'stroke_play' ? (
+          <StrokePlayLeaderboardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+            isSpectator={isSpectator}
+          />
+        ) : isRotating ? (
           // Show individual player scorecards when rotating, sorted by points
           <>
             {rankedPlayers.map((player, index) => renderPlayerCard(player, getPlayerPositionLabel(player.id)))}
