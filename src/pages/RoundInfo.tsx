@@ -6,22 +6,27 @@ import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
+import { GameHeader } from "@/components/GameHeader";
 
 export default function RoundInfo() {
   const { roundId } = useParams();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
   
   const [origin, setOrigin] = useState<string | null>(null);
+  const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {
     if (roundId) {
       const fetchRound = async () => {
         const { data } = await supabase
           .from("rounds")
-          .select("origin")
+          .select("origin, round_name, course_name")
           .eq("id", roundId)
-          .single();
-        setOrigin(data?.origin || null);
+          .maybeSingle();
+        if (data) {
+          setOrigin(data.origin || null);
+          setGameData({ round_name: data.round_name, course_name: data.course_name });
+        }
       };
       fetchRound();
     }
@@ -37,8 +42,12 @@ export default function RoundInfo() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Info</h1>
+      <GameHeader 
+        gameTitle={gameData?.round_name || "Stroke Play"} 
+        courseName={gameData?.course_name || ""} 
+        pageTitle="Game info" 
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

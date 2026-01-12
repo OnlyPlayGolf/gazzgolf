@@ -1,17 +1,38 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { supabase } from "@/integrations/supabase/client";
+import { GameHeader } from "@/components/GameHeader";
 
 export default function MatchPlayInfo() {
   const { gameId } = useParams();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
+  const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
+
+  useEffect(() => {
+    if (gameId) {
+      const fetchGameData = async () => {
+        const { data } = await supabase
+          .from("match_play_games")
+          .select("round_name, course_name")
+          .eq("id", gameId)
+          .maybeSingle();
+        if (data) setGameData(data);
+      };
+      fetchGameData();
+    }
+  }, [gameId]);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Game Info</h1>
-        
+      <GameHeader 
+        gameTitle={gameData?.round_name || "Match Play"} 
+        courseName={gameData?.course_name || ""} 
+        pageTitle="Game info" 
+      />
+      <div className="p-4 max-w-2xl mx-auto">
         <Card className="mb-4">
           <CardHeader>
             <CardTitle className="text-lg">How to Play</CardTitle>

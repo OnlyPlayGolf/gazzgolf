@@ -1,15 +1,39 @@
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { GameHeader } from "@/components/GameHeader";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 export default function SkinsInfo() {
   const { roundId } = useParams();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('skins', roundId);
+  const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
+
+  useEffect(() => {
+    if (roundId) {
+      const fetchGameData = async () => {
+        const { data } = await supabase
+          .from("skins_games")
+          .select("round_name, course_name")
+          .eq("id", roundId)
+          .maybeSingle();
+        if (data) setGameData(data);
+      };
+      fetchGameData();
+    }
+  }, [roundId]);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Info</h1>
+      <GameHeader 
+        gameTitle={gameData?.round_name || "Skins"} 
+        courseName={gameData?.course_name || ""} 
+        pageTitle="Game info" 
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -66,7 +90,7 @@ export default function SkinsInfo() {
           </CardContent>
         </Card>
       </div>
-      {roundId && <SkinsBottomTabBar roundId={roundId} />}
+      {roundId && !isSpectatorLoading && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
     </div>
   );
 }
