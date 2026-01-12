@@ -163,7 +163,7 @@ export function MatchPlayCompletionModal({
 
   const handleContinue = () => {
     onOpenChange(false);
-    onContinue();
+    navigate("/");
   };
 
   const renderNine = (nineHoles: CourseHole[], isBackNine: boolean = false) => {
