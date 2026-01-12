@@ -66,7 +66,7 @@ export default function BestBallLeaderboard() {
         .from("best_ball_games")
         .select("*")
         .eq("id", gameId)
-        .single();
+        .maybeSingle();
 
       if (gameData) {
         // Safely parse player arrays with fallback to empty array

@@ -80,7 +80,7 @@ export default function RoundLeaderboard() {
         .from("rounds")
         .select("*")
         .eq("id", roundId)
-        .single();
+        .maybeSingle();
 
       if (roundError) throw roundError;
       setRound(roundData);

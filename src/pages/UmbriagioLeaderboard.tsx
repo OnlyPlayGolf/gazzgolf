@@ -72,7 +72,7 @@ export default function UmbriagioLeaderboard() {
         .from("umbriago_games")
         .select("*")
         .eq("id", gameId)
-        .single();
+        .maybeSingle();
 
       if (gameData) {
         setGame({
