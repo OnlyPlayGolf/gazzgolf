@@ -1560,7 +1560,10 @@ export type Database = {
           game_type: string
           hole_number: number | null
           id: string
+          is_activity_item: boolean | null
           round_id: string
+          scorecard_player_id: string | null
+          scorecard_player_name: string | null
           user_id: string
         }
         Insert: {
@@ -1570,7 +1573,10 @@ export type Database = {
           game_type?: string
           hole_number?: number | null
           id?: string
+          is_activity_item?: boolean | null
           round_id: string
+          scorecard_player_id?: string | null
+          scorecard_player_name?: string | null
           user_id: string
         }
         Update: {
@@ -1580,7 +1586,10 @@ export type Database = {
           game_type?: string
           hole_number?: number | null
           id?: string
+          is_activity_item?: boolean | null
           round_id?: string
+          scorecard_player_id?: string | null
+          scorecard_player_name?: string | null
           user_id?: string
         }
         Relationships: []

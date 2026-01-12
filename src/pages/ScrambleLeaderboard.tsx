@@ -382,7 +382,8 @@ export default function ScrambleLeaderboard() {
         <LeaderboardActions 
           gameId={gameId!} 
           gameType="scramble" 
-          feedPath={`/scramble/${gameId}/feed`} 
+          feedPath={`/scramble/${gameId}/feed`}
+          scorecardPlayerName={game?.round_name || "Scramble Game"}
         />
       </div>
 

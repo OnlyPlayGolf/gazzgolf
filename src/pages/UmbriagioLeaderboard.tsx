@@ -771,7 +771,8 @@ export default function UmbriagioLeaderboard() {
             <LeaderboardActions 
               gameId={gameId} 
               gameType="umbriago" 
-              feedPath={`/umbriago/${gameId}/feed`} 
+              feedPath={`/umbriago/${gameId}/feed`}
+              scorecardPlayerName={game?.round_name || "Umbriago Game"}
             />
           </>
         )}

@@ -587,7 +587,8 @@ export default function SimpleSkinsLeaderboard() {
         <LeaderboardActions 
           gameId={roundId!} 
           gameType="skins" 
-          feedPath={`/skins/${roundId}/feed`} 
+          feedPath={`/skins/${roundId}/feed`}
+          scorecardPlayerName="Skins Game"
         />
       </div>
 

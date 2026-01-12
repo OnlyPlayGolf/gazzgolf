@@ -338,7 +338,8 @@ export default function MatchPlayLeaderboard() {
         <LeaderboardActions 
           gameId={game.id} 
           gameType="match_play" 
-          feedPath={`/match-play/${game.id}/feed`} 
+          feedPath={`/match-play/${game.id}/feed`}
+          scorecardPlayerName={game.round_name || `${game.player_1} vs ${game.player_2}`}
         />
       </Card>
     );

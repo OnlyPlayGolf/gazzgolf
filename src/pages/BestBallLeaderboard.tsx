@@ -846,7 +846,8 @@ export default function BestBallLeaderboard() {
         <LeaderboardActions 
           gameId={gameId} 
           gameType="best_ball" 
-          feedPath={`/best-ball/${gameId}/feed`} 
+          feedPath={`/best-ball/${gameId}/feed`}
+          scorecardPlayerName={game.round_name || "Best Ball Game"}
         />
       </div>
 
