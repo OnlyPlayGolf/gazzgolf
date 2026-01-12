@@ -16,6 +16,7 @@ import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { Player as PlaySetupPlayer } from "@/types/playSetup";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
+import { StatsModeSelector, StatsMode } from "@/components/play/StatsModeSelector";
 
 interface Course {
   id: string;
@@ -94,6 +95,7 @@ export default function UmbriagioSetup() {
   const [rollsPerTeam, setRollsPerTeam] = useState(1);
   const [teamRotation, setTeamRotation] = useState<TeamRotation>("none");
   const [teamsConfirmed, setTeamsConfirmed] = useState(false);
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
   
   // Team names
   const [teamAName, setTeamAName] = useState("Team A");
@@ -261,6 +263,7 @@ export default function UmbriagioSetup() {
           stake_per_point: 0,
           payout_mode: "difference",
           rolls_per_team: rollsPerTeam,
+          stats_mode: statsMode,
         })
         .select()
         .single();

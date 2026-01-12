@@ -31,6 +31,7 @@ export type Database = {
           match_status: number
           mulligans_per_player: number | null
           round_name: string | null
+          stats_mode: string | null
           team_a_name: string
           team_a_players: Json
           team_a_total: number
@@ -57,6 +58,7 @@ export type Database = {
           match_status?: number
           mulligans_per_player?: number | null
           round_name?: string | null
+          stats_mode?: string | null
           team_a_name?: string
           team_a_players?: Json
           team_a_total?: number
@@ -83,6 +85,7 @@ export type Database = {
           match_status?: number
           mulligans_per_player?: number | null
           round_name?: string | null
+          stats_mode?: string | null
           team_a_name?: string
           team_a_players?: Json
           team_a_total?: number
@@ -275,6 +278,7 @@ export type Database = {
           presses: Json | null
           round_name: string | null
           stake_per_point: number
+          stats_mode: string | null
           tee_set: string | null
           use_handicaps: boolean
           user_id: string
@@ -305,6 +309,7 @@ export type Database = {
           presses?: Json | null
           round_name?: string | null
           stake_per_point?: number
+          stats_mode?: string | null
           tee_set?: string | null
           use_handicaps?: boolean
           user_id: string
@@ -335,6 +340,7 @@ export type Database = {
           presses?: Json | null
           round_name?: string | null
           stake_per_point?: number
+          stats_mode?: string | null
           tee_set?: string | null
           use_handicaps?: boolean
           user_id?: string
@@ -1071,6 +1077,7 @@ export type Database = {
           player_2_handicap: number | null
           player_2_tee: string | null
           round_name: string | null
+          stats_mode: string | null
           tee_set: string | null
           use_handicaps: boolean
           user_id: string
@@ -1097,6 +1104,7 @@ export type Database = {
           player_2_handicap?: number | null
           player_2_tee?: string | null
           round_name?: string | null
+          stats_mode?: string | null
           tee_set?: string | null
           use_handicaps?: boolean
           user_id: string
@@ -1123,6 +1131,7 @@ export type Database = {
           player_2_handicap?: number | null
           player_2_tee?: string | null
           round_name?: string | null
+          stats_mode?: string | null
           tee_set?: string | null
           use_handicaps?: boolean
           user_id?: string
@@ -1725,6 +1734,7 @@ export type Database = {
           min_drives_per_player: number | null
           round_name: string | null
           scoring_type: string
+          stats_mode: string | null
           teams: Json
           tee_set: string | null
           use_handicaps: boolean
@@ -1744,6 +1754,7 @@ export type Database = {
           min_drives_per_player?: number | null
           round_name?: string | null
           scoring_type?: string
+          stats_mode?: string | null
           teams?: Json
           tee_set?: string | null
           use_handicaps?: boolean
@@ -1763,6 +1774,7 @@ export type Database = {
           min_drives_per_player?: number | null
           round_name?: string | null
           scoring_type?: string
+          stats_mode?: string | null
           teams?: Json
           tee_set?: string | null
           use_handicaps?: boolean
@@ -1847,6 +1859,7 @@ export type Database = {
           players: Json
           round_name: string | null
           skin_value: number
+          stats_mode: string | null
           use_handicaps: boolean
           user_id: string
           winner_player: string | null
@@ -1866,6 +1879,7 @@ export type Database = {
           players?: Json
           round_name?: string | null
           skin_value?: number
+          stats_mode?: string | null
           use_handicaps?: boolean
           user_id: string
           winner_player?: string | null
@@ -1885,6 +1899,7 @@ export type Database = {
           players?: Json
           round_name?: string | null
           skin_value?: number
+          stats_mode?: string | null
           use_handicaps?: boolean
           user_id?: string
           winner_player?: string | null
@@ -1977,6 +1992,7 @@ export type Database = {
           rolls_per_team: number
           round_name: string | null
           stake_per_point: number
+          stats_mode: string | null
           team_a_name: string
           team_a_player_1: string
           team_a_player_2: string
@@ -2005,6 +2021,7 @@ export type Database = {
           rolls_per_team?: number
           round_name?: string | null
           stake_per_point?: number
+          stats_mode?: string | null
           team_a_name?: string
           team_a_player_1: string
           team_a_player_2: string
@@ -2033,6 +2050,7 @@ export type Database = {
           rolls_per_team?: number
           round_name?: string | null
           stake_per_point?: number
+          stats_mode?: string | null
           team_a_name?: string
           team_a_player_1?: string
           team_a_player_2?: string
@@ -2231,6 +2249,7 @@ export type Database = {
           roll_history: Json | null
           rolls_per_player: number
           round_name: string | null
+          stats_mode: string | null
           team_win_points: number
           user_id: string
           winner_player: string | null
@@ -2264,6 +2283,7 @@ export type Database = {
           roll_history?: Json | null
           rolls_per_player?: number
           round_name?: string | null
+          stats_mode?: string | null
           team_win_points?: number
           user_id: string
           winner_player?: string | null
@@ -2297,6 +2317,7 @@ export type Database = {
           roll_history?: Json | null
           rolls_per_player?: number
           round_name?: string | null
+          stats_mode?: string | null
           team_win_points?: number
           user_id?: string
           winner_player?: string | null

@@ -17,6 +17,7 @@ import { STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 import { PlayerGroup, Player as SetupPlayer } from "@/types/playSetup";
+import { StatsModeSelector, StatsMode } from "@/components/play/StatsModeSelector";
 
 interface Course {
   id: string;
@@ -52,6 +53,7 @@ export default function MatchPlaySetup() {
   
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
@@ -232,6 +234,7 @@ export default function MatchPlaySetup() {
             player_2_handicap: group.players[1].handicap || null,
             use_handicaps: useHandicaps,
             mulligans_per_player: mulligansPerPlayer,
+            stats_mode: statsMode,
             match_status: 0,
             holes_remaining: holesPlayed,
             event_id: eventId,

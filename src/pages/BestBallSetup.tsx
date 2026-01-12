@@ -17,6 +17,7 @@ import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { BestBallPlayer, BestBallGameType } from "@/types/bestBall";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
+import { StatsModeSelector, StatsMode } from "@/components/play/StatsModeSelector";
 
 interface Course {
   id: string;
@@ -40,6 +41,7 @@ export default function BestBallSetup() {
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [teamAName, setTeamAName] = useState("Team A");
   const [teamBName, setTeamBName] = useState("Team B");
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
   
   // Players
   const [teamA, setTeamA] = useState<BestBallPlayer[]>([]);
@@ -262,6 +264,7 @@ export default function BestBallSetup() {
           team_b_players: teamB as unknown as any,
           use_handicaps: useHandicaps,
           mulligans_per_player: mulligansPerPlayer,
+          stats_mode: statsMode,
         }])
         .select()
         .single();
