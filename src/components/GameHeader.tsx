@@ -81,7 +81,7 @@ export function GameHeader({
 
   return (
     <>
-      <div>
+      <div className="mb-4">
         {/* Green header bar */}
         <div className="bg-primary px-4 py-3 relative flex items-center justify-center min-h-[60px]">
           {/* Back button - left side */}
