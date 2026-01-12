@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { WolfGame, WolfHole } from "@/types/wolf";
@@ -466,6 +467,13 @@ export default function WolfLeaderboard() {
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {players.map((player) => renderPlayerCard(player))}
+
+        {/* Like and Comment Actions */}
+        <LeaderboardActions 
+          gameId={gameId!} 
+          gameType="wolf" 
+          feedPath={`/wolf/${gameId}/feed`} 
+        />
       </div>
 
       {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}

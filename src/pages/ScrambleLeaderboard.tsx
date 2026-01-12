@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
@@ -376,6 +377,13 @@ export default function ScrambleLeaderboard() {
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {teamScores.map((ts, index) => renderTeamCard(ts, index))}
+
+        {/* Like and Comment Actions */}
+        <LeaderboardActions 
+          gameId={gameId!} 
+          gameType="scramble" 
+          feedPath={`/scramble/${gameId}/feed`} 
+        />
       </div>
 
       {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}

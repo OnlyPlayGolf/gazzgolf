@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
@@ -765,6 +766,13 @@ export default function UmbriagioLeaderboard() {
                 Teams are tied!
               </div>
             )}
+
+            {/* Like and Comment Actions */}
+            <LeaderboardActions 
+              gameId={gameId} 
+              gameType="umbriago" 
+              feedPath={`/umbriago/${gameId}/feed`} 
+            />
           </>
         )}
       </div>

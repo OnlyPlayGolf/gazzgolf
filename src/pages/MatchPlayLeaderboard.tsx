@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
+import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
-import { MessageSquare, Swords } from "lucide-react";
+import { Swords } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   Table,
@@ -334,20 +334,12 @@ export default function MatchPlayLeaderboard() {
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="border-t p-4">
-          <div className="flex items-center justify-center">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="flex-col h-auto gap-1"
-              onClick={() => navigate(`/match-play/${game.id}/feed`)}
-            >
-              <MessageSquare size={20} className="text-primary" />
-              <span className="text-xs">View Game Feed</span>
-            </Button>
-          </div>
-        </div>
+        {/* Like and Comment Actions */}
+        <LeaderboardActions 
+          gameId={game.id} 
+          gameType="match_play" 
+          feedPath={`/match-play/${game.id}/feed`} 
+        />
       </Card>
     );
   };
