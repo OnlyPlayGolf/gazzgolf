@@ -244,6 +244,8 @@ export default function BestBallSetup() {
 
       // Get round name from session storage
       const savedRoundName = sessionStorage.getItem('roundName');
+      const savedHoles = sessionStorage.getItem('selectedHoles');
+      const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
 
       const { data: game, error } = await supabase
         .from("best_ball_games")
@@ -252,7 +254,7 @@ export default function BestBallSetup() {
           course_name: selectedCourse?.name || "Best Ball Game",
           course_id: selectedCourseId || null,
           round_name: savedRoundName || null,
-          holes_played: 18,
+          holes_played: holesPlayed,
           game_type: gameType,
           team_a_name: teamAName,
           team_a_players: teamA as unknown as any,
