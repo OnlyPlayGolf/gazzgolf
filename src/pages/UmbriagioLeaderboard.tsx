@@ -261,6 +261,25 @@ export default function UmbriagioLeaderboard() {
     return playersWithStats;
   }, [isSpectator, playersWithStats, sortedPlayersForRanking]);
 
+  // Build stroke play players from umbriago data
+  const strokePlayPlayers: StrokePlayPlayer[] = useMemo(() => {
+    if (!game) return [];
+    return allPlayers.map((player) => {
+      const scoresMap = new Map<number, number>();
+      holes.forEach((hole) => {
+        const score = getPlayerScore(hole.hole_number, player.id);
+        if (score !== null && score > 0) {
+          scoresMap.set(hole.hole_number, score);
+        }
+      });
+      return {
+        id: player.id,
+        name: player.name,
+        scores: scoresMap,
+      };
+    });
+  }, [game, allPlayers, holes, getPlayerScore]);
+
   // Get player's position label in leaderboard (with T prefix for ties)
   // Always use sortedPlayersForRanking to calculate correct position
   const getPlayerPositionLabel = (playerId: string): string => {
@@ -690,24 +709,6 @@ export default function UmbriagioLeaderboard() {
     );
   };
 
-  // Build stroke play players from umbriago data
-  const strokePlayPlayers: StrokePlayPlayer[] = useMemo(() => {
-    if (!game) return [];
-    return allPlayers.map(player => {
-      const scoresMap = new Map<number, number>();
-      holes.forEach(hole => {
-        const score = getPlayerScore(hole.hole_number, player.id);
-        if (score !== null && score > 0) {
-          scoresMap.set(hole.hole_number, score);
-        }
-      });
-      return {
-        id: player.id,
-        name: player.name,
-        scores: scoresMap,
-      };
-    });
-  }, [game, holes, allPlayers]);
 
   const handleFinishGame = async () => {
     try {
