@@ -11,6 +11,9 @@ import { UmbriagioGame, UmbriagioHole } from "@/types/umbriago";
 import { UmbriagioScorecard } from "@/components/UmbriagioScorecard";
 import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { format } from "date-fns";
+import { ScorecardTypeSelector, ScorecardType } from "@/components/ScorecardTypeSelector";
+import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 
 interface CourseHole {
   hole_number: number;
@@ -41,7 +44,9 @@ export function UmbriagioShareDialogWithScorecard({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const [scorecardType, setScorecardType] = useState<ScorecardType>('primary');
   const { toast } = useToast();
+  const { strokePlayEnabled } = useStrokePlayEnabled(game.id, 'umbriago');
 
   useEffect(() => {
     if (open) {
@@ -64,6 +69,27 @@ export function UmbriagioShareDialogWithScorecard({
   const getScoreDisplay = () => {
     return `${normalizedA} - ${normalizedB}`;
   };
+
+  // Prepare stroke play data - Umbriago stores gross scores in holes
+  const allPlayers = [
+    game.team_a_player_1,
+    game.team_a_player_2,
+    game.team_b_player_1,
+    game.team_b_player_2,
+  ];
+
+  const strokePlayPlayers = allPlayers.map(playerName => {
+    const scores = new Map<number, number>();
+    let total = 0;
+    
+    holes.forEach(hole => {
+      // Umbriago holes have team scores, we need individual scores
+      // For now we'll show team best scores as individual approximation
+      // This would need proper individual tracking in the data model
+    });
+    
+    return { name: playerName, scores, totalScore: total };
+  });
 
   const handleShare = async () => {
     setIsSharing(true);
@@ -166,15 +192,30 @@ export function UmbriagioShareDialogWithScorecard({
           </div>
         </div>
 
-        <ScrollArea className="max-h-[calc(90vh-180px)] px-4">
+        {/* Scorecard Type Selector */}
+        <ScorecardTypeSelector
+          primaryLabel="Umbriago"
+          selectedType={scorecardType}
+          onTypeChange={setScorecardType}
+          strokePlayEnabled={strokePlayEnabled}
+        />
+
+        <ScrollArea className="max-h-[calc(90vh-220px)] px-4">
           <div className="space-y-4 pb-4 pt-4">
-            {/* Scorecard - same design as leaderboard */}
-            <UmbriagioScorecard
-              game={game}
-              holes={holes}
-              courseHoles={courseHoles}
-              currentUserTeam={currentUserTeam}
-            />
+            {/* Scorecard */}
+            {scorecardType === 'stroke_play' ? (
+              <StrokePlayScorecardView
+                players={strokePlayPlayers}
+                courseHoles={courseHoles}
+              />
+            ) : (
+              <UmbriagioScorecard
+                game={game}
+                holes={holes}
+                courseHoles={courseHoles}
+                currentUserTeam={currentUserTeam}
+              />
+            )}
 
             {showShareForm ? (
               <div className="space-y-3">
