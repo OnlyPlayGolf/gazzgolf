@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { StatsMode } from '@/components/play/StatsModeSelector';
 
+const LAST_STATS_MODE_KEY = 'lastPlayerStatsMode';
+
 interface UsePlayerStatsModeReturn {
   statsMode: StatsMode;
   loading: boolean;
@@ -39,7 +41,14 @@ export function usePlayerStatsMode(
         .maybeSingle();
 
       if (data) {
+        // Use existing mode for this game
         setStatsModeState(data.stats_mode as StatsMode);
+      } else {
+        // No mode set for this game yet - use last saved preference as default
+        const lastMode = localStorage.getItem(LAST_STATS_MODE_KEY) as StatsMode | null;
+        if (lastMode && ['none', 'basic', 'strokes_gained'].includes(lastMode)) {
+          setStatsModeState(lastMode);
+        }
       }
       
       setLoading(false);
@@ -63,7 +72,11 @@ export function usePlayerStatsMode(
         }, { onConflict: 'user_id,game_id,game_type' });
 
       if (error) throw error;
+      
       setStatsModeState(mode);
+      
+      // Save as last used preference for future games
+      localStorage.setItem(LAST_STATS_MODE_KEY, mode);
     } catch (error) {
       console.error('Error saving stats mode:', error);
       throw error;
