@@ -443,7 +443,12 @@ export function InRoundStrokesGained({
       if (upsertError) throw upsertError;
 
       setSaved(true);
-      onStatsSaved?.();
+      
+      // Only trigger onStatsSaved when hole is complete (ball holed)
+      const lastShot = shotsToSave[shotsToSave.length - 1];
+      if (lastShot?.holed) {
+        onStatsSaved?.();
+      }
     } catch (error: any) {
       console.error("Error saving shots:", error);
       toast({ title: "Error saving stats", variant: "destructive" });
