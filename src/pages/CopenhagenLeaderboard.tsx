@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
@@ -8,11 +8,13 @@ import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { normalizePoints } from "@/utils/copenhagenScoring";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
 import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import {
   Table,
   TableBody,
@@ -30,6 +32,8 @@ interface CourseHole {
 
 export default function CopenhagenLeaderboard() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
@@ -40,6 +44,7 @@ export default function CopenhagenLeaderboard() {
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'copenhagen');
+  const { isAdmin } = useGameAdminStatus('copenhagen', gameId);
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -407,12 +412,39 @@ export default function CopenhagenLeaderboard() {
     };
   });
 
+  const handleFinishGame = async () => {
+    try {
+      const winner = sortedPlayers[0]?.name || null;
+      await supabase.from("copenhagen_games").update({ is_finished: true, winner_player: winner }).eq("id", gameId);
+      toast({ title: "Game finished!" });
+      navigate(`/copenhagen/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("copenhagen_holes").delete().eq("game_id", gameId);
+      await supabase.from("copenhagen_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
         gameTitle={game.round_name || "Copenhagen"}
         courseName={game.course_name}
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Copenhagen Game"
       />
 
       <LeaderboardModeTabs

@@ -8,11 +8,13 @@ import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
 import { Swords } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
 import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import {
   Table,
   TableBody,
@@ -38,8 +40,10 @@ interface GameWithHoles {
 export default function MatchPlayLeaderboard() {
   const { gameId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'match_play');
+  const { isAdmin } = useGameAdminStatus('match_play', gameId);
   const [currentGame, setCurrentGame] = useState<MatchPlayGame | null>(null);
   const [allGamesWithHoles, setAllGamesWithHoles] = useState<GameWithHoles[]>([]);
   const [loading, setLoading] = useState(true);
@@ -373,12 +377,40 @@ export default function MatchPlayLeaderboard() {
   // Use course holes from the first game for stroke play view
   const strokePlayCourseHoles = allGamesWithHoles[0]?.courseHoles || [];
 
+  const handleFinishGame = async () => {
+    try {
+      const winner = currentGame.match_status > 0 ? currentGame.player_1 : 
+                     currentGame.match_status < 0 ? currentGame.player_2 : null;
+      await supabase.from("match_play_games").update({ is_finished: true, winner_player: winner }).eq("id", gameId);
+      toast({ title: "Game finished!" });
+      navigate(`/match-play/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("match_play_holes").delete().eq("game_id", gameId);
+      await supabase.from("match_play_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
         gameTitle={currentGame.round_name || "Match Play"}
         courseName={currentGame.course_name}
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Match Play Game"
       />
 
       <LeaderboardModeTabs

@@ -14,6 +14,7 @@ import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
 import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import {
   Collapsible,
   CollapsibleContent,
@@ -150,7 +151,7 @@ export default function BestBallLeaderboard() {
     );
   }
 
-  const isAdmin = currentUserId !== null && game.user_id === currentUserId;
+  const { isAdmin } = useGameAdminStatus('best_ball', gameId);
 
   const handleFinishGame = async () => {
     try {

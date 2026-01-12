@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { Card } from "@/components/ui/card";
@@ -8,11 +8,13 @@ import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
 import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
 import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import {
   Table,
   TableBody,
@@ -39,6 +41,8 @@ interface RotationSchedule {
 
 export default function UmbriagioLeaderboard() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [holes, setHoles] = useState<UmbriagioHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
@@ -50,6 +54,7 @@ export default function UmbriagioLeaderboard() {
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'umbriago');
+  const { isAdmin } = useGameAdminStatus('umbriago', gameId);
 
   // Load rotation schedule from sessionStorage
   const rotationSchedule = useMemo<RotationSchedule | null>(() => {
@@ -706,12 +711,40 @@ export default function UmbriagioLeaderboard() {
     });
   }, [game, holes, allPlayers]);
 
+  const handleFinishGame = async () => {
+    try {
+      const winningTeam = game.team_a_total_points > game.team_b_total_points ? 'A' : 
+                          game.team_b_total_points > game.team_a_total_points ? 'B' : 'TIE';
+      await supabase.from("umbriago_games").update({ is_finished: true, winning_team: winningTeam }).eq("id", gameId);
+      toast({ title: "Game finished!" });
+      navigate(`/umbriago/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("umbriago_holes").delete().eq("game_id", gameId);
+      await supabase.from("umbriago_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
         gameTitle={game.round_name || "Umbriago"}
         courseName={game.course_name}
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Umbriago Game"
       />
 
       <LeaderboardModeTabs
