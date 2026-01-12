@@ -1314,9 +1314,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               userTeam={bestBallScorecardResult.userTeam}
               holeScores={bestBallScorecardResult.holeScores}
               holePars={bestBallScorecardResult.holePars}
-              onClick={() => {
+              onClick={async () => {
                 if (bestBallScorecardResult.gameId) {
-                  navigate(`/best-ball/${bestBallScorecardResult.gameId}/summary`);
+                  // Navigate to play screen - spectator mode is handled by useIsSpectator hook in BestBallPlay
+                  navigate(`/best-ball/${bestBallScorecardResult.gameId}/play`);
                 } else {
                   toast.error("Game details not found");
                 }
