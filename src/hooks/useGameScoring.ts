@@ -18,6 +18,14 @@ export interface CourseHoleData {
   hole_number: number;
   par: number;
   stroke_index?: number;
+  white_distance?: number | null;
+  yellow_distance?: number | null;
+  blue_distance?: number | null;
+  red_distance?: number | null;
+  black_distance?: number | null;
+  gold_distance?: number | null;
+  orange_distance?: number | null;
+  silver_distance?: number | null;
 }
 
 export interface GameScoringConfig<TGame, THole, TScores> {
@@ -140,7 +148,7 @@ export function useGameScoring<TGame, THole, TScores>(
       if (courseId) {
         const { data: courseHolesData } = await supabase
           .from("course_holes")
-          .select("hole_number, par, stroke_index")
+          .select("hole_number, par, stroke_index, white_distance, yellow_distance, blue_distance, red_distance, black_distance, gold_distance, orange_distance, silver_distance")
           .eq("course_id", courseId)
           .order("hole_number");
         
