@@ -345,19 +345,13 @@ export default function MatchPlayLeaderboard() {
           )}
         </div>
 
-        {/* Per-scorecard actions for each player */}
-        <div className="px-4 pb-3 space-y-2">
+        {/* Single action for the match scorecard */}
+        <div className="px-4 pb-3">
           <ScorecardActions
             gameId={game.id}
             gameType="match_play"
-            scorecardPlayerId="player_1"
-            scorecardPlayerName={game.player_1}
-          />
-          <ScorecardActions
-            gameId={game.id}
-            gameType="match_play"
-            scorecardPlayerId="player_2"
-            scorecardPlayerName={game.player_2}
+            scorecardPlayerId="match"
+            scorecardPlayerName={`${game.player_1} vs ${game.player_2}`}
           />
         </div>
       </Card>

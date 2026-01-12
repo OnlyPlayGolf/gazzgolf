@@ -462,6 +462,15 @@ export default function BestBallLeaderboard() {
                 </div>
               )}
             </div>
+            {/* Per-team scorecard actions */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="best_ball"
+                scorecardPlayerId={`team_${team}`}
+                scorecardPlayerName={teamName}
+              />
+            </div>
           </CollapsibleContent>
         </Collapsible>
       </Card>
@@ -837,6 +846,15 @@ export default function BestBallLeaderboard() {
                 </Table>
               </div>
             )}
+            {/* Single action for the combined match scorecard */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="best_ball"
+                scorecardPlayerId="match"
+                scorecardPlayerName={`${game.team_a_name} vs ${game.team_b_name}`}
+              />
+            </div>
           </CollapsibleContent>
         </Collapsible>
       </Card>
@@ -893,6 +911,8 @@ export default function BestBallLeaderboard() {
             players={strokePlayPlayers}
             courseHoles={courseHoles}
             isSpectator={isSpectator}
+            gameId={gameId}
+            gameType="best_ball"
           />
         ) : isMatchPlay ? (
           // For match play, render combined scorecard (side-by-side format with arrow indicating leader)
