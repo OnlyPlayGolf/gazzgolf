@@ -9,6 +9,7 @@ import { formatMatchStatus } from "@/utils/matchPlayScoring";
 import { Swords } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
+import { GameNotFound } from "@/components/GameNotFound";
 import {
   Table,
   TableBody,
@@ -135,10 +136,10 @@ export default function MatchPlayLeaderboard() {
 
   if (!currentGame || allGamesWithHoles.length === 0) {
     return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-muted-foreground">Game not found</div>
-        {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
-      </div>
+      <GameNotFound 
+        onRetry={() => fetchData()}
+        message="This game was deleted or is no longer available."
+      />
     );
   }
 

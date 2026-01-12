@@ -8,6 +8,7 @@ import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
+import { GameNotFound } from "@/components/GameNotFound";
 import {
   Table,
   TableBody,
