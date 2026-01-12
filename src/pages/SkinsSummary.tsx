@@ -3,13 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, MapPin, Trophy, Share2 } from "lucide-react";
+import { Calendar, MapPin, Trophy, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { RoundShareDialog } from "@/components/RoundShareDialog";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { GameHeader } from "@/components/GameHeader";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { SkinsShareDialogWithScorecard } from "@/components/SkinsShareDialogWithScorecard";
 
 interface SkinsGame {
   id: string;
@@ -23,6 +23,7 @@ interface SkinsGame {
   carryover_enabled: boolean;
   use_handicaps: boolean;
   players: any;
+  course_id: string | null;
 }
 
 interface SkinsHole {
@@ -46,6 +47,12 @@ interface SkinsPlayer {
   avatarUrl?: string | null;
 }
 
+interface CourseHole {
+  hole_number: number;
+  par: number;
+  stroke_index: number;
+}
+
 interface SkinResult {
   holeNumber: number;
   winnerId: string | null;
@@ -54,7 +61,7 @@ interface SkinResult {
   isCarryover: boolean;
 }
 
-export default function SimpleSkinsSummary() {
+export default function SkinsSummary() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -62,6 +69,7 @@ export default function SimpleSkinsSummary() {
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [players, setPlayers] = useState<SkinsPlayer[]>([]);
   const [holes, setHoles] = useState<SkinsHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [skinResults, setSkinResults] = useState<SkinResult[]>([]);
@@ -121,6 +129,19 @@ export default function SimpleSkinsSummary() {
           player_scores: (h.player_scores as Record<string, number>) || {},
         }));
         setHoles(typedHoles);
+      }
+
+      // Fetch course holes if course_id exists
+      if (gameData.course_id) {
+        const { data: courseHolesData } = await supabase
+          .from("course_holes")
+          .select("hole_number, par, stroke_index")
+          .eq("course_id", gameData.course_id)
+          .order("hole_number");
+        
+        if (courseHolesData) {
+          setCourseHoles(courseHolesData);
+        }
       }
     } catch (error: any) {
       toast({
@@ -335,7 +356,7 @@ export default function SimpleSkinsSummary() {
           </Button>
           
           <Button 
-            onClick={() => navigate("/rounds")} 
+            onClick={() => navigate("/")} 
             className="flex-1 bg-amber-600 hover:bg-amber-700" 
             size="lg"
           >
@@ -346,16 +367,14 @@ export default function SimpleSkinsSummary() {
 
       <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
 
-      <RoundShareDialog
+      <SkinsShareDialogWithScorecard
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
-        roundName={game.round_name || 'Skins'}
-        courseName={game.course_name}
-        score={winnerSkins}
-        scoreVsPar={0}
-        holesPlayed={game.holes_played}
-        roundId={roundId}
-        onContinue={() => navigate("/rounds")}
+        game={game}
+        holes={holes}
+        players={players}
+        courseHoles={courseHoles}
+        onContinue={() => navigate("/")}
       />
     </div>
   );
