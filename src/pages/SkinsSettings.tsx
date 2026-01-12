@@ -20,6 +20,7 @@ import {
   DeleteGameDialog,
   LeaveGameDialog,
 } from "@/components/settings";
+import { GameHeader } from "@/components/GameHeader";
 
 interface RoundData {
   id: string;
@@ -292,8 +293,12 @@ export default function SimpleSkinsSettings() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Settings</h1>
+      <GameHeader
+        gameTitle={round.round_name || "Skins"}
+        courseName={round.course_name}
+        pageTitle="Settings"
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         <GameDetailsSection 
           data={gameDetails} 

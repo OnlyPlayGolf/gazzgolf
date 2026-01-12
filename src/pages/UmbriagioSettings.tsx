@@ -20,6 +20,7 @@ import {
   LeaveGameDialog,
 } from "@/components/settings";
 import { getTeeDisplayName } from "@/components/TeeSelector";
+import { GameHeader } from "@/components/GameHeader";
 
 type TeamRotation = "none" | "every9" | "every6";
 
@@ -327,8 +328,12 @@ export default function UmbriagioSettings() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Settings</h1>
+      <GameHeader
+        gameTitle={(game as any).round_name || "Umbriago"}
+        courseName={game.course_name}
+        pageTitle="Settings"
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         <GameDetailsSection 
           data={gameDetails} 

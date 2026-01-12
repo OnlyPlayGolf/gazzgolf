@@ -21,6 +21,7 @@ import {
   LeaveGameDialog,
 } from "@/components/settings";
 import { getTeeDisplayName } from "@/components/TeeSelector";
+import { GameHeader } from "@/components/GameHeader";
 
 export default function ScrambleSettings() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -230,8 +231,12 @@ export default function ScrambleSettings() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Settings</h1>
+      <GameHeader
+        gameTitle={(game as any).round_name || "Scramble"}
+        courseName={game.course_name}
+        pageTitle="Settings"
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         <GameDetailsSection 
           data={gameDetails} 
