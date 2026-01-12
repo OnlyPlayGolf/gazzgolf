@@ -18,6 +18,7 @@ import { RoundCard, RoundCardData } from "./RoundCard";
 import { StrokePlayScorecardCard } from "./StrokePlayScorecardCard";
 import { UmbriagioScorecardCard } from "./UmbriagioScorecardCard";
 import { MatchPlayScorecardCard } from "./MatchPlayScorecardCard";
+import { BestBallScorecardCard } from "./BestBallScorecardCard";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 
 // Parse round scorecard result from post content (new format with scorecard data)
@@ -78,6 +79,40 @@ const parseMatchPlayScorecardResult = (content: string) => {
       };
     } catch (e) {
       console.error('Error parsing match play scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Parse best ball scorecard result from post content
+const parseBestBallScorecardResult = (content: string) => {
+  // Format: [BEST_BALL_SCORECARD]roundName|courseName|date|teamAName|teamBName|matchStatus|userTeam|gameId|scorecardJson[/BEST_BALL_SCORECARD]
+  const match = content?.match(/\[BEST_BALL_SCORECARD\]([^|]*)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(.+?)\[\/BEST_BALL_SCORECARD\]/s);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[9]);
+      return {
+        roundName: match[1] || 'Best Ball Match Play',
+        courseName: match[2],
+        datePlayed: match[3],
+        teamAName: match[4],
+        teamBName: match[5],
+        matchStatus: parseInt(match[6]),
+        userTeam: match[7] as 'A' | 'B',
+        gameId: match[8] || null,
+        holeScores: scorecardData.holeScores as Record<number, {
+          teamAScores: { playerId: string; playerName: string; grossScore: number }[];
+          teamBScores: { playerId: string; playerName: string; grossScore: number }[];
+          matchStatusAfter: number;
+        }>,
+        holePars: scorecardData.holePars as Record<number, number>,
+        teamAPlayers: scorecardData.teamAPlayers as { id: string; name: string }[],
+        teamBPlayers: scorecardData.teamBPlayers as { id: string; name: string }[],
+        textContent: content.replace(/\[BEST_BALL_SCORECARD\].+?\[\/BEST_BALL_SCORECARD\]/s, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing best ball scorecard data:', e);
       return null;
     }
   }
@@ -1022,14 +1057,15 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const initials = displayName.charAt(0).toUpperCase();
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
-  // Check if this post contains a drill result, round result, umbriago result, match play result, or game result
+  // Check if this post contains a drill result, round result, umbriago result, match play result, best ball result, or game result
   const drillResult = parseDrillResult(post.content);
   const roundScorecardResult = parseRoundScorecardResult(post.content);
   const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
+  const bestBallScorecardResult = parseBestBallScorecardResult(post.content);
   const roundResult = !roundScorecardResult ? parseRoundResult(post.content) : null;
   const umbriagioScorecardResult = parseUmbriagioScorecardResult(post.content);
   const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(post.content) : null;
-  const gameResult = !matchPlayScorecardResult ? parseGameResult(post.content) : null;
+  const gameResult = !matchPlayScorecardResult && !bestBallScorecardResult ? parseGameResult(post.content) : null;
 
   return (
     <Card>
@@ -1254,6 +1290,33 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               onClick={() => {
                 if (matchPlayScorecardResult.gameId) {
                   navigate(`/match-play/${matchPlayScorecardResult.gameId}/play`);
+                } else {
+                  toast.error("Game details not found");
+                }
+              }}
+            />
+          </div>
+        ) : bestBallScorecardResult ? (
+          <div className="space-y-3">
+            {bestBallScorecardResult.textContent && (
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{bestBallScorecardResult.textContent}</p>
+            )}
+            <BestBallScorecardCard
+              gameId={bestBallScorecardResult.gameId || undefined}
+              roundName={bestBallScorecardResult.roundName}
+              courseName={bestBallScorecardResult.courseName}
+              datePlayed={bestBallScorecardResult.datePlayed}
+              teamAName={bestBallScorecardResult.teamAName}
+              teamBName={bestBallScorecardResult.teamBName}
+              teamAPlayers={bestBallScorecardResult.teamAPlayers}
+              teamBPlayers={bestBallScorecardResult.teamBPlayers}
+              matchStatus={bestBallScorecardResult.matchStatus}
+              userTeam={bestBallScorecardResult.userTeam}
+              holeScores={bestBallScorecardResult.holeScores}
+              holePars={bestBallScorecardResult.holePars}
+              onClick={() => {
+                if (bestBallScorecardResult.gameId) {
+                  navigate(`/best-ball/${bestBallScorecardResult.gameId}/summary`);
                 } else {
                   toast.error("Game details not found");
                 }
