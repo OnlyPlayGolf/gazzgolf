@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 interface RoundPlayer {
   id: string;
@@ -61,6 +62,9 @@ export default function SimpleSkinsLeaderboard() {
   const [courseName, setCourseName] = useState("");
   const [strokePlayPlayers, setStrokePlayPlayers] = useState<PlayerData[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
+  
+  // Check spectator status for leaderboard sorting
+  const { isSpectator } = useIsSpectator('round', roundId);
 
   useEffect(() => {
     fetchData();
@@ -283,16 +287,22 @@ export default function SimpleSkinsLeaderboard() {
 
   if (loading) return <div className="p-4">Loading...</div>;
 
-  const sortedPlayers = [...players].sort((a, b) => 
+  // Always sort for position calculation
+  const sortedPlayersForRanking = [...players].sort((a, b) => 
     getPlayerSkinCount(b.id) - getPlayerSkinCount(a.id)
   );
+  
+  // For display: only sort by position in spectator mode
+  const sortedPlayers = isSpectator 
+    ? sortedPlayersForRanking 
+    : players;
 
-  // Helper for skins position with ties
+  // Helper for skins position with ties - always use sorted list
   const getSkinsPositionLabel = (playerId: string): string => {
     const skinCount = getPlayerSkinCount(playerId);
-    const playersAhead = sortedPlayers.filter(p => getPlayerSkinCount(p.id) > skinCount).length;
+    const playersAhead = sortedPlayersForRanking.filter(p => getPlayerSkinCount(p.id) > skinCount).length;
     const position = playersAhead + 1;
-    const sameSkinsCount = sortedPlayers.filter(p => getPlayerSkinCount(p.id) === skinCount).length;
+    const sameSkinsCount = sortedPlayersForRanking.filter(p => getPlayerSkinCount(p.id) === skinCount).length;
     if (sameSkinsCount > 1) {
       return `T${position}`;
     }
@@ -302,30 +312,35 @@ export default function SimpleSkinsLeaderboard() {
   const frontNine = courseHoles.slice(0, 9);
   const backNine = courseHoles.slice(9, 18);
 
-  // Sort stroke play players by score to par
-  const sortedStrokePlayPlayers = [...strokePlayPlayers].sort((a, b) => {
+  // Always sort stroke play players for position calculation
+  const sortedStrokePlayPlayersForRanking = [...strokePlayPlayers].sort((a, b) => {
     const aTotals = calculateTotals(a, courseHoles);
     const bTotals = calculateTotals(b, courseHoles);
     const aScoreToPar = aTotals.totalScore > 0 ? aTotals.totalScore - aTotals.totalPar : Infinity;
     const bScoreToPar = bTotals.totalScore > 0 ? bTotals.totalScore - bTotals.totalPar : Infinity;
     return aScoreToPar - bScoreToPar;
   });
+  
+  // For display: only sort by position in spectator mode
+  const sortedStrokePlayPlayers = isSpectator 
+    ? sortedStrokePlayPlayersForRanking 
+    : strokePlayPlayers;
 
-  // Helper for stroke play position with ties
+  // Helper for stroke play position with ties - always use sorted list
   const getStrokePlayPositionLabel = (playerId: string): string => {
     const player = strokePlayPlayers.find(p => p.id === playerId);
     if (!player) return "1";
     const playerTotals = calculateTotals(player, courseHoles);
     const playerScoreToPar = playerTotals.totalScore > 0 ? playerTotals.totalScore - playerTotals.totalPar : Infinity;
     
-    const playersAhead = sortedStrokePlayPlayers.filter(p => {
+    const playersAhead = sortedStrokePlayPlayersForRanking.filter(p => {
       const totals = calculateTotals(p, courseHoles);
       const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
       return scoreToPar < playerScoreToPar;
     }).length;
     const position = playersAhead + 1;
     
-    const sameToPar = sortedStrokePlayPlayers.filter(p => {
+    const sameToPar = sortedStrokePlayPlayersForRanking.filter(p => {
       const totals = calculateTotals(p, courseHoles);
       const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
       return scoreToPar === playerScoreToPar;
