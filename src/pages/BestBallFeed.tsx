@@ -75,14 +75,20 @@ export default function BestBallFeed() {
     
     try {
       // Fetch comments for this best ball game
+      // Only show: activity items OR regular comments (not scorecard thread comments)
       const { data: commentsData, error } = await supabase
         .from("round_comments")
-        .select("id, content, hole_number, user_id, created_at, is_activity_item, scorecard_player_name")
+        .select("id, content, hole_number, user_id, created_at, is_activity_item, scorecard_player_name, scorecard_player_id")
         .eq("round_id", gameId)
         .eq("game_type", "best_ball")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      
+      // Filter: show activity items OR comments without scorecard_player_id (regular feed comments)
+      const filteredComments = (commentsData || []).filter(c => 
+        c.is_activity_item || !c.scorecard_player_id
+      );
 
       // Get unique user IDs and fetch profiles
       const userIds = [...new Set((commentsData || []).map(c => c.user_id))];
@@ -101,7 +107,7 @@ export default function BestBallFeed() {
 
       // Fetch likes and replies counts for each comment
       const commentsWithCounts: Comment[] = await Promise.all(
-        (commentsData || []).map(async (comment) => {
+        filteredComments.map(async (comment) => {
           const { count: likesCount } = await supabase
             .from("round_comment_likes")
             .select("*", { count: "exact", head: true })
