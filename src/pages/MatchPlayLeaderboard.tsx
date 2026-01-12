@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
-import { LeaderboardActions } from "@/components/LeaderboardActions";
+import { ScorecardActions } from "@/components/ScorecardActions";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
 import { Swords } from "lucide-react";
@@ -345,13 +345,21 @@ export default function MatchPlayLeaderboard() {
           )}
         </div>
 
-        {/* Like and Comment Actions */}
-        <LeaderboardActions 
-          gameId={game.id} 
-          gameType="match_play" 
-          feedPath={`/match-play/${game.id}/feed`}
-          scorecardPlayerName={game.round_name || `${game.player_1} vs ${game.player_2}`}
-        />
+        {/* Per-scorecard actions for each player */}
+        <div className="px-4 pb-3 space-y-2">
+          <ScorecardActions
+            gameId={game.id}
+            gameType="match_play"
+            scorecardPlayerId="player_1"
+            scorecardPlayerName={game.player_1}
+          />
+          <ScorecardActions
+            gameId={game.id}
+            gameType="match_play"
+            scorecardPlayerId="player_2"
+            scorecardPlayerName={game.player_2}
+          />
+        </div>
       </Card>
     );
   };
@@ -426,6 +434,8 @@ export default function MatchPlayLeaderboard() {
             players={strokePlayPlayers}
             courseHoles={strokePlayCourseHoles}
             isSpectator={isSpectator}
+            gameId={gameId}
+            gameType="match_play"
           />
         ) : (
           <>

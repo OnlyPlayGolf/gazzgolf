@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { LeaderboardActions } from "@/components/LeaderboardActions";
+import { ScorecardActions } from "@/components/ScorecardActions";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { normalizePoints } from "@/utils/copenhagenScoring";
 import { ChevronDown } from "lucide-react";
@@ -391,6 +391,15 @@ export default function CopenhagenLeaderboard() {
               </div>
             )}
 
+            {/* Per-scorecard actions */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="copenhagen"
+                scorecardPlayerId={`player_${player.index}`}
+                scorecardPlayerName={player.name}
+              />
+            </div>
           </>
         )}
       </Card>
@@ -460,18 +469,12 @@ export default function CopenhagenLeaderboard() {
             players={strokePlayPlayers}
             courseHoles={courseHoles}
             isSpectator={isSpectator}
+            gameId={gameId}
+            gameType="copenhagen"
           />
         ) : (
           sortedPlayers.map((player, index) => renderPlayerCard(player, index))
         )}
-
-        {/* Like and Comment Actions */}
-        <LeaderboardActions 
-          gameId={gameId!} 
-          gameType="copenhagen" 
-          feedPath={`/copenhagen/${gameId}/feed`}
-          scorecardPlayerName={game?.round_name || "Copenhagen Game"}
-        />
       </div>
 
       {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
