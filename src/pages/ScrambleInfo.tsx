@@ -3,9 +3,11 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 export default function ScrambleInfo() {
   const { gameId } = useParams<{ gameId: string }>();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -66,7 +68,7 @@ export default function ScrambleInfo() {
         </Card>
       </div>
 
-      <ScrambleBottomTabBar gameId={gameId!} />
+      {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

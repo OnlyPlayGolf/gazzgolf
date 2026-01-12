@@ -3,9 +3,11 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 export default function CopenhagenInfo() {
   const { gameId } = useParams();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -77,7 +79,7 @@ export default function CopenhagenInfo() {
           </CardContent>
         </Card>
       </div>
-      {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

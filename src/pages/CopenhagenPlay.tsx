@@ -306,11 +306,11 @@ export default function CopenhagenPlay() {
     void saveHole();
   }, [pendingAutoAdvance, saving, scores.player1, scores.player2, scores.player3, saveHole]);
 
-  if (loading) {
+  if (loading || spectatorLoading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading game...</div>
-        {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+        {gameId && !spectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -319,7 +319,7 @@ export default function CopenhagenPlay() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+        {gameId && !spectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -473,7 +473,7 @@ export default function CopenhagenPlay() {
         </Card>
       </div>
 
-      {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+      {gameId && !spectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
 
       {/* Exit Dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>

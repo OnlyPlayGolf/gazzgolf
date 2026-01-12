@@ -37,7 +37,7 @@ export default function ScrambleLeaderboard() {
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator } = useIsSpectator('scramble', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
 
   useEffect(() => {
     if (gameId) fetchData();
@@ -378,7 +378,7 @@ export default function ScrambleLeaderboard() {
         {teamScores.map((ts, index) => renderTeamCard(ts, index))}
       </div>
 
-      <ScrambleBottomTabBar gameId={gameId!} />
+      {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

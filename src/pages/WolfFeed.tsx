@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 interface Comment {
   id: string;
@@ -42,6 +43,7 @@ interface Reply {
 export default function WolfFeed() {
   const { gameId } = useParams();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -439,7 +441,7 @@ export default function WolfFeed() {
           </div>
         )}
       </div>
-      <WolfBottomTabBar gameId={gameId!} />
+      {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

@@ -3,9 +3,11 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 export default function WolfInfo() {
   const { gameId } = useParams();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -88,7 +90,7 @@ export default function WolfInfo() {
         </Card>
       </div>
 
-      {gameId && <WolfBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 interface Comment {
   id: string;

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,7 @@ interface Reply {
 export default function BestBallFeed() {
   const { gameId } = useParams();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -460,7 +462,7 @@ export default function BestBallFeed() {
         )}
       </div>
 
-      {gameId && <BestBallBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

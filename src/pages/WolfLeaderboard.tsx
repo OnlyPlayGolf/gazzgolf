@@ -30,7 +30,7 @@ export default function WolfLeaderboard() {
   const [loading, setLoading] = useState(true);
   
   // Check spectator status for leaderboard sorting
-  const { isSpectator } = useIsSpectator('wolf', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
 
   useEffect(() => {
     if (gameId) fetchGameData();
@@ -468,7 +468,7 @@ export default function WolfLeaderboard() {
         {players.map((player) => renderPlayerCard(player))}
       </div>
 
-      <WolfBottomTabBar gameId={gameId!} />
+      {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

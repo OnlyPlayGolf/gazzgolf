@@ -1,11 +1,13 @@
 import { useParams } from "react-router-dom";
 import { TopNavBar } from "@/components/TopNavBar";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
 
 export default function BestBallInfo() {
   const { gameId } = useParams();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -56,7 +58,7 @@ export default function BestBallInfo() {
         </Card>
       </div>
 
-      {gameId && <BestBallBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

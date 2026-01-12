@@ -7,6 +7,7 @@ import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { formatMatchStatus } from "@/utils/matchPlayScoring";
 import { MessageSquare, Swords } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   Table,
   TableBody,
@@ -32,6 +33,7 @@ interface GameWithHoles {
 export default function MatchPlayLeaderboard() {
   const { gameId } = useParams();
   const navigate = useNavigate();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
   const [currentGame, setCurrentGame] = useState<MatchPlayGame | null>(null);
   const [allGamesWithHoles, setAllGamesWithHoles] = useState<GameWithHoles[]>([]);
   const [loading, setLoading] = useState(true);
@@ -396,7 +398,7 @@ export default function MatchPlayLeaderboard() {
         )}
       </div>
 
-      {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

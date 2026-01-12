@@ -241,11 +241,11 @@ export default function MatchPlayPlay() {
     await deleteGame();
   };
 
-  if (loading) {
+  if (loading || spectatorLoading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading game...</div>
-        {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+        {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -254,7 +254,7 @@ export default function MatchPlayPlay() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+        {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -465,7 +465,7 @@ export default function MatchPlayPlay() {
 
       </div>
 
-      {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+      {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
 
       {/* Exit Dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
