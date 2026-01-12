@@ -10,6 +10,9 @@ import { Swords } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
+import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
+import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   Table,
   TableBody,
@@ -36,10 +39,12 @@ export default function MatchPlayLeaderboard() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
+  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'match_play');
   const [currentGame, setCurrentGame] = useState<MatchPlayGame | null>(null);
   const [allGamesWithHoles, setAllGamesWithHoles] = useState<GameWithHoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGameIndex, setSelectedGameIndex] = useState(0);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
 
   useEffect(() => {
     if (gameId) {
@@ -347,6 +352,27 @@ export default function MatchPlayLeaderboard() {
     );
   };
 
+  // Prepare stroke play players from all games
+  const strokePlayPlayers = allGamesWithHoles.flatMap(({ game, holes }) => [
+    {
+      id: `${game.id}_p1`,
+      name: game.player_1,
+      scores: new Map(
+        holes.map(h => [h.hole_number, h.player_1_gross_score || 0]).filter(([_, s]) => s > 0) as [number, number][]
+      ),
+    },
+    {
+      id: `${game.id}_p2`,
+      name: game.player_2,
+      scores: new Map(
+        holes.map(h => [h.hole_number, h.player_2_gross_score || 0]).filter(([_, s]) => s > 0) as [number, number][]
+      ),
+    },
+  ]);
+
+  // Use course holes from the first game for stroke play view
+  const strokePlayCourseHoles = allGamesWithHoles[0]?.courseHoles || [];
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
@@ -355,35 +381,52 @@ export default function MatchPlayLeaderboard() {
         pageTitle="Leaderboard"
       />
 
+      <LeaderboardModeTabs
+        primaryLabel="Match Play"
+        activeMode={leaderboardMode}
+        onModeChange={setLeaderboardMode}
+        strokePlayEnabled={strokePlayEnabled}
+      />
+
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {/* If multiple matches, show tabs or all matches */}
-        {allGamesWithHoles.length > 1 ? (
-          <Tabs value={selectedGameIndex.toString()} onValueChange={(v) => setSelectedGameIndex(parseInt(v))}>
-            <TabsList className="w-full justify-start overflow-x-auto">
-              {allGamesWithHoles.map((_, index) => (
-                <TabsTrigger key={index} value={index.toString()} className="flex-shrink-0">
-                  Match {index + 1}
-                </TabsTrigger>
-              ))}
-              <TabsTrigger value="all" className="flex-shrink-0">
-                All Matches
-              </TabsTrigger>
-            </TabsList>
-            
-            {allGamesWithHoles.map((gameWithHoles, index) => (
-              <TabsContent key={index} value={index.toString()}>
-                {renderMatchCard(gameWithHoles, index)}
-              </TabsContent>
-            ))}
-            
-            <TabsContent value="all" className="space-y-4">
-              {allGamesWithHoles.map((gameWithHoles, index) => 
-                renderMatchCard(gameWithHoles, index)
-              )}
-            </TabsContent>
-          </Tabs>
+        {leaderboardMode === 'stroke_play' ? (
+          <StrokePlayLeaderboardView
+            players={strokePlayPlayers}
+            courseHoles={strokePlayCourseHoles}
+            isSpectator={isSpectator}
+          />
         ) : (
-          renderMatchCard(allGamesWithHoles[0], 0)
+          <>
+            {/* If multiple matches, show tabs or all matches */}
+            {allGamesWithHoles.length > 1 ? (
+              <Tabs value={selectedGameIndex.toString()} onValueChange={(v) => setSelectedGameIndex(parseInt(v))}>
+                <TabsList className="w-full justify-start overflow-x-auto">
+                  {allGamesWithHoles.map((_, index) => (
+                    <TabsTrigger key={index} value={index.toString()} className="flex-shrink-0">
+                      Match {index + 1}
+                    </TabsTrigger>
+                  ))}
+                  <TabsTrigger value="all" className="flex-shrink-0">
+                    All Matches
+                  </TabsTrigger>
+                </TabsList>
+                
+                {allGamesWithHoles.map((gameWithHoles, index) => (
+                  <TabsContent key={index} value={index.toString()}>
+                    {renderMatchCard(gameWithHoles, index)}
+                  </TabsContent>
+                ))}
+                
+                <TabsContent value="all" className="space-y-4">
+                  {allGamesWithHoles.map((gameWithHoles, index) => 
+                    renderMatchCard(gameWithHoles, index)
+                  )}
+                </TabsContent>
+              </Tabs>
+            ) : (
+              renderMatchCard(allGamesWithHoles[0], 0)
+            )}
+          </>
         )}
       </div>
 
