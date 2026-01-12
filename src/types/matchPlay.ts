@@ -19,6 +19,7 @@ export interface MatchPlayGame {
   
   use_handicaps: boolean;
   mulligans_per_player?: number;
+  stats_mode?: string | null;
   
   match_status: number; // positive = player 1 up, negative = player 2 up, 0 = all square
   holes_remaining: number;

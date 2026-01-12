@@ -24,6 +24,7 @@ export interface CopenhagenGame {
   player_3_tee: string | null;
   
   use_handicaps: boolean;
+  stats_mode?: string | null;
   
   player_1_total_points: number;
   player_2_total_points: number;

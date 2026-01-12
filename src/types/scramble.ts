@@ -29,6 +29,7 @@ export interface ScrambleGame {
   min_drives_per_player: number | null;
   use_handicaps: boolean;
   scoring_type: 'gross' | 'net';
+  stats_mode?: string | null;
   
   is_finished: boolean;
   winning_team: string | null;

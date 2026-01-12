@@ -29,6 +29,9 @@ interface InRoundStatsEntryProps {
   isCurrentUser: boolean;
   holeDistance?: number;
   onStatsSaved?: () => void;
+  // Optional: pass course info directly instead of looking up from rounds table
+  courseName?: string;
+  holesPlayed?: number;
 }
 
 export function InRoundStatsEntry({
@@ -41,6 +44,8 @@ export function InRoundStatsEntry({
   isCurrentUser,
   holeDistance,
   onStatsSaved,
+  courseName,
+  holesPlayed,
 }: InRoundStatsEntryProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(true);
@@ -146,20 +151,31 @@ export function InRoundStatsEntry({
       if (existingRound) {
         proRoundId = existingRound.id;
       } else {
-        // Get round details for course name
-        const { data: roundData } = await supabase
-          .from('rounds')
-          .select('course_name, holes_played')
-          .eq('id', roundId)
-          .single();
+        // Use passed course info or try to get from rounds table
+        let courseNameToUse = courseName;
+        let holesPlayedToUse = holesPlayed || 18;
+        
+        if (!courseNameToUse) {
+          // Fallback: try to get from rounds table (for standard stroke play rounds)
+          const { data: roundData } = await supabase
+            .from('rounds')
+            .select('course_name, holes_played')
+            .eq('id', roundId)
+            .maybeSingle();
+          
+          if (roundData) {
+            courseNameToUse = roundData.course_name;
+            holesPlayedToUse = roundData.holes_played || 18;
+          }
+        }
 
         const { data: newRound, error: createError } = await supabase
           .from('pro_stats_rounds')
           .insert({
             user_id: user.id,
             external_round_id: roundId,
-            course_name: roundData?.course_name || null,
-            holes_played: roundData?.holes_played || 18,
+            course_name: courseNameToUse || null,
+            holes_played: holesPlayedToUse,
           })
           .select('id')
           .single();
@@ -216,6 +232,8 @@ export function InRoundStatsEntry({
         score={score}
         holeDistance={holeDistance}
         onStatsSaved={onStatsSaved}
+        courseName={courseName}
+        holesPlayed={holesPlayed}
       />
     );
   }
