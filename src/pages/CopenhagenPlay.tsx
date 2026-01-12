@@ -11,6 +11,9 @@ import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,12 +128,16 @@ export default function CopenhagenPlay() {
   const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [pendingAutoAdvance, setPendingAutoAdvance] = useState(false);
+  const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
   
   // Mulligan and comment tracking
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [mulligansUsed, setMulligansUsed] = useState<Map<number, Set<number>>>(new Map()); // playerNum -> Set of hole numbers
   const [currentComment, setCurrentComment] = useState("");
   const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
+  
+  // Per-player stats mode
+  const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(gameId, 'copenhagen');
   
   const config = createCopenhagenConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -151,6 +158,17 @@ export default function CopenhagenPlay() {
     return typeof distance === 'number' ? distance : undefined;
   };
   const holeDistance = getHoleDistance();
+
+  // Show stats mode dialog on first load if not set
+  useEffect(() => {
+    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
+      const hasShownDialog = sessionStorage.getItem(`copenhagenStatsModeShown_${gameId}`);
+      if (!hasShownDialog) {
+        setShowStatsModeDialog(true);
+        sessionStorage.setItem(`copenhagenStatsModeShown_${gameId}`, 'true');
+      }
+    }
+  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   // Load mulligan settings on mount
   useEffect(() => {
@@ -512,6 +530,26 @@ export default function CopenhagenPlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stats Mode Dialog */}
+      <PlayerStatsModeDialog
+        open={showStatsModeDialog}
+        onOpenChange={setShowStatsModeDialog}
+        onSelect={setStatsMode}
+        saving={statsModeSaving}
+      />
+
+      {/* Per-player stats entry */}
+      <InRoundStatsEntry
+        statsMode={statsMode}
+        roundId={gameId}
+        holeNumber={currentHole}
+        par={par}
+        score={scores.player1}
+        holeDistance={holeDistance}
+        playerId="player1"
+        isCurrentUser={true}
+      />
     </div>
   );
 }

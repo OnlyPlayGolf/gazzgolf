@@ -11,6 +11,9 @@ import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import {
   calculateBestBall,
   calculateHoleResult,
@@ -200,6 +203,7 @@ export default function BestBallPlay() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);
   const [shouldSaveOnComplete, setShouldSaveOnComplete] = useState(false);
+  const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
   
   // More sheet state
   const [showMoreSheet, setShowMoreSheet] = useState(false);
@@ -209,6 +213,9 @@ export default function BestBallPlay() {
   // Mulligan tracking: Map<playerId, Set<holeNumber>>
   const [mulligansUsed, setMulligansUsed] = useState<Map<string, Set<number>>>(new Map());
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
+  
+  // Per-player stats mode
+  const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(gameId, 'best_ball');
   
   // Use a ref to track latest scores for the advance logic (avoids stale state)
   const scoresRef = useRef<BestBallScores>({ teamA: {}, teamB: {} });
@@ -235,6 +242,17 @@ export default function BestBallPlay() {
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+  
+  // Show stats mode dialog on first load if not set
+  useEffect(() => {
+    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
+      const hasShownDialog = sessionStorage.getItem(`bestBallStatsModeShown_${gameId}`);
+      if (!hasShownDialog) {
+        setShowStatsModeDialog(true);
+        sessionStorage.setItem(`bestBallStatsModeShown_${gameId}`, 'true');
+      }
+    }
+  }, [statsModeLoading, statsMode, game, loading, gameId]);
   
   // Get hole distance from course data based on tee set
   const currentCourseHole = courseHoles.find(h => h.hole_number === currentHole);
@@ -704,6 +722,28 @@ export default function BestBallPlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stats Mode Dialog */}
+      <PlayerStatsModeDialog
+        open={showStatsModeDialog}
+        onOpenChange={setShowStatsModeDialog}
+        onSelect={setStatsMode}
+        saving={statsModeSaving}
+      />
+
+      {/* Per-player stats entry */}
+      {game?.team_a_players?.[0] && (
+        <InRoundStatsEntry
+          statsMode={statsMode}
+          roundId={gameId}
+          holeNumber={currentHole}
+          par={par}
+          score={scores?.teamA?.[game.team_a_players[0].odId] ?? 0}
+          holeDistance={holeDistance}
+          playerId={game.team_a_players[0].odId}
+          isCurrentUser={true}
+        />
+      )}
     </div>
   );
 }

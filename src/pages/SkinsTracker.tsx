@@ -12,6 +12,9 @@ import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import { GameHeader } from "@/components/GameHeader";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 
 interface SkinsGame {
   id: string;
@@ -84,6 +87,22 @@ export default function SkinsTracker() {
   const [showScoreSheet, setShowScoreSheet] = useState(false);
   const [carryoverCount, setCarryoverCount] = useState(1);
   const [isManualNavigation, setIsManualNavigation] = useState(false);
+  const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
+  
+  // Per-player stats mode
+  const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(roundId, 'skins');
+  
+  // Show stats mode dialog on first load if not set
+  useEffect(() => {
+    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
+      // Check if this is first time (no stats mode set yet)
+      const hasShownDialog = sessionStorage.getItem(`skinsStatsModeShown_${roundId}`);
+      if (!hasShownDialog) {
+        setShowStatsModeDialog(true);
+        sessionStorage.setItem(`skinsStatsModeShown_${roundId}`, 'true');
+      }
+    }
+  }, [statsModeLoading, statsMode, game, loading, roundId]);
 
   useEffect(() => {
     if (roundId) {
@@ -610,6 +629,28 @@ export default function SkinsTracker() {
               }
             }
           }}
+        />
+      )}
+
+      {/* Stats Mode Dialog */}
+      <PlayerStatsModeDialog
+        open={showStatsModeDialog}
+        onOpenChange={setShowStatsModeDialog}
+        onSelect={setStatsMode}
+        saving={statsModeSaving}
+      />
+
+      {/* Per-player stats entry */}
+      {currentHole && selectedPlayer && (
+        <InRoundStatsEntry
+          statsMode={statsMode}
+          roundId={roundId}
+          holeNumber={currentHole.hole_number}
+          par={currentHole.par}
+          score={getPlayerScore(selectedPlayer.odId)}
+          holeDistance={holeDistance}
+          playerId={selectedPlayer.odId}
+          isCurrentUser={true}
         />
       )}
 

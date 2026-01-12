@@ -12,6 +12,9 @@ import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { calculateWolfHoleScore, getWolfPlayerForHole } from "@/utils/wolfScoring";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -183,6 +186,10 @@ export default function WolfPlay() {
   const [activePlayerSheet, setActivePlayerSheet] = useState<number | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [currentComment, setCurrentComment] = useState("");
+  const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
+  
+  // Per-player stats mode
+  const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(gameId, 'wolf');
   
   const config = createWolfConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -220,6 +227,17 @@ export default function WolfPlay() {
   
   const wolfPosition = game?.wolf_position as 'first' | 'last' || 'last';
   const currentWolfPlayer = getWolfPlayerForHole(currentHole, getPlayerCount(), wolfPosition);
+
+  // Show stats mode dialog on first load if not set
+  useEffect(() => {
+    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
+      const hasShownDialog = sessionStorage.getItem(`wolfStatsModeShown_${gameId}`);
+      if (!hasShownDialog) {
+        setShowStatsModeDialog(true);
+        sessionStorage.setItem(`wolfStatsModeShown_${gameId}`, 'true');
+      }
+    }
+  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   // Auto-advance to next hole when all scores and wolf choice are entered
   useEffect(() => {
@@ -707,6 +725,26 @@ export default function WolfPlay() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stats Mode Dialog */}
+      <PlayerStatsModeDialog
+        open={showStatsModeDialog}
+        onOpenChange={setShowStatsModeDialog}
+        onSelect={setStatsMode}
+        saving={statsModeSaving}
+      />
+
+      {/* Per-player stats entry */}
+      <InRoundStatsEntry
+        statsMode={statsMode}
+        roundId={gameId}
+        holeNumber={currentHole}
+        par={par}
+        score={scoresState.scores[0] ?? 0}
+        holeDistance={holeDistance}
+        playerId="player1"
+        isCurrentUser={true}
+      />
     </div>
   );
 }
