@@ -12,6 +12,7 @@ import { Heart, MessageCircle, Send, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
+import { GameHeader } from "@/components/GameHeader";
 
 interface Profile {
   display_name: string | null;
@@ -55,6 +56,7 @@ export default function BestBallFeed() {
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
   const [commentsSheetOpen, setCommentsSheetOpen] = useState(false);
   const [selectedScorecardPlayerName, setSelectedScorecardPlayerName] = useState<string>("");
+  const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -67,8 +69,19 @@ export default function BestBallFeed() {
   useEffect(() => {
     if (gameId) {
       fetchComments();
+      fetchGameData();
     }
   }, [gameId, currentUserId]);
+
+  const fetchGameData = async () => {
+    if (!gameId) return;
+    const { data } = await supabase
+      .from("best_ball_games")
+      .select("round_name, course_name")
+      .eq("id", gameId)
+      .single();
+    if (data) setGameData(data);
+  };
 
   const fetchComments = async () => {
     if (!gameId) return;
@@ -305,8 +318,12 @@ export default function BestBallFeed() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold">Game Feed</h1>
+      <GameHeader 
+        gameTitle={gameData?.round_name || "Best Ball"} 
+        courseName={gameData?.course_name || ""} 
+        pageTitle="Game feed" 
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         {/* New Comment Box */}
         {currentUserId && (
