@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WolfGame } from "@/types/wolf";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -25,6 +26,7 @@ export default function WolfSettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
   const [game, setGame] = useState<WolfGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [loneWolfWinPoints, setLoneWolfWinPoints] = useState(3);
@@ -180,11 +182,11 @@ export default function WolfSettings() {
     }
   };
 
-  if (loading || !game) {
+  if (loading || isSpectatorLoading || !game) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <WolfBottomTabBar gameId={gameId} />}
+        {gameId && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }

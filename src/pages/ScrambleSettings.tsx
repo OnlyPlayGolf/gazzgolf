@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam } from "@/types/scramble";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -24,6 +25,7 @@ import { getTeeDisplayName } from "@/components/TeeSelector";
 export default function ScrambleSettings() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [minDrives, setMinDrives] = useState<string>('none');
@@ -174,11 +176,11 @@ export default function ScrambleSettings() {
     }
   };
 
-  if (loading || !game) {
+  if (loading || isSpectatorLoading || !game) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center pb-20">
         <p>Loading...</p>
-        {gameId && <ScrambleBottomTabBar gameId={gameId} />}
+        {gameId && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }

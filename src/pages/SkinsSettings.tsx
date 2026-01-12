@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeeSelector, getTeeDisplayName } from "@/components/TeeSelector";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -47,6 +48,7 @@ export default function SimpleSkinsSettings() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('skins', roundId);
   const [round, setRound] = useState<RoundData | null>(null);
   const [players, setPlayers] = useState<RoundPlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,11 +238,11 @@ export default function SimpleSkinsSettings() {
     }
   };
 
-  if (loading || !round) {
+  if (loading || isSpectatorLoading || !round) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {roundId && <SkinsBottomTabBar roundId={roundId} />}
+        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
       </div>
     );
   }

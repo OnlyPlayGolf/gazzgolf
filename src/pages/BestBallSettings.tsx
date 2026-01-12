@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   GameDetailsSection,
@@ -25,6 +26,7 @@ export default function BestBallSettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
   const [game, setGame] = useState<BestBallGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -145,11 +147,11 @@ export default function BestBallSettings() {
     }
   };
 
-  if (loading) {
+  if (loading || isSpectatorLoading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <BestBallBottomTabBar gameId={gameId} />}
+        {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -158,7 +160,7 @@ export default function BestBallSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && <BestBallBottomTabBar gameId={gameId} />}
+        {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -218,83 +220,88 @@ export default function BestBallSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* Game Settings */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between text-lg">
-              <div className="flex items-center gap-2">
-                <Settings size={20} className="text-primary" />
-                Game Settings
+        {/* Game Settings - Hidden for spectators */}
+        {!isSpectator && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Settings size={20} className="text-primary" />
+                  Game Settings
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/best-ball/${gameId}?returnPath=/best-ball/${gameId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Use Handicaps (Net)</Label>
+                  <p className="text-xs text-muted-foreground">Apply stroke allocation</p>
+                </div>
+                <Switch 
+                  checked={game.use_handicaps} 
+                  onCheckedChange={async (checked) => {
+                    await supabase
+                      .from("best_ball_games")
+                      .update({ use_handicaps: checked })
+                      .eq("id", gameId);
+                    setGame({ ...game, use_handicaps: checked });
+                    toast({ title: checked ? "Handicaps enabled" : "Handicaps disabled" });
+                  }} 
+                />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/game-settings/best-ball/${gameId}?returnPath=/best-ball/${gameId}/settings`)}
-                className="h-8 w-8"
-              >
-                <Settings size={16} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Use Handicaps (Net)</Label>
-                <p className="text-xs text-muted-foreground">Apply stroke allocation</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Mulligans per Player</Label>
+                  <p className="text-xs text-muted-foreground">Extra shots allowed</p>
+                </div>
+                <Select 
+                  value={((game as any).mulligans_per_player || 0).toString()} 
+                  onValueChange={async (v) => {
+                    const mulligans = parseInt(v);
+                    await supabase
+                      .from("best_ball_games")
+                      .update({ mulligans_per_player: mulligans })
+                      .eq("id", gameId);
+                    setGame({ ...game, mulligans_per_player: mulligans } as any);
+                    toast({ title: mulligans === 0 ? "Mulligans disabled" : mulligans === 9 ? "1 mulligan per 9 holes" : `Mulligans set to ${mulligans}` });
+                  }}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No mulligans</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="9">1 per 9 holes</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Switch 
-                checked={game.use_handicaps} 
-                onCheckedChange={async (checked) => {
-                  await supabase
-                    .from("best_ball_games")
-                    .update({ use_handicaps: checked })
-                    .eq("id", gameId);
-                  setGame({ ...game, use_handicaps: checked });
-                  toast({ title: checked ? "Handicaps enabled" : "Handicaps disabled" });
-                }} 
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Mulligans per Player</Label>
-                <p className="text-xs text-muted-foreground">Extra shots allowed</p>
-              </div>
-              <Select 
-                value={((game as any).mulligans_per_player || 0).toString()} 
-                onValueChange={async (v) => {
-                  const mulligans = parseInt(v);
-                  await supabase
-                    .from("best_ball_games")
-                    .update({ mulligans_per_player: mulligans })
-                    .eq("id", gameId);
-                  setGame({ ...game, mulligans_per_player: mulligans } as any);
-                  toast({ title: mulligans === 0 ? "Mulligans disabled" : mulligans === 9 ? "1 mulligan per 9 holes" : `Mulligans set to ${mulligans}` });
-                }}
-              >
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">No mulligans</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3">3</SelectItem>
-                  <SelectItem value="4">4</SelectItem>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="9">1 per 9 holes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <RoundActionsSection
-          isAdmin={currentUserId === game.user_id}
-          onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate('/profile')}
-          onDelete={() => setShowDeleteDialog(true)}
-          onLeave={() => setShowLeaveDialog(true)}
-        />
+        {/* Round Actions - Hidden for spectators */}
+        {!isSpectator && (
+          <RoundActionsSection
+            isAdmin={currentUserId === game.user_id}
+            onFinish={handleFinishGame}
+            onSaveAndExit={() => navigate('/profile')}
+            onDelete={() => setShowDeleteDialog(true)}
+            onLeave={() => setShowLeaveDialog(true)}
+          />
+        )}
       </div>
 
       <ViewPlayersModal
@@ -318,7 +325,7 @@ export default function BestBallSettings() {
         leaving={leaving}
       />
 
-      {gameId && <BestBallBottomTabBar gameId={gameId} />}
+      {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

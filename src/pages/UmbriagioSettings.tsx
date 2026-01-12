@@ -9,6 +9,7 @@ import { UmbriagioGame } from "@/types/umbriago";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -69,6 +70,7 @@ export default function UmbriagioSettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -293,11 +295,11 @@ export default function UmbriagioSettings() {
     }
   };
 
-  if (loading || !game) {
+  if (loading || isSpectatorLoading || !game) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={game?.is_finished} />}
+        {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
