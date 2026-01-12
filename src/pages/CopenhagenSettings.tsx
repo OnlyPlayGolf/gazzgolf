@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -25,6 +26,7 @@ export default function CopenhagenSettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -184,11 +186,11 @@ export default function CopenhagenSettings() {
     }
   };
 
-  if (loading || !game) {
+  if (loading || isSpectatorLoading || !game) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+        {gameId && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -264,8 +266,8 @@ export default function CopenhagenSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* Game Settings */}
-        <Card>
+        {/* Game Settings - Hidden for spectators */}
+        {!isSpectator && (<Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-lg">
               <div className="flex items-center gap-2">
@@ -354,14 +356,18 @@ export default function CopenhagenSettings() {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        <RoundActionsSection
-          isAdmin={currentUserId === game.user_id}
-          onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate('/profile')}
-          onDelete={() => setShowDeleteDialog(true)}
-          onLeave={() => setShowLeaveDialog(true)}
-        />
+        {/* Round Actions - Hidden for spectators */}
+        {!isSpectator && (
+          <RoundActionsSection
+            isAdmin={currentUserId === game.user_id}
+            onFinish={handleFinishGame}
+            onSaveAndExit={() => navigate('/profile')}
+            onDelete={() => setShowDeleteDialog(true)}
+            onLeave={() => setShowLeaveDialog(true)}
+          />
+        )}
       </div>
 
       <ViewPlayersModal
@@ -385,7 +391,7 @@ export default function CopenhagenSettings() {
         leaving={leaving}
       />
 
-      {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+      {gameId && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }
