@@ -290,23 +290,27 @@ export default function RoundLeaderboard() {
           });
           
           // Sort by score to par (lower is better), conceded players go last
-          const sorted = [...playersWithTotals].sort((a, b) => a.scoreToPar - b.scoreToPar);
+          // This sorted array is always used for position calculation
+          const sortedForRanking = [...playersWithTotals].sort((a, b) => a.scoreToPar - b.scoreToPar);
           
-          // Helper for position with ties
+          // Display order: sorted in spectator mode, original order otherwise
+          const displayOrder = isSpectator ? sortedForRanking : playersWithTotals;
+          
+          // Helper for position with ties (always use sortedForRanking for correct positions)
           const getPositionLabel = (scoreToPar: number, hasConceded: boolean): string => {
             // Players with conceded holes show "-" instead of position
             if (hasConceded) return "-";
             
-            const playersAhead = sorted.filter(p => p.scoreToPar < scoreToPar).length;
+            const playersAhead = sortedForRanking.filter(p => p.scoreToPar < scoreToPar).length;
             const position = playersAhead + 1;
-            const sameScoreCount = sorted.filter(p => p.scoreToPar === scoreToPar && !p.hasConceded).length;
+            const sameScoreCount = sortedForRanking.filter(p => p.scoreToPar === scoreToPar && !p.hasConceded).length;
             if (sameScoreCount > 1) {
               return `T${position}`;
             }
             return `${position}`;
           };
 
-          return sorted.map(({ player, scoreToPar, hasConceded }) => {
+          return displayOrder.map(({ player, scoreToPar, hasConceded }) => {
             const isExpanded = expandedPlayerId === player.id;
             const frontTotals = calculateTotals(player, frontNine);
             const backTotals = calculateTotals(player, backNine);

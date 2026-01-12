@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { ChevronDown } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   Table,
   TableBody,
@@ -34,6 +35,9 @@ export default function ScrambleLeaderboard() {
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  
+  // Check spectator status - for sorting leaderboard by position
+  const { isSpectator } = useIsSpectator('scramble', gameId);
 
   useEffect(() => {
     if (gameId) fetchData();
@@ -89,7 +93,7 @@ export default function ScrambleLeaderboard() {
   };
 
   const calculateTeamScores = (): TeamScore[] => {
-    return teams.map(team => {
+    const unsortedScores = teams.map(team => {
       let total = 0;
       let thru = 0;
       let parTotal = 0;
@@ -112,12 +116,18 @@ export default function ScrambleLeaderboard() {
         thru,
         toPar: total - parTotal
       };
-    }).sort((a, b) => {
-      if (a.total === 0 && b.total === 0) return 0;
-      if (a.total === 0) return 1;
-      if (b.total === 0) return -1;
-      return a.total - b.total;
     });
+
+    // Only sort in spectator mode
+    if (isSpectator) {
+      return unsortedScores.sort((a, b) => {
+        if (a.total === 0 && b.total === 0) return 0;
+        if (a.total === 0) return 1;
+        if (b.total === 0) return -1;
+        return a.total - b.total;
+      });
+    }
+    return unsortedScores;
   };
 
   const formatToPar = (toPar: number): string => {

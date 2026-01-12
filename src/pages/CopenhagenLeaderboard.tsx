@@ -6,6 +6,7 @@ import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { normalizePoints } from "@/utils/copenhagenScoring";
 import { ChevronDown } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   Table,
   TableBody,
@@ -28,6 +29,9 @@ export default function CopenhagenLeaderboard() {
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
+  
+  // Check spectator status - for sorting leaderboard by position
+  const { isSpectator } = useIsSpectator('copenhagen', gameId);
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -105,8 +109,11 @@ export default function CopenhagenLeaderboard() {
     { index: 3, name: game.player_3, points: normalizedPts.player3 },
   ];
 
-  const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
-  const leader = sortedPlayers[0]?.index;
+  // Sort players by points only in spectator mode
+  const sortedPlayers = isSpectator 
+    ? [...players].sort((a, b) => b.points - a.points)
+    : players;
+  const leader = [...players].sort((a, b) => b.points - a.points)[0]?.index;
 
   // Create a map for quick hole data lookup
   const holesMap = new Map(holes.map(h => [h.hole_number, h]));
