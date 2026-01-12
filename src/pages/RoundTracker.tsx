@@ -464,6 +464,13 @@ export default function RoundTracker() {
     return player.profiles?.display_name || player.profiles?.username || "Player";
   };
 
+  // Get hole distance based on tee set
+  const getHoleDistance = (hole: CourseHole, teeSet: string): number | undefined => {
+    const teeKey = teeSet?.toLowerCase() || 'white';
+    const distanceKey = `${teeKey}_distance`;
+    return hole[distanceKey] || hole.white_distance || undefined;
+  };
+
   // Mulligan helpers
   const getPlayerMulligansUsed = (playerId: string): number => {
     return mulligansUsed.get(playerId)?.size || 0;
@@ -897,6 +904,7 @@ export default function RoundTracker() {
                               score={playerScore}
                               playerId={player.id}
                               isCurrentUser={true}
+                              holeDistance={getHoleDistance(currentHole, player.tee_color || round.tee_set)}
                             />
                           )}
                         </div>
@@ -959,6 +967,7 @@ export default function RoundTracker() {
                     score={playerScore}
                     playerId={player.id}
                     isCurrentUser={true}
+                    holeDistance={getHoleDistance(currentHole, player.tee_color || round.tee_set)}
                   />
                 )}
               </div>

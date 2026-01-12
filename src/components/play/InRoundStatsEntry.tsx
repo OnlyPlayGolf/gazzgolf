@@ -8,6 +8,7 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { InRoundStrokesGained } from "./InRoundStrokesGained";
 
 export type StatsMode = 'none' | 'basic' | 'strokes_gained';
 
@@ -26,6 +27,7 @@ interface InRoundStatsEntryProps {
   score: number;
   playerId: string;
   isCurrentUser: boolean;
+  holeDistance?: number;
   onStatsSaved?: () => void;
 }
 
@@ -37,6 +39,7 @@ export function InRoundStatsEntry({
   score,
   playerId,
   isCurrentUser,
+  holeDistance,
   onStatsSaved,
 }: InRoundStatsEntryProps) {
   const { toast } = useToast();
@@ -203,15 +206,17 @@ export function InRoundStatsEntry({
     return null;
   }
 
-  // For strokes gained, we'll add that later - for now show a message
+  // For strokes gained, use the dedicated component
   if (statsMode === 'strokes_gained') {
     return (
-      <Card className="mt-4 border-dashed border-2 border-muted-foreground/30">
-        <CardContent className="py-4 text-center text-muted-foreground">
-          <p className="text-sm">Strokes Gained stats entry coming soon</p>
-          <p className="text-xs">Use post-round stats entry for detailed tracking</p>
-        </CardContent>
-      </Card>
+      <InRoundStrokesGained
+        roundId={roundId}
+        holeNumber={holeNumber}
+        par={par}
+        score={score}
+        holeDistance={holeDistance}
+        onStatsSaved={onStatsSaved}
+      />
     );
   }
 
