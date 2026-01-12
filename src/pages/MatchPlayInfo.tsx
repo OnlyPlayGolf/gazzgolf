@@ -10,7 +10,7 @@ export default function MatchPlayInfo() {
   return (
     <div className="min-h-screen pb-24 bg-background">
       <div className="p-4 pt-6 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Match Play Rules</h1>
+        <h1 className="text-2xl font-bold mb-4">Game Info</h1>
         
         <Card className="mb-4">
           <CardHeader>

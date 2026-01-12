@@ -1,5 +1,4 @@
 import { useParams } from "react-router-dom";
-import { TopNavBar } from "@/components/TopNavBar";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Info } from "lucide-react";
@@ -10,9 +9,9 @@ export default function ScrambleInfo() {
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
 
   return (
-    <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
-      <TopNavBar />
-      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
+    <div className="min-h-screen pb-24 bg-background">
+      <div className="p-4 pt-6 max-w-2xl mx-auto space-y-4">
+        <h1 className="text-2xl font-bold">Game Info</h1>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
