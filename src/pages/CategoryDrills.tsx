@@ -12,6 +12,7 @@ import {
   syncLocalFavoritesToSupabase
 } from "@/utils/favoritesManager";
 import { supabase } from "@/integrations/supabase/client";
+import { TopNavBar } from "@/components/TopNavBar";
 
 const allDrills = [
   {
@@ -200,6 +201,7 @@ const CategoryDrills = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
+      <TopNavBar />
       <div className="p-4 pt-20">
         <div className="flex items-center gap-3 mb-6">
           <Button 

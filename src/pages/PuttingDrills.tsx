@@ -2,13 +2,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { TopNavBar } from "@/components/TopNavBar";
 
 const PuttingDrills = () => {
   const navigate = useNavigate();
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
         <div className="flex items-center gap-3 mb-6">
           <Button 
             variant="ghost" 
