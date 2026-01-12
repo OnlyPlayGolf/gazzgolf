@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trophy, ChevronDown, RotateCcw } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Trophy, ChevronDown, RotateCcw } from "lucide-react";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { LeaderboardActions } from "@/components/LeaderboardActions";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GameHeader } from "@/components/GameHeader";
+import { GameNotFound } from "@/components/GameNotFound";
+import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
+import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import {
   Table,
   TableBody,
@@ -15,18 +19,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 
-interface RoundPlayer {
+interface SkinsGame {
   id: string;
-  user_id: string;
-  tee_color: string | null;
-  handicap: number | null;
-  profiles: {
-    display_name: string | null;
-    username: string | null;
-  } | null;
+  course_id: string | null;
+  course_name: string;
+  round_name: string | null;
+  players: any[];
+  holes_played: number;
+  is_finished: boolean;
+  carryover_enabled: boolean;
+  use_handicaps: boolean;
+}
+
+interface SkinsHole {
+  id: string;
+  game_id: string;
+  hole_number: number;
+  par: number;
+  stroke_index: number | null;
+  player_scores: Record<string, { gross_score: number; net_score?: number; mulligan?: boolean }>;
+  winner_player: string | null;
+  skins_available: number;
+  is_carryover: boolean;
 }
 
 interface CourseHole {
@@ -35,557 +50,433 @@ interface CourseHole {
   stroke_index: number;
 }
 
-interface SkinResult {
-  holeNumber: number;
-  winnerId: string | null;
-  skinsWon: number;
-  isCarryover: boolean;
-}
-
-interface PlayerData {
-  id: string;
-  user_id: string;
-  tee_color: string | null;
+interface PlayerSkinResult {
+  playerId: string;
+  name: string;
   handicap: number | null;
-  display_name: string;
-  username: string | null;
+  skinsWon: number;
+  totalScore: number;
+  holesPlayed: number;
   scores: Map<number, number>;
   mulligans: Set<number>;
 }
 
-export default function SimpleSkinsLeaderboard() {
+export default function SkinsLeaderboard() {
   const { roundId } = useParams();
-  const navigate = useNavigate();
-  const [players, setPlayers] = useState<RoundPlayer[]>([]);
-  const [scores, setScores] = useState<Map<string, Map<number, number>>>(new Map());
+  const [game, setGame] = useState<SkinsGame | null>(null);
+  const [holes, setHoles] = useState<SkinsHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [skinResults, setSkinResults] = useState<SkinResult[]>([]);
-  const [courseName, setCourseName] = useState("");
-  const [strokePlayPlayers, setStrokePlayPlayers] = useState<PlayerData[]>([]);
+  const [playerResults, setPlayerResults] = useState<PlayerSkinResult[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
+  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
-  // Check spectator status for leaderboard sorting
-  const { isSpectator } = useIsSpectator('round', roundId);
+  const { isSpectator } = useIsSpectator('skins', roundId);
   const { strokePlayEnabled } = useStrokePlayEnabled(roundId, 'skins');
 
   useEffect(() => {
-    fetchData();
+    if (roundId) fetchGameData();
   }, [roundId]);
 
   useEffect(() => {
-    if (players.length > 0 && courseHoles.length > 0) {
-      calculateSkinResults();
+    if (game && holes.length > 0) {
+      calculatePlayerResults();
     }
-  }, [scores, courseHoles, players]);
+  }, [game, holes]);
 
-  const fetchData = async () => {
+  const fetchGameData = async () => {
     try {
-      const { data: roundData } = await supabase
-        .from("rounds")
+      const { data: gameData } = await supabase
+        .from("skins_games")
         .select("*")
         .eq("id", roundId)
         .maybeSingle();
 
-      if (!roundData) return;
-      setCourseName(roundData.course_name);
+      if (gameData) {
+        const typedGame: SkinsGame = {
+          id: gameData.id,
+          course_id: gameData.course_id,
+          course_name: gameData.course_name,
+          round_name: gameData.round_name,
+          players: Array.isArray(gameData.players) ? gameData.players : [],
+          holes_played: gameData.holes_played,
+          is_finished: gameData.is_finished,
+          carryover_enabled: gameData.carryover_enabled,
+          use_handicaps: gameData.use_handicaps,
+        };
+        setGame(typedGame);
 
-      const { data: playersData } = await supabase
-        .from("round_players")
-        .select("id, user_id, tee_color, handicap")
-        .eq("round_id", roundId);
+        // Set first player as expanded by default
+        if (typedGame.players.length > 0) {
+          setExpandedPlayerId(typedGame.players[0].id || typedGame.players[0].name);
+        }
 
-      if (playersData && playersData.length > 0) {
-        const userIds = playersData.map(p => p.user_id);
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, display_name, username, handicap")
-          .in("id", userIds);
-        
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-        const playersWithProfiles = playersData.map(player => ({
-          ...player,
-          profiles: profilesMap.get(player.user_id) || null
-        }));
-        setPlayers(playersWithProfiles);
+        // Fetch course holes
+        if (typedGame.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", typedGame.course_id)
+            .order("hole_number");
 
-        // Prepare stroke play players
-        const strokePlayers: PlayerData[] = playersData.map(player => {
-          const profile = profilesMap.get(player.user_id);
-          return {
-            id: player.id,
-            user_id: player.user_id,
-            tee_color: player.tee_color,
-            handicap: player.handicap || (profile?.handicap ? parseFloat(profile.handicap) : null),
-            display_name: profile?.display_name || profile?.username || "Player",
-            username: profile?.username || null,
-            scores: new Map(),
-            mulligans: new Set(),
-          };
-        });
-        setStrokePlayPlayers(strokePlayers);
-      }
-
-      const { data: courseData } = await supabase
-        .from("courses")
-        .select("id")
-        .eq("name", roundData.course_name)
-        .maybeSingle();
-
-      let holesArray: CourseHole[] = [];
-      if (courseData) {
-        const { data: holesData } = await supabase
-          .from("course_holes")
-          .select("hole_number, par, stroke_index")
-          .eq("course_id", courseData.id)
-          .order("hole_number");
-        
-        if (holesData) {
-          holesArray = holesData.slice(0, roundData.holes_played);
+          if (courseHolesData) {
+            const filteredHoles = typedGame.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
         }
       }
-      
-      if (holesArray.length === 0) {
-        const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5];
-        holesArray = Array.from({ length: roundData.holes_played }, (_, i) => ({
-          hole_number: i + 1,
-          par: i < 9 ? defaultPar[i] : defaultPar[i % 9],
-          stroke_index: i + 1,
+
+      const { data: holesData } = await supabase
+        .from("skins_holes")
+        .select("*")
+        .eq("game_id", roundId)
+        .order("hole_number");
+
+      if (holesData) {
+        const typedHoles: SkinsHole[] = holesData.map(h => ({
+          id: h.id,
+          game_id: h.game_id,
+          hole_number: h.hole_number,
+          par: h.par,
+          stroke_index: h.stroke_index,
+          player_scores: (h.player_scores as Record<string, { gross_score: number; net_score?: number; mulligan?: boolean }>) || {},
+          winner_player: h.winner_player,
+          skins_available: h.skins_available,
+          is_carryover: h.is_carryover,
         }));
+        setHoles(typedHoles);
       }
-      setCourseHoles(holesArray);
-
-      const { data: existingHoles } = await supabase
-        .from("holes")
-        .select("hole_number, score, player_id, mulligan")
-        .eq("round_id", roundId);
-
-      if (existingHoles) {
-        const scoresMap = new Map<string, Map<number, number>>();
-        const mulligansMap = new Map<string, Set<number>>();
-        
-        existingHoles.forEach((hole) => {
-          if (hole.player_id) {
-            if (!scoresMap.has(hole.player_id)) {
-              scoresMap.set(hole.player_id, new Map());
-            }
-            scoresMap.get(hole.player_id)!.set(hole.hole_number, hole.score);
-            
-            if (hole.mulligan) {
-              if (!mulligansMap.has(hole.player_id)) {
-                mulligansMap.set(hole.player_id, new Set());
-              }
-              mulligansMap.get(hole.player_id)!.add(hole.hole_number);
-            }
-          }
-        });
-        setScores(scoresMap);
-
-        // Update stroke play players with scores and mulligans
-        setStrokePlayPlayers(prev => prev.map(player => ({
-          ...player,
-          scores: scoresMap.get(player.id) || new Map(),
-          mulligans: mulligansMap.get(player.id) || new Set(),
-        })));
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateSkinResults = () => {
-    const results: SkinResult[] = [];
-    let carryover = 0;
-    
-    for (const hole of courseHoles) {
-      const holeScores: { playerId: string; score: number }[] = [];
-      
-      for (const player of players) {
-        const playerScoreMap = scores.get(player.id);
-        const score = playerScoreMap?.get(hole.hole_number);
-        if (score && score > 0) {
-          holeScores.push({
-            playerId: player.id,
-            score
-          });
+  const calculatePlayerResults = () => {
+    if (!game) return;
+
+    const results: PlayerSkinResult[] = game.players.map(player => {
+      const playerId = player.id || player.name;
+      let skinsWon = 0;
+      let totalScore = 0;
+      let holesPlayed = 0;
+      const scores = new Map<number, number>();
+      const mulligans = new Set<number>();
+
+      holes.forEach(hole => {
+        if (hole.winner_player === playerId) {
+          skinsWon += hole.skins_available;
         }
-      }
-      
-      if (holeScores.length < players.length || players.length === 0) {
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: null,
-          skinsWon: 0,
-          isCarryover: false
-        });
-        continue;
-      }
-      
-      const lowestScore = Math.min(...holeScores.map(s => s.score));
-      const playersWithLowest = holeScores.filter(s => s.score === lowestScore);
-      
-      if (playersWithLowest.length === 1) {
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: playersWithLowest[0].playerId,
-          skinsWon: 1 + carryover,
-          isCarryover: false
-        });
-        carryover = 0;
-      } else {
-        results.push({
-          holeNumber: hole.hole_number,
-          winnerId: null,
-          skinsWon: 0,
-          isCarryover: true
-        });
-        carryover += 1;
-      }
-    }
-    
-    setSkinResults(results);
-  };
 
-  const getPlayerName = (player: RoundPlayer) => {
-    return player.profiles?.display_name || player.profiles?.username || "Player";
-  };
+        const playerScore = hole.player_scores[playerId];
+        if (playerScore && playerScore.gross_score > 0) {
+          totalScore += playerScore.gross_score;
+          holesPlayed++;
+          scores.set(hole.hole_number, playerScore.gross_score);
+          if (playerScore.mulligan) {
+            mulligans.add(hole.hole_number);
+          }
+        }
+      });
 
-  const getPlayerSkinCount = (playerId: string): number => {
-    return skinResults
-      .filter(r => r.winnerId === playerId)
-      .reduce((sum, r) => sum + r.skinsWon, 0);
-  };
-
-  const getPlayerTotalScore = (playerId: string): number => {
-    const playerScores = scores.get(playerId);
-    if (!playerScores) return 0;
-    let total = 0;
-    playerScores.forEach(score => { total += score; });
-    return total;
-  };
-
-  const calculateTotals = (player: PlayerData, holes: CourseHole[]) => {
-    let totalScore = 0;
-    let totalPar = 0;
-
-    holes.forEach(hole => {
-      const score = player.scores.get(hole.hole_number);
-      if (score && score > 0) {
-        totalScore += score;
-        totalPar += hole.par;
-      }
+      return {
+        playerId,
+        name: player.name,
+        handicap: player.handicap ?? null,
+        skinsWon,
+        totalScore,
+        holesPlayed,
+        scores,
+        mulligans,
+      };
     });
 
-    return { totalScore, totalPar };
+    setPlayerResults(results);
   };
 
-  const getScoreToPar = (score: number, par: number) => {
-    const diff = score - par;
-    if (diff === 0) return "E";
-    if (diff > 0) return `+${diff}`;
-    return diff.toString();
-  };
-
-  if (loading) return <div className="p-4">Loading...</div>;
-
-  // Always sort for position calculation
-  const sortedPlayersForRanking = [...players].sort((a, b) => 
-    getPlayerSkinCount(b.id) - getPlayerSkinCount(a.id)
-  );
+  // Sort for position calculation
+  const sortedResultsForRanking = [...playerResults].sort((a, b) => b.skinsWon - a.skinsWon);
   
-  // For display: only sort by position in spectator mode
-  const sortedPlayers = isSpectator 
-    ? sortedPlayersForRanking 
-    : players;
+  // For display: only sort in spectator mode
+  const displayResults = isSpectator ? sortedResultsForRanking : playerResults;
 
-  // Helper for skins position with ties - always use sorted list
-  const getSkinsPositionLabel = (playerId: string): string => {
-    const skinCount = getPlayerSkinCount(playerId);
-    const playersAhead = sortedPlayersForRanking.filter(p => getPlayerSkinCount(p.id) > skinCount).length;
-    const position = playersAhead + 1;
-    const sameSkinsCount = sortedPlayersForRanking.filter(p => getPlayerSkinCount(p.id) === skinCount).length;
-    if (sameSkinsCount > 1) {
-      return `T${position}`;
-    }
-    return `${position}`;
-  };
-
-  const frontNine = courseHoles.slice(0, 9);
-  const backNine = courseHoles.slice(9, 18);
-
-  // Always sort stroke play players for position calculation
-  const sortedStrokePlayPlayersForRanking = [...strokePlayPlayers].sort((a, b) => {
-    const aTotals = calculateTotals(a, courseHoles);
-    const bTotals = calculateTotals(b, courseHoles);
-    const aScoreToPar = aTotals.totalScore > 0 ? aTotals.totalScore - aTotals.totalPar : Infinity;
-    const bScoreToPar = bTotals.totalScore > 0 ? bTotals.totalScore - bTotals.totalPar : Infinity;
-    return aScoreToPar - bScoreToPar;
-  });
-  
-  // For display: only sort by position in spectator mode
-  const sortedStrokePlayPlayers = isSpectator 
-    ? sortedStrokePlayPlayersForRanking 
-    : strokePlayPlayers;
-
-  // Helper for stroke play position with ties - always use sorted list
-  const getStrokePlayPositionLabel = (playerId: string): string => {
-    const player = strokePlayPlayers.find(p => p.id === playerId);
+  const getPositionLabel = (playerId: string): string => {
+    const player = playerResults.find(p => p.playerId === playerId);
     if (!player) return "1";
-    const playerTotals = calculateTotals(player, courseHoles);
-    const playerScoreToPar = playerTotals.totalScore > 0 ? playerTotals.totalScore - playerTotals.totalPar : Infinity;
-    
-    const playersAhead = sortedStrokePlayPlayersForRanking.filter(p => {
-      const totals = calculateTotals(p, courseHoles);
-      const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
-      return scoreToPar < playerScoreToPar;
-    }).length;
+    const playersAhead = sortedResultsForRanking.filter(p => p.skinsWon > player.skinsWon).length;
     const position = playersAhead + 1;
-    
-    const sameToPar = sortedStrokePlayPlayersForRanking.filter(p => {
-      const totals = calculateTotals(p, courseHoles);
-      const scoreToPar = totals.totalScore > 0 ? totals.totalScore - totals.totalPar : Infinity;
-      return scoreToPar === playerScoreToPar;
-    }).length;
-    
-    if (sameToPar > 1) {
-      return `T${position}`;
-    }
+    const sameCount = sortedResultsForRanking.filter(p => p.skinsWon === player.skinsWon).length;
+    if (sameCount > 1) return `T${position}`;
     return `${position}`;
   };
 
-  return (
-    <div className="pb-24 min-h-screen bg-background">
-      <div className="p-4 space-y-4 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold">Leaderboard</h1>
+  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
+  const backNine = courseHoles.filter(h => h.hole_number > 9);
 
-        <Tabs defaultValue="skins" className="w-full">
-          <TabsList className={`grid w-full ${strokePlayEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <TabsTrigger value="skins">Skins</TabsTrigger>
-            {strokePlayEnabled && <TabsTrigger value="strokeplay">Stroke Play</TabsTrigger>}
-          </TabsList>
+  // Stroke play data
+  const strokePlayPlayers: StrokePlayPlayer[] = playerResults.map(p => ({
+    id: p.playerId,
+    name: p.name,
+    handicap: p.handicap,
+    scores: p.scores,
+    mulligans: p.mulligans,
+  }));
 
-          <TabsContent value="skins" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-amber-600" />
-                  Skins
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {sortedPlayers.map((player) => {
-                  const skinCount = getPlayerSkinCount(player.id);
-                  const positionLabel = getSkinsPositionLabel(player.id);
-                  const isLeader = positionLabel === "1" || positionLabel === "T1";
-                  
-                  return (
-                    <div 
-                      key={player.id}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
-                        isLeader && skinCount > 0 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-muted/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`text-lg font-bold ${isLeader && skinCount > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
-                          {positionLabel}
-                        </span>
-                        <div>
-                          <p className="font-medium">{getPlayerName(player)}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 text-amber-600">
-                          <Trophy size={16} />
-                          <span className="text-xl font-bold">{skinCount}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">skin{skinCount !== 1 ? 's' : ''}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          </TabsContent>
+  const getScoreColor = (score: number, par: number) => {
+    if (score < par) return 'text-red-600 font-bold';
+    if (score > par) return 'text-sky-600';
+    return '';
+  };
 
-          <TabsContent value="strokeplay" className="mt-4 space-y-4">
-            <div className="bg-primary text-primary-foreground p-4 rounded-lg">
-              <div className="text-center">
-                <h2 className="text-lg font-bold">{courseName}</h2>
-                <p className="text-sm opacity-90">Stroke Play</p>
+  const calculateTotals = (scores: Map<number, number>, holesRange: CourseHole[]) => {
+    let total = 0;
+    let par = 0;
+    holesRange.forEach(hole => {
+      const score = scores.get(hole.hole_number);
+      if (score && score > 0) {
+        total += score;
+        par += hole.par;
+      }
+    });
+    return { total, par };
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pb-16">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!game) {
+    return (
+      <GameNotFound 
+        onRetry={() => fetchGameData()}
+        message="This game was deleted or is no longer available."
+      />
+    );
+  }
+
+  const renderSkinsView = () => (
+    <div className="space-y-3 p-4">
+      {displayResults.map((player) => {
+        const isExpanded = expandedPlayerId === player.playerId;
+        const positionLabel = getPositionLabel(player.playerId);
+        const isLeader = positionLabel === "1" || positionLabel === "T1";
+        const frontTotals = calculateTotals(player.scores, frontNine);
+        const backTotals = calculateTotals(player.scores, backNine);
+
+        return (
+          <Card key={player.playerId} className="overflow-hidden">
+            {/* Player Info Bar */}
+            <div 
+              className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => setExpandedPlayerId(isExpanded ? null : player.playerId)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ChevronDown 
+                    size={20} 
+                    className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+                  />
+                  <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
+                    isLeader && player.skinsWon > 0 ? 'bg-amber-500/20 text-amber-600' : ''
+                  }`}>
+                    {positionLabel}
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold">{player.name}</div>
+                    {player.handicap !== null && (
+                      <div className="text-sm text-muted-foreground">HCP {player.handicap}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-1 justify-end">
+                    <Trophy size={18} className="text-amber-500" />
+                    <span className="text-3xl font-bold">{player.skinsWon}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {isLeader && player.skinsWon > 0 ? 'LEADING' : 'SKINS'}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {sortedStrokePlayPlayers.map((player) => {
-              const isExpanded = expandedPlayerId === player.id;
-              const frontTotals = calculateTotals(player, frontNine);
-              const backTotals = calculateTotals(player, backNine);
-              const overallTotals = calculateTotals(player, courseHoles);
-              const positionLabel = getStrokePlayPositionLabel(player.id);
+            {/* Scorecard - Only shown when expanded */}
+            {isExpanded && courseHoles.length > 0 && (
+              <>
+                {/* Front 9 */}
+                <div className="border rounded-lg overflow-hidden w-full">
+                  <Table className="table-fixed w-full">
+                    <TableHeader>
+                      <TableRow className="bg-primary/5">
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
+                        {frontNine.map(hole => (
+                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                            {hole.hole_number}
+                          </TableHead>
+                        ))}
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Out</TableHead>
+                        {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10"></TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">HCP</TableCell>
+                        {frontNine.map(hole => (
+                          <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                            {hole.stroke_index}
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                        {backNine.length > 0 && <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>}
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
+                        {frontNine.map(hole => (
+                          <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                            {hole.par}
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                          {frontNine.reduce((sum, h) => sum + h.par, 0)}
+                        </TableCell>
+                        {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
+                      </TableRow>
+                      <TableRow className="font-bold">
+                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                        {frontNine.map(hole => {
+                          const score = player.scores.get(hole.hole_number);
+                          const hasMulligan = player.mulligans.has(hole.hole_number);
+                          return (
+                            <TableCell 
+                              key={hole.hole_number} 
+                              className={`text-center text-[10px] px-0 py-1 ${score ? getScoreColor(score, hole.par) : ''}`}
+                            >
+                              <div className="flex items-center justify-center gap-0.5">
+                                {score || ''}
+                                {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
+                              </div>
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                          {frontTotals.total > 0 ? frontTotals.total : ''}
+                        </TableCell>
+                        {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
 
-              return (
-                <Card key={player.id} className="overflow-hidden">
-                  <div 
-                    className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <ChevronDown 
-                          size={20} 
-                          className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
-                        />
-                        <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
-                          {positionLabel}
-                        </div>
-                        <div>
-                          <div className="text-xl font-bold">{player.display_name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            HCP +{player.handicap ? Math.abs(Number(player.handicap)) : 0}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-3xl font-bold">
-                          {overallTotals.totalScore > 0 
-                            ? getScoreToPar(overallTotals.totalScore, overallTotals.totalPar)
-                            : "E"
-                          }
-                        </div>
-                        <div className="text-sm text-muted-foreground">TO PAR</div>
-                      </div>
-                    </div>
+                {/* Back 9 */}
+                {backNine.length > 0 && (
+                  <div className="border rounded-lg overflow-hidden w-full mt-2">
+                    <Table className="table-fixed w-full">
+                      <TableHeader>
+                        <TableRow className="bg-primary/5">
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
+                          {backNine.map(hole => (
+                            <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                              {hole.hole_number}
+                            </TableHead>
+                          ))}
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">In</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Tot</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">HCP</TableCell>
+                          {backNine.map(hole => (
+                            <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                              {hole.stroke_index}
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                          <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
+                          {backNine.map(hole => (
+                            <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
+                              {hole.par}
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {backNine.reduce((sum, h) => sum + h.par, 0)}
+                          </TableCell>
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {frontTotals.total + backTotals.total > 0 ? frontTotals.total + backTotals.total : ''}
+                          </TableCell>
+                        </TableRow>
+                        <TableRow className="font-bold">
+                          <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                          {backNine.map(hole => {
+                            const score = player.scores.get(hole.hole_number);
+                            const hasMulligan = player.mulligans.has(hole.hole_number);
+                            return (
+                              <TableCell 
+                                key={hole.hole_number} 
+                                className={`text-center text-[10px] px-0 py-1 ${score ? getScoreColor(score, hole.par) : ''}`}
+                              >
+                                <div className="flex items-center justify-center gap-0.5">
+                                  {score || ''}
+                                  {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
+                                </div>
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {backTotals.total > 0 ? backTotals.total : ''}
+                          </TableCell>
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+                            {frontTotals.total + backTotals.total > 0 ? frontTotals.total + backTotals.total : ''}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
                   </div>
+                )}
+              </>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
 
-                  {isExpanded && (
-                    <>
-                      {/* Front 9 */}
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-primary/5">
-                              <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
-                              {frontNine.map(hole => (
-                                <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
-                                  {hole.hole_number}
-                                </TableHead>
-                              ))}
-                              <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            <TableRow>
-                              <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
-                              {frontNine.map(hole => (
-                                <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                  {hole.stroke_index}
-                                </TableCell>
-                              ))}
-                              <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
-                              {frontNine.map(hole => (
-                                <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
-                                  {hole.par}
-                                </TableCell>
-                              ))}
-                              <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                                {frontNine.reduce((sum, h) => sum + h.par, 0)}
-                              </TableCell>
-                            </TableRow>
-                            <TableRow className="font-bold">
-                              <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
-                              {frontNine.map(hole => {
-                                const score = player.scores.get(hole.hole_number);
-                                const hasScore = player.scores.has(hole.hole_number);
-                                const hasMulligan = player.mulligans.has(hole.hole_number);
-                                return (
-                                  <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1.5">
-                                    <div className="flex items-center justify-center gap-0.5">
-                                      {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
-                                      {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
-                                    </div>
-                                  </TableCell>
-                                );
-                              })}
-                              <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                                {frontTotals.totalScore > 0 ? frontTotals.totalScore : ''}
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </div>
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      <GameHeader 
+        gameTitle={game.round_name || "Skins"} 
+        courseName={game.course_name} 
+        pageTitle="Leaderboard"
+      />
 
-                      {/* Back 9 */}
-                      {courseHoles.length > 9 && backNine.length > 0 && (
-                        <div className="overflow-x-auto border-t">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="bg-primary/5">
-                                <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
-                                {backNine.map(hole => (
-                                  <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
-                                    {hole.hole_number}
-                                  </TableHead>
-                                ))}
-                                <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              <TableRow>
-                                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">HCP</TableCell>
-                                {backNine.map(hole => (
-                                  <TableCell key={hole.hole_number} className="text-center text-xs px-1 py-1.5">
-                                    {hole.stroke_index}
-                                  </TableCell>
-                                ))}
-                                <TableCell className="text-center bg-muted text-xs px-1 py-1.5"></TableCell>
-                              </TableRow>
-                              <TableRow>
-                                <TableCell className="font-medium text-muted-foreground text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Par</TableCell>
-                                {backNine.map(hole => (
-                                  <TableCell key={hole.hole_number} className="text-center font-semibold text-xs px-1 py-1.5">
-                                    {hole.par}
-                                  </TableCell>
-                                ))}
-                                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                                  {backNine.reduce((sum, h) => sum + h.par, 0)}
-                                </TableCell>
-                              </TableRow>
-                              <TableRow className="font-bold">
-                                <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
-                                {backNine.map(hole => {
-                                  const score = player.scores.get(hole.hole_number);
-                                  const hasScore = player.scores.has(hole.hole_number);
-                                  const hasMulligan = player.mulligans.has(hole.hole_number);
-                                  return (
-                                    <TableCell key={hole.hole_number} className="text-center font-bold text-xs px-1 py-1.5">
-                                      <div className="flex items-center justify-center gap-0.5">
-                                        {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
-                                        {hasMulligan && <RotateCcw size={10} className="text-amber-500" />}
-                                      </div>
-                                    </TableCell>
-                                  );
-                                })}
-                                <TableCell className="text-center font-bold bg-muted text-xs px-1 py-1.5">
-                                  {backTotals.totalScore > 0 ? backTotals.totalScore : ''}
-                                </TableCell>
-                              </TableRow>
-                            </TableBody>
-                          </Table>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </Card>
-              );
-            })}
-          </TabsContent>
-        </Tabs>
+      <LeaderboardModeTabs
+        primaryLabel="Skins"
+        activeMode={leaderboardMode}
+        onModeChange={setLeaderboardMode}
+        strokePlayEnabled={strokePlayEnabled}
+      />
 
-        {/* Like and Comment Actions */}
+      {leaderboardMode === 'stroke_play' ? (
+        <div className="p-4">
+          <StrokePlayLeaderboardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+            isSpectator={isSpectator}
+          />
+        </div>
+      ) : (
+        renderSkinsView()
+      )}
+
+      <div className="px-4">
         <LeaderboardActions 
           gameId={roundId!} 
           gameType="skins" 
