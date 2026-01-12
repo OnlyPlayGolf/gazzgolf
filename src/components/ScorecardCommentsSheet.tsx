@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { Send, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -51,7 +52,6 @@ export function ScorecardCommentsSheet({
   const [submitting, setSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -76,13 +76,6 @@ export function ScorecardCommentsSheet({
     }
   }, [open, gameId, scorecardPlayerId]);
 
-  useEffect(() => {
-    // Scroll to bottom when new comments are added
-    if (scrollRef.current && comments.length > 0) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [comments]);
-
   const fetchComments = async () => {
     if (!gameId) return;
     setLoading(true);
@@ -96,7 +89,7 @@ export function ScorecardCommentsSheet({
         .eq("game_type", gameType)
         .eq("scorecard_player_name", scorecardPlayerName)
         .is("is_activity_item", false) // Only get actual comments, not activity items
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
 
       const { data: commentsData, error } = await query;
 
@@ -173,7 +166,6 @@ export function ScorecardCommentsSheet({
 
       if (activityError) {
         console.error("Error creating activity item:", activityError);
-        // Don't throw - the main comment was saved successfully
       }
 
       // Add the new comment to the list immediately
@@ -185,7 +177,7 @@ export function ScorecardCommentsSheet({
         profiles: currentUserProfile,
       };
       
-      setComments(prev => [...prev, newCommentObj]);
+      setComments(prev => [newCommentObj, ...prev]);
       setNewComment("");
     } catch (error: any) {
       console.error("Error posting comment:", error);
@@ -204,20 +196,13 @@ export function ScorecardCommentsSheet({
     return name.substring(0, 2).toUpperCase();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmitComment();
-    }
-  };
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] flex flex-col p-0">
+      <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
         <SheetHeader className="px-4 py-3 border-b">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg">
-              Comments on {scorecardPlayerName}'s Scorecard
+              {scorecardPlayerName}'s Scorecard
             </SheetTitle>
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
               <X size={20} />
@@ -225,82 +210,75 @@ export function ScorecardCommentsSheet({
           </div>
         </SheetHeader>
 
-        {/* Chat Messages */}
-        <div 
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4"
-        >
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Comment Input Card */}
+          {currentUserId ? (
+            <Card className="border bg-card">
+              <CardContent className="p-4 space-y-3">
+                <Textarea
+                  placeholder="Write a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  disabled={submitting}
+                  className="min-h-[80px] resize-none bg-background"
+                  rows={3}
+                />
+                <Button 
+                  onClick={handleSubmitComment}
+                  disabled={!newComment.trim() || submitting}
+                  className="w-full gap-2"
+                >
+                  <Send size={16} />
+                  Post Comment
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border bg-card">
+              <CardContent className="p-4 text-center text-muted-foreground text-sm">
+                Sign in to leave a comment
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Comments List */}
           {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="text-muted-foreground">Loading comments...</div>
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading...</div>
             </div>
           ) : comments.length === 0 ? (
-            <div className="flex items-center justify-center h-32">
+            <div className="flex items-center justify-center py-8">
               <div className="text-center text-muted-foreground">
                 <p>No comments yet</p>
                 <p className="text-sm">Be the first to comment!</p>
               </div>
             </div>
           ) : (
-            comments.map((comment) => {
-              const isOwnMessage = comment.user_id === currentUserId;
-              
-              return (
-                <div 
-                  key={comment.id} 
-                  className={`flex gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''}`}
-                >
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs">{getInitials(comment.profiles)}</AvatarFallback>
-                  </Avatar>
-                  <div className={`max-w-[75%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                    <div className={`flex items-center gap-2 mb-1 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-xs font-medium">{getDisplayName(comment.profiles)}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                      </span>
+            <div className="space-y-3">
+              {comments.map((comment) => (
+                <Card key={comment.id} className="border bg-card">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs">{getInitials(comment.profiles)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">{getDisplayName(comment.profiles)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground">{comment.content}</p>
+                      </div>
                     </div>
-                    <div 
-                      className={`px-3 py-2 rounded-2xl text-sm ${
-                        isOwnMessage 
-                          ? 'bg-primary text-primary-foreground rounded-br-md' 
-                          : 'bg-muted rounded-bl-md'
-                      }`}
-                    >
-                      {comment.content}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
-
-        {/* Input Area */}
-        {currentUserId ? (
-          <div className="border-t p-4 flex gap-2">
-            <Input
-              placeholder="Write a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={submitting}
-              className="flex-1"
-            />
-            <Button 
-              size="icon" 
-              onClick={handleSubmitComment}
-              disabled={!newComment.trim() || submitting}
-            >
-              <Send size={18} />
-            </Button>
-          </div>
-        ) : (
-          <div className="border-t p-4 text-center text-muted-foreground text-sm">
-            Sign in to leave a comment
-          </div>
-        )}
       </SheetContent>
     </Sheet>
   );
