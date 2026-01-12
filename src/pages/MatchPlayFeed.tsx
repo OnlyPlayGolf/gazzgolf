@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,6 +43,7 @@ interface Reply {
 export default function MatchPlayFeed() {
   const { gameId } = useParams();
   const { toast } = useToast();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -438,7 +440,7 @@ export default function MatchPlayFeed() {
           </div>
         )}
       </div>
-      {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

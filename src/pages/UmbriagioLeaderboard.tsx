@@ -41,7 +41,7 @@ export default function UmbriagioLeaderboard() {
   const [loading, setLoading] = useState(true);
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator } = useIsSpectator('umbriago', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
 
   // Load rotation schedule from sessionStorage
   const rotationSchedule = useMemo<RotationSchedule | null>(() => {
@@ -768,7 +768,7 @@ export default function UmbriagioLeaderboard() {
           </>
         )}
       </div>
-      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={game?.is_finished} />}
+      {gameId && !isSpectatorLoading && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 export default function MatchPlayInfo() {
   const { gameId } = useParams();
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -68,7 +70,7 @@ export default function MatchPlayInfo() {
         </Card>
       </div>
 
-      {gameId && <MatchPlayBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

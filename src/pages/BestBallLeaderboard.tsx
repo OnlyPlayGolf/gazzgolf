@@ -37,7 +37,7 @@ export default function BestBallLeaderboard() {
   const [scorecardOpen, setScorecardOpen] = useState(false);
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator } = useIsSpectator('best_ball', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
 
   useEffect(() => {
     if (gameId) {
@@ -112,11 +112,11 @@ export default function BestBallLeaderboard() {
     }
   };
 
-  if (loading) {
+  if (loading || isSpectatorLoading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <BestBallBottomTabBar gameId={gameId} />}
+        {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -125,7 +125,7 @@ export default function BestBallLeaderboard() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && <BestBallBottomTabBar gameId={gameId} />}
+        {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
       </div>
     );
   }
@@ -842,7 +842,7 @@ export default function BestBallLeaderboard() {
         )}
       </div>
 
-      {gameId && <BestBallBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

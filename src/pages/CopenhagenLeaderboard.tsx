@@ -31,7 +31,7 @@ export default function CopenhagenLeaderboard() {
   const [loading, setLoading] = useState(true);
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator } = useIsSpectator('copenhagen', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
 
   useEffect(() => {
     if (gameId) fetchGame();
@@ -397,7 +397,7 @@ export default function CopenhagenLeaderboard() {
         {sortedPlayers.map((player, index) => renderPlayerCard(player, index))}
       </div>
 
-      {gameId && <CopenhagenBottomTabBar gameId={gameId} />}
+      {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }

@@ -1,28 +1,12 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 export default function UmbriagioInfo() {
   const { gameId } = useParams();
-  const [isFinished, setIsFinished] = useState(false);
-
-  useEffect(() => {
-    const fetchGameStatus = async () => {
-      if (!gameId) return;
-      const { data } = await supabase
-        .from("umbriago_games")
-        .select("is_finished")
-        .eq("id", gameId)
-        .single();
-      if (data) {
-        setIsFinished(data.is_finished);
-      }
-    };
-    fetchGameStatus();
-  }, [gameId]);
+  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -86,7 +70,7 @@ export default function UmbriagioInfo() {
           </CardContent>
         </Card>
       </div>
-      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isFinished} />}
+      {gameId && !isSpectatorLoading && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>
   );
 }
