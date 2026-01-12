@@ -23,27 +23,28 @@ import {
 } from "@/components/settings";
 import { GameHeader } from "@/components/GameHeader";
 
-interface RoundData {
+interface SkinsGame {
   id: string;
   course_name: string;
   date_played: string;
   holes_played: number;
-  tee_set: string | null;
   round_name: string | null;
-  origin: string | null;
   user_id: string;
+  is_finished: boolean;
+  skin_value: number;
+  carryover_enabled: boolean;
+  use_handicaps: boolean;
+  players: any;
 }
 
-interface RoundPlayer {
-  id: string;
-  user_id: string;
-  handicap: number | null;
-  tee_color: string | null;
-  profiles?: {
-    display_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-  } | null;
+interface SkinsPlayer {
+  id?: string;
+  odId?: string;
+  name: string;
+  displayName?: string;
+  handicap?: number | null;
+  tee?: string | null;
+  avatarUrl?: string | null;
 }
 
 export default function SimpleSkinsSettings() {
@@ -51,8 +52,8 @@ export default function SimpleSkinsSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('skins', roundId);
-  const [round, setRound] = useState<RoundData | null>(null);
-  const [players, setPlayers] = useState<RoundPlayer[]>([]);
+  const [game, setGame] = useState<SkinsGame | null>(null);
+  const [players, setPlayers] = useState<SkinsPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
@@ -76,104 +77,68 @@ export default function SimpleSkinsSettings() {
     loadUser();
     
     if (roundId) {
-      fetchRound();
+      fetchGame();
       fetchProgress();
-      loadSettings();
     }
   }, [roundId]);
 
-  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  // Refetch data when page comes back into focus
   useEffect(() => {
     const handleFocus = () => {
       if (roundId) {
-        fetchRound();
+        fetchGame();
       }
     };
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [roundId]);
 
-  const loadSettings = () => {
-    // First try round-specific settings (from localStorage for persistence)
-    const roundSettings = localStorage.getItem(`simpleSkinsRoundSettings_${roundId}`);
-    if (roundSettings) {
-      const settings = JSON.parse(roundSettings);
-      setSkinValue(settings.skinValue || 1);
-      setCarryoverEnabled(settings.carryoverEnabled ?? true);
-      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-      return;
-    }
-    
-    // Fallback to session storage for new rounds
-    const savedSettings = sessionStorage.getItem('simpleSkinsSettings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      setSkinValue(settings.skinValue || 1);
-      setCarryoverEnabled(settings.carryoverEnabled ?? true);
-      setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-    }
-  };
-
-  const saveSettings = () => {
-    // Save to round-specific localStorage for persistence
-    localStorage.setItem(`simpleSkinsRoundSettings_${roundId}`, JSON.stringify({
-      skinValue,
-      carryoverEnabled,
-      mulligansPerPlayer,
-    }));
-    // Also save to session storage for backward compatibility
-    sessionStorage.setItem('simpleSkinsSettings', JSON.stringify({
-      skinValue,
-      carryoverEnabled,
-      mulligansPerPlayer,
-    }));
-  };
-
-  useEffect(() => {
-    if (!loading) {
-      saveSettings();
-    }
-  }, [skinValue, carryoverEnabled, mulligansPerPlayer]);
-
-  const fetchRound = async () => {
+  const fetchGame = async () => {
     try {
-      const { data: roundData } = await supabase
-        .from("rounds")
+      const { data: gameData, error } = await supabase
+        .from("skins_games")
         .select("*")
         .eq("id", roundId)
         .single();
 
-      if (roundData) {
-        setRound(roundData);
-        if (roundData.tee_set) {
-          setTeeColor(roundData.tee_set);
-        }
+      if (error) {
+        console.error("Error fetching skins game:", error);
+        setLoading(false);
+        return;
       }
 
-      const { data: playersData } = await supabase
-        .from("round_players")
-        .select("id, user_id, handicap, tee_color")
-        .eq("round_id", roundId);
+      if (gameData) {
+        const gameWithDefaults: SkinsGame = {
+          ...gameData,
+          round_name: gameData.round_name || null,
+        };
+        setGame(gameWithDefaults);
+        setSkinValue(gameData.skin_value || 1);
+        setCarryoverEnabled(gameData.carryover_enabled ?? true);
 
-      if (playersData && playersData.length > 0) {
-        // Fetch profiles separately
-        const userIds = playersData.map(p => p.user_id);
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, display_name, username, avatar_url")
-          .in("id", userIds);
+        // Load saved tee preference from localStorage
+        const savedTee = localStorage.getItem(`skins_tee_${roundId}`);
+        if (savedTee) {
+          setTeeColor(savedTee);
+        }
 
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-        
-        const playersWithProfiles = playersData.map(p => ({
-          ...p,
-          profiles: profilesMap.get(p.user_id) || null
-        }));
-
-        setPlayers(playersWithProfiles as RoundPlayer[]);
+        // Parse players from JSON
+        const rawPlayers = gameData.players;
+        const parsedPlayers: SkinsPlayer[] = Array.isArray(rawPlayers) 
+          ? rawPlayers.map((p: any) => ({
+              id: p.id,
+              odId: p.odId,
+              name: p.name || 'Player',
+              displayName: p.displayName,
+              handicap: p.handicap,
+              tee: p.tee,
+              avatarUrl: p.avatarUrl,
+            }))
+          : [];
+        setPlayers(parsedPlayers);
       }
     } catch (error) {
-      console.error("Error fetching round:", error);
+      console.error("Error fetching game:", error);
     } finally {
       setLoading(false);
     }
@@ -181,25 +146,48 @@ export default function SimpleSkinsSettings() {
 
   const fetchProgress = async () => {
     const { count } = await supabase
-      .from("holes")
+      .from("skins_holes")
       .select("*", { count: "exact", head: true })
-      .eq("round_id", roundId);
+      .eq("game_id", roundId);
     setHolesCompleted(count || 0);
   };
 
-  const handleTeeChange = async (newTee: string) => {
+  const handleTeeChange = (newTee: string) => {
     setTeeColor(newTee);
+    // Store tee preference locally since skins_games doesn't have tee_set column
+    localStorage.setItem(`skins_tee_${roundId}`, newTee);
+  };
+
+  const handleSkinValueChange = async (value: string) => {
+    const numValue = parseInt(value);
+    setSkinValue(numValue);
     if (roundId) {
       await supabase
-        .from("rounds")
-        .update({ tee_set: newTee })
+        .from("skins_games")
+        .update({ skin_value: numValue })
+        .eq("id", roundId);
+    }
+  };
+
+  const handleCarryoverChange = async (checked: boolean) => {
+    setCarryoverEnabled(checked);
+    if (roundId) {
+      await supabase
+        .from("skins_games")
+        .update({ carryover_enabled: checked })
         .eq("id", roundId);
     }
   };
 
   const handleFinishRound = async () => {
+    if (roundId) {
+      await supabase
+        .from("skins_games")
+        .update({ is_finished: true })
+        .eq("id", roundId);
+    }
     toast({ title: "Game saved" });
-    navigate(`/simple-skins/${roundId}/summary`);
+    navigate(`/skins/${roundId}/summary`);
   };
 
   const handleDeleteRound = async () => {
@@ -207,15 +195,11 @@ export default function SimpleSkinsSettings() {
     
     setDeleting(true);
     try {
-      await supabase.from("holes").delete().eq("round_id", roundId);
-      await supabase.from("round_players").delete().eq("round_id", roundId);
+      await supabase.from("skins_holes").delete().eq("game_id", roundId);
       await supabase.from("round_comments").delete().eq("round_id", roundId);
-      const { error } = await supabase.from("rounds").delete().eq("id", roundId);
+      const { error } = await supabase.from("skins_games").delete().eq("id", roundId);
 
       if (error) throw error;
-
-      // Clean up localStorage
-      localStorage.removeItem(`simpleSkinsRoundSettings_${roundId}`);
 
       toast({ title: "Game deleted" });
       navigate("/rounds-play");
@@ -240,7 +224,7 @@ export default function SimpleSkinsSettings() {
     }
   };
 
-  if (loading || isSpectatorLoading || !round) {
+  if (loading || isSpectatorLoading || !game) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
@@ -249,54 +233,44 @@ export default function SimpleSkinsSettings() {
     );
   }
 
-  // Use individual player tees from DB - these are the actual per-player tees set in Game Settings
-  const defaultTee = round.tee_set || 'white';
-  const gamePlayers: GamePlayer[] = players.map(p => {
-    const profile = p.profiles;
-    return {
-      name: profile?.display_name || profile?.username || "Player",
-      handicap: p.handicap,
-      tee: p.tee_color || defaultTee, // Individual player tee from DB, fallback to default
-      avatarUrl: profile?.avatar_url,
-    };
-  });
+  const defaultTee = teeColor || 'white';
+  const gamePlayers: GamePlayer[] = players.map(p => ({
+    name: p.displayName || p.name || "Player",
+    handicap: p.handicap ?? null,
+    tee: p.tee || defaultTee,
+    avatarUrl: p.avatarUrl || null,
+  }));
 
-  // tee_set is the "Default Tee" - display it in Game Details
-  // If all players have same tee, show that; if different, show "Combo"
+  // Determine tee display info
   const allPlayerTees = gamePlayers.map(p => p.tee);
   const uniqueTees = [...new Set(allPlayerTees)];
   const teeInfo = (() => {
-    if (round.tee_set && uniqueTees.length === 1 && uniqueTees[0] === round.tee_set) {
-      return getTeeDisplayName(round.tee_set);
-    }
     if (uniqueTees.length === 1) {
       return getTeeDisplayName(uniqueTees[0]!);
     }
     if (uniqueTees.length > 1) {
       return "Combo";
     }
-    return round.tee_set ? getTeeDisplayName(round.tee_set) : "Not specified";
+    return getTeeDisplayName(defaultTee);
   })();
 
   const gameDetails: GameDetailsData = {
     format: "Skins",
-    courseName: round.course_name,
-    datePlayed: round.date_played,
+    courseName: game.course_name,
+    datePlayed: game.date_played,
     players: gamePlayers,
     teeInfo,
-    holesPlayed: round.holes_played,
+    holesPlayed: game.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
-    scoring: skinValue.toString() === "progressive" 
-      ? `Progressive skins${carryoverEnabled ? " with carryover" : ""}`
-      : `${skinValue} skin${skinValue !== 1 ? 's' : ''} per hole${carryoverEnabled ? " with carryover" : ""}`,
-    roundName: round.round_name,
+    scoring: `${skinValue} skin${skinValue !== 1 ? 's' : ''} per hole${carryoverEnabled ? " with carryover" : ""}`,
+    roundName: game.round_name,
   };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
-        gameTitle={round.round_name || "Skins"}
-        courseName={round.course_name}
+        gameTitle={game.round_name || "Skins"}
+        courseName={game.course_name}
         pageTitle="Settings"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
@@ -344,7 +318,7 @@ export default function SimpleSkinsSettings() {
                 <Label>Skin Value</Label>
                 <Select 
                   value={skinValue.toString()} 
-                  onValueChange={(value) => setSkinValue(parseInt(value))}
+                  onValueChange={handleSkinValueChange}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select skin value" />
@@ -356,7 +330,6 @@ export default function SimpleSkinsSettings() {
                     <SelectItem value="10">10 skins per hole</SelectItem>
                     <SelectItem value="20">20 skins per hole</SelectItem>
                     <SelectItem value="50">50 skins per hole</SelectItem>
-                    <SelectItem value="progressive">1 skin first 6, 2 skins next 6, 3 skins last 6</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -372,7 +345,7 @@ export default function SimpleSkinsSettings() {
                 <Switch
                   id="carryover"
                   checked={carryoverEnabled}
-                  onCheckedChange={setCarryoverEnabled}
+                  onCheckedChange={handleCarryoverChange}
                 />
               </div>
 
@@ -404,11 +377,11 @@ export default function SimpleSkinsSettings() {
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
           <RoundActionsSection
-          isAdmin={currentUserId === round.user_id}
-          onFinish={handleFinishRound}
-          onSaveAndExit={() => navigate('/profile')}
-          onDelete={() => setShowDeleteDialog(true)}
-          onLeave={() => setShowLeaveDialog(true)}
+            isAdmin={currentUserId === game.user_id}
+            onFinish={handleFinishRound}
+            onSaveAndExit={() => navigate('/profile')}
+            onDelete={() => setShowDeleteDialog(true)}
+            onLeave={() => setShowLeaveDialog(true)}
             finishLabel="Finish Game"
           />
         )}
@@ -418,7 +391,7 @@ export default function SimpleSkinsSettings() {
         open={showPlayersModal}
         onOpenChange={setShowPlayersModal}
         players={gamePlayers}
-        useHandicaps={false}
+        useHandicaps={game.use_handicaps}
       />
 
       <DeleteGameDialog
