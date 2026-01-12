@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Trophy, ChevronDown, RotateCcw } from "lucide-react";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
-import { LeaderboardActions } from "@/components/LeaderboardActions";
+import { ScorecardActions } from "@/components/ScorecardActions";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
@@ -463,6 +463,16 @@ export default function SkinsLeaderboard() {
                 )}
               </>
             )}
+            
+            {/* Per-scorecard actions */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={roundId!}
+                gameType="skins"
+                scorecardPlayerId={player.playerId}
+                scorecardPlayerName={player.name}
+              />
+            </div>
           </Card>
         );
       })}
@@ -495,20 +505,13 @@ export default function SkinsLeaderboard() {
             players={strokePlayPlayers}
             courseHoles={courseHoles}
             isSpectator={isSpectator}
+            gameId={roundId}
+            gameType="skins"
           />
         </div>
       ) : (
         renderSkinsView()
       )}
-
-      <div className="px-4">
-        <LeaderboardActions 
-          gameId={roundId!} 
-          gameType="skins" 
-          feedPath={`/skins/${roundId}/feed`}
-          scorecardPlayerName="Skins Game"
-        />
-      </div>
 
       {roundId && <SkinsBottomTabBar roundId={roundId} />}
     </div>

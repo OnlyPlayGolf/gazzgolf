@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { WolfBottomTabBar } from "@/components/WolfBottomTabBar";
-import { LeaderboardActions } from "@/components/LeaderboardActions";
+import { ScorecardActions } from "@/components/ScorecardActions";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { WolfGame, WolfHole } from "@/types/wolf";
@@ -249,6 +249,16 @@ export default function WolfLeaderboard() {
                 {isLeader ? 'LEADING' : 'POINTS'}
               </div>
             </div>
+          </div>
+          
+          {/* Per-scorecard actions */}
+          <div className="px-4 pb-3">
+            <ScorecardActions
+              gameId={gameId!}
+              gameType="wolf"
+              scorecardPlayerId={`player_${player.num}`}
+              scorecardPlayerName={player.name}
+            />
           </div>
         </div>
 
@@ -530,16 +540,10 @@ export default function WolfLeaderboard() {
             players={strokePlayPlayers}
             courseHoles={courseHoles}
             isSpectator={isSpectator}
+            gameId={gameId}
+            gameType="wolf"
           />
         )}
-
-        {/* Like and Comment Actions */}
-        <LeaderboardActions 
-          gameId={gameId!} 
-          gameType="wolf" 
-          feedPath={`/wolf/${gameId}/feed`}
-          scorecardPlayerName={game?.round_name || "Wolf Game"}
-        />
       </div>
 
       {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}

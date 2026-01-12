@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
-import { LeaderboardActions } from "@/components/LeaderboardActions";
+import { ScorecardActions } from "@/components/ScorecardActions";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { UmbriagioGame, UmbriagioHole, RollEvent } from "@/types/umbriago";
@@ -520,6 +520,16 @@ export default function UmbriagioLeaderboard() {
 
           </>
         )}
+        
+        {/* Per-scorecard actions */}
+        <div className="px-4 pb-3">
+          <ScorecardActions
+            gameId={gameId!}
+            gameType="umbriago"
+            scorecardPlayerId={player.id}
+            scorecardPlayerName={player.name}
+          />
+        </div>
       </Card>
     );
   };
@@ -705,6 +715,16 @@ export default function UmbriagioLeaderboard() {
 
           </>
         )}
+        
+        {/* Per-scorecard actions */}
+        <div className="px-4 pb-3">
+          <ScorecardActions
+            gameId={gameId!}
+            gameType="umbriago"
+            scorecardPlayerId={`team_${team}`}
+            scorecardPlayerName={teamName}
+          />
+        </div>
       </Card>
     );
   };
@@ -759,6 +779,8 @@ export default function UmbriagioLeaderboard() {
             players={strokePlayPlayers}
             courseHoles={courseHoles}
             isSpectator={isSpectator}
+            gameId={gameId}
+            gameType="umbriago"
           />
         ) : isRotating ? (
           // Show individual player scorecards when rotating, sorted by points
@@ -836,14 +858,6 @@ export default function UmbriagioLeaderboard() {
                 Teams are tied!
               </div>
             )}
-
-            {/* Like and Comment Actions */}
-            <LeaderboardActions 
-              gameId={gameId} 
-              gameType="umbriago" 
-              feedPath={`/umbriago/${gameId}/feed`}
-              scorecardPlayerName={game?.round_name || "Umbriago Game"}
-            />
           </>
         )}
       </div>
