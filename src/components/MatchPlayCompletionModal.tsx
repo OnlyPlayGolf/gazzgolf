@@ -16,6 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScorecardTypeSelector, ScorecardType } from "@/components/ScorecardTypeSelector";
+import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 
 interface CourseHole {
   hole_number: number;
@@ -44,11 +47,35 @@ export function MatchPlayCompletionModal({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const [scorecardType, setScorecardType] = useState<ScorecardType>('primary');
+  const { strokePlayEnabled } = useStrokePlayEnabled(game.id, 'match_play');
 
   const holesMap = new Map(holes.map(h => [h.hole_number, h]));
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
   const backNine = courseHoles.filter(h => h.hole_number > 9);
   const hasBackNine = backNine.length > 0;
+
+  // Prepare stroke play data
+  const player1Scores = new Map<number, number>();
+  const player2Scores = new Map<number, number>();
+  let player1Total = 0;
+  let player2Total = 0;
+  
+  holes.forEach(hole => {
+    if (hole.player_1_gross_score && hole.player_1_gross_score > 0) {
+      player1Scores.set(hole.hole_number, hole.player_1_gross_score);
+      player1Total += hole.player_1_gross_score;
+    }
+    if (hole.player_2_gross_score && hole.player_2_gross_score > 0) {
+      player2Scores.set(hole.hole_number, hole.player_2_gross_score);
+      player2Total += hole.player_2_gross_score;
+    }
+  });
+
+  const strokePlayPlayers = [
+    { name: game.player_1, scores: player1Scores, totalScore: player1Total },
+    { name: game.player_2, scores: player2Scores, totalScore: player2Total },
+  ];
 
   const player1HolesWon = holes.filter(h => h.hole_result === 1).length;
   const player2HolesWon = holes.filter(h => h.hole_result === -1).length;
@@ -113,31 +140,61 @@ export function MatchPlayCompletionModal({
         return;
       }
 
-      // Build scorecard data for the post
-      const holeScoresObj: Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }> = {};
-      const holeParsObj: Record<number, number> = {};
-      
-      holes.forEach(hole => {
-        holeScoresObj[hole.hole_number] = {
-          player1: hole.player_1_gross_score,
-          player2: hole.player_2_gross_score,
-          result: hole.hole_result,
-          statusAfter: hole.match_status_after,
-        };
-      });
-      
-      courseHoles.forEach(hole => {
-        holeParsObj[hole.hole_number] = hole.par;
-      });
+      let postContent = '';
 
-      const scorecardData = JSON.stringify({ holeScores: holeScoresObj, holePars: holeParsObj });
-      const resultText = game.final_result || `${player1HolesWon}-${player2HolesWon}`;
+      if (scorecardType === 'stroke_play') {
+        // Share as stroke play scorecard
+        const holeScoresObj: Record<number, Record<string, number>> = {};
+        const holeParsObj: Record<number, number> = {};
+        
+        holes.forEach(hole => {
+          holeScoresObj[hole.hole_number] = {
+            [game.player_1]: hole.player_1_gross_score || 0,
+            [game.player_2]: hole.player_2_gross_score || 0,
+          };
+        });
+        
+        courseHoles.forEach(hole => {
+          holeParsObj[hole.hole_number] = hole.par;
+        });
 
-      // Format: [MATCH_PLAY_SCORECARD]roundName|courseName|date|player1|player2|finalResult|winnerPlayer|gameId|scorecardJson[/MATCH_PLAY_SCORECARD]
-      const roundResult = `[MATCH_PLAY_SCORECARD]${game.round_name || 'Match Play'}|${game.course_name}|${game.date_played}|${game.player_1}|${game.player_2}|${resultText}|${game.winner_player || ''}|${game.id}|${scorecardData}[/MATCH_PLAY_SCORECARD]`;
-      const postContent = comment.trim()
-        ? `${comment}\n\n${roundResult}`
-        : roundResult;
+        const totalPar = courseHoles.reduce((sum, h) => sum + h.par, 0);
+        const scorecardData = JSON.stringify({ 
+          scores: holeScoresObj, 
+          pars: holeParsObj, 
+          totalPar,
+          players: [
+            { name: game.player_1, total: player1Total },
+            { name: game.player_2, total: player2Total },
+          ]
+        });
+
+        const roundResult = `[STROKE_PLAY_MULTI_SCORECARD]${game.round_name || 'Stroke Play'}|${game.course_name}|${game.date_played}|${holes.length}|${totalPar}|${game.id}|${scorecardData}[/STROKE_PLAY_MULTI_SCORECARD]`;
+        postContent = comment.trim() ? `${comment}\n\n${roundResult}` : roundResult;
+      } else {
+        // Share as match play scorecard (original logic)
+        const holeScoresObj: Record<number, { player1: number | null; player2: number | null; result: number; statusAfter: number }> = {};
+        const holeParsObj: Record<number, number> = {};
+        
+        holes.forEach(hole => {
+          holeScoresObj[hole.hole_number] = {
+            player1: hole.player_1_gross_score,
+            player2: hole.player_2_gross_score,
+            result: hole.hole_result,
+            statusAfter: hole.match_status_after,
+          };
+        });
+        
+        courseHoles.forEach(hole => {
+          holeParsObj[hole.hole_number] = hole.par;
+        });
+
+        const scorecardData = JSON.stringify({ holeScores: holeScoresObj, holePars: holeParsObj });
+        const resultText = game.final_result || `${player1HolesWon}-${player2HolesWon}`;
+
+        const roundResult = `[MATCH_PLAY_SCORECARD]${game.round_name || 'Match Play'}|${game.course_name}|${game.date_played}|${game.player_1}|${game.player_2}|${resultText}|${game.winner_player || ''}|${game.id}|${scorecardData}[/MATCH_PLAY_SCORECARD]`;
+        postContent = comment.trim() ? `${comment}\n\n${roundResult}` : roundResult;
+      }
 
       const { error } = await supabase
         .from('posts')
@@ -148,7 +205,7 @@ export function MatchPlayCompletionModal({
 
       if (error) throw error;
 
-      toast({ title: "Shared!", description: "Your match has been posted" });
+      toast({ title: "Shared!", description: scorecardType === 'stroke_play' ? "Your stroke play round has been posted" : "Your match has been posted" });
       setShowShareForm(false);
       setComment("");
       onOpenChange(false);
@@ -300,18 +357,33 @@ export function MatchPlayCompletionModal({
         </div>
 
 
+        {/* Scorecard Type Selector */}
+        <ScorecardTypeSelector
+          primaryLabel="Match Play"
+          selectedType={scorecardType}
+          onTypeChange={setScorecardType}
+          strokePlayEnabled={strokePlayEnabled}
+        />
+
         {/* Scorecard */}
         {courseHoles.length > 0 && (
           <div className="px-4 pt-3">
-            <div className="border rounded-lg overflow-hidden">
-              {renderNine(frontNine, false)}
-              
-              {hasBackNine && (
-                <div className="border-t">
-                  {renderNine(backNine, true)}
-                </div>
-              )}
-            </div>
+            {scorecardType === 'stroke_play' ? (
+              <StrokePlayScorecardView
+                players={strokePlayPlayers}
+                courseHoles={courseHoles}
+              />
+            ) : (
+              <div className="border rounded-lg overflow-hidden">
+                {renderNine(frontNine, false)}
+                
+                {hasBackNine && (
+                  <div className="border-t">
+                    {renderNine(backNine, true)}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

@@ -16,6 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScorecardTypeSelector, ScorecardType } from "@/components/ScorecardTypeSelector";
+import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 
 interface CourseHole {
   hole_number: number;
@@ -46,6 +49,8 @@ export function BestBallCompletionDialog({
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [scorecardType, setScorecardType] = useState<ScorecardType>('primary');
+  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'best_ball');
 
   useEffect(() => {
     if (open) {
@@ -257,8 +262,16 @@ export function BestBallCompletionDialog({
           </div>
         </div>
 
+        {/* Scorecard Type Selector */}
+        <ScorecardTypeSelector
+          primaryLabel="Best Ball"
+          selectedType={scorecardType}
+          onTypeChange={setScorecardType}
+          strokePlayEnabled={strokePlayEnabled}
+        />
+
         {/* Scorecard - Match Play style matching Stroke Play layout */}
-        {courseHoles.length > 0 && (
+        {courseHoles.length > 0 && scorecardType === 'primary' && (
           <div className="px-4 pt-4">
             <div className="border rounded-lg overflow-hidden">
               {/* Front 9 */}
@@ -495,6 +508,39 @@ export function BestBallCompletionDialog({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Stroke Play Scorecard */}
+        {courseHoles.length > 0 && scorecardType === 'stroke_play' && (
+          <div className="px-4 pt-4">
+            <StrokePlayScorecardView
+              players={[
+                ...game.team_a_players.map(p => ({
+                  name: p.displayName,
+                  scores: new Map(holes.flatMap(h => {
+                    const playerScore = (h.team_a_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
+                    return playerScore ? [[h.hole_number, playerScore.grossScore]] : [];
+                  })),
+                  totalScore: holes.reduce((sum, h) => {
+                    const ps = (h.team_a_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
+                    return sum + (ps?.grossScore || 0);
+                  }, 0)
+                })),
+                ...game.team_b_players.map(p => ({
+                  name: p.displayName,
+                  scores: new Map(holes.flatMap(h => {
+                    const playerScore = (h.team_b_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
+                    return playerScore ? [[h.hole_number, playerScore.grossScore]] : [];
+                  })),
+                  totalScore: holes.reduce((sum, h) => {
+                    const ps = (h.team_b_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
+                    return sum + (ps?.grossScore || 0);
+                  }, 0)
+                }))
+              ]}
+              courseHoles={courseHoles}
+            />
           </div>
         )}
 
