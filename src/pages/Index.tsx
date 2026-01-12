@@ -17,6 +17,8 @@ import { PostBox } from "@/components/PostBox";
 import { FeedPost } from "@/components/FeedPost";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
+import { buildGameUrl } from "@/hooks/useRoundNavigation";
+import { GameMode } from "@/types/roundShell";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
@@ -455,19 +457,13 @@ const Index = () => {
                         className={`flex ${isGroup ? 'bg-muted/50 rounded-xl px-2 py-2 gap-1 border border-border/50' : ''}`}
                       >
                         {friends.map((friend, idx) => {
-                          // Determine the route based on game type
+                          // Use standardized buildGameUrl with entryPoint for back button behavior
                           const getGameRoute = () => {
-                            switch (friend.gameType) {
-                              case 'round': return `/rounds/${friend.gameId}/leaderboard`;
-                              case 'match_play': return `/match-play/${friend.gameId}/leaderboard`;
-                              case 'best_ball': return `/best-ball/${friend.gameId}/leaderboard`;
-                              case 'copenhagen': return `/copenhagen/${friend.gameId}/leaderboard`;
-                              case 'scramble': return `/scramble/${friend.gameId}/leaderboard`;
-                              case 'skins': return `/skins/${friend.gameId}/leaderboard`;
-                              case 'wolf': return `/wolf/${friend.gameId}/leaderboard`;
-                              case 'umbriago': return `/umbriago/${friend.gameId}/leaderboard`;
-                              default: return `/rounds/${friend.gameId}/leaderboard`;
-                            }
+                            const mode = friend.gameType as GameMode;
+                            return buildGameUrl(mode, friend.gameId, 'leaderboard', {
+                              entryPoint: 'friends_on_course',
+                              viewType: 'spectator'
+                            });
                           };
 
                           return (

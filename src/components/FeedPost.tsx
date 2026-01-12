@@ -20,6 +20,7 @@ import { UmbriagioScorecardCard } from "./UmbriagioScorecardCard";
 import { MatchPlayScorecardCard } from "./MatchPlayScorecardCard";
 import { BestBallScorecardCard } from "./BestBallScorecardCard";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
+import { buildGameUrl } from "@/hooks/useRoundNavigation";
 
 // Parse round scorecard result from post content (new format with scorecard data)
 const parseRoundScorecardResult = (content: string) => {
@@ -1262,8 +1263,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               holePars={roundScorecardResult.holePars}
               onClick={() => {
                 if (roundScorecardResult.roundId) {
-                  sessionStorage.setItem(`spectator_return_${roundScorecardResult.roundId}`, location.pathname);
-                  navigate(`/rounds/${roundScorecardResult.roundId}/leaderboard`);
+                  navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
+                    entryPoint: 'home', 
+                    viewType: 'spectator' 
+                  }));
                 } else {
                   toast.error("Round details not found");
                 }
@@ -1289,7 +1292,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               holePars={matchPlayScorecardResult.holePars}
               onClick={() => {
                 if (matchPlayScorecardResult.gameId) {
-                  navigate(`/match-play/${matchPlayScorecardResult.gameId}/play`);
+                  navigate(buildGameUrl('match_play', matchPlayScorecardResult.gameId, 'leaderboard', {
+                    entryPoint: 'home',
+                    viewType: 'spectator'
+                  }));
                 } else {
                   toast.error("Game details not found");
                 }
@@ -1314,10 +1320,12 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               userTeam={bestBallScorecardResult.userTeam}
               holeScores={bestBallScorecardResult.holeScores}
               holePars={bestBallScorecardResult.holePars}
-              onClick={async () => {
+              onClick={() => {
                 if (bestBallScorecardResult.gameId) {
-                  // Navigate to play screen - spectator mode is handled by useIsSpectator hook in BestBallPlay
-                  navigate(`/best-ball/${bestBallScorecardResult.gameId}/play`);
+                  navigate(buildGameUrl('best_ball', bestBallScorecardResult.gameId, 'leaderboard', {
+                    entryPoint: 'home',
+                    viewType: 'spectator'
+                  }));
                 } else {
                   toast.error("Game details not found");
                 }
