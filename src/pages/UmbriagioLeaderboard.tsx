@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { LeaderboardActions } from "@/components/LeaderboardActions";
@@ -133,16 +133,16 @@ export default function UmbriagioLeaderboard() {
   const leader = getLeader();
 
   // Create a map for quick hole data lookup
-  const holesMap = new Map(holes.map(h => [h.hole_number, h]));
+  const holesMap = useMemo(() => new Map(holes.map(h => [h.hole_number, h])), [holes]);
 
-  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
-  const backNine = courseHoles.filter(h => h.hole_number > 9);
+  const frontNine = useMemo(() => courseHoles.filter(h => h.hole_number <= 9), [courseHoles]);
+  const backNine = useMemo(() => courseHoles.filter(h => h.hole_number > 9), [courseHoles]);
 
-  const getTeamPoints = (holeNumber: number, team: 'A' | 'B') => {
+  const getTeamPoints = useCallback((holeNumber: number, team: 'A' | 'B') => {
     const hole = holesMap.get(holeNumber);
     if (!hole) return null;
     return team === 'A' ? hole.team_a_hole_points : hole.team_b_hole_points;
-  };
+  }, [holesMap]);
 
   // Get all unique players from the game
   const allPlayers = useMemo(() => {
@@ -156,7 +156,7 @@ export default function UmbriagioLeaderboard() {
   }, [game]);
 
   // Get player's score for a specific hole
-  const getPlayerScore = (holeNumber: number, playerId: string): number | null => {
+  const getPlayerScore = useCallback((holeNumber: number, playerId: string): number | null => {
     const hole = holesMap.get(holeNumber);
     if (!hole) return null;
     
@@ -167,10 +167,10 @@ export default function UmbriagioLeaderboard() {
       case 'team_b_player_2': return hole.team_b_player_2_score;
       default: return null;
     }
-  };
+  }, [holesMap]);
 
   // Determine which team a player was on for a specific hole (considering rotation)
-  const getPlayerTeamForHole = (holeNumber: number, playerId: string): 'A' | 'B' | null => {
+  const getPlayerTeamForHole = useCallback((holeNumber: number, playerId: string): 'A' | 'B' | null => {
     if (!game || !rotationSchedule || rotationSchedule.schedule.length <= 1) {
       // No rotation - use original team assignment
       if (playerId === 'team_a_player_1' || playerId === 'team_a_player_2') return 'A';
@@ -200,10 +200,10 @@ export default function UmbriagioLeaderboard() {
     if (segment.teamA.includes(playerName)) return 'A';
     if (segment.teamB.includes(playerName)) return 'B';
     return null;
-  };
+  }, [game, rotationSchedule]);
 
   // Get player's points for a specific hole based on which team they were on
-  const getPlayerPointsForHole = (holeNumber: number, playerId: string): number | null => {
+  const getPlayerPointsForHole = useCallback((holeNumber: number, playerId: string): number | null => {
     const hole = holesMap.get(holeNumber);
     if (!hole) return null;
 
@@ -213,42 +213,40 @@ export default function UmbriagioLeaderboard() {
     // Each player gets the full team points (not split)
     const teamPoints = playerTeam === 'A' ? hole.team_a_hole_points : hole.team_b_hole_points;
     return teamPoints;
-  };
-
-  // Calculate total stats for a player including points
-  const getPlayerStats = (playerId: string) => {
-    let totalScore = 0;
-    let totalPar = 0;
-    let holesPlayed = 0;
-    let totalPoints = 0;
-
-    holes.forEach(hole => {
-      const score = getPlayerScore(hole.hole_number, playerId);
-      if (score && score > 0) {
-        totalScore += score;
-        totalPar += hole.par;
-        holesPlayed++;
-      }
-      
-      const points = getPlayerPointsForHole(hole.hole_number, playerId);
-      if (points !== null) {
-        totalPoints += points;
-      }
-    });
-
-    const toPar = totalScore - totalPar;
-    const toParDisplay = totalScore === 0 ? 'E' : toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : `${toPar}`;
-
-    return { totalScore, toPar, toParDisplay, holesPlayed, totalPoints };
-  };
+  }, [holesMap, getPlayerTeamForHole]);
 
   // Get players with stats for ranking (always sorted for position calculation)
   const playersWithStats = useMemo(() => {
-    return allPlayers.map(player => ({
-      ...player,
-      stats: getPlayerStats(player.id)
-    }));
-  }, [allPlayers, holes]);
+    // Calculate stats inline to avoid function reference issues
+    return allPlayers.map(player => {
+      let totalScore = 0;
+      let totalPar = 0;
+      let holesPlayed = 0;
+      let totalPoints = 0;
+
+      holes.forEach(hole => {
+        const score = getPlayerScore(hole.hole_number, player.id);
+        if (score && score > 0) {
+          totalScore += score;
+          totalPar += hole.par;
+          holesPlayed++;
+        }
+        
+        const points = getPlayerPointsForHole(hole.hole_number, player.id);
+        if (points !== null) {
+          totalPoints += points;
+        }
+      });
+
+      const toPar = totalScore - totalPar;
+      const toParDisplay = totalScore === 0 ? 'E' : toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : `${toPar}`;
+
+      return {
+        ...player,
+        stats: { totalScore, toPar, toParDisplay, holesPlayed, totalPoints }
+      };
+    });
+  }, [allPlayers, holes, getPlayerScore, getPlayerPointsForHole]);
 
   // Sorted players for position calculation
   const sortedPlayersForRanking = useMemo(() => {
@@ -301,9 +299,9 @@ export default function UmbriagioLeaderboard() {
     );
   }
 
-  const renderPlayerCard = (player: { id: string; name: string }, positionLabel: string) => {
+  const renderPlayerCard = (player: { id: string; name: string; stats: { totalScore: number; toPar: number; toParDisplay: string; holesPlayed: number; totalPoints: number } }, positionLabel: string) => {
     const isExpanded = expandedPlayer === player.id;
-    const stats = getPlayerStats(player.id);
+    const stats = player.stats;
     const isLeader = positionLabel === '1';
 
     return (
