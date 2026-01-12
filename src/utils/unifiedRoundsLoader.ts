@@ -504,13 +504,13 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       });
       
       // Get match status (positive = team A winning, negative = team B winning)
+      // Use match_status as source of truth since winner_team can be inconsistent
       const matchStatus = game.match_status || 0;
       
-      // winner_team can be 'TIE', 'A', 'B', 'team_a', 'team_b', or null/empty
-      const winnerTeam = (game.winner_team || '').toUpperCase();
-      const isTie = winnerTeam === 'TIE' || winnerTeam === '';
-      const teamAWon = winnerTeam === 'A' || winnerTeam === 'TEAM_A';
-      const teamBWon = winnerTeam === 'B' || winnerTeam === 'TEAM_B';
+      // Determine winner based on match_status (more reliable than winner_team)
+      const isTie = matchStatus === 0;
+      const teamAWon = matchStatus > 0;
+      const teamBWon = matchStatus < 0;
       
       if (isTie) {
         matchResult = 'T';
@@ -518,21 +518,15 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       } else if (userInTeamA && !userInTeamB) {
         matchResult = teamAWon ? 'W' : 'L';
         // From Team A's perspective: positive status = UP, negative = DOWN
-        if (matchStatus !== 0) {
-          matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
-        }
+        matchFinalScore = teamAWon ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
       } else if (userInTeamB && !userInTeamA) {
         matchResult = teamBWon ? 'W' : 'L';
         // From Team B's perspective: invert the status
-        if (matchStatus !== 0) {
-          matchFinalScore = matchStatus < 0 ? `${Math.abs(matchStatus)} UP` : `${matchStatus} DOWN`;
-        }
+        matchFinalScore = teamBWon ? `${Math.abs(matchStatus)} UP` : `${matchStatus} DOWN`;
       } else if (game.user_id === targetUserId) {
         // Owner defaults to team A
         matchResult = teamAWon ? 'W' : 'L';
-        if (matchStatus !== 0) {
-          matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
-        }
+        matchFinalScore = teamAWon ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
       }
     }
 
