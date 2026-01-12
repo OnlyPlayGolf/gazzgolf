@@ -581,6 +581,8 @@ export default function UmbriagioSetup() {
               </p>
               {getRotationPreview()}
             </div>
+
+            <StatsModeSelector value={statsMode} onChange={setStatsMode} />
           </CardContent>
         </Card>
 

@@ -423,6 +423,8 @@ export default function WolfSetup() {
                 </Select>
               </div>
             </div>
+
+            <StatsModeSelector value={statsMode} onChange={setStatsMode} />
           </CardContent>
         </Card>
 

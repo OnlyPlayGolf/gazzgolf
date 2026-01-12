@@ -472,6 +472,8 @@ export default function MatchPlaySetup() {
                 Number of allowed do-overs per player during the match
               </p>
             </div>
+
+            <StatsModeSelector value={statsMode} onChange={setStatsMode} />
           </CardContent>
         </Card>
 

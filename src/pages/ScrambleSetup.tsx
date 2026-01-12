@@ -324,6 +324,8 @@ export default function ScrambleSetup() {
                 </Select>
               </div>
             )}
+
+            <StatsModeSelector value={statsMode} onChange={setStatsMode} />
           </CardContent>
         </Card>
 

@@ -382,6 +382,8 @@ export default function CopenhagenSetup() {
                 onCheckedChange={setSweepRuleEnabled}
               />
             </div>
+
+            <StatsModeSelector value={statsMode} onChange={setStatsMode} />
           </CardContent>
         </Card>
 

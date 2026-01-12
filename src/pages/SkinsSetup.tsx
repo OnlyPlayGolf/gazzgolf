@@ -360,6 +360,8 @@ export default function SkinsSetup() {
                 onCheckedChange={setCarryoverEnabled}
               />
             </div>
+
+            <StatsModeSelector value={statsMode} onChange={setStatsMode} />
           </CardContent>
         </Card>
 
