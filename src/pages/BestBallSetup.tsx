@@ -465,6 +465,8 @@ export default function BestBallSetup() {
                 </SelectContent>
               </Select>
             </div>
+
+            <StatsModeSelector value={statsMode} onChange={setStatsMode} />
           </CardContent>
         </Card>
 
