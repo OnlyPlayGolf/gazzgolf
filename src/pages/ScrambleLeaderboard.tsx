@@ -7,6 +7,7 @@ import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { GameHeader } from "@/components/GameHeader";
 import {
   Table,
   TableBody,
@@ -367,13 +368,11 @@ export default function ScrambleLeaderboard() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Single Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold">{game.course_name}</h2>
-          <p className="text-sm opacity-90">Scramble</p>
-        </div>
-      </div>
+      <GameHeader
+        gameTitle={game.round_name || "Scramble"}
+        courseName={game.course_name}
+        pageTitle="Leaderboard"
+      />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {teamScores.map((ts, index) => renderTeamCard(ts, index))}

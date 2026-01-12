@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { WolfGame, WolfHole } from "@/types/wolf";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { GameHeader } from "@/components/GameHeader";
 import {
   Table,
   TableBody,
@@ -457,13 +458,11 @@ export default function WolfLeaderboard() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {/* Single Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold">{game.round_name || game.course_name}</h2>
-          {game.round_name && <p className="text-sm opacity-90">{game.course_name}</p>}
-        </div>
-      </div>
+      <GameHeader
+        gameTitle={game.round_name || "Wolf"}
+        courseName={game.course_name}
+        pageTitle="Leaderboard"
+      />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {players.map((player) => renderPlayerCard(player))}
