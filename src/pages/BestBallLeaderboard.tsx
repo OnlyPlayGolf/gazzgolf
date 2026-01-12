@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { formatMatchStatus } from "@/utils/bestBallScoring";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import {
   Collapsible,
@@ -31,15 +32,26 @@ interface CourseHole {
 
 export default function BestBallLeaderboard() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [game, setGame] = useState<BestBallGame | null>(null);
   const [holes, setHoles] = useState<BestBallHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedTeam, setExpandedTeam] = useState<'A' | 'B' | null>(null);
   const [scorecardOpen, setScorecardOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    loadUser();
+  }, []);
 
   useEffect(() => {
     if (gameId) {
@@ -131,6 +143,36 @@ export default function BestBallLeaderboard() {
       </div>
     );
   }
+
+  const isAdmin = currentUserId !== null && game.user_id === currentUserId;
+
+  const handleFinishGame = async () => {
+    try {
+      const winner = game.team_a_total > game.team_b_total ? "A" : 
+                     game.team_b_total > game.team_a_total ? "B" : "TIE";
+      
+      await supabase
+        .from("best_ball_games")
+        .update({ is_finished: true, winner_team: winner })
+        .eq("id", gameId);
+      
+      toast({ title: "Game finished!" });
+      navigate(`/best-ball/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("best_ball_holes").delete().eq("game_id", gameId);
+      await supabase.from("best_ball_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
 
   const holesMap = new Map(holes.map(h => [h.hole_number, h]));
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
@@ -800,6 +842,11 @@ export default function BestBallLeaderboard() {
         gameTitle={game.round_name || 'Best Ball'}
         courseName={game.course_name}
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Best Ball Game"
       />
 
       <div className="max-w-4xl mx-auto px-4 space-y-4">
