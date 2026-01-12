@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { formatMatchStatus } from "@/utils/bestBallScoring";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,6 +35,9 @@ export default function BestBallLeaderboard() {
   const [loading, setLoading] = useState(true);
   const [expandedTeam, setExpandedTeam] = useState<'A' | 'B' | null>(null);
   const [scorecardOpen, setScorecardOpen] = useState(false);
+  
+  // Check spectator status - for sorting leaderboard by position
+  const { isSpectator } = useIsSpectator('best_ball', gameId);
 
   useEffect(() => {
     if (gameId) {
@@ -799,23 +803,37 @@ export default function BestBallLeaderboard() {
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         {isMatchPlay ? (
+          // For match play, render combined scorecard (side-by-side format with arrow indicating leader)
           renderCombinedScorecard()
         ) : (
           <>
             {(() => {
               const isTied = game.team_a_total === game.team_b_total;
-              if (game.team_a_total <= game.team_b_total) {
-                return (
-                  <>
-                    {renderTeamScorecard('A', 1, isTied)}
-                    {renderTeamScorecard('B', isTied ? 1 : 2, isTied)}
-                  </>
-                );
+              // In spectator mode, sort by leaderboard position (lower score = higher position)
+              // When not spectator, keep fixed order (Team A first)
+              if (isSpectator) {
+                // Sort by total score - lower is better
+                if (game.team_a_total <= game.team_b_total) {
+                  return (
+                    <>
+                      {renderTeamScorecard('A', 1, isTied)}
+                      {renderTeamScorecard('B', isTied ? 1 : 2, isTied)}
+                    </>
+                  );
+                } else {
+                  return (
+                    <>
+                      {renderTeamScorecard('B', 1, isTied)}
+                      {renderTeamScorecard('A', isTied ? 1 : 2, isTied)}
+                    </>
+                  );
+                }
               } else {
+                // Not spectator - keep fixed order (Team A first, then Team B)
                 return (
                   <>
-                    {renderTeamScorecard('B', 1, isTied)}
-                    {renderTeamScorecard('A', isTied ? 1 : 2, isTied)}
+                    {renderTeamScorecard('A', game.team_a_total <= game.team_b_total ? 1 : 2, isTied)}
+                    {renderTeamScorecard('B', game.team_b_total <= game.team_a_total ? 1 : (isTied ? 1 : 2), isTied)}
                   </>
                 );
               }
