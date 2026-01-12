@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { WolfGame } from "@/types/wolf";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
+import { MyStatsSettings } from "@/components/play/MyStatsSettings";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -42,6 +44,15 @@ export default function WolfSettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  // Per-player stats mode
+  const { 
+    statsMode: playerStatsMode, 
+    loading: statsModeLoading,
+    saving: statsModeSaving,
+    setStatsMode: setPlayerStatsMode,
+    deletePlayerStats,
+  } = usePlayerStatsMode(gameId, 'wolf');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -235,7 +246,15 @@ export default function WolfSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        {/* Game Rules - Hidden for spectators */}
+        {/* My Stats Settings */}
+        {currentUserId && !statsModeLoading && (
+          <MyStatsSettings
+            currentMode={playerStatsMode}
+            onModeChange={setPlayerStatsMode}
+            onDeleteStats={deletePlayerStats}
+            saving={statsModeSaving}
+          />
+        )}
         {!isSpectator && (
           <Card>
             <CardHeader className="pb-2">

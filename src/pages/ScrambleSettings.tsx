@@ -12,6 +12,8 @@ import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
+import { MyStatsSettings } from "@/components/play/MyStatsSettings";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -39,6 +41,15 @@ export default function ScrambleSettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  // Per-player stats mode
+  const { 
+    statsMode: playerStatsMode, 
+    loading: statsModeLoading,
+    saving: statsModeSaving,
+    setStatsMode: setPlayerStatsMode,
+    deletePlayerStats,
+  } = usePlayerStatsMode(gameId, 'scramble');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -243,6 +254,16 @@ export default function ScrambleSettings() {
           data={gameDetails} 
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
+
+        {/* My Stats Settings */}
+        {currentUserId && !statsModeLoading && (
+          <MyStatsSettings
+            currentMode={playerStatsMode}
+            onModeChange={setPlayerStatsMode}
+            onDeleteStats={deletePlayerStats}
+            saving={statsModeSaving}
+          />
+        )}
 
         {/* Game Rules - Hidden for spectators */}
         {!isSpectator && (

@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
+import { MyStatsSettings } from "@/components/play/MyStatsSettings";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   GameDetailsSection,
@@ -37,6 +39,15 @@ export default function BestBallSettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  // Per-player stats mode
+  const { 
+    statsMode: playerStatsMode, 
+    loading: statsModeLoading,
+    saving: statsModeSaving,
+    setStatsMode: setPlayerStatsMode,
+    deletePlayerStats,
+  } = usePlayerStatsMode(gameId, 'best_ball');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -225,6 +236,16 @@ export default function BestBallSettings() {
           data={gameDetails} 
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
+
+        {/* My Stats Settings */}
+        {currentUserId && !statsModeLoading && (
+          <MyStatsSettings
+            currentMode={playerStatsMode}
+            onModeChange={setPlayerStatsMode}
+            onDeleteStats={deletePlayerStats}
+            saving={statsModeSaving}
+          />
+        )}
 
         {/* Game Settings - Hidden for spectators */}
         {!isSpectator && (
