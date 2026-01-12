@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, Send, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { GameHeader } from "@/components/GameHeader";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 
 interface Comment {
   id: string;
@@ -47,6 +49,7 @@ export default function RoundFeed() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
+  const { isAdmin } = useGameAdminStatus('round', roundId);
   
   // Use standardized navigation hook for back button behavior
   const { handleBack } = useRoundNavigation({

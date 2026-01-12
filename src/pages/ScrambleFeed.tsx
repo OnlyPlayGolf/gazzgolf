@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,7 @@ import { Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 
 interface Comment {
   id: string;
@@ -27,6 +28,8 @@ interface Comment {
 
 export default function ScrambleFeed() {
   const { gameId } = useParams<{ gameId: string }>();
+  const navigate = useNavigate();
+  const { isAdmin } = useGameAdminStatus('scramble', gameId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -112,12 +115,38 @@ export default function ScrambleFeed() {
     }
   };
 
+  const handleFinishGame = async () => {
+    try {
+      await supabase.from("scramble_games").update({ is_finished: true }).eq("id", gameId);
+      toast.success("Game finished!");
+      navigate(`/scramble/${gameId}/summary`);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("scramble_holes").delete().eq("game_id", gameId);
+      await supabase.from("scramble_games").delete().eq("id", gameId);
+      toast.success("Game deleted");
+      navigate("/");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <GameHeader
         gameTitle={gameData?.round_name || "Scramble"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Scramble Game"
       />
 
       <div className="p-4 space-y-4">

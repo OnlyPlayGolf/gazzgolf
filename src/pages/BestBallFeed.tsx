@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BestBallBottomTabBar } from "@/components/BestBallBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
 import { GameHeader } from "@/components/GameHeader";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 
 interface Profile {
   display_name: string | null;
@@ -44,8 +45,10 @@ interface Reply {
 
 export default function BestBallFeed() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
+  const { isAdmin } = useGameAdminStatus('best_ball', gameId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -316,12 +319,38 @@ export default function BestBallFeed() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const handleFinishGame = async () => {
+    try {
+      await supabase.from("best_ball_games").update({ is_finished: true }).eq("id", gameId);
+      toast({ title: "Game finished!" });
+      navigate(`/best-ball/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("best_ball_holes").delete().eq("game_id", gameId);
+      await supabase.from("best_ball_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader 
         gameTitle={gameData?.round_name || "Best Ball"} 
         courseName={gameData?.course_name || ""} 
-        pageTitle="Game feed" 
+        pageTitle="Game feed"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Best Ball Game"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

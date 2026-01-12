@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { GameHeader } from "@/components/GameHeader";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 
 
 interface GameData {
@@ -53,7 +54,9 @@ interface Reply {
 
 export default function UmbriagioFeed() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAdmin } = useGameAdminStatus('umbriago', gameId);
   
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -294,6 +297,26 @@ export default function UmbriagioFeed() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const handleFinishGame = async () => {
+    try {
+      await supabase.from("umbriago_games").update({ is_finished: true }).eq("id", gameId);
+      toast({ title: "Game finished!" });
+      navigate(`/umbriago/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("umbriago_holes").delete().eq("game_id", gameId);
+      await supabase.from("umbriago_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="min-h-screen pb-24 bg-gradient-to-b from-background to-muted/20">
@@ -301,6 +324,11 @@ export default function UmbriagioFeed() {
         gameTitle={gameData?.round_name || "Umbriago"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Umbriago Game"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
@@ -7,11 +7,13 @@ import { LeaderboardActions } from "@/components/LeaderboardActions";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
 import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import {
   Table,
   TableBody,
@@ -36,6 +38,8 @@ interface TeamScore {
 
 export default function ScrambleLeaderboard() {
   const { gameId } = useParams<{ gameId: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
@@ -46,6 +50,7 @@ export default function ScrambleLeaderboard() {
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'scramble');
+  const { isAdmin } = useGameAdminStatus('scramble', gameId);
 
   useEffect(() => {
     if (gameId) fetchData();
@@ -386,12 +391,39 @@ export default function ScrambleLeaderboard() {
     }))
   );
 
+  const handleFinishGame = async () => {
+    try {
+      const winningTeam = teamScores[0]?.team?.name || null;
+      await supabase.from("scramble_games").update({ is_finished: true, winning_team: winningTeam }).eq("id", gameId);
+      toast({ title: "Game finished!" });
+      navigate(`/scramble/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("scramble_holes").delete().eq("game_id", gameId);
+      await supabase.from("scramble_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <GameHeader
         gameTitle={game.round_name || "Scramble"}
         courseName={game.course_name}
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Scramble Game"
       />
 
       <LeaderboardModeTabs

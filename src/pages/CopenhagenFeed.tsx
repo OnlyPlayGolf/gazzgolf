@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
@@ -12,6 +12,7 @@ import { Heart, MessageCircle, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { GameHeader } from "@/components/GameHeader";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 
 interface Comment {
   id: string;
@@ -43,8 +44,10 @@ interface Reply {
 
 export default function CopenhagenFeed() {
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
+  const { isAdmin } = useGameAdminStatus('copenhagen', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,12 +282,38 @@ export default function CopenhagenFeed() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const handleFinishGame = async () => {
+    try {
+      await supabase.from("copenhagen_games").update({ is_finished: true }).eq("id", gameId);
+      toast({ title: "Game finished!" });
+      navigate(`/copenhagen/${gameId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("copenhagen_holes").delete().eq("game_id", gameId);
+      await supabase.from("copenhagen_games").delete().eq("id", gameId);
+      toast({ title: "Game deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting game", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
         gameTitle={gameData?.round_name || "Copenhagen"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Copenhagen Game"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import {
   Table,
   TableBody,
@@ -54,7 +55,7 @@ export default function RoundLeaderboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
-  
+  const { isAdmin } = useGameAdminStatus('round', roundId);
   // Use standardized navigation hook for back button behavior
   const { handleBack } = useRoundNavigation({
     gameId: roundId || '',
@@ -267,12 +268,38 @@ export default function RoundLeaderboard() {
   const frontNine = courseHoles.slice(0, 9);
   const backNine = courseHoles.slice(9, 18);
 
+  const handleFinishGame = async () => {
+    try {
+      toast({ title: "Round finished!" });
+      navigate(`/round/${roundId}/summary`);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      await supabase.from("holes").delete().eq("round_id", roundId);
+      await supabase.from("round_players").delete().eq("round_id", roundId);
+      await supabase.from("rounds").delete().eq("id", roundId);
+      toast({ title: "Round deleted" });
+      navigate("/");
+    } catch (error: any) {
+      toast({ title: "Error deleting round", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
         gameTitle={round.round_name || "Stroke Play"}
         courseName={round.course_name}
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Round"
       />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
