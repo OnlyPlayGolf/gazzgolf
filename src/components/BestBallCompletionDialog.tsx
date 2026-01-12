@@ -45,6 +45,7 @@ export function BestBallCompletionDialog({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -53,24 +54,51 @@ export function BestBallCompletionDialog({
     }
   }, [open]);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    fetchUser();
+  }, []);
+
   const holesMap = new Map(holes.map(h => [h.hole_number, h]));
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
   const backNine = courseHoles.filter(h => h.hole_number > 9);
   const hasBackNine = backNine.length > 0;
 
-  // Determine winner and result text based on match_status
+  // Determine which team the current user is on
+  const getUserTeam = (): 'A' | 'B' => {
+    if (!currentUserId) return 'A'; // Default to A if unknown
+    
+    // Check if user is on Team A
+    const isOnTeamA = game.team_a_players.some(p => p.odId === currentUserId);
+    if (isOnTeamA) return 'A';
+    
+    // Check if user is on Team B
+    const isOnTeamB = game.team_b_players.some(p => p.odId === currentUserId);
+    if (isOnTeamB) return 'B';
+    
+    // Default to game creator's team (Team A)
+    return 'A';
+  };
+
+  const userTeam = getUserTeam();
+
+  // Calculate match status from user's perspective
+  // game.match_status: positive = Team A winning, negative = Team B winning
+  const userMatchStatus = userTeam === 'A' ? game.match_status : -game.match_status;
+
+  // Determine result text from user's perspective
   let matchResult: 'W' | 'L' | 'T' = 'T';
   let resultText = '';
-  let winnerName: string | null = null;
   
-  if (game.match_status > 0) {
+  if (userMatchStatus > 0) {
     matchResult = 'W';
-    winnerName = game.team_a_name;
-    resultText = `${Math.abs(game.match_status)} UP`;
-  } else if (game.match_status < 0) {
+    resultText = `${Math.abs(userMatchStatus)} UP`;
+  } else if (userMatchStatus < 0) {
     matchResult = 'L';
-    winnerName = game.team_b_name;
-    resultText = `${Math.abs(game.match_status)} UP`;
+    resultText = `${Math.abs(userMatchStatus)} DOWN`;
   } else {
     matchResult = 'T';
     resultText = 'AS';
@@ -98,6 +126,39 @@ export function BestBallCompletionDialog({
     return 'text-foreground';
   };
 
+  // Build scorecard data for sharing
+  const buildScorecardData = () => {
+    const holeScores: Record<number, {
+      teamAScores: { playerId: string; playerName: string; grossScore: number }[];
+      teamBScores: { playerId: string; playerName: string; grossScore: number }[];
+      matchStatusAfter: number;
+    }> = {};
+    
+    const holePars: Record<number, number> = {};
+    
+    courseHoles.forEach(ch => {
+      holePars[ch.hole_number] = ch.par;
+      const hole = holesMap.get(ch.hole_number);
+      if (hole) {
+        holeScores[ch.hole_number] = {
+          teamAScores: (hole.team_a_scores || []).map(s => ({
+            playerId: s.playerId,
+            playerName: s.playerName,
+            grossScore: s.grossScore
+          })),
+          teamBScores: (hole.team_b_scores || []).map(s => ({
+            playerId: s.playerId,
+            playerName: s.playerName,
+            grossScore: s.grossScore
+          })),
+          matchStatusAfter: hole.match_status_after
+        };
+      }
+    });
+    
+    return { holeScores, holePars };
+  };
+
   const handleShare = async () => {
     setIsSharing(true);
     try {
@@ -107,10 +168,24 @@ export function BestBallCompletionDialog({
         return;
       }
 
-      const gameResult = `[GAME_RESULT]Best Ball|${game.course_name}|${game.round_name || ''}|${winnerName || ''}|${resultText}|${game.team_a_name} vs ${game.team_b_name}|${gameId}[/GAME_RESULT]`;
+      const scorecardData = buildScorecardData();
+      const teamAPlayersData = game.team_a_players.map(p => ({ id: p.odId, name: p.displayName }));
+      const teamBPlayersData = game.team_b_players.map(p => ({ id: p.odId, name: p.displayName }));
+      
+      // Create scorecard format that includes all data needed for exact rendering
+      // Format: [BEST_BALL_SCORECARD]roundName|courseName|date|teamAName|teamBName|matchStatus|userTeam|gameId|teamAPlayers|teamBPlayers|scorecardJson[/BEST_BALL_SCORECARD]
+      const scorecardJson = JSON.stringify({
+        holeScores: scorecardData.holeScores,
+        holePars: scorecardData.holePars,
+        teamAPlayers: teamAPlayersData,
+        teamBPlayers: teamBPlayersData
+      });
+      
+      const bestBallScorecard = `[BEST_BALL_SCORECARD]${game.round_name || ''}|${game.course_name}|${game.date_played}|${game.team_a_name}|${game.team_b_name}|${userMatchStatus}|${userTeam}|${gameId}|${scorecardJson}[/BEST_BALL_SCORECARD]`;
+      
       const postContent = comment.trim()
-        ? `${comment}\n\n${gameResult}`
-        : gameResult;
+        ? `${comment}\n\n${bestBallScorecard}`
+        : bestBallScorecard;
 
       const { error } = await supabase.from("posts").insert({
         user_id: user.id,
