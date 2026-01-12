@@ -120,6 +120,8 @@ export default function RoundTracker() {
   const [mulliganJustAdded, setMulliganJustAdded] = useState(false);
   // Track if user manually navigated (to prevent auto-advance)
   const [isManualNavigation, setIsManualNavigation] = useState(false);
+  // Track which holes have had stats saved (for stats mode auto-advance blocking)
+  const [holeStatsSaved, setHoleStatsSaved] = useState<Set<number>>(new Set());
 
   // Check if current user can edit a player's scores
   const canEditPlayer = (player: RoundPlayer): boolean => {
@@ -326,6 +328,31 @@ export default function RoundTracker() {
 
       setScores(scoresMap);
       setMulligansUsed(mulligansMap);
+      
+      // Load existing stats for this round to mark which holes have stats saved
+      if (roundData.stats_mode && roundData.stats_mode !== 'none') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: proRound } = await supabase
+            .from('pro_stats_rounds')
+            .select('id')
+            .eq('external_round_id', roundId)
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (proRound) {
+            const { data: existingHoles } = await supabase
+              .from('pro_stats_holes')
+              .select('hole_number')
+              .eq('pro_round_id', proRound.id);
+            
+            if (existingHoles) {
+              const savedHoles = new Set(existingHoles.map(h => h.hole_number));
+              setHoleStatsSaved(savedHoles);
+            }
+          }
+        }
+      }
       
       // Find the first hole where not all players have entered scores
       if (allPlayers.length > 0) {
@@ -639,19 +666,26 @@ export default function RoundTracker() {
 
   // Auto-advance to next hole when all players have entered scores for current hole
   // Skip if user manually navigated back to review scores
+  // Skip if stats mode is enabled and stats haven't been saved for this hole
   useEffect(() => {
     if (isManualNavigation) {
       // Reset flag but don't auto-advance
       return;
     }
-    if (allPlayersEnteredCurrentHole && currentHoleIndex < courseHoles.length - 1) {
+    
+    // Check if stats mode is enabled and requires stats to be saved first
+    const statsRequired = round?.stats_mode && round.stats_mode !== 'none';
+    const currentHoleNumber = currentHole?.hole_number;
+    const statsCompleted = !statsRequired || (currentHoleNumber && holeStatsSaved.has(currentHoleNumber));
+    
+    if (allPlayersEnteredCurrentHole && statsCompleted && currentHoleIndex < courseHoles.length - 1) {
       const timeout = setTimeout(() => {
         setCurrentHoleIndex(currentHoleIndex + 1);
         setShowScoreSheet(false);
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation]);
+  }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation, round?.stats_mode, holeStatsSaved, currentHole?.hole_number]);
 
   const handleShowCompletionDialog = () => {
     setShowCompletionDialog(true);
@@ -905,6 +939,9 @@ export default function RoundTracker() {
                               playerId={player.id}
                               isCurrentUser={true}
                               holeDistance={getHoleDistance(currentHole, player.tee_color || round.tee_set)}
+                              onStatsSaved={() => {
+                                setHoleStatsSaved(prev => new Set(prev).add(currentHole.hole_number));
+                              }}
                             />
                           )}
                         </div>
@@ -968,6 +1005,9 @@ export default function RoundTracker() {
                     playerId={player.id}
                     isCurrentUser={true}
                     holeDistance={getHoleDistance(currentHole, player.tee_color || round.tee_set)}
+                    onStatsSaved={() => {
+                      setHoleStatsSaved(prev => new Set(prev).add(currentHole.hole_number));
+                    }}
                   />
                 )}
               </div>
