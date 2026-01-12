@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   GameDetailsSection,
@@ -246,6 +246,8 @@ export default function BestBallSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <StrokePlayToggle gameId={gameId} gameType="best_ball" />
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Use Handicaps (Net)</Label>

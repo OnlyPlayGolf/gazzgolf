@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeeSelector, getTeeDisplayName } from "@/components/TeeSelector";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -326,6 +326,8 @@ export default function SimpleSkinsSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <StrokePlayToggle gameId={roundId} gameType="skins" />
+
               {/* Default Tee */}
               <div className="space-y-2">
                 <Label>Default Tee Box</Label>

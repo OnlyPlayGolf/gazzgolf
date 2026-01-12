@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -291,6 +291,8 @@ export default function CopenhagenSettings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <StrokePlayToggle gameId={gameId} gameType="copenhagen" />
+
             {/* Use Handicaps toggle */}
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div className="space-y-0.5">
