@@ -795,14 +795,15 @@ export default function BestBallLeaderboard() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="text-center">
-          <h2 className="text-lg font-bold">{game.round_name || 'Best Ball'}</h2>
-          <p className="text-sm text-primary-foreground/80">{game.course_name}</p>
-        </div>
+      <div className="bg-primary text-primary-foreground px-4 py-3">
+        <h1 className="text-xl font-bold">{game.round_name || 'Best Ball'}</h1>
+        <p className="text-sm text-primary-foreground/80">{game.course_name}</p>
+      </div>
+      <div className="px-4 pt-3 pb-2">
+        <span className="text-sm text-muted-foreground">Leaderboard</span>
       </div>
 
-      <div className="max-w-4xl mx-auto p-4 space-y-4">
+      <div className="max-w-4xl mx-auto px-4 space-y-4">
         {isMatchPlay ? (
           // For match play, render combined scorecard (side-by-side format with arrow indicating leader)
           renderCombinedScorecard()
