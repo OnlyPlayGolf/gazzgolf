@@ -472,7 +472,8 @@ export default function WolfLeaderboard() {
         <LeaderboardActions 
           gameId={gameId!} 
           gameType="wolf" 
-          feedPath={`/wolf/${gameId}/feed`} 
+          feedPath={`/wolf/${gameId}/feed`}
+          scorecardPlayerName={game?.round_name || "Wolf Game"}
         />
       </div>
 

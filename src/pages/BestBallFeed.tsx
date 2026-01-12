@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Send } from "lucide-react";
+import { Heart, MessageCircle, Send, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
 
 interface Profile {
   display_name: string | null;
@@ -28,6 +29,8 @@ interface Comment {
   likes_count: number;
   replies_count: number;
   user_has_liked: boolean;
+  is_activity_item: boolean;
+  scorecard_player_name: string | null;
 }
 
 interface Reply {
@@ -50,6 +53,8 @@ export default function BestBallFeed() {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
+  const [commentsSheetOpen, setCommentsSheetOpen] = useState(false);
+  const [selectedScorecardPlayerName, setSelectedScorecardPlayerName] = useState<string>("");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -72,7 +77,7 @@ export default function BestBallFeed() {
       // Fetch comments for this best ball game
       const { data: commentsData, error } = await supabase
         .from("round_comments")
-        .select("id, content, hole_number, user_id, created_at")
+        .select("id, content, hole_number, user_id, created_at, is_activity_item, scorecard_player_name")
         .eq("round_id", gameId)
         .eq("game_type", "best_ball")
         .order("created_at", { ascending: false });
@@ -124,6 +129,8 @@ export default function BestBallFeed() {
             likes_count: likesCount || 0,
             replies_count: repliesCount || 0,
             user_has_liked: userHasLiked,
+            is_activity_item: comment.is_activity_item || false,
+            scorecard_player_name: comment.scorecard_player_name || null,
           };
         })
       );
@@ -333,6 +340,36 @@ export default function BestBallFeed() {
         ) : (
           <div className="space-y-4">
             {comments.map((comment) => {
+              // Activity items (e.g., "X commented on Y's scorecard") - render as clickable
+              if (comment.is_activity_item && comment.scorecard_player_name) {
+                return (
+                  <Card 
+                    key={comment.id} 
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      setSelectedScorecardPlayerName(comment.scorecard_player_name!);
+                      setCommentsSheetOpen(true);
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">{comment.content}</p>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <ChevronRight size={20} className="text-muted-foreground" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+
               // Parse mulligan comments
               const isMulliganComment = comment.content.startsWith("🔄");
               let userComment = "";
@@ -461,6 +498,15 @@ export default function BestBallFeed() {
           </div>
         )}
       </div>
+
+      {/* Scorecard Comments Sheet */}
+      <ScorecardCommentsSheet
+        open={commentsSheetOpen}
+        onOpenChange={setCommentsSheetOpen}
+        gameId={gameId || ""}
+        gameType="best_ball"
+        scorecardPlayerName={selectedScorecardPlayerName}
+      />
 
       {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>

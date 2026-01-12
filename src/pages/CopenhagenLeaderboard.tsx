@@ -401,7 +401,8 @@ export default function CopenhagenLeaderboard() {
         <LeaderboardActions 
           gameId={gameId!} 
           gameType="copenhagen" 
-          feedPath={`/copenhagen/${gameId}/feed`} 
+          feedPath={`/copenhagen/${gameId}/feed`}
+          scorecardPlayerName={game?.round_name || "Copenhagen Game"}
         />
       </div>
 

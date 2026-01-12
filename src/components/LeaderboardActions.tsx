@@ -1,24 +1,32 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Heart, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
 
 interface LeaderboardActionsProps {
   gameId: string;
   gameType: 'round' | 'match_play' | 'best_ball' | 'umbriago' | 'wolf' | 'scramble' | 'copenhagen' | 'skins';
   feedPath: string;
+  scorecardPlayerId?: string;
+  scorecardPlayerName?: string;
 }
 
-export function LeaderboardActions({ gameId, gameType, feedPath }: LeaderboardActionsProps) {
-  const navigate = useNavigate();
+export function LeaderboardActions({ 
+  gameId, 
+  gameType, 
+  feedPath,
+  scorecardPlayerId,
+  scorecardPlayerName = "Game",
+}: LeaderboardActionsProps) {
   const { toast } = useToast();
   const [likesCount, setLikesCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+  const [commentsSheetOpen, setCommentsSheetOpen] = useState(false);
 
   useEffect(() => {
     fetchCounts();
@@ -106,26 +114,37 @@ export function LeaderboardActions({ gameId, gameType, feedPath }: LeaderboardAc
   };
 
   return (
-    <div className="flex items-center justify-center gap-6 py-4 border-t">
-      <Button
-        variant="ghost"
-        size="sm"
-        className={`flex-col h-auto gap-1 ${hasLiked ? 'text-red-500' : ''}`}
-        onClick={handleLike}
-        disabled={isLiking}
-      >
-        <Heart size={20} fill={hasLiked ? "currentColor" : "none"} />
-        <span className="text-xs">{likesCount > 0 ? likesCount : 'Like'}</span>
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="flex-col h-auto gap-1"
-        onClick={() => navigate(feedPath)}
-      >
-        <MessageCircle size={20} className="text-primary" />
-        <span className="text-xs">{commentsCount > 0 ? commentsCount : 'Comment'}</span>
-      </Button>
-    </div>
+    <>
+      <div className="flex items-center justify-center gap-6 py-4 border-t">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex-col h-auto gap-1 ${hasLiked ? 'text-red-500' : ''}`}
+          onClick={handleLike}
+          disabled={isLiking}
+        >
+          <Heart size={20} fill={hasLiked ? "currentColor" : "none"} />
+          <span className="text-xs">{likesCount > 0 ? likesCount : 'Like'}</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-col h-auto gap-1"
+          onClick={() => setCommentsSheetOpen(true)}
+        >
+          <MessageCircle size={20} className="text-primary" />
+          <span className="text-xs">{commentsCount > 0 ? commentsCount : 'Comment'}</span>
+        </Button>
+      </div>
+
+      <ScorecardCommentsSheet
+        open={commentsSheetOpen}
+        onOpenChange={setCommentsSheetOpen}
+        gameId={gameId}
+        gameType={gameType}
+        scorecardPlayerId={scorecardPlayerId}
+        scorecardPlayerName={scorecardPlayerName}
+      />
+    </>
   );
 }

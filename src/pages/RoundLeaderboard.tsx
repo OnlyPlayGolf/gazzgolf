@@ -542,7 +542,9 @@ export default function RoundLeaderboard() {
                   <LeaderboardActions 
                     gameId={roundId!} 
                     gameType={round?.origin === "skins" ? "skins" : "round"} 
-                    feedPath={`/rounds/${roundId}/feed`} 
+                    feedPath={`/rounds/${roundId}/feed`}
+                    scorecardPlayerId={player.id}
+                    scorecardPlayerName={player.display_name}
                   />
                 </>
               )}
