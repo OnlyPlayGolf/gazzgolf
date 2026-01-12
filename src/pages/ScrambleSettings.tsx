@@ -238,71 +238,77 @@ export default function ScrambleSettings() {
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center justify-between text-lg">
-              <span>Game Rules</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/game-settings/scramble/${gameId}?returnPath=/scramble/${gameId}/settings`)}
-                className="h-8 w-8"
-              >
-                <Settings size={16} />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Minimum drives per player</Label>
-                <p className="text-xs text-muted-foreground">Require each player's drive to be used</p>
-              </div>
-              <Select value={minDrives} onValueChange={handleMinDrivesChange}>
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3">3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">Apply handicap strokes</p>
-              </div>
-              <Switch checked={useHandicaps} onCheckedChange={handleUseHandicapsChange} />
-            </div>
-
-            {useHandicaps && (
+        {/* Game Rules - Hidden for spectators */}
+        {!isSpectator && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <span>Game Rules</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/scramble/${gameId}?returnPath=/scramble/${gameId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Scoring Type</Label>
-                <Select value={scoringType} onValueChange={handleScoringTypeChange}>
+                <div>
+                  <Label>Minimum drives per player</Label>
+                  <p className="text-xs text-muted-foreground">Require each player's drive to be used</p>
+                </div>
+                <Select value={minDrives} onValueChange={handleMinDrivesChange}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gross">Gross</SelectItem>
-                    <SelectItem value="net">Net</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <RoundActionsSection
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Use Handicaps</Label>
+                  <p className="text-xs text-muted-foreground">Apply handicap strokes</p>
+                </div>
+                <Switch checked={useHandicaps} onCheckedChange={handleUseHandicapsChange} />
+              </div>
+
+              {useHandicaps && (
+                <div className="flex items-center justify-between">
+                  <Label>Scoring Type</Label>
+                  <Select value={scoringType} onValueChange={handleScoringTypeChange}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gross">Gross</SelectItem>
+                      <SelectItem value="net">Net</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Round Actions - Hidden for spectators */}
+        {!isSpectator && (
+          <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
           onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
-          onLeave={() => setShowLeaveDialog(true)}
-        />
+            onLeave={() => setShowLeaveDialog(true)}
+          />
+        )}
       </div>
 
       <ViewPlayersModal
@@ -326,7 +332,7 @@ export default function ScrambleSettings() {
         leaving={leaving}
       />
 
-      <ScrambleBottomTabBar gameId={gameId!} />
+      <ScrambleBottomTabBar gameId={gameId!} isSpectator={isSpectator} />
     </div>
   );
 }
