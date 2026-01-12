@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TeeSelector, getTeeDisplayName } from "@/components/TeeSelector";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
+import { MyStatsSettings } from "@/components/play/MyStatsSettings";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -62,6 +64,15 @@ export default function SimpleSkinsSettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  // Per-player stats mode
+  const { 
+    statsMode: playerStatsMode, 
+    loading: statsModeLoading,
+    saving: statsModeSaving,
+    setStatsMode: setPlayerStatsMode,
+    deletePlayerStats,
+  } = usePlayerStatsMode(roundId, 'skins');
 
   // Game settings state
   const [teeColor, setTeeColor] = useState("white");
@@ -279,6 +290,16 @@ export default function SimpleSkinsSettings() {
           data={gameDetails} 
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
+
+        {/* My Stats Settings */}
+        {currentUserId && !statsModeLoading && (
+          <MyStatsSettings
+            currentMode={playerStatsMode}
+            onModeChange={setPlayerStatsMode}
+            onDeleteStats={deletePlayerStats}
+            saving={statsModeSaving}
+          />
+        )}
 
         {/* Game Settings - Hidden for spectators */}
         {!isSpectator && (
