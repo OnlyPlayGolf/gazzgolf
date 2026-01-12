@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { ChevronRight, MapPin, Flag } from "lucide-react";
-
+import { buildGameUrl } from "@/hooks/useRoundNavigation";
+import { GameMode } from "@/types/roundShell";
 interface LiveRoundCardProps {
   gameId: string;
   gameType: 'round' | 'match_play' | 'umbriago' | 'wolf' | 'copenhagen';
@@ -48,17 +49,16 @@ export function LiveRoundCard({
   const getNavigationPath = () => {
     // If user is a participant in a stroke play round, go to tracker
     if (isParticipant && gameType === 'round') {
-      return `/rounds/${gameId}/track`;
+      return buildGameUrl('round', gameId, 'track', { entryPoint: 'home' });
     }
     
-    // Navigate to the game's leaderboard (spectator mode is handled within the pages)
-    switch (gameType) {
-      case 'match_play': return `/match-play/${gameId}/leaderboard`;
-      case 'umbriago': return `/umbriago/${gameId}/leaderboard`;
-      case 'wolf': return `/wolf/${gameId}/leaderboard`;
-      case 'copenhagen': return `/copenhagen/${gameId}/leaderboard`;
-      default: return `/rounds/${gameId}/leaderboard`;
-    }
+    // Navigate to the game's leaderboard using standardized URL builder
+    // This ensures the back button will return to home
+    const mode = gameType as GameMode;
+    return buildGameUrl(mode, gameId, 'leaderboard', { 
+      entryPoint: 'home',
+      viewType: isParticipant ? 'participant' : 'spectator'
+    });
   };
 
   const displayName = ownerProfile.display_name || ownerProfile.username || 'Friend';

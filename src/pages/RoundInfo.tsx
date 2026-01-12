@@ -5,7 +5,7 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { getSpectatorReturnPath } from "@/utils/unifiedRoundsLoader";
+import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Info, ArrowLeft } from "lucide-react";
@@ -14,6 +14,13 @@ export default function RoundInfo() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
+  
+  // Use standardized navigation hook for back button behavior
+  const { handleBack } = useRoundNavigation({
+    gameId: roundId || '',
+    mode: 'round',
+  });
+  
   const [origin, setOrigin] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,7 +54,7 @@ export default function RoundInfo() {
               variant="ghost"
               size="icon"
               className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={() => navigate(getSpectatorReturnPath(roundId || ''))}
+              onClick={handleBack}
             >
               <ArrowLeft size={20} />
             </Button>
