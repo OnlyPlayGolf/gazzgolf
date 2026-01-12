@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, Routes, Route, Navigate } from "react-router-dom";
 import { DrillBottomTabBar } from "@/components/DrillBottomTabBar";
+import { DrillHighScores } from "@/components/DrillHighScores";
 import { migrateStorageKeys } from "@/utils/storageManager";
 import Wedges2LapsScore from "./Wedges2LapsScore";
 import Wedges2LapsLeaderboard from "./Wedges2LapsLeaderboard";
@@ -40,6 +41,7 @@ const Wedges2LapsDrill = () => {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <DrillHighScores drillName="Wedge Point Game" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<Wedges2LapsScore />} />

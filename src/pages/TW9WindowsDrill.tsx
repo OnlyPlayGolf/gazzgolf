@@ -7,6 +7,7 @@ import TW9WindowsFeed from "./TW9WindowsFeed";
 import TW9WindowsMessages from "./TW9WindowsMessages";
 import TW9WindowsInfo from "./TW9WindowsInfo";
 import { DrillBottomTabBar } from "@/components/DrillBottomTabBar";
+import { DrillHighScores } from "@/components/DrillHighScores";
 
 const TW9WindowsDrill = () => {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ const TW9WindowsDrill = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4 pt-6">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -25,7 +26,7 @@ const TW9WindowsDrill = () => {
           </Button>
           <h1 className="text-xl font-bold text-foreground">TW's 9 Windows Test</h1>
         </div>
-
+        <DrillHighScores drillName="TW's 9 Windows Test" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<TW9WindowsScore />} />
