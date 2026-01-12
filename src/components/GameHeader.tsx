@@ -8,7 +8,7 @@ export function GameHeader({ gameTitle, courseName, pageTitle }: GameHeaderProps
   return (
     <div>
       {/* Green header bar */}
-      <div className="bg-primary px-4 py-3">
+      <div className="bg-primary px-4 py-3 text-center">
         <h1 className="text-xl font-bold text-primary-foreground">{gameTitle}</h1>
         <p className="text-sm text-primary-foreground/80">{courseName}</p>
       </div>
