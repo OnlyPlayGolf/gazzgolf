@@ -13,6 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TeeSelector, STANDARD_TEE_OPTIONS, getTeeDisplayName } from "@/components/TeeSelector";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -75,6 +77,9 @@ export default function RoundSettings() {
   const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
+
+  // Player stats mode for current user
+  const { statsMode, saving: statsModeSaving, setStatsMode, deletePlayerStats } = usePlayerStatsMode(roundId, 'round');
 
   useEffect(() => {
     if (roundId) {
@@ -348,6 +353,16 @@ export default function RoundSettings() {
           data={gameDetails} 
           onViewPlayers={() => setShowPlayersModal(true)} 
         />
+
+        {/* My Stats Settings - Available for all participants (not spectators) */}
+        {!isSpectator && (
+          <MyStatsSettings
+            currentMode={statsMode}
+            onModeChange={setStatsMode}
+            onDeleteStats={deletePlayerStats}
+            saving={statsModeSaving}
+          />
+        )}
 
         {/* Game Settings - Hidden for spectators */}
         {!isSpectator && (
