@@ -51,6 +51,7 @@ export default function BestBallLeaderboard() {
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'best_ball');
+  const { isAdmin } = useGameAdminStatus('best_ball', gameId);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -150,8 +151,6 @@ export default function BestBallLeaderboard() {
       />
     );
   }
-
-  const { isAdmin } = useGameAdminStatus('best_ball', gameId);
 
   const handleFinishGame = async () => {
     try {
