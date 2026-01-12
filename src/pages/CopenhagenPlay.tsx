@@ -135,11 +135,22 @@ export default function CopenhagenPlay() {
   const config = createCopenhagenConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
   
-  const { game, holes, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
+  const { game, holes, courseHoles, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
   const { setScores, saveHole, navigateHole, deleteGame } = actions;
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+  
+  // Get hole distance from course data based on tee set
+  const currentCourseHole = courseHoles.find(h => h.hole_number === currentHole);
+  const getHoleDistance = (): number | undefined => {
+    if (!currentCourseHole) return undefined;
+    const tee = game?.tee_set?.toLowerCase() || 'white';
+    const distanceKey = `${tee}_distance` as keyof typeof currentCourseHole;
+    const distance = currentCourseHole[distanceKey];
+    return typeof distance === 'number' ? distance : undefined;
+  };
+  const holeDistance = getHoleDistance();
 
   // Load mulligan settings on mount
   useEffect(() => {

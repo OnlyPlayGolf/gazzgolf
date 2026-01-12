@@ -38,6 +38,14 @@ interface CourseHole {
   hole_number: number;
   par: number;
   stroke_index: number;
+  white_distance?: number | null;
+  yellow_distance?: number | null;
+  blue_distance?: number | null;
+  red_distance?: number | null;
+  black_distance?: number | null;
+  gold_distance?: number | null;
+  orange_distance?: number | null;
+  silver_distance?: number | null;
 }
 
 interface SkinsHoleData {
@@ -143,7 +151,7 @@ export default function SkinsTracker() {
       if (courseData) {
         const { data: holesData } = await supabase
           .from("course_holes")
-          .select("hole_number, par, stroke_index")
+          .select("hole_number, par, stroke_index, white_distance, yellow_distance, blue_distance, red_distance, black_distance, gold_distance, orange_distance, silver_distance")
           .eq("course_id", courseData.id)
           .order("hole_number");
 
@@ -251,6 +259,15 @@ export default function SkinsTracker() {
   };
 
   const currentHole = courseHoles[currentHoleIndex];
+  
+  // Get hole distance from course data (Skins uses per-player tees, default to white)
+  const getHoleDistance = (): number | undefined => {
+    if (!currentHole) return undefined;
+    const distanceKey = 'white_distance' as keyof typeof currentHole;
+    const distance = currentHole[distanceKey];
+    return typeof distance === 'number' ? distance : undefined;
+  };
+  const holeDistance = getHoleDistance();
 
   const getPlayerScore = (playerId: string): number => {
     if (!currentHole) return 0;

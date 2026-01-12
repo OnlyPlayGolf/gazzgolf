@@ -187,11 +187,21 @@ export default function WolfPlay() {
   const config = createWolfConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
   
-  const { game, holes, currentHoleIndex, loading, saving, scores: scoresState, par } = state;
+  const { game, holes, courseHoles, currentHoleIndex, loading, saving, scores: scoresState, par } = state;
   const { setScores, saveHole, navigateHole, deleteGame } = actions;
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+  
+  // Get hole distance from course data based on tee set (Wolf doesn't have per-game tee_set, use white as default)
+  const currentCourseHole = courseHoles.find(h => h.hole_number === currentHole);
+  const getHoleDistance = (): number | undefined => {
+    if (!currentCourseHole) return undefined;
+    const distanceKey = 'white_distance' as keyof typeof currentCourseHole;
+    const distance = currentCourseHole[distanceKey];
+    return typeof distance === 'number' ? distance : undefined;
+  };
+  const holeDistance = getHoleDistance();
   
   // Get player count
   const getPlayerCount = () => {

@@ -235,6 +235,17 @@ export default function BestBallPlay() {
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+  
+  // Get hole distance from course data based on tee set
+  const currentCourseHole = courseHoles.find(h => h.hole_number === currentHole);
+  const getHoleDistance = (): number | undefined => {
+    if (!currentCourseHole) return undefined;
+    // Best Ball doesn't have a single tee_set, default to white
+    const distanceKey = 'white_distance' as keyof typeof currentCourseHole;
+    const distance = currentCourseHole[distanceKey];
+    return typeof distance === 'number' ? distance : undefined;
+  };
+  const holeDistance = getHoleDistance();
 
   const handleScoreSelect = (team: 'A' | 'B', playerId: string, score: number | null) => {
     if (score === null) return;
