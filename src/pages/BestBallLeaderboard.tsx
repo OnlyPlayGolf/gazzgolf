@@ -10,6 +10,7 @@ import { formatMatchStatus } from "@/utils/bestBallScoring";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
+import { GameNotFound } from "@/components/GameNotFound";
 import {
   Collapsible,
   CollapsibleContent,
@@ -137,10 +138,10 @@ export default function BestBallLeaderboard() {
 
   if (!game) {
     return (
-      <div className="min-h-screen pb-24 flex items-center justify-center">
-        <div className="text-muted-foreground">Game not found</div>
-        {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
-      </div>
+      <GameNotFound 
+        onRetry={() => fetchData()}
+        message="This game was deleted or is no longer available."
+      />
     );
   }
 

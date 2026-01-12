@@ -9,6 +9,7 @@ import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
+import { GameNotFound } from "@/components/GameNotFound";
 import {
   Table,
   TableBody,
@@ -283,9 +284,10 @@ export default function UmbriagioLeaderboard() {
 
   if (!game) {
     return (
-      <div className="min-h-screen flex items-center justify-center pb-16">
-        <div className="text-muted-foreground">Game not found</div>
-      </div>
+      <GameNotFound 
+        onRetry={() => fetchGameData()}
+        message="This game was deleted or is no longer available."
+      />
     );
   }
 

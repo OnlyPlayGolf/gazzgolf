@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
 import { GameHeader } from "@/components/GameHeader";
+import { GameNotFound } from "@/components/GameNotFound";
 import {
   Table,
   TableBody,
@@ -256,9 +257,10 @@ export default function RoundLeaderboard() {
 
   if (!round || courseHoles.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center pb-16">
-        <div className="text-muted-foreground">Round not found</div>
-      </div>
+      <GameNotFound 
+        onRetry={() => fetchRoundData()}
+        message="This round was deleted or is no longer available."
+      />
     );
   }
 
