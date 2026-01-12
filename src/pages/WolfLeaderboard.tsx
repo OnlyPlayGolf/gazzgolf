@@ -45,7 +45,7 @@ export default function WolfLeaderboard() {
         .from("wolf_games" as any)
         .select("*")
         .eq("id", gameId)
-        .single();
+        .maybeSingle();
       
       if (gameData) {
         const typedGameData = gameData as unknown as WolfGame;

@@ -46,7 +46,7 @@ export default function CopenhagenLeaderboard() {
         .from("copenhagen_games")
         .select("*")
         .eq("id", gameId)
-        .single();
+        .maybeSingle();
 
       if (gameData) {
         setGame(gameData as CopenhagenGame);

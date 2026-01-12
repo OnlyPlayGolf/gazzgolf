@@ -54,7 +54,7 @@ export default function MatchPlayLeaderboard() {
         .from("match_play_games")
         .select("*")
         .eq("id", gameId)
-        .single();
+        .maybeSingle();
 
       if (!gameData) {
         setLoading(false);

@@ -52,7 +52,7 @@ export default function ScrambleLeaderboard() {
       .from('scramble_games')
       .select('*')
       .eq('id', gameId)
-      .single();
+      .maybeSingle();
 
     if (gameData) {
       setGame(gameData as unknown as ScrambleGame);

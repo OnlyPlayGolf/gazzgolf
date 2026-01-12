@@ -83,7 +83,7 @@ export default function SimpleSkinsLeaderboard() {
         .from("rounds")
         .select("*")
         .eq("id", roundId)
-        .single();
+        .maybeSingle();
 
       if (!roundData) return;
       setCourseName(roundData.course_name);
