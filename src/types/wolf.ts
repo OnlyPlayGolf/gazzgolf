@@ -27,6 +27,9 @@ export interface WolfGame {
   // Double option
   double_enabled: boolean;
   
+  // Stats tracking
+  stats_mode?: string | null;
+  
   // Player scores (running totals)
   player_1_points: number;
   player_2_points: number;

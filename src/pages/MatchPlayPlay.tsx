@@ -11,6 +11,7 @@ import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
+import { InRoundStatsEntry, StatsMode } from "@/components/play/InRoundStatsEntry";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   calculateHoleResult,
@@ -133,6 +134,8 @@ export default function MatchPlayPlay() {
   const [showScoreSheet, setShowScoreSheet] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [currentComment, setCurrentComment] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [statsSaved, setStatsSaved] = useState(false);
   
   const config = createMatchPlayConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
@@ -142,6 +145,21 @@ export default function MatchPlayPlay() {
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
+  
+  // Determine stats mode from game
+  const statsMode: StatsMode = (game?.stats_mode as StatsMode) || 'none';
+  
+  // Get current user ID for stats entry
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
+  
+  // Reset stats saved when hole changes
+  useEffect(() => {
+    setStatsSaved(false);
+  }, [currentHoleIndex]);
 
   // Calculate mulligans used by each player
   const mulligansPerPlayer = game?.mulligans_per_player || 0;
@@ -177,13 +195,26 @@ export default function MatchPlayPlay() {
   // Check if both players have entered scores for current hole
   // -1 means dash/conceded, which is also a valid entry
   const allPlayersEnteredCurrentHole = (scores.player1 > 0 || scores.player1 === -1) && (scores.player2 > 0 || scores.player2 === -1);
+  
+  // Determine if stats need to be saved before advancing
+  const needsStats = statsMode !== 'none' && currentUserId === game?.user_id;
+  const canAutoAdvance = allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && !saving;
 
   // Auto-save and advance to next hole when all players have entered scores
+  // If stats mode is enabled, wait for stats to be saved first
   useEffect(() => {
-    if (allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && !saving) {
+    if (canAutoAdvance) {
+      if (needsStats && !statsSaved) {
+        // Wait for stats to be saved
+        return;
+      }
       saveHole();
     }
-  }, [allPlayersEnteredCurrentHole, showScoreSheet, showMoreSheet]);
+  }, [canAutoAdvance, needsStats, statsSaved]);
+  
+  const handleStatsSaved = () => {
+    setStatsSaved(true);
+  };
 
   const handleSaveMoreSheet = async () => {
     // Save comment to feed if provided
@@ -382,6 +413,22 @@ export default function MatchPlayPlay() {
             </div>
           </div>
         </Card>
+
+        {/* In-Round Stats Entry - only shown when score is entered */}
+        {allPlayersEnteredCurrentHole && statsMode !== 'none' && currentUserId === game.user_id && (
+          <InRoundStatsEntry
+            statsMode={statsMode}
+            roundId={gameId || ''}
+            holeNumber={currentHole}
+            par={par}
+            score={scores.player1 > 0 ? scores.player1 : scores.player2}
+            playerId={currentUserId}
+            isCurrentUser={true}
+            onStatsSaved={handleStatsSaved}
+            courseName={game.course_name}
+            holesPlayed={game.holes_played}
+          />
+        )}
 
         {/* Score Sheet */}
         <PlayerScoreSheet

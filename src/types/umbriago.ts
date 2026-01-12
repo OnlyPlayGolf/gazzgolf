@@ -18,6 +18,7 @@ export interface UmbriagioGame {
   
   stake_per_point: number;
   payout_mode: 'difference' | 'total';
+  stats_mode?: string | null;
   
   team_a_total_points: number;
   team_b_total_points: number;
