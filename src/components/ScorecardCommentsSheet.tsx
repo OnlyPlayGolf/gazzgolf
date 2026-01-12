@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
-import { Send, X } from "lucide-react";
+import { Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -200,14 +200,9 @@ export function ScorecardCommentsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
         <SheetHeader className="px-4 py-3 border-b">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg">
-              {scorecardPlayerName}'s Scorecard
-            </SheetTitle>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X size={20} />
-            </Button>
-          </div>
+          <SheetTitle className="text-lg">
+            {scorecardPlayerName}'s Scorecard
+          </SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
