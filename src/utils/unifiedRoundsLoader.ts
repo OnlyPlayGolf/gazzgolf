@@ -487,39 +487,49 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     const teamB = Array.isArray(game.team_b_players) ? game.team_b_players : [];
 
     // Determine match result for match play best ball games
+    // game_type can be 'match', 'match_play', or 'stroke_play'
     let matchResult: 'W' | 'L' | 'T' | null = null;
     let matchFinalScore: string | null = null;
+    const isMatchPlayFormat = game.game_type === 'match_play' || game.game_type === 'match';
     
-    if (game.game_type === 'match_play' && game.is_finished) {
-      // Find which team the user is on
-      const userInTeamA = teamA.some((p: any) => 
-        participantNames.includes(typeof p === 'string' ? p : p?.name)
-      );
-      const userInTeamB = teamB.some((p: any) => 
-        participantNames.includes(typeof p === 'string' ? p : p?.name)
-      );
+    if (isMatchPlayFormat && game.is_finished) {
+      // Find which team the user is on - check both name and displayName
+      const userInTeamA = teamA.some((p: any) => {
+        const pName = typeof p === 'string' ? p : (p?.name || p?.displayName);
+        return pName && participantNames.includes(pName);
+      });
+      const userInTeamB = teamB.some((p: any) => {
+        const pName = typeof p === 'string' ? p : (p?.name || p?.displayName);
+        return pName && participantNames.includes(pName);
+      });
       
       // Get match status (positive = team A winning, negative = team B winning)
       const matchStatus = game.match_status || 0;
       
-      if (game.winner_team === null || game.winner_team === '') {
+      // winner_team can be 'TIE', 'A', 'B', 'team_a', 'team_b', or null/empty
+      const winnerTeam = (game.winner_team || '').toUpperCase();
+      const isTie = winnerTeam === 'TIE' || winnerTeam === '';
+      const teamAWon = winnerTeam === 'A' || winnerTeam === 'TEAM_A';
+      const teamBWon = winnerTeam === 'B' || winnerTeam === 'TEAM_B';
+      
+      if (isTie) {
         matchResult = 'T';
         // No score displayed for ties
       } else if (userInTeamA && !userInTeamB) {
-        matchResult = game.winner_team === 'team_a' ? 'W' : 'L';
+        matchResult = teamAWon ? 'W' : 'L';
         // From Team A's perspective: positive status = UP, negative = DOWN
         if (matchStatus !== 0) {
           matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
         }
       } else if (userInTeamB && !userInTeamA) {
-        matchResult = game.winner_team === 'team_b' ? 'W' : 'L';
+        matchResult = teamBWon ? 'W' : 'L';
         // From Team B's perspective: invert the status
         if (matchStatus !== 0) {
           matchFinalScore = matchStatus < 0 ? `${Math.abs(matchStatus)} UP` : `${matchStatus} DOWN`;
         }
       } else if (game.user_id === targetUserId) {
         // Owner defaults to team A
-        matchResult = game.winner_team === 'team_a' ? 'W' : 'L';
+        matchResult = teamAWon ? 'W' : 'L';
         if (matchStatus !== 0) {
           matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
         }
@@ -533,7 +543,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       date: game.date_played,
       score: 0,
       playerCount: teamA.length + teamB.length,
-      gameMode: game.game_type === 'match_play' ? "Best Ball Match Play" : "Best Ball",
+      gameMode: isMatchPlayFormat ? "Best Ball Match Play" : "Best Ball",
       gameType: "best_ball",
       holesPlayed: game.holes_played,
       ownerUserId: game.user_id || targetUserId,
