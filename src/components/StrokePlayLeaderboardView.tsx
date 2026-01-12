@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScorecardActions } from "@/components/ScorecardActions";
 
 interface CourseHole {
   hole_number: number;
@@ -28,12 +29,16 @@ interface StrokePlayLeaderboardViewProps {
   players: StrokePlayPlayer[];
   courseHoles: CourseHole[];
   isSpectator?: boolean;
+  gameId?: string;
+  gameType?: 'round' | 'match_play' | 'best_ball' | 'umbriago' | 'wolf' | 'scramble' | 'copenhagen' | 'skins';
 }
 
 export function StrokePlayLeaderboardView({
   players,
   courseHoles,
   isSpectator = false,
+  gameId,
+  gameType,
 }: StrokePlayLeaderboardViewProps) {
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(
     players.length > 0 ? players[0].id : null
@@ -305,6 +310,18 @@ export function StrokePlayLeaderboardView({
                   </div>
                 )}
               </>
+            )}
+
+            {/* Per-scorecard actions */}
+            {gameId && gameType && (
+              <div className="px-4 pb-3">
+                <ScorecardActions
+                  gameId={gameId}
+                  gameType={gameType}
+                  scorecardPlayerId={player.id}
+                  scorecardPlayerName={player.name}
+                />
+              </div>
             )}
           </Card>
         );
