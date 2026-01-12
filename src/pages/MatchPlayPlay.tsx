@@ -58,12 +58,13 @@ const createMatchPlayConfig = (gameId: string): GameScoringConfig<MatchPlayGame,
     player2Mulligan: hole.player_2_mulligan || false,
   }),
   
-  buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles }) => {
+  buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles, game }) => {
     const holeResult = calculateHoleResult(scores.player1, scores.player2);
     const previousStatus = previousHoles.length > 0 
       ? previousHoles[previousHoles.length - 1].match_status_after 
       : 0;
     const newMatchStatus = previousStatus + holeResult;
+    const totalHoles = game.holes_played || 18;
     
     return {
       game_id: gameId,
@@ -78,7 +79,7 @@ const createMatchPlayConfig = (gameId: string): GameScoringConfig<MatchPlayGame,
       player_2_mulligan: scores.player2Mulligan || false,
       hole_result: holeResult,
       match_status_after: newMatchStatus,
-      holes_remaining_after: 18 - holeNumber, // Will be updated based on actual total
+      holes_remaining_after: totalHoles - holeNumber,
     };
   },
   

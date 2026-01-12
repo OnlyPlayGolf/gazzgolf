@@ -187,6 +187,8 @@ export default function MatchPlaySetup() {
       }
 
       const savedRoundName = sessionStorage.getItem('roundName');
+      const savedHoles = sessionStorage.getItem('selectedHoles');
+      const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
       
       let eventId: string | null = null;
       
@@ -223,7 +225,7 @@ export default function MatchPlaySetup() {
             course_name: selectedCourse?.name || "Match Play Game",
             course_id: selectedCourseId || null,
             round_name: savedRoundName || null,
-            holes_played: 18,
+            holes_played: holesPlayed,
             player_1: group.players[0].displayName,
             player_1_handicap: group.players[0].handicap || null,
             player_2: group.players[1].displayName,
@@ -231,7 +233,7 @@ export default function MatchPlaySetup() {
             use_handicaps: useHandicaps,
             mulligans_per_player: mulligansPerPlayer,
             match_status: 0,
-            holes_remaining: 18,
+            holes_remaining: holesPlayed,
             event_id: eventId,
           })
           .select()

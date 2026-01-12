@@ -241,6 +241,8 @@ export default function UmbriagioSetup() {
 
       // Get round name from session storage
       const savedRoundName = sessionStorage.getItem('roundName');
+      const savedHoles = sessionStorage.getItem('selectedHoles');
+      const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
 
       const { data: game, error } = await supabase
         .from("umbriago_games")
@@ -249,7 +251,7 @@ export default function UmbriagioSetup() {
           course_name: selectedCourse?.name || "Umbriago Game",
           course_id: selectedCourseId || null,
           round_name: savedRoundName || null,
-          holes_played: 18,
+          holes_played: holesPlayed,
           team_a_name: teamAName,
           team_b_name: teamBName,
           team_a_player_1: players[0].displayName,

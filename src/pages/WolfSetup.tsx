@@ -202,6 +202,8 @@ export default function WolfSetup() {
 
       // Get round name from session storage
       const savedRoundName = sessionStorage.getItem('roundName');
+      const savedHoles = sessionStorage.getItem('selectedHoles');
+      const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
 
       const { data: game, error } = await supabase
         .from("wolf_games" as any)
@@ -210,7 +212,7 @@ export default function WolfSetup() {
           course_name: selectedCourse?.name || "Wolf Game",
           course_id: selectedCourseId || null,
           round_name: savedRoundName || null,
-          holes_played: 18,
+          holes_played: holesPlayed,
           player_1: players[0]?.displayName || "",
           player_2: players[1]?.displayName || "",
           player_3: players[2]?.displayName || "",
