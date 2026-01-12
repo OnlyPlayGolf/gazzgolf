@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Heart, MessageCircle, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { GameHeader } from "@/components/GameHeader";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 
 interface Comment {
   id: string;
@@ -42,6 +43,7 @@ interface Reply {
 
 export default function SkinsFeed() {
   const { roundId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -52,6 +54,23 @@ export default function SkinsFeed() {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
+  
+  const { isAdmin } = useGameAdminStatus('skins', roundId);
+
+  const handleFinishGame = async () => {
+    if (!roundId) return;
+    await supabase.from("skins_games").update({ is_finished: true }).eq("id", roundId);
+    toast({ title: "Game finished" });
+    navigate(`/skins/${roundId}/summary`);
+  };
+
+  const handleDeleteGame = async () => {
+    if (!roundId) return;
+    await supabase.from("skins_holes").delete().eq("game_id", roundId);
+    await supabase.from("skins_games").delete().eq("id", roundId);
+    toast({ title: "Game deleted" });
+    navigate("/");
+  };
 
   useEffect(() => {
     const fetchGameData = async () => {
@@ -283,6 +302,11 @@ export default function SkinsFeed() {
         gameTitle={gameData?.round_name || "Skins"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Skins Game"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

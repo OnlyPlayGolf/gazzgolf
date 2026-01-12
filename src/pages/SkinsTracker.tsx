@@ -10,16 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { GameHeader } from "@/components/GameHeader";
 
 interface SkinsGame {
   id: string;
@@ -63,6 +55,7 @@ export default function SkinsTracker() {
   const { toast } = useToast();
   
   const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('skins', roundId);
+  const { isAdmin, isLoading: adminLoading } = useGameAdminStatus('skins', roundId);
   
   useEffect(() => {
     if (!spectatorLoading && isSpectator && roundId) {
@@ -78,7 +71,6 @@ export default function SkinsTracker() {
   });
   const [holeData, setHoleData] = useState<Map<number, SkinsHoleData>>(new Map());
   const [loading, setLoading] = useState(true);
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerData | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
@@ -439,54 +431,45 @@ export default function SkinsTracker() {
   return (
     <div className="min-h-screen pb-24 bg-background">
       {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="p-4 max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowExitDialog(true)}
-              className="rounded-full"
-            >
-              <ChevronLeft size={24} />
-            </Button>
-            <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">{game.round_name || 'Skins'}</h1>
-              <p className="text-sm text-muted-foreground">{game.course_name}</p>
-            </div>
-            <div className="w-10" />
+      <GameHeader
+        gameTitle={game.round_name || 'Skins'}
+        courseName={game.course_name}
+        pageTitle="Skins"
+        isAdmin={isAdmin}
+        onFinish={handleFinishRound}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Skins Game"
+      />
+
+      {/* Hole Navigation Bar */}
+      <div className="bg-primary py-4 px-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigateHole("prev")}
+            disabled={currentHoleIndex === 0}
+            className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
+          >
+            <ChevronLeft size={24} />
+          </Button>
+
+          <div className="text-center">
+            <div className="text-sm text-white/90">PAR {currentHole.par}</div>
+            <div className="text-2xl font-bold text-white">Hole {currentHole.hole_number}</div>
+            <div className="text-sm text-white/90">HCP {currentHole.stroke_index}</div>
           </div>
-        </div>
 
-        {/* Hole Navigation Bar */}
-        <div className="bg-primary py-4 px-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("prev")}
-              disabled={currentHoleIndex === 0}
-              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
-            >
-              <ChevronLeft size={24} />
-            </Button>
-
-            <div className="text-center">
-              <div className="text-sm text-white/90">PAR {currentHole.par}</div>
-              <div className="text-2xl font-bold text-white">Hole {currentHole.hole_number}</div>
-              <div className="text-sm text-white/90">HCP {currentHole.stroke_index}</div>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("next")}
-              disabled={currentHoleIndex === courseHoles.length - 1}
-              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
-            >
-              <ChevronRight size={24} />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigateHole("next")}
+            disabled={currentHoleIndex === courseHoles.length - 1}
+            className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
+          >
+            <ChevronRight size={24} />
+          </Button>
         </div>
       </div>
 
@@ -614,38 +597,6 @@ export default function SkinsTracker() {
       )}
 
       <SkinsBottomTabBar roundId={roundId!} />
-
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <AlertDialogAction
-              onClick={() => {
-                setShowExitDialog(false);
-                navigate("/");
-              }}
-              className="w-full"
-            >
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => {
-                setShowExitDialog(false);
-                handleDeleteGame();
-              }}
-              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel className="w-full mt-0">Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Trophy, ChevronDown, RotateCcw } from "lucide-react";
@@ -11,6 +11,8 @@ import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardMo
 import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -63,6 +65,8 @@ interface PlayerSkinResult {
 
 export default function SkinsLeaderboard() {
   const { roundId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [holes, setHoles] = useState<SkinsHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
@@ -73,6 +77,22 @@ export default function SkinsLeaderboard() {
   
   const { isSpectator } = useIsSpectator('skins', roundId);
   const { strokePlayEnabled } = useStrokePlayEnabled(roundId, 'skins');
+  const { isAdmin } = useGameAdminStatus('skins', roundId);
+
+  const handleFinishGame = async () => {
+    if (!roundId) return;
+    await supabase.from("skins_games").update({ is_finished: true }).eq("id", roundId);
+    toast({ title: "Game finished" });
+    navigate(`/skins/${roundId}/summary`);
+  };
+
+  const handleDeleteGame = async () => {
+    if (!roundId) return;
+    await supabase.from("skins_holes").delete().eq("game_id", roundId);
+    await supabase.from("skins_games").delete().eq("id", roundId);
+    toast({ title: "Game deleted" });
+    navigate("/");
+  };
 
   useEffect(() => {
     if (roundId) fetchGameData();
@@ -455,6 +475,11 @@ export default function SkinsLeaderboard() {
         gameTitle={game.round_name || "Skins"} 
         courseName={game.course_name} 
         pageTitle="Leaderboard"
+        isAdmin={isAdmin}
+        onFinish={handleFinishGame}
+        onSaveAndExit={() => navigate('/profile')}
+        onDelete={handleDeleteGame}
+        gameName="Skins Game"
       />
 
       <LeaderboardModeTabs
