@@ -14,6 +14,7 @@ import { formatHandicap } from "@/lib/utils";
 import { TeeSelector } from "@/components/TeeSelector";
 import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
+import { StatsModeSelector, StatsMode } from "@/components/play/StatsModeSelector";
 
 interface Course {
   id: string;
@@ -40,6 +41,7 @@ export default function ScrambleSetup() {
   const [minDrivesPerPlayer, setMinDrivesPerPlayer] = useState<number | null>(null);
   const [useHandicaps, setUseHandicaps] = useState(false);
   const [scoringType, setScoringType] = useState<'gross' | 'net'>('gross');
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   const teeCount = 5;
 
@@ -170,6 +172,7 @@ export default function ScrambleSetup() {
           min_drives_per_player: minDrivesPerPlayer,
           use_handicaps: useHandicaps,
           scoring_type: scoringType,
+          stats_mode: statsMode,
         })
         .select()
         .single();

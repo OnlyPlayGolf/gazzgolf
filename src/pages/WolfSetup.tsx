@@ -18,6 +18,7 @@ import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { SetupAddFriendSheet } from "@/components/play/SetupAddFriendSheet";
 import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
+import { StatsModeSelector, StatsMode } from "@/components/play/StatsModeSelector";
 
 interface Course {
   id: string;
@@ -54,6 +55,7 @@ export default function WolfSetup() {
   const [teamWinPoints, setTeamWinPoints] = useState(1);
   const [wolfPosition, setWolfPosition] = useState<'first' | 'last'>('last');
   const [doubleEnabled, setDoubleEnabled] = useState(true);
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -224,6 +226,7 @@ export default function WolfSetup() {
           team_win_points: teamWinPoints,
           wolf_position: wolfPosition,
           double_enabled: doubleEnabled,
+          stats_mode: statsMode,
         })
         .select()
         .single();

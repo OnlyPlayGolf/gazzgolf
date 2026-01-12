@@ -15,6 +15,7 @@ import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
+import { StatsModeSelector, StatsMode } from "@/components/play/StatsModeSelector";
 
 interface Course {
   id: string;
@@ -50,6 +51,7 @@ export default function SkinsSetup() {
   // Skins specific settings
   const [skinValue, setSkinValue] = useState(1);
   const [carryoverEnabled, setCarryoverEnabled] = useState(true);
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   // Sheet states
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -200,6 +202,7 @@ export default function SkinsSetup() {
           handicap_mode: "none",
           players: playersJson,
           date_played: new Date().toISOString().split('T')[0],
+          stats_mode: statsMode,
         })
         .select()
         .single();

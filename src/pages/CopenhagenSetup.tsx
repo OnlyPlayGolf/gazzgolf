@@ -19,6 +19,7 @@ import { SetupAddGuestSheet } from "@/components/play/SetupAddGuestSheet";
 import { STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
 import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
+import { StatsModeSelector, StatsMode } from "@/components/play/StatsModeSelector";
 
 interface Course {
   id: string;
@@ -49,6 +50,7 @@ export default function CopenhagenSetup() {
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
   const [sweepRuleEnabled, setSweepRuleEnabled] = useState(true);
   const [defaultTee, setDefaultTee] = useState(() => getDefaultTeeFromPreferences());
+  const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [showAddFriend, setShowAddFriend] = useState(false);
@@ -196,6 +198,7 @@ export default function CopenhagenSetup() {
           player_2_tee: players[1].teeColor || null,
           player_3_tee: players[2].teeColor || null,
           use_handicaps: useHandicaps,
+          stats_mode: statsMode,
         })
         .select()
         .single();
