@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 
 interface RoundPlayer {
   id: string;
@@ -66,6 +67,7 @@ export default function SimpleSkinsLeaderboard() {
   
   // Check spectator status for leaderboard sorting
   const { isSpectator } = useIsSpectator('round', roundId);
+  const { strokePlayEnabled } = useStrokePlayEnabled(roundId, 'skins');
 
   useEffect(() => {
     fetchData();
@@ -359,9 +361,9 @@ export default function SimpleSkinsLeaderboard() {
         <h1 className="text-2xl font-bold">Leaderboard</h1>
 
         <Tabs defaultValue="skins" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className={`grid w-full ${strokePlayEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <TabsTrigger value="skins">Skins</TabsTrigger>
-            <TabsTrigger value="strokeplay">Stroke Play</TabsTrigger>
+            {strokePlayEnabled && <TabsTrigger value="strokeplay">Stroke Play</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="skins" className="mt-4">

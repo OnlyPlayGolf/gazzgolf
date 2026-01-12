@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { WolfGame } from "@/types/wolf";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -29,7 +29,6 @@ export default function WolfSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
-  const { strokePlayEnabled, setStrokePlayEnabled } = useStrokePlayEnabled(gameId, 'wolf');
   const [game, setGame] = useState<WolfGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [loneWolfWinPoints, setLoneWolfWinPoints] = useState(3);
@@ -253,15 +252,7 @@ export default function WolfSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Stroke Play Leaderboard</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Show individual stroke play scores alongside Wolf
-                  </p>
-                </div>
-                <Switch checked={strokePlayEnabled} onCheckedChange={setStrokePlayEnabled} />
-              </div>
+              <StrokePlayToggle gameId={gameId} gameType="wolf" />
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">

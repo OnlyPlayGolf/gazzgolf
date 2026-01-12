@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -261,6 +261,8 @@ export default function ScrambleSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <StrokePlayToggle gameId={gameId} gameType="scramble" />
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Minimum drives per player</Label>

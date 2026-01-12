@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -362,6 +362,8 @@ export default function UmbriagioSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <StrokePlayToggle gameId={gameId} gameType="umbriago" />
+
               <div className="space-y-2">
                 <Label>Rolls per Team</Label>
                 <Select value={rollsPerTeam.toString()} onValueChange={handleRollsChange}>
