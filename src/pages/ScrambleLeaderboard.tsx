@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
-import { LeaderboardActions } from "@/components/LeaderboardActions";
+import { ScorecardActions } from "@/components/ScorecardActions";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { ChevronDown } from "lucide-react";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
@@ -371,6 +371,15 @@ export default function ScrambleLeaderboard() {
               </div>
             )}
 
+            {/* Per-scorecard actions */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="scramble"
+                scorecardPlayerId={ts.team.id}
+                scorecardPlayerName={ts.team.name}
+              />
+            </div>
           </>
         )}
       </Card>
@@ -439,18 +448,12 @@ export default function ScrambleLeaderboard() {
             players={strokePlayPlayers}
             courseHoles={courseHoles}
             isSpectator={isSpectator}
+            gameId={gameId}
+            gameType="scramble"
           />
         ) : (
           teamScores.map((ts, index) => renderTeamCard(ts, index))
         )}
-
-        {/* Like and Comment Actions */}
-        <LeaderboardActions 
-          gameId={gameId!} 
-          gameType="scramble" 
-          feedPath={`/scramble/${gameId}/feed`}
-          scorecardPlayerName={game?.round_name || "Scramble Game"}
-        />
       </div>
 
       {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}

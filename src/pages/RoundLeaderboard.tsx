@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
-import { LeaderboardActions } from "@/components/LeaderboardActions";
+import { ScorecardActions } from "@/components/ScorecardActions";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import { Card } from "@/components/ui/card";
@@ -555,14 +555,15 @@ export default function RoundLeaderboard() {
                     </div>
                   )}
 
-                  {/* Like and Comment Actions */}
-                  <LeaderboardActions 
-                    gameId={roundId!} 
-                    gameType={round?.origin === "skins" ? "skins" : "round"} 
-                    feedPath={`/rounds/${roundId}/feed`}
-                    scorecardPlayerId={player.id}
-                    scorecardPlayerName={player.display_name}
-                  />
+                  {/* Per-scorecard actions */}
+                  <div className="px-4 pb-3">
+                    <ScorecardActions
+                      gameId={roundId!}
+                      gameType={round?.origin === "skins" ? "skins" : "round"}
+                      scorecardPlayerId={player.id}
+                      scorecardPlayerName={player.display_name}
+                    />
+                  </div>
                 </>
               )}
               </Card>
