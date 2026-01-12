@@ -10,6 +10,7 @@ import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
+import { GameHeader } from "@/components/GameHeader";
 
 interface Comment {
   id: string;
@@ -30,13 +31,24 @@ export default function ScrambleFeed() {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {
     if (gameId) {
       fetchComments();
       getCurrentUser();
+      fetchGameData();
     }
   }, [gameId]);
+
+  const fetchGameData = async () => {
+    const { data } = await supabase
+      .from("scramble_games")
+      .select("round_name, course_name")
+      .eq("id", gameId)
+      .maybeSingle();
+    if (data) setGameData(data);
+  };
 
   const getCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -102,9 +114,11 @@ export default function ScrambleFeed() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-primary text-primary-foreground p-4">
-        <h1 className="text-xl font-bold text-center">Game Feed</h1>
-      </div>
+      <GameHeader
+        gameTitle={gameData?.round_name || "Scramble"}
+        courseName={gameData?.course_name || ""}
+        pageTitle="Game feed"
+      />
 
       <div className="p-4 space-y-4">
         {/* Comment input */}
