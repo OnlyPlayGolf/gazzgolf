@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { WolfGame, WolfHole } from "@/types/wolf";
 import { ChevronDown } from "lucide-react";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   Table,
   TableBody,
@@ -27,6 +28,9 @@ export default function WolfLeaderboard() {
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
+  
+  // Check spectator status for leaderboard sorting
+  const { isSpectator } = useIsSpectator('wolf', gameId);
 
   useEffect(() => {
     if (gameId) fetchGameData();
@@ -138,18 +142,27 @@ export default function WolfLeaderboard() {
 
   const playerCount = getPlayerCount();
   
-  const players = game ? Array.from({ length: playerCount }, (_, i) => ({
+  // Build players array - always sorted for position calculation
+  const sortedPlayersForRanking = game ? Array.from({ length: playerCount }, (_, i) => ({
     num: i + 1,
     name: getPlayerName(i + 1),
     points: getPlayerPoints(i + 1),
   })).sort((a, b) => b.points - a.points) : [];
+  
+  // For display: only sort by position in spectator mode, otherwise keep original order
+  const players = isSpectator 
+    ? sortedPlayersForRanking 
+    : (game ? Array.from({ length: playerCount }, (_, i) => ({
+        num: i + 1,
+        name: getPlayerName(i + 1),
+        points: getPlayerPoints(i + 1),
+      })) : []);
 
-  // Calculate positions with tie handling
-  const getPlayerPosition = (playerIndex: number): string => {
-    const player = players[playerIndex];
-    const playersWithSamePoints = players.filter(p => p.points === player.points);
+  // Calculate positions with tie handling - always use sorted list for position calculation
+  const getPlayerPosition = (player: { num: number; name: string; points: number }): string => {
+    const playersWithSamePoints = sortedPlayersForRanking.filter(p => p.points === player.points);
     const isTied = playersWithSamePoints.length > 1;
-    const position = players.findIndex(p => p.points === player.points) + 1;
+    const position = sortedPlayersForRanking.findIndex(p => p.points === player.points) + 1;
     return isTied ? `T${position}` : `${position}`;
   };
 
@@ -172,10 +185,10 @@ export default function WolfLeaderboard() {
     );
   }
 
-  const renderPlayerCard = (player: { num: number; name: string; points: number }, rank: number) => {
+  const renderPlayerCard = (player: { num: number; name: string; points: number }) => {
     const isExpanded = expandedPlayerId === player.num;
-    const isLeader = rank === 0;
-    const position = getPlayerPosition(rank);
+    const position = getPlayerPosition(player);
+    const isLeader = position === "1" || position === "T1";
 
     return (
       <Card key={player.num} className="overflow-hidden">
@@ -452,7 +465,7 @@ export default function WolfLeaderboard() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {players.map((player, index) => renderPlayerCard(player, index))}
+        {players.map((player) => renderPlayerCard(player))}
       </div>
 
       <WolfBottomTabBar gameId={gameId!} />
