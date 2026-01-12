@@ -25,6 +25,14 @@ interface CourseHole {
   hole_number: number;
   par: number;
   stroke_index: number;
+  white_distance?: number | null;
+  yellow_distance?: number | null;
+  blue_distance?: number | null;
+  red_distance?: number | null;
+  black_distance?: number | null;
+  gold_distance?: number | null;
+  orange_distance?: number | null;
+  silver_distance?: number | null;
 }
 
 export default function ScramblePlay() {
@@ -102,7 +110,7 @@ export default function ScramblePlay() {
     if (gameData.course_id) {
       const { data: holesData } = await supabase
         .from('course_holes')
-        .select('hole_number, par, stroke_index')
+        .select('hole_number, par, stroke_index, white_distance, yellow_distance, blue_distance, red_distance, black_distance, gold_distance, orange_distance, silver_distance')
         .eq('course_id', gameData.course_id)
         .order('hole_number');
 
@@ -153,6 +161,17 @@ export default function ScramblePlay() {
     const hole = courseHoles.find(h => h.hole_number === currentHole);
     return hole?.stroke_index || currentHole;
   };
+
+  // Get hole distance from course data based on tee set
+  const getCurrentHoleDistance = (): number | undefined => {
+    const hole = courseHoles.find(h => h.hole_number === currentHole);
+    if (!hole) return undefined;
+    const tee = game?.tee_set?.toLowerCase() || 'white';
+    const distanceKey = `${tee}_distance` as keyof typeof hole;
+    const distance = hole[distanceKey];
+    return typeof distance === 'number' ? distance : undefined;
+  };
+  const holeDistance = getCurrentHoleDistance();
 
   const saveHole = async () => {
     if (!gameId) return;
