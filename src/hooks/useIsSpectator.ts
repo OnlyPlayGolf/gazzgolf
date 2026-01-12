@@ -139,8 +139,9 @@ export function useIsSpectator(
         const editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
         setIsEditWindowExpired(editWindowExpired);
 
-        // User is spectator if not a participant OR if edit window has expired
-        setIsSpectator(!isParticipant || editWindowExpired);
+        // User is spectator ONLY if not a participant
+        // The edit window expiry is tracked separately and should NOT make owners into spectators
+        setIsSpectator(!isParticipant);
       } catch (error) {
         console.error('Error checking spectator status:', error);
         setIsSpectator(true);
