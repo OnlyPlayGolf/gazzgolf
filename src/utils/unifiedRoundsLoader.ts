@@ -100,7 +100,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 4: best ball owned
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
@@ -168,12 +168,12 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const bestBallParticipantPromises = participantNames.flatMap((name) => [
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
       .contains("team_a_players", [{ name }])
       .then((r) => r),
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
       .contains("team_b_players", [{ name }])
       .then((r) => r),
   ]);
@@ -499,18 +499,31 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
         participantNames.includes(typeof p === 'string' ? p : p?.name)
       );
       
+      // Get match status (positive = team A winning, negative = team B winning)
+      const matchStatus = game.match_status || 0;
+      
       if (game.winner_team === null || game.winner_team === '') {
         matchResult = 'T';
-      } else if (userInTeamA) {
+        // No score displayed for ties
+      } else if (userInTeamA && !userInTeamB) {
         matchResult = game.winner_team === 'team_a' ? 'W' : 'L';
-      } else if (userInTeamB) {
+        // From Team A's perspective: positive status = UP, negative = DOWN
+        if (matchStatus !== 0) {
+          matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
+        }
+      } else if (userInTeamB && !userInTeamA) {
         matchResult = game.winner_team === 'team_b' ? 'W' : 'L';
+        // From Team B's perspective: invert the status
+        if (matchStatus !== 0) {
+          matchFinalScore = matchStatus < 0 ? `${Math.abs(matchStatus)} UP` : `${matchStatus} DOWN`;
+        }
       } else if (game.user_id === targetUserId) {
         // Owner defaults to team A
         matchResult = game.winner_team === 'team_a' ? 'W' : 'L';
+        if (matchStatus !== 0) {
+          matchFinalScore = matchStatus > 0 ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
+        }
       }
-      
-      matchFinalScore = game.final_result || null;
     }
 
     allRounds.push({
