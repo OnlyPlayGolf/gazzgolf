@@ -1294,6 +1294,36 @@ export type Database = {
         }
         Relationships: []
       }
+      player_game_stats_mode: {
+        Row: {
+          created_at: string | null
+          game_id: string
+          game_type: string
+          id: string
+          stats_mode: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          game_id: string
+          game_type: string
+          id?: string
+          stats_mode?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          game_id?: string
+          game_type?: string
+          id?: string
+          stats_mode?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       post_comments: {
         Row: {
           content: string

@@ -11,7 +11,10 @@ import { MatchPlayGame, MatchPlayHole } from "@/types/matchPlay";
 import { MatchPlayBottomTabBar } from "@/components/MatchPlayBottomTabBar";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
-import { InRoundStatsEntry, StatsMode } from "@/components/play/InRoundStatsEntry";
+import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
+import { StatsMode } from "@/components/play/StatsModeSelector";
+import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import {
   calculateHoleResult,
@@ -136,9 +139,18 @@ export default function MatchPlayPlay() {
   const [currentComment, setCurrentComment] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [statsSaved, setStatsSaved] = useState(false);
+  const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
   
   const config = createMatchPlayConfig(gameId || "");
   const [state, actions] = useGameScoring(config, navigate);
+  
+  // Per-player stats mode
+  const { 
+    statsMode: playerStatsMode, 
+    loading: statsModeLoading, 
+    saving: statsModeSaving,
+    setStatsMode: setPlayerStatsMode 
+  } = usePlayerStatsMode(gameId, 'match_play');
   
   const { game, holes, courseHoles, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
   const { setScores, saveHole, navigateHole, deleteGame } = actions;
@@ -157,15 +169,30 @@ export default function MatchPlayPlay() {
   };
   const holeDistance = getHoleDistance();
   
-  // Determine stats mode from game
-  const statsMode: StatsMode = (game?.stats_mode as StatsMode) || 'none';
-  
   // Get current user ID for stats entry
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
-    });
-  }, []);
+      
+      // Show stats mode dialog if user hasn't set their preference yet
+      if (user && !statsModeLoading && playerStatsMode === 'none') {
+        // Check if this is first load (no existing preference)
+        const { data } = await supabase
+          .from('player_game_stats_mode')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('game_id', gameId)
+          .eq('game_type', 'match_play')
+          .maybeSingle();
+        
+        if (!data) {
+          setShowStatsModeDialog(true);
+        }
+      }
+    };
+    loadUser();
+  }, [gameId, statsModeLoading]);
   
   // Reset stats saved when hole changes
   useEffect(() => {
@@ -207,8 +234,8 @@ export default function MatchPlayPlay() {
   // -1 means dash/conceded, which is also a valid entry
   const allPlayersEnteredCurrentHole = (scores.player1 > 0 || scores.player1 === -1) && (scores.player2 > 0 || scores.player2 === -1);
   
-  // Determine if stats need to be saved before advancing
-  const needsStats = statsMode !== 'none' && currentUserId === game?.user_id;
+  // Determine if stats need to be saved before advancing (using per-player stats mode)
+  const needsStats = playerStatsMode !== 'none' && currentUserId;
   const canAutoAdvance = allPlayersEnteredCurrentHole && !showScoreSheet && !showMoreSheet && !saving;
 
   // Auto-save and advance to next hole when all players have entered scores
@@ -425,10 +452,10 @@ export default function MatchPlayPlay() {
           </div>
         </Card>
 
-        {/* In-Round Stats Entry - only shown when score is entered */}
-        {allPlayersEnteredCurrentHole && statsMode !== 'none' && currentUserId === game.user_id && (
+        {/* In-Round Stats Entry - only shown when score is entered and player has enabled stats */}
+        {allPlayersEnteredCurrentHole && playerStatsMode !== 'none' && currentUserId && (
           <InRoundStatsEntry
-            statsMode={statsMode}
+            statsMode={playerStatsMode}
             roundId={gameId || ''}
             holeNumber={currentHole}
             par={par}
@@ -441,6 +468,14 @@ export default function MatchPlayPlay() {
             holeDistance={holeDistance}
           />
         )}
+        
+        {/* Stats Mode Selection Dialog */}
+        <PlayerStatsModeDialog
+          open={showStatsModeDialog}
+          onOpenChange={setShowStatsModeDialog}
+          onSelect={setPlayerStatsMode}
+          saving={statsModeSaving}
+        />
 
         {/* Score Sheet */}
         <PlayerScoreSheet
