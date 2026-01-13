@@ -149,6 +149,9 @@ const GroupDetail = () => {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [memberToPromote, setMemberToPromote] = useState<Member | null>(null);
+  const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingGroup, setDeletingGroup] = useState(false);
   
   // Manage group state
   const [editGroupName, setEditGroupName] = useState("");
@@ -909,6 +912,50 @@ useEffect(() => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!groupId || !canManageGroup) return;
+
+    setDeletingGroup(true);
+    try {
+      // Delete group members first (cascade should handle this, but be explicit)
+      await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId);
+
+      // Delete group invites
+      await supabase
+        .from('group_invites')
+        .delete()
+        .eq('group_id', groupId);
+
+      // Delete the group
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Group deleted",
+        description: "The group has been permanently deleted",
+      });
+
+      navigate('/profile');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete group",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingGroup(false);
+      setShowDeleteGroupDialog(false);
+      setDeleteConfirmText("");
     }
   };
 
@@ -1673,6 +1720,73 @@ useEffect(() => {
                 className="w-full"
               >
                 Cancel
+              </Button>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="border-t border-border pt-4 mt-4">
+              <p className="text-sm font-medium text-destructive mb-2">Danger Zone</p>
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={() => {
+                  setShowManageDialog(false);
+                  setShowDeleteGroupDialog(true);
+                }}
+              >
+                <Trash2 size={16} className="mr-2" />
+                Delete Group
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Group Confirmation Dialog */}
+      <Dialog open={showDeleteGroupDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowDeleteGroupDialog(false);
+          setDeleteConfirmText("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-destructive">Delete Group</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-muted-foreground">
+              This action cannot be undone. This will permanently delete the group <span className="font-semibold text-foreground">"{group?.name}"</span> and remove all members.
+            </p>
+            <div>
+              <Label htmlFor="delete-confirm" className="text-foreground">
+                Type <span className="font-mono font-semibold">DELETE</span> to confirm
+              </Label>
+              <Input
+                id="delete-confirm"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="mt-1.5"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowDeleteGroupDialog(false);
+                  setDeleteConfirmText("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={handleDeleteGroup}
+                disabled={deletingGroup || deleteConfirmText !== "DELETE"}
+              >
+                {deletingGroup ? "Deleting..." : "Delete Group"}
               </Button>
             </div>
           </div>
