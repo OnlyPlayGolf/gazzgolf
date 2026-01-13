@@ -189,10 +189,10 @@ const ProfileSettings = () => {
         <Card className="mb-4">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center">
-              <div className="relative mb-4">
+              <label htmlFor="avatar-upload" className="relative mb-4 cursor-pointer group">
                 <Avatar className="h-24 w-24">
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Profile" className="object-cover" />
+                    <img src={profile.avatar_url} alt="Profile" className="h-full w-full object-cover" />
                   ) : (
                     <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
                       {profile?.display_name ? profile.display_name.charAt(0).toUpperCase() : 
@@ -200,21 +200,18 @@ const ProfileSettings = () => {
                     </AvatarFallback>
                   )}
                 </Avatar>
-                <label 
-                  htmlFor="avatar-upload" 
-                  className="absolute bottom-0 right-0 p-2 bg-primary rounded-full cursor-pointer hover:bg-primary/90 transition-colors"
-                >
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    disabled={uploadingAvatar}
-                    className="hidden"
-                  />
+                <div className="absolute bottom-0 right-0 p-2 bg-primary rounded-full group-hover:bg-primary/90 transition-colors">
                   <Camera size={14} className="text-primary-foreground" />
-                </label>
-              </div>
+                </div>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                />
+              </label>
               <p className="text-sm text-muted-foreground">
                 {uploadingAvatar ? "Uploading..." : "Tap to change photo"}
               </p>

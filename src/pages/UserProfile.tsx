@@ -394,24 +394,13 @@ export default function UserProfile() {
 
         {/* Profile photo */}
         <div className="flex flex-col items-center">
-          <div className="relative">
-            <ProfilePhoto
-              src={profile.avatar_url}
-              alt={displayName}
-              fallback={displayName}
-              size="2xl"
-              className="border-4 border-background shadow-lg"
-            />
-            <label className="absolute bottom-0 right-0 h-10 w-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
-              <Camera size={20} className="text-primary-foreground" />
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-            </label>
-          </div>
+          <ProfilePhoto
+            src={profile.avatar_url}
+            alt={displayName}
+            fallback={displayName}
+            size="2xl"
+            className="border-4 border-background shadow-lg"
+          />
         </div>
       </div>
 
