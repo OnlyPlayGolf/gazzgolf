@@ -25,6 +25,16 @@ interface Member {
   avatar_url: string | null;
 }
 
+// Helper to determine if user is a coach (owner or admin)
+const isCoachRole = (role: 'owner' | 'admin' | 'member' | null): boolean => {
+  return role === 'owner' || role === 'admin';
+};
+
+// Get display role label
+const getDisplayRole = (role: 'owner' | 'admin' | 'member'): string => {
+  return role === 'owner' || role === 'admin' ? 'Coach' : 'Player';
+};
+
 interface Friend {
   id: string;
   username: string | null;
@@ -137,6 +147,8 @@ const GroupDetail = () => {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showManageDialog, setShowManageDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
+  const [memberToPromote, setMemberToPromote] = useState<Member | null>(null);
   
   // Manage group state
   const [editGroupName, setEditGroupName] = useState("");
@@ -833,7 +845,72 @@ useEffect(() => {
     }
   };
 
-  const canAddMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
+  const canAddMembers = isCoachRole(currentUserRole);
+  const canManageGroup = isCoachRole(currentUserRole);
+  const canRemoveMembers = isCoachRole(currentUserRole);
+  const canPromoteMembers = isCoachRole(currentUserRole);
+
+  const handleRemoveMember = async (member: Member) => {
+    if (!groupId || !canRemoveMembers) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', member.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Member removed",
+        description: `${member.display_name || member.username || 'Member'} has been removed from the group`,
+      });
+
+      setMemberToRemove(null);
+      await loadMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove member",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePromoteMember = async (member: Member) => {
+    if (!groupId || !canPromoteMembers) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .update({ role: 'admin' })
+        .eq('group_id', groupId)
+        .eq('user_id', member.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Member promoted",
+        description: `${member.display_name || member.username || 'Member'} is now a Coach`,
+      });
+
+      setMemberToPromote(null);
+      await loadMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to promote member",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Populate edit fields when manage dialog opens
   useEffect(() => {
@@ -893,8 +970,7 @@ useEffect(() => {
   };
 
   const getRoleIcon = (role: string) => {
-    if (role === 'owner') return <Crown size={16} className="text-yellow-500" />;
-    if (role === 'admin') return <Shield size={16} className="text-blue-500" />;
+    if (role === 'owner' || role === 'admin') return <Crown size={16} className="text-yellow-500" />;
     return null;
   };
 
@@ -969,18 +1045,20 @@ useEffect(() => {
                 Members
               </Button>
               
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3"
-                onClick={() => {
-                  loadFriendsForAdding();
-                  loadCurrentInvite();
-                  setShowInviteDialog(true);
-                }}
-              >
-                <UserPlus size={20} />
-                Invite Friends
-              </Button>
+              {canAddMembers && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                  onClick={() => {
+                    loadFriendsForAdding();
+                    loadCurrentInvite();
+                    setShowInviteDialog(true);
+                  }}
+                >
+                  <UserPlus size={20} />
+                  Invite Friends
+                </Button>
+              )}
               
               <Button
                 variant="outline"
@@ -994,14 +1072,16 @@ useEffect(() => {
                 Message
               </Button>
               
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3"
-                onClick={() => setShowManageDialog(true)}
-              >
-                <Settings size={20} />
-                Manage
-              </Button>
+              {canManageGroup && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                  onClick={() => setShowManageDialog(true)}
+                >
+                  <Settings size={20} />
+                  Manage
+                </Button>
+              )}
               
               {currentUserRole !== 'owner' && (
                 <Button
@@ -1224,12 +1304,99 @@ useEffect(() => {
                 </div>
                 <div className="flex items-center gap-2">
                   {getRoleIcon(member.role)}
-                  <Badge variant={member.role === 'owner' ? 'default' : 'secondary'}>
-                    {member.role}
+                  <Badge variant={isCoachRole(member.role) ? 'default' : 'secondary'}>
+                    {getDisplayRole(member.role)}
                   </Badge>
+                  {/* Promote to Coach button - only show for non-coaches, and only to coaches */}
+                  {canPromoteMembers && !isCoachRole(member.role) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMemberToPromote(member);
+                      }}
+                      title="Promote to Coach"
+                    >
+                      <Crown size={16} />
+                    </Button>
+                  )}
+                  {/* Remove member button - only show to coaches, not for owner */}
+                  {canRemoveMembers && member.role !== 'owner' && member.user_id !== user?.id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMemberToRemove(member);
+                      }}
+                      title="Remove member"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Remove Member Dialog */}
+      <Dialog open={!!memberToRemove} onOpenChange={(open) => !open && setMemberToRemove(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove Member</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Are you sure you want to remove <span className="font-medium text-foreground">{memberToRemove?.display_name || memberToRemove?.username || 'this member'}</span> from the group?
+          </p>
+          <div className="flex gap-2 pt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setMemberToRemove(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => memberToRemove && handleRemoveMember(memberToRemove)}
+              disabled={loading}
+            >
+              {loading ? "Removing..." : "Remove"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Promote Member Dialog */}
+      <Dialog open={!!memberToPromote} onOpenChange={(open) => !open && setMemberToPromote(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Promote to Coach</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Are you sure you want to promote <span className="font-medium text-foreground">{memberToPromote?.display_name || memberToPromote?.username || 'this member'}</span> to Coach? They will be able to manage the group, add members, and remove members.
+          </p>
+          <div className="flex gap-2 pt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setMemberToPromote(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={() => memberToPromote && handlePromoteMember(memberToPromote)}
+              disabled={loading}
+            >
+              {loading ? "Promoting..." : "Promote"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -745,7 +745,7 @@ const Profile = () => {
                           {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
                         </p>
                         <Badge variant="outline" className="text-xs">
-                          {group.role}
+                          {group.role === 'owner' || group.role === 'admin' ? 'Coach' : 'Player'}
                         </Badge>
                       </div>
 
