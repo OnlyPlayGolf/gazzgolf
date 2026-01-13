@@ -990,17 +990,6 @@ export default function RoundsPlay() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-0">
-                {/* Tee Color */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Default Tee</Label>
-                  <TeeSelector
-                    value={setupState.teeColor}
-                    onValueChange={handleDefaultTeeChange}
-                    teeCount={teeCount}
-                    courseTeeNames={courseTeeNames}
-                  />
-                </div>
-
                 {/* Game Format */}
                 <div className="space-y-3">
                   <Label className="text-xs">Game Format</Label>

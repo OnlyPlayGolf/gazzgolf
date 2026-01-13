@@ -311,20 +311,6 @@ export default function SkinsSetup() {
               </div>
             </div>
 
-            {/* Default Tee */}
-            <div className="space-y-2">
-              <Label>Default Tee Box</Label>
-              <TeeSelector
-                value={teeColor}
-                onValueChange={(v) => {
-                  setTeeColor(v);
-                  setPlayers(prev => prev.map(p => ({ ...p, teeColor: v })));
-                }}
-                teeCount={teeCount}
-                courseTeeNames={courseTeeNames}
-              />
-            </div>
-
             {/* Skin Value */}
             <div className="space-y-2">
               <Label>Skin Value</Label>

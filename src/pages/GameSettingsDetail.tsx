@@ -906,17 +906,6 @@ export default function GameSettingsDetail() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-0">
-                {/* Default Tee */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Default Tee</Label>
-                  <TeeSelector
-                    value={defaultTee}
-                    onValueChange={handleDefaultTeeChange}
-                    teeCount={5}
-                    courseTeeNames={courseTeeNames}
-                  />
-                </div>
-
                 {/* Game Format */}
                 <div className="space-y-3">
                   <Label className="text-xs">Game Format</Label>
