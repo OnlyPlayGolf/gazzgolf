@@ -10,9 +10,6 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
-import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
-import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
-import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import {
   Table,
@@ -45,11 +42,9 @@ export default function ScrambleLeaderboard() {
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
-  const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
-  const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'scramble');
   const { isAdmin } = useGameAdminStatus('scramble', gameId);
 
   useEffect(() => {
@@ -435,25 +430,8 @@ export default function ScrambleLeaderboard() {
         gameName="Scramble Game"
       />
 
-      <LeaderboardModeTabs
-        primaryLabel="Scramble"
-        activeMode={leaderboardMode}
-        onModeChange={setLeaderboardMode}
-        strokePlayEnabled={strokePlayEnabled}
-      />
-
       <div className="max-w-4xl mx-auto p-4 space-y-4">
-        {leaderboardMode === 'stroke_play' ? (
-          <StrokePlayLeaderboardView
-            players={strokePlayPlayers}
-            courseHoles={courseHoles}
-            isSpectator={isSpectator}
-            gameId={gameId}
-            gameType="scramble"
-          />
-        ) : (
-          teamScores.map((ts, index) => renderTeamCard(ts, index))
-        )}
+        {teamScores.map((ts, index) => renderTeamCard(ts, index))}
       </div>
 
       {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
