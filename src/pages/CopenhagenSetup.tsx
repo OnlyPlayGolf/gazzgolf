@@ -293,26 +293,6 @@ export default function CopenhagenSetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Default Tee */}
-            <div className="space-y-2">
-              <Label>Default Tee</Label>
-              <Select value={defaultTee} onValueChange={setDefaultTee}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select default tee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STANDARD_TEE_OPTIONS.map((tee) => (
-                    <SelectItem key={tee.value} value={tee.value}>
-                      {tee.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Default tee for new players
-              </p>
-            </div>
-
             {/* Use Handicaps toggle */}
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div className="space-y-0.5">
