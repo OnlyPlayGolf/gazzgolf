@@ -194,9 +194,7 @@ export default function CopenhagenLeaderboard() {
               <div className="text-3xl font-bold">
                 {player.points}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {isLeader ? 'LEADING' : 'POINTS'}
-              </div>
+              <div className="text-sm text-muted-foreground">POINTS</div>
             </div>
           </div>
         </div>
