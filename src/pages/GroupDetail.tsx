@@ -1429,7 +1429,7 @@ useEffect(() => {
                       <Crown size={16} />
                     </Button>
                   )}
-                  {/* Demote to Player button - only owner can demote admins */}
+                  {/* Demote to Player button - only owner can demote admins, using crown icon */}
                   {currentUserRole === 'owner' && member.role === 'admin' && (
                     <Button
                       variant="ghost"
@@ -1441,7 +1441,7 @@ useEffect(() => {
                       }}
                       title="Demote to Player"
                     >
-                      <Shield size={16} />
+                      <Crown size={16} />
                     </Button>
                   )}
                   {/* Remove member button - only show to coaches, not for owner */}
