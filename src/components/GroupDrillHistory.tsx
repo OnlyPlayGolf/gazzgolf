@@ -76,11 +76,12 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
   useEffect(() => {
     const fetchGroupHistory = async () => {
       try {
-        // Get all group members
+        // Get all group members with their roles
         const { data: groupMembers } = await supabase
           .from('group_members')
           .select(`
             user_id,
+            role,
             profiles!inner(display_name, username, avatar_url)
           `)
           .eq('group_id', groupId);
@@ -90,8 +91,11 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
           return;
         }
 
-        const memberIds = groupMembers.map(m => m.user_id);
-        const memberProfiles = groupMembers.map((m: any) => ({
+        // Filter out coaches (owner/admin) - only show players in history
+        const playerMembers = groupMembers.filter((m: any) => m.role === 'member');
+        
+        const memberIds = playerMembers.map(m => m.user_id);
+        const memberProfiles = playerMembers.map((m: any) => ({
           user_id: m.user_id,
           display_name: m.profiles.display_name,
           username: m.profiles.username,

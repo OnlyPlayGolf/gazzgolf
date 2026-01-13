@@ -347,10 +347,10 @@ useEffect(() => {
         return;
       }
 
-      // Get all group members
+      // Get all group members - exclude coaches (owner/admin)
       const { data: groupMembers } = await supabase
         .from('group_members')
-        .select('user_id')
+        .select('user_id, role')
         .eq('group_id', groupId);
 
       if (!groupMembers || groupMembers.length === 0) {
@@ -359,7 +359,9 @@ useEffect(() => {
         return;
       }
 
-      const memberIds = groupMembers.map(m => m.user_id);
+      // Filter out coaches (owners and admins) - only players appear on leaderboard
+      const playerMembers = groupMembers.filter(m => m.role === 'member');
+      const memberIds = playerMembers.map(m => m.user_id);
 
       // Get best scores for all group members
       const { data: memberScores } = await supabase
@@ -438,7 +440,24 @@ useEffect(() => {
         console.error('Error loading group levels leaderboard:', error);
         setGroupLevelsLeaderboard([]);
       } else {
-        setGroupLevelsLeaderboard(data || []);
+        // Get coach user IDs to filter them out
+        const { data: groupMembers } = await supabase
+          .from('group_members')
+          .select('user_id, role')
+          .eq('group_id', groupId);
+        
+        const coachIds = new Set(
+          (groupMembers || [])
+            .filter(m => m.role === 'owner' || m.role === 'admin')
+            .map(m => m.user_id)
+        );
+        
+        // Filter out coaches from the leaderboard
+        const filteredData = (data || []).filter(
+          (entry: GroupLevelLeaderboardEntry) => !coachIds.has(entry.user_id)
+        );
+        
+        setGroupLevelsLeaderboard(filteredData);
       }
     } catch (e) {
       console.error('Error loading group levels leaderboard:', e);
