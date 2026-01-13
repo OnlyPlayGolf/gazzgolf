@@ -13,7 +13,7 @@ import { parseHandicap } from "@/lib/utils";
 import { SetupPlayerCard } from "@/components/play/SetupPlayerCard";
 import { SetupPlayerEditSheet } from "@/components/play/SetupPlayerEditSheet";
 import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
-import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
+import { getDefaultTeeFromPreferences, getDefaultTeeForCourse } from "@/utils/teeSystem";
 import { PlayerGroup } from "@/types/playSetup";
 import { validateAllGroupsForFormat, getFormatPlayerRequirementText } from "@/utils/groupValidation";
 
@@ -91,11 +91,18 @@ export default function StrokePlaySetup() {
       
       // Load course from sessionStorage
       const savedCourse = sessionStorage.getItem('selectedCourse');
+      let availableTees: string[] = [];
       if (savedCourse) {
         const course = JSON.parse(savedCourse);
         setSelectedCourse(course);
         if (course.tee_names) {
           setCourseTeeNames(course.tee_names);
+          // Extract available tee names
+          if (Array.isArray(course.tee_names)) {
+            availableTees = course.tee_names;
+          } else {
+            availableTees = Object.keys(course.tee_names);
+          }
         }
       }
       
@@ -105,10 +112,13 @@ export default function StrokePlaySetup() {
         setSelectedHoles(savedHoles as "18" | "front9" | "back9");
       }
       
-      // Load tee color
+      // Load tee color - use course-aware default if no saved value
       const savedTee = sessionStorage.getItem('userTeeColor');
       if (savedTee) {
         setTeeColor(savedTee);
+      } else if (availableTees.length > 0) {
+        // Apply user's preferred tee mapped to available course tees
+        setTeeColor(getDefaultTeeForCourse(availableTees));
       }
 
       // Load round name

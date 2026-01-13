@@ -269,6 +269,7 @@ export const DEFAULT_MEN_TEE = "long";
 
 /**
  * Get user's preferred default tee from app preferences
+ * Returns the raw preference value (longest, long, medium, short, shortest)
  */
 export function getDefaultTeeFromPreferences(): string {
   try {
@@ -283,6 +284,68 @@ export function getDefaultTeeFromPreferences(): string {
     console.error("Error reading app preferences for tee:", e);
   }
   return DEFAULT_MEN_TEE;
+}
+
+/**
+ * Map a difficulty-based preference to an actual available tee for a course
+ * This picks the correct tee based on position (longest = first, shortest = last)
+ */
+export function mapPreferenceToAvailableTee(
+  preference: string,
+  availableTees: string[]
+): string {
+  if (!availableTees || availableTees.length === 0) {
+    // Fall back to color mapping if no available tees
+    const difficultyToColor: Record<string, string> = {
+      "longest": "black",
+      "long": "blue", 
+      "medium": "white",
+      "short": "yellow",
+      "shortest": "red",
+    };
+    return difficultyToColor[preference.toLowerCase()] || "blue";
+  }
+
+  const lower = preference.toLowerCase();
+  const total = availableTees.length;
+
+  // Map preference to position index
+  if (lower === "longest") {
+    return availableTees[0].toLowerCase();
+  }
+  if (lower === "shortest") {
+    return availableTees[total - 1].toLowerCase();
+  }
+  if (lower === "long") {
+    // Second from longest, or first if only 2
+    return availableTees[Math.min(1, total - 1)].toLowerCase();
+  }
+  if (lower === "short") {
+    // Second from shortest, or last if only 2
+    return availableTees[Math.max(0, total - 2)].toLowerCase();
+  }
+  if (lower === "medium") {
+    // Middle tee
+    return availableTees[Math.floor(total / 2)].toLowerCase();
+  }
+
+  // If preference is already a color/tee name, check if it exists
+  const matchingTee = availableTees.find(t => t.toLowerCase() === lower);
+  if (matchingTee) {
+    return matchingTee.toLowerCase();
+  }
+
+  // Default to middle
+  return availableTees[Math.floor(total / 2)].toLowerCase();
+}
+
+/**
+ * Get the default tee for a course based on user preference
+ * Combines getDefaultTeeFromPreferences with mapPreferenceToAvailableTee
+ */
+export function getDefaultTeeForCourse(availableTees: string[]): string {
+  const preference = getDefaultTeeFromPreferences();
+  return mapPreferenceToAvailableTee(preference, availableTees);
 }
 
 /**
