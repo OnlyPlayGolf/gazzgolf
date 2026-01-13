@@ -1065,8 +1065,24 @@ useEffect(() => {
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    if (role === 'owner' || role === 'admin') return <Crown size={16} className="text-yellow-500" />;
+  const getRoleIcon = (role: string, member?: Member) => {
+    if (role === 'owner') return <Crown size={16} className="text-yellow-500" />;
+    if (role === 'admin') {
+      // If current user is owner, make the crown clickable to demote
+      if (currentUserRole === 'owner' && member) {
+        return (
+          <Crown 
+            size={16} 
+            className="text-yellow-500 cursor-pointer hover:text-orange-500 transition-colors" 
+            onClick={(e) => {
+              e.stopPropagation();
+              setMemberToDemote(member);
+            }}
+          />
+        );
+      }
+      return <Crown size={16} className="text-yellow-500" />;
+    }
     return null;
   };
 
@@ -1410,7 +1426,7 @@ useEffect(() => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {getRoleIcon(member.role)}
+                  {getRoleIcon(member.role, member)}
                   <Badge variant={isCoachRole(member.role) ? 'default' : 'secondary'}>
                     {getDisplayRole(member.role)}
                   </Badge>
@@ -1425,21 +1441,6 @@ useEffect(() => {
                         setMemberToPromote(member);
                       }}
                       title="Promote to Coach"
-                    >
-                      <Crown size={16} />
-                    </Button>
-                  )}
-                  {/* Demote to Player button - only owner can demote admins, using crown icon */}
-                  {currentUserRole === 'owner' && member.role === 'admin' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-orange-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMemberToDemote(member);
-                      }}
-                      title="Demote to Player"
                     >
                       <Crown size={16} />
                     </Button>
