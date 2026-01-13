@@ -333,7 +333,7 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
                       </span>
                     </div>
                     <span className="text-lg font-bold text-foreground">
-                      {result.total_points} {drillTitle === "TW's 9 Windows Test" || drillTitle === "18 Up & Downs" ? 'shots' : 'points'}
+                      {result.total_points} {drillTitle === "TW's 9 Windows Test" || drillTitle === "18 Up & Downs" ? 'shots' : drillTitle === "Aggressive Putting" ? 'putts' : 'points'}
                     </span>
                   </div>
                 </AccordionTrigger>
