@@ -263,24 +263,12 @@ export function calculateTeeHandicapAdjustment(
 export const DEFAULT_TEE_OPTIONS = getStandardTeeOptions(5);
 
 /**
- * Default tee for men (second farthest) - color-based for database compatibility
+ * Default tee for men (second farthest)
  */
-export const DEFAULT_MEN_TEE = "blue";
-
-/**
- * Map legacy difficulty-based tee values to color-based values
- */
-const DIFFICULTY_TO_COLOR_MAP: Record<string, string> = {
-  "longest": "black",
-  "long": "blue",
-  "medium": "white",
-  "short": "yellow",
-  "shortest": "red",
-};
+export const DEFAULT_MEN_TEE = "long";
 
 /**
  * Get user's preferred default tee from app preferences
- * Returns color-based tee value for database compatibility
  */
 export function getDefaultTeeFromPreferences(): string {
   try {
@@ -288,12 +276,7 @@ export function getDefaultTeeFromPreferences(): string {
     if (savedPrefs) {
       const prefs = JSON.parse(savedPrefs);
       if (prefs.defaultTee) {
-        const tee = prefs.defaultTee;
-        // Normalize legacy difficulty-based values to color-based
-        if (DIFFICULTY_TO_COLOR_MAP[tee]) {
-          return DIFFICULTY_TO_COLOR_MAP[tee];
-        }
-        return tee;
+        return prefs.defaultTee;
       }
     }
   } catch (e) {
