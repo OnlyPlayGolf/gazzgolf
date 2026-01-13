@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Target, Flag, Users } from "lucide-react";
-import { DEFAULT_TEE_OPTIONS } from "@/utils/teeSystem";
+import { STANDARD_TEE_OPTIONS, DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,17 +17,29 @@ const SettingsAppPreferences = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Ensure all expected keys exist with fallbacks
+        // Normalize legacy difficulty-based tee values to color-based
+        let defaultTee = parsed.defaultTee || DEFAULT_MEN_TEE;
+        const difficultyToColorMap: Record<string, string> = {
+          'longest': 'black',
+          'long': 'blue',
+          'medium': 'white',
+          'short': 'yellow',
+          'shortest': 'red',
+        };
+        if (difficultyToColorMap[defaultTee]) {
+          defaultTee = difficultyToColorMap[defaultTee];
+        }
+        
         return {
           defaultGameFormat: parsed.defaultGameFormat || 'stroke-play',
-          defaultTee: parsed.defaultTee || 'medium',
+          defaultTee: defaultTee,
           defaultHoles: parsed.defaultHoles || '18',
           defaultScoring: parsed.defaultScoring || 'gross'
         };
       } catch {
         return {
           defaultGameFormat: 'stroke-play',
-          defaultTee: 'medium',
+          defaultTee: DEFAULT_MEN_TEE,
           defaultHoles: '18',
           defaultScoring: 'gross'
         };
@@ -35,7 +47,7 @@ const SettingsAppPreferences = () => {
     }
     return {
       defaultGameFormat: 'stroke-play',
-      defaultTee: 'medium',
+      defaultTee: DEFAULT_MEN_TEE,
       defaultHoles: '18',
       defaultScoring: 'gross'
     };
@@ -150,7 +162,7 @@ const SettingsAppPreferences = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DEFAULT_TEE_OPTIONS.map((tee) => (
+                    {STANDARD_TEE_OPTIONS.map((tee) => (
                       <SelectItem key={tee.value} value={tee.value}>
                         {tee.label}
                       </SelectItem>
