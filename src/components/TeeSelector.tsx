@@ -58,8 +58,11 @@ export function TeeSelector({
   // Get appropriate options based on course tee names or default
   const options = getOptions(courseTeeNames);
   
+  // Extract available tee names for normalization
+  const availableTees = options.map(opt => opt.value);
+  
   // Normalize value to ensure it matches an option
-  const normalizedValue = normalizeValue(value);
+  const normalizedValue = normalizeValue(value, availableTees);
   
   // Get display name for current value
   const displayName = getDisplayName(normalizedValue, courseTeeNames);
@@ -144,7 +147,7 @@ function getOptions(courseTeeNames?: Record<string, string> | string[] | null): 
 }
 
 // Normalize legacy values (difficulty-based) to color-based system
-export function normalizeValue(value: string): string {
+export function normalizeValue(value: string, availableTees?: string[]): string {
   if (!value) return "";
   
   const lower = value.toLowerCase();
@@ -154,7 +157,24 @@ export function normalizeValue(value: string): string {
     return lower;
   }
   
-  // Map legacy difficulty names to colors
+  // If we have available tees, map difficulty preference to actual tee
+  if (availableTees && availableTees.length > 0) {
+    const difficultyPreferences = ["longest", "long", "medium", "short", "shortest"];
+    if (difficultyPreferences.includes(lower)) {
+      const total = availableTees.length;
+      if (lower === "longest") return availableTees[0].toLowerCase();
+      if (lower === "shortest") return availableTees[total - 1].toLowerCase();
+      if (lower === "long") return availableTees[Math.min(1, total - 1)].toLowerCase();
+      if (lower === "short") return availableTees[Math.max(0, total - 2)].toLowerCase();
+      if (lower === "medium") return availableTees[Math.floor(total / 2)].toLowerCase();
+    }
+    
+    // Check if the value matches an available tee
+    const matchingTee = availableTees.find(t => t.toLowerCase() === lower);
+    if (matchingTee) return matchingTee.toLowerCase();
+  }
+  
+  // Map legacy difficulty names to colors (fallback)
   const difficultyMap: Record<string, string> = {
     "longest": "black",
     "long": "blue",
