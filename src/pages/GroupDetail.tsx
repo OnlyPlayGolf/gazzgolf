@@ -1129,11 +1129,22 @@ useEffect(() => {
                   Manage
                 </Button>
               )}
-              
-              {currentUserRole !== 'owner' && (
+
+              {canManageGroup && (
                 <Button
                   variant="destructive"
                   className="w-full justify-start gap-3"
+                  onClick={() => setShowDeleteGroupDialog(true)}
+                >
+                  <Trash2 size={20} />
+                  Delete Group
+                </Button>
+              )}
+              
+              {currentUserRole !== 'owner' && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-3 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
                   onClick={handleLeaveGroup}
                   disabled={loading}
                 >
@@ -1723,21 +1734,6 @@ useEffect(() => {
               </Button>
             </div>
 
-            {/* Danger Zone */}
-            <div className="border-t border-border pt-4 mt-4">
-              <p className="text-sm font-medium text-destructive mb-2">Danger Zone</p>
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={() => {
-                  setShowManageDialog(false);
-                  setShowDeleteGroupDialog(true);
-                }}
-              >
-                <Trash2 size={16} className="mr-2" />
-                Delete Group
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
