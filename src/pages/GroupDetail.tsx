@@ -149,8 +149,8 @@ const GroupDetail = () => {
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [memberToPromote, setMemberToPromote] = useState<Member | null>(null);
+  const [memberToDemote, setMemberToDemote] = useState<Member | null>(null);
   const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deletingGroup, setDeletingGroup] = useState(false);
   
   // Manage group state
@@ -934,6 +934,37 @@ useEffect(() => {
     }
   };
 
+  const handleDemoteMember = async (member: Member) => {
+    if (!groupId || currentUserRole !== 'owner') return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('group_members')
+        .update({ role: 'member' })
+        .eq('group_id', groupId)
+        .eq('user_id', member.user_id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Member demoted",
+        description: `${member.display_name || member.username || 'Member'} is now a Player`,
+      });
+
+      setMemberToDemote(null);
+      await loadMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to demote member",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteGroup = async () => {
     if (!groupId || !canManageGroup) return;
 
@@ -974,7 +1005,6 @@ useEffect(() => {
     } finally {
       setDeletingGroup(false);
       setShowDeleteGroupDialog(false);
-      setDeleteConfirmText("");
     }
   };
 
@@ -1399,6 +1429,21 @@ useEffect(() => {
                       <Crown size={16} />
                     </Button>
                   )}
+                  {/* Demote to Player button - only owner can demote admins */}
+                  {currentUserRole === 'owner' && member.role === 'admin' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-orange-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMemberToDemote(member);
+                      }}
+                      title="Demote to Player"
+                    >
+                      <Shield size={16} />
+                    </Button>
+                  )}
                   {/* Remove member button - only show to coaches, not for owner */}
                   {canRemoveMembers && member.role !== 'owner' && member.user_id !== user?.id && (
                     <Button
@@ -1473,6 +1518,35 @@ useEffect(() => {
               disabled={loading}
             >
               {loading ? "Promoting..." : "Promote"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Demote Member Dialog */}
+      <Dialog open={!!memberToDemote} onOpenChange={(open) => !open && setMemberToDemote(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Demote to Player</DialogTitle>
+          </DialogHeader>
+          <p className="text-muted-foreground">
+            Are you sure you want to demote <span className="font-medium text-foreground">{memberToDemote?.display_name || memberToDemote?.username || 'this member'}</span> to Player? They will no longer be able to manage the group.
+          </p>
+          <div className="flex gap-2 pt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setMemberToDemote(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => memberToDemote && handleDemoteMember(memberToDemote)}
+              disabled={loading}
+            >
+              {loading ? "Demoting..." : "Demote"}
             </Button>
           </div>
         </DialogContent>
@@ -1758,12 +1832,7 @@ useEffect(() => {
       </Dialog>
 
       {/* Delete Group Confirmation Dialog */}
-      <Dialog open={showDeleteGroupDialog} onOpenChange={(open) => {
-        if (!open) {
-          setShowDeleteGroupDialog(false);
-          setDeleteConfirmText("");
-        }
-      }}>
+      <Dialog open={showDeleteGroupDialog} onOpenChange={setShowDeleteGroupDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-destructive">Delete Group</DialogTitle>
@@ -1772,26 +1841,11 @@ useEffect(() => {
             <p className="text-muted-foreground">
               This action cannot be undone. This will permanently delete the group <span className="font-semibold text-foreground">"{group?.name}"</span> and remove all members.
             </p>
-            <div>
-              <Label htmlFor="delete-confirm" className="text-foreground">
-                Type <span className="font-mono font-semibold">DELETE</span> to confirm
-              </Label>
-              <Input
-                id="delete-confirm"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="DELETE"
-                className="mt-1.5"
-              />
-            </div>
             <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => {
-                  setShowDeleteGroupDialog(false);
-                  setDeleteConfirmText("");
-                }}
+                onClick={() => setShowDeleteGroupDialog(false)}
               >
                 Cancel
               </Button>
@@ -1799,7 +1853,7 @@ useEffect(() => {
                 variant="destructive"
                 className="flex-1"
                 onClick={handleDeleteGroup}
-                disabled={deletingGroup || deleteConfirmText !== "DELETE"}
+                disabled={deletingGroup}
               >
                 {deletingGroup ? "Deleting..." : "Delete Group"}
               </Button>
