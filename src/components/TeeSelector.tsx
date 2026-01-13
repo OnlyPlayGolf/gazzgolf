@@ -41,8 +41,8 @@ interface TeeSelectorProps {
   triggerClassName?: string;
   placeholder?: string;
   disabled?: boolean;
-  /** Course-specific tee names from database, e.g., {"black": "Black", "blue": "Blue", "white": "Combo"} */
-  courseTeeNames?: Record<string, string> | null;
+  /** Course-specific tee names from database - can be array ["Black", "Blue"] or object {"black": "Black"} */
+  courseTeeNames?: Record<string, string> | string[] | null;
 }
 
 export function TeeSelector({
@@ -82,18 +82,37 @@ export function TeeSelector({
   );
 }
 
-function getOptions(courseTeeNames?: Record<string, string> | null): { value: string; label: string }[] {
-  if (!courseTeeNames) {
+// Normalize courseTeeNames to Record<string, string> format
+function normalizeCourseTeeNames(courseTeeNames?: Record<string, string> | string[] | null): Record<string, string> | null {
+  if (!courseTeeNames) return null;
+  
+  // If it's an array, convert to Record
+  if (Array.isArray(courseTeeNames)) {
+    const normalized: Record<string, string> = {};
+    courseTeeNames.forEach((name: string) => {
+      normalized[name.toLowerCase()] = name;
+    });
+    return normalized;
+  }
+  
+  // Already a Record
+  return courseTeeNames;
+}
+
+function getOptions(courseTeeNames?: Record<string, string> | string[] | null): { value: string; label: string }[] {
+  const normalizedNames = normalizeCourseTeeNames(courseTeeNames);
+  
+  if (!normalizedNames) {
     return STANDARD_TEE_ORDER.map(key => ({
       value: key,
       label: DEFAULT_TEE_NAMES[key] || key,
     }));
   }
   
-  // Normalize course tee names to lowercase keys for matching
-  const normalizedNames: Record<string, string> = {};
-  Object.entries(courseTeeNames).forEach(([key, value]) => {
-    normalizedNames[key.toLowerCase()] = value;
+  // Normalize keys to lowercase for matching
+  const lowerCaseNames: Record<string, string> = {};
+  Object.entries(normalizedNames).forEach(([key, value]) => {
+    lowerCaseNames[key.toLowerCase()] = value;
   });
   
   // Build options from course tee names, maintaining standard order for known tees
@@ -101,20 +120,25 @@ function getOptions(courseTeeNames?: Record<string, string> | null): { value: st
   
   // First add tees in standard order
   STANDARD_TEE_ORDER.forEach(key => {
-    if (normalizedNames[key]) {
+    if (lowerCaseNames[key]) {
       orderedOptions.push({
         value: key,
-        label: normalizedNames[key],
+        label: lowerCaseNames[key],
       });
     }
   });
   
   // Then add any custom tees not in standard order
-  Object.entries(normalizedNames).forEach(([key, label]) => {
+  Object.entries(lowerCaseNames).forEach(([key, label]) => {
     if (!STANDARD_TEE_ORDER.includes(key) && !orderedOptions.some(opt => opt.value === key)) {
       orderedOptions.push({ value: key, label });
     }
   });
+  
+  // If no options were matched (all custom names), just return all of them
+  if (orderedOptions.length === 0) {
+    return Object.entries(lowerCaseNames).map(([key, label]) => ({ value: key, label }));
+  }
   
   return orderedOptions;
 }
@@ -142,23 +166,25 @@ export function normalizeValue(value: string): string {
   return difficultyMap[lower] || DEFAULT_MEN_TEE;
 }
 
-function getDisplayName(value: string, courseTeeNames?: Record<string, string> | null): string {
+function getDisplayName(value: string, courseTeeNames?: Record<string, string> | string[] | null): string {
   if (!value) return "";
   
-  if (courseTeeNames) {
-    // Normalize course tee names to lowercase keys for matching
-    const normalizedNames: Record<string, string> = {};
-    Object.entries(courseTeeNames).forEach(([key, val]) => {
-      normalizedNames[key.toLowerCase()] = val;
+  const normalizedNames = normalizeCourseTeeNames(courseTeeNames);
+  
+  if (normalizedNames) {
+    // Normalize keys to lowercase for matching
+    const lowerCaseNames: Record<string, string> = {};
+    Object.entries(normalizedNames).forEach(([key, val]) => {
+      lowerCaseNames[key.toLowerCase()] = val;
     });
-    return normalizedNames[value.toLowerCase()] || DEFAULT_TEE_NAMES[value] || value;
+    return lowerCaseNames[value.toLowerCase()] || DEFAULT_TEE_NAMES[value] || value;
   }
   
   return DEFAULT_TEE_NAMES[value] || value;
 }
 
 // Export for use in display contexts
-export function getTeeDisplayName(teeValue: string, courseTeeNames?: Record<string, string> | null): string {
+export function getTeeDisplayName(teeValue: string, courseTeeNames?: Record<string, string> | string[] | null): string {
   if (!teeValue) return DEFAULT_TEE_NAMES[DEFAULT_MEN_TEE];
   const normalized = normalizeValue(teeValue);
   return getDisplayName(normalized, courseTeeNames);
