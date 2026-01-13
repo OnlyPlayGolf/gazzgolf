@@ -266,17 +266,6 @@ export default function ScrambleSetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Default Tee */}
-            <div className="space-y-2">
-              <Label>Default Tee Box</Label>
-              <TeeSelector
-                value={teeColor}
-                onValueChange={setTeeColor}
-                teeCount={teeCount}
-                courseTeeNames={courseTeeNames}
-              />
-            </div>
-
             {/* Min Drives */}
             <div className="space-y-2">
               <Label>Minimum Drives per Player</Label>

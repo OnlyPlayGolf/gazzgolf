@@ -399,17 +399,6 @@ export default function StrokePlaySetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Default Tee */}
-            <div className="space-y-2">
-              <Label>Default Tee Box</Label>
-              <TeeSelector
-                value={teeColor}
-                onValueChange={updateAllPlayersTee}
-                teeCount={teeCount}
-                courseTeeNames={courseTeeNames}
-              />
-            </div>
-
             {/* Handicap toggle */}
             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
               <div className="space-y-0.5">
