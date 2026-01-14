@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 
 interface CourseHole {
   hole_number: number;
@@ -98,15 +99,13 @@ export function StrokePlayScorecardView({
                 </TableCell>
                 {nineHoles.map(hole => {
                   const score = player.scores.get(hole.hole_number);
-                  const par = hole.par;
-                  let colorClass = '';
-                  if (score && score > 0) {
-                    if (score < par) colorClass = 'text-red-500';
-                    else if (score > par) colorClass = 'text-blue-500';
-                  }
                   return (
-                    <TableCell key={hole.hole_number} className={`text-center font-bold text-[10px] px-0 py-1 ${colorClass}`}>
-                      {score && score > 0 ? score : ''}
+                    <TableCell key={hole.hole_number} className="text-center px-0 py-1">
+                      {score && score > 0 ? (
+                        <ScorecardScoreCell score={score} par={hole.par} />
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">-</span>
+                      )}
                     </TableCell>
                   );
                 })}

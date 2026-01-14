@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 
 interface BestBallPlayerScoreData {
   playerId: string;
@@ -74,12 +75,6 @@ export function BestBallScorecardCard({
   };
 
   const { result, statusText } = getMatchResultDisplay();
-
-  const getScoreColor = (score: number | null, par: number) => {
-    if (score === null) return '';
-    if (score < par) return 'text-red-600 font-bold';
-    return 'text-foreground';
-  };
 
   const getMatchStatusAfterHole = (holeNumber: number): { text: string; leadingTeam: 'A' | 'B' | null } => {
     const holeData = holeScores[holeNumber];
@@ -158,9 +153,14 @@ export function BestBallScorecardCard({
                 </TableCell>
                 {nineHoles.map(hole => {
                   const score = getPlayerScoreForHole(hole, player.id, 'A');
+                  const par = holePars[hole] || 4;
                   return (
-                    <TableCell key={hole} className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score, holePars[hole] || 4)}`}>
-                      {score || ''}
+                    <TableCell key={hole} className="text-center px-0 py-1">
+                      {score ? (
+                        <ScorecardScoreCell score={score} par={par} />
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">-</span>
+                      )}
                     </TableCell>
                   );
                 })}
@@ -207,9 +207,14 @@ export function BestBallScorecardCard({
                 </TableCell>
                 {nineHoles.map(hole => {
                   const score = getPlayerScoreForHole(hole, player.id, 'B');
+                  const par = holePars[hole] || 4;
                   return (
-                    <TableCell key={hole} className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score, holePars[hole] || 4)}`}>
-                      {score || ''}
+                    <TableCell key={hole} className="text-center px-0 py-1">
+                      {score ? (
+                        <ScorecardScoreCell score={score} par={par} />
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">-</span>
+                      )}
                     </TableCell>
                   );
                 })}

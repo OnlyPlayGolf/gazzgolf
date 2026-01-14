@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 
 interface StrokePlayScorecardCardProps {
   roundId?: string;
@@ -141,8 +142,12 @@ export function StrokePlayScorecardCard({
                 {frontNineHoles.map(hole => {
                   const score = holeScores[hole];
                   return (
-                    <TableCell key={hole} className="text-center font-bold text-[10px] px-0 py-1">
-                      {score && score > 0 ? score : ''}
+                    <TableCell key={hole} className="text-center px-0 py-1">
+                      {score && score > 0 ? (
+                        <ScorecardScoreCell score={score} par={holePars[hole]} />
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">-</span>
+                      )}
                     </TableCell>
                   );
                 })}
@@ -192,8 +197,12 @@ export function StrokePlayScorecardCard({
                     {backNineHoles.map(hole => {
                       const score = holeScores[hole];
                       return (
-                        <TableCell key={hole} className="text-center font-bold text-[10px] px-0 py-1">
-                          {score && score > 0 ? score : ''}
+                        <TableCell key={hole} className="text-center px-0 py-1">
+                          {score && score > 0 ? (
+                            <ScorecardScoreCell score={score} par={holePars[hole]} />
+                          ) : (
+                            <span className="text-muted-foreground text-[10px]">-</span>
+                          )}
                         </TableCell>
                       );
                     })}
