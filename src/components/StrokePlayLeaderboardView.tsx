@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScorecardActions } from "@/components/ScorecardActions";
-
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 interface CourseHole {
   hole_number: number;
   par: number;
@@ -219,10 +219,12 @@ export function StrokePlayLeaderboardView({
                           return (
                             <TableCell 
                               key={hole.hole_number} 
-                              className="text-center font-bold text-[10px] px-0 py-1"
+                              className="text-center px-0 py-1"
                             >
                               <div className="flex items-center justify-center gap-0.5">
-                                {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
+                                {hasScore ? (
+                                  <ScorecardScoreCell score={score} par={hole.par} />
+                                ) : ''}
                                 {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                               </div>
                             </TableCell>
@@ -289,10 +291,12 @@ export function StrokePlayLeaderboardView({
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
-                                className="text-center font-bold text-[10px] px-0 py-1"
+                                className="text-center px-0 py-1"
                               >
                                 <div className="flex items-center justify-center gap-0.5">
-                                  {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
+                                  {hasScore ? (
+                                    <ScorecardScoreCell score={score} par={hole.par} />
+                                  ) : ''}
                                   {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                                 </div>
                               </TableCell>
