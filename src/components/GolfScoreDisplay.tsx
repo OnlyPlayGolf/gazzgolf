@@ -1,157 +1,151 @@
 import { cn } from "@/lib/utils";
 
 interface GolfScoreDisplayProps {
-  score: number | null;
+  score: number | null | undefined;
   par: number;
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
 }
 
 /**
- * Displays a golf score with traditional styling:
- * - Albatross (3 under): triple circle
- * - Eagle (2 under): double circle
- * - Birdie (1 under): single circle
- * - Par: plain number
- * - Bogey (1 over): single box
- * - Double bogey (2 over): double box
- * - Triple bogey (3 over): triple box
- * - Quadruple bogey+ (4+ over): quadruple box
+ * Displays a golf score with standardized visual styling:
+ * - Eagle or better (2+ under): solid orange circle
+ * - Birdie (1 under): solid red circle
+ * - Par: plain number (no shape)
+ * - Bogey (1 over): solid light-blue square
+ * - Double bogey (2 over): solid navy square
+ * - Triple bogey or worse (3+ over): solid black square
+ * 
+ * All shapes have white centered text.
  */
 export function GolfScoreDisplay({ score, par, className, size = "sm" }: GolfScoreDisplayProps) {
-  if (score === null || score === undefined) {
-    return <span className={cn("text-muted-foreground", className)}>-</span>;
+  if (score === null || score === undefined || score === 0 || score === -1) {
+    return <span className={cn("text-muted-foreground", className)}>{score === -1 ? "–" : "-"}</span>;
   }
 
   const diff = score - par;
   
   // Size configurations
   const sizeConfig = {
+    xs: { 
+      container: "w-4 h-4 text-[9px]",
+      borderRadius: "rounded-full",
+      squareRadius: "rounded-[2px]",
+    },
     sm: { 
-      innerSize: "w-5 h-5 text-[10px]", 
-      borderWidth: 1,
-      gap: 2,
+      container: "w-5 h-5 text-[10px]",
+      borderRadius: "rounded-full",
+      squareRadius: "rounded-[3px]",
     },
     md: { 
-      innerSize: "w-6 h-6 text-xs", 
-      borderWidth: 1.5,
-      gap: 2,
+      container: "w-6 h-6 text-xs",
+      borderRadius: "rounded-full",
+      squareRadius: "rounded-[4px]",
     },
     lg: { 
-      innerSize: "w-8 h-8 text-sm", 
-      borderWidth: 2,
-      gap: 3,
+      container: "w-8 h-8 text-sm",
+      borderRadius: "rounded-full",
+      squareRadius: "rounded-[5px]",
     },
   };
 
   const config = sizeConfig[size];
 
-  // Under par - circles (concentric rings)
-  if (diff < 0) {
-    const circleCount = Math.min(Math.abs(diff), 3); // Max 3 circles (albatross)
-    
-    // Calculate outer padding for nested circles
-    const totalPadding = (circleCount - 1) * (config.borderWidth + config.gap);
-    
+  // Eagle or better (2+ under par) - solid orange circle
+  if (diff <= -2) {
     return (
       <div className={cn("flex items-center justify-center", className)}>
         <div 
-          className="relative flex items-center justify-center"
-          style={{ padding: totalPadding }}
+          className={cn(
+            "flex items-center justify-center font-bold text-white",
+            config.container,
+            config.borderRadius,
+            "bg-orange-500"
+          )}
         >
-          {/* Outer circles */}
-          {circleCount >= 3 && (
-            <div 
-              className="absolute inset-0 rounded-full border-foreground/70"
-              style={{ borderWidth: config.borderWidth }}
-            />
-          )}
-          {circleCount >= 2 && (
-            <div 
-              className="absolute rounded-full border-foreground/70"
-              style={{ 
-                borderWidth: config.borderWidth,
-                inset: circleCount >= 3 ? config.borderWidth + config.gap : 0,
-              }}
-            />
-          )}
-          {/* Inner circle with score */}
-          <div 
-            className={cn(
-              "flex items-center justify-center rounded-full font-semibold border-foreground/70",
-              config.innerSize
-            )}
-            style={{ borderWidth: config.borderWidth }}
-          >
-            {score}
-          </div>
+          {score}
         </div>
       </div>
     );
   }
 
-  // Par - plain number
+  // Birdie (1 under par) - solid red circle
+  if (diff === -1) {
+    return (
+      <div className={cn("flex items-center justify-center", className)}>
+        <div 
+          className={cn(
+            "flex items-center justify-center font-bold text-white",
+            config.container,
+            config.borderRadius,
+            "bg-red-500"
+          )}
+        >
+          {score}
+        </div>
+      </div>
+    );
+  }
+
+  // Par - plain number (no shape)
   if (diff === 0) {
     return (
       <div className={cn("flex items-center justify-center", className)}>
-        <div className={cn("flex items-center justify-center font-medium", config.innerSize)}>
+        <div className={cn("flex items-center justify-center font-semibold text-foreground", config.container)}>
           {score}
         </div>
       </div>
     );
   }
 
-  // Over par - boxes (concentric squares)
-  const boxCount = Math.min(diff, 4); // Max 4 boxes (quadruple bogey)
-  
-  // Calculate outer padding for nested boxes
-  const totalPadding = (boxCount - 1) * (config.borderWidth + config.gap);
-  
-  return (
-    <div className={cn("flex items-center justify-center", className)}>
-      <div 
-        className="relative flex items-center justify-center"
-        style={{ padding: totalPadding }}
-      >
-        {/* Outer boxes */}
-        {boxCount >= 4 && (
-          <div 
-            className="absolute inset-0 border-foreground/70"
-            style={{ borderWidth: config.borderWidth }}
-          />
-        )}
-        {boxCount >= 3 && (
-          <div 
-            className="absolute border-foreground/70"
-            style={{ 
-              borderWidth: config.borderWidth,
-              inset: boxCount >= 4 ? config.borderWidth + config.gap : 0,
-            }}
-          />
-        )}
-        {boxCount >= 2 && (
-          <div 
-            className="absolute border-foreground/70"
-            style={{ 
-              borderWidth: config.borderWidth,
-              inset: boxCount >= 4 
-                ? (config.borderWidth + config.gap) * 2 
-                : boxCount >= 3 
-                  ? config.borderWidth + config.gap 
-                  : 0,
-            }}
-          />
-        )}
-        {/* Inner box with score */}
+  // Bogey (1 over par) - solid light-blue square
+  if (diff === 1) {
+    return (
+      <div className={cn("flex items-center justify-center", className)}>
         <div 
           className={cn(
-            "flex items-center justify-center font-semibold border-foreground/70",
-            config.innerSize
+            "flex items-center justify-center font-bold text-white",
+            config.container,
+            config.squareRadius,
+            "bg-sky-400"
           )}
-          style={{ borderWidth: config.borderWidth }}
         >
           {score}
         </div>
+      </div>
+    );
+  }
+
+  // Double bogey (2 over par) - solid navy square
+  if (diff === 2) {
+    return (
+      <div className={cn("flex items-center justify-center", className)}>
+        <div 
+          className={cn(
+            "flex items-center justify-center font-bold text-white",
+            config.container,
+            config.squareRadius,
+            "bg-blue-800"
+          )}
+        >
+          {score}
+        </div>
+      </div>
+    );
+  }
+
+  // Triple bogey or worse (3+ over par) - solid black square
+  return (
+    <div className={cn("flex items-center justify-center", className)}>
+      <div 
+        className={cn(
+          "flex items-center justify-center font-bold text-white",
+          config.container,
+          config.squareRadius,
+          "bg-gray-900"
+        )}
+      >
+        {score}
       </div>
     </div>
   );

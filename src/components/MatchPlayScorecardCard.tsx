@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 
 interface MatchPlayScorecardCardProps {
   gameId?: string;
@@ -62,19 +63,19 @@ export function MatchPlayScorecardCard({
 
   const renderScoreCell = (holeNumber: number, playerNum: 1 | 2) => {
     const holeData = holeScores[holeNumber];
-    if (!holeData) return "";
+    if (!holeData) return <span className="text-muted-foreground text-[10px]">-</span>;
     
     const score = playerNum === 1 ? holeData.player1 : holeData.player2;
-    if (score === null) return "";
+    if (score === null) return <span className="text-muted-foreground text-[10px]">-</span>;
     
-    const displayScore = score === -1 ? "–" : score;
+    // Handle conceded holes
+    if (score === -1) return <span className="text-muted-foreground text-[10px]">–</span>;
+    
+    const par = holePars[holeNumber] || 4;
     const won = (playerNum === 1 && holeData.result === 1) || (playerNum === 2 && holeData.result === -1);
     
-    if (won) {
-      const colorClass = playerNum === 1 ? "text-blue-500" : "text-destructive";
-      return <span className={`font-bold ${colorClass}`}>{displayScore}</span>;
-    }
-    return displayScore;
+    // Use unified score styling
+    return <ScorecardScoreCell score={score} par={par} />;
   };
 
   const getNineTotal = (holes: number[], playerNum: 1 | 2) => {
@@ -137,7 +138,7 @@ export function MatchPlayScorecardCard({
               {player1Name.split(" ")[0]}
             </TableCell>
             {nineHoles.map(hole => (
-              <TableCell key={hole} className="text-center font-bold text-[10px] px-0 py-1">
+              <TableCell key={hole} className="text-center px-0 py-1">
                 {renderScoreCell(hole, 1)}
               </TableCell>
             ))}
@@ -174,7 +175,7 @@ export function MatchPlayScorecardCard({
               {player2Name.split(" ")[0]}
             </TableCell>
             {nineHoles.map(hole => (
-              <TableCell key={hole} className="text-center font-bold text-[10px] px-0 py-1">
+              <TableCell key={hole} className="text-center px-0 py-1">
                 {renderScoreCell(hole, 2)}
               </TableCell>
             ))}
