@@ -99,8 +99,8 @@ export function StrokePlayLeaderboardView({
   // Sorted array for position calculation
   const sortedForRanking = [...playersWithTotals].sort((a, b) => a.scoreToPar - b.scoreToPar);
   
-  // Display order: sorted in spectator mode, original order otherwise
-  const displayOrder = isSpectator ? sortedForRanking : playersWithTotals;
+  // Display order: always sorted by score in stroke play view (lowest score on top)
+  const displayOrder = sortedForRanking;
   
   const getPositionLabel = (scoreToPar: number, hasConceded: boolean): string => {
     if (hasConceded) return "-";
