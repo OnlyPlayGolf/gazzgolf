@@ -9,6 +9,7 @@ import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
 import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
@@ -243,12 +244,6 @@ export default function SkinsLeaderboard() {
     mulligans: p.mulligans,
   }));
 
-  const getScoreColor = (score: number, par: number) => {
-    if (score < par) return 'text-red-600 font-bold';
-    if (score > par) return 'text-sky-600';
-    return '';
-  };
-
   const calculateTotals = (scores: Map<number, number>, holesRange: CourseHole[]) => {
     let total = 0;
     let par = 0;
@@ -309,7 +304,7 @@ export default function SkinsLeaderboard() {
                   <div>
                     <div className="text-xl font-bold">{player.name}</div>
                     {player.handicap !== null && (
-                      <div className="text-sm text-muted-foreground">HCP {player.handicap}</div>
+                      <div className="text-sm text-muted-foreground">HCP +{player.handicap}</div>
                     )}
                   </div>
                 </div>
@@ -374,10 +369,10 @@ export default function SkinsLeaderboard() {
                           return (
                             <TableCell 
                               key={hole.hole_number} 
-                              className={`text-center text-[10px] px-0 py-1 ${score ? getScoreColor(score, hole.par) : ''}`}
+                              className="text-center text-[10px] px-0 py-1"
                             >
                               <div className="flex items-center justify-center gap-0.5">
-                                {score || ''}
+                                {score ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                                 {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                               </div>
                             </TableCell>
@@ -441,10 +436,10 @@ export default function SkinsLeaderboard() {
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
-                                className={`text-center text-[10px] px-0 py-1 ${score ? getScoreColor(score, hole.par) : ''}`}
+                                className="text-center text-[10px] px-0 py-1"
                               >
                                 <div className="flex items-center justify-center gap-0.5">
-                                  {score || ''}
+                                  {score ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                                   {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                                 </div>
                               </TableCell>
