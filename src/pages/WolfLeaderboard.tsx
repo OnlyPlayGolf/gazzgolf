@@ -14,6 +14,7 @@ import { GameNotFound } from "@/components/GameNotFound";
 import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardModeTabs";
 import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import {
   Table,
   TableBody,
@@ -308,16 +309,14 @@ export default function WolfLeaderboard() {
                     {frontNine.map(hole => {
                       const rawScore = getHoleScore(hole.hole_number, player.num);
                       const score = rawScore === -1 ? null : rawScore;
-                      const par = hole.par;
                       return (
                         <TableCell 
                           key={hole.hole_number} 
-                          className={`text-center text-[10px] px-0 py-1 ${
-                            score !== null && score < par ? 'text-red-600 font-bold' : 
-                            score !== null && score > par ? 'text-sky-600' : ''
-                          }`}
+                          className="text-center px-0 py-1"
                         >
-                          {rawScore === -1 ? '-' : (score ?? '')}
+                          {score !== null ? (
+                            <ScorecardScoreCell score={score} par={hole.par} />
+                          ) : ''}
                         </TableCell>
                       );
                     })}
@@ -411,16 +410,14 @@ export default function WolfLeaderboard() {
                       {backNine.map(hole => {
                         const rawScore = getHoleScore(hole.hole_number, player.num);
                         const score = rawScore === -1 ? null : rawScore;
-                        const par = hole.par;
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className={`text-center text-[10px] px-0 py-1 ${
-                              score !== null && score < par ? 'text-red-600 font-bold' : 
-                              score !== null && score > par ? 'text-sky-600' : ''
-                            }`}
+                            className="text-center px-0 py-1"
                           >
-                            {rawScore === -1 ? '-' : (score ?? '')}
+                            {score !== null ? (
+                              <ScorecardScoreCell score={score} par={hole.par} />
+                            ) : ''}
                           </TableCell>
                         );
                       })}
