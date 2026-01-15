@@ -288,29 +288,6 @@ export default function SkinsSetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Holes */}
-            <div className="space-y-2">
-              <Label>Holes</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={selectedHoles === "9" ? "default" : "outline"}
-                  onClick={() => setSelectedHoles("9")}
-                  className="flex-1"
-                >
-                  9 Holes
-                </Button>
-                <Button
-                  type="button"
-                  variant={selectedHoles === "18" ? "default" : "outline"}
-                  onClick={() => setSelectedHoles("18")}
-                  className="flex-1"
-                >
-                  18 Holes
-                </Button>
-              </div>
-            </div>
-
             {/* Skin Value */}
             <div className="space-y-2">
               <Label>Skin Value</Label>
