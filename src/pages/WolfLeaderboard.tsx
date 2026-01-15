@@ -247,7 +247,7 @@ export default function WolfLeaderboard() {
                 {player.points}
               </div>
               <div className="text-sm text-muted-foreground">
-                {isLeader ? 'LEADING' : 'POINTS'}
+                POINTS
               </div>
             </div>
           </div>

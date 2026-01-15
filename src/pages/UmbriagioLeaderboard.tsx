@@ -353,7 +353,7 @@ export default function UmbriagioLeaderboard() {
                 {stats.totalPoints}
               </div>
               <div className="text-sm text-muted-foreground">
-                {isLeader ? 'LEADING' : 'POINTS'}
+                POINTS
               </div>
             </div>
           </div>
@@ -584,7 +584,7 @@ export default function UmbriagioLeaderboard() {
                 {totalPoints}
               </div>
               <div className="text-sm text-muted-foreground">
-                {isLeader ? 'LEADING' : 'POINTS'}
+                POINTS
               </div>
             </div>
           </div>
@@ -834,7 +834,7 @@ export default function UmbriagioLeaderboard() {
                           {totalPoints}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {isLeader ? 'LEADING' : 'POINTS'}
+                          POINTS
                         </div>
                       </div>
                     </div>

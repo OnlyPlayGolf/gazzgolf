@@ -319,7 +319,7 @@ export default function SkinsLeaderboard() {
                     <span className="text-3xl font-bold">{player.skinsWon}</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {isLeader && player.skinsWon > 0 ? 'LEADING' : 'SKINS'}
+                    SKINS
                   </div>
                 </div>
               </div>
