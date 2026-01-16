@@ -58,6 +58,9 @@ export default function SkinsSetup() {
 
   const teeCount = 5;
 
+  // Round name from sessionStorage
+  const [roundName, setRoundName] = useState<string>("");
+
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -93,6 +96,12 @@ export default function SkinsSetup() {
         } else {
           setSelectedHoles("18");
         }
+      }
+      
+      // Load round name
+      const savedRoundName = sessionStorage.getItem('roundName');
+      if (savedRoundName) {
+        setRoundName(savedRoundName);
       }
       
       // Load tee color
@@ -203,6 +212,7 @@ export default function SkinsSetup() {
           players: playersJson,
           date_played: new Date().toISOString().split('T')[0],
           stats_mode: statsMode,
+          round_name: roundName || null,
         })
         .select()
         .single();
