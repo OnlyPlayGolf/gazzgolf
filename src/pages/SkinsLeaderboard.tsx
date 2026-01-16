@@ -216,11 +216,11 @@ export default function SkinsLeaderboard() {
     setPlayerResults(results);
   };
 
-  // Sort for position calculation
+  // Sort for position calculation and display (always sort by most skins on top)
   const sortedResultsForRanking = [...playerResults].sort((a, b) => b.skinsWon - a.skinsWon);
   
-  // For display: only sort in spectator mode
-  const displayResults = isSpectator ? sortedResultsForRanking : playerResults;
+  // Always display sorted by skins won (most on top)
+  const displayResults = sortedResultsForRanking;
 
   const getPositionLabel = (playerId: string): string => {
     const player = playerResults.find(p => p.playerId === playerId);
