@@ -531,7 +531,7 @@ export const ProStatsAverages = () => {
         ) : (
           <div className="space-y-3">
             {/* Summary */}
-            <div className="flex justify-between items-center py-2 px-3 bg-primary/10 rounded-lg">
+            <div className="flex justify-between items-center py-2 px-3 bg-primary text-primary-foreground rounded-lg">
               <span className="font-semibold">Total Strokes Gained</span>
               <span className={`font-bold text-lg ${getSGColor(sgStats.sgTotal)}`}>
                 {formatSG(sgStats.sgTotal)}

@@ -191,7 +191,7 @@ export function AISetupAssistant({ isOpen, onClose, courseInfo, onApplyConfig, c
   };
 
   const renderAppliedBadge = (config: GameConfiguration) => (
-    <div className="mt-2 flex items-center gap-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
+    <div className="mt-2 flex items-center gap-2 p-2 rounded-lg bg-primary text-primary-foreground border border-primary/20">
       <CheckCircle2 className="w-4 h-4 text-primary" />
       <span className="text-xs font-medium text-primary">Applied:</span>
       <div className="flex flex-wrap gap-1">

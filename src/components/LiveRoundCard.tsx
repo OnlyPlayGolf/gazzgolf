@@ -95,7 +95,7 @@ export function LiveRoundCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-semibold text-foreground truncate">{displayName}</p>
-            <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+            <span className="text-xs px-2 py-0.5 bg-primary text-primary-foreground text-primary rounded-full">
               {getGameTypeLabel()}
             </span>
           </div>

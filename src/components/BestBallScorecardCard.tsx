@@ -111,32 +111,32 @@ export function BestBallScorecardCard({
     return (
       <Table className="w-full table-fixed">
         <TableHeader>
-          <TableRow className="bg-primary/5">
-            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+          <TableRow className="bg-primary">
+            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {nineHoles.map(hole => (
-              <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5">
+              <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                 {hole}
               </TableHead>
             ))}
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">{nineLabel}</TableHead>
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">{nineLabel}</TableHead>
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
               {isBackNine ? "Tot" : (hasBackNine ? "" : "Tot")}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {/* Par Row */}
-          <TableRow>
-            <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
+          <TableRow className="bg-muted/50">
+            <TableCell className="font-medium text-foreground text-[10px] px-0.5 py-1 bg-muted/50">Par</TableCell>
             {nineHoles.map(hole => (
-              <TableCell key={hole} className="text-center font-semibold text-[10px] px-0 py-1">
+              <TableCell key={hole} className="text-center font-semibold text-foreground text-[10px] px-0 py-1 bg-muted/50">
                 {holePars[hole] || ""}
               </TableCell>
             ))}
-            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-muted/50 text-foreground text-[10px] px-0 py-1">
               {ninePar}
             </TableCell>
-            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-muted/50 text-foreground text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? totalPar : ""}
             </TableCell>
           </TableRow>
@@ -154,10 +154,17 @@ export function BestBallScorecardCard({
                 {nineHoles.map(hole => {
                   const score = getPlayerScoreForHole(hole, player.id, 'A');
                   const par = holePars[hole] || 4;
+                  const diff = score ? score - par : null;
                   return (
                     <TableCell key={hole} className="text-center px-0 py-1">
                       {score ? (
-                        <ScorecardScoreCell score={score} par={par} />
+                        diff === 0 ? (
+                          <span className="text-[10px] font-semibold text-foreground">
+                            {score}
+                          </span>
+                        ) : (
+                          <ScorecardScoreCell score={score} par={par} />
+                        )
                       ) : (
                         <span className="text-muted-foreground text-[10px]">-</span>
                       )}
@@ -167,7 +174,7 @@ export function BestBallScorecardCard({
                 <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {nineTotal || ''}
                 </TableCell>
-                <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {isBackNine || !hasBackNine ? (fullTotal || '') : ''}
                 </TableCell>
               </TableRow>
@@ -208,10 +215,17 @@ export function BestBallScorecardCard({
                 {nineHoles.map(hole => {
                   const score = getPlayerScoreForHole(hole, player.id, 'B');
                   const par = holePars[hole] || 4;
+                  const diff = score ? score - par : null;
                   return (
                     <TableCell key={hole} className="text-center px-0 py-1">
                       {score ? (
-                        <ScorecardScoreCell score={score} par={par} />
+                        diff === 0 ? (
+                          <span className="text-[10px] font-semibold text-foreground">
+                            {score}
+                          </span>
+                        ) : (
+                          <ScorecardScoreCell score={score} par={par} />
+                        )
                       ) : (
                         <span className="text-muted-foreground text-[10px]">-</span>
                       )}
@@ -221,7 +235,7 @@ export function BestBallScorecardCard({
                 <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {nineTotal || ''}
                 </TableCell>
-                <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {isBackNine || !hasBackNine ? (fullTotal || '') : ''}
                 </TableCell>
               </TableRow>
@@ -237,28 +251,28 @@ export function BestBallScorecardCard({
       className="cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all group overflow-hidden"
       onClick={onClick}
     >
-      {/* Green Header */}
-      <div className="bg-primary text-primary-foreground p-3">
+      {/* Grey Header */}
+      <div className="bg-muted/50 p-3">
         <div className="flex items-center gap-3">
           {/* Left: W/L/T with match status */}
           <div className="flex-shrink-0 w-14 text-center">
-            <div className="text-xl font-bold">{result}</div>
-            <div className="text-xs opacity-75">{statusText}</div>
+            <div className="text-xl font-bold text-foreground">{result}</div>
+            <div className="text-xs text-muted-foreground">{statusText}</div>
           </div>
 
           {/* Right: Round Details */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm truncate">{roundName || "Best Ball Match Play"}</h3>
-            <div className="flex items-center gap-1.5 mt-0.5 text-xs opacity-90">
+            <h3 className="font-semibold text-sm truncate text-foreground">{roundName || "Best Ball Match Play"}</h3>
+            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
               <span className="truncate">{courseName}</span>
               <span>·</span>
               <span className="flex-shrink-0">{formatDate(datePlayed)}</span>
             </div>
-            <div className="text-xs opacity-75 mt-0.5">Best Ball Match Play · {playerCount} players</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Best Ball Match Play · {playerCount} players</div>
           </div>
 
           {/* Chevron */}
-          <ChevronRight size={20} className="text-primary-foreground/60 flex-shrink-0 group-hover:text-primary-foreground transition-colors" />
+          <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 group-hover:text-foreground transition-colors" />
         </div>
       </div>
 

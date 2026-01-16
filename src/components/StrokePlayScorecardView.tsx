@@ -60,15 +60,15 @@ export function StrokePlayScorecardView({
     return (
       <Table className="w-full table-fixed">
         <TableHeader>
-          <TableRow className="bg-primary/5">
-            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+          <TableRow className="bg-primary">
+            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {nineHoles.map(hole => (
-              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                 {hole.hole_number}
               </TableHead>
             ))}
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">{nineLabel}</TableHead>
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">{nineLabel}</TableHead>
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
               {isBackNine ? 'Tot' : (hasBackNine ? '' : 'Tot')}
             </TableHead>
           </TableRow>
@@ -112,7 +112,7 @@ export function StrokePlayScorecardView({
                 <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {nineTotal > 0 ? nineTotal : ''}
                 </TableCell>
-                <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
                   {(isBackNine || !hasBackNine) && player.totalScore > 0 ? player.totalScore : ''}
                 </TableCell>
               </TableRow>

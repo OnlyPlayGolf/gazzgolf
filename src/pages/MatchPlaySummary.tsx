@@ -136,7 +136,7 @@ export default function MatchPlaySummary() {
         </div>
 
         {/* Result */}
-        <Card className="p-6 text-center bg-primary/10">
+        <Card className="p-6 text-center bg-primary text-primary-foreground">
           {game.winner_player ? (
             <>
               <p className="text-sm text-muted-foreground mb-2">Winner</p>
@@ -180,15 +180,15 @@ export default function MatchPlaySummary() {
           <div className="border rounded-lg overflow-hidden w-full">
             <Table className="table-fixed w-full">
               <TableHeader>
-                <TableRow className="bg-primary/5">
-                  <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
+                <TableRow className="bg-primary">
+                  <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px] bg-primary text-primary-foreground">Hole</TableHead>
                   {frontNine.map(hole => (
-                    <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                    <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                       {hole.hole_number}
                     </TableHead>
                   ))}
-                  <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Out</TableHead>
-                  {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10"></TableHead>}
+                  <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Out</TableHead>
+                  {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground"></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -245,15 +245,15 @@ export default function MatchPlaySummary() {
             <div className="border rounded-lg overflow-hidden w-full mt-2">
               <Table className="table-fixed w-full">
                 <TableHeader>
-                  <TableRow className="bg-primary/5">
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
+                  <TableRow className="bg-primary">
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px] bg-primary text-primary-foreground">Hole</TableHead>
                     {backNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                         {hole.hole_number}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">In</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Tot</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">In</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Tot</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

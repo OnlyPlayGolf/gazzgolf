@@ -206,7 +206,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-primary/10 rounded-lg p-4 text-center">
+            <div className="bg-primary text-primary-foreground rounded-lg p-4 text-center">
               <p className="text-sm text-muted-foreground mb-1">Total Shots</p>
               <p className="text-3xl font-bold text-primary">{totalShots}</p>
             </div>
@@ -300,7 +300,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
             </Button>
           </div>
 
-          <div className="p-3 bg-primary/10 rounded-md text-center">
+          <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
             <div className="text-sm text-muted-foreground">Current Station</div>
             <div className="text-2xl font-bold text-primary">
               {currentStation?.lie} - {currentStation?.distance}m

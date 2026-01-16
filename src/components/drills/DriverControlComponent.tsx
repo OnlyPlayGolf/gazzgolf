@@ -254,7 +254,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
             </div>
           )}
           {bonusStreak >= 3 && (
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+            <div className="bg-primary text-primary-foreground border border-primary/20 rounded-lg p-3">
               <p className="text-sm font-semibold text-primary flex items-center gap-2">
                 <TrendingUp className="h-4 w-4" />
                 Bonus Active! {bonusStreak} consecutive fairways
@@ -270,7 +270,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
                   <div className="font-semibold">Miss Left</div>
                   <div className="text-lg">{currentShotStructure?.missLeftPoints}</div>
                 </div>
-                <div className="text-center p-2 bg-primary/10 rounded">
+                <div className="text-center p-2 bg-primary text-primary-foreground rounded">
                   <div className="font-semibold">Fairway</div>
                   <div className="text-lg text-primary">+{currentShotStructure?.fairwayPoints}</div>
                 </div>
@@ -308,7 +308,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
 
           <div className="flex gap-2">
             <Button onClick={handleRecordShot} className="flex-1" size="lg">
-              Record Shot
+              Next Shot
             </Button>
             <Button onClick={handleResetDrill} variant="outline" size="lg">
               Reset Drill

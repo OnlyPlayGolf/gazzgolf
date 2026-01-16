@@ -231,15 +231,15 @@ export function MatchPlayCompletionModal({
     return (
       <Table className="w-full table-fixed">
         <TableHeader>
-          <TableRow className="bg-primary/5">
-            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+          <TableRow className="bg-primary">
+            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {nineHoles.map(hole => (
               <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
                 {hole.hole_number}
               </TableHead>
             ))}
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">{nineLabel}</TableHead>
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">{nineLabel}</TableHead>
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
               {isBackNine ? 'Tot' : (hasBackNine ? '' : 'Tot')}
             </TableHead>
           </TableRow>
@@ -272,7 +272,7 @@ export function MatchPlayCompletionModal({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 1) || 0), 0) || ''}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_1_gross_score || 0), 0) || '') : ''}
             </TableCell>
           </TableRow>
@@ -297,7 +297,7 @@ export function MatchPlayCompletionModal({
               );
             })}
             <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-            <TableCell className="text-center bg-primary/10 text-[10px] px-0 py-1"></TableCell>
+            <TableCell className="text-center bg-primary text-primary-foreground text-[10px] px-0 py-1"></TableCell>
           </TableRow>
 
           <TableRow>
@@ -312,7 +312,7 @@ export function MatchPlayCompletionModal({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 2) || 0), 0) || ''}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_2_gross_score || 0), 0) || '') : ''}
             </TableCell>
           </TableRow>
@@ -324,16 +324,16 @@ export function MatchPlayCompletionModal({
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
-        {/* Green Header - Match Card Style */}
-        <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
+        {/* Grey Header - Match Card Style */}
+        <div className="bg-muted/50 p-4 rounded-t-lg">
           <div className="flex items-center gap-4">
             {/* Left: W/L/T with match status */}
             <div className="flex-shrink-0 w-16 text-center">
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-foreground">
                 {game.match_status > 0 ? "W" : game.match_status < 0 ? "L" : "T"}
               </div>
               {game.match_status !== 0 && (
-                <div className="text-xs opacity-75">
+                <div className="text-xs text-muted-foreground">
                   {Math.abs(game.match_status)} {game.match_status > 0 ? "UP" : "DOWN"}
                 </div>
               )}
@@ -341,15 +341,15 @@ export function MatchPlayCompletionModal({
             
             {/* Right: Round Details */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate">
+              <h3 className="font-semibold truncate text-foreground">
                 {game.round_name || 'Match Play'}
               </h3>
-              <div className="flex items-center gap-1.5 mt-1 text-sm opacity-90">
+              <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
                 <span className="truncate">{game.course_name}</span>
                 <span>·</span>
                 <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
               </div>
-              <div className="text-xs opacity-75 mt-1">
+              <div className="text-xs text-muted-foreground mt-1">
                 Match Play · 2 players
               </div>
             </div>

@@ -193,7 +193,7 @@ export default function SpectateMatchPlay() {
           </div>
 
           {/* Match Status */}
-          <div className="bg-primary/10 rounded-lg p-3 text-center">
+          <div className="bg-primary text-primary-foreground rounded-lg p-3 text-center">
             <p className="text-lg font-bold text-primary">
               {formatMatchStatus(game.match_status, game.holes_remaining, game.player_1, game.player_2)}
             </p>

@@ -376,9 +376,9 @@ const ProRoundSummary = () => {
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4 space-y-4">
-        <Button variant="ghost" onClick={() => navigate("/practice")}>
+        <Button variant="ghost" onClick={() => navigate("/rounds/pro-setup")}>
           <ArrowLeft className="mr-2" size={20} />
-          Back to Practice
+          Back
         </Button>
 
         {/* Header Card - matches StatsRoundsHistory design */}
@@ -409,7 +409,7 @@ const ProRoundSummary = () => {
                       <span>{summary.holes_played} holes</span>
                     </div>
                     <div className="mt-1">
-                      <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
+                      <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-primary text-xs">
                         Fun/Practice
                       </span>
                     </div>

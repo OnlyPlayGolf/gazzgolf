@@ -348,7 +348,7 @@ const BasicStatsTracker = () => {
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" onClick={() => navigate(-1)}>
+          <Button variant="ghost" onClick={() => navigate("/rounds/pro-setup")}>
             <ArrowLeft className="mr-2" size={20} />
             Back
           </Button>

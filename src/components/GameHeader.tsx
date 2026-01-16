@@ -82,15 +82,15 @@ export function GameHeader({
   return (
     <>
       <div className="mb-4">
-        {/* Green header bar */}
-        <div className="bg-primary px-4 py-3 relative flex items-center justify-center min-h-[60px]">
+        {/* Grey header bar */}
+        <div className="bg-muted/50 px-4 py-3 relative flex items-center justify-center min-h-[60px]">
           {/* Back button - left side */}
           {!hideBackButton && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleBackClick}
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-primary-foreground hover:bg-primary-foreground/10"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-foreground hover:bg-muted"
             >
               <ChevronLeft size={24} />
             </Button>
@@ -98,8 +98,8 @@ export function GameHeader({
           
           {/* Centered title and course */}
           <div className="text-center">
-            <h1 className="text-xl font-bold text-primary-foreground">{gameTitle}</h1>
-            <p className="text-sm text-primary-foreground/80">{courseName}</p>
+            <h1 className="text-xl font-bold text-foreground">{gameTitle}</h1>
+            <p className="text-sm text-muted-foreground">{courseName}</p>
           </div>
         </div>
       </div>

@@ -366,14 +366,14 @@ export default function UmbriagioLeaderboard() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-primary/5">
-                    <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                  <TableRow className="bg-primary">
+                    <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary text-primary-foreground z-10">Hole</TableHead>
                     {frontNine.map(hole => (
                       <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
                         {hole.hole_number}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
+                    <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary text-primary-foreground w-[36px]">Out</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -444,14 +444,14 @@ export default function UmbriagioLeaderboard() {
               <div className="overflow-x-auto border-t">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-primary/5">
-                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                    <TableRow className="bg-primary">
+                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary text-primary-foreground z-10">Hole</TableHead>
                       {backNine.map(hole => (
                         <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
                           {hole.hole_number}
                         </TableHead>
                       ))}
-                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
+                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary text-primary-foreground w-[36px]">In</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -597,14 +597,14 @@ export default function UmbriagioLeaderboard() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-primary/5">
-                    <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                  <TableRow className="bg-primary">
+                    <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary text-primary-foreground z-10">Hole</TableHead>
                     {frontNine.map(hole => (
                       <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
                         {hole.hole_number}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">Out</TableHead>
+                    <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary text-primary-foreground w-[36px]">Out</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -657,14 +657,14 @@ export default function UmbriagioLeaderboard() {
               <div className="overflow-x-auto border-t">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-primary/5">
-                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary/5 z-10">Hole</TableHead>
+                    <TableRow className="bg-primary">
+                      <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary text-primary-foreground z-10">Hole</TableHead>
                       {backNine.map(hole => (
                         <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
                           {hole.hole_number}
                         </TableHead>
                       ))}
-                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary/10 w-[36px]">In</TableHead>
+                      <TableHead className="text-center font-bold text-xs px-2 py-2 bg-primary text-primary-foreground w-[36px]">In</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

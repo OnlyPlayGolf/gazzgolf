@@ -288,7 +288,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
             <CardTitle>Shot #{currentShot} of 14</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-3 bg-primary/10 rounded-md text-center">
+            <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
               <div className="text-sm text-muted-foreground">Required Shot</div>
               <div className="text-xl font-bold text-primary capitalize">{currentShotInfo.shape}</div>
               <div className="text-sm font-medium text-foreground mt-1">{currentShotInfo.club}</div>
@@ -362,7 +362,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
                 onClick={addAttempt}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                Record Shot
+                Next Shot
               </Button>
               <Button 
                 onClick={resetDrill}
@@ -408,7 +408,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
                 </div>
               ))}
             </div>
-            <div className="mt-4 p-3 bg-primary/10 rounded-md">
+            <div className="mt-4 p-3 bg-primary text-primary-foreground rounded-md">
               <div className="text-center font-medium">
                 Total: {totalPoints} / {maxPoints} points
               </div>

@@ -329,15 +329,15 @@ export default function SkinsLeaderboard() {
                 <div className="border rounded-lg overflow-hidden w-full">
                   <Table className="table-fixed w-full">
                     <TableHeader>
-                      <TableRow className="bg-primary/5">
+                      <TableRow className="bg-primary">
                         <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
                         {frontNine.map(hole => (
                           <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
                             {hole.hole_number}
                           </TableHead>
                         ))}
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Out</TableHead>
-                        {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10"></TableHead>}
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Out</TableHead>
+                        {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground"></TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -394,15 +394,15 @@ export default function SkinsLeaderboard() {
                   <div className="border rounded-lg overflow-hidden w-full mt-2">
                     <Table className="table-fixed w-full">
                       <TableHeader>
-                        <TableRow className="bg-primary/5">
+                        <TableRow className="bg-primary">
                           <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
                           {backNine.map(hole => (
                             <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
                               {hole.hole_number}
                             </TableHead>
                           ))}
-                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">In</TableHead>
-                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary/10">Tot</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">In</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Tot</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>

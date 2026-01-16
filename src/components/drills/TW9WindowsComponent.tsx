@@ -276,7 +276,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
                     window.completed 
                       ? 'bg-green-50 border-green-600' 
                       : index === currentWindowIndex 
-                        ? 'bg-primary/10 border-primary'
+                        ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-muted'
                   }`}
                 >

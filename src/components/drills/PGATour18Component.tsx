@@ -266,7 +266,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
               </Button>
             </div>
 
-            <div className="p-3 bg-primary/10 rounded-md text-center">
+            <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
               <div className="text-sm text-muted-foreground">Distance</div>
               <div className="text-2xl font-bold text-primary">{currentDistance}</div>
             </div>

@@ -189,7 +189,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
                     key={index}
                     className={`p-3 rounded-lg border-2 transition-all ${
                       index === currentTeeIndex && !drillEnded
-                        ? 'border-primary bg-primary/10'
+                        ? 'border-primary bg-primary text-primary-foreground'
                         : 'border-muted bg-muted/50'
                     }`}
                   >

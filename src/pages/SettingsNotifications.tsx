@@ -109,7 +109,7 @@ const SettingsNotifications = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                  <div className="p-2 rounded-lg bg-primary text-primary-foreground">
                     <Bell className="h-5 w-5 text-primary" />
                   </div>
                   <div>

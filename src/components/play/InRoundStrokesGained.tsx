@@ -336,14 +336,14 @@ export function InRoundStrokesGained({
     // Clear inputs and add shot
     setEndDistance("");
     setEndLie('');
-    
-    const newShots = [...shots, newShot];
-    setShots(newShots);
-    saveShots(newShots);
-    
+
+      const newShots = [...shots, newShot];
+      setShots(newShots);
+      saveShots(newShots);
+      
     // Reset start distance
-    setStartDistance("");
-    return;
+      setStartDistance("");
+      return;
     }
 
     if (!endLie) return;
@@ -374,7 +374,7 @@ export function InRoundStrokesGained({
     setEndDistance("");
     setEndLie('');
     setMissedSide('');
-    
+
     const newShots = [...shots, newShot];
     setShots(newShots);
     saveShots(newShots);
@@ -390,7 +390,7 @@ export function InRoundStrokesGained({
     const start = parseFloat(startDistance.replace(',', '.'));
     if (isNaN(start)) {
       if (!autoHole) {
-        toast({ title: "Enter start distance", variant: "destructive" });
+      toast({ title: "Enter start distance", variant: "destructive" });
       }
       return;
     }
@@ -409,7 +409,7 @@ export function InRoundStrokesGained({
     // Clear inputs
     setEndDistance("");
     setEndLie('');
-    
+
     const newShots = [...shots, newShot];
     
     // If auto-holing, skip state update to prevent visual flash
@@ -423,7 +423,7 @@ export function InRoundStrokesGained({
       });
     } else {
       // Manual holed shot - update state first, then save and navigate
-      setShots(newShots);
+    setShots(newShots);
       saveShots(newShots, false);
     }
 
@@ -474,7 +474,7 @@ export function InRoundStrokesGained({
     setEndDistance("");
     setEndLie('');
     setMissedSide('');
-    
+
     const newShots = [...shots, obShot, penaltyShot];
     setShots(newShots);
     saveShots(newShots);
@@ -518,11 +518,11 @@ export function InRoundStrokesGained({
         setStartLie(lastShot.startLie);
       } else {
         // Normal case: use end distance and lie from previous shot
-        if (lastShot.endDistance !== undefined) {
-          setStartDistance(String(lastShot.endDistance));
-        }
-        if (lastShot.endLie && lastShot.endLie !== 'OB') {
-          setStartLie(lastShot.endLie as LieType | 'green');
+      if (lastShot.endDistance !== undefined) {
+        setStartDistance(String(lastShot.endDistance));
+      }
+      if (lastShot.endLie && lastShot.endLie !== 'OB') {
+        setStartLie(lastShot.endLie as LieType | 'green');
         }
       }
     }

@@ -43,7 +43,7 @@ export default function ApproachControlInfo() {
               </ul>
             </div>
 
-            <div className="bg-primary/10 rounded-lg p-4 space-y-2">
+            <div className="bg-primary text-primary-foreground rounded-lg p-4 space-y-2">
               <h3 className="font-semibold text-sm flex items-center gap-2">
                 <TrendingUp size={16} className="text-primary" />
                 Bonus Streak System

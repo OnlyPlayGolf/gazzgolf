@@ -113,7 +113,7 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
 
   return (
     <Card 
-      className={`cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all ${className || ''}`}
+      className={`cursor-pointer bg-muted/50 border border-border hover:border-primary/40 hover:shadow-lg active:scale-[0.98] transition-all ${className || ''}`}
       onClick={handleClick}
     >
       <CardContent className="p-4">

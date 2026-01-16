@@ -243,7 +243,7 @@ export default function DrillResultDetail() {
                       className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                        <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
                           {index + 1}
                         </span>
                         <span className="text-sm text-muted-foreground">
@@ -324,7 +324,7 @@ export default function DrillResultDetail() {
                       <div 
                         key={h.id}
                         className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                          isCurrent ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
+                          isCurrent ? 'bg-primary text-primary-foreground border border-primary/20' : 'bg-muted/50'
                         }`}
                         onClick={() => !isCurrent && navigate(`/drill-result/${h.id}`)}
                       >

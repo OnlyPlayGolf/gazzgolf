@@ -134,7 +134,7 @@ const Support = () => {
                 >
                   <CardContent className="pt-4 pb-4">
                     <div className="flex flex-col items-center text-center">
-                      <div className="p-2 rounded-lg bg-primary/10 mb-2">
+                      <div className="p-2 rounded-lg bg-primary text-primary-foreground mb-2">
                         <Icon className="h-5 w-5 text-primary" />
                       </div>
                       <p className="font-medium text-sm">{option.title}</p>

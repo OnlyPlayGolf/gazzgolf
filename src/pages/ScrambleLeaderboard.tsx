@@ -232,15 +232,15 @@ export default function ScrambleLeaderboard() {
             <div className="w-full">
               <Table className="w-full table-fixed">
                 <TableHeader>
-                  <TableRow className="bg-primary/5">
-                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+                  <TableRow className="bg-primary">
+                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                     {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                         {hole.hole_number}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Out</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Out</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                       {backNine.length > 0 ? '' : 'Tot'}
                     </TableHead>
                   </TableRow>
@@ -289,7 +289,7 @@ export default function ScrambleLeaderboard() {
                         return sum + (s !== null && s > 0 ? s : 0);
                       }, 0) || ''}
                     </TableCell>
-                    <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                    <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
                       {backNine.length > 0 ? '' : (ts.total || '')}
                     </TableCell>
                   </TableRow>
@@ -302,15 +302,15 @@ export default function ScrambleLeaderboard() {
               <div className="w-full border-t">
                 <Table className="w-full table-fixed">
                   <TableHeader>
-                    <TableRow className="bg-primary/5">
-                      <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+                    <TableRow className="bg-primary">
+                      <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                       {backNine.map(hole => (
-                        <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                        <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                           {hole.hole_number}
                         </TableHead>
                       ))}
-                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">In</TableHead>
-                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Tot</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">In</TableHead>
+                      <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Tot</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -357,7 +357,7 @@ export default function ScrambleLeaderboard() {
                           return sum + (s !== null && s > 0 ? s : 0);
                         }, 0) || ''}
                       </TableCell>
-                      <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+                      <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
                         {ts.total || ''}
                       </TableCell>
                     </TableRow>

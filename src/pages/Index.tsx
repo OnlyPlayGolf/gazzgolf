@@ -369,7 +369,7 @@ const Index = () => {
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/categories')}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-full">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
                     <Target size={24} className="text-primary" />
                   </div>
                   <div>
@@ -383,7 +383,7 @@ const Index = () => {
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/levels')}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-full">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
                     <TrendingUp size={24} className="text-primary" />
                   </div>
                   <div>
@@ -397,7 +397,7 @@ const Index = () => {
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/rounds')}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-full">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
                     <Calendar size={24} className="text-primary" />
                   </div>
                   <div>

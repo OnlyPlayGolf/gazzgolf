@@ -210,7 +210,7 @@ const Leaderboards = () => {
                       return (
                         <div 
                           key={entry.user_id} 
-                          className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                          className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary text-primary-foreground border border-primary/20' : 'bg-secondary/50'}`}
                         >
                           <div className="flex items-center gap-3">
                             <Badge variant="outline" className="w-8 text-center">
@@ -264,7 +264,7 @@ const Leaderboards = () => {
                       return (
                         <div 
                           key={entry.user_id} 
-                          className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                          className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary text-primary-foreground border border-primary/20' : 'bg-secondary/50'}`}
                         >
                           <div className="flex items-center gap-3">
                             <Badge variant="outline" className="w-8 text-center">
@@ -382,7 +382,7 @@ const Leaderboards = () => {
                           return (
                             <div 
                               key={entry.user_id} 
-                              className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                              className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary text-primary-foreground border border-primary/20' : 'bg-secondary/50'}`}
                             >
                               <div className="flex items-center gap-3">
                                 <Badge variant="outline" className="w-8 text-center">
@@ -426,7 +426,7 @@ const Leaderboards = () => {
                           return (
                             <div 
                               key={entry.user_id} 
-                              className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-secondary/50'}`}
+                              className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary text-primary-foreground border border-primary/20' : 'bg-secondary/50'}`}
                             >
                               <div className="flex items-center gap-3">
                                 <Badge variant="outline" className="w-8 text-center">

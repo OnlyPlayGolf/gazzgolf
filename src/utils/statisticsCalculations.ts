@@ -192,9 +192,14 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     girPar3: null,
     girPar4: null,
     girPar5: null,
-    scrambling: validSummaries.length > 0 
-      ? validSummaries.reduce((sum, s) => sum + (s.updown_percentage || 0), 0) / validSummaries.length 
-      : null,
+    scrambling: (() => {
+      // Only calculate if we have summaries with actual updown_percentage values
+      const summariesWithUpDown = validSummaries.filter(s => s.updown_percentage !== null && s.updown_percentage !== undefined);
+      if (summariesWithUpDown.length === 0) {
+        return null;
+      }
+      return summariesWithUpDown.reduce((sum, s) => sum + (s.updown_percentage || 0), 0) / summariesWithUpDown.length;
+    })(),
     sandSaves: null,
     avgDriverDistance: null,
     leftMissPercentage: null,
@@ -515,10 +520,28 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   }
   
   if (proScramblingAttempts > 0) {
+    // Check if all greens were hit (no scramble opportunities)
+    if (proGIRAttempts > 0 && proGIRCount === proGIRAttempts) {
+      // All greens hit = no scramble opportunities = N/A
+      accuracy = {
+        ...accuracy,
+        scrambling: null,
+      };
+    } else {
     accuracy = {
       ...accuracy,
       scrambling: (proScramblingSuccess / proScramblingAttempts) * 100,
     };
+    }
+  } else {
+    // No scramble attempts at all = N/A
+    // Only set to null if we have pro stats data, otherwise keep existing value
+    if (proRounds && proRounds.length > 0) {
+      accuracy = {
+        ...accuracy,
+        scrambling: null,
+      };
+    }
   }
   
   if (proHolesWithPutts > 0) {

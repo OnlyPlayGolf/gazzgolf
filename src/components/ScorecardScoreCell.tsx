@@ -53,7 +53,7 @@ export function ScorecardScoreCell({ score, par, className }: ScorecardScoreCell
     );
   }
 
-  // Par - plain number (no shape)
+  // Par - plain number (no shape) - use white text if className overrides
   if (diff === 0) {
     return (
       <span className={cn("inline-flex items-center justify-center w-[18px] h-[18px] text-[10px] font-semibold text-foreground leading-none", className)}>

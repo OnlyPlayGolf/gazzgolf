@@ -212,7 +212,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                     key={entry.user_id} 
                     className={cn(
                       "flex items-center justify-between p-3 rounded-md",
-                      entry.user_id === user?.id ? "bg-primary/10 border border-primary/20" : "bg-secondary/30"
+                      entry.user_id === user?.id ? "bg-primary text-primary-foreground border border-primary/20" : "bg-secondary/30"
                     )}
                   >
                     <div className="flex items-center gap-3">

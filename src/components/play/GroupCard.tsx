@@ -67,7 +67,7 @@ function PlayerRow({
       >
         <Avatar className="h-8 w-8 shrink-0">
           <AvatarImage src={player.avatarUrl} />
-          <AvatarFallback className="text-xs bg-primary/10">
+          <AvatarFallback className="text-xs bg-primary text-primary-foreground">
             {formatPlayerName(player).charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
@@ -189,7 +189,7 @@ export function GroupCard({
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className={`min-h-[60px] rounded-lg transition-colors ${
-                  snapshot.isDraggingOver ? "bg-primary/10 border-2 border-dashed border-primary" : ""
+                  snapshot.isDraggingOver ? "bg-primary text-primary-foreground border-2 border-dashed border-primary" : ""
                 }`}
               >
                 {group.players.length === 0 && !snapshot.isDraggingOver ? (

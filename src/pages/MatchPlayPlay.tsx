@@ -530,7 +530,7 @@ export default function MatchPlayPlay() {
             ? "bg-blue-100 dark:bg-blue-900/30" 
             : currentMatchStatus < 0 
               ? "bg-red-100 dark:bg-red-900/30" 
-              : "bg-primary/10"
+              : "bg-primary text-primary-foreground"
         }`}>
           <p className={`text-lg font-bold ${
             currentMatchStatus > 0 

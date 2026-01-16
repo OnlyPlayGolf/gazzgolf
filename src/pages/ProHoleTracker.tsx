@@ -806,9 +806,9 @@ const ProHoleTracker = () => {
       <div className="sticky top-0 z-10 bg-background border-b">
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate(`/rounds/${roundId}/pro-summary`)}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/rounds/pro-setup")}>
               <ArrowLeft className="mr-2" size={18} />
-              Exit
+              Back
             </Button>
             <Badge variant="outline" className="text-lg px-3 py-1">
               Hole {currentHole} of {round?.holes_played}

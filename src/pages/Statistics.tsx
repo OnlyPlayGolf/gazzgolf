@@ -518,7 +518,9 @@ export default function Statistics() {
             />
             <StatRow 
               label="Scrambling" 
-              value={formatPercentage(stats?.accuracy.scrambling ?? null)}
+              value={stats?.accuracy.scrambling !== null && stats?.accuracy.scrambling !== undefined
+                ? formatPercentage(stats.accuracy.scrambling)
+                : "N/A"}
               level={stats?.accuracy.scrambling !== null 
                 ? stats.accuracy.scrambling >= 50 ? 'strength' 
                 : stats.accuracy.scrambling <= 30 ? 'needs-improvement' 

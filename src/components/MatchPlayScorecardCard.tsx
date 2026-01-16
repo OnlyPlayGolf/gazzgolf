@@ -104,15 +104,15 @@ export function MatchPlayScorecardCard({
     return (
       <Table className="w-full table-fixed">
         <TableHeader>
-          <TableRow className="bg-primary/5">
-            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+          <TableRow className="bg-primary">
+            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {nineHoles.map(hole => (
-              <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5">
+              <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                 {hole}
               </TableHead>
             ))}
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">{nineLabel}</TableHead>
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">{nineLabel}</TableHead>
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
               {isBackNine ? "Tot" : (hasBackNine ? "" : "Tot")}
             </TableHead>
           </TableRow>
@@ -145,7 +145,7 @@ export function MatchPlayScorecardCard({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {getNineTotal(nineHoles, 1) || ""}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (getTotalScore(1) || "") : ""}
             </TableCell>
           </TableRow>
@@ -167,7 +167,7 @@ export function MatchPlayScorecardCard({
               );
             })}
             <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-            <TableCell className="text-center bg-primary/10 text-[10px] px-0 py-1"></TableCell>
+            <TableCell className="text-center bg-primary text-primary-foreground text-[10px] px-0 py-1"></TableCell>
           </TableRow>
 
           <TableRow>
@@ -182,7 +182,7 @@ export function MatchPlayScorecardCard({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {getNineTotal(nineHoles, 2) || ""}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (getTotalScore(2) || "") : ""}
             </TableCell>
           </TableRow>
@@ -196,16 +196,16 @@ export function MatchPlayScorecardCard({
       className="cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all group overflow-hidden"
       onClick={onClick}
     >
-      {/* Green Header - Match Card Style */}
-      <div className="bg-primary text-primary-foreground p-3">
+      {/* Grey Header - Match Card Style */}
+      <div className="bg-muted/50 p-3">
         <div className="flex items-center gap-3">
           {/* Left: W/L/T with match status */}
           <div className="flex-shrink-0 w-14 text-center">
-            <div className="text-xl font-bold">
+            <div className="text-xl font-bold text-foreground">
               {matchStatus > 0 ? "W" : matchStatus < 0 ? "L" : "T"}
             </div>
             {matchStatus !== 0 && (
-              <div className="text-xs opacity-75">
+              <div className="text-xs text-muted-foreground">
                 {Math.abs(matchStatus)} {matchStatus > 0 ? "UP" : "DOWN"}
               </div>
             )}
@@ -213,17 +213,17 @@ export function MatchPlayScorecardCard({
 
           {/* Right: Round Details */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm truncate">{roundName || "Match Play"}</h3>
-            <div className="flex items-center gap-1.5 mt-0.5 text-xs opacity-90">
+            <h3 className="font-semibold text-sm truncate text-foreground">{roundName || "Match Play"}</h3>
+            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
               <span className="truncate">{courseName}</span>
               <span>·</span>
               <span className="flex-shrink-0">{formatDate(datePlayed)}</span>
             </div>
-            <div className="text-xs opacity-75 mt-0.5">Match Play · 2 players</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Match Play · 2 players</div>
           </div>
 
           {/* Chevron */}
-          <ChevronRight size={20} className="text-primary-foreground/60 flex-shrink-0 group-hover:text-primary-foreground transition-colors" />
+          <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 group-hover:text-foreground transition-colors" />
         </div>
       </div>
 

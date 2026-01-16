@@ -67,14 +67,14 @@ const allDrills = [
   {
     id: 'wedges-2-laps',
     title: 'Wedge Point Game',
-    shortDescription: 'Dial in your wedges with 18 pressure shots from 40–80 meters. One shot per distance, 2 laps (18 total shots) and score points by hitting it close.',
+    shortDescription: 'Dial in your wedges with 18 pressure shots from 40–80 meters.',
     category: 'approach',
     icon: Hammer,
   },
   {
     id: 'wedges-progression',
     title: "Åberg's Wedge Ladder",
-    shortDescription: 'Test your distance control across 13 distances (60-120m). Hit within 3m to advance. Score is total shots needed.',
+    shortDescription: 'Test your distance control with 13 shots from 60-120 meters.',
     category: 'approach',
     icon: Hammer,
   },
@@ -109,7 +109,7 @@ const allDrills = [
   {
     id: 'up-downs-test',
     title: '18 Up & Downs',
-    shortDescription: '18 randomized short game stations from bunkers, rough, and fairway. Track total shots needed for all stations.',
+    shortDescription: '18 randomized up-and-down shots from bunkers, rough, and fairway. Hole out every station and track total shots.',
     category: 'shortgame',
     icon: Zap,
   },
@@ -191,9 +191,38 @@ const CategoryDrills = () => {
       ).filter(Boolean).sort((a, b) => a!.title.localeCompare(b!.title));
     }
     
-    return allDrills
-      .filter(drill => drill.category === categoryId)
-      .sort((a, b) => a.title.localeCompare(b.title));
+    const drills = allDrills.filter(drill => drill.category === categoryId);
+    
+    // Custom order for shortgame category
+    if (categoryId === 'shortgame') {
+      const order = ['easy-chip', '8-ball-drill', 'up-downs-test'];
+      return drills.sort((a, b) => {
+        const indexA = order.indexOf(a.id);
+        const indexB = order.indexOf(b.id);
+        // If drill not in order array, put it at the end
+        if (indexA === -1 && indexB === -1) return a.title.localeCompare(b.title);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    }
+    
+    // Custom order for approach category
+    if (categoryId === 'approach') {
+      const order = ['wedges-2-laps', 'wedges-progression', 'approach-control', 'tw-9-windows'];
+      return drills.sort((a, b) => {
+        const indexA = order.indexOf(a.id);
+        const indexB = order.indexOf(b.id);
+        // If drill not in order array, put it at the end
+        if (indexA === -1 && indexB === -1) return a.title.localeCompare(b.title);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    }
+    
+    // Default alphabetical sort for other categories
+    return drills.sort((a, b) => a.title.localeCompare(b.title));
   };
 
   const drills = getDrillsForCategory();

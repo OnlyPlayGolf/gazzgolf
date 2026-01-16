@@ -231,7 +231,7 @@ export const StatsRoundsHistory = () => {
                               </div>
                               {round.round_type && (
                                 <div className="mt-1">
-                                  <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs">
+                                  <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-primary text-xs">
                                     {roundTypeLabels[round.round_type] || round.round_type}
                                   </span>
                                 </div>

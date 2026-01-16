@@ -490,7 +490,7 @@ const Auth = () => {
             {view === 'confirmation' && (
               <div className="space-y-6 text-center">
                 <div className="flex justify-center">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
                     <Mail size={32} className="text-primary" />
                   </div>
                 </div>

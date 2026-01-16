@@ -61,7 +61,7 @@ const About = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded bg-primary/10">
+                <div className="p-1.5 rounded bg-primary text-primary-foreground">
                   <Code className="h-4 w-4 text-primary" />
                 </div>
                 <div>
@@ -70,7 +70,7 @@ const About = () => {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded bg-primary/10">
+                <div className="p-1.5 rounded bg-primary text-primary-foreground">
                   <Code className="h-4 w-4 text-primary" />
                 </div>
                 <div>
@@ -79,7 +79,7 @@ const About = () => {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded bg-primary/10">
+                <div className="p-1.5 rounded bg-primary text-primary-foreground">
                   <Code className="h-4 w-4 text-primary" />
                 </div>
                 <div>

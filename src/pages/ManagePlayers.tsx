@@ -290,7 +290,7 @@ export default function ManagePlayers() {
             <div className="flex items-start gap-3">
               <Avatar className="w-12 h-12">
                 <AvatarImage src={player.avatarUrl} />
-                <AvatarFallback className={player.isTemporary ? "bg-muted" : "bg-primary/10"}>
+                <AvatarFallback className={player.isTemporary ? "bg-muted" : "bg-primary text-primary-foreground"}>
                   {player.displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -362,7 +362,7 @@ export default function ManagePlayers() {
                 >
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={friend.avatar_url} />
-                    <AvatarFallback className="bg-primary/10">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {(friend.display_name || friend.username).charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>

@@ -124,7 +124,7 @@ export function UmbriagioScorecardCard({
         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
           {totalForNine !== 0 ? totalForNine : ''}
         </TableCell>
-        <TableCell className="text-center font-bold bg-primary/10 text-[10px] px-0 py-1">
+        <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
           {showTotal ? grandTotal : ''}
         </TableCell>
       </TableRow>
@@ -136,30 +136,30 @@ export function UmbriagioScorecardCard({
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={handleClick}
     >
-      {/* Green Header - Round Card Style */}
-      <div className="bg-primary text-primary-foreground p-4">
+      {/* Grey Header - Round Card Style */}
+      <div className="bg-muted/50 p-4">
         <div className="flex items-center gap-4">
           {/* Left: W/L/T Result with score below */}
           <div className="flex-shrink-0 w-14 text-center">
             <div className={`text-2xl font-bold ${getResultColor()}`}>
               {getResultDisplay()}
             </div>
-            <div className="text-xs opacity-75 mt-0.5">
+            <div className="text-xs text-muted-foreground mt-0.5">
               {getScoreDisplay()}
             </div>
           </div>
           
           {/* Right: Round Details */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold truncate">
+            <h3 className="font-semibold truncate text-foreground">
               {roundName || 'Umbriago'}
             </h3>
-            <div className="flex items-center gap-1.5 mt-1 text-sm opacity-90">
+            <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
               <span className="truncate">{courseName}</span>
               <span>·</span>
               <span className="flex-shrink-0">{format(new Date(datePlayed), "MMM d")}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs opacity-75 mt-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
               <span>Umbriago</span>
               <span>·</span>
               <span className="flex items-center gap-1">
@@ -177,15 +177,15 @@ export function UmbriagioScorecardCard({
           {/* Front 9 */}
           <Table className="w-full table-fixed">
             <TableHeader>
-              <TableRow className="bg-primary/5">
-                <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+              <TableRow className="bg-primary">
+                <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                 {frontNineHoles.map(hole => (
-                  <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5">
+                  <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                     {hole}
                   </TableHead>
                 ))}
-                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Out</TableHead>
-                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">
+                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Out</TableHead>
+                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                   {!hasBackNine ? 'Tot' : ''}
                 </TableHead>
               </TableRow>
@@ -215,15 +215,15 @@ export function UmbriagioScorecardCard({
             <div className="border-t">
               <Table className="w-full table-fixed">
                 <TableHeader>
-                  <TableRow className="bg-primary/5">
-                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary/5 w-[44px]">Hole</TableHead>
+                  <TableRow className="bg-primary">
+                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                     {backNineHoles.map(hole => (
-                      <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5">
+                      <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
                         {hole}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">In</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary/10">Tot</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">In</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Tot</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

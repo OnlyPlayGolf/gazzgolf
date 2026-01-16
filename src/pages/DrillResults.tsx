@@ -126,7 +126,7 @@ export default function DrillResults() {
                   onClick={() => setSelectedSession(session)}
                   className={`w-full p-3 rounded-lg border text-left transition-colors ${
                     selectedSession?.id === session.id
-                      ? 'bg-primary/10 border-primary'
+                      ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-muted/50 border-border hover:bg-muted'
                   }`}
                 >

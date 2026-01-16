@@ -80,7 +80,7 @@ const AccountMembership = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10">
+                <div className="p-2 rounded-full bg-primary text-primary-foreground">
                   <Crown className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -88,7 +88,7 @@ const AccountMembership = () => {
                   <p className="font-semibold text-foreground capitalize">{currentPlan}</p>
                 </div>
               </div>
-              <Badge variant="secondary" className="bg-primary/10 text-primary">
+              <Badge variant="secondary" className="bg-primary text-primary-foreground text-primary">
                 Active
               </Badge>
             </div>

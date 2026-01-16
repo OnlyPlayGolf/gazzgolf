@@ -174,7 +174,7 @@ export function AddPlayerDialog({
                     >
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={friend.avatar_url} />
-                        <AvatarFallback className="bg-primary/10 text-xs">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                           {(friend.display_name || friend.username)?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>

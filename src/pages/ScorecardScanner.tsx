@@ -782,7 +782,7 @@ export default function ScorecardScanner() {
                           />
                         ) : (
                           <div className={`h-10 flex items-center justify-center rounded border ${
-                            score ? 'bg-primary/10 border-primary' : 'bg-muted'
+                            score ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted'
                           }`}>
                             {score || '-'}
                           </div>
