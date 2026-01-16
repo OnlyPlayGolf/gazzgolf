@@ -322,7 +322,7 @@ const RoundSummary = () => {
                       <div>
                         <div className="text-xl font-bold">{player.display_name}</div>
                         <div className="text-sm text-muted-foreground">
-                          HCP +{player.handicap ? Math.abs(Number(player.handicap)) : 0}
+                          HCP {Number(player.handicap) === 0 ? '0' : `+${player.handicap ? Math.abs(Number(player.handicap)) : 0}`}
                         </div>
                       </div>
                     </div>

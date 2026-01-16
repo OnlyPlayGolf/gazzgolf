@@ -43,6 +43,7 @@ export function parseHandicap(input: string | null | undefined): number | undefi
  */
 export function formatHandicap(handicap: number | null | undefined): string {
   if (handicap === undefined || handicap === null) return "";
+  if (handicap === 0) return "0";
   if (handicap < 0) return `+${Math.abs(handicap)}`;
   return handicap.toString();
 }
