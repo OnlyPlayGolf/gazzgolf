@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Trophy, ChevronDown, RotateCcw } from "lucide-react";
+import { ChevronDown, RotateCcw } from "lucide-react";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { ScorecardActions } from "@/components/ScorecardActions";
 import { GameHeader } from "@/components/GameHeader";
@@ -257,6 +257,21 @@ export default function SkinsLeaderboard() {
     return { total, par };
   };
 
+  const getHoleData = (holeNumber: number): SkinsHole | null => {
+    return holes.find(h => h.hole_number === holeNumber) || null;
+  };
+
+  const getWinnerDisplayName = (winnerId: string | null): string => {
+    if (!winnerId) return '';
+    const winner = game?.players.find(p => {
+      const playerId = p.odId || p.id || p.name;
+      return playerId === winnerId;
+    });
+    if (!winner) return '';
+    const name = winner.displayName || winner.name || '';
+    return name.split(' ')[0]; // Return first name only
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center pb-16">
@@ -310,11 +325,8 @@ export default function SkinsLeaderboard() {
                     )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1 justify-end">
-                    <Trophy size={18} className="text-amber-500" />
-                    <span className="text-3xl font-bold">{player.skinsWon}</span>
-                  </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold">{player.skinsWon}</div>
                   <div className="text-sm text-muted-foreground">
                     SKINS
                   </div>
@@ -364,7 +376,7 @@ export default function SkinsLeaderboard() {
                         {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                       </TableRow>
                       <TableRow className="font-bold">
-                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                         {frontNine.map(hole => {
                           const score = player.scores.get(hole.hole_number);
                           const hasMulligan = player.mulligans.has(hole.hole_number);
@@ -384,6 +396,47 @@ export default function SkinsLeaderboard() {
                           {frontTotals.total > 0 ? frontTotals.total : ''}
                         </TableCell>
                         {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-bold text-foreground text-[10px] px-0 py-1 w-[44px]">Skins</TableCell>
+                        {frontNine.map(hole => {
+                          const holeData = getHoleData(hole.hole_number);
+                          if (!holeData) return <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1"></TableCell>;
+                          
+                          if (holeData.is_carryover) {
+                            return (
+                              <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1 text-muted-foreground">
+                                -
+                              </TableCell>
+                            );
+                          }
+                          
+                          if (holeData.winner_player === player.playerId) {
+                            // Current player won this hole, show number of skins they got
+                            return (
+                              <TableCell 
+                                key={hole.hole_number} 
+                                className="text-center text-[10px] px-0 py-1 text-green-600 font-bold"
+                              >
+                                {holeData.skins_available}
+                              </TableCell>
+                            );
+                          }
+                          
+                          if (holeData.winner_player && holeData.winner_player !== player.playerId) {
+                            // Another player won this hole, show 0
+                            return (
+                              <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1 text-foreground">
+                                0
+                              </TableCell>
+                            );
+                          }
+                          
+                          // No winner yet
+                          return <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1"></TableCell>;
+                        })}
+                        <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                        {backNine.length > 0 && <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>}
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -427,11 +480,11 @@ export default function SkinsLeaderboard() {
                             {backNine.reduce((sum, h) => sum + h.par, 0)}
                           </TableCell>
                           <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                            {frontTotals.total + backTotals.total > 0 ? frontTotals.total + backTotals.total : ''}
+                            {frontNine.reduce((sum, h) => sum + h.par, 0) + backNine.reduce((sum, h) => sum + h.par, 0)}
                           </TableCell>
                         </TableRow>
                         <TableRow className="font-bold">
-                          <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                          <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                           {backNine.map(hole => {
                             const score = player.scores.get(hole.hole_number);
                             const hasMulligan = player.mulligans.has(hole.hole_number);
@@ -453,6 +506,47 @@ export default function SkinsLeaderboard() {
                           <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                             {frontTotals.total + backTotals.total > 0 ? frontTotals.total + backTotals.total : ''}
                           </TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-bold text-foreground text-[10px] px-0 py-1 w-[44px]">Skins</TableCell>
+                          {backNine.map(hole => {
+                            const holeData = getHoleData(hole.hole_number);
+                            if (!holeData) return <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1"></TableCell>;
+                            
+                            if (holeData.is_carryover) {
+                              return (
+                                <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1 text-muted-foreground">
+                                  -
+                                </TableCell>
+                              );
+                            }
+                            
+                            if (holeData.winner_player === player.playerId) {
+                              // Current player won this hole, show number of skins they got
+                              return (
+                                <TableCell 
+                                  key={hole.hole_number} 
+                                  className="text-center text-[10px] px-0 py-1 text-green-600 font-bold"
+                                >
+                                  {holeData.skins_available}
+                                </TableCell>
+                              );
+                            }
+                            
+                            if (holeData.winner_player && holeData.winner_player !== player.playerId) {
+                              // Another player won this hole, show 0
+                              return (
+                                <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1 text-foreground">
+                                  0
+                                </TableCell>
+                              );
+                            }
+                            
+                            // No winner yet
+                            return <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1"></TableCell>;
+                          })}
+                          <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
+                          <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>

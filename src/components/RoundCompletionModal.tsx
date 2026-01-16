@@ -203,7 +203,7 @@ export function RoundCompletionModal({
                     </TableCell>
                   </TableRow>
                   <TableRow className="font-bold">
-                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Player</TableCell>
                     {frontNine.map(hole => {
                       const score = holeScores.get(hole.hole_number);
                       return (
@@ -215,7 +215,7 @@ export function RoundCompletionModal({
                     <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {getFrontNineTotal() > 0 ? getFrontNineTotal() : ''}
                     </TableCell>
-                    <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {!hasBackNine ? totalScore : ''}
                     </TableCell>
                   </TableRow>
@@ -254,7 +254,7 @@ export function RoundCompletionModal({
                         </TableCell>
                       </TableRow>
                       <TableRow className="font-bold">
-                        <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                        <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Player</TableCell>
                         {backNine.map(hole => {
                           const score = holeScores.get(hole.hole_number);
                           return (
@@ -266,7 +266,7 @@ export function RoundCompletionModal({
                         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {getBackNineTotal() > 0 ? getBackNineTotal() : ''}
                         </TableCell>
-                        <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {totalScore}
                         </TableCell>
                       </TableRow>

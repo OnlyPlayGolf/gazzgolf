@@ -325,7 +325,7 @@ export default function BestBallLeaderboard() {
                               <TableCell 
                                 key={hole.hole_number} 
                                 className={`text-center text-[10px] px-0 py-1 ${
-                                  isLowest ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold' : ''
+                                  isLowest ? 'bg-muted font-bold' : ''
                                 }`}
                               >
                                 {playerScore?.grossScore || ''}
@@ -340,7 +340,7 @@ export default function BestBallLeaderboard() {
                       );
                     })}
                     <TableRow className="font-bold">
-                      <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                      <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{teamName.split(' ')[0]}</TableCell>
                       {frontNine.map(hole => {
                         const score = getTeamBestScore(hole.hole_number, team);
                         return (
@@ -420,7 +420,7 @@ export default function BestBallLeaderboard() {
                                 <TableCell 
                                   key={hole.hole_number} 
                                   className={`text-center text-[10px] px-0 py-1 ${
-                                    isLowest ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold' : ''
+                                    isLowest ? 'bg-muted font-bold' : ''
                                   }`}
                                 >
                                   {playerScore?.grossScore || ''}
@@ -437,7 +437,7 @@ export default function BestBallLeaderboard() {
                         );
                       })}
                       <TableRow className="font-bold">
-                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{teamName.split(' ')[0]}</TableCell>
                         {backNine.map(hole => {
                           const score = getTeamBestScore(hole.hole_number, team);
                           return (

@@ -380,7 +380,7 @@ const RoundSummary = () => {
                             </TableCell>
                           </TableRow>
                           <TableRow className="font-bold">
-                            <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                            <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.display_name.split(' ')[0]}</TableCell>
                             {frontNine.map(hole => {
                               const score = player.scores.get(hole.hole_number);
                               const hasScore = player.scores.has(hole.hole_number);
@@ -468,7 +468,7 @@ const RoundSummary = () => {
                               </TableCell>
                             </TableRow>
                             <TableRow className="font-bold">
-                              <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                              <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.display_name.split(' ')[0]}</TableCell>
                               {backNine.map(hole => {
                                 const score = player.scores.get(hole.hole_number);
                                 const hasScore = player.scores.has(hole.hole_number);

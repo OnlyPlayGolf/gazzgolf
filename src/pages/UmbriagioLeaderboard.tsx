@@ -467,7 +467,7 @@ export default function UmbriagioLeaderboard() {
                       </TableCell>
                     </TableRow>
                     <TableRow className="font-bold">
-                      <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
+                      <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10 max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                       {backNine.map(hole => {
                         const score = getPlayerScore(hole.hole_number, player.id);
                         const scoreDiff = score && score > 0 ? score - hole.par : null;

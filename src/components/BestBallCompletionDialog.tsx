@@ -446,7 +446,7 @@ export function BestBallCompletionDialog({
                             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {backTotal || ''}
                             </TableCell>
-                            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {fullTotal || ''}
                             </TableCell>
                           </TableRow>
@@ -497,7 +497,7 @@ export function BestBallCompletionDialog({
                             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {backTotal || ''}
                             </TableCell>
-                            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {fullTotal || ''}
                             </TableCell>
                           </TableRow>

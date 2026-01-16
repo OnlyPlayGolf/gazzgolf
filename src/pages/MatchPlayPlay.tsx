@@ -357,22 +357,22 @@ export default function MatchPlayPlay() {
         </div>
 
         {/* Hole Navigation Bar */}
-        <div className="bg-muted py-4 px-4">
+        <div className="bg-primary py-4 px-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigateHole("prev")}
               disabled={currentHoleIndex === 0}
-              className="text-foreground hover:bg-muted-foreground/20 disabled:text-muted-foreground/50"
+              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
             >
               <ChevronLeft size={24} />
             </Button>
 
             <div className="text-center">
-              <div className="text-sm text-muted-foreground">PAR {par}</div>
-              <div className="text-2xl font-bold text-foreground">Hole {currentHole}</div>
-              <div className="text-sm text-muted-foreground">HCP {strokeIndex || '-'}</div>
+              <div className="text-sm text-primary-foreground/90">PAR {par}</div>
+              <div className="text-2xl font-bold text-primary-foreground">Hole {currentHole}</div>
+              <div className="text-sm text-primary-foreground/90">HCP {strokeIndex || '-'}</div>
             </div>
 
             <Button
@@ -380,7 +380,7 @@ export default function MatchPlayPlay() {
               size="icon"
               onClick={() => navigateHole("next")}
               disabled={currentHole > holes.length || currentHole >= totalHoles}
-              className="text-foreground hover:bg-muted-foreground/20 disabled:text-muted-foreground/50"
+              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
             >
               <ChevronRight size={24} />
             </Button>

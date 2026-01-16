@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
-import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
+import { SkinsCompletionModal } from "@/components/SkinsCompletionModal";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import { GameHeader } from "@/components/GameHeader";
@@ -377,8 +377,6 @@ export default function SkinsTracker() {
   };
 
   const handleFinishRound = async () => {
-    setShowCompletionDialog(false);
-    
     // Mark game as finished
     try {
       await supabase
@@ -389,38 +387,10 @@ export default function SkinsTracker() {
       console.error("Error finishing game:", error);
     }
     
-    navigate(`/skins/${roundId}/summary`);
+    // Show completion modal - don't navigate yet, modal will handle navigation
+    setShowCompletionDialog(true);
   };
 
-  const handleContinuePlaying = async () => {
-    setShowCompletionDialog(false);
-    
-    const nextHoleNumber = courseHoles.length + 1;
-    const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5];
-    
-    const newHole: CourseHole = {
-      hole_number: nextHoleNumber,
-      par: defaultPar[(nextHoleNumber - 1) % 9],
-      stroke_index: nextHoleNumber,
-    };
-    
-    setCourseHoles([...courseHoles, newHole]);
-    setCurrentHoleIndex(courseHoles.length);
-    
-    try {
-      await supabase
-        .from("skins_games")
-        .update({ holes_played: nextHoleNumber })
-        .eq("id", roundId);
-    } catch (error) {
-      console.error("Error updating holes_played:", error);
-    }
-    
-    toast({
-      title: "Extra hole added",
-      description: `Hole ${nextHoleNumber} added to your game`,
-    });
-  };
 
   const handleDeleteGame = async () => {
     try {
@@ -479,22 +449,22 @@ export default function SkinsTracker() {
       />
 
       {/* Hole Navigation Bar */}
-      <div className="bg-muted py-4 px-4">
+      <div className="bg-primary py-4 px-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigateHole("prev")}
             disabled={currentHoleIndex === 0}
-            className="text-foreground hover:bg-muted-foreground/20 disabled:text-muted-foreground/50"
+            className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
           >
             <ChevronLeft size={24} />
           </Button>
 
           <div className="text-center">
-            <div className="text-sm text-muted-foreground">PAR {currentHole.par}</div>
-            <div className="text-2xl font-bold text-foreground">Hole {currentHole.hole_number}</div>
-            <div className="text-sm text-muted-foreground">HCP {currentHole.stroke_index}</div>
+            <div className="text-sm text-primary-foreground/90">PAR {currentHole.par}</div>
+            <div className="text-2xl font-bold text-primary-foreground">Hole {currentHole.hole_number}</div>
+            <div className="text-sm text-primary-foreground/90">HCP {currentHole.stroke_index}</div>
           </div>
 
           <Button
@@ -502,7 +472,7 @@ export default function SkinsTracker() {
             size="icon"
             onClick={() => navigateHole("next")}
             disabled={currentHoleIndex === courseHoles.length - 1}
-            className="text-foreground hover:bg-muted-foreground/20 disabled:text-muted-foreground/50"
+            className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
           >
             <ChevronRight size={24} />
           </Button>
@@ -514,7 +484,6 @@ export default function SkinsTracker() {
         <Card className="p-3 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-amber-600" />
               <span className="font-medium text-amber-800 dark:text-amber-200">
                 {carryoverCount} Skin{carryoverCount > 1 ? 's' : ''} on this hole
               </span>
@@ -557,8 +526,7 @@ export default function SkinsTracker() {
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                     <span>Tee: {player.teeColor}</span>
                     <span>•</span>
-                    <span className="flex items-center gap-1 text-amber-600">
-                      <Trophy size={14} />
+                    <span className="text-amber-600">
                       {skinCount} skin{skinCount !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -577,7 +545,7 @@ export default function SkinsTracker() {
         {/* Complete Round Button */}
         {isAtLastHole && (
           <Button
-            onClick={() => setShowCompletionDialog(true)}
+            onClick={handleFinishRound}
             className="w-full bg-amber-600 hover:bg-amber-700 text-white"
             size="lg"
           >
@@ -587,16 +555,46 @@ export default function SkinsTracker() {
         )}
       </div>
 
-      {/* Round Completion Dialog */}
-      <RoundCompletionDialog
-        open={showCompletionDialog}
-        onOpenChange={setShowCompletionDialog}
-        holesPlayed={courseHoles.length}
-        plannedHoles={game.holes_played}
-        onFinishRound={handleFinishRound}
-        onContinuePlaying={handleContinuePlaying}
-        onGoBack={() => setShowCompletionDialog(false)}
-      />
+      {/* Round Completion Modal */}
+      {showCompletionDialog && game && (
+        <SkinsCompletionModal
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={{
+            id: game.id,
+            course_name: game.course_name,
+            date_played: game.date_played,
+            holes_played: game.holes_played,
+            round_name: game.round_name || null,
+            user_id: game.players[0]?.odId || '',
+            is_finished: game.is_finished,
+            skin_value: game.skin_value,
+            carryover_enabled: game.carryover_enabled,
+            use_handicaps: false,
+            players: game.players,
+          }}
+          holes={Array.from(holeData.values()).map((h, index) => ({
+            id: `${roundId}-${h.hole_number}-${index}`,
+            game_id: roundId || '',
+            hole_number: h.hole_number,
+            par: h.par,
+            player_scores: h.player_scores,
+            winner_player: h.winner_player,
+            skins_available: h.skins_available,
+            is_carryover: h.is_carryover,
+          }))}
+          players={game.players.map(p => ({
+            id: p.odId,
+            odId: p.odId,
+            name: p.displayName || 'Player',
+            displayName: p.displayName,
+            handicap: p.handicap,
+            tee: p.teeColor,
+            avatarUrl: undefined,
+          }))}
+          courseHoles={courseHoles}
+        />
+      )}
 
       {/* Score Input Sheet */}
       {selectedPlayer && currentHole && (

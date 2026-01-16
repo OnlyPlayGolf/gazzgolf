@@ -305,7 +305,7 @@ export default function WolfLeaderboard() {
                     {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                     {frontNine.map(hole => {
                       const rawScore = getHoleScore(hole.hole_number, player.num);
                       const score = rawScore === -1 ? null : rawScore;
@@ -406,7 +406,7 @@ export default function WolfLeaderboard() {
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Score</TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                       {backNine.map(hole => {
                         const rawScore = getHoleScore(hole.hole_number, player.num);
                         const score = rawScore === -1 ? null : rawScore;

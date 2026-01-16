@@ -138,7 +138,7 @@ export function StrokePlayScorecardCard({
                 </TableCell>
               </TableRow>
               <TableRow className="font-bold">
-                <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Player</TableCell>
                 {frontNineHoles.map(hole => {
                   const score = holeScores[hole];
                   return (
@@ -193,7 +193,7 @@ export function StrokePlayScorecardCard({
                     </TableCell>
                   </TableRow>
                   <TableRow className="font-bold">
-                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Player</TableCell>
                     {backNineHoles.map(hole => {
                       const score = holeScores[hole];
                       return (

@@ -272,7 +272,7 @@ export function MatchPlayCompletionModal({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 1) || 0), 0) || ''}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_1_gross_score || 0), 0) || '') : ''}
             </TableCell>
           </TableRow>
@@ -297,7 +297,7 @@ export function MatchPlayCompletionModal({
               );
             })}
             <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-            <TableCell className="text-center bg-primary text-primary-foreground text-[10px] px-0 py-1"></TableCell>
+            <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
           </TableRow>
 
           <TableRow>
@@ -312,7 +312,7 @@ export function MatchPlayCompletionModal({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 2) || 0), 0) || ''}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_2_gross_score || 0), 0) || '') : ''}
             </TableCell>
           </TableRow>

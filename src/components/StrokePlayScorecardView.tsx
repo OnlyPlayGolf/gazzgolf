@@ -112,7 +112,7 @@ export function StrokePlayScorecardView({
                 <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {nineTotal > 0 ? nineTotal : ''}
                 </TableCell>
-                <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {(isBackNine || !hasBackNine) && player.totalScore > 0 ? player.totalScore : ''}
                 </TableCell>
               </TableRow>

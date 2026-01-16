@@ -211,7 +211,7 @@ export function StrokePlayLeaderboardView({
                         </TableCell>
                       </TableRow>
                       <TableRow className="font-bold">
-                        <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                        <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                         {frontNine.map(hole => {
                           const score = player.scores.get(hole.hole_number);
                           const hasScore = player.scores.has(hole.hole_number);
@@ -233,7 +233,7 @@ export function StrokePlayLeaderboardView({
                         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {hasConceded ? '-' : (frontTotals.totalScore > 0 ? frontTotals.totalScore : '')}
                         </TableCell>
-                        <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {backNine.length > 0 ? '' : (hasConceded ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
                         </TableCell>
                       </TableRow>
@@ -283,7 +283,7 @@ export function StrokePlayLeaderboardView({
                           </TableCell>
                         </TableRow>
                         <TableRow className="font-bold">
-                          <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                          <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                           {backNine.map(hole => {
                             const score = player.scores.get(hole.hole_number);
                             const hasScore = player.scores.has(hole.hole_number);
@@ -305,7 +305,7 @@ export function StrokePlayLeaderboardView({
                           <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                             {hasConceded ? '-' : (backTotals.totalScore > 0 ? backTotals.totalScore : '')}
                           </TableCell>
-                          <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                             {hasConceded ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : '')}
                           </TableCell>
                         </TableRow>

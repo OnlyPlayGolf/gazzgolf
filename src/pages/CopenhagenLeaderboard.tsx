@@ -245,7 +245,7 @@ export default function CopenhagenLeaderboard() {
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                     {frontNine.map(hole => {
                       const score = getPlayerGrossScore(hole.hole_number, player.index);
                       return (
@@ -337,7 +337,7 @@ export default function CopenhagenLeaderboard() {
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                       {backNine.map(hole => {
                         const score = getPlayerGrossScore(hole.hole_number, player.index);
                         return (

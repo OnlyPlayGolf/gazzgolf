@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Share2, Loader2, Trophy } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ScorecardTypeSelector, ScorecardType } from "@/components/ScorecardTypeSelector";
 import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
@@ -61,39 +60,29 @@ interface CourseHole {
   stroke_index: number;
 }
 
-interface SkinsShareDialogWithScorecardProps {
+interface SkinsCompletionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   game: SkinsGame;
   holes: SkinsHole[];
   players: SkinsPlayer[];
   courseHoles: CourseHole[];
-  onContinue: () => void;
 }
 
-export function SkinsShareDialogWithScorecard({
+export function SkinsCompletionModal({
   open,
   onOpenChange,
   game,
   holes,
   players,
   courseHoles,
-  onContinue,
-}: SkinsShareDialogWithScorecardProps) {
+}: SkinsCompletionModalProps) {
   const navigate = useNavigate();
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [scorecardType, setScorecardType] = useState<ScorecardType>('primary');
-  const { toast } = useToast();
   const { strokePlayEnabled } = useStrokePlayEnabled(game.id, 'skins');
-
-  useEffect(() => {
-    if (open) {
-      setShowShareForm(false);
-      setComment("");
-    }
-  }, [open]);
 
   const getPlayerId = (player: SkinsPlayer) => {
     return player.odId || player.id || player.name;
@@ -203,18 +192,20 @@ export function SkinsShareDialogWithScorecard({
 
       if (error) throw error;
 
-      toast({ title: "Shared to feed!" });
+      toast({ title: "Shared!", description: "Your round has been posted" });
+      setShowShareForm(false);
+      setComment("");
       onOpenChange(false);
       navigate("/");
     } catch (error) {
       console.error("Error sharing:", error);
-      toast({ title: "Failed to share", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to share round", variant: "destructive" });
     } finally {
       setIsSharing(false);
     }
   };
 
-  const handleContinue = () => {
+  const handleDone = () => {
     onOpenChange(false);
     navigate("/");
   };
@@ -348,8 +339,8 @@ export function SkinsShareDialogWithScorecard({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button]:hidden">
-        {/* Grey Header - Round Card Style (matches completion modal) */}
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
+        {/* Grey Header - Round Card Style */}
         <div className="bg-muted/50 p-4 rounded-t-lg">
           <div className="flex items-center gap-4">
             {/* Left: Winner with trophy and skins count */}
@@ -388,9 +379,9 @@ export function SkinsShareDialogWithScorecard({
           strokePlayEnabled={strokePlayEnabled}
         />
 
-        <ScrollArea className="max-h-[calc(90vh-220px)] px-4">
-          <div className="space-y-4 pb-4 pt-4">
-            {/* Scorecard */}
+        {/* Scorecard */}
+        {effectiveCourseHoles.length > 0 && (
+          <div className="px-4 pt-3">
             {scorecardType === 'stroke_play' ? (
               <StrokePlayScorecardView
                 players={strokePlayPlayers}
@@ -399,54 +390,59 @@ export function SkinsShareDialogWithScorecard({
             ) : (
               <SkinsScorecardView />
             )}
+          </div>
+        )}
 
-            {showShareForm ? (
-              <div className="space-y-3">
-                <Textarea
-                  placeholder="Add a comment (optional)..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  className="min-h-[80px]"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowShareForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={handleShare}
-                    disabled={isSharing}
-                  >
-                    {isSharing ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Share2 className="h-4 w-4 mr-2" />
-                    )}
-                    Post
-                  </Button>
-                </div>
-              </div>
-            ) : (
+        {/* Actions */}
+        <div className="p-4">
+          {showShareForm ? (
+            <div className="space-y-3">
+              <Textarea
+                placeholder="Add your post-round thoughts..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="min-h-[80px]"
+              />
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => setShowShareForm(true)}
+                  onClick={() => setShowShareForm(false)}
                 >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
+                  Cancel
                 </Button>
-                <Button className="flex-1 bg-amber-600 hover:bg-amber-700" onClick={handleContinue}>
-                  Done
+                <Button
+                  className="flex-1"
+                  onClick={handleShare}
+                  disabled={isSharing}
+                >
+                  {isSharing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Post"
+                  )}
                 </Button>
               </div>
-            )}
-          </div>
-        </ScrollArea>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowShareForm(true)}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleDone}
+              >
+                Done
+              </Button>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
