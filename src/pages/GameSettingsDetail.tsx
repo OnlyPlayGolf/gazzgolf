@@ -108,8 +108,10 @@ export default function GameSettingsDetail() {
     try {
       switch (gameType) {
         case "round":
-        case "skins":
           await fetchRoundData();
+          break;
+        case "skins":
+          await fetchSkinsData();
           break;
         case "match-play":
           await fetchMatchPlayData();
@@ -195,6 +197,67 @@ export default function GameSettingsDetail() {
       });
 
       setGroups([{ ...createDefaultGroup(0), players }]);
+    } else {
+      setGroups([createDefaultGroup(0)]);
+    }
+  };
+
+  const fetchSkinsData = async () => {
+    const { data: skinsData } = await supabase
+      .from("skins_games")
+      .select("*")
+      .eq("id", gameId)
+      .single();
+
+    if (skinsData) {
+      setRoundName(skinsData.round_name || "");
+      setDatePlayed(skinsData.date_played);
+      setSelectedHoles(skinsData.holes_played === 18 ? "18" : "front9");
+      setGameFormat("skins");
+
+      // Fetch course by name or id
+      let courseData = null;
+      if (skinsData.course_id) {
+        const { data } = await supabase
+          .from("courses")
+          .select("id, name, location")
+          .eq("id", skinsData.course_id)
+          .maybeSingle();
+        courseData = data;
+      } else if (skinsData.course_name) {
+        const { data } = await supabase
+          .from("courses")
+          .select("id, name, location")
+          .eq("name", skinsData.course_name)
+          .maybeSingle();
+        courseData = data;
+      }
+
+      if (courseData) {
+        setSelectedCourse({ id: courseData.id, name: courseData.name, location: courseData.location || "" });
+      } else {
+        setSelectedCourse({ id: "", name: skinsData.course_name, location: "" });
+      }
+
+      // Parse players from JSON
+      const rawPlayers = skinsData.players;
+      const parsedPlayers: Player[] = Array.isArray(rawPlayers) 
+        ? rawPlayers.map((p: any) => ({
+            odId: p.odId || p.id || p.name,
+            displayName: p.displayName || p.name || 'Player',
+            username: p.username || "",
+            avatarUrl: p.avatarUrl || undefined,
+            teeColor: p.tee || p.teeColor || "white",
+            handicap: p.handicap,
+            isTemporary: p.isGuest || false,
+          }))
+        : [];
+      
+      if (parsedPlayers.length > 0) {
+        setDefaultTee(parsedPlayers[0].teeColor || "white");
+      }
+      
+      setGroups([{ ...createDefaultGroup(0), players: parsedPlayers }]);
     } else {
       setGroups([createDefaultGroup(0)]);
     }
@@ -427,8 +490,10 @@ export default function GameSettingsDetail() {
     try {
       switch (gameType) {
         case "round":
-        case "skins":
           await saveRoundChanges();
+          break;
+        case "skins":
+          await saveSkinsChanges();
           break;
         case "match-play":
           await saveMatchPlayChanges();
@@ -486,6 +551,35 @@ export default function GameSettingsDetail() {
           .or(`user_id.eq.${player.odId},id.eq.${player.odId}`);
       }
     }
+  };
+
+  const saveSkinsChanges = async () => {
+    const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const currentGroups = groupsRef.current;
+    const allPlayers = currentGroups[0]?.players || [];
+    
+    // Format players for skins_games JSON
+    const playersJson = allPlayers.map(p => ({
+      odId: p.odId,
+      name: p.displayName,
+      displayName: p.displayName,
+      handicap: p.handicap,
+      tee: p.teeColor,
+      avatarUrl: p.avatarUrl,
+      isGuest: p.isTemporary,
+    }));
+
+    await supabase
+      .from("skins_games")
+      .update({
+        round_name: roundName || null,
+        date_played: datePlayed,
+        course_name: selectedCourse?.name || "",
+        course_id: selectedCourse?.id || null,
+        holes_played: holesPlayed,
+        players: playersJson,
+      })
+      .eq("id", gameId);
   };
 
   const saveMatchPlayChanges = async () => {
