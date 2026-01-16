@@ -151,7 +151,7 @@ export function StrokePlayLeaderboardView({
                     <div className="text-xl font-bold">{player.name}</div>
                     {player.handicap !== undefined && player.handicap !== null && (
                       <div className="text-sm text-muted-foreground">
-                        HCP +{Math.abs(Number(player.handicap))}
+                        HCP {Number(player.handicap) === 0 ? '0' : `+${Math.abs(Number(player.handicap))}`}
                       </div>
                     )}
                   </div>

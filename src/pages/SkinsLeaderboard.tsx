@@ -303,8 +303,10 @@ export default function SkinsLeaderboard() {
                   </div>
                   <div>
                     <div className="text-xl font-bold">{player.name}</div>
-                    {player.handicap !== null && (
-                      <div className="text-sm text-muted-foreground">HCP +{player.handicap}</div>
+                    {player.handicap !== null && player.handicap !== undefined && (
+                      <div className="text-sm text-muted-foreground">
+                        HCP {player.handicap === 0 ? '0' : `+${player.handicap}`}
+                      </div>
                     )}
                   </div>
                 </div>
