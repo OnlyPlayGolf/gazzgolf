@@ -150,6 +150,7 @@ import ShortGameStats from "./pages/ShortGameStats";
 import OtherStats from "./pages/OtherStats";
 import ScoringStats from "./pages/ScoringStats";
 import GameSettingsDetail from "./pages/GameSettingsDetail";
+import ScorecardScanner from "./pages/ScorecardScanner";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -191,6 +192,7 @@ const App = () => {
             <Route path="/statistics/other" element={<OtherStats />} />
             <Route path="/statistics/scoring-sg" element={<ScoringStats />} />
             <Route path="/statistics/:category" element={<StatDetail />} />
+            <Route path="/scorecard-scanner" element={<ScorecardScanner />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/menu" element={<Menu />} />

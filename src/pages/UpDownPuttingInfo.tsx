@@ -15,7 +15,7 @@ export default function UpDownPuttingInfo() {
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <h3 className="font-semibold text-sm">Overview</h3>
             <p className="text-sm text-muted-foreground">
-              This uphill-downhill putting drill sharpens your speed control and consistency across varying slopes. It trains you to manage pace and break from both directions.
+              This putting drill sharpens your speed control and consistency across varying slopes. It trains you to manage pace and break from uphill and downhill putts.
             </p>
           </div>
 
@@ -24,7 +24,7 @@ export default function UpDownPuttingInfo() {
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Two lines: one uphill and one downhill</li>
               <li>• Mark distances at 6 m, 8 m, and 10 m from the hole on both lines</li>
-              <li>• Create a 3-foot "zone" short and long of the hole</li>
+              <li>• Create a 3-foot "zone" short and long of the hole or measure after each putt</li>
               <li>• Putt in sequence: 6 m up → 6 m down → 8 m up → 8 m down → 10 m up → 10 m down</li>
               <li>• Complete 3 rounds (18 putts total)</li>
             </ul>

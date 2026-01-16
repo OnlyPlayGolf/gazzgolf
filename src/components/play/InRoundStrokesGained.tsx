@@ -64,6 +64,7 @@ export function InRoundStrokesGained({
   const [missedSide, setMissedSide] = useState<'left' | 'right' | ''>('');
   
   const autoAdvanceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoHoleTriggeredRef = useRef<number>(0); // Track last shot count when auto-hole was triggered
 
   // Load baseline data on mount
   useEffect(() => {
@@ -78,6 +79,7 @@ export function InRoundStrokesGained({
     setEndLie('');
     setMissedSide('');
     setSaved(false);
+    autoHoleTriggeredRef.current = 0; // Reset auto-hole trigger for new hole
   }, [holeNumber, roundId]);
 
   // Set initial start distance from hole distance
@@ -117,6 +119,83 @@ export function InRoundStrokesGained({
       }
     };
   }, []);
+
+  // Auto-hole when shots reach (score - 1)
+  useEffect(() => {
+    // Only proceed if:
+    // 1. Score is valid (> 0)
+    // 2. Calculator is ready
+    if (!sgCalculator || score <= 0) return;
+    
+    const currentShots = shots.length;
+    const isHoleComplete = currentShots > 0 && shots[currentShots - 1]?.holed;
+    
+    // Don't auto-hole if already complete
+    if (isHoleComplete) {
+      autoHoleTriggeredRef.current = 0; // Reset when hole is complete
+      return;
+    }
+
+    // Edge case: score < loggedShots - show warning (only once)
+    if (score < currentShots && currentShots > 0) {
+      // Only show warning if the last shot wasn't just auto-holed
+      const lastShot = shots[currentShots - 1];
+      if (!lastShot?.holed) {
+        toast({
+          title: "Score mismatch",
+          description: `Score is ${score} but ${currentShots} shots logged. Please adjust score or shots.`,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Edge case: score = 1 (hole in one) - should be holed immediately when score is set
+    if (score === 1 && currentShots === 0 && holeDistance && autoHoleTriggeredRef.current !== 1) {
+      // For hole in one, create the shot directly
+      const start = holeDistance;
+      const drillType = 'longGame'; // Hole in one is always from tee
+      const sg = sgCalculator.calculateStrokesGained(drillType, start, 'tee', true, 'green', 0);
+      
+      const holeInOneShot: Shot = {
+        type: 'tee',
+        startDistance: start,
+        startLie: 'tee',
+        holed: true,
+        strokesGained: sg,
+      };
+
+      const newShots = [holeInOneShot];
+      setShots(newShots);
+      saveShots(newShots);
+      setStartDistance("");
+      autoHoleTriggeredRef.current = 1;
+      return;
+    }
+
+    // Normal case: when loggedShots == (score - 1), auto-hole the next shot
+    if (currentShots === score - 1 && currentShots > 0) {
+      // Prevent multiple triggers for the same shot count
+      // Also prevent if trigger was reset to -1 (user just deleted a shot)
+      if (autoHoleTriggeredRef.current === currentShots || autoHoleTriggeredRef.current === -1) return;
+      
+      // Only auto-hole if we have a valid start distance
+      const start = parseFloat(startDistance.replace(',', '.'));
+      if (!isNaN(start) && start > 0) {
+        addHoledShot(true);
+        autoHoleTriggeredRef.current = currentShots;
+      }
+    } else {
+      // Reset trigger ref if shot count changes (user added/removed shots manually)
+      // But don't reset if it's -1 (user just deleted)
+      if (autoHoleTriggeredRef.current > 0 && currentShots !== autoHoleTriggeredRef.current) {
+        autoHoleTriggeredRef.current = 0;
+      } else if (autoHoleTriggeredRef.current === -1 && currentShots !== score - 1) {
+        // Reset the -1 flag once we're past the auto-hole threshold
+        autoHoleTriggeredRef.current = 0;
+      }
+    }
+  }, [shots.length, score, sgCalculator, startDistance, holeDistance, shots]);
 
   useEffect(() => {
     if (startDistance && endDistance && sgCalculator && endLie) {
@@ -197,8 +276,11 @@ export function InRoundStrokesGained({
             if (lastShot.endLie && lastShot.endLie !== 'OB') {
               setStartLie(lastShot.endLie as LieType | 'green');
             }
+            // Reset auto-hole trigger when loading incomplete hole
+            autoHoleTriggeredRef.current = 0;
           } else if (lastShot?.holed) {
-            // Hole complete
+            // Hole complete - set trigger to prevent re-auto-holing
+            autoHoleTriggeredRef.current = loadedShots.length - 1;
             setStartDistance("");
             setEndDistance("");
             setStartLie('tee');
@@ -251,15 +333,17 @@ export function InRoundStrokesGained({
         strokesGained: sg,
       };
 
-      const newShots = [...shots, newShot];
-      setShots(newShots);
-      saveShots(newShots);
-      
-      // Reset inputs
-      setStartDistance("");
-      setEndDistance("");
-      setEndLie('');
-      return;
+    // Clear inputs and add shot
+    setEndDistance("");
+    setEndLie('');
+    
+    const newShots = [...shots, newShot];
+    setShots(newShots);
+    saveShots(newShots);
+    
+    // Reset start distance
+    setStartDistance("");
+    return;
     }
 
     if (!endLie) return;
@@ -284,24 +368,30 @@ export function InRoundStrokesGained({
       strokesGained: sg,
     };
 
+    // Clear inputs and add shot
+    const savedEndDistance = endDistance;
+    const savedEndLie = endLie;
+    setEndDistance("");
+    setEndLie('');
+    setMissedSide('');
+    
     const newShots = [...shots, newShot];
     setShots(newShots);
     saveShots(newShots);
 
     // Set up for next shot
-    setStartDistance(endDistance);
-    setStartLie(endLie as LieType | 'green');
-    setEndDistance("");
-    setEndLie('');
-    setMissedSide('');
+    setStartDistance(savedEndDistance);
+    setStartLie(savedEndLie as LieType | 'green');
   };
 
-  const addHoledShot = () => {
+  const addHoledShot = (autoHole: boolean = false) => {
     if (!sgCalculator) return;
     
     const start = parseFloat(startDistance.replace(',', '.'));
     if (isNaN(start)) {
-      toast({ title: "Enter start distance", variant: "destructive" });
+      if (!autoHole) {
+        toast({ title: "Enter start distance", variant: "destructive" });
+      }
       return;
     }
 
@@ -316,13 +406,28 @@ export function InRoundStrokesGained({
       strokesGained: sg,
     };
 
-    const newShots = [...shots, newShot];
-    setShots(newShots);
-    saveShots(newShots);
-
-    setStartDistance("");
+    // Clear inputs
     setEndDistance("");
     setEndLie('');
+    
+    const newShots = [...shots, newShot];
+    
+    // If auto-holing, skip state update to prevent visual flash
+    // Navigate immediately and save in background
+    if (autoHole) {
+      // Navigate immediately - don't update state to avoid flash
+      onStatsSaved?.();
+      // Save directly without updating local state (state will sync when user returns to hole)
+      saveShots(newShots, true).catch(error => {
+        console.error('Error saving auto-holed shot:', error);
+      });
+    } else {
+      // Manual holed shot - update state first, then save and navigate
+      setShots(newShots);
+      saveShots(newShots, false);
+    }
+
+    setStartDistance("");
   };
 
   const addOBShot = () => {
@@ -334,7 +439,13 @@ export function InRoundStrokesGained({
       return;
     }
 
+    // Calculate strokes gained for OB shot
+    const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+    const obSG = sgCalculator.calculateOBStrokesGained ? 
+      sgCalculator.calculateOBStrokesGained(drillType, start, startLie) : -2.0;
+
     // OB shot + penalty stroke
+    // The OB shot itself loses strokes
     const obShot: Shot = {
       type: shotType,
       startDistance: start,
@@ -342,10 +453,12 @@ export function InRoundStrokesGained({
       holed: false,
       endDistance: start,
       endLie: 'OB',
-      strokesGained: 0,
+      strokesGained: obSG,
       isOB: true,
     };
 
+    // Penalty stroke (re-tee or drop) - no additional SG loss, just a stroke
+    // The penalty is already accounted for in the OB shot's SG
     const penaltyShot: Shot = {
       type: shotType,
       startDistance: start,
@@ -357,21 +470,40 @@ export function InRoundStrokesGained({
       isOB: false,
     };
 
-    const newShots = [...shots, obShot, penaltyShot];
-    setShots(newShots);
-    saveShots(newShots);
-
+    // Clear inputs and add shots
     setEndDistance("");
     setEndLie('');
     setMissedSide('');
-  };
-
-  const deleteLastShot = () => {
-    if (shots.length === 0) return;
-
-    const newShots = shots.slice(0, -1);
+    
+    const newShots = [...shots, obShot, penaltyShot];
     setShots(newShots);
     saveShots(newShots);
+  };
+
+  const deleteLastShot = async () => {
+    if (shots.length === 0) {
+      console.log('Cannot delete: no shots');
+      return;
+    }
+    
+    console.log('Deleting last shot, current shots:', shots.length);
+
+    const newShots = shots.slice(0, -1);
+    
+    // Reset auto-hole trigger BEFORE updating state to prevent re-triggering
+    // Set it to a value that won't match the new shot count
+    autoHoleTriggeredRef.current = -1;
+    
+    // Update state immediately (optimistic update)
+    setShots(newShots);
+    
+    // Save to database (don't block on this)
+    try {
+      await saveShots(newShots);
+    } catch (error) {
+      console.error('Error saving after delete:', error);
+      // State is already updated, so user can continue
+    }
 
     // Reset inputs
     if (newShots.length === 0) {
@@ -379,11 +511,19 @@ export function InRoundStrokesGained({
       setStartLie('tee');
     } else {
       const lastShot = newShots[newShots.length - 1];
-      if (lastShot.endDistance !== undefined) {
-        setStartDistance(String(lastShot.endDistance));
-      }
-      if (lastShot.endLie && lastShot.endLie !== 'OB') {
-        setStartLie(lastShot.endLie as LieType | 'green');
+      if (lastShot.holed) {
+        // If the last shot was holed, we need to set up for the next shot
+        // Use the holed shot's start distance and lie
+        setStartDistance(String(lastShot.startDistance));
+        setStartLie(lastShot.startLie);
+      } else {
+        // Normal case: use end distance and lie from previous shot
+        if (lastShot.endDistance !== undefined) {
+          setStartDistance(String(lastShot.endDistance));
+        }
+        if (lastShot.endLie && lastShot.endLie !== 'OB') {
+          setStartLie(lastShot.endLie as LieType | 'green');
+        }
       }
     }
     setEndDistance("");
@@ -391,7 +531,7 @@ export function InRoundStrokesGained({
     setMissedSide('');
   };
 
-  const saveShots = async (shotsToSave: Shot[]) => {
+  const saveShots = async (shotsToSave: Shot[], skipNavigation: boolean = false) => {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -462,8 +602,9 @@ export function InRoundStrokesGained({
       setSaved(true);
       
       // Only trigger onStatsSaved when hole is complete (ball holed)
+      // Skip if navigation was already triggered (auto-hole case)
       const lastShot = shotsToSave[shotsToSave.length - 1];
-      if (lastShot?.holed) {
+      if (lastShot?.holed && !skipNavigation) {
         onStatsSaved?.();
       }
     } catch (error: any) {
@@ -554,7 +695,7 @@ export function InRoundStrokesGained({
                     ))}
                     <Button
                       variant="outline"
-                      onClick={addHoledShot}
+                      onClick={() => addHoledShot(false)}
                       size="sm"
                       className="text-xs h-8"
                     >
@@ -601,6 +742,7 @@ export function InRoundStrokesGained({
                     </div>
                   </div>
                 )}
+
               </>
             )}
 
@@ -609,7 +751,18 @@ export function InRoundStrokesGained({
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <Label className="text-xs">Shots ({shots.length})</Label>
-                  <Button variant="ghost" size="sm" onClick={deleteLastShot} className="h-6 text-xs">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Delete button clicked, shots.length:', shots.length);
+                      deleteLastShot();
+                    }} 
+                    className="h-6 text-xs hover:bg-destructive/10 hover:text-destructive"
+                    type="button"
+                  >
                     <Trash2 size={12} className="mr-1" /> Delete Last
                   </Button>
                 </div>

@@ -15,4 +15,28 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  worker: {
+    format: 'es',
+    plugins: () => [react()],
+  },
+  optimizeDeps: {
+    include: ['tesseract.js'],
+    esbuildOptions: {
+      target: 'es2020',
+    },
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
+      include: [/tesseract\.js/, /node_modules/],
+    },
+    rollupOptions: {
+      output: {
+        format: 'es',
+      },
+    },
+  },
+  ssr: {
+    noExternal: ['tesseract.js'],
+  },
 }));

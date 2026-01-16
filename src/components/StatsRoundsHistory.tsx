@@ -7,6 +7,8 @@ import { format } from "date-fns";
 
 interface StatsRound {
   id: string;
+  proStatsRoundId: string;
+  externalRoundId: string | null;
   course_name: string;
   date_played: string;
   holes_played: number;
@@ -37,55 +39,82 @@ export const StatsRoundsHistory = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch rounds created from pro_stats (Add Statistics feature)
-      const { data: roundsData, error } = await supabase
-        .from("rounds")
-        .select("id, course_name, date_played, holes_played, tee_set, round_type")
+      // Fetch all pro_stats_rounds (regardless of origin)
+      const { data: proStatsRounds, error: proStatsError } = await supabase
+        .from("pro_stats_rounds")
+        .select("id, external_round_id, course_name, holes_played, created_at")
         .eq("user_id", user.id)
-        .eq("origin", "pro_stats")
-        .order("date_played", { ascending: false })
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (proStatsError) throw proStatsError;
 
-      if (!roundsData || roundsData.length === 0) {
+      if (!proStatsRounds || proStatsRounds.length === 0) {
         setRounds([]);
         setLoading(false);
         return;
       }
 
-      // Get scores for each round from pro_stats_holes
+      // Get scores and round details for each pro_stats_round
       const roundsWithScores = await Promise.all(
-        roundsData.map(async (round) => {
-          // Get pro_stats_round linked to this round
-          const { data: proRound } = await supabase
-            .from("pro_stats_rounds")
-            .select("id")
-            .eq("external_round_id", round.id)
-            .maybeSingle();
-
-          if (!proRound) {
-            return { ...round, total_score: undefined, total_par: undefined };
-          }
-
+        proStatsRounds.map(async (proRound) => {
           // Get hole scores
           const { data: holes } = await supabase
             .from("pro_stats_holes")
-            .select("score, par")
-            .eq("pro_round_id", proRound.id);
+            .select("score, par, hole_number")
+            .eq("pro_round_id", proRound.id)
+            .order("hole_number", { ascending: true });
 
           if (!holes || holes.length === 0) {
-            return { ...round, total_score: undefined, total_par: undefined };
+            return null;
           }
 
           const totalScore = holes.reduce((sum, h) => sum + (h.score || 0), 0);
           const totalPar = holes.reduce((sum, h) => sum + (h.par || 0), 0);
 
-          return { ...round, total_score: totalScore, total_par: totalPar };
+          // Try to get additional details from rounds table if external_round_id exists
+          let datePlayed: string = proRound.created_at || new Date().toISOString();
+          let teeSet: string | null = null;
+          let roundType: string | null = null;
+          let roundId = proRound.external_round_id || proRound.id;
+
+          if (proRound.external_round_id) {
+            const { data: roundData } = await supabase
+              .from("rounds")
+              .select("id, date_played, tee_set, round_type")
+              .eq("id", proRound.external_round_id)
+              .maybeSingle();
+
+            if (roundData) {
+              datePlayed = roundData.date_played || datePlayed;
+              teeSet = roundData.tee_set;
+              roundType = roundData.round_type;
+            }
+          }
+          return {
+            id: roundId || proRound.id,
+            proStatsRoundId: proRound.id,
+            externalRoundId: proRound.external_round_id,
+            course_name: proRound.course_name || "Unknown Course",
+            date_played: datePlayed || new Date().toISOString(),
+            holes_played: proRound.holes_played || 18,
+            tee_set: teeSet,
+            round_type: roundType,
+            total_score: totalScore,
+            total_par: totalPar,
+          };
         })
       );
 
-      setRounds(roundsWithScores);
+      // Filter out nulls and sort by date
+      const validRounds = roundsWithScores
+        .filter((r): r is StatsRound => r !== null)
+        .sort((a, b) => {
+          const dateA = new Date(a.date_played).getTime();
+          const dateB = new Date(b.date_played).getTime();
+          return dateB - dateA;
+        });
+
+      setRounds(validRounds);
     } catch (error) {
       console.error("Error fetching stats rounds:", error);
     } finally {
@@ -93,8 +122,11 @@ export const StatsRoundsHistory = () => {
     }
   };
 
-  const handleRoundClick = (roundId: string) => {
-    navigate(`/rounds/${roundId}/pro-summary`);
+  const handleRoundClick = (round: StatsRound) => {
+    // Only navigate if the parent round exists
+    if (round.externalRoundId) {
+      navigate(`/rounds/${round.externalRoundId}/pro-summary`);
+    }
   };
 
   const formatScore = (round: StatsRound) => {
@@ -166,8 +198,10 @@ export const StatsRoundsHistory = () => {
                     {roundsByYear[year].map((round) => (
                       <Card
                         key={round.id}
-                        onClick={() => handleRoundClick(round.id)}
-                        className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all"
+                        onClick={() => handleRoundClick(round)}
+                        className={`bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all ${
+                          !round.externalRoundId ? 'border-destructive/30 bg-destructive/5' : 'cursor-pointer'
+                        }`}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-center gap-4">
@@ -180,9 +214,16 @@ export const StatsRoundsHistory = () => {
                             
                             {/* Middle: Details */}
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-foreground truncate">
-                                {round.course_name}
-                              </h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-foreground truncate">
+                                  {round.course_name}
+                                </h3>
+                                {!round.externalRoundId && (
+                                  <span className="px-1.5 py-0.5 rounded bg-destructive/10 text-destructive text-xs">
+                                    Deleted
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
                                 <span>{format(new Date(round.date_played), "MMM d")}</span>
                                 <span>·</span>
@@ -198,7 +239,9 @@ export const StatsRoundsHistory = () => {
                             </div>
                             
                             {/* Right: Chevron */}
-                            <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
+                            {round.externalRoundId && (
+                              <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
+                            )}
                           </div>
                         </CardContent>
                       </Card>

@@ -376,7 +376,8 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
             const type = shot.type;
             const dist = shot.startDistance || 0;
             const startLie = shot.startLie;
-            const category = shot.category;
+            // Note: category field may not exist on all shots, so we categorize based on shot properties
+            const category = (shot as any).category;
             
             // Calculate driver distance from tee shots
             if (type === 'tee' && shot.startDistance && shot.endDistance !== undefined) {
@@ -388,19 +389,25 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
             }
             
             // Categorize strokes gained
+            // First check if explicit category exists (for backwards compatibility)
             if (category === 'other') {
               sgOther += sg;
             } else if (category === 'scoring') {
               sgScoring += sg;
             } else if (type === 'putt' || startLie === 'green') {
+              // Putting shots
               sgPutt += sg;
             } else if (idx === 0 && dist >= 200) {
+              // First shot from 200m+ = tee shot
               sgTee += sg;
             } else if (dist >= 40) {
+              // Shots from 40m+ = approach shots
               sgApproach += sg;
             } else if (dist > 0) {
+              // Shots under 40m = short game
               sgShort += sg;
             } else {
+              // Fallback to other
               sgOther += sg;
             }
           });

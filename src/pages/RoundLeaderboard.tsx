@@ -279,6 +279,27 @@ export default function RoundLeaderboard() {
 
   const handleDeleteGame = async () => {
     try {
+      // Delete pro stats data if it exists
+      const { data: proRound } = await supabase
+        .from('pro_stats_rounds')
+        .select('id')
+        .eq('external_round_id', roundId)
+        .maybeSingle();
+
+      if (proRound?.id) {
+        // Delete pro stats holes
+        await supabase
+          .from('pro_stats_holes')
+          .delete()
+          .eq('pro_round_id', proRound.id);
+        
+        // Delete pro stats round
+        await supabase
+          .from('pro_stats_rounds')
+          .delete()
+          .eq('id', proRound.id);
+      }
+
       await supabase.from("holes").delete().eq("round_id", roundId);
       await supabase.from("round_players").delete().eq("round_id", roundId);
       await supabase.from("rounds").delete().eq("id", roundId);

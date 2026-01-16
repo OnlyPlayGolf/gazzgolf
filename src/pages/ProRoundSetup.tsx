@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Check, ChevronsUpDown, TrendingUp, ClipboardList } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown, TrendingUp, ClipboardList, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatsRoundsHistory } from "@/components/StatsRoundsHistory";
 import {
@@ -263,6 +263,29 @@ const ProRoundSetup = () => {
           <ArrowLeft className="mr-2" size={20} />
           Back
         </Button>
+
+        {/* Scan Scorecard Option */}
+        <Card className="mb-6 border-dashed">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Camera className="h-5 w-5" />
+                  Scan Paper Scorecard
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Take a photo of your scorecard to automatically import scores
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/scorecard-scanner")}
+              >
+                Scan Now
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Mode Selector */}
         <div className="mb-6">

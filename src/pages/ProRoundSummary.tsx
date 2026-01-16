@@ -356,7 +356,7 @@ const ProRoundSummary = () => {
         description: "The round has been removed",
       });
 
-      navigate('/rounds');
+      navigate('/rounds/pro-setup');
     } catch (error: any) {
       toast({
         title: "Error deleting round",

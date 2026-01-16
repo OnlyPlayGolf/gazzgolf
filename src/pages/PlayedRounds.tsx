@@ -73,6 +73,27 @@ const PlayedRounds = () => {
     const gameType = roundToDelete.gameType || 'round';
 
     try {
+      // Delete pro stats data if it exists (for any game type)
+      const { data: proRound } = await supabase
+        .from('pro_stats_rounds')
+        .select('id')
+        .eq('external_round_id', roundId)
+        .maybeSingle();
+
+      if (proRound?.id) {
+        // Delete pro stats holes
+        await supabase
+          .from('pro_stats_holes')
+          .delete()
+          .eq('pro_round_id', proRound.id);
+        
+        // Delete pro stats round
+        await supabase
+          .from('pro_stats_rounds')
+          .delete()
+          .eq('id', proRound.id);
+      }
+
       let deleteError: any = null;
 
       // Delete based on game type

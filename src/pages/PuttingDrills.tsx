@@ -67,7 +67,7 @@ const PuttingDrills = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                18 putts that represent an average putting round on the PGA Tour. A great drill to use for overall putting practice, compete with friends, test yourself against tour standards or dial in your speed control.
+                18 putts based on the PGA Tour's average first putt per hole. A great drill to use for overall putting practice, compete with friends, test yourself against tour standards or dial in your speed control.
               </p>
               
               <Button 
@@ -93,7 +93,7 @@ const PuttingDrills = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                A confidence-building putting drill where you make as many putts in a row as possible to improve consistency, handle pressure, and sharpen your must-make routine.
+                Make as many 4 foot short putts in a row as possible to build confidence, handle pressure, and master must-make putts.
               </p>
               
               <Button 
@@ -145,7 +145,7 @@ const PuttingDrills = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                18 putts from 8-20 meters randomized. Score points based on proximity - holed putts earn 3 points, within 2 feet earns 2 points. Get as many points as possible!
+                18 randomized putts from 8-20 meters. A great drill for improving lag putting and reducing three putts. Score points based on proximity. Get as many points as possible!
               </p>
               
               <Button 

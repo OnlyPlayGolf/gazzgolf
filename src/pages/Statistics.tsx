@@ -27,6 +27,7 @@ import {
   getSGLevel, getStatInsights, getDrillRecommendations,
   AllStats, StatLevel, StatInsight, DrillRecommendation, StatsFilter
 } from "@/utils/statisticsCalculations";
+import { migrateOBStrokesGained } from "@/utils/migrateOBStrokesGained";
 import { cn } from "@/lib/utils";
 
 type TimeFilter = StatsFilter;
@@ -179,6 +180,8 @@ export default function Statistics() {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [sgInfoOpen, setSgInfoOpen] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -546,6 +549,58 @@ export default function Statistics() {
               <Button onClick={() => navigate('/rounds')}>
                 Start a Round
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Migration Tool (Developer/Admin) */}
+        {process.env.NODE_ENV === 'development' && (
+          <Card className="mt-4 border-dashed">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Developer Tools</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Fix OB shot strokes gained in historical data
+              </p>
+              <Button
+                onClick={async () => {
+                  setMigrating(true);
+                  setMigrationResult(null);
+                  try {
+                    const result = await migrateOBStrokesGained();
+                    if (result.success) {
+                      setMigrationResult(
+                        `Success! Updated ${result.updated} holes. ` +
+                        (result.errors ? `${result.errors} errors. ` : '') +
+                        'Refresh to see updated stats.'
+                      );
+                      // Reload stats after migration
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (user) {
+                        const data = await fetchUserStats(user.id, timeFilter);
+                        setStats(data);
+                        setInsights(getStatInsights(data));
+                      }
+                    } else {
+                      setMigrationResult(`Error: ${result.error || 'Unknown error'}`);
+                    }
+                  } catch (error) {
+                    setMigrationResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                  } finally {
+                    setMigrating(false);
+                  }
+                }}
+                disabled={migrating}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                {migrating ? 'Migrating...' : 'Fix Historical OB Shots'}
+              </Button>
+              {migrationResult && (
+                <p className="text-xs text-muted-foreground">{migrationResult}</p>
+              )}
             </CardContent>
           </Card>
         )}

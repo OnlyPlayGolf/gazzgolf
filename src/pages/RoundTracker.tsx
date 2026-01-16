@@ -738,6 +738,27 @@ export default function RoundTracker() {
 
   const handleDeleteRound = async () => {
     try {
+      // Delete pro stats data if it exists
+      const { data: proRound } = await supabase
+        .from('pro_stats_rounds')
+        .select('id')
+        .eq('external_round_id', roundId)
+        .maybeSingle();
+
+      if (proRound?.id) {
+        // Delete pro stats holes
+        await supabase
+          .from('pro_stats_holes')
+          .delete()
+          .eq('pro_round_id', proRound.id);
+        
+        // Delete pro stats round
+        await supabase
+          .from('pro_stats_rounds')
+          .delete()
+          .eq('id', proRound.id);
+      }
+
       // Delete all holes for this round
       const { error: holesError } = await supabase
         .from("holes")
