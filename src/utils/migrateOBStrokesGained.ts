@@ -68,7 +68,7 @@ export async function migrateOBStrokesGained() {
     // Process each hole
     for (const hole of holes) {
       try {
-        const shots = hole.pro_shot_data as Shot[] | null;
+        const shots = hole.pro_shot_data as unknown as Shot[] | null;
         if (!shots || !Array.isArray(shots)) continue;
 
         let needsUpdate = false;
@@ -123,7 +123,8 @@ export async function migrateOBStrokesGained() {
       const updatePromises = batch.map((update) =>
         supabase
           .from('pro_stats_holes')
-          .update({ pro_shot_data: update.shots })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .update({ pro_shot_data: update.shots as any })
           .eq('id', update.id)
       );
 
