@@ -165,7 +165,7 @@ export default function WolfSettings() {
         .eq("id", gameId);
       
       toast({ title: "Game finished!" });
-      navigate(`/wolf/${gameId}/summary`);
+      navigate("/");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }

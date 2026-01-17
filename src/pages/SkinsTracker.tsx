@@ -110,6 +110,17 @@ export default function SkinsTracker() {
     }
   }, [roundId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (roundId) {
+        fetchGameData();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [roundId]);
+
   useEffect(() => {
     if (roundId) {
       localStorage.setItem(`skinsCurrentHole_${roundId}`, currentHoleIndex.toString());
@@ -376,18 +387,9 @@ export default function SkinsTracker() {
     return holeData.get(currentHole.hole_number);
   };
 
-  const handleFinishRound = async () => {
-    // Mark game as finished
-    try {
-      await supabase
-        .from("skins_games")
-        .update({ is_finished: true })
-        .eq("id", roundId);
-    } catch (error) {
-      console.error("Error finishing game:", error);
-    }
-    
-    // Show completion modal - don't navigate yet, modal will handle navigation
+  const handleFinishRound = () => {
+    // Show completion modal immediately - don't update database yet
+    // The modal will handle marking the game as finished when user clicks Done/Post/Share
     setShowCompletionDialog(true);
   };
 
@@ -546,7 +548,7 @@ export default function SkinsTracker() {
         {isAtLastHole && (
           <Button
             onClick={handleFinishRound}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+            className="w-full bg-primary hover:bg-primary/90 text-white"
             size="lg"
           >
             <Check size={20} className="mr-2" />
@@ -556,7 +558,7 @@ export default function SkinsTracker() {
       </div>
 
       {/* Round Completion Modal */}
-      {showCompletionDialog && game && (
+      {game && (
         <SkinsCompletionModal
           open={showCompletionDialog}
           onOpenChange={setShowCompletionDialog}
@@ -622,9 +624,7 @@ export default function SkinsTracker() {
               setSelectedPlayer(nextPlayer);
             } else {
               setShowScoreSheet(false);
-              if (currentHoleIndex >= courseHoles.length - 1) {
-                setShowCompletionDialog(true);
-              }
+              // Don't auto-show completion dialog - user must click "FINISH GAME" button
             }
           }}
         />

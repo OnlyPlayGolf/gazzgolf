@@ -15,6 +15,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
+import { WolfCompletionModal } from "@/components/WolfCompletionModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +45,7 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
   getHoleNumber: (hole) => hole.hole_number,
   getTotalHoles: (game) => game.holes_played || 18,
   getCourseId: (game) => game.course_id || null,
-  getSummaryRoute: (id) => `/wolf/${id}/summary`,
+  getSummaryRoute: (id) => `/wolf/${id}/play`, // Changed to play route - we'll show modal instead
   
   createEmptyScores: () => ({
     scores: [null, null, null, null, null, null],
@@ -165,7 +166,8 @@ const createWolfConfig = (gameId: string): GameScoringConfig<WolfGame, WolfHole,
     player_6_points: newHoleData.player_6_running_total,
   }),
   
-  isGameFinished: (game, holeNumber, totalHoles) => holeNumber >= totalHoles,
+  // Don't auto-navigate to summary - we'll show modal instead
+  isGameFinished: () => false,
 });
 
 export default function WolfPlay() {
@@ -187,6 +189,7 @@ export default function WolfPlay() {
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [currentComment, setCurrentComment] = useState("");
   const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   
   // Per-player stats mode
   const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(gameId, 'wolf');
@@ -195,7 +198,18 @@ export default function WolfPlay() {
   const [state, actions] = useGameScoring(config, navigate);
   
   const { game, holes, courseHoles, currentHoleIndex, loading, saving, scores: scoresState, par } = state;
-  const { setScores, saveHole, navigateHole, deleteGame } = actions;
+  const { setScores, saveHole, navigateHole, deleteGame, refetchGame } = actions;
+
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        refetchGame();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [gameId, refetchGame]);
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
@@ -246,15 +260,20 @@ export default function WolfPlay() {
     const playerCount = getPlayerCount();
     const allScoresEntered = scoresState.scores.slice(0, playerCount).every(s => s !== null);
     const wolfChoiceMade = scoresState.wolfChoice !== null;
+    const isLastHole = currentHole >= totalHoles;
     
     if (allScoresEntered && wolfChoiceMade) {
       // Small delay for visual feedback before auto-saving and advancing
       const timer = setTimeout(async () => {
         await saveHole();
+        // If this is the last hole, show completion modal
+        if (isLastHole) {
+          setShowCompletionModal(true);
+        }
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [scoresState.scores, scoresState.wolfChoice, game, saving, loading]);
+  }, [scoresState.scores, scoresState.wolfChoice, game, saving, loading, currentHole, totalHoles, saveHole]);
 
   const handleScoreSelect = (playerIndex: number, score: number | null) => {
     setScores(prev => {
@@ -745,6 +764,17 @@ export default function WolfPlay() {
         playerId="player1"
         isCurrentUser={true}
       />
+
+      {/* Wolf Completion Modal */}
+      {game && (
+        <WolfCompletionModal
+          open={showCompletionModal}
+          onOpenChange={setShowCompletionModal}
+          game={game}
+          holes={holes}
+          courseHoles={courseHoles}
+        />
+      )}
     </div>
   );
 }

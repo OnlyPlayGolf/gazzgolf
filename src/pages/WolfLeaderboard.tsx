@@ -50,6 +50,17 @@ export default function WolfLeaderboard() {
     if (gameId) fetchGameData();
   }, [gameId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (gameId) {
+        fetchGameData();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [gameId]);
+
   const fetchGameData = async () => {
     try {
       const { data: gameData } = await supabase
@@ -187,7 +198,7 @@ export default function WolfLeaderboard() {
     if (!gameId) return;
     await supabase.from("wolf_games").update({ is_finished: true }).eq("id", gameId);
     toast({ title: "Game finished!" });
-    navigate(`/wolf/${gameId}/summary`);
+    navigate("/");
   };
 
   const handleDeleteGame = async () => {

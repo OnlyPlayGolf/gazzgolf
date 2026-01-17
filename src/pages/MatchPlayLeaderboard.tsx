@@ -16,6 +16,7 @@ import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardMo
 import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import {
   Table,
   TableBody,
@@ -197,12 +198,10 @@ export default function MatchPlayLeaderboard() {
 
     const renderScoreCell = (holeNumber: number, playerNum: number) => {
       const score = getPlayerScore(holeNumber, playerNum);
+      const hole = holesMap.get(holeNumber);
+      const par = hole?.par || 0;
       
-      if (score === null) return "";
-      if (score === -1) return <span className="text-muted-foreground">–</span>;
-      
-      const hole = courseHoles.find(h => h.hole_number === holeNumber);
-      const par = hole?.par || 4;
+      if (score === null || score === 0) return "";
       
       return <ScorecardScoreCell score={score} par={par} />;
     };

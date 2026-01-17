@@ -392,28 +392,47 @@ export default function UserProfile() {
           </Sheet>
         </div>
 
-        {/* Profile photo */}
-        <div className="flex flex-col items-center">
-          <ProfilePhoto
-            src={profile.avatar_url}
-            alt={displayName}
-            fallback={displayName}
-            size="2xl"
-            className="border-4 border-background shadow-lg"
-          />
+        {/* Profile photo and info - side by side, centered */}
+        <div className="flex items-start justify-center px-4">
+          <div className="flex items-start gap-4 max-w-2xl">
+            {/* Profile photo - left side, bigger */}
+            <div className="flex-shrink-0">
+              <ProfilePhoto
+                src={profile.avatar_url}
+                alt={displayName}
+                fallback={displayName}
+                size="2xl"
+                className="border-4 border-background shadow-lg h-24 w-24"
+              />
+            </div>
+
+            {/* Profile info - right side */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+              <h1 className="text-xl font-bold text-foreground mb-1">{displayName}</h1>
+              <div className="space-y-0.5">
+                {profile.handicap && (
+                  <p className="text-xs text-muted-foreground">
+                    {handicapDisplay}
+                  </p>
+                )}
+                {profile.home_club && (
+                  <p className="text-xs text-muted-foreground">
+                    {profile.home_club}
+                  </p>
+                )}
+                {profile.country && (
+                  <p className="text-xs text-muted-foreground">
+                    {profile.country}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Profile info */}
+      {/* Additional content */}
       <div className="px-4">
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-foreground mb-2">{displayName}</h1>
-          <p className="text-sm text-muted-foreground">
-            {handicapDisplay}
-            {profile.home_club && ` | ${profile.home_club}`}
-            {profile.country && ` | ${profile.country}`}
-          </p>
-        </div>
 
         {/* Friends and QR code */}
         <div className="flex items-center justify-center gap-6 mb-6">

@@ -61,7 +61,7 @@ export default function SkinsFeed() {
     if (!roundId) return;
     await supabase.from("skins_games").update({ is_finished: true }).eq("id", roundId);
     toast({ title: "Game finished" });
-    navigate(`/skins/${roundId}/summary`);
+    navigate("/");
   };
 
   const handleDeleteGame = async () => {

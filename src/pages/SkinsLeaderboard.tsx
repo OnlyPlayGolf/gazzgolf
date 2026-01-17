@@ -84,7 +84,7 @@ export default function SkinsLeaderboard() {
     if (!roundId) return;
     await supabase.from("skins_games").update({ is_finished: true }).eq("id", roundId);
     toast({ title: "Game finished" });
-    navigate(`/skins/${roundId}/summary`);
+    navigate("/");
   };
 
   const handleDeleteGame = async () => {
@@ -97,6 +97,17 @@ export default function SkinsLeaderboard() {
 
   useEffect(() => {
     if (roundId) fetchGameData();
+  }, [roundId]);
+
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (roundId) {
+        fetchGameData();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [roundId]);
 
   useEffect(() => {

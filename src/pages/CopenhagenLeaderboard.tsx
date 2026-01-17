@@ -16,6 +16,7 @@ import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardMo
 import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import {
   Table,
   TableBody,
@@ -251,9 +252,7 @@ export default function CopenhagenLeaderboard() {
                       const score = getPlayerGrossScore(hole.hole_number, player.index);
                       return (
                         <TableCell key={hole.hole_number} className="text-center px-0 py-1">
-                          {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
-                            <ScorecardScoreCell score={score} par={hole.par} />
-                          ) : ''}
+                          {score !== null && score > 0 ? <ScorecardScoreCell score={score} par={hole.par} /> : (score === -1 ? '–' : '')}
                         </TableCell>
                       );
                     })}
@@ -345,9 +344,7 @@ export default function CopenhagenLeaderboard() {
                         const score = getPlayerGrossScore(hole.hole_number, player.index);
                         return (
                           <TableCell key={hole.hole_number} className="text-center px-0 py-1">
-                            {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
-                              <ScorecardScoreCell score={score} par={hole.par} />
-                            ) : ''}
+                            {score !== null && score > 0 ? <ScorecardScoreCell score={score} par={hole.par} /> : (score === -1 ? '–' : '')}
                           </TableCell>
                         );
                       })}

@@ -198,7 +198,7 @@ export default function SimpleSkinsSettings() {
         .eq("id", roundId);
     }
     toast({ title: "Game saved" });
-    navigate(`/skins/${roundId}/summary`);
+    navigate("/");
   };
 
   const handleDeleteRound = async () => {

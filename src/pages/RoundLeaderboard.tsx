@@ -13,6 +13,7 @@ import { ChevronDown, RotateCcw, ArrowLeft } from "lucide-react";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import {
   Table,
   TableBody,
@@ -449,10 +450,12 @@ export default function RoundLeaderboard() {
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
-                                className="text-center font-bold text-[10px] px-0 py-1"
+                                className="text-center px-0 py-1"
                               >
                                 <div className="flex items-center justify-center gap-0.5">
-                                  {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
+                                  {hasScore && score && score > 0 ? (
+                                    <ScorecardScoreCell score={score} par={hole.par} />
+                                  ) : hasScore ? (score === -1 ? '–' : '') : ''}
                                   {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                                 </div>
                               </TableCell>
@@ -461,7 +464,7 @@ export default function RoundLeaderboard() {
                           <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                             {hasConceded ? '-' : (frontTotals.totalScore > 0 ? frontTotals.totalScore : '')}
                           </TableCell>
-                          <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                             {backNine.length > 0 ? '' : (hasConceded ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
                           </TableCell>
                         </TableRow>
@@ -471,8 +474,10 @@ export default function RoundLeaderboard() {
                             const score = player.scores.get(hole.hole_number);
                             const hasScore = player.scores.has(hole.hole_number);
                             return (
-                              <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
-                                {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
+                              <TableCell key={hole.hole_number} className="text-center px-0 py-1">
+                                {hasScore && score && score > 0 ? (
+                                  <ScorecardScoreCell score={score} par={hole.par} />
+                                ) : hasScore ? (score === -1 ? '–' : '') : ''}
                               </TableCell>
                             );
                           })}
@@ -537,10 +542,12 @@ export default function RoundLeaderboard() {
                               return (
                                 <TableCell 
                                   key={hole.hole_number} 
-                                  className="text-center font-bold text-[10px] px-0 py-1"
+                                  className="text-center px-0 py-1"
                                 >
                                   <div className="flex items-center justify-center gap-0.5">
-                                    {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
+                                    {hasScore && score && score > 0 ? (
+                                      <ScorecardScoreCell score={score} par={hole.par} />
+                                    ) : hasScore ? (score === -1 ? '–' : '') : ''}
                                     {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                                   </div>
                                 </TableCell>
@@ -549,7 +556,7 @@ export default function RoundLeaderboard() {
                             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {hasConceded ? '-' : (backTotals.totalScore > 0 ? backTotals.totalScore : '')}
                             </TableCell>
-                            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {hasConceded ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : '')}
                             </TableCell>
                           </TableRow>
@@ -559,9 +566,11 @@ export default function RoundLeaderboard() {
                               const score = player.scores.get(hole.hole_number);
                               const hasScore = player.scores.has(hole.hole_number);
                               return (
-                              <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
-                                {hasScore ? (score === -1 ? '–' : (score === 0 ? '-' : score)) : ''}
-                              </TableCell>
+                                <TableCell key={hole.hole_number} className="text-center px-0 py-1">
+                                  {hasScore && score && score > 0 ? (
+                                    <ScorecardScoreCell score={score} par={hole.par} />
+                                  ) : hasScore ? (score === -1 ? '–' : '') : ''}
+                                </TableCell>
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">

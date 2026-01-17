@@ -19,6 +19,7 @@ import {
 import { ScorecardTypeSelector, ScorecardType } from "@/components/ScorecardTypeSelector";
 import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 
 interface CourseHole {
   hole_number: number;
@@ -322,15 +323,15 @@ export function BestBallCompletionDialog({
                           const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
                           const score = playerScore?.grossScore;
                           return (
-                            <TableCell key={hole.hole_number} className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}>
-                              {score || ''}
+                            <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                              {score ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                             </TableCell>
                           );
                         })}
                         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {frontTotal || ''}
                         </TableCell>
-                        <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {!hasBackNine ? (fullTotal || '') : ''}
                         </TableCell>
                       </TableRow>
@@ -373,15 +374,15 @@ export function BestBallCompletionDialog({
                           const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
                           const score = playerScore?.grossScore;
                           return (
-                            <TableCell key={hole.hole_number} className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}>
-                              {score || ''}
+                            <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                              {score ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                             </TableCell>
                           );
                         })}
                         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {frontTotal || ''}
                         </TableCell>
-                        <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                           {!hasBackNine ? (fullTotal || '') : ''}
                         </TableCell>
                       </TableRow>
@@ -438,8 +439,8 @@ export function BestBallCompletionDialog({
                               const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
                               const score = playerScore?.grossScore;
                               return (
-                                <TableCell key={hole.hole_number} className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}>
-                                  {score || ''}
+                                <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                                  {score ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                                 </TableCell>
                               );
                             })}
@@ -489,8 +490,8 @@ export function BestBallCompletionDialog({
                               const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
                               const score = playerScore?.grossScore;
                               return (
-                                <TableCell key={hole.hole_number} className={`text-center text-[10px] px-0 py-1 ${getScoreColor(score || null, hole.par)}`}>
-                                  {score || ''}
+                                <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                                  {score ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                                 </TableCell>
                               );
                             })}

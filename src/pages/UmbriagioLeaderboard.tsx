@@ -16,6 +16,7 @@ import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardMo
 import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import {
   Table,
   TableBody,
@@ -398,9 +399,7 @@ export default function UmbriagioLeaderboard() {
                           key={hole.hole_number} 
                           className="text-center px-1 py-1.5"
                         >
-                          {score && score > 0 ? (
-                            <ScorecardScoreCell score={score} par={hole.par} />
-                          ) : ''}
+                          {score && score > 0 ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                         </TableCell>
                       );
                     })}
@@ -474,9 +473,7 @@ export default function UmbriagioLeaderboard() {
                             key={hole.hole_number} 
                             className="text-center px-1 py-1.5"
                           >
-                            {score && score > 0 ? (
-                              <ScorecardScoreCell score={score} par={hole.par} />
-                            ) : ''}
+                            {score && score > 0 ? <ScorecardScoreCell score={score} par={hole.par} /> : ''}
                           </TableCell>
                         );
                       })}

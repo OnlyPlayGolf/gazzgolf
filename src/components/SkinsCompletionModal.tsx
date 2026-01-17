@@ -151,6 +151,12 @@ export function SkinsCompletionModal({
         return;
       }
 
+      // Mark game as finished first
+      await supabase
+        .from("skins_games")
+        .update({ is_finished: true })
+        .eq("id", game.id);
+
       // Build scorecard data for the post
       const playerScoresData: Record<string, { name: string; skins: number; total: number }> = {};
       players.forEach(player => {
@@ -205,9 +211,22 @@ export function SkinsCompletionModal({
     }
   };
 
-  const handleDone = () => {
-    onOpenChange(false);
-    navigate("/");
+  const handleDone = async () => {
+    try {
+      // Mark game as finished before navigating
+      await supabase
+        .from("skins_games")
+        .update({ is_finished: true })
+        .eq("id", game.id);
+      
+      onOpenChange(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Error finishing game:", error);
+      // Still navigate even if update fails
+      onOpenChange(false);
+      navigate("/");
+    }
   };
 
   // Skins scorecard component
@@ -364,8 +383,10 @@ export function SkinsCompletionModal({
                 <span>·</span>
                 <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
               </div>
-              <div className="text-xs text-primary-foreground/80 mt-1">
-                Skins · {players.length} player{players.length !== 1 ? 's' : ''}
+              <div className="text-xs text-muted-foreground mt-1">
+                <span className="text-muted-foreground">Winner: </span>
+                <span className="font-semibold text-amber-600">{winnerName}</span>
+                <span className="text-muted-foreground"> · {winnerSkins} skin{winnerSkins !== 1 ? 's' : ''} won</span>
               </div>
             </div>
           </div>

@@ -89,7 +89,6 @@ import UmbriagioSettings from "./pages/UmbriagioSettings";
 import HowToPlayUmbriago from "./pages/HowToPlayUmbriago";
 import WolfSetup from "./pages/WolfSetup";
 import WolfPlay from "./pages/WolfPlay";
-import WolfSummary from "./pages/WolfSummary";
 import WolfInfo from "./pages/WolfInfo";
 import WolfFeed from "./pages/WolfFeed";
 import WolfLeaderboard from "./pages/WolfLeaderboard";
@@ -139,7 +138,6 @@ import SkinsInfo from "./pages/SkinsInfo";
 import SkinsFeed from "./pages/SkinsFeed";
 import SkinsLeaderboard from "./pages/SkinsLeaderboard";
 import SkinsSettings from "./pages/SkinsSettings";
-import SkinsSummary from "./pages/SkinsSummary";
 import HowToPlaySkins from "./pages/HowToPlaySkins";
 import Statistics from "./pages/Statistics";
 import StatDetail from "./pages/StatDetail";
@@ -250,7 +248,6 @@ const App = () => {
             <Route path="/wolf/:gameId/feed" element={<WolfFeed />} />
             <Route path="/wolf/:gameId/leaderboard" element={<WolfLeaderboard />} />
             <Route path="/wolf/:gameId/settings" element={<WolfSettings />} />
-            <Route path="/wolf/:gameId/summary" element={<WolfSummary />} />
             <Route path="/copenhagen/how-to-play" element={<HowToPlayCopenhagen />} />
             <Route path="/copenhagen/setup" element={<CopenhagenSetup />} />
             <Route path="/copenhagen/:gameId/play" element={<CopenhagenPlay />} />
@@ -292,7 +289,6 @@ const App = () => {
             <Route path="/skins/:roundId/feed" element={<SkinsFeed />} />
             <Route path="/skins/:roundId/leaderboard" element={<SkinsLeaderboard />} />
             <Route path="/skins/:roundId/settings" element={<SkinsSettings />} />
-            <Route path="/skins/:roundId/summary" element={<SkinsSummary />} />
             <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
             <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
             <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />

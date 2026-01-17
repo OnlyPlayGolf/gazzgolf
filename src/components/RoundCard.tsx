@@ -41,6 +41,10 @@ export interface RoundCardData {
   // Wolf-specific: player's position and final score (e.g., "8-5-3-0")
   wolfPosition?: number | null;
   wolfFinalScore?: string | null;
+  
+  // Skins-specific: player's position and number of skins won
+  skinsPosition?: number | null;
+  skinsWon?: number | null;
 }
 
 interface RoundCardProps {
@@ -89,6 +93,9 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   
   // Check if this is a wolf with position data
   const isWolf = round.gameType === 'wolf' && round.wolfPosition;
+  
+  // Check if this is a skins game with position data
+  const isSkins = round.gameType === 'skins' && round.skinsPosition !== null && round.skinsPosition !== undefined;
   
   // Format position for Copenhagen/Wolf games
   const formatPosition = (pos: number) => {
@@ -161,6 +168,17 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
                 {round.scrambleScoreToPar !== undefined && round.scrambleScoreToPar !== null && (
                   <div className="text-xs text-muted-foreground">
                     {formatScoreToPar(round.scrambleScoreToPar)}
+                  </div>
+                )}
+              </div>
+            ) : isSkins ? (
+              <div className="flex flex-col items-center">
+                <div className={`text-2xl font-bold ${round.skinsPosition === 1 ? 'text-emerald-600' : 'text-foreground'}`}>
+                  {formatPosition(round.skinsPosition!)}
+                </div>
+                {round.skinsWon !== null && round.skinsWon !== undefined && (
+                  <div className="text-xs text-muted-foreground">
+                    {round.skinsWon} SKIN{round.skinsWon !== 1 ? 'S' : ''}
                   </div>
                 )}
               </div>

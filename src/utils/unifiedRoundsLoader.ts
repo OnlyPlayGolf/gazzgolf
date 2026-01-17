@@ -310,6 +310,24 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   };
 
   const skinsGames = mergeGames(skinsOwnedRes, skinsParticipantRes);
+  
+  // Fetch skins holes data to calculate position and skins won
+  const skinsGameIds = skinsGames.map((g: any) => g.id);
+  let skinsHolesMap = new Map<string, any[]>();
+  
+  if (skinsGameIds.length > 0) {
+    const { data: skinsHoles } = await supabase
+      .from("skins_holes")
+      .select("game_id, winner_player, skins_available")
+      .in("game_id", skinsGameIds);
+    
+    for (const hole of skinsHoles || []) {
+      const existing = skinsHolesMap.get(hole.game_id) || [];
+      existing.push(hole);
+      skinsHolesMap.set(hole.game_id, existing);
+    }
+  }
+  
   const copenhagenGames = mergeGames(copenhagenOwnedRes, copenhagenParticipantRes);
   const bestBallGames = mergeGames(bestBallOwnedRes, bestBallParticipantRes);
   const wolfGames = mergeGames(wolfOwnedRes, wolfParticipantRes);
@@ -463,9 +481,83 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     });
   }
 
-  // Skins
+  // Skins - calculate position and skins won
   for (const game of skinsGames) {
     const players = Array.isArray(game.players) ? game.players : [];
+    
+    // Build player ID map: playerId (odId || id || name) -> player info
+    const playerIdMap = new Map<string, { id: string; name: string }>();
+    for (const p of players) {
+      const pName = typeof p === 'string' ? p : (p?.name || p?.displayName || '');
+      const pId = typeof p === 'string' ? p : (p?.odId || p?.id || p?.name || '');
+      if (pId) {
+        playerIdMap.set(pId, { id: pId, name: pName });
+      }
+    }
+    
+    // Find which player the target user is
+    let userPlayerId: string | null = null;
+    for (const [playerId, playerInfo] of playerIdMap) {
+      if (participantNames.includes(playerInfo.name)) {
+        userPlayerId = playerId;
+        break;
+      }
+    }
+    
+    // If not found but user owns the game, default to first player
+    if (!userPlayerId && game.user_id === targetUserId && playerIdMap.size > 0) {
+      userPlayerId = Array.from(playerIdMap.keys())[0];
+    }
+    
+    // Calculate skins won for each player
+    const holes = skinsHolesMap.get(game.id) || [];
+    const playerSkinsMap = new Map<string, number>();
+    
+    // Initialize all players with 0 skins
+    for (const playerId of playerIdMap.keys()) {
+      playerSkinsMap.set(playerId, 0);
+    }
+    
+    // Count skins won
+    for (const hole of holes) {
+      const winner = hole.winner_player;
+      const skinsAvailable = hole.skins_available || 0;
+      
+      if (winner && playerSkinsMap.has(winner)) {
+        playerSkinsMap.set(winner, (playerSkinsMap.get(winner) || 0) + skinsAvailable);
+      }
+    }
+    
+    // Calculate position for the user
+    const allSkins = Array.from(playerSkinsMap.entries()).map(([playerId, skins]) => ({
+      playerId,
+      skins,
+    }));
+    
+    // Sort by skins descending
+    const sortedBySkins = [...allSkins].sort((a, b) => b.skins - a.skins);
+    
+    let skinsPosition: number | null = null;
+    let skinsWon: number | null = null;
+    
+    if (userPlayerId) {
+      const userEntry = allSkins.find(e => e.playerId === userPlayerId);
+      
+      if (userEntry) {
+        skinsWon = userEntry.skins;
+        // Find position (1-based, accounting for ties)
+        let pos = 1;
+        for (const entry of sortedBySkins) {
+          if (entry.skins > userEntry.skins) {
+            pos++;
+          } else if (entry.playerId === userPlayerId) {
+            break;
+          }
+        }
+        skinsPosition = pos;
+      }
+    }
+    
     allRounds.push({
       id: game.id,
       course_name: game.course_name,
@@ -477,6 +569,8 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       gameType: "skins",
       holesPlayed: game.holes_played,
       ownerUserId: game.user_id || targetUserId,
+      skinsPosition,
+      skinsWon,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }

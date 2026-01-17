@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import {
   Table,
   TableBody,
@@ -280,9 +281,7 @@ export default function ScrambleLeaderboard() {
                           key={hole.hole_number} 
                           className="text-center px-0 py-1"
                         >
-                          {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
-                            <ScorecardScoreCell score={score} par={hole.par} />
-                          ) : ''}
+                          {score !== null && score > 0 ? <ScorecardScoreCell score={score} par={hole.par} /> : formatScore(score)}
                         </TableCell>
                       );
                     })}
@@ -350,9 +349,7 @@ export default function ScrambleLeaderboard() {
                             key={hole.hole_number} 
                             className="text-center px-0 py-1"
                           >
-                            {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
-                              <ScorecardScoreCell score={score} par={hole.par} />
-                            ) : ''}
+                            {score !== null && score > 0 ? <ScorecardScoreCell score={score} par={hole.par} /> : formatScore(score)}
                           </TableCell>
                         );
                       })}
