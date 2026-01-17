@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -277,9 +278,11 @@ export default function ScrambleLeaderboard() {
                       return (
                         <TableCell 
                           key={hole.hole_number} 
-                          className="text-center font-bold text-[10px] px-0 py-1"
+                          className="text-center px-0 py-1"
                         >
-                          {formatScore(score)}
+                          {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
+                            <ScorecardScoreCell score={score} par={hole.par} />
+                          ) : ''}
                         </TableCell>
                       );
                     })}
@@ -345,9 +348,11 @@ export default function ScrambleLeaderboard() {
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className="text-center font-bold text-[10px] px-0 py-1"
+                            className="text-center px-0 py-1"
                           >
-                            {formatScore(score)}
+                            {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
+                              <ScorecardScoreCell score={score} par={hole.par} />
+                            ) : ''}
                           </TableCell>
                         );
                       })}

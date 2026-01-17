@@ -154,17 +154,10 @@ export function BestBallScorecardCard({
                 {nineHoles.map(hole => {
                   const score = getPlayerScoreForHole(hole, player.id, 'A');
                   const par = holePars[hole] || 4;
-                  const diff = score ? score - par : null;
                   return (
                     <TableCell key={hole} className="text-center px-0 py-1">
                       {score ? (
-                        diff === 0 ? (
-                          <span className="text-[10px] font-semibold text-foreground">
-                            {score}
-                          </span>
-                        ) : (
-                          <ScorecardScoreCell score={score} par={par} />
-                        )
+                        <ScorecardScoreCell score={score} par={par} />
                       ) : (
                         <span className="text-muted-foreground text-[10px]">-</span>
                       )}
@@ -215,17 +208,10 @@ export function BestBallScorecardCard({
                 {nineHoles.map(hole => {
                   const score = getPlayerScoreForHole(hole, player.id, 'B');
                   const par = holePars[hole] || 4;
-                  const diff = score ? score - par : null;
                   return (
                     <TableCell key={hole} className="text-center px-0 py-1">
                       {score ? (
-                        diff === 0 ? (
-                          <span className="text-[10px] font-semibold text-foreground">
-                            {score}
-                          </span>
-                        ) : (
-                          <ScorecardScoreCell score={score} par={par} />
-                        )
+                        <ScorecardScoreCell score={score} par={par} />
                       ) : (
                         <span className="text-muted-foreground text-[10px]">-</span>
                       )}

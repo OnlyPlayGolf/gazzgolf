@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import { useParams, useNavigate } from "react-router-dom";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { ScorecardActions } from "@/components/ScorecardActions";
@@ -392,16 +393,14 @@ export default function UmbriagioLeaderboard() {
                     <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10">Score</TableCell>
                     {frontNine.map(hole => {
                       const score = getPlayerScore(hole.hole_number, player.id);
-                      const scoreDiff = score && score > 0 ? score - hole.par : null;
                       return (
                         <TableCell 
                           key={hole.hole_number} 
-                          className={`text-center font-bold text-xs px-1 py-1.5 ${
-                            scoreDiff !== null && scoreDiff < 0 ? 'text-green-600' : 
-                            scoreDiff !== null && scoreDiff > 0 ? 'text-red-600' : ''
-                          }`}
+                          className="text-center px-1 py-1.5"
                         >
-                          {score && score > 0 ? score : ''}
+                          {score && score > 0 ? (
+                            <ScorecardScoreCell score={score} par={hole.par} />
+                          ) : ''}
                         </TableCell>
                       );
                     })}
@@ -470,16 +469,14 @@ export default function UmbriagioLeaderboard() {
                       <TableCell className="font-bold text-xs px-1 py-1.5 sticky left-0 bg-background z-10 max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
                       {backNine.map(hole => {
                         const score = getPlayerScore(hole.hole_number, player.id);
-                        const scoreDiff = score && score > 0 ? score - hole.par : null;
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className={`text-center font-bold text-xs px-1 py-1.5 ${
-                              scoreDiff !== null && scoreDiff < 0 ? 'text-green-600' : 
-                              scoreDiff !== null && scoreDiff > 0 ? 'text-red-600' : ''
-                            }`}
+                            className="text-center px-1 py-1.5"
                           >
-                            {score && score > 0 ? score : ''}
+                            {score && score > 0 ? (
+                              <ScorecardScoreCell score={score} par={hole.par} />
+                            ) : ''}
                           </TableCell>
                         );
                       })}
