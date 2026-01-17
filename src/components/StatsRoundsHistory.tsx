@@ -107,7 +107,7 @@ export const StatsRoundsHistory = () => {
 
       // Filter out nulls and sort by date
       const validRounds = roundsWithScores
-        .filter((r): r is StatsRound => r !== null)
+        .filter((r): r is NonNullable<typeof r> => r !== null)
         .sort((a, b) => {
           const dateA = new Date(a.date_played).getTime();
           const dateB = new Date(b.date_played).getTime();
