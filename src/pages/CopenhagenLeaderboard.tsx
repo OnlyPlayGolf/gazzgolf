@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -249,8 +250,10 @@ export default function CopenhagenLeaderboard() {
                     {frontNine.map(hole => {
                       const score = getPlayerGrossScore(hole.hole_number, player.index);
                       return (
-                        <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
-                          {score === -1 ? '–' : score !== null ? score : ''}
+                        <TableCell key={hole.hole_number} className="text-center px-0 py-1">
+                          {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
+                            <ScorecardScoreCell score={score} par={hole.par} />
+                          ) : ''}
                         </TableCell>
                       );
                     })}
@@ -341,8 +344,10 @@ export default function CopenhagenLeaderboard() {
                       {backNine.map(hole => {
                         const score = getPlayerGrossScore(hole.hole_number, player.index);
                         return (
-                          <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
-                            {score === -1 ? '–' : score !== null ? score : ''}
+                          <TableCell key={hole.hole_number} className="text-center px-0 py-1">
+                            {score === -1 ? <span className="text-muted-foreground text-[10px]">–</span> : score !== null && score > 0 ? (
+                              <ScorecardScoreCell score={score} par={hole.par} />
+                            ) : ''}
                           </TableCell>
                         );
                       })}

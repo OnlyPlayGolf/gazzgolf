@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -196,21 +197,14 @@ export default function MatchPlayLeaderboard() {
 
     const renderScoreCell = (holeNumber: number, playerNum: number) => {
       const score = getPlayerScore(holeNumber, playerNum);
-      const won = playerWonHole(holeNumber, playerNum);
       
       if (score === null) return "";
+      if (score === -1) return <span className="text-muted-foreground">–</span>;
       
-      const displayScore = score === -1 ? "–" : score;
+      const hole = courseHoles.find(h => h.hole_number === holeNumber);
+      const par = hole?.par || 4;
       
-      if (won) {
-        const colorClass = playerNum === 1 ? "text-blue-500" : "text-destructive";
-        return (
-          <span className={`font-bold ${colorClass}`}>
-            {displayScore}
-          </span>
-        );
-      }
-      return displayScore;
+      return <ScorecardScoreCell score={score} par={par} />;
     };
 
     const renderNine = (nineHoles: CourseHole[], isBackNine: boolean = false) => {
