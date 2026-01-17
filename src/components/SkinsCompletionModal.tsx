@@ -340,31 +340,31 @@ export function SkinsCompletionModal({
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
-        {/* Grey Header - Round Card Style */}
-        <div className="bg-muted/50 p-4 rounded-t-lg">
+        {/* Green Header - Round Card Style */}
+        <div className="bg-primary p-4 rounded-t-lg">
           <div className="flex items-center gap-4">
             {/* Left: Winner with trophy and skins count */}
             <div className="flex-shrink-0 w-14 text-center">
-              <Trophy className="h-6 w-6 mx-auto text-amber-600 mb-1" />
-              <div className="text-sm font-bold text-foreground">
+              <Trophy className="h-6 w-6 mx-auto text-primary-foreground/80 mb-1" />
+              <div className="text-sm font-bold text-primary-foreground">
                 {winnerSkins}
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-primary-foreground/80">
                 skin{winnerSkins !== 1 ? 's' : ''}
               </div>
             </div>
             
             {/* Right: Round Details */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate text-foreground">
+              <h3 className="font-semibold truncate text-primary-foreground">
                 {game.round_name || 'Skins'}
               </h3>
-              <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5 mt-1 text-sm text-primary-foreground/80">
                 <span className="truncate">{game.course_name}</span>
                 <span>·</span>
                 <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-xs text-primary-foreground/80 mt-1">
                 Skins · {players.length} player{players.length !== 1 ? 's' : ''}
               </div>
             </div>
@@ -435,7 +435,7 @@ export function SkinsCompletionModal({
                 Share
               </Button>
               <Button
-                className="flex-1"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 onClick={handleDone}
               >
                 Done
