@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,15 @@ export function RoundCompletionModal({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Reset textarea height when share form is closed
+  useEffect(() => {
+    if (!showShareForm && commentTextareaRef.current) {
+      commentTextareaRef.current.style.height = '2.5rem';
+      setComment("");
+    }
+  }, [showShareForm]);
 
   const formatScoreVsPar = (diff: number) => {
     if (diff === 0) return "E";
@@ -139,8 +148,8 @@ export function RoundCompletionModal({
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
-        {/* Grey Header - Round Card Style */}
-        <div className="bg-muted/50 p-4 rounded-t-lg">
+        {/* Round Card Style Header - Matching Profile Round Cards */}
+        <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border-b border-primary/20 p-4 rounded-t-lg">
           <div className="flex items-center gap-4">
             {/* Left: Score with vs par below */}
             <div className="flex-shrink-0 w-14 text-center">
@@ -283,10 +292,19 @@ export function RoundCompletionModal({
           {showShareForm ? (
             <div className="space-y-3">
               <Textarea
+                ref={commentTextareaRef}
                 placeholder="Add your post-round thoughts..."
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="min-h-[80px]"
+                onChange={(e) => {
+                  setComment(e.target.value);
+                  const textarea = commentTextareaRef.current;
+                  if (textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                  }
+                }}
+                className="min-h-[2.5rem] resize-none overflow-hidden"
+                rows={1}
               />
               <div className="flex gap-2">
                 <Button

@@ -560,8 +560,8 @@ export default function SkinsTracker() {
       {/* Round Completion Modal */}
       {game && (
         <SkinsCompletionModal
-          open={showCompletionDialog}
-          onOpenChange={setShowCompletionDialog}
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
           game={{
             id: game.id,
             course_name: game.course_name,

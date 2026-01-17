@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 interface GroupDrillHistoryProps {
   groupId: string;
+  groupCreatedAt?: string;
 }
 
 interface DrillResultWithProfile {
@@ -64,7 +65,7 @@ interface DrillInfo {
   title: string;
 }
 
-export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
+export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistoryProps) {
   const [results, setResults] = useState<DrillResultWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrill, setSelectedDrill] = useState<string>("all");
@@ -117,8 +118,8 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
           setDrills(uniqueDrills);
         }
 
-        // Get drill results for all members
-        const { data: drillResults } = await supabase
+        // Build query for drill results - only include drills completed after group creation
+        let drillResultsQuery = supabase
           .from('drill_results')
           .select(`
             id,
@@ -131,6 +132,13 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
           .in('user_id', memberIds)
           .order('created_at', { ascending: false })
           .limit(100);
+
+        // Filter by group creation date if provided
+        if (groupCreatedAt) {
+          drillResultsQuery = drillResultsQuery.gte('created_at', groupCreatedAt);
+        }
+
+        const { data: drillResults } = await drillResultsQuery;
 
         if (drillResults) {
           const resultsWithProfiles: DrillResultWithProfile[] = drillResults.map((r: any) => {
@@ -156,7 +164,7 @@ export function GroupDrillHistory({ groupId }: GroupDrillHistoryProps) {
     };
 
     fetchGroupHistory();
-  }, [groupId]);
+  }, [groupId, groupCreatedAt]);
 
   const filteredResults = results.filter(result => {
     const drillMatch = selectedDrill === "all" || result.drill_title === selectedDrill;

@@ -570,7 +570,7 @@ export default function RoundLeaderboard() {
                                   {hasScore && score && score > 0 ? (
                                     <ScorecardScoreCell score={score} par={hole.par} />
                                   ) : hasScore ? (score === -1 ? '–' : '') : ''}
-                                </TableCell>
+                              </TableCell>
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">

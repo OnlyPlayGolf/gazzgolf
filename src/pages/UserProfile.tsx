@@ -397,13 +397,13 @@ export default function UserProfile() {
           <div className="flex items-start gap-4 max-w-2xl">
             {/* Profile photo - left side, bigger */}
             <div className="flex-shrink-0">
-              <ProfilePhoto
-                src={profile.avatar_url}
-                alt={displayName}
-                fallback={displayName}
-                size="2xl"
+          <ProfilePhoto
+            src={profile.avatar_url}
+            alt={displayName}
+            fallback={displayName}
+            size="2xl"
                 className="border-4 border-background shadow-lg h-24 w-24"
-              />
+          />
             </div>
 
             {/* Profile info - right side */}

@@ -11,14 +11,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
-import { StrokePlayScorecardCard } from "./StrokePlayScorecardCard";
 import { UmbriagioScorecardCard } from "./UmbriagioScorecardCard";
 import { MatchPlayScorecardCard } from "./MatchPlayScorecardCard";
-import { BestBallScorecardCard } from "./BestBallScorecardCard";
+import { BestBallScorecardView } from "./BestBallScorecardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 
@@ -799,6 +809,138 @@ const GameResultCardFromDB = ({
   return <RoundCard round={roundData} onClick={handleClick} />;
 };
 
+// Component to display Best Ball scorecard in posts
+const BestBallScorecardInPost = ({
+  bestBallScorecardResult,
+  textContent,
+}: {
+  bestBallScorecardResult: NonNullable<ReturnType<typeof parseBestBallScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const { strokePlayEnabled } = useStrokePlayEnabled(bestBallScorecardResult.gameId || '', 'best_ball');
+
+  useEffect(() => {
+    const fetchCourseHoles = async () => {
+      if (bestBallScorecardResult.gameId) {
+        // Try to fetch course holes from game
+        const { data: gameData } = await supabase
+          .from("best_ball_games")
+          .select("course_id, holes_played")
+          .eq("id", bestBallScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holePars
+      const holes = Object.keys(bestBallScorecardResult.holePars)
+        .map(holeNum => ({
+          hole_number: parseInt(holeNum),
+          par: bestBallScorecardResult.holePars[parseInt(holeNum)],
+          stroke_index: parseInt(holeNum), // Default stroke index
+        }))
+        .sort((a, b) => a.hole_number - b.hole_number);
+      setCourseHoles(holes);
+      setLoading(false);
+    };
+
+    fetchCourseHoles();
+  }, [bestBallScorecardResult.gameId, bestBallScorecardResult.holePars]);
+
+  // Calculate match result from user's perspective
+  const userMatchStatus = bestBallScorecardResult.matchStatus;
+  let matchResult: string = 'T';
+  let resultText = '';
+  
+  if (userMatchStatus > 0) {
+    matchResult = 'W';
+    resultText = `${Math.abs(userMatchStatus)} UP`;
+  } else if (userMatchStatus < 0) {
+    matchResult = 'L';
+    resultText = `${Math.abs(userMatchStatus)} DOWN`;
+  } else {
+    matchResult = 'T';
+    resultText = 'AS';
+  }
+
+  // Convert holeScores to holes array format
+  const holes = Object.keys(bestBallScorecardResult.holeScores).map(holeNum => ({
+    hole_number: parseInt(holeNum),
+    team_a_scores: bestBallScorecardResult.holeScores[parseInt(holeNum)].teamAScores,
+    team_b_scores: bestBallScorecardResult.holeScores[parseInt(holeNum)].teamBScores,
+    match_status_after: bestBallScorecardResult.holeScores[parseInt(holeNum)].matchStatusAfter,
+  }));
+
+  const playerCount = bestBallScorecardResult.teamAPlayers.length + bestBallScorecardResult.teamBPlayers.length;
+
+  const handleHeaderClick = () => {
+    if (bestBallScorecardResult.gameId) {
+      navigate(buildGameUrl('best_ball', bestBallScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (bestBallScorecardResult.gameId) {
+      navigate(buildGameUrl('best_ball', bestBallScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <BestBallScorecardView
+        roundName={bestBallScorecardResult.roundName}
+        courseName={bestBallScorecardResult.courseName}
+        datePlayed={bestBallScorecardResult.datePlayed}
+        playerCount={playerCount}
+        matchResult={matchResult}
+        resultText={resultText}
+        teamAPlayers={bestBallScorecardResult.teamAPlayers.map(p => ({ id: p.id, displayName: p.name || '' }))}
+        teamBPlayers={bestBallScorecardResult.teamBPlayers.map(p => ({ id: p.id, displayName: p.name || '' }))}
+        holes={holes}
+        courseHoles={courseHoles}
+        strokePlayEnabled={strokePlayEnabled}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
 interface FeedPostProps {
   post: any;
   currentUserId: string;
@@ -820,6 +962,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editPostContent, setEditPostContent] = useState("");
   const [isSavingPost, setIsSavingPost] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isOwnPost = post.user_id === currentUserId;
 
@@ -827,9 +970,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     navigate(`/user/${userId}`);
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
-    
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
       const { error } = await supabase
@@ -840,6 +985,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       if (error) throw error;
 
       toast.success("Post deleted");
+      setShowDeleteDialog(false);
       onPostDeleted?.();
     } catch (error) {
       console.error("Error deleting post:", error);
@@ -1069,6 +1215,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const gameResult = !matchPlayScorecardResult && !bestBallScorecardResult ? parseGameResult(post.content) : null;
 
   return (
+    <>
     <Card>
       <CardContent className="p-4 space-y-4">
         {/* Post Header */}
@@ -1155,17 +1302,26 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               />
             )}
             {roundScorecardResult && (
-              <StrokePlayScorecardCard 
-                roundId={roundScorecardResult.roundId || undefined}
-                roundName={roundScorecardResult.roundName}
-                courseName={roundScorecardResult.courseName}
-                datePlayed={roundScorecardResult.datePlayed}
-                holesPlayed={roundScorecardResult.holesPlayed}
-                totalScore={roundScorecardResult.score}
-                scoreVsPar={roundScorecardResult.scoreVsPar}
-                totalPar={roundScorecardResult.totalPar}
-                holeScores={roundScorecardResult.holeScores}
-                holePars={roundScorecardResult.holePars}
+              <RoundCard 
+                round={{
+                  id: roundScorecardResult.roundId || '',
+                  round_name: roundScorecardResult.roundName,
+                  course_name: roundScorecardResult.courseName,
+                  date: roundScorecardResult.datePlayed,
+                  score: roundScorecardResult.scoreVsPar,
+                  playerCount: 1,
+                  gameMode: 'Stroke Play',
+                  gameType: 'round',
+                  holesPlayed: roundScorecardResult.holesPlayed,
+                }}
+                onClick={() => {
+                  if (roundScorecardResult.roundId) {
+                    navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
+                      entryPoint: 'home', 
+                      viewType: 'spectator' 
+                    }));
+                  }
+                }}
               />
             )}
             {matchPlayScorecardResult && (
@@ -1250,17 +1406,18 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             {roundScorecardResult.textContent && (
               <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundScorecardResult.textContent}</p>
             )}
-            <StrokePlayScorecardCard 
-              roundId={roundScorecardResult.roundId || undefined}
-              roundName={roundScorecardResult.roundName}
-              courseName={roundScorecardResult.courseName}
-              datePlayed={roundScorecardResult.datePlayed}
-              holesPlayed={roundScorecardResult.holesPlayed}
-              totalScore={roundScorecardResult.score}
-              scoreVsPar={roundScorecardResult.scoreVsPar}
-              totalPar={roundScorecardResult.totalPar}
-              holeScores={roundScorecardResult.holeScores}
-              holePars={roundScorecardResult.holePars}
+            <RoundCard 
+              round={{
+                id: roundScorecardResult.roundId || '',
+                round_name: roundScorecardResult.roundName,
+                course_name: roundScorecardResult.courseName,
+                date: roundScorecardResult.datePlayed,
+                score: roundScorecardResult.scoreVsPar,
+                playerCount: 1,
+                gameMode: 'Stroke Play',
+                gameType: 'round',
+                holesPlayed: roundScorecardResult.holesPlayed,
+              }}
               onClick={() => {
                 if (roundScorecardResult.roundId) {
                   navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
@@ -1303,35 +1460,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             />
           </div>
         ) : bestBallScorecardResult ? (
-          <div className="space-y-3">
-            {bestBallScorecardResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{bestBallScorecardResult.textContent}</p>
-            )}
-            <BestBallScorecardCard
-              gameId={bestBallScorecardResult.gameId || undefined}
-              roundName={bestBallScorecardResult.roundName}
-              courseName={bestBallScorecardResult.courseName}
-              datePlayed={bestBallScorecardResult.datePlayed}
-              teamAName={bestBallScorecardResult.teamAName}
-              teamBName={bestBallScorecardResult.teamBName}
-              teamAPlayers={bestBallScorecardResult.teamAPlayers}
-              teamBPlayers={bestBallScorecardResult.teamBPlayers}
-              matchStatus={bestBallScorecardResult.matchStatus}
-              userTeam={bestBallScorecardResult.userTeam}
-              holeScores={bestBallScorecardResult.holeScores}
-              holePars={bestBallScorecardResult.holePars}
-              onClick={() => {
-                if (bestBallScorecardResult.gameId) {
-                  navigate(buildGameUrl('best_ball', bestBallScorecardResult.gameId, 'leaderboard', {
-                    entryPoint: 'home',
-                    viewType: 'spectator'
-                  }));
-                } else {
-                  toast.error("Game details not found");
-                }
-              }}
-            />
-          </div>
+          <BestBallScorecardInPost
+            bestBallScorecardResult={bestBallScorecardResult}
+            textContent={bestBallScorecardResult.textContent}
+          />
         ) : roundResult ? (
           <div className="space-y-3">
             {roundResult.textContent && (
@@ -1654,5 +1786,28 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
         )}
       </CardContent>
     </Card>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Post?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this post? This action cannot be undone and the post will be permanently removed.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
