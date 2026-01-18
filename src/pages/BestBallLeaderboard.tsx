@@ -348,7 +348,7 @@ export default function BestBallLeaderboard() {
                         </TableRow>
                       );
                     })}
-                    <TableRow className="font-bold">
+                    <TableRow className="font-bold border-t-2 border-foreground/30">
                       <TableCell className="font-bold text-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate bg-background" title={teamName}>
                         {teamName}
                       </TableCell>
@@ -457,7 +457,7 @@ export default function BestBallLeaderboard() {
                           </TableRow>
                         );
                       })}
-                      <TableRow className="font-bold">
+                      <TableRow className="font-bold border-t-2 border-foreground/30">
                         <TableCell className="font-bold text-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate bg-background" title={teamName}>
                           {teamName}
                         </TableCell>
