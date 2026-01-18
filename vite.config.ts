@@ -6,8 +6,9 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: "0.0.0.0", // Listen on all interfaces (IPv4 and IPv6)
     port: 8080,
+    strictPort: true, // Exit if port is already in use
     hmr: {
       overlay: true, // Show errors in the browser overlay
     },

@@ -108,7 +108,8 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
     };
   },
   
-  isGameFinished: (game, holeNumber, totalHoles) => holeNumber >= totalHoles,
+  // Don't auto-navigate to summary - stay on play page
+  isGameFinished: () => false,
 });
 
 export default function CopenhagenPlay() {

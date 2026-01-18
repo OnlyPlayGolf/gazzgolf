@@ -60,6 +60,7 @@ const RoundSummary = () => {
   const [showCompletionModal, setShowCompletionModal] = useState(true);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [holeScores, setHoleScores] = useState<Map<number, number>>(new Map());
+  const [playerName, setPlayerName] = useState<string>("Player");
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   const [courseName, setCourseName] = useState<string>("");
@@ -188,6 +189,7 @@ const RoundSummary = () => {
           const currentPlayer = playersWithScores.find(p => p.user_id === roundData.user_id);
           if (currentPlayer) {
             setHoleScores(currentPlayer.scores);
+            setPlayerName(currentPlayer.display_name);
           }
         }
 
@@ -556,6 +558,7 @@ const RoundSummary = () => {
         holeScores={holeScores}
         roundId={roundId}
         roundName={roundName}
+        playerName={playerName}
         onContinue={() => navigate("/rounds")}
       />
     </div>

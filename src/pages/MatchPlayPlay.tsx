@@ -524,39 +524,22 @@ export default function MatchPlayPlay() {
           />
         )}
 
-        {/* Match Status */}
+        {/* Match Status - Hide when tied/all square */}
+        {currentMatchStatus !== 0 && (
         <div className={`p-3 rounded-lg text-center ${
           currentMatchStatus > 0 
             ? "bg-blue-100 dark:bg-blue-900/30" 
-            : currentMatchStatus < 0 
-              ? "bg-red-100 dark:bg-red-900/30" 
-              : "bg-primary text-primary-foreground"
+            : "bg-red-100 dark:bg-red-900/30"
         }`}>
           <p className={`text-lg font-bold ${
             currentMatchStatus > 0 
               ? "text-blue-600 dark:text-blue-400" 
-              : currentMatchStatus < 0 
-                ? "text-red-600 dark:text-red-400" 
-                : "text-primary"
+              : "text-red-600 dark:text-red-400"
           }`}>
             {formatMatchStatusWithHoles(currentMatchStatus, currentHolesRemaining, game.player_1, game.player_2)}
           </p>
         </div>
-
-        {/* Preview Result */}
-        {scores.player1 > 0 && scores.player2 > 0 && scores.player1 !== scores.player2 && (
-          <Card className="p-4 bg-muted/50">
-            <p className="text-center text-sm">
-              {scores.player1 < scores.player2 && (
-                <span className="text-blue-600 font-medium">{game.player_1} wins this hole</span>
-              )}
-              {scores.player2 < scores.player1 && (
-                <span className="text-red-600 font-medium">{game.player_2} wins this hole</span>
-              )}
-            </p>
-          </Card>
         )}
-
 
       </div>
 

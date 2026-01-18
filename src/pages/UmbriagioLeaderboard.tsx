@@ -416,7 +416,7 @@ export default function UmbriagioLeaderboard() {
                       return (
                         <TableCell 
                           key={hole.hole_number} 
-                          className={`text-center font-bold text-xs px-1 py-1.5 ${
+                          className={`text-center font-bold bg-muted text-xs px-1 py-1.5 ${
                             points !== null && points > 0 ? 'text-green-600' : 
                             points !== null && points < 0 ? 'text-red-600' : ''
                           }`}
@@ -490,7 +490,7 @@ export default function UmbriagioLeaderboard() {
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className={`text-center font-bold text-xs px-1 py-1.5 ${
+                            className={`text-center font-bold bg-muted text-xs px-1 py-1.5 ${
                               points !== null && points > 0 ? 'text-green-600' : 
                               points !== null && points < 0 ? 'text-red-600' : ''
                             }`}
@@ -628,7 +628,7 @@ export default function UmbriagioLeaderboard() {
                       return (
                         <TableCell 
                           key={hole.hole_number} 
-                          className={`text-center font-bold text-xs px-1 py-1.5 ${
+                          className={`text-center font-bold bg-muted text-xs px-1 py-1.5 ${
                             points !== null && points > 0 ? 'text-green-600' : 
                             points !== null && points < 0 ? 'text-red-600' : ''
                           }`}
@@ -688,7 +688,7 @@ export default function UmbriagioLeaderboard() {
                         return (
                           <TableCell 
                             key={hole.hole_number} 
-                            className={`text-center font-bold text-xs px-1 py-1.5 ${
+                            className={`text-center font-bold bg-muted text-xs px-1 py-1.5 ${
                               points !== null && points > 0 ? 'text-green-600' : 
                               points !== null && points < 0 ? 'text-red-600' : ''
                             }`}

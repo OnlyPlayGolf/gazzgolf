@@ -3,16 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Share2, Loader2 } from "lucide-react";
 import { UmbriagioGame, UmbriagioHole } from "@/types/umbriago";
-import { UmbriagioScorecard } from "@/components/UmbriagioScorecard";
 import { normalizeUmbriagioPoints } from "@/utils/umbriagioScoring";
 import { format } from "date-fns";
-import { ScorecardTypeSelector, ScorecardType } from "@/components/ScorecardTypeSelector";
-import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
+import { UmbriagioScorecardView } from "@/components/UmbriagioScorecardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 
 interface CourseHole {
@@ -44,7 +41,6 @@ export function UmbriagioShareDialogWithScorecard({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
-  const [scorecardType, setScorecardType] = useState<ScorecardType>('primary');
   const { toast } = useToast();
   const { strokePlayEnabled } = useStrokePlayEnabled(game.id, 'umbriago');
 
@@ -70,26 +66,63 @@ export function UmbriagioShareDialogWithScorecard({
     return `${normalizedA} - ${normalizedB}`;
   };
 
-  // Prepare stroke play data - Umbriago stores gross scores in holes
-  const allPlayers = [
-    game.team_a_player_1,
-    game.team_a_player_2,
-    game.team_b_player_1,
-    game.team_b_player_2,
-  ];
+  // Calculate match result from user's perspective
+  const winningTeam = game.winning_team;
+  let matchResult: string = '—';
+  let resultText = `${normalizedA} - ${normalizedB}`;
+  
+  if (winningTeam === 'TIE') {
+    matchResult = 'T';
+  } else if (winningTeam === currentUserTeam) {
+    matchResult = 'W';
+  } else if (winningTeam) {
+    matchResult = 'L';
+  }
 
-  const strokePlayPlayers = allPlayers.map(playerName => {
-    const scores = new Map<number, number>();
-    let total = 0;
+  // Prepare stroke play players data from individual player scores in holes
+  const buildStrokePlayPlayers = () => {
+    const player1Scores = new Map<number, number>();
+    const player2Scores = new Map<number, number>();
+    const player3Scores = new Map<number, number>();
+    const player4Scores = new Map<number, number>();
     
+    let player1Total = 0;
+    let player2Total = 0;
+    let player3Total = 0;
+    let player4Total = 0;
+
     holes.forEach(hole => {
-      // Umbriago holes have team scores, we need individual scores
-      // For now we'll show team best scores as individual approximation
-      // This would need proper individual tracking in the data model
+      // Team A Player 1
+      if (hole.team_a_player_1_score !== null && hole.team_a_player_1_score > 0) {
+        player1Scores.set(hole.hole_number, hole.team_a_player_1_score);
+        player1Total += hole.team_a_player_1_score;
+      }
+      // Team A Player 2
+      if (hole.team_a_player_2_score !== null && hole.team_a_player_2_score > 0) {
+        player2Scores.set(hole.hole_number, hole.team_a_player_2_score);
+        player2Total += hole.team_a_player_2_score;
+      }
+      // Team B Player 1
+      if (hole.team_b_player_1_score !== null && hole.team_b_player_1_score > 0) {
+        player3Scores.set(hole.hole_number, hole.team_b_player_1_score);
+        player3Total += hole.team_b_player_1_score;
+      }
+      // Team B Player 2
+      if (hole.team_b_player_2_score !== null && hole.team_b_player_2_score > 0) {
+        player4Scores.set(hole.hole_number, hole.team_b_player_2_score);
+        player4Total += hole.team_b_player_2_score;
+      }
     });
-    
-    return { name: playerName, scores, totalScore: total };
-  });
+
+    return [
+      { name: game.team_a_player_1, scores: player1Scores, totalScore: player1Total },
+      { name: game.team_a_player_2, scores: player2Scores, totalScore: player2Total },
+      { name: game.team_b_player_1, scores: player3Scores, totalScore: player3Total },
+      { name: game.team_b_player_2, scores: player4Scores, totalScore: player4Total },
+    ];
+  };
+
+  const strokePlayPlayers = buildStrokePlayPlayers();
 
   const handleShare = async () => {
     setIsSharing(true);
@@ -153,71 +186,28 @@ export function UmbriagioShareDialogWithScorecard({
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 overflow-hidden [&>button]:hidden">
-        {/* Green Header - Round Card Style */}
-        <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
-          <div className="flex items-center gap-4">
-            {/* Left: W/L/T Result with score below - matching RoundCard */}
-            <div className="flex-shrink-0 w-14 text-center">
-              <div className={`text-2xl font-bold ${
-                game.winning_team === currentUserTeam ? 'text-emerald-300' : 
-                game.winning_team && game.winning_team !== 'TIE' ? 'text-red-400' : 
-                'text-primary-foreground'
-              }`}>
-                {game.winning_team === 'TIE' ? 'T' : 
-                 game.winning_team === currentUserTeam ? 'W' : 
-                 game.winning_team ? 'L' : '—'}
-              </div>
-              <div className="text-xs opacity-75 mt-0.5">
-                {getScoreDisplay()}
-              </div>
-            </div>
-            
-            {/* Right: Round Details */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate">
-                {game.round_name || 'Umbriago'}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-1 text-sm opacity-90">
-                <span className="truncate">{game.course_name}</span>
-                <span>·</span>
-                <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs opacity-75 mt-1">
-                <span>Umbriago</span>
-                <span>·</span>
-                <span>4 players</span>
-              </div>
-            </div>
-          </div>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 overflow-hidden flex flex-col [&>button]:hidden">
+        {/* Use UmbriagioScorecardView - matches shared post exactly */}
+        <div className="flex-1 overflow-y-auto">
+          <UmbriagioScorecardView
+            roundName={game.round_name || 'Umbriago'}
+            courseName={game.course_name}
+            datePlayed={game.date_played}
+            playerCount={4}
+            matchResult={matchResult}
+            resultText={resultText}
+            game={game}
+            holes={holes}
+            courseHoles={courseHoles}
+            currentUserTeam={currentUserTeam}
+            strokePlayEnabled={strokePlayEnabled}
+            strokePlayPlayers={strokePlayPlayers}
+          />
         </div>
 
-        {/* Scorecard Type Selector */}
-        <ScorecardTypeSelector
-          primaryLabel="Umbriago"
-          selectedType={scorecardType}
-          onTypeChange={setScorecardType}
-          strokePlayEnabled={strokePlayEnabled}
-        />
-
-        <ScrollArea className="max-h-[calc(90vh-220px)] px-4">
-          <div className="space-y-4 pb-4 pt-4">
-            {/* Scorecard */}
-            {scorecardType === 'stroke_play' ? (
-              <StrokePlayScorecardView
-                players={strokePlayPlayers}
-                courseHoles={courseHoles}
-              />
-            ) : (
-              <UmbriagioScorecard
-                game={game}
-                holes={holes}
-                courseHoles={courseHoles}
-                currentUserTeam={currentUserTeam}
-              />
-            )}
-
-            {showShareForm ? (
+        {/* Actions */}
+        <div className="p-4 border-t flex-shrink-0">
+          {showShareForm ? (
               <div className="space-y-3">
                 <Textarea
                   placeholder="Add a comment (optional)..."
@@ -262,8 +252,7 @@ export function UmbriagioShareDialogWithScorecard({
                 </Button>
               </div>
             )}
-          </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

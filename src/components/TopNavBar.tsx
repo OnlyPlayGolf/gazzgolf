@@ -84,7 +84,7 @@ export const TopNavBar = () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
-          Gazz Golf
+          OnlyPlay Golf
         </h1>
 
         {/* Center: Empty space for balance */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -52,6 +52,7 @@ export function ScorecardCommentsSheet({
   const [submitting, setSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserProfile, setCurrentUserProfile] = useState<Profile | null>(null);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -211,12 +212,20 @@ export function ScorecardCommentsSheet({
             <Card className="border bg-card">
               <CardContent className="p-4 space-y-3">
                 <Textarea
+                  ref={commentTextareaRef}
                   placeholder="Write a comment..."
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={(e) => {
+                    setNewComment(e.target.value);
+                    const textarea = commentTextareaRef.current;
+                    if (textarea) {
+                      textarea.style.height = 'auto';
+                      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                    }
+                  }}
                   disabled={submitting}
-                  className="min-h-[80px] resize-none bg-background"
-                  rows={3}
+                  className="min-h-[2.5rem] resize-none overflow-hidden bg-background"
+                  rows={1}
                 />
                 <Button 
                   onClick={handleSubmitComment}

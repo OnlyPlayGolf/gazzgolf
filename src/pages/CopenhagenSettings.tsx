@@ -166,7 +166,7 @@ export default function CopenhagenSettings() {
         .eq("id", game.id);
 
       toast({ title: "Game finished!" });
-      navigate(`/copenhagen/${game.id}/summary`);
+      navigate("/");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }

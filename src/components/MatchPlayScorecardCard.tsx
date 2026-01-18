@@ -54,11 +54,15 @@ export function MatchPlayScorecardCard({
   const hasBackNine = backNine.length > 0;
 
   const getMatchStatusDisplay = (status: number) => {
-    if (status === 0) return { text: "AS", color: "bg-muted text-muted-foreground" };
+    if (status === 0) return { text: "AS", color: "bg-background text-foreground font-bold" };
+    // Player 1 is up (status > 0): blue background with blue text
     if (status > 0) {
-      return { text: `${status}UP`, color: "bg-blue-500 text-white" };
+      const absStatus = Math.abs(status);
+      return { text: `${absStatus}UP`, color: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold" };
     }
-    return { text: `${Math.abs(status)}UP`, color: "bg-destructive text-destructive-foreground" };
+    // Player 2 is up (status < 0): red background with red text
+    const absStatus = Math.abs(status);
+    return { text: `${absStatus}UP`, color: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold" };
   };
 
   const renderScoreCell = (holeNumber: number, playerNum: 1 | 2) => {
@@ -145,29 +149,27 @@ export function MatchPlayScorecardCard({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {getNineTotal(nineHoles, 1) || ""}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (getTotalScore(1) || "") : ""}
             </TableCell>
           </TableRow>
 
-          <TableRow className="bg-muted/30">
-            <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-muted/30">Score</TableCell>
+          <TableRow>
+            <TableCell className="font-bold text-foreground text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
             {nineHoles.map(hole => {
               const holeData = holeScores[hole];
               if (!holeData) {
-                return <TableCell key={hole} className="text-center text-[10px] px-0 py-1"></TableCell>;
+                return <TableCell key={hole} className="text-center text-[10px] px-0 py-1 bg-background"></TableCell>;
               }
               const status = getMatchStatusDisplay(holeData.statusAfter);
               return (
-                <TableCell key={hole} className="text-center text-[10px] px-0 py-1">
-                  <span className={`inline-flex items-center justify-center px-0.5 py-0 rounded text-[8px] font-bold ${status.color}`}>
-                    {status.text}
-                  </span>
+                <TableCell key={hole} className={`text-center text-[10px] px-0 py-1 ${status.color}`}>
+                  {status.text}
                 </TableCell>
               );
             })}
             <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-            <TableCell className="text-center bg-primary text-primary-foreground text-[10px] px-0 py-1"></TableCell>
+            <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
           </TableRow>
 
           <TableRow>
@@ -182,7 +184,7 @@ export function MatchPlayScorecardCard({
             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {getNineTotal(nineHoles, 2) || ""}
             </TableCell>
-            <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
               {isBackNine || !hasBackNine ? (getTotalScore(2) || "") : ""}
             </TableCell>
           </TableRow>

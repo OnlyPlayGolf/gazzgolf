@@ -16,6 +16,7 @@ import { FeedPost } from "@/components/FeedPost";
 import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
 import { RoundCardData } from "@/components/RoundCard";
 import { loadUnifiedRounds } from "@/utils/unifiedRoundsLoader";
+import { parseHandicap, formatHandicap } from "@/lib/utils";
 
 interface Profile {
   id: string;
@@ -178,9 +179,11 @@ export default function UserProfile() {
   }
 
   const displayName = profile.display_name || profile.username || 'User';
-  // Display handicap exactly as stored in profile (user's input format)
-  const handicapDisplay = profile.handicap 
-    ? `HCP ${profile.handicap}`
+  // Format handicap correctly: use parseHandicap to handle both string ("+10", "10") and numeric formats
+  // Plus handicaps are stored as negative internally, formatHandicap displays them with "+"
+  const handicapValue = profile.handicap ? parseHandicap(profile.handicap) : null;
+  const handicapDisplay = handicapValue !== null && handicapValue !== undefined
+    ? `HCP ${formatHandicap(handicapValue)}`
     : 'HCP Not Set';
 
   return (
@@ -392,47 +395,30 @@ export default function UserProfile() {
           </Sheet>
         </div>
 
-        {/* Profile photo and info - side by side, centered */}
-        <div className="flex items-start justify-center px-4">
-          <div className="flex items-start gap-4 max-w-2xl">
-            {/* Profile photo - left side, bigger */}
-            <div className="flex-shrink-0">
+        {/* Profile photo - centered at top */}
+        <div className="flex flex-col items-center">
           <ProfilePhoto
             src={profile.avatar_url}
             alt={displayName}
             fallback={displayName}
             size="2xl"
-                className="border-4 border-background shadow-lg h-24 w-24"
+            className="border-4 border-background shadow-lg"
           />
-            </div>
-
-            {/* Profile info - right side */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-              <h1 className="text-xl font-bold text-foreground mb-1">{displayName}</h1>
-              <div className="space-y-0.5">
-                {profile.handicap && (
-                  <p className="text-xs text-muted-foreground">
-                    {handicapDisplay}
-                  </p>
-                )}
-                {profile.home_club && (
-                  <p className="text-xs text-muted-foreground">
-                    {profile.home_club}
-                  </p>
-                )}
-                {profile.country && (
-                  <p className="text-xs text-muted-foreground">
-                    {profile.country}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Additional content */}
+      {/* Profile info - centered under photo, matching friends' profiles */}
       <div className="px-4">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold text-foreground mb-2">{displayName}</h1>
+          <p className="text-sm text-muted-foreground">
+            {handicapDisplay}
+            {profile.home_club && ` | ${profile.home_club}`}
+            {profile.country && ` | ${profile.country}`}
+          </p>
+        </div>
+
+        {/* Additional content */}
 
         {/* Friends and QR code */}
         <div className="flex items-center justify-center gap-6 mb-6">

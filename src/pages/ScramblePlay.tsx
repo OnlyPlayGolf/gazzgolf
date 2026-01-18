@@ -23,6 +23,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface CourseHole {
   hole_number: number;
@@ -68,6 +74,11 @@ export default function ScramblePlay() {
   // Map: teamId -> Map<holeNumber, comment>
   const [holeComments, setHoleComments] = useState<Map<string, Map<number, string>>>(new Map());
   const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
+  
+  // Tee shot tracking state
+  const [showTeeShotDialog, setShowTeeShotDialog] = useState(false);
+  const [pendingTeeShotTeamId, setPendingTeeShotTeamId] = useState<string | null>(null);
+  const [selectedTeeShotPlayerId, setSelectedTeeShotPlayerId] = useState<string | null>(null);
   
   // Per-player stats mode
   const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(gameId, 'scramble');
@@ -147,7 +158,8 @@ export default function ScramblePlay() {
     if (scrambleHoles) {
       setHoles(scrambleHoles.map(h => ({
         ...h,
-        team_scores: (h.team_scores as Record<string, number | null>) || {}
+        team_scores: (h.team_scores as Record<string, number | null>) || {},
+        team_tee_shots: (h.team_tee_shots as Record<string, string | null>) || {}
       })));
       
       // Set to first unplayed hole on initial load
@@ -196,6 +208,10 @@ export default function ScramblePlay() {
     
     const par = getCurrentHolePar();
     const strokeIndex = getCurrentHoleStrokeIndex();
+    
+    // Get existing tee shots for this hole
+    const holeData = holes.find(h => h.hole_number === currentHole);
+    const existingTeeShots = holeData?.team_tee_shots || {};
 
     const { error } = await supabase
       .from('scramble_holes')
@@ -204,7 +220,8 @@ export default function ScramblePlay() {
         hole_number: currentHole,
         par,
         stroke_index: strokeIndex,
-        team_scores: teamScores
+        team_scores: teamScores,
+        team_tee_shots: existingTeeShots
       }, {
         onConflict: 'game_id,hole_number'
       });
@@ -219,7 +236,7 @@ export default function ScramblePlay() {
     setHoles(prev => {
       const existing = prev.find(h => h.hole_number === currentHole);
       if (existing) {
-        return prev.map(h => h.hole_number === currentHole ? { ...h, team_scores: teamScores } : h);
+        return prev.map(h => h.hole_number === currentHole ? { ...h, team_scores: teamScores, team_tee_shots: existing.team_tee_shots || {} } : h);
       } else {
         return [...prev, {
           id: `temp-${currentHole}`,
@@ -228,7 +245,8 @@ export default function ScramblePlay() {
           par,
           stroke_index: strokeIndex,
           created_at: new Date().toISOString(),
-          team_scores: teamScores
+          team_scores: teamScores,
+          team_tee_shots: {}
         }];
       }
     });
@@ -246,6 +264,10 @@ export default function ScramblePlay() {
     
     const par = getCurrentHolePar();
     const strokeIndex = getCurrentHoleStrokeIndex();
+    
+    // Get existing tee shots for this hole
+    const holeData = holes.find(h => h.hole_number === currentHole);
+    const existingTeeShots = holeData?.team_tee_shots || {};
 
     await supabase
       .from('scramble_holes')
@@ -254,7 +276,8 @@ export default function ScramblePlay() {
         hole_number: currentHole,
         par,
         stroke_index: strokeIndex,
-        team_scores: newScores
+        team_scores: newScores,
+        team_tee_shots: existingTeeShots
       }, {
         onConflict: 'game_id,hole_number'
       });
@@ -263,7 +286,7 @@ export default function ScramblePlay() {
     setHoles(prev => {
       const existing = prev.find(h => h.hole_number === currentHole);
       if (existing) {
-        return prev.map(h => h.hole_number === currentHole ? { ...h, team_scores: newScores } : h);
+        return prev.map(h => h.hole_number === currentHole ? { ...h, team_scores: newScores, team_tee_shots: existing.team_tee_shots || {} } : h);
       } else {
         return [...prev, {
           id: `temp-${currentHole}`,
@@ -272,10 +295,73 @@ export default function ScramblePlay() {
           par,
           stroke_index: strokeIndex,
           created_at: new Date().toISOString(),
-          team_scores: newScores
+          team_scores: newScores,
+          team_tee_shots: {}
         }];
       }
     });
+    
+    // If min_drives_per_player > 0 and score is valid, show tee shot selector
+    // This allows both initial selection and editing of tee shots
+    if (game?.min_drives_per_player && game.min_drives_per_player > 0 && score !== null && score > 0) {
+      // Check existing tee shot - pre-fill dialog if it exists
+      const currentHoleData = holes.find(h => h.hole_number === currentHole) || { team_tee_shots: existingTeeShots };
+      const existingTeeShot = currentHoleData?.team_tee_shots?.[teamId];
+      
+      // Show dialog - pre-fill with existing tee shot if available, otherwise empty
+      // Use setTimeout to ensure state update completes
+      setTimeout(() => {
+        setPendingTeeShotTeamId(teamId);
+        setSelectedTeeShotPlayerId(existingTeeShot || null);
+        setShowTeeShotDialog(true);
+      }, 100);
+    }
+  };
+  
+  const handleTeeShotSelect = async (playerId: string) => {
+    if (!gameId || !pendingTeeShotTeamId || !playerId) return;
+    
+    const holeData = holes.find(h => h.hole_number === currentHole);
+    const existingTeeShots = holeData?.team_tee_shots || {};
+    const newTeeShots = { ...existingTeeShots, [pendingTeeShotTeamId]: playerId };
+    
+    const par = getCurrentHolePar();
+    const strokeIndex = getCurrentHoleStrokeIndex();
+
+    await supabase
+      .from('scramble_holes')
+      .upsert({
+        game_id: gameId,
+        hole_number: currentHole,
+        par,
+        stroke_index: strokeIndex,
+        team_scores: teamScores,
+        team_tee_shots: newTeeShots
+      }, {
+        onConflict: 'game_id,hole_number'
+      });
+
+    // Update local holes state
+    setHoles(prev => {
+      const existing = prev.find(h => h.hole_number === currentHole);
+      if (existing) {
+        return prev.map(h => h.hole_number === currentHole ? { ...h, team_tee_shots: newTeeShots } : h);
+      } else {
+        return prev;
+      }
+    });
+    
+    // Close dialog and clear state (capture teamId before clearing)
+    const selectedTeamId = pendingTeeShotTeamId;
+    setShowTeeShotDialog(false);
+    setPendingTeeShotTeamId(null);
+    setSelectedTeeShotPlayerId(null);
+    
+    // Do NOT advance - the score selection already handled advancement
+    // Just close the sheet if it's still open for this team
+    if (activeTeamSheet === selectedTeamId) {
+      setActiveTeamSheet(null);
+    }
   };
 
   const advanceToNextTeam = (currentTeamId: string) => {
@@ -427,7 +513,7 @@ export default function ScramblePlay() {
     }
 
     toast.success("Game finished!");
-    navigate(`/scramble/${gameId}/summary`);
+    navigate("/");
   };
 
   const handleSaveAndExit = async () => {
@@ -571,7 +657,21 @@ export default function ScramblePlay() {
             currentScore={teamScores[team.id] ?? null}
             onScoreSelect={(score) => handleScoreSelect(team.id, score)}
             onMore={handleOpenMoreSheet}
-            onEnterAndNext={() => advanceToNextTeam(team.id)}
+            onEnterAndNext={() => {
+              // If min_drives_per_player > 0 and tee shot not selected, don't advance
+              if (game?.min_drives_per_player && game.min_drives_per_player > 0) {
+                const holeData = holes.find(h => h.hole_number === currentHole);
+                const existingTeeShot = holeData?.team_tee_shots?.[team.id];
+                const teamScore = teamScores[team.id];
+                
+                // Only require tee shot if score is valid
+                if (teamScore !== null && teamScore > 0 && !existingTeeShot) {
+                  // Tee shot dialog should already be shown from handleScoreSelect
+                  return;
+                }
+              }
+              advanceToNextTeam(team.id);
+            }}
           />
         ))}
 
@@ -604,6 +704,51 @@ export default function ScramblePlay() {
       </div>
 
       <ScrambleBottomTabBar gameId={gameId!} />
+
+      {/* Tee Shot Selection Dialog */}
+      <Dialog open={showTeeShotDialog} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden">
+          <DialogHeader>
+            <DialogTitle>Tee Shot Used</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {pendingTeeShotTeamId && (() => {
+              const team = teams.find(t => t.id === pendingTeeShotTeamId);
+              if (!team) return null;
+              
+              const holeData = holes.find(h => h.hole_number === currentHole);
+              const existingTeeShotPlayerId = holeData?.team_tee_shots?.[pendingTeeShotTeamId];
+              
+              return (
+                <div className="space-y-2">
+                  {team.players.map(player => (
+                    <Card
+                      key={player.id}
+                      className={`cursor-pointer transition-colors hover:bg-muted/50 ${
+                        existingTeeShotPlayerId === player.id ? 'bg-primary/10 border-primary' : ''
+                      }`}
+                      onClick={() => handleTeeShotSelect(player.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-foreground">{player.name}</span>
+                          {existingTeeShotPlayerId === player.id && (
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                              <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Exit Dialog */}
       <AlertDialog open={exitDialogOpen} onOpenChange={setExitDialogOpen}>

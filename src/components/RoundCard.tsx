@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronRight, Users } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 
@@ -222,9 +222,8 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
             <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
               <span>{round.gameMode}</span>
               <span>·</span>
-              <span className="flex items-center gap-1">
-                <Users size={12} />
-                {round.playerCount}
+              <span>
+                {round.playerCount === 1 ? '1 player' : `${round.playerCount} players`}
               </span>
             </div>
           </div>

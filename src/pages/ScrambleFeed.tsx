@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ export default function ScrambleFeed() {
   const [loading, setLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (gameId) {
@@ -119,7 +120,7 @@ export default function ScrambleFeed() {
     try {
       await supabase.from("scramble_games").update({ is_finished: true }).eq("id", gameId);
       toast.success("Game finished!");
-      navigate(`/scramble/${gameId}/summary`);
+      navigate("/");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -155,10 +156,19 @@ export default function ScrambleFeed() {
           <CardContent className="p-4">
             <div className="flex gap-2">
               <Textarea
+                ref={commentTextareaRef}
                 placeholder="Add a comment..."
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[60px]"
+                onChange={(e) => {
+                  setNewComment(e.target.value);
+                  const textarea = commentTextareaRef.current;
+                  if (textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                  }
+                }}
+                className="min-h-[2.5rem] resize-none overflow-hidden"
+                rows={1}
               />
               <Button
                 onClick={submitComment}

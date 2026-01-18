@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import {
@@ -155,7 +154,7 @@ export default function ScrambleSettings() {
         .eq('id', gameId);
       
       toast.success("Game finished!");
-      navigate(`/scramble/${gameId}/summary`);
+      navigate("/");
     } catch (error) {
       toast.error("Failed to finish game");
     }
@@ -282,8 +281,6 @@ export default function ScrambleSettings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <StrokePlayToggle gameId={gameId} gameType="scramble" />
-
               <div className="flex items-center justify-between">
                 <div>
                   <Label>Minimum drives per player</Label>

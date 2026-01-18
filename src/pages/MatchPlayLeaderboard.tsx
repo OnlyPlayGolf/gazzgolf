@@ -181,11 +181,15 @@ export default function MatchPlayLeaderboard() {
 
     const getMatchStatusDisplay = (holeNumber: number) => {
       const status = getMatchStatusAfter(holeNumber);
-      if (status === 0) return { text: "AS", color: "bg-muted text-muted-foreground" };
+      if (status === 0) return { text: "AS", color: "bg-background text-foreground font-bold" };
+      // Player 1 is up (status > 0): blue background with blue text
       if (status > 0) {
-        return { text: `${status}UP`, color: "bg-blue-500 text-white" };
+        const absStatus = Math.abs(status);
+        return { text: `${absStatus}UP`, color: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold" };
       }
-      return { text: `${Math.abs(status)}UP`, color: "bg-destructive text-destructive-foreground" };
+      // Player 2 is up (status < 0): red background with red text
+      const absStatus = Math.abs(status);
+      return { text: `${absStatus}UP`, color: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold" };
     };
 
     const playerWonHole = (holeNumber: number, playerNum: number) => {
@@ -256,32 +260,30 @@ export default function MatchPlayLeaderboard() {
                 <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 1) || 0), 0) || ''}
                 </TableCell>
-                <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_1_gross_score || 0), 0) || '') : ''}
                 </TableCell>
               </TableRow>
 
-              <TableRow className="bg-muted/30">
-                <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-muted/30">Score</TableCell>
+              <TableRow>
+                <TableCell className="font-bold text-foreground text-[10px] px-0.5 py-1 bg-background">Score</TableCell>
                 {nineHoles.map(hole => {
                   const holeData = holesMap.get(hole.hole_number);
                   if (!holeData) {
                     return (
-                      <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                      <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1 bg-background">
                       </TableCell>
                     );
                   }
                   const status = getMatchStatusDisplay(hole.hole_number);
                   return (
-                    <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
-                      <span className={`inline-flex items-center justify-center px-0.5 py-0 rounded text-[8px] font-bold ${status.color}`}>
-                        {status.text}
-                      </span>
+                    <TableCell key={hole.hole_number} className={`text-center text-[10px] px-0 py-1 ${status.color}`}>
+                      {status.text}
                     </TableCell>
                   );
                 })}
                 <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-                <TableCell className="text-center bg-primary text-primary-foreground text-[10px] px-0 py-1"></TableCell>
+                <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
               </TableRow>
 
               <TableRow>
@@ -296,7 +298,7 @@ export default function MatchPlayLeaderboard() {
                 <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {nineHoles.reduce((sum, h) => sum + (getPlayerScore(h.hole_number, 2) || 0), 0) || ''}
                 </TableCell>
-                <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {isBackNine || !hasBackNine ? (holes.reduce((sum, h) => sum + (h.player_2_gross_score || 0), 0) || '') : ''}
                 </TableCell>
               </TableRow>
@@ -316,16 +318,6 @@ export default function MatchPlayLeaderboard() {
           </div>
         )}
         
-        {/* Match Status */}
-        <div className="p-3 text-center border-b">
-          <p className="text-lg font-bold text-primary">
-            {formatMatchStatus(game.match_status, game.holes_remaining, game.player_1, game.player_2)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {game.holes_remaining} holes remaining
-          </p>
-        </div>
-
         {/* Scorecard */}
         <div className="border rounded-lg overflow-hidden w-full m-0">
           {renderNine(frontNine, false)}

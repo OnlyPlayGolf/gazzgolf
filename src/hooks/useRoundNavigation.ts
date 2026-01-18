@@ -128,7 +128,7 @@ export function buildGameUrl(
   tab: string = 'leaderboard',
   options?: { entryPoint?: EntryPoint; viewType?: 'spectator' | 'participant' }
 ): string {
-  const modePath = mode === 'match_play' ? 'match-play' : mode === 'best_ball' ? 'best-ball' : mode;
+  const modePath = mode === 'match_play' ? 'match-play' : mode === 'best_ball' ? 'best-ball' : mode === 'round' ? 'rounds' : mode;
   let url = `/${modePath}/${gameId}/${tab}`;
   
   const params = new URLSearchParams();
