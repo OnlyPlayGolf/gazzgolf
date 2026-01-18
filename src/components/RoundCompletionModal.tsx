@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,14 +7,8 @@ import { Share2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { RoundCard, RoundCardData } from "@/components/RoundCard";
+import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
 
 interface CourseHole {
   hole_number: number;
@@ -35,6 +29,7 @@ interface RoundCompletionModalProps {
   holeScores: Map<number, number>;
   roundId?: string;
   roundName: string;
+  playerName?: string; // Optional player name, defaults to "Player" if not provided
   onContinue: () => void;
 }
 
@@ -51,12 +46,22 @@ export function RoundCompletionModal({
   holeScores,
   roundId,
   roundName,
+  playerName = "Player",
   onContinue,
 }: RoundCompletionModalProps) {
   const navigate = useNavigate();
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Reset textarea height when share form is closed
+  useEffect(() => {
+    if (!showShareForm && commentTextareaRef.current) {
+      commentTextareaRef.current.style.height = '2.5rem';
+      setComment("");
+    }
+  }, [showShareForm]);
 
   const formatScoreVsPar = (diff: number) => {
     if (diff === 0) return "E";
@@ -118,163 +123,60 @@ export function RoundCompletionModal({
     navigate("/");
   };
 
-  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
-  const backNine = courseHoles.filter(h => h.hole_number > 9);
-  const hasBackNine = backNine.length > 0;
-
-  const getFrontNineTotal = () => {
-    return frontNine.reduce((sum, h) => {
-      const score = holeScores.get(h.hole_number);
-      return sum + (score && score > 0 ? score : 0);
-    }, 0);
+  const handleHeaderClick = () => {
+    if (roundId) {
+      navigate(`/rounds/${roundId}/leaderboard`);
+    }
   };
 
-  const getBackNineTotal = () => {
-    return backNine.reduce((sum, h) => {
-      const score = holeScores.get(h.hole_number);
-      return sum + (score && score > 0 ? score : 0);
-    }, 0);
+  const handleScorecardClick = () => {
+    handleHeaderClick();
+  };
+
+  // Calculate total score from holeScores
+  const calculatedTotalScore = Array.from(holeScores.values())
+    .reduce((sum, score) => sum + (score && score > 0 ? score : 0), 0);
+
+  // Convert single player's holeScores to PlayerScore format for StrokePlayScorecardView
+  const strokePlayPlayers = [{
+    name: playerName,
+    scores: holeScores,
+    totalScore: calculatedTotalScore || totalScore,
+  }];
+
+  // Build RoundCardData for the header
+  const roundCardData: RoundCardData = {
+    id: roundId || '',
+    round_name: roundName,
+    course_name: courseName,
+    date: datePlayed,
+    score: scoreVsPar,
+    playerCount: 1,
+    gameMode: 'Stroke Play',
+    gameType: 'round',
+    totalScore: totalScore,
+    holesPlayed: holesPlayed,
   };
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
-        {/* Grey Header - Round Card Style */}
-        <div className="bg-muted/50 p-4 rounded-t-lg">
-          <div className="flex items-center gap-4">
-            {/* Left: Score with vs par below */}
-            <div className="flex-shrink-0 w-14 text-center">
-              <div className="text-3xl font-bold text-foreground">{totalScore}</div>
-              <div className={`text-sm ${scoreVsPar <= 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                {formatScoreVsPar(scoreVsPar)}
-              </div>
-            </div>
-            
-            {/* Right: Round Details */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate text-foreground">
-                {roundName || 'Round'}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                <span className="truncate">{courseName}</span>
-                <span>·</span>
-                <span className="flex-shrink-0">{format(new Date(datePlayed), "MMM d")}</span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Stroke Play · 1 player
-              </div>
-            </div>
-          </div>
+        {/* Round Card Header - Clickable to navigate to leaderboard */}
+        <div onClick={handleHeaderClick} className="cursor-pointer">
+          <RoundCard 
+            round={roundCardData} 
+            className="border-0 shadow-none hover:shadow-none rounded-t-lg"
+          />
         </div>
 
-        {/* Scorecard */}
+        {/* Scorecard - Using StrokePlayScorecardView (compact scorecard table, same as in-game leaderboard) */}
         {courseHoles.length > 0 && (
-          <div className="px-4 pt-4">
-            <div className="border rounded-lg overflow-hidden">
-              {/* Front 9 */}
-              <Table className="w-full table-fixed">
-                <TableHeader>
-                  <TableRow className="bg-primary">
-                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
-                    {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
-                        {hole.hole_number}
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Out</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
-                      {!hasBackNine ? 'Tot' : ''}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
-                    {frontNine.map(hole => (
-                      <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
-                        {hole.par}
-                      </TableCell>
-                    ))}
-                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                      {frontNine.reduce((sum, h) => sum + h.par, 0)}
-                    </TableCell>
-                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                      {!hasBackNine ? totalPar : ''}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="font-bold">
-                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Player</TableCell>
-                    {frontNine.map(hole => {
-                      const score = holeScores.get(hole.hole_number);
-                      return (
-                        <TableCell key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
-                          {score && score > 0 ? score : ''}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                      {getFrontNineTotal() > 0 ? getFrontNineTotal() : ''}
-                    </TableCell>
-                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                      {!hasBackNine ? totalScore : ''}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-
-              {/* Back 9 */}
-              {hasBackNine && (
-                <div className="border-t">
-                  <Table className="w-full table-fixed">
-                    <TableHeader>
-                      <TableRow className="bg-primary">
-                        <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
-                        {backNine.map(hole => (
-                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
-                            {hole.hole_number}
-                          </TableHead>
-                        ))}
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">In</TableHead>
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Tot</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Par</TableCell>
-                        {backNine.map(hole => (
-                          <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
-                            {hole.par}
-                          </TableCell>
-                        ))}
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {backNine.reduce((sum, h) => sum + h.par, 0)}
-                        </TableCell>
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {totalPar}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="font-bold">
-                        <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Player</TableCell>
-                        {backNine.map(hole => {
-                          const score = holeScores.get(hole.hole_number);
-                          return (
-                            <TableCell key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
-                              {score && score > 0 ? score : ''}
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {getBackNineTotal() > 0 ? getBackNineTotal() : ''}
-                        </TableCell>
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {totalScore}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </div>
+          <div onClick={handleScorecardClick} className="cursor-pointer px-4 pt-3 pb-4">
+            <StrokePlayScorecardView
+              players={strokePlayPlayers}
+              courseHoles={courseHoles}
+              showNetRow={false}
+            />
           </div>
         )}
 
@@ -283,10 +185,19 @@ export function RoundCompletionModal({
           {showShareForm ? (
             <div className="space-y-3">
               <Textarea
+                ref={commentTextareaRef}
                 placeholder="Add your post-round thoughts..."
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="min-h-[80px]"
+                onChange={(e) => {
+                  setComment(e.target.value);
+                  const textarea = commentTextareaRef.current;
+                  if (textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                  }
+                }}
+                className="min-h-[2.5rem] resize-none overflow-hidden"
+                rows={1}
               />
               <div className="flex gap-2">
                 <Button

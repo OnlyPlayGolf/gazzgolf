@@ -12,6 +12,7 @@ import QRCode from "react-qr-code";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
 import { RoundCardData } from "@/components/RoundCard";
+import { parseHandicap, formatHandicap } from "@/lib/utils";
 
 interface Profile {
   id: string;
@@ -342,9 +343,11 @@ export default function PublicProfile() {
   }
 
   const displayName = profile.display_name || profile.username || 'User';
-  const handicapValue = profile.handicap ? parseFloat(profile.handicap) : null;
-  const handicapDisplay = handicapValue !== null 
-    ? `HCP ${handicapValue < 0 ? '+' : ''}${Math.abs(handicapValue)}`
+  // Format handicap correctly: use parseHandicap to handle both string ("+10", "10") and numeric formats
+  // Plus handicaps are stored as negative internally, formatHandicap displays them with "+"
+  const handicapValue = profile.handicap ? parseHandicap(profile.handicap) : null;
+  const handicapDisplay = handicapValue !== null && handicapValue !== undefined
+    ? `HCP ${formatHandicap(handicapValue)}`
     : 'HCP Not Set';
 
   const isFriend = friendshipStatus === 'accepted';

@@ -11,14 +11,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
-import { StrokePlayScorecardCard } from "./StrokePlayScorecardCard";
-import { UmbriagioScorecardCard } from "./UmbriagioScorecardCard";
+import { UmbriagioScorecardView } from "./UmbriagioScorecardView";
+import { MatchPlayScorecardView } from "./MatchPlayScorecardView";
 import { MatchPlayScorecardCard } from "./MatchPlayScorecardCard";
-import { BestBallScorecardCard } from "./BestBallScorecardCard";
+import { BestBallScorecardView } from "./BestBallScorecardView";
+import { StrokePlayScorecardView } from "./StrokePlayScorecardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 
@@ -799,6 +811,557 @@ const GameResultCardFromDB = ({
   return <RoundCard round={roundData} onClick={handleClick} />;
 };
 
+// Component to display Best Ball scorecard in posts
+const BestBallScorecardInPost = ({
+  bestBallScorecardResult,
+  textContent,
+}: {
+  bestBallScorecardResult: NonNullable<ReturnType<typeof parseBestBallScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const { strokePlayEnabled } = useStrokePlayEnabled(bestBallScorecardResult.gameId || '', 'best_ball');
+
+  useEffect(() => {
+    const fetchCourseHoles = async () => {
+      if (bestBallScorecardResult.gameId) {
+        // Try to fetch course holes from game
+        const { data: gameData } = await supabase
+          .from("best_ball_games")
+          .select("course_id, holes_played")
+          .eq("id", bestBallScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holePars
+      const holes = Object.keys(bestBallScorecardResult.holePars)
+        .map(holeNum => ({
+          hole_number: parseInt(holeNum),
+          par: bestBallScorecardResult.holePars[parseInt(holeNum)],
+          stroke_index: parseInt(holeNum), // Default stroke index
+        }))
+        .sort((a, b) => a.hole_number - b.hole_number);
+      setCourseHoles(holes);
+      setLoading(false);
+    };
+
+    fetchCourseHoles();
+  }, [bestBallScorecardResult.gameId, bestBallScorecardResult.holePars]);
+
+  // Calculate match result from user's perspective
+  const userMatchStatus = bestBallScorecardResult.matchStatus;
+  let matchResult: string = 'T';
+  let resultText = '';
+  
+  if (userMatchStatus > 0) {
+    matchResult = 'W';
+    resultText = `${Math.abs(userMatchStatus)} UP`;
+  } else if (userMatchStatus < 0) {
+    matchResult = 'L';
+    resultText = `${Math.abs(userMatchStatus)} DOWN`;
+  } else {
+    matchResult = 'T';
+    resultText = 'AS';
+  }
+
+  // Convert holeScores to holes array format
+  const holes = Object.keys(bestBallScorecardResult.holeScores).map(holeNum => ({
+    hole_number: parseInt(holeNum),
+    team_a_scores: bestBallScorecardResult.holeScores[parseInt(holeNum)].teamAScores,
+    team_b_scores: bestBallScorecardResult.holeScores[parseInt(holeNum)].teamBScores,
+    match_status_after: bestBallScorecardResult.holeScores[parseInt(holeNum)].matchStatusAfter,
+  }));
+
+  const playerCount = bestBallScorecardResult.teamAPlayers.length + bestBallScorecardResult.teamBPlayers.length;
+
+  const handleHeaderClick = () => {
+    if (bestBallScorecardResult.gameId) {
+      navigate(buildGameUrl('best_ball', bestBallScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (bestBallScorecardResult.gameId) {
+      navigate(buildGameUrl('best_ball', bestBallScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <BestBallScorecardView
+        roundName={bestBallScorecardResult.roundName}
+        courseName={bestBallScorecardResult.courseName}
+        datePlayed={bestBallScorecardResult.datePlayed}
+        playerCount={playerCount}
+        matchResult={matchResult}
+        resultText={resultText}
+        teamAPlayers={bestBallScorecardResult.teamAPlayers.map(p => ({ id: p.id, displayName: p.name || '' }))}
+        teamBPlayers={bestBallScorecardResult.teamBPlayers.map(p => ({ id: p.id, displayName: p.name || '' }))}
+        holes={holes}
+        courseHoles={courseHoles}
+        strokePlayEnabled={strokePlayEnabled}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
+// Component to display Umbriago scorecard in posts
+const UmbriagioScorecardInPost = ({
+  umbriagioScorecardResult,
+  textContent,
+}: {
+  umbriagioScorecardResult: NonNullable<ReturnType<typeof parseUmbriagioScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [holesData, setHolesData] = useState<Array<{
+    hole_number: number;
+    team_a_player_1_score: number | null;
+    team_a_player_2_score: number | null;
+    team_b_player_1_score: number | null;
+    team_b_player_2_score: number | null;
+  }>>([]);
+  const [gameData, setGameData] = useState<{
+    team_a_player_1: string;
+    team_a_player_2: string;
+    team_b_player_1: string;
+    team_b_player_2: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { strokePlayEnabled } = useStrokePlayEnabled(umbriagioScorecardResult.gameId || '', 'umbriago');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (umbriagioScorecardResult.gameId) {
+        // Fetch game data (for player names) and course holes
+        const { data: gameDataResult } = await supabase
+          .from("umbriago_games")
+          .select("course_id, holes_played, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+          .eq("id", umbriagioScorecardResult.gameId)
+          .single();
+
+        if (gameDataResult) {
+          setGameData({
+            team_a_player_1: gameDataResult.team_a_player_1,
+            team_a_player_2: gameDataResult.team_a_player_2,
+            team_b_player_1: gameDataResult.team_b_player_1,
+            team_b_player_2: gameDataResult.team_b_player_2,
+          });
+
+          // Fetch course holes
+          if (gameDataResult.course_id) {
+            const { data: holesData } = await supabase
+              .from("course_holes")
+              .select("hole_number, par, stroke_index")
+              .eq("course_id", gameDataResult.course_id)
+              .order("hole_number");
+
+            if (holesData) {
+              const filteredHoles = gameDataResult.holes_played === 9 
+                ? holesData.slice(0, 9) 
+                : holesData;
+              setCourseHoles(filteredHoles);
+            }
+          }
+
+          // Fetch holes for individual player scores (for stroke play)
+          if (strokePlayEnabled) {
+            const { data: holesResult } = await supabase
+              .from("umbriago_holes")
+              .select("hole_number, team_a_player_1_score, team_a_player_2_score, team_b_player_1_score, team_b_player_2_score")
+              .eq("game_id", umbriagioScorecardResult.gameId)
+              .order("hole_number");
+
+            if (holesResult) {
+              setHolesData(holesResult);
+            }
+          }
+
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fallback: construct course holes from holePars
+      const holes = Object.keys(umbriagioScorecardResult.holePars)
+        .map(holeNum => ({
+          hole_number: parseInt(holeNum),
+          par: umbriagioScorecardResult.holePars[parseInt(holeNum)],
+          stroke_index: parseInt(holeNum), // Default stroke index
+        }))
+        .sort((a, b) => a.hole_number - b.hole_number);
+      setCourseHoles(holes);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [umbriagioScorecardResult.gameId, umbriagioScorecardResult.holePars, strokePlayEnabled]);
+
+  // Calculate match result from user's perspective
+  const winningTeam = umbriagioScorecardResult.winningTeam;
+  const currentUserTeam = umbriagioScorecardResult.currentUserTeam;
+  
+  let matchResult: string = '—';
+  let resultText = `${umbriagioScorecardResult.normalizedA} - ${umbriagioScorecardResult.normalizedB}`;
+  
+  if (winningTeam === 'TIE') {
+    matchResult = 'T';
+    resultText = `${umbriagioScorecardResult.normalizedA} - ${umbriagioScorecardResult.normalizedB}`;
+  } else if (winningTeam === currentUserTeam) {
+    matchResult = 'W';
+  } else if (winningTeam) {
+    matchResult = 'L';
+  }
+
+  // Build holes map from fetched holes data for player scores
+  const holesMap = new Map(holesData.map(h => [h.hole_number, h]));
+
+  // Convert holePoints to holes array format (UmbriagioHole[])
+  const holes = Object.keys(umbriagioScorecardResult.holePoints).map(holeNum => {
+    const holeNumInt = parseInt(holeNum);
+    const fetchedHole = holesMap.get(holeNumInt);
+    
+    return {
+      id: `hole-${holeNum}`,
+      game_id: umbriagioScorecardResult.gameId || '',
+      hole_number: holeNumInt,
+      created_at: new Date().toISOString(),
+      team_a_player_1_score: fetchedHole?.team_a_player_1_score ?? null,
+      team_a_player_2_score: fetchedHole?.team_a_player_2_score ?? null,
+      team_b_player_1_score: fetchedHole?.team_b_player_1_score ?? null,
+      team_b_player_2_score: fetchedHole?.team_b_player_2_score ?? null,
+      par: umbriagioScorecardResult.holePars[holeNumInt] || 4,
+      team_low_winner: null,
+      individual_low_winner: null,
+      closest_to_pin_winner: null,
+      birdie_eagle_winner: null,
+      multiplier: 1 as const,
+      double_called_by: null,
+      double_back_called: false,
+      is_umbriago: false,
+      team_a_hole_points: umbriagioScorecardResult.holePoints[holeNumInt].teamA,
+      team_b_hole_points: umbriagioScorecardResult.holePoints[holeNumInt].teamB,
+      team_a_running_total: 0,
+      team_b_running_total: 0,
+    };
+  });
+
+  // Calculate total points from holePoints
+  const teamATotalPoints = Object.values(umbriagioScorecardResult.holePoints).reduce(
+    (sum, h) => sum + h.teamA, 0
+  );
+  const teamBTotalPoints = Object.values(umbriagioScorecardResult.holePoints).reduce(
+    (sum, h) => sum + h.teamB, 0
+  );
+
+  // Reconstruct minimal game object
+  const game = {
+    id: umbriagioScorecardResult.gameId || '',
+    user_id: '',
+    course_name: umbriagioScorecardResult.courseName,
+    course_id: null,
+    tee_set: null,
+    holes_played: courseHoles.length || 18,
+    date_played: umbriagioScorecardResult.datePlayed,
+    created_at: new Date().toISOString(),
+    round_name: umbriagioScorecardResult.roundName,
+    team_a_name: umbriagioScorecardResult.teamAName,
+    team_b_name: umbriagioScorecardResult.teamBName,
+    team_a_player_1: gameData?.team_a_player_1 || '',
+    team_a_player_2: gameData?.team_a_player_2 || '',
+    team_b_player_1: gameData?.team_b_player_1 || '',
+    team_b_player_2: gameData?.team_b_player_2 || '',
+    stake_per_point: 0,
+    payout_mode: 'difference' as const,
+    stats_mode: null,
+    team_a_total_points: teamATotalPoints,
+    team_b_total_points: teamBTotalPoints,
+    rolls_per_team: 0,
+    roll_history: [],
+    is_finished: true,
+    winning_team: winningTeam,
+    final_payout: null,
+  };
+
+  const playerCount = 4; // Umbriago is always 4 players
+
+  // Build stroke play players from holes data (if available)
+  const buildStrokePlayPlayers = () => {
+    if (!gameData || holesData.length === 0) {
+      return [];
+    }
+
+    const player1Scores = new Map<number, number>();
+    const player2Scores = new Map<number, number>();
+    const player3Scores = new Map<number, number>();
+    const player4Scores = new Map<number, number>();
+    
+    let player1Total = 0;
+    let player2Total = 0;
+    let player3Total = 0;
+    let player4Total = 0;
+
+    holesData.forEach(hole => {
+      // Team A Player 1
+      if (hole.team_a_player_1_score !== null && hole.team_a_player_1_score > 0) {
+        player1Scores.set(hole.hole_number, hole.team_a_player_1_score);
+        player1Total += hole.team_a_player_1_score;
+      }
+      // Team A Player 2
+      if (hole.team_a_player_2_score !== null && hole.team_a_player_2_score > 0) {
+        player2Scores.set(hole.hole_number, hole.team_a_player_2_score);
+        player2Total += hole.team_a_player_2_score;
+      }
+      // Team B Player 1
+      if (hole.team_b_player_1_score !== null && hole.team_b_player_1_score > 0) {
+        player3Scores.set(hole.hole_number, hole.team_b_player_1_score);
+        player3Total += hole.team_b_player_1_score;
+      }
+      // Team B Player 2
+      if (hole.team_b_player_2_score !== null && hole.team_b_player_2_score > 0) {
+        player4Scores.set(hole.hole_number, hole.team_b_player_2_score);
+        player4Total += hole.team_b_player_2_score;
+      }
+    });
+
+    return [
+      { name: gameData.team_a_player_1, scores: player1Scores, totalScore: player1Total },
+      { name: gameData.team_a_player_2, scores: player2Scores, totalScore: player2Total },
+      { name: gameData.team_b_player_1, scores: player3Scores, totalScore: player3Total },
+      { name: gameData.team_b_player_2, scores: player4Scores, totalScore: player4Total },
+    ];
+  };
+
+  const strokePlayPlayers = buildStrokePlayPlayers();
+
+  const handleHeaderClick = () => {
+    if (umbriagioScorecardResult.gameId) {
+      // Mark as spectator to prevent share dialog
+      sessionStorage.setItem(`spectator_umbriago_${umbriagioScorecardResult.gameId}`, 'true');
+      navigate(`/umbriago/${umbriagioScorecardResult.gameId}/summary`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (umbriagioScorecardResult.gameId) {
+      // Mark as spectator to prevent share dialog
+      sessionStorage.setItem(`spectator_umbriago_${umbriagioScorecardResult.gameId}`, 'true');
+      navigate(`/umbriago/${umbriagioScorecardResult.gameId}/summary`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <UmbriagioScorecardView
+        roundName={umbriagioScorecardResult.roundName}
+        courseName={umbriagioScorecardResult.courseName}
+        datePlayed={umbriagioScorecardResult.datePlayed}
+        playerCount={playerCount}
+        matchResult={matchResult}
+        resultText={resultText}
+        game={game}
+        holes={holes}
+        courseHoles={courseHoles}
+        currentUserTeam={currentUserTeam}
+        strokePlayEnabled={strokePlayEnabled}
+        strokePlayPlayers={strokePlayPlayers}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
+// Component to display Match Play scorecard in posts
+const MatchPlayScorecardInPost = ({
+  matchPlayScorecardResult,
+  textContent,
+}: {
+  matchPlayScorecardResult: NonNullable<ReturnType<typeof parseMatchPlayScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const { strokePlayEnabled } = useStrokePlayEnabled(matchPlayScorecardResult.gameId || '', 'match_play');
+
+  useEffect(() => {
+    const fetchCourseHoles = async () => {
+      if (matchPlayScorecardResult.gameId) {
+        // Try to fetch course holes from game
+        const { data: gameData } = await supabase
+          .from("match_play_games")
+          .select("course_id")
+          .eq("id", matchPlayScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            setCourseHoles(holesData);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holePars
+      const holes = Object.keys(matchPlayScorecardResult.holePars)
+        .map(holeNum => ({
+          hole_number: parseInt(holeNum),
+          par: matchPlayScorecardResult.holePars[parseInt(holeNum)],
+          stroke_index: parseInt(holeNum), // Default stroke index
+        }))
+        .sort((a, b) => a.hole_number - b.hole_number);
+      setCourseHoles(holes);
+      setLoading(false);
+    };
+
+    fetchCourseHoles();
+  }, [matchPlayScorecardResult.gameId, matchPlayScorecardResult.holePars]);
+
+  // Convert holeScores to holes array format for MatchPlayScorecardView
+  const holes = Object.keys(matchPlayScorecardResult.holeScores).map(holeNum => {
+    const holeData = matchPlayScorecardResult.holeScores[parseInt(holeNum)];
+    return {
+      hole_number: parseInt(holeNum),
+      player_1_gross_score: holeData.player1,
+      player_2_gross_score: holeData.player2,
+      hole_result: holeData.result,
+      match_status_after: holeData.statusAfter,
+    };
+  });
+
+  // Build stroke play players for the Stroke Play tab
+  const buildStrokePlayPlayers = () => {
+    const player1Scores = new Map<number, number>();
+    const player2Scores = new Map<number, number>();
+    let player1Total = 0;
+    let player2Total = 0;
+
+    holes.forEach(hole => {
+      if (hole.player_1_gross_score && hole.player_1_gross_score > 0) {
+        player1Scores.set(hole.hole_number, hole.player_1_gross_score);
+        player1Total += hole.player_1_gross_score;
+      }
+      if (hole.player_2_gross_score && hole.player_2_gross_score > 0) {
+        player2Scores.set(hole.hole_number, hole.player_2_gross_score);
+        player2Total += hole.player_2_gross_score;
+      }
+    });
+
+    return [
+      { name: matchPlayScorecardResult.player1Name, scores: player1Scores, totalScore: player1Total },
+      { name: matchPlayScorecardResult.player2Name, scores: player2Scores, totalScore: player2Total },
+    ];
+  };
+
+  const strokePlayPlayers = buildStrokePlayPlayers();
+
+  const handleHeaderClick = () => {
+    if (matchPlayScorecardResult.gameId) {
+      navigate(buildGameUrl('match_play', matchPlayScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (matchPlayScorecardResult.gameId) {
+      navigate(buildGameUrl('match_play', matchPlayScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <MatchPlayScorecardView
+        roundName={matchPlayScorecardResult.roundName}
+        courseName={matchPlayScorecardResult.courseName}
+        datePlayed={matchPlayScorecardResult.datePlayed}
+        player1Name={matchPlayScorecardResult.player1Name}
+        player2Name={matchPlayScorecardResult.player2Name}
+        matchStatus={matchPlayScorecardResult.matchStatus}
+        holes={holes}
+        courseHoles={courseHoles}
+        strokePlayEnabled={strokePlayEnabled}
+        strokePlayPlayers={strokePlayPlayers}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
 interface FeedPostProps {
   post: any;
   currentUserId: string;
@@ -820,6 +1383,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editPostContent, setEditPostContent] = useState("");
   const [isSavingPost, setIsSavingPost] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isOwnPost = post.user_id === currentUserId;
 
@@ -827,9 +1391,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     navigate(`/user/${userId}`);
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
+  const handleDelete = () => {
+    setShowDeleteDialog(true);
+  };
     
+  const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
       const { error } = await supabase
@@ -840,6 +1406,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       if (error) throw error;
 
       toast.success("Post deleted");
+      setShowDeleteDialog(false);
       onPostDeleted?.();
     } catch (error) {
       console.error("Error deleting post:", error);
@@ -1069,6 +1636,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const gameResult = !matchPlayScorecardResult && !bestBallScorecardResult ? parseGameResult(post.content) : null;
 
   return (
+    <>
     <Card>
       <CardContent className="p-4 space-y-4">
         {/* Post Header */}
@@ -1155,17 +1723,26 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               />
             )}
             {roundScorecardResult && (
-              <StrokePlayScorecardCard 
-                roundId={roundScorecardResult.roundId || undefined}
-                roundName={roundScorecardResult.roundName}
-                courseName={roundScorecardResult.courseName}
-                datePlayed={roundScorecardResult.datePlayed}
-                holesPlayed={roundScorecardResult.holesPlayed}
-                totalScore={roundScorecardResult.score}
-                scoreVsPar={roundScorecardResult.scoreVsPar}
-                totalPar={roundScorecardResult.totalPar}
-                holeScores={roundScorecardResult.holeScores}
-                holePars={roundScorecardResult.holePars}
+              <RoundCard 
+                round={{
+                  id: roundScorecardResult.roundId || '',
+                  round_name: roundScorecardResult.roundName,
+                  course_name: roundScorecardResult.courseName,
+                  date: roundScorecardResult.datePlayed,
+                  score: roundScorecardResult.scoreVsPar,
+                  playerCount: 1,
+                  gameMode: 'Stroke Play',
+                  gameType: 'round',
+                  holesPlayed: roundScorecardResult.holesPlayed,
+                }}
+                onClick={() => {
+                  if (roundScorecardResult.roundId) {
+                    navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
+                      entryPoint: 'home', 
+                      viewType: 'spectator' 
+                    }));
+                  }
+                }}
               />
             )}
             {matchPlayScorecardResult && (
@@ -1245,93 +1822,95 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               }}
             />
           </div>
-        ) : roundScorecardResult ? (
-          <div className="space-y-3">
-            {roundScorecardResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundScorecardResult.textContent}</p>
-            )}
-            <StrokePlayScorecardCard 
-              roundId={roundScorecardResult.roundId || undefined}
-              roundName={roundScorecardResult.roundName}
-              courseName={roundScorecardResult.courseName}
-              datePlayed={roundScorecardResult.datePlayed}
-              holesPlayed={roundScorecardResult.holesPlayed}
-              totalScore={roundScorecardResult.score}
-              scoreVsPar={roundScorecardResult.scoreVsPar}
-              totalPar={roundScorecardResult.totalPar}
-              holeScores={roundScorecardResult.holeScores}
-              holePars={roundScorecardResult.holePars}
-              onClick={() => {
-                if (roundScorecardResult.roundId) {
-                  navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
-                    entryPoint: 'home', 
-                    viewType: 'spectator' 
-                  }));
-                } else {
-                  toast.error("Round details not found");
-                }
-              }}
-            />
-          </div>
-        ) : matchPlayScorecardResult ? (
-          <div className="space-y-3">
-            {matchPlayScorecardResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{matchPlayScorecardResult.textContent}</p>
-            )}
-            <MatchPlayScorecardCard
-              gameId={matchPlayScorecardResult.gameId || undefined}
-              roundName={matchPlayScorecardResult.roundName}
-              courseName={matchPlayScorecardResult.courseName}
-              datePlayed={matchPlayScorecardResult.datePlayed}
-              player1Name={matchPlayScorecardResult.player1Name}
-              player2Name={matchPlayScorecardResult.player2Name}
-              finalResult={matchPlayScorecardResult.finalResult}
-              winnerPlayer={matchPlayScorecardResult.winnerPlayer}
-              matchStatus={matchPlayScorecardResult.matchStatus}
-              holeScores={matchPlayScorecardResult.holeScores}
-              holePars={matchPlayScorecardResult.holePars}
-              onClick={() => {
-                if (matchPlayScorecardResult.gameId) {
-                  navigate(buildGameUrl('match_play', matchPlayScorecardResult.gameId, 'leaderboard', {
-                    entryPoint: 'home',
-                    viewType: 'spectator'
-                  }));
-                } else {
-                  toast.error("Game details not found");
-                }
-              }}
-            />
-          </div>
+        ) : roundScorecardResult ? (() => {
+          // Build courseHoles from holePars
+          const courseHoles = Object.keys(roundScorecardResult.holePars)
+            .map(holeNum => ({
+              hole_number: parseInt(holeNum),
+              par: roundScorecardResult.holePars[parseInt(holeNum)],
+              stroke_index: parseInt(holeNum),
+            }))
+            .sort((a, b) => a.hole_number - b.hole_number);
+
+          // Build strokePlayPlayers from holeScores
+          const holeScoresMap = new Map<number, number>();
+          let totalScore = 0;
+          Object.entries(roundScorecardResult.holeScores || {}).forEach(([holeNum, score]) => {
+            if (score && score > 0) {
+              holeScoresMap.set(parseInt(holeNum), score);
+              totalScore += score;
+            }
+          });
+
+          const strokePlayPlayers = [{
+            name: "Player",
+            scores: holeScoresMap,
+            totalScore: totalScore || roundScorecardResult.score || 0,
+          }];
+
+          // Build RoundCardData for the header
+          const roundCardData: RoundCardData = {
+            id: roundScorecardResult.roundId || '',
+            round_name: roundScorecardResult.roundName,
+            course_name: roundScorecardResult.courseName,
+            date: roundScorecardResult.datePlayed,
+            score: roundScorecardResult.scoreVsPar,
+            playerCount: 1,
+            gameMode: 'Stroke Play',
+            gameType: 'round',
+            totalScore: roundScorecardResult.score || 0,
+            holesPlayed: roundScorecardResult.holesPlayed,
+          };
+
+          const handleHeaderClick = () => {
+            if (roundScorecardResult.roundId) {
+              navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
+                entryPoint: 'home', 
+                viewType: 'spectator' 
+              }));
+            } else {
+              toast.error("Round details not found");
+            }
+          };
+
+          const handleScorecardClick = () => {
+            handleHeaderClick();
+          };
+
+          return (
+            <div className="space-y-3">
+              {roundScorecardResult.textContent && (
+                <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundScorecardResult.textContent}</p>
+              )}
+              {/* Round Card Header - Clickable to navigate to leaderboard */}
+              <div onClick={handleHeaderClick} className="cursor-pointer">
+                <RoundCard 
+                  round={roundCardData}
+                  className="border-0 shadow-none hover:shadow-none"
+                />
+              </div>
+
+              {/* Scorecard - Using StrokePlayScorecardView (compact scorecard table, same as in-game leaderboard) */}
+              {courseHoles.length > 0 && (
+                <div onClick={handleScorecardClick} className="cursor-pointer px-4 pt-3 pb-4">
+                  <StrokePlayScorecardView
+                    players={strokePlayPlayers}
+                    courseHoles={courseHoles}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })() : matchPlayScorecardResult ? (
+          <MatchPlayScorecardInPost
+            matchPlayScorecardResult={matchPlayScorecardResult}
+            textContent={matchPlayScorecardResult.textContent}
+          />
         ) : bestBallScorecardResult ? (
-          <div className="space-y-3">
-            {bestBallScorecardResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{bestBallScorecardResult.textContent}</p>
-            )}
-            <BestBallScorecardCard
-              gameId={bestBallScorecardResult.gameId || undefined}
-              roundName={bestBallScorecardResult.roundName}
-              courseName={bestBallScorecardResult.courseName}
-              datePlayed={bestBallScorecardResult.datePlayed}
-              teamAName={bestBallScorecardResult.teamAName}
-              teamBName={bestBallScorecardResult.teamBName}
-              teamAPlayers={bestBallScorecardResult.teamAPlayers}
-              teamBPlayers={bestBallScorecardResult.teamBPlayers}
-              matchStatus={bestBallScorecardResult.matchStatus}
-              userTeam={bestBallScorecardResult.userTeam}
-              holeScores={bestBallScorecardResult.holeScores}
-              holePars={bestBallScorecardResult.holePars}
-              onClick={() => {
-                if (bestBallScorecardResult.gameId) {
-                  navigate(buildGameUrl('best_ball', bestBallScorecardResult.gameId, 'leaderboard', {
-                    entryPoint: 'home',
-                    viewType: 'spectator'
-                  }));
-                } else {
-                  toast.error("Game details not found");
-                }
-              }}
+          <BestBallScorecardInPost
+            bestBallScorecardResult={bestBallScorecardResult}
+            textContent={bestBallScorecardResult.textContent}
             />
-          </div>
         ) : roundResult ? (
           <div className="space-y-3">
             {roundResult.textContent && (
@@ -1397,34 +1976,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             />
           </div>
         ) : umbriagioScorecardResult ? (
-          <div className="space-y-3">
-            {umbriagioScorecardResult.textContent && (
-              <p className="text-foreground whitespace-pre-wrap leading-relaxed">{umbriagioScorecardResult.textContent}</p>
-            )}
-            <UmbriagioScorecardCard
-              gameId={umbriagioScorecardResult.gameId || ''}
-              roundName={umbriagioScorecardResult.roundName}
-              courseName={umbriagioScorecardResult.courseName}
-              datePlayed={umbriagioScorecardResult.datePlayed}
-              teamAName={umbriagioScorecardResult.teamAName}
-              teamBName={umbriagioScorecardResult.teamBName}
-              normalizedA={umbriagioScorecardResult.normalizedA}
-              normalizedB={umbriagioScorecardResult.normalizedB}
-              winningTeam={umbriagioScorecardResult.winningTeam}
-              currentUserTeam={umbriagioScorecardResult.currentUserTeam}
-              holePoints={umbriagioScorecardResult.holePoints}
-              holePars={umbriagioScorecardResult.holePars}
-              onClick={() => {
-                if (umbriagioScorecardResult.gameId) {
-                  // Mark as spectator to prevent share dialog
-                  sessionStorage.setItem(`spectator_umbriago_${umbriagioScorecardResult.gameId}`, 'true');
-                  navigate(`/umbriago/${umbriagioScorecardResult.gameId}/summary`);
-                } else {
-                  toast.error("Game details not found");
-                }
-              }}
-            />
-          </div>
+          <UmbriagioScorecardInPost
+            umbriagioScorecardResult={umbriagioScorecardResult}
+            textContent={umbriagioScorecardResult.textContent}
+          />
         ) : umbriagioResult ? (
           <div className="space-y-3">
             {umbriagioResult.textContent && (
@@ -1654,5 +2209,28 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
         )}
       </CardContent>
     </Card>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Post?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this post? This action cannot be undone and the post will be permanently removed.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            disabled={isDeleting}
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

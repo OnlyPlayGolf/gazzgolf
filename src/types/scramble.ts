@@ -44,6 +44,7 @@ export interface ScrambleHole {
   created_at: string;
   
   team_scores: Record<string, number | null>; // teamId -> score (null means not holed/"-")
+  team_tee_shots?: Record<string, string | null>; // teamId -> playerId (which player's tee shot was used)
 }
 
 export interface ScrambleSetupData {

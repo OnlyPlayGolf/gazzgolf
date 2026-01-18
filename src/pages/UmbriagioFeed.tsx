@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { UmbriagioBottomTabBar } from "@/components/UmbriagioBottomTabBar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,7 @@ export default function UmbriagioFeed() {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -337,10 +338,19 @@ export default function UmbriagioFeed() {
           <Card>
             <CardContent className="p-4">
               <Textarea
+                ref={commentTextareaRef}
                 placeholder="Write a comment..."
                 value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="mb-3"
+                onChange={(e) => {
+                  setNewComment(e.target.value);
+                  const textarea = commentTextareaRef.current;
+                  if (textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                  }
+                }}
+                className="min-h-[2.5rem] resize-none overflow-hidden mb-3"
+                rows={1}
               />
               <Button 
                 onClick={handleSubmitComment} 

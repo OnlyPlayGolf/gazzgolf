@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,7 @@ import { ScorecardTypeSelector, ScorecardType } from "@/components/ScorecardType
 import { StrokePlayScorecardView } from "@/components/StrokePlayScorecardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
+import { BestBallScorecardView } from "@/components/BestBallScorecardView";
 
 interface CourseHole {
   hole_number: number;
@@ -50,6 +51,15 @@ export function BestBallCompletionDialog({
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Reset textarea height when share form is closed
+  useEffect(() => {
+    if (!showShareForm && commentTextareaRef.current) {
+      commentTextareaRef.current.style.height = '2.5rem';
+      setComment("");
+    }
+  }, [showShareForm]);
   const [scorecardType, setScorecardType] = useState<ScorecardType>('primary');
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'best_ball');
 
@@ -233,46 +243,26 @@ export function BestBallCompletionDialog({
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
-        {/* Grey Header - Same as Stroke Play */}
-        <div className="bg-muted/50 p-4 rounded-t-lg">
-          <div className="flex items-center gap-4">
-            {/* Left: Match Result with status below */}
-            <div className="flex-shrink-0 w-14 text-center">
-              <div className="text-3xl font-bold text-foreground">
-                {matchResult}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {resultText}
-              </div>
-            </div>
-            
-            {/* Right: Round Details */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate text-foreground">
-                {game.round_name || 'Best Ball Match Play'}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                <span className="truncate">{game.course_name}</span>
-                <span>·</span>
-                <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Best Ball Match Play · {playerCount} players
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scorecard Type Selector */}
-        <ScorecardTypeSelector
-          primaryLabel="Best Ball"
-          selectedType={scorecardType}
-          onTypeChange={setScorecardType}
+        <DialogTitle className="sr-only">Best Ball Match Play Results</DialogTitle>
+        <DialogDescription className="sr-only">View your match play scorecard and results</DialogDescription>
+        <BestBallScorecardView
+          roundName={game.round_name || 'Best Ball Match Play'}
+          courseName={game.course_name}
+          datePlayed={game.date_played}
+          playerCount={playerCount}
+          matchResult={matchResult}
+          resultText={resultText}
+          teamAPlayers={game.team_a_players}
+          teamBPlayers={game.team_b_players}
+          holes={holes}
+          courseHoles={courseHoles}
           strokePlayEnabled={strokePlayEnabled}
+          onHeaderClick={undefined}
+          onScorecardClick={undefined}
         />
 
-        {/* Scorecard - Match Play style matching Stroke Play layout */}
-        {courseHoles.length > 0 && scorecardType === 'primary' && (
+        {/* Legacy code - kept for reference but not rendered */}
+        {false && courseHoles.length > 0 && scorecardType === 'primary' && (
           <div className="px-4 pt-4">
             <div className="border rounded-lg overflow-hidden">
               {/* Front 9 */}
@@ -512,48 +502,25 @@ export function BestBallCompletionDialog({
           </div>
         )}
 
-        {/* Stroke Play Scorecard */}
-        {courseHoles.length > 0 && scorecardType === 'stroke_play' && (
-          <div className="px-4 pt-4">
-            <StrokePlayScorecardView
-              players={[
-                ...game.team_a_players.map(p => ({
-                  name: p.displayName,
-                  scores: new Map(holes.flatMap(h => {
-                    const playerScore = (h.team_a_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
-                    return playerScore ? [[h.hole_number, playerScore.grossScore]] : [];
-                  })),
-                  totalScore: holes.reduce((sum, h) => {
-                    const ps = (h.team_a_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
-                    return sum + (ps?.grossScore || 0);
-                  }, 0)
-                })),
-                ...game.team_b_players.map(p => ({
-                  name: p.displayName,
-                  scores: new Map(holes.flatMap(h => {
-                    const playerScore = (h.team_b_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
-                    return playerScore ? [[h.hole_number, playerScore.grossScore]] : [];
-                  })),
-                  totalScore: holes.reduce((sum, h) => {
-                    const ps = (h.team_b_scores || []).find(s => s.playerId === p.odId || s.playerName === p.displayName);
-                    return sum + (ps?.grossScore || 0);
-                  }, 0)
-                }))
-              ]}
-              courseHoles={courseHoles}
-            />
-          </div>
-        )}
 
         {/* Actions - Same as Stroke Play */}
         <div className="p-4">
           {showShareForm ? (
             <div className="space-y-3">
               <Textarea
+                ref={commentTextareaRef}
                 placeholder="Add your post-round thoughts..."
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="min-h-[80px]"
+                onChange={(e) => {
+                  setComment(e.target.value);
+                  const textarea = commentTextareaRef.current;
+                  if (textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                  }
+                }}
+                className="min-h-[2.5rem] resize-none overflow-hidden"
+                rows={1}
               />
               <div className="flex gap-2">
                 <Button

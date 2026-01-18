@@ -82,7 +82,7 @@ export function UmbriagioSharedScorecard({
         <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
           {totalForNine !== 0 ? totalForNine : ''}
         </TableCell>
-        <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
           {showTotal ? grandTotal : ''}
         </TableCell>
       </TableRow>

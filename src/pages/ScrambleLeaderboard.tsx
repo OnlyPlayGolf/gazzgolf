@@ -96,7 +96,8 @@ export default function ScrambleLeaderboard() {
     if (scrambleHoles) {
       setHoles(scrambleHoles.map(h => ({
         ...h,
-        team_scores: (h.team_scores as Record<string, number | null>) || {}
+        team_scores: (h.team_scores as Record<string, number | null>) || {},
+        team_tee_shots: ((h as Record<string, unknown>).team_tee_shots as Record<string, string | null>) || {}
       })));
     }
   };
@@ -173,6 +174,19 @@ export default function ScrambleLeaderboard() {
     if (!hole) return null;
     const score = hole.team_scores[teamId];
     return score !== null && score !== undefined ? score : null;
+  };
+
+  const getTeamTeeShotPlayer = (holeNumber: number, teamId: string): string | null => {
+    const hole = holesMap.get(holeNumber);
+    if (!hole) return null;
+    const teeShotPlayerId = hole.team_tee_shots?.[teamId];
+    if (!teeShotPlayerId) return null;
+    
+    // Find the team and get the player name
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return null;
+    const player = team.players.find(p => p.id === teeShotPlayerId);
+    return player?.name || null;
   };
 
   const formatScore = (score: number | null): string => {
@@ -272,7 +286,7 @@ export default function ScrambleLeaderboard() {
                     </TableCell>
                   </TableRow>
                   <TableRow className="font-bold">
-                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{ts.team.name.split(' ')[0]}</TableCell>
+                    <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{ts.team.name}</TableCell>
                     {frontNine.map(hole => {
                       const score = getTeamScore(hole.hole_number, ts.team.id);
                       return (
@@ -290,10 +304,27 @@ export default function ScrambleLeaderboard() {
                         return sum + (s !== null && s > 0 ? s : 0);
                       }, 0) || ''}
                     </TableCell>
-                    <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {backNine.length > 0 ? '' : (ts.total || '')}
                     </TableCell>
                   </TableRow>
+                  {/* Tee Shot Row - only show if min_drives_per_player > 0 */}
+                  {game.min_drives_per_player && game.min_drives_per_player > 0 && (
+                    <TableRow className="font-bold">
+                      <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Tee Shot</TableCell>
+                      {frontNine.map(hole => {
+                        const teeShotPlayer = getTeamTeeShotPlayer(hole.hole_number, ts.team.id);
+                        const displayName = teeShotPlayer ? (teeShotPlayer.includes(' ') ? teeShotPlayer.split(' ')[0] : teeShotPlayer) : '';
+                        return (
+                          <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1 truncate max-w-[44px]" title={teeShotPlayer || ''}>
+                            {displayName}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -340,7 +371,7 @@ export default function ScrambleLeaderboard() {
                       </TableCell>
                     </TableRow>
                     <TableRow className="font-bold">
-                      <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{ts.team.name.split(' ')[0]}</TableCell>
+                      <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{ts.team.name}</TableCell>
                       {backNine.map(hole => {
                         const score = getTeamScore(hole.hole_number, ts.team.id);
                         return (
@@ -358,10 +389,27 @@ export default function ScrambleLeaderboard() {
                           return sum + (s !== null && s > 0 ? s : 0);
                         }, 0) || ''}
                       </TableCell>
-                      <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                         {ts.total || ''}
                       </TableCell>
                     </TableRow>
+                    {/* Tee Shot Row - only show if min_drives_per_player > 0 */}
+                    {game.min_drives_per_player && game.min_drives_per_player > 0 && (
+                      <TableRow className="font-bold">
+                        <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">Tee Shot</TableCell>
+                      {backNine.map(hole => {
+                        const teeShotPlayer = getTeamTeeShotPlayer(hole.hole_number, ts.team.id);
+                        const displayName = teeShotPlayer ? (teeShotPlayer.includes(' ') ? teeShotPlayer.split(' ')[0] : teeShotPlayer) : '';
+                        return (
+                          <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1 truncate max-w-[44px]" title={teeShotPlayer || ''}>
+                            {displayName}
+                          </TableCell>
+                        );
+                      })}
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -401,7 +449,7 @@ export default function ScrambleLeaderboard() {
       const winningTeam = teamScores[0]?.team?.name || null;
       await supabase.from("scramble_games").update({ is_finished: true, winning_team: winningTeam }).eq("id", gameId);
       toast({ title: "Game finished!" });
-      navigate(`/scramble/${gameId}/summary`);
+      navigate("/");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }

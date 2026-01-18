@@ -124,11 +124,13 @@ export default function CopenhagenLeaderboard() {
     { index: 3, name: game.player_3, points: normalizedPts.player3 },
   ];
 
-  // Sort players by points only in spectator mode
-  const sortedPlayers = isSpectator 
-    ? [...players].sort((a, b) => b.points - a.points)
-    : players;
-  const leader = [...players].sort((a, b) => b.points - a.points)[0]?.index;
+  // Always sort players by points for correct position calculation and display
+  // Higher points = better position (1st, 2nd, 3rd)
+  const sortedPlayersForRanking = [...players].sort((a, b) => b.points - a.points);
+  
+  // For display: always show sorted by points (ranking should always be visible)
+  const sortedPlayers = sortedPlayersForRanking;
+  const leader = sortedPlayersForRanking[0]?.index;
 
   // Create a map for quick hole data lookup
   const holesMap = new Map(holes.map(h => [h.hole_number, h]));
@@ -288,7 +290,7 @@ export default function CopenhagenLeaderboard() {
                     <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {frontNine.reduce((sum, h) => sum + (getPlayerPoints(h.hole_number, player.index) || 0), 0) || ''}
                     </TableCell>
-                    <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                       {backNine.length > 0 ? '' : player.points}
                     </TableCell>
                   </TableRow>
@@ -381,7 +383,7 @@ export default function CopenhagenLeaderboard() {
                       <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                         {backNine.reduce((sum, h) => sum + (getPlayerPoints(h.hole_number, player.index) || 0), 0) || ''}
                       </TableCell>
-                      <TableCell className="text-center font-bold bg-primary text-primary-foreground text-[10px] px-0 py-1">
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                         {player.points}
                       </TableCell>
                     </TableRow>
@@ -425,7 +427,7 @@ export default function CopenhagenLeaderboard() {
       const winner = sortedPlayers[0]?.name || null;
       await supabase.from("copenhagen_games").update({ is_finished: true, winner_player: winner }).eq("id", gameId);
       toast({ title: "Game finished!" });
-      navigate(`/copenhagen/${gameId}/summary`);
+      navigate("/");
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }

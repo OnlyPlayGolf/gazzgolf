@@ -104,7 +104,6 @@ import CopenhagenInfo from "./pages/CopenhagenInfo";
 import CopenhagenFeed from "./pages/CopenhagenFeed";
 import CopenhagenLeaderboard from "./pages/CopenhagenLeaderboard";
 import CopenhagenSettings from "./pages/CopenhagenSettings";
-import CopenhagenSummary from "./pages/CopenhagenSummary";
 import HowToPlayCopenhagen from "./pages/HowToPlayCopenhagen";
 import MatchPlaySetup from "./pages/MatchPlaySetup";
 import MatchPlayPlay from "./pages/MatchPlayPlay";
@@ -255,7 +254,6 @@ const App = () => {
             <Route path="/copenhagen/:gameId/feed" element={<CopenhagenFeed />} />
             <Route path="/copenhagen/:gameId/leaderboard" element={<CopenhagenLeaderboard />} />
             <Route path="/copenhagen/:gameId/settings" element={<CopenhagenSettings />} />
-            <Route path="/copenhagen/:gameId/summary" element={<CopenhagenSummary />} />
             <Route path="/match-play/how-to-play" element={<HowToPlayMatchPlay />} />
             <Route path="/match-play/setup" element={<MatchPlaySetup />} />
             <Route path="/match-play/:gameId/play" element={<MatchPlayPlay />} />

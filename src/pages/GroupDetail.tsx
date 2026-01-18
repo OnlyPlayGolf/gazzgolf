@@ -333,7 +333,7 @@ useEffect(() => {
   };
 
   const loadDrillLeaderboard = async (drillTitle: string, lowerIsBetter: boolean) => {
-    if (!groupId) return;
+    if (!groupId || !group) return;
 
     setLoadingLeaderboard(true);
     try {
@@ -363,12 +363,14 @@ useEffect(() => {
       const playerMembers = groupMembers.filter(m => m.role === 'member');
       const memberIds = playerMembers.map(m => m.user_id);
 
-      // Get best scores for all group members
+      // Get best scores for all group members, only including drills completed after group creation
+      const groupCreatedAt = group.created_at;
       const { data: memberScores } = await supabase
         .from('drill_results')
         .select('user_id, total_points')
         .eq('drill_id', drillData)
-        .in('user_id', memberIds);
+        .in('user_id', memberIds)
+        .gte('created_at', groupCreatedAt);
 
       // Calculate best score for each member
       const memberBestScores = new Map<string, number>();
@@ -1233,7 +1235,7 @@ useEffect(() => {
             <Tabs value={leaderboardTab} onValueChange={setLeaderboardTab}>
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="levels">Levels</TabsTrigger>
-                <TabsTrigger value="drills">Drills</TabsTrigger>
+                <TabsTrigger value="drills">Drills PB</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger value="play">Play</TabsTrigger>
               </TabsList>
@@ -1377,7 +1379,7 @@ useEffect(() => {
 
               {/* History Tab */}
               <TabsContent value="history">
-                {groupId && <GroupDrillHistory groupId={groupId} />}
+                {groupId && <GroupDrillHistory groupId={groupId} groupCreatedAt={group?.created_at} />}
               </TabsContent>
 
               {/* Play Tab */}

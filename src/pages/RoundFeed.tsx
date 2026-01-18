@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
@@ -66,6 +66,7 @@ export default function RoundFeed() {
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -327,10 +328,18 @@ export default function RoundFeed() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
                 <Textarea
+                  ref={commentTextareaRef}
                   placeholder="Write a comment..."
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="min-h-[44px] py-2 flex-1 resize-none"
+                  onChange={(e) => {
+                    setNewComment(e.target.value);
+                    const textarea = commentTextareaRef.current;
+                    if (textarea) {
+                      textarea.style.height = 'auto';
+                      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                    }
+                  }}
+                  className="min-h-[2.5rem] resize-none overflow-hidden flex-1"
                   rows={1}
                 />
                 <Button 

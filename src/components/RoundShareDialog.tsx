@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +32,7 @@ export function RoundShareDialog({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const formatScoreVsPar = (diff: number) => {
     if (diff === 0) return "E";
@@ -115,10 +116,19 @@ export function RoundShareDialog({
           {showShareForm ? (
             <div className="w-full space-y-3">
               <Textarea
+                ref={commentTextareaRef}
                 placeholder="Add your post-round thoughts..."
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="min-h-[80px]"
+                onChange={(e) => {
+                  setComment(e.target.value);
+                  const textarea = commentTextareaRef.current;
+                  if (textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                  }
+                }}
+                className="min-h-[2.5rem] resize-none overflow-hidden"
+                rows={1}
               />
               <div className="flex gap-2">
                 <Button

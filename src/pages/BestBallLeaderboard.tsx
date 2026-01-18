@@ -292,7 +292,17 @@ export default function BestBallLeaderboard() {
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] bg-background">HCP</TableCell>
+                      {frontNine.map(hole => (
+                        <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                          {hole.stroke_index}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                      {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] bg-background">Par</TableCell>
                       {frontNine.map(hole => (
                         <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
                           {hole.par}
@@ -312,36 +322,36 @@ export default function BestBallLeaderboard() {
                       }, 0);
                       
                       return (
-                        <TableRow key={player.odId || playerIndex} className="text-muted-foreground">
-                          <TableCell className="text-[10px] px-0.5 py-1 w-[44px] truncate">
+                        <TableRow key={player.odId || playerIndex}>
+                          <TableCell className={`font-bold text-[10px] px-0.5 py-1 w-[44px] truncate bg-background ${team === 'A' ? 'text-blue-600' : 'text-red-600'}`}>
                             {player.displayName.split(' ')[0]}
                           </TableCell>
                           {frontNine.map(hole => {
                             const scores = getPlayerScoresForHole(hole.hole_number, team);
                             const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
-                            const lowestScore = getLowestScore(scores);
-                            const isLowest = playerScore?.grossScore !== null && playerScore?.grossScore === lowestScore;
                             
                             return (
                               <TableCell 
                                 key={hole.hole_number} 
-                                className={`text-center text-[10px] px-0 py-1 ${
-                                  isLowest ? 'bg-muted font-bold' : ''
-                                }`}
+                                className="text-center text-[10px] px-0 py-1"
                               >
-                                {playerScore?.grossScore || ''}
+                                {playerScore?.grossScore ? (
+                                  <ScorecardScoreCell score={playerScore.grossScore} par={hole.par} />
+                                ) : ''}
                               </TableCell>
                             );
                           })}
-                          <TableCell className="text-center text-[10px] px-0 py-1 bg-muted">
+                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                             {playerTotals || ''}
                           </TableCell>
-                          {backNine.length > 0 && <TableCell className="text-center text-[10px] px-0 py-1 bg-muted"></TableCell>}
+                          {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
                         </TableRow>
                       );
                     })}
                     <TableRow className="font-bold">
-                      <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{teamName.split(' ')[0]}</TableCell>
+                      <TableCell className="font-bold text-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate bg-background" title={teamName}>
+                        {teamName}
+                      </TableCell>
                       {frontNine.map(hole => {
                         const score = getTeamBestScore(hole.hole_number, team);
                         return (
@@ -349,7 +359,9 @@ export default function BestBallLeaderboard() {
                             key={hole.hole_number} 
                             className="text-center font-bold text-[10px] px-0 py-1"
                           >
-                            {score || ''}
+                            {score ? (
+                              <ScorecardScoreCell score={score} par={hole.par} />
+                            ) : ''}
                           </TableCell>
                         );
                       })}
@@ -380,7 +392,17 @@ export default function BestBallLeaderboard() {
                     </TableHeader>
                     <TableBody>
                       <TableRow>
-                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
+                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] bg-background">HCP</TableCell>
+                        {backNine.map(hole => (
+                          <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
+                            {hole.stroke_index}
+                          </TableCell>
+                        ))}
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] bg-background">Par</TableCell>
                         {backNine.map(hole => (
                           <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
                             {hole.par}
@@ -407,38 +429,38 @@ export default function BestBallLeaderboard() {
                         }, 0);
                         
                         return (
-                          <TableRow key={player.odId || playerIndex} className="text-muted-foreground">
-                            <TableCell className="text-[10px] px-0.5 py-1 w-[44px] truncate">
+                          <TableRow key={player.odId || playerIndex}>
+                            <TableCell className={`font-bold text-[10px] px-0.5 py-1 w-[44px] truncate bg-background ${team === 'A' ? 'text-blue-600' : 'text-red-600'}`}>
                               {player.displayName.split(' ')[0]}
                             </TableCell>
                             {backNine.map(hole => {
                               const scores = getPlayerScoresForHole(hole.hole_number, team);
                               const playerScore = scores.find(s => s.playerId === player.odId || s.playerName === player.displayName);
-                              const lowestScore = getLowestScore(scores);
-                              const isLowest = playerScore?.grossScore !== null && playerScore?.grossScore === lowestScore;
                               
                               return (
                                 <TableCell 
                                   key={hole.hole_number} 
-                                  className={`text-center text-[10px] px-0 py-1 ${
-                                    isLowest ? 'bg-muted font-bold' : ''
-                                  }`}
+                                  className="text-center text-[10px] px-0 py-1"
                                 >
-                                  {playerScore?.grossScore || ''}
+                                  {playerScore?.grossScore ? (
+                                    <ScorecardScoreCell score={playerScore.grossScore} par={hole.par} />
+                                  ) : ''}
                                 </TableCell>
                               );
                             })}
-                            <TableCell className="text-center text-[10px] px-0 py-1 bg-muted">
+                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {backPlayerTotals || ''}
                             </TableCell>
-                            <TableCell className="text-center text-[10px] px-0 py-1 bg-muted">
+                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                               {(frontPlayerTotals + backPlayerTotals) || ''}
                             </TableCell>
                           </TableRow>
                         );
                       })}
                       <TableRow className="font-bold">
-                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{teamName.split(' ')[0]}</TableCell>
+                        <TableCell className="font-bold text-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate bg-background" title={teamName}>
+                          {teamName}
+                        </TableCell>
                         {backNine.map(hole => {
                           const score = getTeamBestScore(hole.hole_number, team);
                           return (
@@ -446,7 +468,9 @@ export default function BestBallLeaderboard() {
                               key={hole.hole_number} 
                               className="text-center font-bold text-[10px] px-0 py-1"
                             >
-                              {score || ''}
+                              {score ? (
+                                <ScorecardScoreCell score={score} par={hole.par} />
+                              ) : ''}
                             </TableCell>
                           );
                         })}

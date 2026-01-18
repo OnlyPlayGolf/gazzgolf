@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,7 @@ const Profile = () => {
   const [groupType, setGroupType] = useState<"Player" | "Coach">("Player");
   const [groupImage, setGroupImage] = useState<File | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
@@ -84,6 +85,16 @@ const Profile = () => {
       loadUserData();
     }
   }, [user]);
+
+  // Reset textarea height when dialog closes or description is cleared
+  useEffect(() => {
+    if (!isCreateGroupOpen || !groupDescription) {
+      const textarea = descriptionTextareaRef.current;
+      if (textarea) {
+        textarea.style.height = 'auto';
+      }
+    }
+  }, [isCreateGroupOpen, groupDescription]);
 
   // Search users when search term changes
   useEffect(() => {
@@ -526,14 +537,14 @@ const Profile = () => {
                 Create Group
               </Button>
             </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
+                    <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+                      <DialogHeader className="flex-shrink-0">
                         <DialogTitle className="text-xl font-semibold text-center">Create New Group</DialogTitle>
                         <DialogDescription className="text-center text-muted-foreground">
                           Create a group to compete and connect with your golf friends.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4 py-4">
+                      <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
                         {/* Group Type Toggle */}
                         <div className="flex gap-2">
                           <Button
@@ -574,11 +585,21 @@ const Profile = () => {
                             Description
                           </Label>
                           <Textarea
+                            ref={descriptionTextareaRef}
                             id="group-description"
                             value={groupDescription}
-                            onChange={(e) => setGroupDescription(e.target.value)}
+                            onChange={(e) => {
+                              setGroupDescription(e.target.value);
+                              // Auto-resize textarea
+                              const textarea = descriptionTextareaRef.current;
+                              if (textarea) {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                              }
+                            }}
                             placeholder="Optional group description"
-                            className="mt-1.5 min-h-[100px] resize-none"
+                            className="mt-1.5 min-h-[2.5rem] resize-none overflow-hidden"
+                            rows={1}
                           />
                         </div>
 
@@ -679,33 +700,33 @@ const Profile = () => {
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-col gap-2 pt-2">
-                          <Button
-                            onClick={handleCreateGroup}
-                            disabled={loading || !groupName.trim()}
-                            className="w-full bg-foreground text-background hover:bg-foreground/90"
-                          >
-                            {loading ? "Creating..." : "Create Group"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => {
-                              setIsCreateGroupOpen(false);
-                              setGroupName("");
-                              setGroupDescription("");
-                              setGroupType("Player");
-                              setGroupImage(null);
-                              setSelectedMembers([]);
-                              setSearchTerm("");
-                              setSearchResults([]);
-                            }}
-                            className="w-full"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
+                      </div>
+                      {/* Action Buttons - Sticky at bottom */}
+                      <div className="flex flex-col gap-2 pt-4 border-t flex-shrink-0">
+                        <Button
+                          onClick={handleCreateGroup}
+                          disabled={loading || !groupName.trim()}
+                          className="w-full bg-foreground text-background hover:bg-foreground/90"
+                        >
+                          {loading ? "Creating..." : "Create Group"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setIsCreateGroupOpen(false);
+                            setGroupName("");
+                            setGroupDescription("");
+                            setGroupType("Player");
+                            setGroupImage(null);
+                            setSelectedMembers([]);
+                            setSearchTerm("");
+                            setSearchResults([]);
+                          }}
+                          className="w-full"
+                        >
+                          Cancel
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>

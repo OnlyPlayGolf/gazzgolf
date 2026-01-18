@@ -82,9 +82,9 @@ export function UmbriagioScorecardCard({
   };
 
   const getResultColor = () => {
-    if (winningTeam === currentUserTeam) return 'text-emerald-300';
-    if (winningTeam && winningTeam !== 'TIE') return 'text-red-400';
-    return 'text-primary-foreground';
+    if (winningTeam === currentUserTeam) return 'text-emerald-600';
+    if (winningTeam && winningTeam !== 'TIE') return 'text-destructive';
+    return 'text-foreground';
   };
 
   const handleClick = () => {
@@ -133,11 +133,11 @@ export function UmbriagioScorecardCard({
 
   return (
     <Card 
-      className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+      className="overflow-hidden cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all"
       onClick={handleClick}
     >
-      {/* Grey Header - Round Card Style */}
-      <div className="bg-muted/50 p-4">
+      {/* Green Header - Round Card Style - Matching Profile Round Cards */}
+      <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border-b border-primary/20 p-4">
         <div className="flex items-center gap-4">
           {/* Left: W/L/T Result with score below */}
           <div className="flex-shrink-0 w-14 text-center">
