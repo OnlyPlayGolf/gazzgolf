@@ -21,7 +21,7 @@ import {
 interface CourseHole {
   hole_number: number;
   par: number;
-  stroke_index: number;
+  stroke_index?: number;
 }
 
 interface WolfCompletionModalProps {
@@ -204,13 +204,18 @@ export function WolfCompletionModal({
 
   const handleDone = async () => {
     // Mark game as finished before navigating
-    await supabase
-      .from("wolf_games")
-      .update({ is_finished: true })
-      .eq("id", game.id)
-      .catch((error) => {
+    try {
+      const { error } = await supabase
+        .from("wolf_games")
+        .update({ is_finished: true })
+        .eq("id", game.id);
+      
+      if (error) {
         console.error("Error finishing game:", error);
-      });
+      }
+    } catch (error) {
+      console.error("Error finishing game:", error);
+    }
     
     onOpenChange(false);
     navigate("/");

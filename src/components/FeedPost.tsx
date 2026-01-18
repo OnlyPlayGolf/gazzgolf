@@ -27,6 +27,7 @@ import { formatDistanceToNow } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
 import { UmbriagioScorecardView } from "./UmbriagioScorecardView";
 import { MatchPlayScorecardView } from "./MatchPlayScorecardView";
+import { MatchPlayScorecardCard } from "./MatchPlayScorecardCard";
 import { BestBallScorecardView } from "./BestBallScorecardView";
 import { StrokePlayScorecardView } from "./StrokePlayScorecardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";

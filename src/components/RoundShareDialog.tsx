@@ -32,6 +32,7 @@ export function RoundShareDialog({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const formatScoreVsPar = (diff: number) => {
     if (diff === 0) return "E";
