@@ -29,6 +29,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [relatedProfiles, setRelatedProfiles] = useState<Record<string, { display_name: string | null; username: string | null; avatar_url: string | null }>>({});
 
   useEffect(() => {
     if (open) {
@@ -71,6 +72,59 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
       supabase.removeChannel(channel);
     };
   }, [currentUserId]);
+
+  // Resolve profile info for related users (e.g. friend requests)
+  useEffect(() => {
+    const relatedUserIds = Array.from(
+      new Set(
+        notifications
+          .filter((n) => n.type === 'friend_request' && n.related_user_id)
+          .map((n) => n.related_user_id!) // safe due to filter
+      )
+    ).filter((id) => !relatedProfiles[id]);
+
+    if (relatedUserIds.length === 0) return;
+
+    const loadProfiles = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url')
+        .in('id', relatedUserIds);
+
+      if (error) {
+        console.error('Error loading related profiles:', error);
+        return;
+      }
+
+      setRelatedProfiles((prev) => {
+        const next = { ...prev };
+        for (const p of data || []) {
+          next[p.id] = {
+            display_name: (p as any).display_name ?? null,
+            username: (p as any).username ?? null,
+            avatar_url: (p as any).avatar_url ?? null,
+          };
+        }
+        return next;
+      });
+    };
+
+    loadProfiles();
+  }, [notifications, relatedProfiles]);
+
+  const getDisplayName = (userId: string | null): string => {
+    if (!userId) return 'Someone';
+    const p = relatedProfiles[userId];
+    if (!p) return 'Someone';
+    return p.display_name || (p.username ? `@${p.username}` : 'Someone');
+  };
+
+  const getNotificationMessage = (notification: Notification): string => {
+    if (notification.type === 'friend_request') {
+      return `${getDisplayName(notification.related_user_id)} sent you a friend request`;
+    }
+    return notification.message;
+  };
 
   const loadNotifications = async () => {
     if (!currentUserId) return;
@@ -224,7 +278,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
                   <div className="mt-1">{getIcon(notification.type)}</div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-sm">{notification.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{getNotificationMessage(notification)}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                     </p>
