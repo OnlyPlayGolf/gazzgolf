@@ -255,7 +255,6 @@ export function MatchPlayScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
-              showNetRow={false}
             />
           ) : (
             <div className="border rounded-lg overflow-hidden">

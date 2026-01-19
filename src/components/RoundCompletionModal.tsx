@@ -175,7 +175,6 @@ export function RoundCompletionModal({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
-              showNetRow={false}
             />
           </div>
         )}

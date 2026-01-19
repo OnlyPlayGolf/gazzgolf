@@ -251,7 +251,6 @@ export function CopenhagenScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
-              showNetRow={false}
             />
           ) : (
             renderCopenhagenScorecard()

@@ -24,14 +24,12 @@ interface PlayerScore {
 interface StrokePlayScorecardViewProps {
   players: PlayerScore[];
   courseHoles: CourseHole[];
-  showNetRow?: boolean; // Optional prop to control Net row visibility, defaults to true
   showTeamColors?: boolean; // Optional prop to enable team-based coloring
 }
 
 export function StrokePlayScorecardView({
   players,
   courseHoles,
-  showNetRow = true, // Default to true to match RoundLeaderboard behavior
   showTeamColors = false, // Default to false for backward compatibility
 }: StrokePlayScorecardViewProps) {
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
@@ -94,13 +92,13 @@ export function StrokePlayScorecardView({
             </TableCell>
           </TableRow>
 
-          {players.flatMap((player, index) => {
+          {players.map((player, index) => {
             const nineTotal = isBackNine ? getPlayerBackNineTotal(player) : getPlayerFrontNineTotal(player);
             const teamColorClass = showTeamColors && player.team 
               ? (player.team === 'A' ? 'text-blue-600' : 'text-red-600')
               : '';
             
-            return [
+            return (
               <TableRow key={`player-${index}`}>
                 <TableCell className={`font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate ${teamColorClass}`}>
                   {player.name.split(' ')[0]}
@@ -123,29 +121,8 @@ export function StrokePlayScorecardView({
                 <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
                   {(isBackNine || !hasBackNine) && player.totalScore > 0 ? player.totalScore : ''}
                 </TableCell>
-              </TableRow>,
-              // Net row - conditionally shown based on showNetRow prop
-              ...(showNetRow ? [<TableRow key={`net-${index}`}>
-                <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Net</TableCell>
-                {nineHoles.map(hole => {
-                  const score = player.scores.get(hole.hole_number);
-                  const hasScore = player.scores.has(hole.hole_number);
-                  return (
-                    <TableCell key={hole.hole_number} className="text-center px-0 py-1">
-                      {hasScore && score && score > 0 ? (
-                        <ScorecardScoreCell score={score} par={hole.par} />
-                      ) : hasScore ? (score === -1 ? '–' : '') : ''}
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                  {nineTotal > 0 ? nineTotal : ''}
-                </TableCell>
-                <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                  {(isBackNine || !hasBackNine) && player.totalScore > 0 ? player.totalScore : ''}
-                </TableCell>
-              </TableRow>] : [])
-            ];
+              </TableRow>
+            );
           })}
         </TableBody>
       </Table>

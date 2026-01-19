@@ -267,7 +267,6 @@ export function WolfScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={effectiveCourseHoles}
-              showNetRow={false}
             />
           ) : (
             renderWolfScorecard()

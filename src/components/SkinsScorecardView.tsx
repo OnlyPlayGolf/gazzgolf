@@ -291,7 +291,6 @@ export function SkinsScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={effectiveCourseHoles}
-              showNetRow={false}
             />
           ) : (
             renderSkinsScorecard()
