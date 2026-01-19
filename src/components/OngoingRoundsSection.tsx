@@ -255,8 +255,20 @@ export const OngoingRoundsSection = ({ userId }: OngoingRoundsSectionProps) => {
   };
 
   const handleOpenGame = (game: OngoingGame) => {
+    // Different game types use different tab names for their play page
+    const getPlayTab = (gameType: GameType): string => {
+      switch (gameType) {
+        case 'round':
+        case 'skins':
+          return 'track';
+        default:
+          return 'play';
+      }
+    };
+    
     const mode = game.gameType as GameMode;
-    const url = buildGameUrl(mode, game.id, 'play');
+    const tab = getPlayTab(game.gameType);
+    const url = buildGameUrl(mode, game.id, tab);
     navigate(url);
   };
 
