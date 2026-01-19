@@ -1116,6 +1116,7 @@ useEffect(() => {
             {/* Group Header */}
             <div className="flex items-start gap-4">
               <Avatar className="h-20 w-20">
+                {group.image_url && <AvatarImage src={group.image_url} alt={group.name} />}
                 <AvatarFallback className="text-2xl font-bold">
                   {group.name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -1755,9 +1756,16 @@ useEffect(() => {
               <Textarea
                 id="edit-group-description"
                 value={editGroupDescription}
-                onChange={(e) => setEditGroupDescription(e.target.value)}
+                onChange={(e) => {
+                  setEditGroupDescription(e.target.value);
+                  // Auto-resize textarea
+                  const textarea = e.target;
+                  textarea.style.height = 'auto';
+                  textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                }}
                 placeholder="Optional group description"
-                className="mt-1.5 min-h-[100px] resize-none"
+                className="mt-1.5 min-h-[2.5rem] resize-none overflow-hidden"
+                rows={1}
               />
             </div>
 
@@ -1765,7 +1773,7 @@ useEffect(() => {
             <div>
               <Label className="text-foreground">Group Image</Label>
               <div 
-                className="mt-1.5 border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                className="mt-1.5 border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
                 onClick={() => document.getElementById('edit-group-image-input')?.click()}
               >
                 <input
@@ -1785,9 +1793,9 @@ useEffect(() => {
                   </div>
                 ) : (
                   <>
-                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2">
                       <svg
-                        className="w-6 h-6 text-muted-foreground"
+                        className="w-5 h-5 text-muted-foreground"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

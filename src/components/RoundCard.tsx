@@ -76,13 +76,17 @@ export function RoundCard({ round, className, onClick, disabled = false }: Round
   };
 
   const handleClick = () => {
-    if (disabled) return;
+    // If a custom onClick is provided, always call it (even when disabled)
+    // This allows parent components to handle clicks in special modes like delete mode
     if (onClick) {
       onClick();
-    } else {
-      const gameType = round.gameType || 'round';
-      navigate(getGameRoute(gameType, round.id, location.pathname));
+      return;
     }
+    // If disabled and no custom onClick, do nothing
+    if (disabled) return;
+    // Default behavior: navigate to the round
+    const gameType = round.gameType || 'round';
+    navigate(getGameRoute(gameType, round.id, location.pathname));
   };
 
   // Only show score for regular stroke play rounds
@@ -138,7 +142,7 @@ export function RoundCard({ round, className, onClick, disabled = false }: Round
           ? '' 
           : 'cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98]'
       } ${className || ''}`}
-      onClick={disabled ? undefined : handleClick}
+      onClick={handleClick}
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">

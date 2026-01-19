@@ -162,8 +162,15 @@ export function DrillCompletionDialog({
               <Textarea
                 placeholder="Add a comment about your result..."
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="min-h-[80px]"
+                onChange={(e) => {
+                  setComment(e.target.value);
+                  // Auto-resize textarea
+                  const textarea = e.target;
+                  textarea.style.height = 'auto';
+                  textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                }}
+                className="min-h-[2.5rem] resize-none overflow-hidden"
+                rows={1}
               />
               <div className="flex gap-2">
                 <Button

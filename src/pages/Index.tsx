@@ -423,13 +423,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopNavBar />
-      <div className="p-4 space-y-6 pt-20">
+      <div className="space-y-6 pt-20">
         {/* Friends On Course Section */}
         {friendsOnCourse.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">Friends On Course</h2>
+            <h2 className="text-lg font-semibold text-foreground px-4">Friends On Course</h2>
             <ScrollArea className="w-full whitespace-nowrap">
-              <div className="flex gap-4 pb-2">
+              <div className="flex gap-4 pb-2 px-4">
                 {(() => {
                   // Group friends by gameId + gameType to show friends in the same round together
                   const gameGroups = new Map<string, FriendOnCourseData[]>();
@@ -527,7 +527,7 @@ const Index = () => {
 
             {/* Round Activity */}
             {friendsActivity.length > 0 && (
-              <Card>
+              <Card className="rounded-none border-x-0">
                 <CardContent className="space-y-3 pt-6">
                   {friendsActivity.map((activity) => {
                     const friendName = activity.profile?.display_name || activity.profile?.username || 'A friend';

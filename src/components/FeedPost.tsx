@@ -2689,7 +2689,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
   return (
     <>
-    <Card>
+    <Card className="rounded-none border-x-0">
       <CardContent className="p-4 space-y-4">
         {/* Post Header */}
         <div className="flex items-center gap-3">

@@ -102,7 +102,7 @@ export const PostBox = ({ profile, userId, onPostCreated }: PostBoxProps) => {
   const initials = displayName.charAt(0).toUpperCase();
 
   return (
-    <Card>
+    <Card className="rounded-none border-x-0">
       <CardContent className="p-4">
         <div className="flex gap-3">
           <ProfilePhoto

@@ -31,6 +31,7 @@ interface Group {
   member_count: number;
   description?: string;
   created_at?: string;
+  image_url?: string;
 }
 
 const Profile = () => {
@@ -161,7 +162,7 @@ const Profile = () => {
       const { data: groupsData } = await (supabase as any)
         .from('group_members')
         .select(`
-          groups(id, name, owner_id, created_at, description),
+          groups(id, name, owner_id, created_at, description, image_url),
           role
         `)
         .eq('user_id', user.id);
@@ -181,7 +182,8 @@ const Profile = () => {
             role: g.role,
             member_count: count || 0,
             created_at: g.groups.created_at,
-            description: g.groups.description
+            description: g.groups.description,
+            image_url: g.groups.image_url
           };
         })
       );
@@ -251,12 +253,34 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      // Step 1: Create the group
+      // Step 1: Upload group image if provided
+      let imageUrl: string | null = null;
+      if (groupImage) {
+        const fileExt = groupImage.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('group-images')
+          .upload(fileName, groupImage);
+        
+        if (uploadError) {
+          console.error('Error uploading group image:', uploadError);
+          // Continue without image - don't fail the whole group creation
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('group-images')
+            .getPublicUrl(fileName);
+          imageUrl = publicUrl;
+        }
+      }
+
+      // Step 2: Create the group
       const { data: groupData, error: groupError } = await (supabase as any)
         .from('groups')
         .insert({
           name: groupName.trim(),
-          owner_id: user.id
+          owner_id: user.id,
+          image_url: imageUrl
         })
         .select()
         .single();
@@ -285,7 +309,7 @@ const Profile = () => {
         return;
       }
 
-      // Step 2: Add creator as owner in group_members
+      // Step 3: Add creator as owner in group_members
       const { error: memberError } = await (supabase as any)
         .from('group_members')
         .insert({
@@ -316,7 +340,7 @@ const Profile = () => {
         return;
       }
 
-      // Step 3: Add selected members to the group
+      // Step 4: Add selected members to the group
       if (selectedMembers.length > 0) {
         const memberInserts = selectedMembers.map(memberId => ({
           group_id: groupData.id,
@@ -537,14 +561,11 @@ const Profile = () => {
                 Create Group
               </Button>
             </DialogTrigger>
-                    <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+                    <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col" hideCloseButton>
                       <DialogHeader className="flex-shrink-0">
                         <DialogTitle className="text-xl font-semibold text-center">Create New Group</DialogTitle>
-                        <DialogDescription className="text-center text-muted-foreground">
-                          Create a group to compete and connect with your golf friends.
-                        </DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4 py-4 overflow-y-auto flex-1 min-h-0">
+                      <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0">
                         {/* Group Type Toggle */}
                         <div className="flex gap-2">
                           <Button
@@ -577,75 +598,6 @@ const Profile = () => {
                             placeholder="Enter group name"
                             className="mt-1.5"
                           />
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                          <Label htmlFor="group-description" className="text-foreground">
-                            Description
-                          </Label>
-                          <Textarea
-                            ref={descriptionTextareaRef}
-                            id="group-description"
-                            value={groupDescription}
-                            onChange={(e) => {
-                              setGroupDescription(e.target.value);
-                              // Auto-resize textarea
-                              const textarea = descriptionTextareaRef.current;
-                              if (textarea) {
-                                textarea.style.height = 'auto';
-                                textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-                              }
-                            }}
-                            placeholder="Optional group description"
-                            className="mt-1.5 min-h-[2.5rem] resize-none overflow-hidden"
-                            rows={1}
-                          />
-                        </div>
-
-                        {/* Group Image Upload */}
-                        <div>
-                          <Label className="text-foreground">Group Image</Label>
-                          <div 
-                            className="mt-1.5 border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
-                            onClick={() => document.getElementById('group-image-input')?.click()}
-                          >
-                            <input
-                              id="group-image-input"
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) setGroupImage(file);
-                              }}
-                            />
-                            {groupImage ? (
-                              <div className="text-center">
-                                <p className="text-sm text-foreground font-medium">{groupImage.name}</p>
-                                <p className="text-xs text-muted-foreground mt-1">Click to change</p>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                  <svg
-                                    className="w-6 h-6 text-muted-foreground"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                    />
-                                  </svg>
-                                </div>
-                                <p className="text-sm text-muted-foreground">Upload group image</p>
-                              </>
-                            )}
-                          </div>
                         </div>
 
                         {/* Add Members */}
@@ -700,6 +652,75 @@ const Profile = () => {
                           </div>
                         </div>
 
+                        {/* Description */}
+                        <div>
+                          <Label htmlFor="group-description" className="text-foreground">
+                            Description
+                          </Label>
+                          <Textarea
+                            ref={descriptionTextareaRef}
+                            id="group-description"
+                            value={groupDescription}
+                            onChange={(e) => {
+                              setGroupDescription(e.target.value);
+                              // Auto-resize textarea
+                              const textarea = descriptionTextareaRef.current;
+                              if (textarea) {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+                              }
+                            }}
+                            placeholder="Optional group description"
+                            className="mt-1.5 min-h-[2.5rem] resize-none overflow-hidden"
+                            rows={1}
+                          />
+                        </div>
+
+                        {/* Group Image Upload */}
+                        <div>
+                          <Label className="text-foreground">Group Image</Label>
+                          <div 
+                            className="mt-1.5 border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                            onClick={() => document.getElementById('group-image-input')?.click()}
+                          >
+                            <input
+                              id="group-image-input"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setGroupImage(file);
+                              }}
+                            />
+                            {groupImage ? (
+                              <div className="text-center">
+                                <p className="text-sm text-foreground font-medium">{groupImage.name}</p>
+                                <p className="text-xs text-muted-foreground mt-1">Click to change</p>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mb-2">
+                                  <svg
+                                    className="w-5 h-5 text-muted-foreground"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                    />
+                                  </svg>
+                                </div>
+                                <p className="text-sm text-muted-foreground">Upload group image</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
                       </div>
                       {/* Action Buttons - Sticky at bottom */}
                       <div className="flex flex-col gap-2 pt-4 border-t flex-shrink-0">
@@ -745,11 +766,19 @@ const Profile = () => {
                   <div className="flex gap-4 items-center">
                     {/* Group Avatar */}
                     <div className="flex-shrink-0">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/10">
-                        <span className="text-xl font-bold text-primary">
-                          {getGroupInitials(group.name)}
-                        </span>
-                      </div>
+                      {group.image_url ? (
+                        <img 
+                          src={group.image_url} 
+                          alt={group.name}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-primary/10"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border-2 border-primary/10">
+                          <span className="text-xl font-bold text-primary">
+                            {getGroupInitials(group.name)}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Group Info */}

@@ -154,7 +154,7 @@ export const PerformanceSnapshot = ({ userId }: PerformanceSnapshotProps) => {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="rounded-none border-x-0">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Key Insights</CardTitle>
         </CardHeader>
@@ -175,7 +175,7 @@ export const PerformanceSnapshot = ({ userId }: PerformanceSnapshotProps) => {
   }
 
   return (
-    <Card>
+    <Card className="rounded-none border-x-0">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center justify-between">
           <span>Key Insights</span>

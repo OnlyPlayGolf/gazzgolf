@@ -106,8 +106,8 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
-              <div className="text-sm text-muted-foreground">Distance</div>
-              <div className="text-2xl font-bold text-primary">10 meters from fairway</div>
+              <div className="text-sm text-primary-foreground/80">Distance</div>
+              <div className="text-2xl font-bold text-primary-foreground">10 meters from fairway</div>
             </div>
 
             <div className="space-y-2">

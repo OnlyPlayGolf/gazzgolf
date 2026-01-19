@@ -49,8 +49,8 @@ export function GameHeader({
       // Admin: show action sheet
       setShowActionSheet(true);
     } else {
-      // Spectator/Participant: go home immediately
-      navigate("/");
+      // Spectator/Participant: go back to previous page
+      navigate(-1);
     }
   };
 
