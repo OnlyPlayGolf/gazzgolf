@@ -382,10 +382,9 @@ export default function RoundSettings() {
 
         {/* Game Settings - Visible for all but locked for spectators or when edit window expired */}
         {(() => {
-          const isLocked = isSpectator || isEditWindowExpired;
-          // Debug logging (remove in production)
+          const isLocked = isSpectator || (isEditWindowExpired ?? false);
           if (process.env.NODE_ENV === 'development') {
-            console.log('RoundSettings lock status:', { isSpectator, isEditWindowExpired, isLocked });
+            console.log('RoundSettings lock status:', { isSpectator, isEditWindowExpired, isLocked, roundId });
           }
           return (
             <Card className={isLocked ? 'opacity-90' : ''}>
