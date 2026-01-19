@@ -566,7 +566,7 @@ export default function UmbriagioLeaderboard() {
                 {positionLabel}
               </div>
               <div>
-                <div className="text-xl font-bold">{teamName}</div>
+                <div className={`text-xl font-bold ${team === 'A' ? 'text-blue-600' : 'text-red-600'}`}>{teamName}</div>
                 <div className="text-sm text-muted-foreground">
                   {player1} & {player2}
                 </div>
@@ -816,7 +816,7 @@ export default function UmbriagioLeaderboard() {
                           {positionLabel}
                         </div>
                         <div>
-                          <div className="text-xl font-bold">{teamName}</div>
+                          <div className={`text-xl font-bold ${team === 'A' ? 'text-blue-600' : 'text-red-600'}`}>{teamName}</div>
                           <div className="text-sm text-muted-foreground">
                             {player1} & {player2}
                           </div>

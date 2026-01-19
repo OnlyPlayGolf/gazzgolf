@@ -24,6 +24,7 @@ import {
   LeaveGameDialog,
 } from "@/components/settings";
 import { GameHeader } from "@/components/GameHeader";
+import { SkinsCompletionModal } from "@/components/SkinsCompletionModal";
 
 interface SkinsGame {
   id: string;
@@ -60,10 +61,22 @@ export default function SimpleSkinsSettings() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [holes, setHoles] = useState<Array<{
+    id: string;
+    game_id: string;
+    hole_number: number;
+    par: number;
+    player_scores: Record<string, number>;
+    winner_player: string | null;
+    skins_available: number;
+    is_carryover: boolean;
+  }>>([]);
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
 
   // Per-player stats mode
   const { 
@@ -147,6 +160,42 @@ export default function SimpleSkinsSettings() {
             }))
           : [];
         setPlayers(parsedPlayers);
+
+        // Fetch holes data for completion dialog
+        const { data: holesData } = await supabase
+          .from("skins_holes")
+          .select("*")
+          .eq("game_id", roundId)
+          .order("hole_number");
+
+        if (holesData) {
+          setHoles(holesData.map(h => ({
+            id: h.id,
+            game_id: h.game_id,
+            hole_number: h.hole_number,
+            par: h.par,
+            player_scores: (h.player_scores as Record<string, number>) || {},
+            winner_player: h.winner_player,
+            skins_available: h.skins_available,
+            is_carryover: h.is_carryover,
+          })));
+        }
+
+        // Fetch course holes for scorecard structure
+        if (gameData.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -198,7 +247,7 @@ export default function SimpleSkinsSettings() {
         .eq("id", roundId);
     }
     toast({ title: "Game saved" });
-    navigate("/");
+    setShowCompletionDialog(true);
   };
 
   const handleDeleteRound = async () => {
@@ -429,6 +478,18 @@ export default function SimpleSkinsSettings() {
         onConfirm={handleLeaveRound}
         leaving={leaving}
       />
+
+      {/* Completion Dialog */}
+      {game && (
+        <SkinsCompletionModal
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={game}
+          holes={holes}
+          players={players}
+          courseHoles={courseHoles}
+        />
+      )}
 
       <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
     </div>

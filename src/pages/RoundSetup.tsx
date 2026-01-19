@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
+import { getDefaultRoundName } from "@/utils/roundCounter";
 
 const RoundSetup = () => {
   const navigate = useNavigate();
@@ -27,13 +28,8 @@ const RoundSetup = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      const { count } = await supabase
-        .from('rounds')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-      
-      const nextRoundNumber = (count || 0) + 1;
-      setRoundName(`Round ${nextRoundNumber}`);
+      const defaultName = await getDefaultRoundName(user.id);
+      setRoundName(defaultName);
     };
     
     fetchRoundCount();

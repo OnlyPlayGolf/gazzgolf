@@ -269,7 +269,7 @@ export default function ScramblePlay() {
     const holeData = holes.find(h => h.hole_number === currentHole);
     const existingTeeShots = holeData?.team_tee_shots || {};
 
-    await supabase
+    const { error } = await supabase
       .from('scramble_holes')
       .upsert({
         game_id: gameId,
@@ -281,6 +281,12 @@ export default function ScramblePlay() {
       }, {
         onConflict: 'game_id,hole_number'
       });
+
+    if (error) {
+      console.error('Error saving score:', error);
+      toast.error("Failed to save score");
+      return;
+    }
 
     // Update local holes state
     setHoles(prev => {
@@ -328,7 +334,7 @@ export default function ScramblePlay() {
     const par = getCurrentHolePar();
     const strokeIndex = getCurrentHoleStrokeIndex();
 
-    await supabase
+    const { error } = await supabase
       .from('scramble_holes')
       .upsert({
         game_id: gameId,
@@ -341,13 +347,29 @@ export default function ScramblePlay() {
         onConflict: 'game_id,hole_number'
       });
 
-    // Update local holes state
+    if (error) {
+      console.error('Error saving tee shot:', error);
+      toast.error("Failed to save tee shot");
+      return;
+    }
+
+    // Update local holes state - handle both existing and new holes
     setHoles(prev => {
       const existing = prev.find(h => h.hole_number === currentHole);
       if (existing) {
         return prev.map(h => h.hole_number === currentHole ? { ...h, team_tee_shots: newTeeShots } : h);
       } else {
-        return prev;
+        // If hole doesn't exist yet in local state, create it
+        return [...prev, {
+          id: `temp-${currentHole}`,
+          game_id: gameId,
+          hole_number: currentHole,
+          par,
+          stroke_index: strokeIndex,
+          created_at: new Date().toISOString(),
+          team_scores: teamScores,
+          team_tee_shots: newTeeShots
+        }];
       }
     });
     

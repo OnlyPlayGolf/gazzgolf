@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BestBallGame, BestBallHole, BestBallPlayer, BestBallPlayerScore, BestBallGameType } from "@/types/bestBall";
 import { BestBallCompletionDialog } from "@/components/BestBallCompletionDialog";
-import { GameShareDialog } from "@/components/GameShareDialog";
-import { formatMatchStatus } from "@/utils/bestBallScoring";
+import { BestBallStrokePlayCompletionDialog } from "@/components/BestBallStrokePlayCompletionDialog";
 
 interface CourseHole {
   hole_number: number;
@@ -14,7 +13,6 @@ interface CourseHole {
 
 export default function BestBallSummary() {
   const { gameId } = useParams();
-  const navigate = useNavigate();
   const [game, setGame] = useState<BestBallGame | null>(null);
   const [holes, setHoles] = useState<BestBallHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
@@ -113,7 +111,7 @@ export default function BestBallSummary() {
 
   const isMatchPlay = game.game_type === 'match';
 
-  // For match play, use the new completion dialog with scorecard
+  // For match play, use the match play completion dialog
   if (isMatchPlay) {
     return (
       <div className="min-h-screen bg-background">
@@ -129,36 +127,16 @@ export default function BestBallSummary() {
     );
   }
 
-  // For stroke play, use the existing GameShareDialog
-  let winner: 'A' | 'B' | 'TIE' | null = null;
-  let resultText = '';
-  
-  if (game.team_a_total < game.team_b_total) {
-    winner = 'A';
-    resultText = `${game.team_a_name} wins by ${game.team_b_total - game.team_a_total} strokes`;
-  } else if (game.team_b_total < game.team_a_total) {
-    winner = 'B';
-    resultText = `${game.team_b_name} wins by ${game.team_a_total - game.team_b_total} strokes`;
-  } else {
-    winner = 'TIE';
-    resultText = 'Match Tied';
-  }
-
-  const winnerName = winner === 'A' ? game.team_a_name : winner === 'B' ? game.team_b_name : undefined;
-
+  // For stroke play, use the new stroke play completion dialog with scorecard
   return (
     <div className="min-h-screen bg-background">
-      <GameShareDialog
+      <BestBallStrokePlayCompletionDialog
         open={showDialog}
         onOpenChange={setShowDialog}
-        gameType="Best Ball"
-        courseName={game.course_name}
-        roundName={game.round_name || undefined}
-        winner={winnerName}
-        resultText={resultText}
-        additionalInfo={`${game.team_a_name} vs ${game.team_b_name}`}
+        game={game}
+        holes={holes}
+        courseHoles={courseHoles}
         gameId={gameId}
-        onContinue={() => navigate("/")}
       />
     </div>
   );

@@ -78,7 +78,7 @@ export function CopenhagenShareDialog({ open, onOpenChange, game }: CopenhagenSh
             placeholder="Add a comment (optional)..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            rows={3}
+            rows={1}
           />
 
           <div className="flex gap-2">

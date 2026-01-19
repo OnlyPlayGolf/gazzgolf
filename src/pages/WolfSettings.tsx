@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { WolfGame } from "@/types/wolf";
+import { WolfGame, WolfHole } from "@/types/wolf";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
@@ -25,6 +25,7 @@ import {
 } from "@/components/settings";
 import { getTeeDisplayName } from "@/components/TeeSelector";
 import { GameHeader } from "@/components/GameHeader";
+import { WolfCompletionModal } from "@/components/WolfCompletionModal";
 
 export default function WolfSettings() {
   const { gameId } = useParams();
@@ -32,7 +33,10 @@ export default function WolfSettings() {
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
   const [game, setGame] = useState<WolfGame | null>(null);
+  const [holes, setHoles] = useState<WolfHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
   const [loading, setLoading] = useState(true);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [loneWolfWinPoints, setLoneWolfWinPoints] = useState(3);
   const [loneWolfLossPoints, setLoneWolfLossPoints] = useState(1);
   const [teamWinPoints, setTeamWinPoints] = useState(1);
@@ -91,8 +95,35 @@ export default function WolfSettings() {
         setLoneWolfWinPoints(typedGame.lone_wolf_win_points);
         setLoneWolfLossPoints(typedGame.lone_wolf_loss_points);
         setTeamWinPoints(typedGame.team_win_points);
-        setDoubleEnabled(typedGame.double_enabled ?? true);
+        setDoubleEnabled(typedGame.double_enabled ?? false);
         setWolfPosition(typedGame.wolf_position as 'first' | 'last');
+
+        // Fetch holes for completion dialog
+        const { data: holesData } = await supabase
+          .from("wolf_holes" as any)
+          .select("*")
+          .eq("game_id", gameId)
+          .order("hole_number");
+        
+        if (holesData) {
+          setHoles(holesData as unknown as WolfHole[]);
+        }
+
+        // Fetch course holes
+        if (typedGame.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", typedGame.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            const filteredHoles = typedGame.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -148,27 +179,8 @@ export default function WolfSettings() {
     saveSettings({ team_win_points: points });
   };
 
-  const handleFinishGame = async () => {
-    if (!game) return;
-    try {
-      const points = [
-        { name: game.player_1, points: game.player_1_points },
-        { name: game.player_2, points: game.player_2_points },
-        { name: game.player_3, points: game.player_3_points },
-        ...(game.player_4 ? [{ name: game.player_4, points: game.player_4_points }] : []),
-        ...(game.player_5 ? [{ name: game.player_5, points: game.player_5_points }] : []),
-      ].sort((a, b) => b.points - a.points);
-      
-      await supabase
-        .from("wolf_games" as any)
-        .update({ is_finished: true, winner_player: points[0].name })
-        .eq("id", gameId);
-      
-      toast({ title: "Game finished!" });
-      navigate("/");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
+  const handleFinishGame = () => {
+    setShowCompletionDialog(true);
   };
 
   const handleDeleteGame = async () => {
@@ -376,6 +388,16 @@ export default function WolfSettings() {
       />
 
       {gameId && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+
+      {game && (
+        <WolfCompletionModal
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={game}
+          holes={holes}
+          courseHoles={courseHoles}
+        />
+      )}
     </div>
   );
 }

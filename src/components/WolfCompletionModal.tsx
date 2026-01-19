@@ -1,27 +1,19 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Share2, Loader2, Trophy } from "lucide-react";
+import { Share2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import { WolfGame, WolfHole } from "@/types/wolf";
-import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { WolfScorecardView } from "@/components/WolfScorecardView";
+import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 
 interface CourseHole {
   hole_number: number;
   par: number;
-  stroke_index?: number;
+  stroke_index: number;
 }
 
 interface WolfCompletionModalProps {
@@ -43,20 +35,15 @@ export function WolfCompletionModal({
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
   const [isSharing, setIsSharing] = useState(false);
-  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Reset textarea height when share form is closed
-  useEffect(() => {
-    if (!showShareForm && commentTextareaRef.current) {
-      commentTextareaRef.current.style.height = '2.5rem';
-      setComment("");
-    }
-  }, [showShareForm]);
+  const [userPosition, setUserPosition] = useState<number>(1);
+  const [userPointsWon, setUserPointsWon] = useState<number>(0);
+  const { toast } = useToast();
+  const { strokePlayEnabled } = useStrokePlayEnabled(game.id, 'wolf');
 
   const getPlayerCount = () => {
-    let count = 4;
-    if (game.player_4) count = 5;
-    if (game.player_5) count = 6;
+    let count = 3;
+    if (game.player_4) count = 4;
+    if (game.player_5) count = 5;
     return count;
   };
 
@@ -67,7 +54,6 @@ export function WolfCompletionModal({
       case 3: return game.player_3;
       case 4: return game.player_4 || '';
       case 5: return game.player_5 || '';
-      case 6: return game.player_6 || '';
       default: return '';
     }
   };
@@ -79,7 +65,6 @@ export function WolfCompletionModal({
       case 3: return game.player_3_points;
       case 4: return game.player_4_points;
       case 5: return game.player_5_points;
-      case 6: return game.player_6_points;
       default: return 0;
     }
   };
@@ -93,7 +78,6 @@ export function WolfCompletionModal({
       case 3: return hole.player_3_score;
       case 4: return hole.player_4_score;
       case 5: return hole.player_5_score;
-      case 6: return hole.player_6_score;
       default: return null;
     }
   };
@@ -107,22 +91,100 @@ export function WolfCompletionModal({
       case 3: return hole.player_3_hole_points;
       case 4: return hole.player_4_hole_points;
       case 5: return hole.player_5_hole_points;
-      case 6: return hole.player_6_hole_points;
       default: return null;
     }
   };
 
   const playerCount = getPlayerCount();
+  
+  // Build players array
   const players = Array.from({ length: playerCount }, (_, i) => ({
     num: i + 1,
     name: getPlayerName(i + 1),
     points: getPlayerPoints(i + 1),
-  })).sort((a, b) => b.points - a.points);
+  }));
 
-  const winner = players[0];
+  // Sort players by points for ranking
+  const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
 
-  const frontNine = courseHoles.filter(h => h.hole_number <= 9);
-  const backNine = courseHoles.filter(h => h.hole_number > 9);
+  // Build holes data for WolfScorecardView
+  const holesData = holes.map(hole => ({
+    hole_number: hole.hole_number,
+    par: courseHoles.find(ch => ch.hole_number === hole.hole_number)?.par || 4,
+    scores: {
+      1: hole.player_1_score,
+      2: hole.player_2_score,
+      3: hole.player_3_score,
+      4: hole.player_4_score,
+      5: hole.player_5_score,
+    } as Record<number, number | null>,
+    points: {
+      1: hole.player_1_hole_points,
+      2: hole.player_2_hole_points,
+      3: hole.player_3_hole_points,
+      4: hole.player_4_hole_points,
+      5: hole.player_5_hole_points,
+    } as Record<number, number | null>,
+  }));
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setShowShareForm(false);
+      setComment("");
+    }
+  }, [open]);
+
+  // Calculate user's position
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchUserPosition = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get user's profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name, username")
+          .eq("id", user.id)
+          .single();
+
+        // Build participant names array
+        const participantNames = [profile?.display_name, profile?.username]
+          .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+          .map((v) => v.trim());
+
+        // Find which player the user is
+        let userPlayerNum: number | null = null;
+        
+        for (const player of players) {
+          if (participantNames.includes(player.name)) {
+            userPlayerNum = player.num;
+            break;
+          }
+        }
+
+        // If not found by name but user owns the game, default to first player
+        if (!userPlayerNum && game.user_id === user.id && players.length > 0) {
+          userPlayerNum = 1;
+        }
+
+        if (userPlayerNum) {
+          const userPoints = getPlayerPoints(userPlayerNum);
+          const position = sortedPlayers.filter(p => p.points > userPoints).length + 1;
+          
+          setUserPosition(position);
+          setUserPointsWon(userPoints);
+        }
+      } catch (error) {
+        console.error("Error fetching user position:", error);
+      }
+    };
+
+    fetchUserPosition();
+  }, [open, game.user_id, players, sortedPlayers]);
 
   const handleShare = async () => {
     setIsSharing(true);
@@ -149,8 +211,9 @@ export function WolfCompletionModal({
         };
       });
 
-      const holeResultsData: Record<number, { scores: Record<number, number | null>; points: Record<number, number | null> }> = {};
+      const holeResultsData: Record<number, { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }> = {};
       holes.forEach(hole => {
+        const courseHole = courseHoles.find(ch => ch.hole_number === hole.hole_number);
         holeResultsData[hole.hole_number] = {
           scores: {
             1: hole.player_1_score,
@@ -158,7 +221,6 @@ export function WolfCompletionModal({
             3: hole.player_3_score,
             4: hole.player_4_score,
             5: hole.player_5_score,
-            6: hole.player_6_score,
           },
           points: {
             1: hole.player_1_hole_points,
@@ -166,8 +228,8 @@ export function WolfCompletionModal({
             3: hole.player_3_hole_points,
             4: hole.player_4_hole_points,
             5: hole.player_5_hole_points,
-            6: hole.player_6_hole_points,
           },
+          par: courseHole?.par || 4,
         };
       });
 
@@ -176,6 +238,7 @@ export function WolfCompletionModal({
         holeResults: holeResultsData,
       });
 
+      const winner = sortedPlayers[0];
       const wolfScorecard = `[WOLF_SCORECARD]${game.round_name || 'Wolf'}|${game.course_name}|${game.date_played}|${winner.name}|${winner.points}|${game.id}|${scorecardJson}[/WOLF_SCORECARD]`;
       
       const postContent = comment.trim()
@@ -189,9 +252,7 @@ export function WolfCompletionModal({
 
       if (error) throw error;
 
-      toast({ title: "Shared!", description: "Your round has been posted" });
-      setShowShareForm(false);
-      setComment("");
+      toast({ title: "Shared to feed!" });
       onOpenChange(false);
       navigate("/");
     } catch (error) {
@@ -205,14 +266,10 @@ export function WolfCompletionModal({
   const handleDone = async () => {
     // Mark game as finished before navigating
     try {
-      const { error } = await supabase
+      await supabase
         .from("wolf_games")
         .update({ is_finished: true })
         .eq("id", game.id);
-      
-      if (error) {
-        console.error("Error finishing game:", error);
-      }
     } catch (error) {
       console.error("Error finishing game:", error);
     }
@@ -221,271 +278,33 @@ export function WolfCompletionModal({
     navigate("/");
   };
 
-  // Wolf scorecard component - matches WolfLeaderboard style
-  const WolfScorecardView = () => {
-    return (
-      <div className="space-y-4">
-        {players.map((player) => {
-          const frontNineTotal = frontNine.reduce((sum, h) => {
-            const s = getHoleScore(h.hole_number, player.num);
-            if (s === null || s === -1) return sum;
-            return sum + s;
-          }, 0);
-
-          const backNineTotal = backNine.reduce((sum, h) => {
-            const s = getHoleScore(h.hole_number, player.num);
-            if (s === null || s === -1) return sum;
-            return sum + s;
-          }, 0);
-
-          const fullTotal = frontNineTotal + backNineTotal;
-
-          const frontNinePoints = frontNine.reduce((sum, h) => sum + (getHolePoints(h.hole_number, player.num) || 0), 0);
-          const backNinePoints = backNine.reduce((sum, h) => sum + (getHolePoints(h.hole_number, player.num) || 0), 0);
-          const fullPoints = frontNinePoints + backNinePoints;
-
-          return (
-            <div key={player.num} className="border rounded-lg overflow-hidden">
-              {/* Front 9 */}
-              <Table className="w-full table-fixed">
-                <TableHeader>
-                  <TableRow className="bg-primary">
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px] bg-primary text-primary-foreground">Hole</TableHead>
-                    {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
-                        {hole.hole_number}
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Out</TableHead>
-                    {backNine.length > 0 && <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground"></TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">HCP</TableCell>
-                    {frontNine.map(hole => (
-                      <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
-                        {hole.stroke_index}
-                      </TableCell>
-                    ))}
-                    <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-                    {backNine.length > 0 && <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
-                    {frontNine.map(hole => (
-                      <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
-                        {hole.par}
-                      </TableCell>
-                    ))}
-                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                      {frontNine.reduce((sum, h) => sum + h.par, 0)}
-                    </TableCell>
-                    {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
-                    {frontNine.map(hole => {
-                      const rawScore = getHoleScore(hole.hole_number, player.num);
-                      const score = rawScore === -1 ? null : rawScore;
-                      return (
-                        <TableCell 
-                          key={hole.hole_number} 
-                          className="text-center px-0 py-1"
-                        >
-                          {score !== null ? (
-                            <ScorecardScoreCell score={score} par={hole.par} />
-                          ) : ''}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                      {frontNineTotal > 0 ? frontNineTotal : ''}
-                    </TableCell>
-                    {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
-                  </TableRow>
-                  <TableRow className="font-bold">
-                    <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Points</TableCell>
-                    {frontNine.map(hole => {
-                      const points = getHolePoints(hole.hole_number, player.num);
-                      return (
-                        <TableCell 
-                          key={hole.hole_number} 
-                          className={`text-center font-bold text-[10px] px-0 py-1 ${
-                            points !== null && points > 0 ? 'text-green-600' : 
-                            points !== null && points < 0 ? 'text-red-600' : ''
-                          }`}
-                        >
-                          {points !== null ? (points > 0 ? `+${points}` : points) : ''}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                      {frontNinePoints || ''}
-                    </TableCell>
-                    {backNine.length > 0 && <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1"></TableCell>}
-                  </TableRow>
-                </TableBody>
-              </Table>
-
-              {/* Back 9 */}
-              {backNine.length > 0 && (
-                <div className="border-t">
-                  <Table className="w-full table-fixed">
-                    <TableHeader>
-                      <TableRow className="bg-primary">
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px] bg-primary text-primary-foreground">Hole</TableHead>
-                        {backNine.map(hole => (
-                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
-                            {hole.hole_number}
-                          </TableHead>
-                        ))}
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">In</TableHead>
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Tot</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">HCP</TableCell>
-                        {backNine.map(hole => (
-                          <TableCell key={hole.hole_number} className="text-center text-[10px] px-0 py-1">
-                            {hole.stroke_index}
-                          </TableCell>
-                        ))}
-                        <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-                        <TableCell className="text-center bg-muted text-[10px] px-0 py-1"></TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px]">Par</TableCell>
-                        {backNine.map(hole => (
-                          <TableCell key={hole.hole_number} className="text-center font-semibold text-[10px] px-0 py-1">
-                            {hole.par}
-                          </TableCell>
-                        ))}
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {backNine.reduce((sum, h) => sum + h.par, 0)}
-                        </TableCell>
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {frontNine.reduce((sum, h) => sum + h.par, 0) + backNine.reduce((sum, h) => sum + h.par, 0)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium text-muted-foreground text-[10px] px-0 py-1 w-[44px] max-w-[44px] truncate">{player.name.split(' ')[0]}</TableCell>
-                        {backNine.map(hole => {
-                          const rawScore = getHoleScore(hole.hole_number, player.num);
-                          const score = rawScore === -1 ? null : rawScore;
-                          return (
-                            <TableCell 
-                              key={hole.hole_number} 
-                              className="text-center px-0 py-1"
-                            >
-                              {score !== null ? (
-                                <ScorecardScoreCell score={score} par={hole.par} />
-                              ) : ''}
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {backNineTotal > 0 ? backNineTotal : ''}
-                        </TableCell>
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {fullTotal > 0 ? fullTotal : ''}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow className="font-bold">
-                        <TableCell className="font-bold text-[10px] px-0 py-1 w-[44px]">Points</TableCell>
-                        {backNine.map(hole => {
-                          const points = getHolePoints(hole.hole_number, player.num);
-                          return (
-                            <TableCell 
-                              key={hole.hole_number} 
-                              className={`text-center font-bold text-[10px] px-0 py-1 ${
-                                points !== null && points > 0 ? 'text-green-600' : 
-                                points !== null && points < 0 ? 'text-red-600' : ''
-                              }`}
-                            >
-                              {points !== null ? (points > 0 ? `+${points}` : points) : ''}
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {backNinePoints || ''}
-                        </TableCell>
-                        <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                          {fullPoints || ''}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto [&>button]:hidden">
-        {/* Round Card Style Header - Matching Profile Round Cards */}
-        <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border-b border-primary/20 p-4 rounded-t-lg">
-          <div className="flex items-center gap-4">
-            {/* Left: Winner with trophy and points */}
-            <div className="flex-shrink-0 w-14 text-center">
-              <Trophy className="h-6 w-6 mx-auto text-amber-600 mb-1" />
-              <div className="text-sm font-bold text-foreground">
-                {winner.points}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                points
-              </div>
-            </div>
-            
-            {/* Right: Round Details */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate text-foreground">
-                {game.round_name || 'Wolf'}
-              </h3>
-              <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                <span className="truncate">{game.course_name}</span>
-                <span>·</span>
-                <span className="flex-shrink-0">{format(new Date(game.date_played), "MMM d")}</span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                <span className="text-muted-foreground">Winner: </span>
-                <span className="font-semibold text-amber-600">{winner.name}</span>
-                <span className="text-muted-foreground"> · {winner.points} points</span>
-              </div>
-            </div>
-          </div>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] p-0 overflow-hidden flex flex-col [&>button]:hidden">
+        {/* Use WolfScorecardView - matches shared post exactly */}
+        <div className="flex-1 overflow-y-auto">
+          <WolfScorecardView
+            roundName={game.round_name || 'Wolf'}
+            courseName={game.course_name}
+            datePlayed={game.date_played}
+            playerCount={playerCount}
+            position={userPosition}
+            pointsWon={userPointsWon}
+            players={players}
+            holes={holesData}
+            courseHoles={courseHoles}
+            strokePlayEnabled={strokePlayEnabled}
+          />
         </div>
 
-        {/* Scorecard */}
-        {courseHoles.length > 0 && (
-          <div className="px-4 pt-4">
-            <WolfScorecardView />
-          </div>
-        )}
-
         {/* Actions */}
-        <div className="p-4">
+        <div className="p-4 border-t flex-shrink-0">
           {showShareForm ? (
             <div className="space-y-3">
               <Textarea
-                ref={commentTextareaRef}
-                placeholder="Add your post-round thoughts..."
+                placeholder="Add a comment (optional)..."
                 value={comment}
-                onChange={(e) => {
-                  setComment(e.target.value);
-                  const textarea = commentTextareaRef.current;
-                  if (textarea) {
-                    textarea.style.height = 'auto';
-                    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-                  }
-                }}
-                className="min-h-[2.5rem] resize-none overflow-hidden"
+                onChange={(e) => setComment(e.target.value)}
                 rows={1}
               />
               <div className="flex gap-2">

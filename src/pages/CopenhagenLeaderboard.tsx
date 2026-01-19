@@ -16,6 +16,7 @@ import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardMo
 import { StrokePlayLeaderboardView } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { CopenhagenCompletionDialog } from "@/components/CopenhagenCompletionDialog";
 import {
   Table,
   TableBody,
@@ -41,6 +42,7 @@ export default function CopenhagenLeaderboard() {
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
   const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
@@ -427,7 +429,7 @@ export default function CopenhagenLeaderboard() {
       const winner = sortedPlayers[0]?.name || null;
       await supabase.from("copenhagen_games").update({ is_finished: true, winner_player: winner }).eq("id", gameId);
       toast({ title: "Game finished!" });
-      navigate("/");
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -479,6 +481,17 @@ export default function CopenhagenLeaderboard() {
       </div>
 
       {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+
+      {/* Completion Dialog */}
+      {game && (
+        <CopenhagenCompletionDialog
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={game}
+          holes={holes}
+          courseHoles={courseHoles}
+        />
+      )}
     </div>
   );
 }

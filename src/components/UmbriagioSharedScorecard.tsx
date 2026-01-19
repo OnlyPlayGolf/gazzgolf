@@ -59,10 +59,11 @@ export function UmbriagioSharedScorecard({
     const teamName = team === 'A' ? game.team_a_name : game.team_b_name;
     const totalForNine = holeSet === frontNine ? getTeamFrontNineTotal(team) : getTeamBackNineTotal(team);
     const grandTotal = team === 'A' ? normalizedA : normalizedB;
+    const teamColorClass = team === 'A' ? 'text-blue-600' : 'text-red-600';
 
     return (
       <TableRow className="font-bold">
-        <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate" title={teamName}>
+        <TableCell className={`font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate ${teamColorClass}`} title={teamName}>
           {truncateTeamName(teamName, 6)}
         </TableCell>
         {holeSet.map(hole => {

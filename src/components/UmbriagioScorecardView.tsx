@@ -23,7 +23,7 @@ interface UmbriagioScorecardViewProps {
   courseHoles: CourseHole[];
   currentUserTeam?: 'A' | 'B' | null;
   strokePlayEnabled: boolean;
-  strokePlayPlayers?: Array<{ name: string; scores: Map<number, number>; totalScore: number }>;
+  strokePlayPlayers?: Array<{ name: string; scores: Map<number, number>; totalScore: number; team?: 'A' | 'B' }>;
   onHeaderClick?: () => void;
   onScorecardClick?: () => void;
 }
@@ -115,6 +115,8 @@ export function UmbriagioScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
+              showNetRow={false}
+              showTeamColors={true}
             />
           ) : (
             <UmbriagioSharedScorecard

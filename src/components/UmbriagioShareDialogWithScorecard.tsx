@@ -115,10 +115,10 @@ export function UmbriagioShareDialogWithScorecard({
     });
 
     return [
-      { name: game.team_a_player_1, scores: player1Scores, totalScore: player1Total },
-      { name: game.team_a_player_2, scores: player2Scores, totalScore: player2Total },
-      { name: game.team_b_player_1, scores: player3Scores, totalScore: player3Total },
-      { name: game.team_b_player_2, scores: player4Scores, totalScore: player4Total },
+      { name: game.team_a_player_1, scores: player1Scores, totalScore: player1Total, team: 'A' as const },
+      { name: game.team_a_player_2, scores: player2Scores, totalScore: player2Total, team: 'A' as const },
+      { name: game.team_b_player_1, scores: player3Scores, totalScore: player3Total, team: 'B' as const },
+      { name: game.team_b_player_2, scores: player4Scores, totalScore: player4Total, team: 'B' as const },
     ];
   };
 
@@ -213,7 +213,7 @@ export function UmbriagioShareDialogWithScorecard({
                   placeholder="Add a comment (optional)..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="min-h-[80px]"
+                  rows={1}
                 />
                 <div className="flex gap-2">
                   <Button

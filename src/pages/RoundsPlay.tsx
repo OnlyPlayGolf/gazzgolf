@@ -26,6 +26,7 @@ import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS } from "@/components
 import { CourseScorecard } from "@/components/CourseScorecard";
 import { validateAllGroupsForFormat, formatSupportsMultipleGroups } from "@/utils/groupValidation";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
+import { getDefaultRoundName } from "@/utils/roundCounter";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -317,14 +318,10 @@ export default function RoundsPlay() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { count } = await supabase
-        .from("rounds")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
       const savedRoundName = sessionStorage.getItem('roundName');
       if (!savedRoundName) {
-        setSetupState(prev => ({ ...prev, roundName: `Round ${(count || 0) + 1}` }));
+        const defaultName = await getDefaultRoundName(user.id);
+        setSetupState(prev => ({ ...prev, roundName: defaultName }));
       }
     } catch (error) {
       console.error("Error fetching round count:", error);

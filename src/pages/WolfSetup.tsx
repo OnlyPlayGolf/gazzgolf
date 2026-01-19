@@ -54,7 +54,7 @@ export default function WolfSetup() {
   const [loneWolfLossPoints, setLoneWolfLossPoints] = useState(1);
   const [teamWinPoints, setTeamWinPoints] = useState(1);
   const [wolfPosition, setWolfPosition] = useState<'first' | 'last'>('last');
-  const [doubleEnabled, setDoubleEnabled] = useState(true);
+  const [doubleEnabled, setDoubleEnabled] = useState(false);
   const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   // Sheet states

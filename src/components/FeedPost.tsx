@@ -23,12 +23,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
 import { UmbriagioScorecardView } from "./UmbriagioScorecardView";
+import { CopenhagenScorecardView } from "./CopenhagenScorecardView";
+import { ScrambleScorecardView } from "./ScrambleScorecardView";
+import { SkinsScorecardView } from "./SkinsScorecardView";
+import { WolfScorecardView } from "./WolfScorecardView";
 import { MatchPlayScorecardView } from "./MatchPlayScorecardView";
 import { MatchPlayScorecardCard } from "./MatchPlayScorecardCard";
 import { BestBallScorecardView } from "./BestBallScorecardView";
+import { BestBallStrokePlayScorecardView } from "./BestBallStrokePlayScorecardView";
 import { StrokePlayScorecardView } from "./StrokePlayScorecardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
@@ -98,7 +103,7 @@ const parseMatchPlayScorecardResult = (content: string) => {
   return null;
 };
 
-// Parse best ball scorecard result from post content
+// Parse best ball scorecard result from post content (Match Play)
 const parseBestBallScorecardResult = (content: string) => {
   // Format: [BEST_BALL_SCORECARD]roundName|courseName|date|teamAName|teamBName|matchStatus|userTeam|gameId|scorecardJson[/BEST_BALL_SCORECARD]
   const match = content?.match(/\[BEST_BALL_SCORECARD\]([^|]*)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(.+?)\[\/BEST_BALL_SCORECARD\]/s);
@@ -126,6 +131,40 @@ const parseBestBallScorecardResult = (content: string) => {
       };
     } catch (e) {
       console.error('Error parsing best ball scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Parse best ball stroke play scorecard result from post content
+const parseBestBallStrokePlayScorecardResult = (content: string) => {
+  // Format: [BEST_BALL_STROKE_PLAY_SCORECARD]roundName|courseName|date|teamAName|teamBName|userTeam|userTeamTotalScore|userTeamScoreToPar|gameId|scorecardJson[/BEST_BALL_STROKE_PLAY_SCORECARD]
+  const match = content?.match(/\[BEST_BALL_STROKE_PLAY_SCORECARD\]([^|]*)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(.+?)\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/s);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[10]);
+      return {
+        roundName: match[1] || 'Best Ball Stroke Play',
+        courseName: match[2],
+        datePlayed: match[3],
+        teamAName: match[4],
+        teamBName: match[5],
+        userTeam: match[6] as 'A' | 'B',
+        userTeamTotalScore: parseInt(match[7]),
+        userTeamScoreToPar: parseInt(match[8]),
+        gameId: match[9] || null,
+        holeScores: scorecardData.holeScores as Record<number, {
+          teamAScores: { playerId: string; playerName: string; grossScore: number }[];
+          teamBScores: { playerId: string; playerName: string; grossScore: number }[];
+        }>,
+        holePars: scorecardData.holePars as Record<number, number>,
+        teamAPlayers: scorecardData.teamAPlayers as { id: string; name: string }[],
+        teamBPlayers: scorecardData.teamBPlayers as { id: string; name: string }[],
+        textContent: content.replace(/\[BEST_BALL_STROKE_PLAY_SCORECARD\].+?\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/s, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing best ball stroke play scorecard data:', e);
       return null;
     }
   }
@@ -194,7 +233,8 @@ const parseRoundResult = (content: string) => {
 // Parse Umbriago scorecard result from post content (new format with scorecard data)
 const parseUmbriagioScorecardResult = (content: string) => {
   // Format: [UMBRIAGO_SCORECARD]roundName|courseName|date|teamAName|teamBName|normalizedA|normalizedB|winningTeam|currentUserTeam|gameId|scorecardJson[/UMBRIAGO_SCORECARD]
-  const match = content?.match(/\[UMBRIAGO_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/UMBRIAGO_SCORECARD\]/);
+  // Note: winningTeam (group 8) and currentUserTeam (group 9) can be empty, so use .*? instead of .+?
+  const match = content?.match(/\[UMBRIAGO_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.*?)\|(.*?)\|(.+?)\|(.+?)\[\/UMBRIAGO_SCORECARD\]/);
   if (match) {
     try {
       const scorecardData = JSON.parse(match[11]);
@@ -215,6 +255,116 @@ const parseUmbriagioScorecardResult = (content: string) => {
       };
     } catch (e) {
       console.error('Error parsing umbriago scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Parse Copenhagen scorecard result from post content
+const parseCopenhagenScorecardResult = (content: string) => {
+  // Format: [COPENHAGEN_SCORECARD]roundName|courseName|date|player1|player2|player3|p1pts|p2pts|p3pts|winner|gameId|scorecardJson[/COPENHAGEN_SCORECARD]
+  const match = content?.match(/\[COPENHAGEN_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/COPENHAGEN_SCORECARD\]/);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[12]);
+      return {
+        roundName: match[1],
+        courseName: match[2],
+        datePlayed: match[3],
+        player1: match[4],
+        player2: match[5],
+        player3: match[6],
+        player1Points: parseInt(match[7]),
+        player2Points: parseInt(match[8]),
+        player3Points: parseInt(match[9]),
+        winner: match[10],
+        gameId: match[11] || null,
+        holeScores: scorecardData.holeScores as Record<number, { p1: number | null; p2: number | null; p3: number | null; p1pts: number; p2pts: number; p3pts: number }>,
+        holePars: scorecardData.holePars as Record<number, number>,
+        textContent: content.replace(/\[COPENHAGEN_SCORECARD\].+?\[\/COPENHAGEN_SCORECARD\]/, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing copenhagen scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Parse Scramble scorecard result from post content
+const parseScrambleScorecardResult = (content: string) => {
+  // Format: [SCRAMBLE_SCORECARD]roundName|courseName|date|winningTeam|gameId|scorecardJson[/SCRAMBLE_SCORECARD]
+  const match = content?.match(/\[SCRAMBLE_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/SCRAMBLE_SCORECARD\]/);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[6]);
+      return {
+        roundName: match[1],
+        courseName: match[2],
+        datePlayed: match[3],
+        winningTeam: match[4],
+        gameId: match[5] || null,
+        holeScores: scorecardData.holeScores as Record<number, Record<string, number | null>>,
+        holePars: scorecardData.holePars as Record<number, number>,
+        teams: scorecardData.teams as Array<{ id: string; name: string; players: Array<{ id: string; name: string }> }>,
+        textContent: content.replace(/\[SCRAMBLE_SCORECARD\].+?\[\/SCRAMBLE_SCORECARD\]/, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing scramble scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Parse Skins scorecard result from post content
+const parseSkinsScorecardResult = (content: string) => {
+  // Format: [SKINS_SCORECARD]roundName|courseName|date|winnerId|winnerName|winnerSkins|gameId|scorecardJson[/SKINS_SCORECARD]
+  const match = content?.match(/\[SKINS_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/SKINS_SCORECARD\]/);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[8]);
+      return {
+        roundName: match[1],
+        courseName: match[2],
+        datePlayed: match[3],
+        winnerId: match[4],
+        winnerName: match[5],
+        winnerSkins: parseInt(match[6]),
+        gameId: match[7] || null,
+        playerScores: scorecardData.playerScores as Record<string, { name: string; skins: number; total: number }>,
+        holeResults: scorecardData.holeResults as Record<number, { winnerId: string | null; skinsAvailable: number; par: number; playerScores?: Record<string, number> }>,
+        textContent: content.replace(/\[SKINS_SCORECARD\].+?\[\/SKINS_SCORECARD\]/, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing skins scorecard data:', e);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Parse Wolf scorecard result from post content
+const parseWolfScorecardResult = (content: string) => {
+  // Format: [WOLF_SCORECARD]roundName|courseName|date|winnerName|winnerPoints|gameId|scorecardJson[/WOLF_SCORECARD]
+  const match = content?.match(/\[WOLF_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/WOLF_SCORECARD\]/);
+  if (match) {
+    try {
+      const scorecardData = JSON.parse(match[7]);
+      return {
+        roundName: match[1],
+        courseName: match[2],
+        datePlayed: match[3],
+        winnerName: match[4],
+        winnerPoints: parseInt(match[5]),
+        gameId: match[6] || null,
+        playerScores: scorecardData.playerScores as Record<string, { name: string; points: number }>,
+        holeResults: scorecardData.holeResults as Record<number, { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }>,
+        textContent: content.replace(/\[WOLF_SCORECARD\].+?\[\/WOLF_SCORECARD\]/, '').trim()
+      };
+    } catch (e) {
+      console.error('Error parsing wolf scorecard data:', e);
       return null;
     }
   }
@@ -943,6 +1093,112 @@ const BestBallScorecardInPost = ({
   );
 };
 
+// Component to display Best Ball Stroke Play scorecard in posts
+const BestBallStrokePlayScorecardInPost = ({
+  bestBallStrokePlayScorecardResult,
+  textContent,
+}: {
+  bestBallStrokePlayScorecardResult: NonNullable<ReturnType<typeof parseBestBallStrokePlayScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourseHoles = async () => {
+      if (bestBallStrokePlayScorecardResult.gameId) {
+        // Try to fetch course holes from game
+        const { data: gameData } = await supabase
+          .from("best_ball_games")
+          .select("course_id, holes_played")
+          .eq("id", bestBallStrokePlayScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holePars
+      const holes = Object.keys(bestBallStrokePlayScorecardResult.holePars)
+        .map(holeNum => ({
+          hole_number: parseInt(holeNum),
+          par: bestBallStrokePlayScorecardResult.holePars[parseInt(holeNum)],
+          stroke_index: parseInt(holeNum), // Default stroke index
+        }))
+        .sort((a, b) => a.hole_number - b.hole_number);
+      setCourseHoles(holes);
+      setLoading(false);
+    };
+
+    fetchCourseHoles();
+  }, [bestBallStrokePlayScorecardResult.gameId, bestBallStrokePlayScorecardResult.holePars]);
+
+  const handleRoundCardClick = () => {
+    if (bestBallStrokePlayScorecardResult.gameId) {
+      navigate(buildGameUrl('best_ball', bestBallStrokePlayScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (bestBallStrokePlayScorecardResult.gameId) {
+      navigate(buildGameUrl('best_ball', bestBallStrokePlayScorecardResult.gameId, 'leaderboard', {
+        entryPoint: 'home',
+        viewType: 'spectator'
+      }));
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <BestBallStrokePlayScorecardView
+        roundName={bestBallStrokePlayScorecardResult.roundName}
+        courseName={bestBallStrokePlayScorecardResult.courseName}
+        datePlayed={bestBallStrokePlayScorecardResult.datePlayed}
+        teamAName={bestBallStrokePlayScorecardResult.teamAName}
+        teamBName={bestBallStrokePlayScorecardResult.teamBName}
+        teamAPlayers={bestBallStrokePlayScorecardResult.teamAPlayers}
+        teamBPlayers={bestBallStrokePlayScorecardResult.teamBPlayers}
+        holeScores={bestBallStrokePlayScorecardResult.holeScores}
+        courseHoles={courseHoles}
+        userTeam={bestBallStrokePlayScorecardResult.userTeam}
+        userTeamTotalScore={bestBallStrokePlayScorecardResult.userTeamTotalScore}
+        userTeamScoreToPar={bestBallStrokePlayScorecardResult.userTeamScoreToPar}
+        onRoundCardClick={handleRoundCardClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
 // Component to display Umbriago scorecard in posts
 const UmbriagioScorecardInPost = ({
   umbriagioScorecardResult,
@@ -1164,10 +1420,10 @@ const UmbriagioScorecardInPost = ({
     });
 
     return [
-      { name: gameData.team_a_player_1, scores: player1Scores, totalScore: player1Total },
-      { name: gameData.team_a_player_2, scores: player2Scores, totalScore: player2Total },
-      { name: gameData.team_b_player_1, scores: player3Scores, totalScore: player3Total },
-      { name: gameData.team_b_player_2, scores: player4Scores, totalScore: player4Total },
+      { name: gameData.team_a_player_1, scores: player1Scores, totalScore: player1Total, team: 'A' as const },
+      { name: gameData.team_a_player_2, scores: player2Scores, totalScore: player2Total, team: 'A' as const },
+      { name: gameData.team_b_player_1, scores: player3Scores, totalScore: player3Total, team: 'B' as const },
+      { name: gameData.team_b_player_2, scores: player4Scores, totalScore: player4Total, team: 'B' as const },
     ];
   };
 
@@ -1215,6 +1471,797 @@ const UmbriagioScorecardInPost = ({
         currentUserTeam={currentUserTeam}
         strokePlayEnabled={strokePlayEnabled}
         strokePlayPlayers={strokePlayPlayers}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
+// Component to display Copenhagen scorecard in posts
+const CopenhagenScorecardInPost = ({
+  copenhagenScorecardResult,
+  textContent,
+}: {
+  copenhagenScorecardResult: NonNullable<ReturnType<typeof parseCopenhagenScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [userPosition, setUserPosition] = useState<number>(1);
+  const { strokePlayEnabled } = useStrokePlayEnabled(copenhagenScorecardResult.gameId || '', 'copenhagen');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (copenhagenScorecardResult.gameId) {
+        // Fetch course holes from game data
+        const { data: gameData } = await supabase
+          .from("copenhagen_games")
+          .select("course_id, holes_played, user_id")
+          .eq("id", copenhagenScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
+
+        // Calculate user's position (same logic as unifiedRoundsLoader.ts for Profile)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, username")
+            .eq("id", user.id)
+            .single();
+
+          // Build participantNames array (same as unifiedRoundsLoader.ts)
+          const participantNames = [profile?.display_name, profile?.username]
+            .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+            .map((v) => v.trim());
+
+          // Find which player the user is (exact matching, same as Profile)
+          let userPlayerIndex: number | null = null;
+          
+          if (participantNames.some(n => n === copenhagenScorecardResult.player1)) {
+            userPlayerIndex = 1;
+          } else if (participantNames.some(n => n === copenhagenScorecardResult.player2)) {
+            userPlayerIndex = 2;
+          } else if (participantNames.some(n => n === copenhagenScorecardResult.player3)) {
+            userPlayerIndex = 3;
+          } else if (gameData?.user_id === user.id) {
+            userPlayerIndex = 1;
+          }
+
+          if (userPlayerIndex) {
+            // Calculate position based on points (same as unifiedRoundsLoader.ts)
+            const rawPoints = [
+              { player: 1, pts: copenhagenScorecardResult.player1Points || 0 },
+              { player: 2, pts: copenhagenScorecardResult.player2Points || 0 },
+              { player: 3, pts: copenhagenScorecardResult.player3Points || 0 },
+            ];
+            
+            // Normalize points (subtract minimum so lowest is 0)
+            const minPts = Math.min(...rawPoints.map(p => p.pts));
+            const normalizedPoints = rawPoints.map(p => ({ ...p, pts: p.pts - minPts }));
+            
+            // Sort by points descending for position calculation
+            const sortedPoints = [...normalizedPoints].sort((a, b) => b.pts - a.pts);
+            
+            const position = sortedPoints.findIndex(p => p.player === userPlayerIndex) + 1;
+            setUserPosition(position);
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holePars
+      if (courseHoles.length === 0) {
+        const holes = Object.keys(copenhagenScorecardResult.holePars)
+          .map(holeNum => ({
+            hole_number: parseInt(holeNum),
+            par: copenhagenScorecardResult.holePars[parseInt(holeNum)],
+            stroke_index: parseInt(holeNum),
+          }))
+          .sort((a, b) => a.hole_number - b.hole_number);
+        setCourseHoles(holes);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [copenhagenScorecardResult.gameId, copenhagenScorecardResult.holePars]);
+
+  // Build holes array from scorecard data
+  const holes = Object.keys(copenhagenScorecardResult.holeScores).map(holeNum => {
+    const holeNumInt = parseInt(holeNum);
+    const holeData = copenhagenScorecardResult.holeScores[holeNumInt];
+    
+    return {
+      id: `hole-${holeNum}`,
+      game_id: copenhagenScorecardResult.gameId || '',
+      hole_number: holeNumInt,
+      par: copenhagenScorecardResult.holePars[holeNumInt] || 4,
+      stroke_index: null,
+      created_at: new Date().toISOString(),
+      player_1_gross_score: holeData.p1,
+      player_2_gross_score: holeData.p2,
+      player_3_gross_score: holeData.p3,
+      player_1_net_score: null,
+      player_2_net_score: null,
+      player_3_net_score: null,
+      player_1_hole_points: holeData.p1pts,
+      player_2_hole_points: holeData.p2pts,
+      player_3_hole_points: holeData.p3pts,
+      player_1_running_total: 0,
+      player_2_running_total: 0,
+      player_3_running_total: 0,
+      is_sweep: false,
+      sweep_winner: null,
+    };
+  });
+
+  // Reconstruct minimal game object
+  const game = {
+    id: copenhagenScorecardResult.gameId || '',
+    user_id: '',
+    course_name: copenhagenScorecardResult.courseName,
+    course_id: null,
+    tee_set: null,
+    holes_played: courseHoles.length || 18,
+    date_played: copenhagenScorecardResult.datePlayed,
+    created_at: new Date().toISOString(),
+    round_name: copenhagenScorecardResult.roundName,
+    player_1: copenhagenScorecardResult.player1,
+    player_2: copenhagenScorecardResult.player2,
+    player_3: copenhagenScorecardResult.player3,
+    player_1_handicap: null,
+    player_2_handicap: null,
+    player_3_handicap: null,
+    player_1_tee: null,
+    player_2_tee: null,
+    player_3_tee: null,
+    use_handicaps: false,
+    stats_mode: null,
+    player_1_total_points: copenhagenScorecardResult.player1Points,
+    player_2_total_points: copenhagenScorecardResult.player2Points,
+    player_3_total_points: copenhagenScorecardResult.player3Points,
+    is_finished: true,
+    winner_player: copenhagenScorecardResult.winner,
+  };
+
+  // Build stroke play players
+  const strokePlayPlayers = [1, 2, 3].map(idx => {
+    const playerName = idx === 1 ? game.player_1 : idx === 2 ? game.player_2 : game.player_3;
+    const scoresMap = new Map<number, number>();
+    let totalScore = 0;
+
+    holes.forEach(hole => {
+      const score = idx === 1 ? hole.player_1_gross_score : idx === 2 ? hole.player_2_gross_score : hole.player_3_gross_score;
+      if (score !== null && score > 0) {
+        scoresMap.set(hole.hole_number, score);
+        totalScore += score;
+      }
+    });
+
+    return {
+      name: playerName,
+      scores: scoresMap,
+      totalScore,
+    };
+  });
+
+  // Get winner info for display
+  const players = [
+    { name: game.player_1, points: game.player_1_total_points },
+    { name: game.player_2, points: game.player_2_total_points },
+    { name: game.player_3, points: game.player_3_total_points },
+  ].sort((a, b) => b.points - a.points);
+
+  // Final score format: "8-3-0" (sorted by points descending)
+  const finalScore = `${players[0].points}-${players[1].points}-${players[2].points}`;
+
+  const handleHeaderClick = () => {
+    if (copenhagenScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_copenhagen_${copenhagenScorecardResult.gameId}`, 'true');
+      navigate(`/copenhagen/${copenhagenScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (copenhagenScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_copenhagen_${copenhagenScorecardResult.gameId}`, 'true');
+      navigate(`/copenhagen/${copenhagenScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <CopenhagenScorecardView
+        roundName={copenhagenScorecardResult.roundName}
+        courseName={copenhagenScorecardResult.courseName}
+        datePlayed={copenhagenScorecardResult.datePlayed}
+        playerCount={3}
+        position={userPosition}
+        finalScore={finalScore}
+        game={game}
+        holes={holes}
+        courseHoles={courseHoles}
+        strokePlayEnabled={strokePlayEnabled}
+        strokePlayPlayers={strokePlayPlayers}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
+// Component to display Scramble scorecard in posts
+const ScrambleScorecardInPost = ({
+  scrambleScorecardResult,
+  textContent,
+}: {
+  scrambleScorecardResult: NonNullable<ReturnType<typeof parseScrambleScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [userPosition, setUserPosition] = useState<number>(1);
+  const [userScoreToPar, setUserScoreToPar] = useState<string>("E");
+
+  // Build teams from parsed data
+  const teams = scrambleScorecardResult.teams.map(t => ({
+    id: t.id,
+    name: t.name,
+    players: t.players.map(p => ({
+      id: p.id,
+      name: p.name,
+    })),
+  }));
+
+  // Build holes from parsed data
+  const holes = Object.keys(scrambleScorecardResult.holeScores).map(holeNum => {
+    const holeNumInt = parseInt(holeNum);
+    return {
+      id: `hole-${holeNum}`,
+      game_id: scrambleScorecardResult.gameId || '',
+      hole_number: holeNumInt,
+      par: scrambleScorecardResult.holePars[holeNumInt] || 4,
+      stroke_index: null,
+      created_at: new Date().toISOString(),
+      team_scores: scrambleScorecardResult.holeScores[holeNumInt],
+    };
+  });
+
+  // Calculate team scores
+  const calculateTeamScores = () => {
+    return teams.map(team => {
+      let total = 0;
+      let parTotal = 0;
+
+      holes.forEach(hole => {
+        const score = hole.team_scores[team.id];
+        if (score !== null && score !== undefined && score > 0) {
+          total += score;
+          parTotal += hole.par;
+        }
+      });
+
+      return {
+        team,
+        total,
+        toPar: total - parTotal,
+      };
+    }).sort((a, b) => {
+      if (a.total === 0 && b.total === 0) return 0;
+      if (a.total === 0) return 1;
+      if (b.total === 0) return -1;
+      return a.total - b.total;
+    });
+  };
+
+  const teamScores = calculateTeamScores();
+
+  // Format score to par
+  const formatScoreToPar = (toPar: number) => {
+    if (toPar === 0) return 'E';
+    return toPar > 0 ? `+${toPar}` : `${toPar}`;
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (scrambleScorecardResult.gameId) {
+        // Fetch course holes from game data
+        const { data: gameData } = await supabase
+          .from("scramble_games")
+          .select("course_id, holes_played, user_id")
+          .eq("id", scrambleScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
+
+        // Calculate user's position
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, username")
+            .eq("id", user.id)
+            .single();
+
+          const participantNames = [profile?.display_name, profile?.username]
+            .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+            .map((v) => v.trim());
+
+          // Find which team the user is on
+          let userTeamId: string | null = null;
+          
+          for (const team of teams) {
+            for (const player of team.players) {
+              if (participantNames.includes(player.name)) {
+                userTeamId = team.id;
+                break;
+              }
+            }
+            if (userTeamId) break;
+          }
+
+          // If not found in teams but user owns the game, default to first team
+          if (!userTeamId && gameData?.user_id === user.id && teams.length > 0) {
+            userTeamId = teams[0].id;
+          }
+
+          if (userTeamId) {
+            const userTeamIndex = teamScores.findIndex(ts => ts.team.id === userTeamId);
+            if (userTeamIndex !== -1) {
+              setUserPosition(userTeamIndex + 1);
+              setUserScoreToPar(formatScoreToPar(teamScores[userTeamIndex].toPar));
+            }
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holePars
+      if (courseHoles.length === 0) {
+        const holesFromPars = Object.keys(scrambleScorecardResult.holePars)
+          .map(holeNum => ({
+            hole_number: parseInt(holeNum),
+            par: scrambleScorecardResult.holePars[parseInt(holeNum)],
+            stroke_index: parseInt(holeNum),
+          }))
+          .sort((a, b) => a.hole_number - b.hole_number);
+        setCourseHoles(holesFromPars);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [scrambleScorecardResult.gameId, scrambleScorecardResult.holePars]);
+
+  // Reconstruct minimal game object
+  const game = {
+    id: scrambleScorecardResult.gameId || '',
+    user_id: '',
+    course_name: scrambleScorecardResult.courseName,
+    course_id: null,
+    tee_set: null,
+    holes_played: courseHoles.length || 18,
+    date_played: scrambleScorecardResult.datePlayed,
+    created_at: new Date().toISOString(),
+    round_name: scrambleScorecardResult.roundName,
+    teams: teams,
+    min_drives_per_player: null,
+    use_handicaps: false,
+    scoring_type: 'gross' as const,
+    stats_mode: null,
+    is_finished: true,
+    winning_team: scrambleScorecardResult.winningTeam,
+  };
+
+  // Count total players
+  const totalPlayers = teams.reduce((sum, team) => sum + team.players.length, 0);
+
+  const handleHeaderClick = () => {
+    if (scrambleScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_scramble_${scrambleScorecardResult.gameId}`, 'true');
+      navigate(`/scramble/${scrambleScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (scrambleScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_scramble_${scrambleScorecardResult.gameId}`, 'true');
+      navigate(`/scramble/${scrambleScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <ScrambleScorecardView
+        roundName={scrambleScorecardResult.roundName}
+        courseName={scrambleScorecardResult.courseName}
+        datePlayed={scrambleScorecardResult.datePlayed}
+        playerCount={totalPlayers}
+        position={userPosition}
+        scoreToPar={userScoreToPar}
+        game={game}
+        teams={teams}
+        holes={holes}
+        courseHoles={courseHoles}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
+// Component to display Skins scorecard in posts
+const SkinsScorecardInPost = ({
+  skinsScorecardResult,
+  textContent,
+}: {
+  skinsScorecardResult: NonNullable<ReturnType<typeof parseSkinsScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [userPosition, setUserPosition] = useState<number>(1);
+  const [userSkinsWon, setUserSkinsWon] = useState<number>(0);
+  const { strokePlayEnabled } = useStrokePlayEnabled(skinsScorecardResult.gameId || '', 'skins');
+
+  // Build players array from parsed data
+  const players = Object.entries(skinsScorecardResult.playerScores).map(([id, data]) => ({
+    id,
+    odId: id,
+    name: data.name,
+    displayName: data.name,
+    skins: data.skins,
+  }));
+
+  // Sort players by skins
+  const sortedPlayers = [...players].sort((a, b) => b.skins - a.skins);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (skinsScorecardResult.gameId) {
+        // Fetch course holes and game owner from game data
+        const { data: gameData } = await supabase
+          .from("skins_games")
+          .select("course_id, holes_played, user_id")
+          .eq("id", skinsScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
+
+        // Calculate user's position
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, username")
+            .eq("id", user.id)
+            .single();
+
+          const participantNames = [profile?.display_name, profile?.username]
+            .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+            .map((v) => v.trim());
+
+          // Find which player the user is
+          let userPlayerId: string | null = null;
+          
+          for (const player of players) {
+            if (participantNames.includes(player.name)) {
+              userPlayerId = player.id;
+              break;
+            }
+          }
+
+          // If not found by name but user owns the game, default to first player
+          if (!userPlayerId && gameData?.user_id === user.id && players.length > 0) {
+            userPlayerId = players[0].id;
+          }
+
+          if (userPlayerId) {
+            const userSkins = skinsScorecardResult.playerScores[userPlayerId]?.skins || 0;
+            const position = sortedPlayers.filter(p => p.skins > userSkins).length + 1;
+            
+            setUserPosition(position);
+            setUserSkinsWon(userSkins);
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holeResults
+      if (courseHoles.length === 0 && skinsScorecardResult.holeResults) {
+        const holesFromResults = Object.keys(skinsScorecardResult.holeResults)
+          .map(holeNum => ({
+            hole_number: parseInt(holeNum),
+            par: skinsScorecardResult.holeResults[parseInt(holeNum)]?.par || 4,
+            stroke_index: parseInt(holeNum),
+          }))
+          .sort((a, b) => a.hole_number - b.hole_number);
+        setCourseHoles(holesFromResults);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [skinsScorecardResult.gameId, skinsScorecardResult.holeResults, skinsScorecardResult.playerScores]);
+
+  const handleHeaderClick = () => {
+    if (skinsScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_skins_${skinsScorecardResult.gameId}`, 'true');
+      navigate(`/skins/${skinsScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (skinsScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_skins_${skinsScorecardResult.gameId}`, 'true');
+      navigate(`/skins/${skinsScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  // Build holes array from parsed data
+  const holes = Object.entries(skinsScorecardResult.holeResults).map(([holeNum, data]) => {
+    const holeNumInt = parseInt(holeNum);
+    return {
+      id: `hole-${holeNum}`,
+      game_id: skinsScorecardResult.gameId || '',
+      hole_number: holeNumInt,
+      par: data.par,
+      player_scores: data.playerScores || {},
+      winner_player: data.winnerId,
+      skins_available: data.skinsAvailable,
+      is_carryover: false,
+    };
+  });
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <SkinsScorecardView
+        roundName={skinsScorecardResult.roundName}
+        courseName={skinsScorecardResult.courseName}
+        datePlayed={skinsScorecardResult.datePlayed}
+        playerCount={players.length}
+        position={userPosition}
+        skinsWon={userSkinsWon}
+        players={players}
+        holes={holes}
+        courseHoles={courseHoles}
+        strokePlayEnabled={strokePlayEnabled}
+        onHeaderClick={handleHeaderClick}
+        onScorecardClick={handleScorecardClick}
+      />
+    </div>
+  );
+};
+
+// Component to display Wolf scorecard in posts
+const WolfScorecardInPost = ({
+  wolfScorecardResult,
+  textContent,
+}: {
+  wolfScorecardResult: NonNullable<ReturnType<typeof parseWolfScorecardResult>>;
+  textContent?: string;
+}) => {
+  const navigate = useNavigate();
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [userPosition, setUserPosition] = useState<number>(1);
+  const [userPointsWon, setUserPointsWon] = useState<number>(0);
+  const { strokePlayEnabled } = useStrokePlayEnabled(wolfScorecardResult.gameId || '', 'wolf');
+
+  // Build players array from parsed data
+  const players = Object.entries(wolfScorecardResult.playerScores).map(([num, data]) => ({
+    num: parseInt(num),
+    name: data.name,
+    points: data.points,
+  }));
+
+  // Sort players by points
+  const sortedPlayers = [...players].sort((a, b) => b.points - a.points);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (wolfScorecardResult.gameId) {
+        // Fetch course holes and game owner from game data
+        const { data: gameData } = await supabase
+          .from("wolf_games")
+          .select("course_id, holes_played, user_id")
+          .eq("id", wolfScorecardResult.gameId)
+          .single();
+
+        if (gameData?.course_id) {
+          const { data: holesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (holesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? holesData.slice(0, 9) 
+              : holesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
+
+        // Calculate user's position
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, username")
+            .eq("id", user.id)
+            .single();
+
+          const participantNames = [profile?.display_name, profile?.username]
+            .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+            .map((v) => v.trim());
+
+          // Find which player the user is
+          let userPlayerNum: number | null = null;
+          
+          for (const player of players) {
+            if (participantNames.includes(player.name)) {
+              userPlayerNum = player.num;
+              break;
+            }
+          }
+
+          // If not found by name but user owns the game, default to first player
+          if (!userPlayerNum && gameData?.user_id === user.id && players.length > 0) {
+            userPlayerNum = 1;
+          }
+
+          if (userPlayerNum) {
+            const userPoints = wolfScorecardResult.playerScores[userPlayerNum.toString()]?.points || 0;
+            const position = sortedPlayers.filter(p => p.points > userPoints).length + 1;
+            
+            setUserPosition(position);
+            setUserPointsWon(userPoints);
+          }
+        }
+      }
+
+      // Fallback: construct course holes from holeResults
+      if (courseHoles.length === 0 && wolfScorecardResult.holeResults) {
+        const holesFromResults = Object.keys(wolfScorecardResult.holeResults)
+          .map(holeNum => ({
+            hole_number: parseInt(holeNum),
+            par: wolfScorecardResult.holeResults[parseInt(holeNum)]?.par || 4,
+            stroke_index: parseInt(holeNum),
+          }))
+          .sort((a, b) => a.hole_number - b.hole_number);
+        setCourseHoles(holesFromResults);
+      }
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [wolfScorecardResult.gameId, wolfScorecardResult.holeResults, wolfScorecardResult.playerScores]);
+
+  const handleHeaderClick = () => {
+    if (wolfScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_wolf_${wolfScorecardResult.gameId}`, 'true');
+      navigate(`/wolf/${wolfScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    if (wolfScorecardResult.gameId) {
+      sessionStorage.setItem(`spectator_wolf_${wolfScorecardResult.gameId}`, 'true');
+      navigate(`/wolf/${wolfScorecardResult.gameId}/leaderboard`);
+    } else {
+      toast.error("Game details not found");
+    }
+  };
+
+  if (loading) {
+    return <div className="text-muted-foreground text-sm">Loading scorecard...</div>;
+  }
+
+  // Build holes array from parsed data
+  const holes = Object.entries(wolfScorecardResult.holeResults).map(([holeNum, data]) => {
+    const holeNumInt = parseInt(holeNum);
+    return {
+      hole_number: holeNumInt,
+      par: data.par,
+      scores: data.scores,
+      points: data.points,
+    };
+  });
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      <WolfScorecardView
+        roundName={wolfScorecardResult.roundName}
+        courseName={wolfScorecardResult.courseName}
+        datePlayed={wolfScorecardResult.datePlayed}
+        playerCount={players.length}
+        position={userPosition}
+        pointsWon={userPointsWon}
+        players={players}
+        holes={holes}
+        courseHoles={courseHoles}
+        strokePlayEnabled={strokePlayEnabled}
         onHeaderClick={handleHeaderClick}
         onScorecardClick={handleScorecardClick}
       />
@@ -1630,10 +2677,15 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const roundScorecardResult = parseRoundScorecardResult(post.content);
   const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
   const bestBallScorecardResult = parseBestBallScorecardResult(post.content);
+  const bestBallStrokePlayScorecardResult = parseBestBallStrokePlayScorecardResult(post.content);
   const roundResult = !roundScorecardResult ? parseRoundResult(post.content) : null;
   const umbriagioScorecardResult = parseUmbriagioScorecardResult(post.content);
   const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(post.content) : null;
-  const gameResult = !matchPlayScorecardResult && !bestBallScorecardResult ? parseGameResult(post.content) : null;
+  const copenhagenScorecardResult = parseCopenhagenScorecardResult(post.content);
+  const scrambleScorecardResult = parseScrambleScorecardResult(post.content);
+  const skinsScorecardResult = parseSkinsScorecardResult(post.content);
+  const wolfScorecardResult = parseWolfScorecardResult(post.content);
+  const gameResult = !matchPlayScorecardResult && !bestBallScorecardResult && !bestBallStrokePlayScorecardResult && !copenhagenScorecardResult && !scrambleScorecardResult && !skinsScorecardResult && !wolfScorecardResult ? parseGameResult(post.content) : null;
 
   return (
     <>
@@ -1784,6 +2836,12 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 fallbackRoundName={gameResult.roundName}
               />
             )}
+            {bestBallStrokePlayScorecardResult && (
+              <BestBallStrokePlayScorecardInPost
+                bestBallStrokePlayScorecardResult={bestBallStrokePlayScorecardResult}
+                textContent={bestBallStrokePlayScorecardResult.textContent}
+              />
+            )}
           </div>
         ) : drillResult ? (
           <div className="space-y-3">
@@ -1911,6 +2969,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             bestBallScorecardResult={bestBallScorecardResult}
             textContent={bestBallScorecardResult.textContent}
             />
+        ) : bestBallStrokePlayScorecardResult ? (
+          <BestBallStrokePlayScorecardInPost
+            bestBallStrokePlayScorecardResult={bestBallStrokePlayScorecardResult}
+            textContent={bestBallStrokePlayScorecardResult.textContent}
+          />
         ) : roundResult ? (
           <div className="space-y-3">
             {roundResult.textContent && (
@@ -1979,6 +3042,26 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
           <UmbriagioScorecardInPost
             umbriagioScorecardResult={umbriagioScorecardResult}
             textContent={umbriagioScorecardResult.textContent}
+          />
+        ) : copenhagenScorecardResult ? (
+          <CopenhagenScorecardInPost
+            copenhagenScorecardResult={copenhagenScorecardResult}
+            textContent={copenhagenScorecardResult.textContent}
+          />
+        ) : scrambleScorecardResult ? (
+          <ScrambleScorecardInPost
+            scrambleScorecardResult={scrambleScorecardResult}
+            textContent={scrambleScorecardResult.textContent}
+          />
+        ) : skinsScorecardResult ? (
+          <SkinsScorecardInPost
+            skinsScorecardResult={skinsScorecardResult}
+            textContent={skinsScorecardResult.textContent}
+          />
+        ) : wolfScorecardResult ? (
+          <WolfScorecardInPost
+            wolfScorecardResult={wolfScorecardResult}
+            textContent={wolfScorecardResult.textContent}
           />
         ) : umbriagioResult ? (
           <div className="space-y-3">

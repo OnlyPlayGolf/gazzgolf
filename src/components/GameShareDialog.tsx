@@ -118,7 +118,7 @@ export function GameShareDialog({
                 placeholder="Add a comment (optional)..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="min-h-[80px]"
+                rows={1}
               />
               <div className="flex gap-2">
                 <Button

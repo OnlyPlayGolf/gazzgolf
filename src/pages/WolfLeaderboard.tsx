@@ -15,6 +15,7 @@ import { LeaderboardModeTabs, LeaderboardMode } from "@/components/LeaderboardMo
 import { StrokePlayLeaderboardView, StrokePlayPlayer } from "@/components/StrokePlayLeaderboardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
+import { WolfCompletionModal } from "@/components/WolfCompletionModal";
 import {
   Table,
   TableBody,
@@ -40,6 +41,7 @@ export default function WolfLeaderboard() {
   const [expandedPlayerId, setExpandedPlayerId] = useState<number | null>(1);
   const [loading, setLoading] = useState(true);
   const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   // Check spectator status for leaderboard sorting
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
@@ -194,11 +196,8 @@ export default function WolfLeaderboard() {
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
   const backNine = courseHoles.filter(h => h.hole_number > 9);
 
-  const handleFinishGame = async () => {
-    if (!gameId) return;
-    await supabase.from("wolf_games").update({ is_finished: true }).eq("id", gameId);
-    toast({ title: "Game finished!" });
-    navigate("/");
+  const handleFinishGame = () => {
+    setShowCompletionDialog(true);
   };
 
   const handleDeleteGame = async () => {
@@ -555,6 +554,16 @@ export default function WolfLeaderboard() {
       </div>
 
       {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+
+      {game && (
+        <WolfCompletionModal
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={game}
+          holes={holes}
+          courseHoles={courseHoles}
+        />
+      )}
     </div>
   );
 }

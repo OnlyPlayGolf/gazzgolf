@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
-import { ScrambleGame, ScrambleTeam } from "@/types/scramble";
+import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
@@ -24,6 +24,7 @@ import {
 } from "@/components/settings";
 import { getTeeDisplayName } from "@/components/TeeSelector";
 import { GameHeader } from "@/components/GameHeader";
+import { ScrambleCompletionDialog } from "@/components/ScrambleCompletionDialog";
 
 export default function ScrambleSettings() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -37,9 +38,12 @@ export default function ScrambleSettings() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [holes, setHoles] = useState<ScrambleHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
 
   // Per-player stats mode
   const { 
@@ -91,6 +95,37 @@ export default function ScrambleSettings() {
         setMinDrives(data.min_drives_per_player?.toString() || 'none');
         setUseHandicaps(data.use_handicaps);
         setScoringType(data.scoring_type as 'gross' | 'net');
+
+        // Fetch holes data for completion dialog
+        const { data: holesData } = await supabase
+          .from("scramble_holes")
+          .select("*")
+          .eq("game_id", gameId)
+          .order("hole_number");
+
+        if (holesData) {
+          setHoles(holesData.map(h => ({
+            ...h,
+            team_scores: (h.team_scores as Record<string, number | null>) || {},
+            team_tee_shots: ((h as Record<string, unknown>).team_tee_shots as Record<string, string | null>) || {}
+          })));
+        }
+
+        // Fetch course holes for scorecard structure
+        if (data.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", data.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            const filteredHoles = data.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -154,7 +189,7 @@ export default function ScrambleSettings() {
         .eq('id', gameId);
       
       toast.success("Game finished!");
-      navigate("/");
+      setShowCompletionDialog(true);
     } catch (error) {
       toast.error("Failed to finish game");
     }
@@ -357,6 +392,18 @@ export default function ScrambleSettings() {
         onConfirm={handleLeaveGame}
         leaving={leaving}
       />
+
+      {/* Completion Dialog */}
+      {game && (
+        <ScrambleCompletionDialog
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={game}
+          teams={game.teams}
+          holes={holes}
+          courseHoles={courseHoles}
+        />
+      )}
 
       <ScrambleBottomTabBar gameId={gameId!} isSpectator={isSpectator} />
     </div>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ScorecardScoreCell } from "@/components/ScorecardScoreCell";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { GameHeader } from "@/components/GameHeader";
 import { GameNotFound } from "@/components/GameNotFound";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import { ScrambleCompletionDialog } from "@/components/ScrambleCompletionDialog";
 import {
   Table,
   TableBody,
@@ -37,22 +38,20 @@ interface TeamScore {
 export default function ScrambleLeaderboard() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [teams, setTeams] = useState<ScrambleTeam[]>([]);
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<CourseHole[]>([]);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   // Check spectator status - for sorting leaderboard by position
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
   const { isAdmin } = useGameAdminStatus('scramble', gameId);
 
-  useEffect(() => {
-    if (gameId) fetchData();
-  }, [gameId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     // Fetch game
     const { data: gameData } = await supabase
       .from('scramble_games')
@@ -100,7 +99,12 @@ export default function ScrambleLeaderboard() {
         team_tee_shots: ((h as Record<string, unknown>).team_tee_shots as Record<string, string | null>) || {}
       })));
     }
-  };
+  }, [gameId]);
+
+  // Refetch data when navigating to this page (e.g., from Enter Score tab)
+  useEffect(() => {
+    if (gameId) fetchData();
+  }, [gameId, location.pathname, fetchData]);
 
   const calculateTeamScores = (): TeamScore[] => {
     const unsortedScores = teams.map(team => {
@@ -449,7 +453,7 @@ export default function ScrambleLeaderboard() {
       const winningTeam = teamScores[0]?.team?.name || null;
       await supabase.from("scramble_games").update({ is_finished: true, winning_team: winningTeam }).eq("id", gameId);
       toast({ title: "Game finished!" });
-      navigate("/");
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -484,6 +488,18 @@ export default function ScrambleLeaderboard() {
       </div>
 
       {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+
+      {/* Completion Dialog */}
+      {game && (
+        <ScrambleCompletionDialog
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={game}
+          teams={teams}
+          holes={holes}
+          courseHoles={courseHoles}
+        />
+      )}
     </div>
   );
 }

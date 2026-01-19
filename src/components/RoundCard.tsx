@@ -45,15 +45,21 @@ export interface RoundCardData {
   // Skins-specific: player's position and number of skins won
   skinsPosition?: number | null;
   skinsWon?: number | null;
+  
+  // Best Ball stroke play specific: team's total score and score to par
+  bestBallTotalScore?: number | null;
+  bestBallScoreToPar?: number | null;
 }
 
 interface RoundCardProps {
   round: RoundCardData;
   className?: string;
   onClick?: () => void;
+  /** When true, the card is display-only: no click handler, no hover effects, no chevron */
+  disabled?: boolean;
 }
 
-export function RoundCard({ round, className, onClick }: RoundCardProps) {
+export function RoundCard({ round, className, onClick, disabled = false }: RoundCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -70,6 +76,7 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   };
 
   const handleClick = () => {
+    if (disabled) return;
     if (onClick) {
       onClick();
     } else {
@@ -84,6 +91,12 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
   // Check if this is a match play format (including best ball match play)
   const isMatchPlay = round.gameType === 'match_play' || 
     (round.gameType === 'best_ball' && round.matchResult);
+  
+  // Check if this is a Best Ball stroke play with score data
+  const isBestBallStrokePlay = round.gameType === 'best_ball' && 
+    !round.matchResult && 
+    round.bestBallTotalScore !== null && 
+    round.bestBallTotalScore !== undefined;
   
   // Check if this is a scramble with position data
   const isScramble = round.gameType === 'scramble' && round.scramblePosition;
@@ -120,8 +133,12 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
 
   return (
     <Card 
-      className={`cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all ${className || ''}`}
-      onClick={handleClick}
+      className={`bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 transition-all ${
+        disabled 
+          ? '' 
+          : 'cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98]'
+      } ${className || ''}`}
+      onClick={disabled ? undefined : handleClick}
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
@@ -193,6 +210,15 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
                   </div>
                 )}
               </div>
+            ) : isBestBallStrokePlay ? (
+              <div className="flex flex-col items-center">
+                <div className="text-2xl font-bold text-foreground">
+                  {round.bestBallTotalScore}
+                </div>
+                <div className={`text-xs ${(round.bestBallScoreToPar ?? 0) <= 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                  {formatScoreToPar(round.bestBallScoreToPar ?? 0)}
+                </div>
+              </div>
             ) : showScore ? (
               <div className="flex flex-col items-center">
                 <div className="text-2xl font-bold text-foreground">
@@ -228,8 +254,10 @@ export function RoundCard({ round, className, onClick }: RoundCardProps) {
             </div>
           </div>
           
-          {/* Right: Chevron */}
-          <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
+          {/* Right: Chevron - hidden when disabled */}
+          {!disabled && (
+            <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
+          )}
         </div>
       </CardContent>
     </Card>

@@ -575,7 +575,23 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     });
   }
 
-  // Best Ball
+  // Best Ball - fetch holes data for stroke play games to calculate scores
+  const bestBallGameIds = bestBallGames.map((g: any) => g.id);
+  let bestBallHolesMap = new Map<string, any[]>();
+  
+  if (bestBallGameIds.length > 0) {
+    const { data: bestBallHoles } = await supabase
+      .from("best_ball_holes")
+      .select("game_id, par, team_a_best_gross, team_b_best_gross")
+      .in("game_id", bestBallGameIds);
+    
+    for (const hole of bestBallHoles || []) {
+      const existing = bestBallHolesMap.get(hole.game_id) || [];
+      existing.push(hole);
+      bestBallHolesMap.set(hole.game_id, existing);
+    }
+  }
+  
   for (const game of bestBallGames) {
     const teamA = Array.isArray(game.team_a_players) ? game.team_a_players : [];
     const teamB = Array.isArray(game.team_b_players) ? game.team_b_players : [];
@@ -584,19 +600,24 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // game_type can be 'match', 'match_play', or 'stroke_play'
     let matchResult: 'W' | 'L' | 'T' | null = null;
     let matchFinalScore: string | null = null;
+    let bestBallTotalScore: number | null = null;
+    let bestBallScoreToPar: number | null = null;
     const isMatchPlayFormat = game.game_type === 'match_play' || game.game_type === 'match';
     
+    // Find which team the user is on - check both name and displayName
+    const userInTeamA = teamA.some((p: any) => {
+      const pName = typeof p === 'string' ? p : (p?.name || p?.displayName);
+      return pName && participantNames.includes(pName);
+    });
+    const userInTeamB = teamB.some((p: any) => {
+      const pName = typeof p === 'string' ? p : (p?.name || p?.displayName);
+      return pName && participantNames.includes(pName);
+    });
+    
+    // Default to team A if user owns the game but isn't in either team list
+    const userTeam = userInTeamA ? 'A' : userInTeamB ? 'B' : (game.user_id === targetUserId ? 'A' : null);
+    
     if (isMatchPlayFormat && game.is_finished) {
-      // Find which team the user is on - check both name and displayName
-      const userInTeamA = teamA.some((p: any) => {
-        const pName = typeof p === 'string' ? p : (p?.name || p?.displayName);
-        return pName && participantNames.includes(pName);
-      });
-      const userInTeamB = teamB.some((p: any) => {
-        const pName = typeof p === 'string' ? p : (p?.name || p?.displayName);
-        return pName && participantNames.includes(pName);
-      });
-      
       // Get match status (positive = team A winning, negative = team B winning)
       // Use match_status as source of truth since winner_team can be inconsistent
       const matchStatus = game.match_status || 0;
@@ -622,6 +643,27 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
         matchResult = teamAWon ? 'W' : 'L';
         matchFinalScore = teamAWon ? `${matchStatus} UP` : `${Math.abs(matchStatus)} DOWN`;
       }
+    } else if (!isMatchPlayFormat && userTeam) {
+      // Stroke play Best Ball - calculate total score and score to par for user's team
+      const holes = bestBallHolesMap.get(game.id) || [];
+      
+      if (holes.length > 0) {
+        let totalScore = 0;
+        let totalPar = 0;
+        
+        for (const hole of holes) {
+          const teamScore = userTeam === 'A' ? hole.team_a_best_gross : hole.team_b_best_gross;
+          if (teamScore !== null && teamScore > 0) {
+            totalScore += teamScore;
+            totalPar += hole.par || 0;
+          }
+        }
+        
+        if (totalScore > 0) {
+          bestBallTotalScore = totalScore;
+          bestBallScoreToPar = totalScore - totalPar;
+        }
+      }
     }
 
     allRounds.push({
@@ -637,6 +679,8 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       ownerUserId: game.user_id || targetUserId,
       matchResult,
       matchFinalScore,
+      bestBallTotalScore,
+      bestBallScoreToPar,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }

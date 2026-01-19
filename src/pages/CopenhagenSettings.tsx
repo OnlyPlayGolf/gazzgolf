@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { CopenhagenGame } from "@/types/copenhagen";
+import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ import {
 } from "@/components/settings";
 import { getTeeDisplayName } from "@/components/TeeSelector";
 import { GameHeader } from "@/components/GameHeader";
+import { CopenhagenCompletionDialog } from "@/components/CopenhagenCompletionDialog";
 
 export default function CopenhagenSettings() {
   const { gameId } = useParams();
@@ -36,9 +37,12 @@ export default function CopenhagenSettings() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [holes, setHoles] = useState<CopenhagenHole[]>([]);
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
 
   // Per-player stats mode
   const { 
@@ -104,6 +108,33 @@ export default function CopenhagenSettings() {
       if (gameData) {
         setGame(gameData as CopenhagenGame);
         setUseHandicaps(gameData.use_handicaps || false);
+
+        // Fetch holes data for completion dialog
+        const { data: holesData } = await supabase
+          .from("copenhagen_holes")
+          .select("*")
+          .eq("game_id", gameId)
+          .order("hole_number");
+
+        if (holesData) {
+          setHoles(holesData as CopenhagenHole[]);
+        }
+
+        // Fetch course holes for scorecard structure
+        if (gameData.course_id) {
+          const { data: courseHolesData } = await supabase
+            .from("course_holes")
+            .select("hole_number, par, stroke_index")
+            .eq("course_id", gameData.course_id)
+            .order("hole_number");
+
+          if (courseHolesData) {
+            const filteredHoles = gameData.holes_played === 9 
+              ? courseHolesData.slice(0, 9) 
+              : courseHolesData;
+            setCourseHoles(filteredHoles);
+          }
+        }
       }
     } catch (error) {
       console.error("Error loading game:", error);
@@ -166,7 +197,7 @@ export default function CopenhagenSettings() {
         .eq("id", game.id);
 
       toast({ title: "Game finished!" });
-      navigate("/");
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -419,6 +450,17 @@ export default function CopenhagenSettings() {
         onConfirm={handleLeaveGame}
         leaving={leaving}
       />
+
+      {/* Completion Dialog */}
+      {game && (
+        <CopenhagenCompletionDialog
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={game}
+          holes={holes}
+          courseHoles={courseHoles}
+        />
+      )}
 
       {gameId && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
     </div>

@@ -18,18 +18,21 @@ interface PlayerScore {
   name: string;
   scores: Map<number, number>;
   totalScore: number;
+  team?: 'A' | 'B'; // Optional team assignment for coloring
 }
 
 interface StrokePlayScorecardViewProps {
   players: PlayerScore[];
   courseHoles: CourseHole[];
   showNetRow?: boolean; // Optional prop to control Net row visibility, defaults to true
+  showTeamColors?: boolean; // Optional prop to enable team-based coloring
 }
 
 export function StrokePlayScorecardView({
   players,
   courseHoles,
   showNetRow = true, // Default to true to match RoundLeaderboard behavior
+  showTeamColors = false, // Default to false for backward compatibility
 }: StrokePlayScorecardViewProps) {
   const frontNine = courseHoles.filter(h => h.hole_number <= 9);
   const backNine = courseHoles.filter(h => h.hole_number > 9);
@@ -93,10 +96,13 @@ export function StrokePlayScorecardView({
 
           {players.flatMap((player, index) => {
             const nineTotal = isBackNine ? getPlayerBackNineTotal(player) : getPlayerFrontNineTotal(player);
+            const teamColorClass = showTeamColors && player.team 
+              ? (player.team === 'A' ? 'text-blue-600' : 'text-red-600')
+              : '';
             
             return [
               <TableRow key={`player-${index}`}>
-                <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">
+                <TableCell className={`font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate ${teamColorClass}`}>
                   {player.name.split(' ')[0]}
                 </TableCell>
                 {nineHoles.map(hole => {

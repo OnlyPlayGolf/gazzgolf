@@ -14,6 +14,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
 import { useToast } from "@/hooks/use-toast";
+import { SkinsCompletionModal } from "@/components/SkinsCompletionModal";
 import {
   Table,
   TableBody,
@@ -75,6 +76,7 @@ export default function SkinsLeaderboard() {
   const [playerResults, setPlayerResults] = useState<PlayerSkinResult[]>([]);
   const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
   const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   const { isSpectator } = useIsSpectator('skins', roundId);
   const { strokePlayEnabled } = useStrokePlayEnabled(roundId, 'skins');
@@ -84,7 +86,7 @@ export default function SkinsLeaderboard() {
     if (!roundId) return;
     await supabase.from("skins_games").update({ is_finished: true }).eq("id", roundId);
     toast({ title: "Game finished" });
-    navigate("/");
+    setShowCompletionDialog(true);
   };
 
   const handleDeleteGame = async () => {
@@ -616,6 +618,45 @@ export default function SkinsLeaderboard() {
       )}
 
       {roundId && <SkinsBottomTabBar roundId={roundId} />}
+
+      {/* Completion Dialog */}
+      {game && (
+        <SkinsCompletionModal
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          game={{
+            id: game.id,
+            course_name: game.course_name,
+            date_played: new Date().toISOString().split('T')[0],
+            holes_played: game.holes_played,
+            round_name: game.round_name,
+            user_id: '',
+            is_finished: game.is_finished,
+            skin_value: 1,
+            carryover_enabled: game.carryover_enabled,
+            use_handicaps: game.use_handicaps,
+            players: game.players,
+          }}
+          holes={holes.map(h => ({
+            id: h.id,
+            game_id: h.game_id,
+            hole_number: h.hole_number,
+            par: h.par,
+            player_scores: h.player_scores,
+            winner_player: h.winner_player,
+            skins_available: h.skins_available,
+            is_carryover: h.is_carryover,
+          }))}
+          players={game.players.map((p: any) => ({
+            id: p.odId || p.id || p.name,
+            odId: p.odId,
+            name: p.name,
+            displayName: p.displayName || p.name,
+            handicap: p.handicap,
+          }))}
+          courseHoles={courseHoles}
+        />
+      )}
     </div>
   );
 }

@@ -1844,6 +1844,7 @@ export type Database = {
           par: number
           stroke_index: number | null
           team_scores: Json
+          team_tee_shots: Json
         }
         Insert: {
           created_at?: string | null
@@ -1853,6 +1854,7 @@ export type Database = {
           par?: number
           stroke_index?: number | null
           team_scores?: Json
+          team_tee_shots?: Json
         }
         Update: {
           created_at?: string | null
@@ -1862,6 +1864,7 @@ export type Database = {
           par?: number
           stroke_index?: number | null
           team_scores?: Json
+          team_tee_shots?: Json
         }
         Relationships: [
           {
