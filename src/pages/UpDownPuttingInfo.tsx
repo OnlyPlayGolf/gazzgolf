@@ -8,14 +8,14 @@ export default function UpDownPuttingInfo() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-foreground">
             <BookOpen size={20} className="text-primary" />
-            Drill Guide
+            Guide
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <h3 className="font-semibold text-sm">Overview</h3>
             <p className="text-sm text-muted-foreground">
-              This putting drill sharpens your speed control and consistency across varying slopes. It trains you to manage pace and break from uphill and downhill putts.
+              This putting practice sharpens your speed control and consistency across varying slopes. It trains you to manage pace and break from uphill and downhill putts.
             </p>
           </div>
 

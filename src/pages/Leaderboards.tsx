@@ -10,6 +10,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
+const getDrillDisplayTitle = (title: string): string => {
+  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
+  if (title === "Short Putting Test") return "Short Putting";
+  return title;
+};
+
 
 interface LevelLeaderboardEntry {
   user_id: string;
@@ -329,7 +335,7 @@ const Leaderboards = () => {
                       <SelectLabel>Putting</SelectLabel>
                       {drills.filter(d => ['Aggressive Putting', 'PGA Tour 18 Holes', 'Short Putting Test', "Up & Down Putting Drill", "Jason Day's Lag Drill"].includes(d.title)).map((drill) => (
                         <SelectItem key={drill.id} value={drill.title}>
-                          {drill.title}
+                          {getDrillDisplayTitle(drill.title)}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -337,7 +343,7 @@ const Leaderboards = () => {
                       <SelectLabel>Short Game</SelectLabel>
                       {drills.filter(d => ['8-Ball Drill', '18 Up & Downs'].includes(d.title)).map((drill) => (
                         <SelectItem key={drill.id} value={drill.title}>
-                          {drill.title}
+                          {getDrillDisplayTitle(drill.title)}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -345,7 +351,7 @@ const Leaderboards = () => {
                       <SelectLabel>Approach</SelectLabel>
                       {drills.filter(d => ['Approach Control', "TW's 9 Windows Test"].includes(d.title)).map((drill) => (
                         <SelectItem key={drill.id} value={drill.title}>
-                          {drill.title}
+                          {getDrillDisplayTitle(drill.title)}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -353,7 +359,7 @@ const Leaderboards = () => {
                       <SelectLabel>Tee Shots</SelectLabel>
                       {drills.filter(d => ['Shot Shape Master', 'Driver Control Drill'].includes(d.title)).map((drill) => (
                         <SelectItem key={drill.id} value={drill.title}>
-                          {drill.title}
+                          {getDrillDisplayTitle(drill.title)}
                         </SelectItem>
                       ))}
                     </SelectGroup>

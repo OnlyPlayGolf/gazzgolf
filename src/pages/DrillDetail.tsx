@@ -44,9 +44,9 @@ const drills: Record<string, Drill> = {
   },
   'up-down-putting': {
     id: 'up-down-putting',
-    title: 'Up & Down Putting Drill',
+    title: 'Up & Down Putting',
     shortDescription: 'Practice distance control on uphill and downhill putts from 6m, 8m, and 10m.',
-    longDescription: 'A comprehensive drill to master distance control and speed consistency on both uphill and downhill putts. Hit 3 putts from each marker at 6m, 8m, and 10m on both uphill and downhill slopes for a total of 18 putts. Score like golf: holed putts are birdies (-1), inside 3 feet is par (0), and outside is a bogey (+1). Tour average is +0.64.',
+    longDescription: 'A comprehensive practice to master distance control and speed consistency on both uphill and downhill putts. Hit 3 putts from each marker at 6m, 8m, and 10m on both uphill and downhill slopes for a total of 18 putts. Score like golf: holed putts are birdies (-1), inside 3 feet is par (0), and outside is a bogey (+1). Tour average is +0.64.',
     category: 'Putting',
     icon: Target,
   },

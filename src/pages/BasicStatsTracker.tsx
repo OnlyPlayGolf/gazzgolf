@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TopNavBar } from "@/components/TopNavBar";
 
 interface BasicHoleData {
   par: number;
@@ -337,15 +338,23 @@ const BasicStatsTracker = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen bg-background">
+        <TopNavBar />
+        <div className="pt-20 flex items-center justify-center">
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <div className="p-4">
+      <TopNavBar />
+      <div className="p-4 pt-20">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-foreground">Add Stats</h1>
+          <p className="text-sm text-muted-foreground">{round?.course_name}</p>
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <Button variant="ghost" onClick={() => navigate("/rounds/pro-setup")}>
@@ -353,7 +362,6 @@ const BasicStatsTracker = () => {
             Back
           </Button>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">{round?.course_name}</p>
             <p className="font-bold text-lg">{getScoreToPar()}</p>
           </div>
         </div>

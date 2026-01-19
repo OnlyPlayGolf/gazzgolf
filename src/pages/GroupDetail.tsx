@@ -17,6 +17,12 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
+const getDrillDisplayTitle = (title: string): string => {
+  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
+  if (title === "Short Putting Test") return "Short Putting";
+  return title;
+};
+
 interface Member {
   user_id: string;
   role: 'owner' | 'admin' | 'member';
@@ -1280,7 +1286,7 @@ useEffect(() => {
                             <optgroup key={category} label={category}>
                               {categoryDrills.map(drill => (
                                 <option key={drill.id} value={drill.title}>
-                                  {drill.title}
+                                  {getDrillDisplayTitle(drill.title)}
                                 </option>
                               ))}
                             </optgroup>

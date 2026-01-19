@@ -32,7 +32,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Short Putting Test</div>
+                  <div>Short Putting</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • Under pressure
                   </div>
@@ -126,7 +126,7 @@ const PuttingDrills = () => {
                 onClick={() => navigate('/drill/up-down-putting/score')}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                Open Drill
+                Open
               </Button>
             </CardContent>
           </Card>

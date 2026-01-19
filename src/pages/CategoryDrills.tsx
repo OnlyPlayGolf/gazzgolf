@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TopNavBar } from "@/components/TopNavBar";
 
 const allDrills = [
+  // Putting (custom order applied below)
   {
     id: 'aggressive-putting',
     title: 'Aggressive Putting',
@@ -31,14 +32,14 @@ const allDrills = [
   },
   {
     id: 'short-putting-test',
-    title: 'Short Putting Test',
+    title: 'Short Putting',
     shortDescription: "Start at 3 feet. Make putts from four positions around the hole to move back. Miss once and restart.",
     category: 'putting',
     icon: Target,
   },
   {
     id: 'up-down-putting',
-    title: 'Up & Down Putting Drill',
+    title: 'Up & Down Putting',
     shortDescription: 'A speed control test that challenges you on both uphill and downhill putts. Learn how elevation changes affect your pace and break.',
     category: 'putting',
     icon: Target,
@@ -196,6 +197,20 @@ const CategoryDrills = () => {
     // Custom order for shortgame category
     if (categoryId === 'shortgame') {
       const order = ['easy-chip', '8-ball-drill', 'up-downs-test'];
+      return drills.sort((a, b) => {
+        const indexA = order.indexOf(a.id);
+        const indexB = order.indexOf(b.id);
+        // If drill not in order array, put it at the end
+        if (indexA === -1 && indexB === -1) return a.title.localeCompare(b.title);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+    }
+
+    // Custom order for putting category
+    if (categoryId === 'putting') {
+      const order = ['short-putting-test', 'pga-tour-18', 'aggressive-putting', 'up-down-putting', 'jason-day-lag'];
       return drills.sort((a, b) => {
         const indexA = order.indexOf(a.id);
         const indexB = order.indexOf(b.id);
