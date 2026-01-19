@@ -27,7 +27,7 @@ interface WolfHoleData {
 interface CourseHole {
   hole_number: number;
   par: number;
-  stroke_index: number;
+  stroke_index?: number;
 }
 
 interface WolfScorecardViewProps {

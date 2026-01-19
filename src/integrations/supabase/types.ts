@@ -896,6 +896,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          image_url: string | null
           is_coach_group: boolean
           name: string
           owner_id: string
@@ -904,6 +905,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           is_coach_group?: boolean
           name: string
           owner_id: string
@@ -912,6 +914,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           is_coach_group?: boolean
           name?: string
           owner_id?: string

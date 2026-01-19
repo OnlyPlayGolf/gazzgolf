@@ -19,6 +19,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
+import { OngoingRoundsSection } from "@/components/OngoingRoundsSection";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
@@ -509,6 +510,9 @@ const Index = () => {
             </ScrollArea>
           </div>
         )}
+
+        {/* Ongoing Rounds Section */}
+        <OngoingRoundsSection userId={user.id} />
 
         {/* Post Box */}
         <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
