@@ -136,7 +136,23 @@ export function useIsSpectator(
         }
 
         // Check if the 12-hour editing window has expired
-        const editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
+        // For rounds: lock if finished (has holes) OR if round is older than 12 hours (regardless of holes)
+        let editWindowExpired = false;
+        if (gameType === 'round') {
+          if (isFinished) {
+            // Round has holes - use standard 12-hour check
+            editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
+          } else if (createdAt) {
+            // Round has no holes yet, but check if it's older than 12 hours anyway
+            const createdDate = new Date(createdAt);
+            const now = new Date();
+            const hoursSinceCreation = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+            editWindowExpired = hoursSinceCreation > EDIT_WINDOW_HOURS;
+          }
+        } else {
+          // For other game types, use standard logic
+          editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
+        }
         setIsEditWindowExpired(editWindowExpired);
 
         // User is spectator ONLY if not a participant
