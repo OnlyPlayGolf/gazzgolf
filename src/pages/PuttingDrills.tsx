@@ -32,20 +32,20 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Aggressive Putting</div>
+                  <div>Short Putting Test</div>
                   <div className="text-sm font-normal text-muted-foreground">
-                    Putting • 4m, 5m, 6m cycle
+                    Putting • Under pressure
                   </div>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                The Aggressive Putting drill helps you commit with confidence inside six meters. We're training speed and confidence - no hesitant strokes.
+                Start at 3 feet. Make putts from four positions around the hole to move back. Miss once and restart.
               </p>
               
               <Button 
-                onClick={() => navigate('/drill/aggressive-putting/score')}
+                onClick={() => navigate('/drill/short-putting-test/score')}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Open Drill
@@ -84,20 +84,20 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Short Putting Test</div>
+                  <div>Aggressive Putting</div>
                   <div className="text-sm font-normal text-muted-foreground">
-                    Putting • Under pressure
+                    Putting • 4m, 5m, 6m cycle
                   </div>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Make as many 4 foot short putts in a row as possible to build confidence, handle pressure, and master must-make putts.
+                The Aggressive Putting drill helps you commit with confidence inside six meters. We're training speed and confidence - no hesitant strokes.
               </p>
               
               <Button 
-                onClick={() => navigate('/drill/short-putting-test/score')}
+                onClick={() => navigate('/drill/aggressive-putting/score')}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Open Drill

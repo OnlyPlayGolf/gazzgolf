@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
@@ -190,7 +190,7 @@ export default function ScrambleSettings() {
       toast.success("Game finished!");
       setShowCompletionDialog(true);
     } catch (error) {
-      toast.error("Failed to finish game");
+      toast.error("Failed to finish round");
     }
   };
 
@@ -356,7 +356,6 @@ export default function ScrambleSettings() {
           <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
             onLeave={() => setShowLeaveDialog(true)}
           />

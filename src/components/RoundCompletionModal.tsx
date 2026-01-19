@@ -96,12 +96,55 @@ export function RoundCompletionModal({
         ? `${comment}\n\n${roundResult}`
         : roundResult;
 
+      // Build scorecard snapshot if roundId exists and round is finished
+      // Only generate snapshot for finished rounds (all holes completed)
+      let scorecardSnapshot = null;
+      let roundIdForPost = null;
+      if (roundId && holesPlayed > 0) {
+        // Verify round is finished: holesPlayed should match the number of holes with scores
+        // The function will also check this, but we can skip the call if obviously not finished
+        try {
+          const { data: snapshotData, error: snapshotError } = await supabase
+            .rpc('build_post_scorecard_snapshot', { p_round_id: roundId });
+          
+          if (!snapshotError && snapshotData) {
+            // Validate snapshot is an object, not an array
+            if (typeof snapshotData === 'object' && !Array.isArray(snapshotData) && snapshotData.holes && snapshotData.players) {
+              scorecardSnapshot = snapshotData;
+              roundIdForPost = roundId;
+            } else {
+              console.warn('Invalid snapshot format (expected object, got array or invalid):', typeof snapshotData);
+            }
+          } else if (snapshotError) {
+            // Function might not exist yet (migration not applied) or round not finished - log but continue
+            console.warn('Could not build snapshot:', snapshotError.message);
+          }
+        } catch (err: any) {
+          // RPC function doesn't exist or other error - continue without snapshot
+          console.warn('Error calling build_post_scorecard_snapshot:', err?.message || err);
+        }
+      }
+
+      // Build insert object - only include columns that exist
+      const postData: any = {
+        user_id: user.id,
+        content: postContent,
+      };
+      
+      // Only add these if snapshot was successfully generated (migration applied)
+      // Ensure snapshot is a valid JSON object (not array, not null)
+      if (scorecardSnapshot !== null && 
+          typeof scorecardSnapshot === 'object' && 
+          !Array.isArray(scorecardSnapshot) &&
+          scorecardSnapshot.holes &&
+          scorecardSnapshot.players) {
+        postData.round_id = roundIdForPost;
+        postData.scorecard_snapshot = scorecardSnapshot;
+      }
+
       const { error } = await supabase
         .from('posts')
-        .insert({
-          user_id: user.id,
-          content: postContent,
-        });
+        .insert(postData);
 
       if (error) throw error;
 
@@ -175,6 +218,7 @@ export function RoundCompletionModal({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
+              showNetRow={false}
             />
           </div>
         )}

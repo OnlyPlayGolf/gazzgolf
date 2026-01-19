@@ -53,7 +53,7 @@ const drills: Record<string, Drill> = {
   'short-putting-test': {
     id: 'short-putting-test',
     title: 'Short Putting Test',
-    shortDescription: 'Make consecutive putts from 4 tees around the hole. One miss ends the test.',
+    shortDescription: 'Start at 3 feet. Make putts from four positions around the hole to move back. Miss once and restart.',
     longDescription: 'Test your short putting accuracy with this pressure-packed drill. Place 4 tees around the hole at 12, 3, 6, and 9 o\'clock positions, each starting 4 feet away. Every time you make a putt, move that tee back 1 foot and rotate to the next position. One miss ends the test. Your score is the number of consecutive putts made.',
     category: 'Putting',
     icon: Target,

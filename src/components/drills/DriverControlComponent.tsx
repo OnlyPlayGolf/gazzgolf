@@ -270,9 +270,9 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
                   <div className="font-semibold">Miss Left</div>
                   <div className="text-lg">{currentShotStructure?.missLeftPoints}</div>
                 </div>
-                <div className="text-center p-2 bg-primary text-primary-foreground rounded">
+                <div className="text-center p-2 bg-background rounded">
                   <div className="font-semibold">Fairway</div>
-                  <div className="text-lg text-primary">+{currentShotStructure?.fairwayPoints}</div>
+                  <div className="text-lg">+{currentShotStructure?.fairwayPoints}</div>
                 </div>
                 <div className="text-center p-2 bg-background rounded">
                   <div className="font-semibold">Miss Right</div>

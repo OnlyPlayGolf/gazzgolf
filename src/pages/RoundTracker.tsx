@@ -12,18 +12,6 @@ import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import { canEditGroupScores } from "@/types/gameGroups";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-
 import { StatsMode } from "@/pages/StrokePlaySetup";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 
@@ -101,7 +89,6 @@ export default function RoundTracker() {
   const [groups, setGroups] = useState<GameGroup[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [currentUserGroupId, setCurrentUserGroupId] = useState<string | null>(null);
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
@@ -836,7 +823,7 @@ export default function RoundTracker() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -1141,38 +1128,6 @@ export default function RoundTracker() {
       )}
 
       <RoundBottomTabBar roundId={roundId!} />
-
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Round</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this round?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <AlertDialogAction
-              onClick={() => {
-                setShowExitDialog(false);
-                navigate("/");
-              }}
-              className="w-full"
-            >
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => {
-                setShowExitDialog(false);
-                handleDeleteRound();
-              }}
-              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Round
-            </AlertDialogAction>
-            <AlertDialogCancel className="w-full mt-0">Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

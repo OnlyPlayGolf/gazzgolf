@@ -254,15 +254,14 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   };
 
   const loadUnreadCount = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!currentUserId) return;
 
     try {
       // Friend conversations where I'm an explicit participant
       const { data: participantConvs } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
-        .eq('user_id', user.id);
+        .eq('user_id', currentUserId);
 
       const friendConversationIds = (participantConvs || []).map((c: any) => c.conversation_id);
 
@@ -270,7 +269,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
       const { data: myGroups } = await supabase
         .from('group_members')
         .select('group_id')
-        .eq('user_id', user.id);
+        .eq('user_id', currentUserId);
 
       const groupIds = (myGroups || []).map((g: any) => g.group_id);
 
@@ -297,7 +296,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         .select('*', { count: 'exact', head: true })
         .in('conversation_id', conversationIds)
         .eq('is_read', false)
-        .neq('sender_id', user.id);
+        .neq('sender_id', currentUserId);
 
       setTotalUnreadCount(count || 0);
     } catch (error) {
@@ -307,8 +306,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
 
 
   const loadConversations = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!currentUserId) return;
 
     try {
       const { data: overview, error } = await supabase.rpc('conversations_overview');
@@ -326,18 +324,31 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         unread_count: 0,
       }));
 
-      // Compute unread counts per conversation (messages not sent by me and is_read=false)
-      const withUnread = await Promise.all(
-        baseConversations.map(async (conv) => {
-          const { count } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id)
-            .eq('is_read', false)
-            .neq('sender_id', user.id);
-          return { ...conv, unread_count: count || 0 } as Conversation;
-        })
-      );
+      // Compute unread counts for all conversations in a single query (avoid N+1)
+      const conversationIds = baseConversations.map((c) => c.id);
+      const unreadCountMap = new Map<string, number>();
+      if (conversationIds.length > 0) {
+        const { data: unreadRows, error: unreadErr } = await supabase
+          .from("messages")
+          .select("conversation_id")
+          .in("conversation_id", conversationIds)
+          .eq("is_read", false)
+          .neq("sender_id", currentUserId);
+
+        if (unreadErr) {
+          console.error("Error loading unread counts:", unreadErr);
+        } else {
+          (unreadRows || []).forEach((r: any) => {
+            if (!r?.conversation_id) return;
+            unreadCountMap.set(r.conversation_id, (unreadCountMap.get(r.conversation_id) || 0) + 1);
+          });
+        }
+      }
+
+      const withUnread: Conversation[] = baseConversations.map((c) => ({
+        ...c,
+        unread_count: unreadCountMap.get(c.id) || 0,
+      }));
 
       // Improve names that came as 'Unknown' by falling back to email prefix
       const unknowns = withUnread.filter(c => c.name === 'Unknown' && c.other_user_id);
@@ -373,8 +384,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   };
 
   const markConversationAsRead = async (conversationId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!currentUserId) return;
 
     try {
       // Mark all messages in this conversation (not sent by me) as read
@@ -383,15 +393,14 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         .update({ is_read: true })
         .eq('conversation_id', conversationId)
         .eq('is_read', false)
-        .neq('sender_id', user.id);
+        .neq('sender_id', currentUserId);
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
   };
 
   const loadMessages = async (conversationId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!currentUserId) return;
 
     try {
       const { data, error } = await supabase
@@ -432,8 +441,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   const sendMessage = async () => {
     if (!selectedConversation || !newMessage.trim()) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!currentUserId) return;
 
     setLoading(true);
     try {
@@ -441,7 +449,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         .from('messages')
         .insert({
           conversation_id: selectedConversation.id,
-          sender_id: user.id,
+          sender_id: currentUserId,
           content: newMessage.trim()
         });
 

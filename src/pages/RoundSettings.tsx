@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Settings, ArrowLeft } from "lucide-react";
 import { useRoundNavigation } from "@/hooks/useRoundNavigation";
+import { GameHeader } from "@/components/GameHeader";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
 import { supabase } from "@/integrations/supabase/client";
@@ -347,23 +348,12 @@ export default function RoundSettings() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {isSpectator && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground p-4">
-          <div className="relative flex items-center justify-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={handleBack}
-            >
-              <ArrowLeft size={20} />
-            </Button>
-            <h2 className="text-lg font-bold">Settings</h2>
-          </div>
-        </div>
-      )}
-      <div className={`p-4 max-w-2xl mx-auto space-y-4 ${isSpectator ? 'pt-20' : 'pt-6'}`}>
-        {!isSpectator && <h1 className="text-2xl font-bold">Settings</h1>}
+      <GameHeader
+        gameTitle={round.round_name || "Round"}
+        courseName={round.course_name}
+        pageTitle="Settings"
+      />
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         <GameDetailsSection 
           data={gameDetails} 
@@ -469,7 +459,6 @@ export default function RoundSettings() {
           <RoundActionsSection
             isAdmin={isAdmin}
             onFinish={handleFinishRound}
-            onSaveAndExit={() => navigate('/profile')}
             onDelete={isAdmin ? () => setShowDeleteDialog(true) : undefined}
             onLeave={!isAdmin ? () => setShowLeaveDialog(true) : undefined}
             finishLabel="Finish Round"

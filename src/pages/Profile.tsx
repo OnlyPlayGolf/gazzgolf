@@ -167,26 +167,37 @@ const Profile = () => {
         `)
         .eq('user_id', user.id);
 
-      // Get member counts for each group
-      const groupsList = await Promise.all(
-        (groupsData || []).map(async (g: any) => {
-          const { count } = await (supabase as any)
-            .from('group_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('group_id', g.groups.id);
+      // Batch member counts for all groups (avoid N+1)
+      const groupRows = (groupsData || []).filter((g: any) => g?.groups?.id);
+      const groupIds = groupRows.map((g: any) => g.groups.id);
+      const memberCountMap = new Map<string, number>();
 
-          return {
-            id: g.groups.id,
-            name: g.groups.name,
-            owner_id: g.groups.owner_id,
-            role: g.role,
-            member_count: count || 0,
-            created_at: g.groups.created_at,
-            description: g.groups.description,
-            image_url: g.groups.image_url
-          };
-        })
-      );
+      if (groupIds.length > 0) {
+        const { data: allMembers, error: membersError } = await (supabase as any)
+          .from("group_members")
+          .select("group_id")
+          .in("group_id", groupIds);
+
+        if (membersError) {
+          console.error("Error loading group member counts:", membersError);
+        } else {
+          (allMembers || []).forEach((m: any) => {
+            if (!m?.group_id) return;
+            memberCountMap.set(m.group_id, (memberCountMap.get(m.group_id) || 0) + 1);
+          });
+        }
+      }
+
+      const groupsList = groupRows.map((g: any) => ({
+        id: g.groups.id,
+        name: g.groups.name,
+        owner_id: g.groups.owner_id,
+        role: g.role,
+        member_count: memberCountMap.get(g.groups.id) || 0,
+        created_at: g.groups.created_at,
+        description: g.groups.description,
+        image_url: g.groups.image_url,
+      }));
 
       setGroups(groupsList);
 

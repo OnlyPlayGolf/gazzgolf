@@ -317,11 +317,6 @@ export default function RoundLeaderboard() {
         gameTitle={round.round_name || "Stroke Play"}
         courseName={round.course_name}
         pageTitle="Leaderboard"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Round"
       />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
@@ -406,7 +401,7 @@ export default function RoundLeaderboard() {
                         <TableRow className="bg-primary">
                           <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                           {frontNine.map(hole => (
-                            <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
+                            <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                               {hole.hole_number}
                             </TableHead>
                           ))}
@@ -480,7 +475,7 @@ export default function RoundLeaderboard() {
                           <TableRow className="bg-primary">
                             <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                             {backNine.map(hole => (
-                              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
+                              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                                 {hole.hole_number}
                               </TableHead>
                             ))}

@@ -114,7 +114,7 @@ export function BestBallScorecardCard({
           <TableRow className="bg-primary">
             <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {nineHoles.map(hole => (
-              <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+              <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                 {hole}
               </TableHead>
             ))}

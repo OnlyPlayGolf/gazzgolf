@@ -14,16 +14,6 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface CopenhagenScores {
   player1: number;
@@ -119,7 +109,6 @@ export default function CopenhagenPlay() {
     }
   }, [isSpectator, spectatorLoading, gameId, navigate]);
   
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [pendingAutoAdvance, setPendingAutoAdvance] = useState(false);
@@ -154,16 +143,6 @@ export default function CopenhagenPlay() {
   };
   const holeDistance = getHoleDistance();
 
-  // Show stats mode dialog on first load if not set
-  useEffect(() => {
-    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
-      const hasShownDialog = sessionStorage.getItem(`copenhagenStatsModeShown_${gameId}`);
-      if (!hasShownDialog) {
-        setShowStatsModeDialog(true);
-        sessionStorage.setItem(`copenhagenStatsModeShown_${gameId}`, 'true');
-      }
-    }
-  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   // Load mulligan settings on mount
   useEffect(() => {
@@ -357,7 +336,7 @@ export default function CopenhagenPlay() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/rounds-play")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -498,33 +477,6 @@ export default function CopenhagenPlay() {
       </div>
 
       {gameId && !spectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
-
-      {/* Exit Dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={() => {
-              setShowExitDialog(false);
-              navigate("/rounds-play");
-            }}>
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => deleteGame()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Stats Mode Dialog */}
       <PlayerStatsModeDialog

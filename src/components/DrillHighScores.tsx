@@ -104,8 +104,8 @@ export const DrillHighScores = ({ drillName }: DrillHighScoresProps) => {
   return (
     <div className="flex gap-3 mb-4">
       {personalBest !== null && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg flex-1">
-          <Trophy size={16} className="text-primary" />
+        <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg flex-1">
+          <Trophy size={16} className="text-muted-foreground" />
           <div className="text-sm">
             <span className="text-muted-foreground">Your best: </span>
             <span className="font-semibold text-foreground">{personalBest} {scoreUnit}</span>

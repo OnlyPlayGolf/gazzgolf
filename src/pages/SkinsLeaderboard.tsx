@@ -357,7 +357,7 @@ export default function SkinsLeaderboard() {
                       <TableRow className="bg-primary">
                         <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px]">Hole</TableHead>
                         {frontNine.map(hole => (
-                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1">
+                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                             {hole.hole_number}
                           </TableHead>
                         ))}
@@ -588,11 +588,6 @@ export default function SkinsLeaderboard() {
         gameTitle={game.round_name || "Skins"} 
         courseName={game.course_name} 
         pageTitle="Leaderboard"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Skins Game"
       />
 
       <LeaderboardModeTabs

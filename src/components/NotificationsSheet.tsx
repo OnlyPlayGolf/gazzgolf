@@ -28,6 +28,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -37,6 +38,15 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
 
   // Real-time subscription for new notifications
   useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
     const channel = supabase
       .channel('notifications-changes')
       .on(
@@ -44,7 +54,9 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
         {
           event: '*',
           schema: 'public',
-          table: 'notifications'
+          table: 'notifications',
+          // Only react to notifications for the signed-in user (prevents refetch storms)
+          filter: `user_id=eq.${currentUserId}`,
         },
         () => {
           loadNotifications();
@@ -52,22 +64,22 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
       )
       .subscribe();
 
+    // Load once for unread badge
     loadNotifications();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [currentUserId]);
 
   const loadNotifications = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!currentUserId) return;
 
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', currentUserId)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -114,8 +126,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
   };
 
   const handleFriendRequest = async (notificationId: string, requesterId: string, accept: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!currentUserId) return;
 
     setLoading(true);
     try {
@@ -125,7 +136,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
           .from('friendships')
           .update({ status: 'accepted' })
           .eq('requester', requesterId)
-          .eq('addressee', user.id);
+          .eq('addressee', currentUserId);
 
         if (updateError) throw updateError;
 
@@ -139,7 +150,7 @@ export const NotificationsSheet = ({ trigger }: NotificationsSheetProps) => {
           .from('friendships')
           .delete()
           .eq('requester', requesterId)
-          .eq('addressee', user.id);
+          .eq('addressee', currentUserId);
 
         if (error) throw error;
 

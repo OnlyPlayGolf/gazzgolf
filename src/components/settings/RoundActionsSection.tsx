@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Trash2, Flag } from "lucide-react";
+import { LogOut, Trash2, Flag } from "lucide-react";
 
 interface RoundActionsSectionProps {
   isAdmin: boolean;
   onFinish: () => void;
-  onSaveAndExit: () => void;
   onDelete?: () => void;
   onLeave?: () => void;
   finishLabel?: string;
@@ -14,10 +13,9 @@ interface RoundActionsSectionProps {
 export function RoundActionsSection({
   isAdmin,
   onFinish,
-  onSaveAndExit,
   onDelete,
   onLeave,
-  finishLabel = "Finish Game",
+  finishLabel = "Finish Round",
 }: RoundActionsSectionProps) {
   return (
     <Card>
@@ -32,15 +30,10 @@ export function RoundActionsSection({
           {finishLabel}
         </Button>
 
-        <Button onClick={onSaveAndExit} className="w-full" variant="outline">
-          <Save size={16} className="mr-2" />
-          Save & Exit
-        </Button>
-
         {isAdmin && onDelete && (
           <Button onClick={onDelete} className="w-full" variant="destructive">
             <Trash2 size={16} className="mr-2" />
-            Delete Game
+            Delete Round
           </Button>
         )}
 

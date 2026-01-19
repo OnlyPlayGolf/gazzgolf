@@ -121,7 +121,7 @@ export function BestBallStrokePlayScorecardView({
           <TableRow className="bg-primary">
             <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {frontNine.map(hole => (
-              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                 {hole.hole_number}
               </TableHead>
             ))}
@@ -204,7 +204,7 @@ export function BestBallStrokePlayScorecardView({
               <TableRow className="bg-primary">
                 <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                 {backNine.map(hole => (
-                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                     {hole.hole_number}
                   </TableHead>
                 ))}
@@ -290,7 +290,7 @@ export function BestBallStrokePlayScorecardView({
           <TableRow className="bg-primary">
             <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {frontNine.map(hole => (
-              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                 {hole.hole_number}
               </TableHead>
             ))}
@@ -366,7 +366,7 @@ export function BestBallStrokePlayScorecardView({
               <TableRow className="bg-primary">
                 <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                 {backNine.map(hole => (
-                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                     {hole.hole_number}
                   </TableHead>
                 ))}

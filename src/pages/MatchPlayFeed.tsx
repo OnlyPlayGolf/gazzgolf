@@ -328,11 +328,6 @@ export default function MatchPlayFeed() {
         gameTitle={gameData?.round_name || "Match Play"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Match Play Game"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

@@ -80,7 +80,7 @@ export function useRoundNavigation({
     navigate(getTabPath(tab));
   }, [navigate, getTabPath]);
 
-  // Handle back navigation based on entry point
+  // Handle back navigation - always go to home page when in a game
   const handleBack = useCallback(() => {
     // If custom handler provided, use it
     if (onBack) {
@@ -88,27 +88,9 @@ export function useRoundNavigation({
       return;
     }
 
-    // Determine where to go based on entry point
-    switch (entryPoint) {
-      case 'home':
-      case 'friends_on_course':
-      case 'deep_link':
-        navigate('/');
-        break;
-      case 'profile':
-        navigate('/profile');
-        break;
-      case 'default':
-      default:
-        // Try to go back in history, fallback to home if no history
-        if (window.history.length > 1) {
-          navigate(-1);
-        } else {
-          navigate(fallbackPath);
-        }
-        break;
-    }
-  }, [entryPoint, navigate, onBack, fallbackPath]);
+    // Always navigate to home page when pressing back in a game
+    navigate('/');
+  }, [navigate, onBack]);
 
   return {
     entryPoint,

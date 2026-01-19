@@ -21,16 +21,6 @@ import {
   calculateHolePoints,
   normalizeUmbriagioPoints,
 } from "@/utils/umbriagioScoring";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface TeamCombination {
   teamA: [string, string];
@@ -178,7 +168,6 @@ export default function UmbriagioPlay() {
     }
   }, [isSpectator, spectatorLoading, gameId, navigate]);
   
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [activeScoreSheet, setActiveScoreSheet] = useState<keyof Pick<UmbriagioScores, 'teamAPlayer1' | 'teamAPlayer2' | 'teamBPlayer1' | 'teamBPlayer2'> | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [currentComment, setCurrentComment] = useState("");
@@ -207,16 +196,6 @@ export default function UmbriagioPlay() {
   };
   const holeDistance = getHoleDistance();
 
-  // Show stats mode dialog on first load if not set
-  useEffect(() => {
-    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
-      const hasShownDialog = sessionStorage.getItem(`umbriagioStatsModeShown_${gameId}`);
-      if (!hasShownDialog) {
-        setShowStatsModeDialog(true);
-        sessionStorage.setItem(`umbriagioStatsModeShown_${gameId}`, 'true');
-      }
-    }
-  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   // Load rotation schedule from sessionStorage
   const rotationSchedule = useMemo<RotationSchedule | null>(() => {
@@ -643,7 +622,7 @@ export default function UmbriagioPlay() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/rounds-play")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -867,33 +846,6 @@ export default function UmbriagioPlay() {
       </div>
 
       {gameId && <UmbriagioBottomTabBar gameId={gameId} />}
-
-      {/* Exit Dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={() => {
-              setShowExitDialog(false);
-              navigate("/rounds-play");
-            }}>
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => deleteGame()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Stats Mode Dialog */}
       <PlayerStatsModeDialog

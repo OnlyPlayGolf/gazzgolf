@@ -434,7 +434,6 @@ export default function UmbriagioSettings() {
           <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
             onLeave={() => setShowLeaveDialog(true)}
           />

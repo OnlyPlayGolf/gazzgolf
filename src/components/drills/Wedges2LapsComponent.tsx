@@ -38,11 +38,11 @@ const outcomePoints: Record<ShotOutcome, number> = {
 };
 
 const outcomeLabels: Record<ShotOutcome, string> = {
-  '2m': '<2m',
-  '3m': '<3m',
-  '4m': '<4m',
-  'long': '>4m',
-  'missed': 'Missed',
+  '2m': '2m',
+  '3m': '3m',
+  '4m': '4m',
+  'long': 'Green',
+  'missed': 'No green',
 };
 
 const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponentProps) => {
@@ -206,7 +206,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
                           <span className={`text-sm ${
                             attempt.points >= 2 ? 'text-green-500' : 
                             attempt.points === 1 ? 'text-yellow-500' :
-                            attempt.points === 0 ? 'text-orange-500' : 'text-red-500'
+                            attempt.points === 0 ? 'text-green-500' : 'text-red-500'
                           }`}>
                             {attempt.points > 0 ? '+' : ''}{attempt.points} pts
                           </span>

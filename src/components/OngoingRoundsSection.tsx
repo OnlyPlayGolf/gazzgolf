@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
@@ -42,217 +42,14 @@ const GAME_FORMAT_LABELS: Record<GameType, string> = {
 };
 
 interface OngoingRoundsSectionProps {
-  userId: string;
+  ongoingGames: OngoingGame[];
+  onGameDeleted?: () => void;
 }
 
-export const OngoingRoundsSection = ({ userId }: OngoingRoundsSectionProps) => {
+export const OngoingRoundsSection = ({ ongoingGames, onGameDeleted }: OngoingRoundsSectionProps) => {
   const navigate = useNavigate();
-  const [ongoingGames, setOngoingGames] = useState<OngoingGame[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState<OngoingGame | null>(null);
-
-  useEffect(() => {
-    loadOngoingGames();
-  }, [userId]);
-
-  const loadOngoingGames = async () => {
-    if (!userId) return;
-    
-    try {
-      setLoading(true);
-      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-      const games: OngoingGame[] = [];
-
-      // Fetch round_players to find rounds user participates in
-      const { data: roundPlayers } = await supabase
-        .from('round_players')
-        .select('round_id')
-        .eq('user_id', userId);
-
-      const participatingRoundIds = (roundPlayers || []).map(rp => rp.round_id);
-
-      // Fetch all game types in parallel
-      const [
-        { data: rounds },
-        { data: copenhagen },
-        { data: skins },
-        { data: bestBall },
-        { data: scramble },
-        { data: wolf },
-        { data: umbriago },
-        { data: matchPlay }
-      ] = await Promise.all([
-        supabase.from('rounds').select('id, user_id, course_name, round_name, created_at').gte('created_at', twelveHoursAgo),
-        supabase.from('copenhagen_games').select('id, user_id, course_name, round_name, created_at, is_finished, player_1, player_2, player_3').gte('created_at', twelveHoursAgo).eq('is_finished', false),
-        supabase.from('skins_games').select('id, user_id, course_name, round_name, created_at, is_finished, players').gte('created_at', twelveHoursAgo).eq('is_finished', false),
-        supabase.from('best_ball_games').select('id, user_id, course_name, round_name, created_at, is_finished, team_a_players, team_b_players').gte('created_at', twelveHoursAgo).eq('is_finished', false),
-        supabase.from('scramble_games').select('id, user_id, course_name, round_name, created_at, is_finished, teams').gte('created_at', twelveHoursAgo).eq('is_finished', false),
-        supabase.from('wolf_games').select('id, user_id, course_name, round_name, created_at, is_finished, player_1, player_2, player_3, player_4, player_5, player_6').gte('created_at', twelveHoursAgo).eq('is_finished', false),
-        supabase.from('umbriago_games').select('id, user_id, course_name, round_name, created_at, is_finished, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2').gte('created_at', twelveHoursAgo).eq('is_finished', false),
-        supabase.from('match_play_games').select('id, user_id, course_name, round_name, created_at, is_finished, player_1, player_2').gte('created_at', twelveHoursAgo).eq('is_finished', false),
-      ]);
-
-      // Process rounds - user owns or participates
-      for (const round of rounds || []) {
-        const isOwner = round.user_id === userId;
-        const isParticipant = participatingRoundIds.includes(round.id);
-        if (isOwner || isParticipant) {
-          // Get player count
-          const { count } = await supabase
-            .from('round_players')
-            .select('id', { count: 'exact', head: true })
-            .eq('round_id', round.id);
-          
-          games.push({
-            id: round.id,
-            gameType: 'round',
-            roundName: round.round_name,
-            courseName: round.course_name,
-            playerCount: count || 1,
-            createdAt: round.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Process Copenhagen - user owns or is a player
-      for (const game of copenhagen || []) {
-        const isOwner = game.user_id === userId;
-        const isPlayer = [game.player_1, game.player_2, game.player_3].some(p => p && p.includes(userId));
-        if (isOwner || isPlayer) {
-          games.push({
-            id: game.id,
-            gameType: 'copenhagen',
-            roundName: game.round_name,
-            courseName: game.course_name,
-            playerCount: 3,
-            createdAt: game.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Process Skins
-      for (const game of skins || []) {
-        const isOwner = game.user_id === userId;
-        const players = (game.players as any[]) || [];
-        const isPlayer = players.some(p => p?.userId === userId || p?.id === userId);
-        if (isOwner || isPlayer) {
-          games.push({
-            id: game.id,
-            gameType: 'skins',
-            roundName: game.round_name,
-            courseName: game.course_name,
-            playerCount: players.length,
-            createdAt: game.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Process Best Ball
-      for (const game of bestBall || []) {
-        const isOwner = game.user_id === userId;
-        const teamA = (game.team_a_players as any[]) || [];
-        const teamB = (game.team_b_players as any[]) || [];
-        const allPlayers = [...teamA, ...teamB];
-        const isPlayer = allPlayers.some(p => p?.userId === userId || p?.id === userId);
-        if (isOwner || isPlayer) {
-          games.push({
-            id: game.id,
-            gameType: 'best_ball',
-            roundName: game.round_name,
-            courseName: game.course_name,
-            playerCount: allPlayers.length,
-            createdAt: game.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Process Scramble
-      for (const game of scramble || []) {
-        const isOwner = game.user_id === userId;
-        const teams = (game.teams as any[]) || [];
-        const allPlayers = teams.flatMap(t => t?.players || []);
-        const isPlayer = allPlayers.some(p => p?.userId === userId || p?.id === userId);
-        if (isOwner || isPlayer) {
-          games.push({
-            id: game.id,
-            gameType: 'scramble',
-            roundName: game.round_name,
-            courseName: game.course_name,
-            playerCount: allPlayers.length,
-            createdAt: game.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Process Wolf
-      for (const game of wolf || []) {
-        const isOwner = game.user_id === userId;
-        const wolfPlayers = [game.player_1, game.player_2, game.player_3, game.player_4, game.player_5, game.player_6].filter(Boolean);
-        const isPlayer = wolfPlayers.some(p => p && p.includes(userId));
-        if (isOwner || isPlayer) {
-          games.push({
-            id: game.id,
-            gameType: 'wolf',
-            roundName: game.round_name,
-            courseName: game.course_name,
-            playerCount: wolfPlayers.length,
-            createdAt: game.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Process Umbriago
-      for (const game of umbriago || []) {
-        const isOwner = game.user_id === userId;
-        const umbriagoPlayers = [game.team_a_player_1, game.team_a_player_2, game.team_b_player_1, game.team_b_player_2].filter(Boolean);
-        const isPlayer = umbriagoPlayers.some(p => p && p.includes(userId));
-        if (isOwner || isPlayer) {
-          games.push({
-            id: game.id,
-            gameType: 'umbriago',
-            roundName: game.round_name,
-            courseName: game.course_name,
-            playerCount: 4,
-            createdAt: game.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Process Match Play
-      for (const game of matchPlay || []) {
-        const isOwner = game.user_id === userId;
-        const matchPlayers = [game.player_1, game.player_2].filter(Boolean);
-        const isPlayer = matchPlayers.some(p => p && p.includes(userId));
-        if (isOwner || isPlayer) {
-          games.push({
-            id: game.id,
-            gameType: 'match_play',
-            roundName: game.round_name,
-            courseName: game.course_name,
-            playerCount: 2,
-            createdAt: game.created_at || '',
-            isOwner,
-          });
-        }
-      }
-
-      // Sort by most recent
-      games.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setOngoingGames(games);
-    } catch (error) {
-      console.error('Error loading ongoing games:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenGame = (game: OngoingGame) => {
     // Different game types use different tab names for their play page
@@ -297,7 +94,8 @@ export const OngoingRoundsSection = ({ userId }: OngoingRoundsSectionProps) => {
       }
 
       toast.success('Game deleted successfully');
-      setOngoingGames(prev => prev.filter(g => g.id !== id));
+      // Notify parent to refresh data
+      onGameDeleted?.();
     } catch (error) {
       console.error('Error deleting game:', error);
       toast.error('Failed to delete game');
@@ -307,7 +105,7 @@ export const OngoingRoundsSection = ({ userId }: OngoingRoundsSectionProps) => {
     }
   };
 
-  if (loading || ongoingGames.length === 0) {
+  if (ongoingGames.length === 0) {
     return null;
   }
 
@@ -372,7 +170,7 @@ export const OngoingRoundsSection = ({ userId }: OngoingRoundsSectionProps) => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Game</AlertDialogTitle>
+            <AlertDialogTitle>Delete Round</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this game? This action cannot be undone and all scores will be lost.
             </AlertDialogDescription>

@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Bell, MessageCircle, ArrowLeft, Menu, Trophy, TrendingUp, Users, Zap, Settings, Info, MessageSquare, User as UserIcon, Mail, ChevronRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { AddFriendDialog } from "./AddFriendDialog";
 import { NotificationsSheet } from "./NotificationsSheet";
 import { MessagesSheet } from "./MessagesSheet";
@@ -11,10 +10,13 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 
-export const TopNavBar = () => {
+interface TopNavBarProps {
+  profile?: any;
+}
+
+export const TopNavBar = ({ profile }: TopNavBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [profile, setProfile] = useState<any>(null);
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,10 +31,6 @@ export const TopNavBar = () => {
     { id: 'settings', label: 'Settings', icon: Settings, available: false },
     { id: 'about', label: 'About', icon: Info, available: false },
   ];
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,19 +50,6 @@ export const TopNavBar = () => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
-
-  const loadProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    setProfile(profileData);
-  };
 
   // Never show back button in TopNavBar
   

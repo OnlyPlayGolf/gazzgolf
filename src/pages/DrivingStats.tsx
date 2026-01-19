@@ -122,19 +122,39 @@ export default function DrivingStats() {
           query = query.gte('created_at', dateFilter);
         }
 
-        const { data: proRounds, error: roundsError } = await query;
+        const { data: allProRounds, error: roundsError } = await query;
 
         if (roundsError) throw roundsError;
 
-        if (!proRounds || proRounds.length === 0) {
+        if (!allProRounds || allProRounds.length === 0) {
           setSgStats(null);
           setProRoundsCount(0);
           setLoading(false);
           return;
         }
 
-        setProRoundsCount(proRounds.length);
-        const roundIds = proRounds.map(r => r.id);
+        // Filter out orphaned pro_stats_rounds (where external_round_id points to a deleted round)
+        const roundsWithExternalId = allProRounds.filter(pr => pr.external_round_id);
+        let validProRounds = allProRounds;
+        if (roundsWithExternalId.length > 0) {
+          const externalRoundIds = roundsWithExternalId.map(pr => pr.external_round_id!);
+          const { data: existingRounds } = await supabase
+            .from('rounds')
+            .select('id')
+            .in('id', externalRoundIds);
+          const existingRoundIds = new Set((existingRounds || []).map(r => r.id));
+          validProRounds = allProRounds.filter(pr => !pr.external_round_id || existingRoundIds.has(pr.external_round_id));
+        }
+
+        if (validProRounds.length === 0) {
+          setSgStats(null);
+          setProRoundsCount(0);
+          setLoading(false);
+          return;
+        }
+
+        setProRoundsCount(validProRounds.length);
+        const roundIds = validProRounds.map(r => r.id);
 
         const { data: holesData, error: holesError } = await supabase
           .from('pro_stats_holes')

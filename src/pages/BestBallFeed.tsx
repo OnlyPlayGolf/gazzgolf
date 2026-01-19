@@ -347,11 +347,6 @@ export default function BestBallFeed() {
         gameTitle={gameData?.round_name || "Best Ball"} 
         courseName={gameData?.course_name || ""} 
         pageTitle="Game feed"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Best Ball Game"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

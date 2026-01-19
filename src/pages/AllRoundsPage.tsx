@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundCard, RoundCardData } from "@/components/RoundCard";
 import { loadUnifiedRounds } from "@/utils/unifiedRoundsLoader";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import {
   AlertDialog,
   AlertDialogAction,

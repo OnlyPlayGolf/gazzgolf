@@ -32,7 +32,7 @@ const allDrills = [
   {
     id: 'short-putting-test',
     title: 'Short Putting Test',
-    shortDescription: "Make as many 4 foot short putts in a row as possible to build confidence, handle pressure, and master must-make putts.",
+    shortDescription: "Start at 3 feet. Make putts from four positions around the hole to move back. Miss once and restart.",
     category: 'putting',
     icon: Target,
   },

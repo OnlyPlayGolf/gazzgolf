@@ -57,6 +57,20 @@ export const StatsRoundsHistory = () => {
       // Get scores and round details for each pro_stats_round
       const roundsWithScores = await Promise.all(
         proStatsRounds.map(async (proRound) => {
+          // If this pro_stats_round has an external_round_id, verify the round still exists
+          if (proRound.external_round_id) {
+            const { data: roundData } = await supabase
+              .from("rounds")
+              .select("id")
+              .eq("id", proRound.external_round_id)
+              .maybeSingle();
+
+            // If the parent round doesn't exist, skip this pro_stats_round (it's orphaned)
+            if (!roundData) {
+              return null;
+            }
+          }
+
           // Get hole scores
           const { data: holes } = await supabase
             .from("pro_stats_holes")

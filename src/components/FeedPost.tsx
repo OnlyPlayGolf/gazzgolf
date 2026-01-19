@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { formatDistanceToNow, format } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
 import { UmbriagioScorecardView } from "./UmbriagioScorecardView";
@@ -38,6 +38,44 @@ import { StrokePlayScorecardView } from "./StrokePlayScorecardView";
 import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
+
+// Shared cache for course_holes to reduce duplicate requests
+const courseHolesCache = new Map<string, Array<{ hole_number: number; par: number; stroke_index: number }>>();
+const courseHolesFetchPromises = new Map<string, Promise<Array<{ hole_number: number; par: number; stroke_index: number }> | null>>();
+
+// Helper function to fetch course_holes with caching
+const fetchCourseHolesCached = async (courseId: string | null): Promise<Array<{ hole_number: number; par: number; stroke_index: number }> | null> => {
+  if (!courseId) return null;
+  
+  // Check cache first
+  if (courseHolesCache.has(courseId)) {
+    return courseHolesCache.get(courseId)!;
+  }
+  
+  // Check if fetch is already in progress
+  if (courseHolesFetchPromises.has(courseId)) {
+    return courseHolesFetchPromises.get(courseId)!;
+  }
+  
+  // Start fetch
+  const fetchPromise = supabase
+    .from("course_holes")
+    .select("hole_number, par, stroke_index")
+    .eq("course_id", courseId)
+    .order("hole_number")
+    .then(({ data, error }) => {
+      if (error || !data) {
+        courseHolesFetchPromises.delete(courseId);
+        return null;
+      }
+      courseHolesCache.set(courseId, data);
+      courseHolesFetchPromises.delete(courseId);
+      return data;
+    });
+  
+  courseHolesFetchPromises.set(courseId, fetchPromise);
+  return fetchPromise;
+};
 
 // Parse round scorecard result from post content (new format with scorecard data)
 const parseRoundScorecardResult = (content: string) => {
@@ -65,6 +103,20 @@ const parseRoundScorecardResult = (content: string) => {
     }
   }
   return null;
+};
+
+// When editing, we must never expose embedded result payload blocks (scorecards, drill results, etc.)
+// to the user. This strips those blocks even if parsing fails due to formatting/newlines.
+const getEditablePostText = (content: string | null | undefined) => {
+  const raw = content || "";
+  return raw
+    .replace(/\[DRILL_RESULT\][\s\S]*?\[\/DRILL_RESULT\]/g, "")
+    .replace(/\[ROUND_SCORECARD\][\s\S]*?\[\/ROUND_SCORECARD\]/g, "")
+    .replace(/\[MATCH_PLAY_SCORECARD\][\s\S]*?\[\/MATCH_PLAY_SCORECARD\]/g, "")
+    .replace(/\[ROUND_RESULT\][\s\S]*?\[\/ROUND_RESULT\]/g, "")
+    .replace(/\[UMBRIAGO_RESULT\][\s\S]*?\[\/UMBRIAGO_RESULT\]/g, "")
+    .replace(/\[GAME_RESULT\][\s\S]*?\[\/GAME_RESULT\]/g, "")
+    .trim();
 };
 
 // Parse match play scorecard result from post content
@@ -581,7 +633,7 @@ const GameResultCardFromDB = ({
             .from(tableName as any)
             .select(selectFields)
             .eq("id", gameId)
-            .single(),
+            .maybeSingle(),
           supabase
             .from("profiles")
             .select("display_name, username")
@@ -985,11 +1037,7 @@ const BestBallScorecardInPost = ({
           .single();
 
         if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
+          const holesData = await fetchCourseHolesCached(gameData.course_id);
 
           if (holesData) {
             const filteredHoles = gameData.holes_played === 9 
@@ -1116,11 +1164,7 @@ const BestBallStrokePlayScorecardInPost = ({
           .single();
 
         if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
+          const holesData = await fetchCourseHolesCached(gameData.course_id);
 
           if (holesData) {
             const filteredHoles = gameData.holes_played === 9 
@@ -1199,6 +1243,204 @@ const BestBallStrokePlayScorecardInPost = ({
   );
 };
 
+// Component to display round scorecard in posts using snapshot from posts table
+const RoundScorecardInPostFromSnapshot = ({
+  roundScorecardResult,
+  textContent,
+  postScorecardSnapshot,
+}: {
+  roundScorecardResult: NonNullable<ReturnType<typeof parseRoundScorecardResult>>;
+  textContent?: string;
+  postScorecardSnapshot?: any;
+}) => {
+  const navigate = useNavigate();
+  const [snapshot, setSnapshot] = useState<any>(postScorecardSnapshot || null);
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [profileMap, setProfileMap] = useState<Map<string, { display_name: string | null; username: string | null }>>(new Map());
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Use snapshot from post if available and valid (object, not array, not null)
+      if (postScorecardSnapshot && 
+          typeof postScorecardSnapshot === 'object' && 
+          !Array.isArray(postScorecardSnapshot) &&
+          postScorecardSnapshot.holes &&
+          postScorecardSnapshot.players) {
+        console.log('[Scorecard] Using snapshot from post');
+        setSnapshot(postScorecardSnapshot);
+        
+        // Build course holes from snapshot
+        const snapshotHoles = postScorecardSnapshot.holes || [];
+        const holes = snapshotHoles.map((h: number) => {
+          // Try to get par from embedded data first, fallback to 4
+          const par = roundScorecardResult.holePars?.[h] || 4;
+          return {
+            hole_number: h,
+            par: par,
+            stroke_index: h,
+          };
+        });
+        setCourseHoles(holes);
+
+        // Fetch profiles for all players in snapshot (non-blocking)
+        const players = postScorecardSnapshot.players || [];
+        const userIds = players
+          .map((p: any) => p.user_id)
+          .filter((id: string | null) => id !== null);
+        
+        if (userIds.length > 0) {
+          supabase
+            .from('profiles')
+            .select('id, display_name, username')
+            .in('id', userIds)
+            .then(({ data: profiles }) => {
+              if (profiles) {
+                const map = new Map<string, { display_name: string | null; username: string | null }>();
+                profiles.forEach(p => {
+                  map.set(p.id, { display_name: p.display_name, username: p.username });
+                });
+                setProfileMap(map);
+              }
+            })
+            .catch((profileError) => {
+              console.error('Error fetching profiles:', profileError);
+              // Continue without profile data - will use display_name from snapshot
+            });
+        }
+        
+        setLoading(false);
+        return;
+      }
+
+      // No snapshot - fallback to embedded data
+      console.warn('[Scorecard] No snapshot found in post - using embedded data');
+      const courseHolesFromPars = Object.keys(roundScorecardResult.holePars || {})
+        .map(holeNum => ({
+          hole_number: parseInt(holeNum),
+          par: roundScorecardResult.holePars[parseInt(holeNum)],
+          stroke_index: parseInt(holeNum),
+        }))
+        .sort((a, b) => a.hole_number - b.hole_number);
+      setCourseHoles(courseHolesFromPars);
+      setLoading(false);
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postScorecardSnapshot, roundScorecardResult.roundId]); // Depend on postScorecardSnapshot
+
+  // Build strokePlayPlayers from snapshot or fallback to embedded data
+  const buildPlayers = () => {
+    if (snapshot && snapshot.players) {
+      return snapshot.players.map((p: any) => {
+        const profile = p.user_id ? profileMap.get(p.user_id) : null;
+        const displayName = p.display_name || profile?.display_name || profile?.username || p.guest_name || 'Player';
+        
+        const scoresMap = new Map<number, number>();
+        if (p.scores && Array.isArray(p.scores)) {
+          p.scores.forEach((score: number | null, index: number) => {
+            if (score !== null && score > 0) {
+              scoresMap.set(index + 1, score);
+            }
+          });
+        }
+
+        return {
+          name: displayName,
+          scores: scoresMap,
+          totalScore: p.total || 0,
+        };
+      });
+    } else {
+      // Fallback to embedded data
+      const holeScoresMap = new Map<number, number>();
+      let totalScore = 0;
+      Object.entries(roundScorecardResult.holeScores || {}).forEach(([holeNum, score]) => {
+        if (score && score > 0) {
+          holeScoresMap.set(parseInt(holeNum), score);
+          totalScore += score;
+        }
+      });
+
+      return [{
+        name: "Player",
+        scores: holeScoresMap,
+        totalScore: totalScore || roundScorecardResult.score || 0,
+      }];
+    }
+  };
+
+  const strokePlayPlayers = buildPlayers();
+
+  // Build RoundCardData for the header
+  const roundCardData: RoundCardData = {
+    id: roundScorecardResult.roundId || '',
+    round_name: roundScorecardResult.roundName,
+    course_name: roundScorecardResult.courseName,
+    date: roundScorecardResult.datePlayed,
+    score: roundScorecardResult.scoreVsPar,
+    playerCount: strokePlayPlayers.length,
+    gameMode: 'Stroke Play',
+    gameType: 'round',
+    totalScore: roundScorecardResult.score || 0,
+    holesPlayed: roundScorecardResult.holesPlayed,
+  };
+
+  const handleHeaderClick = () => {
+    if (roundScorecardResult.roundId) {
+      navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
+        entryPoint: 'home', 
+        viewType: 'spectator' 
+      }));
+    } else {
+      toast.error("Round details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    handleHeaderClick();
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {textContent && (
+          <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+        )}
+        <div className="text-muted-foreground text-sm p-4">Loading scorecard...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      {/* Round Card Header - Clickable to navigate to leaderboard */}
+      <div onClick={handleHeaderClick} className="cursor-pointer">
+        <RoundCard 
+          round={roundCardData}
+          className="border-0 shadow-none hover:shadow-none"
+        />
+      </div>
+
+      {/* Scorecard - Using StrokePlayScorecardView (compact scorecard table, same as in-game leaderboard) */}
+      {courseHoles.length > 0 && strokePlayPlayers.length > 0 ? (
+        <div onClick={handleScorecardClick} className="cursor-pointer px-4 pt-3 pb-4">
+          <StrokePlayScorecardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+          />
+        </div>
+      ) : snapshot === null ? (
+        <div className="text-muted-foreground text-sm p-4">Loading scorecard...</div>
+      ) : null}
+    </div>
+  );
+};
+
 // Component to display Umbriago scorecard in posts
 const UmbriagioScorecardInPost = ({
   umbriagioScorecardResult,
@@ -1245,11 +1487,7 @@ const UmbriagioScorecardInPost = ({
 
           // Fetch course holes
           if (gameDataResult.course_id) {
-            const { data: holesData } = await supabase
-              .from("course_holes")
-              .select("hole_number, par, stroke_index")
-              .eq("course_id", gameDataResult.course_id)
-              .order("hole_number");
+            const holesData = await fetchCourseHolesCached(gameDataResult.course_id);
 
             if (holesData) {
               const filteredHoles = gameDataResult.holes_played === 9 
@@ -1503,11 +1741,7 @@ const CopenhagenScorecardInPost = ({
           .single();
 
         if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
+          const holesData = await fetchCourseHolesCached(gameData.course_id);
 
           if (holesData) {
             const filteredHoles = gameData.holes_played === 9 
@@ -1801,11 +2035,7 @@ const ScrambleScorecardInPost = ({
           .single();
 
         if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
+          const holesData = await fetchCourseHolesCached(gameData.course_id);
 
           if (holesData) {
             const filteredHoles = gameData.holes_played === 9 
@@ -1976,14 +2206,10 @@ const SkinsScorecardInPost = ({
           .from("skins_games")
           .select("course_id, holes_played, user_id")
           .eq("id", skinsScorecardResult.gameId)
-          .single();
+          .maybeSingle();
 
         if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
+          const holesData = await fetchCourseHolesCached(gameData.course_id);
 
           if (holesData) {
             const filteredHoles = gameData.holes_played === 9 
@@ -2144,11 +2370,7 @@ const WolfScorecardInPost = ({
           .single();
 
         if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
+          const holesData = await fetchCourseHolesCached(gameData.course_id);
 
           if (holesData) {
             const filteredHoles = gameData.holes_played === 9 
@@ -2290,14 +2512,10 @@ const MatchPlayScorecardInPost = ({
           .from("match_play_games")
           .select("course_id")
           .eq("id", matchPlayScorecardResult.gameId)
-          .single();
+          .maybeSingle();
 
         if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
+          const holesData = await fetchCourseHolesCached(gameData.course_id);
 
           if (holesData) {
             setCourseHoles(holesData);
@@ -2420,8 +2638,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const location = useLocation();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
   const [comments, setComments] = useState<any[]>([]);
   const [showComments, setShowComments] = useState(false);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -2433,6 +2653,19 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isOwnPost = post.user_id === currentUserId;
+
+  // Initialize engagement counts from preloaded data (non-blocking).
+  // Parents (Home/Profile) batch-fetch these to avoid N+1 requests.
+  useEffect(() => {
+    const engagement = post?._engagement;
+    setLiked(!!engagement?.likedByMe);
+    setLikeCount(typeof engagement?.likeCount === "number" ? engagement.likeCount : 0);
+    setCommentCount(typeof engagement?.commentCount === "number" ? engagement.commentCount : 0);
+    // Reset per-post comment state when switching posts.
+    setComments([]);
+    setShowComments(false);
+    setCommentsLoaded(false);
+  }, [post?.id]);
 
   const handleProfileClick = (userId: string) => {
     navigate(`/user/${userId}`);
@@ -2464,23 +2697,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   };
 
   const handleEditPost = () => {
-    // Extract just the text content (without special result tags)
-    const drillResult = parseDrillResult(post.content);
-    const roundScorecardResult = parseRoundScorecardResult(post.content);
-    const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
-    const roundResult = parseRoundResult(post.content);
-    const umbriagioResult = parseUmbriagioResult(post.content);
-    const gameResult = parseGameResult(post.content);
-    
-    let textContent = post.content || "";
-    if (drillResult) textContent = drillResult.textContent;
-    else if (roundScorecardResult) textContent = roundScorecardResult.textContent;
-    else if (matchPlayScorecardResult) textContent = matchPlayScorecardResult.textContent;
-    else if (roundResult) textContent = roundResult.textContent;
-    else if (umbriagioResult) textContent = umbriagioResult.textContent;
-    else if (gameResult) textContent = gameResult.textContent;
-    
-    setEditPostContent(textContent);
+    // Only allow editing the user's caption text (never embedded payload blocks).
+    setEditPostContent(getEditablePostText(post.content));
     setIsEditingPost(true);
   };
 
@@ -2536,23 +2754,6 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     setEditPostContent("");
   };
 
-  useEffect(() => {
-    loadLikes();
-    loadComments();
-  }, [post.id]);
-
-  const loadLikes = async () => {
-    const { data: likes } = await supabase
-      .from("post_likes")
-      .select("*")
-      .eq("post_id", post.id);
-
-    if (likes) {
-      setLikeCount(likes.length);
-      setLiked(likes.some((like) => like.user_id === currentUserId));
-    }
-  };
-
   const loadComments = async () => {
     const { data } = await supabase
       .from("post_comments")
@@ -2569,8 +2770,26 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
     if (data) {
       setComments(data);
+      setCommentCount(data.length);
+      try {
+        const { setCachedPostEngagement } = await import("@/utils/postsEngagement");
+        setCachedPostEngagement(post.id, currentUserId, {
+          likeCount,
+          commentCount: data.length,
+          likedByMe: liked,
+        });
+      } catch {
+        // ignore cache update failures
+      }
     }
   };
+
+  useEffect(() => {
+    if (showComments && !commentsLoaded) {
+      loadComments();
+      setCommentsLoaded(true);
+    }
+  }, [showComments, commentsLoaded]);
 
   const handleLike = async () => {
     try {
@@ -2580,14 +2799,38 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
           .delete()
           .eq("post_id", post.id)
           .eq("user_id", currentUserId);
-        setLiked(false);
-        setLikeCount((prev) => prev - 1);
+        const nextLiked = false;
+        const nextLikeCount = Math.max(0, likeCount - 1);
+        setLiked(nextLiked);
+        setLikeCount(nextLikeCount);
+        try {
+          const { setCachedPostEngagement } = await import("@/utils/postsEngagement");
+          setCachedPostEngagement(post.id, currentUserId, {
+            likeCount: nextLikeCount,
+            commentCount,
+            likedByMe: nextLiked,
+          });
+        } catch {
+          // ignore cache update failures
+        }
       } else {
         await supabase
           .from("post_likes")
           .insert({ post_id: post.id, user_id: currentUserId });
-        setLiked(true);
-        setLikeCount((prev) => prev + 1);
+        const nextLiked = true;
+        const nextLikeCount = likeCount + 1;
+        setLiked(nextLiked);
+        setLikeCount(nextLikeCount);
+        try {
+          const { setCachedPostEngagement } = await import("@/utils/postsEngagement");
+          setCachedPostEngagement(post.id, currentUserId, {
+            likeCount: nextLikeCount,
+            commentCount,
+            likedByMe: nextLiked,
+          });
+        } catch {
+          // ignore cache update failures
+        }
       }
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -2880,86 +3123,31 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               }}
             />
           </div>
-        ) : roundScorecardResult ? (() => {
-          // Build courseHoles from holePars
-          const courseHoles = Object.keys(roundScorecardResult.holePars)
-            .map(holeNum => ({
-              hole_number: parseInt(holeNum),
-              par: roundScorecardResult.holePars[parseInt(holeNum)],
-              stroke_index: parseInt(holeNum),
-            }))
-            .sort((a, b) => a.hole_number - b.hole_number);
-
-          // Build strokePlayPlayers from holeScores
-          const holeScoresMap = new Map<number, number>();
-          let totalScore = 0;
-          Object.entries(roundScorecardResult.holeScores || {}).forEach(([holeNum, score]) => {
-            if (score && score > 0) {
-              holeScoresMap.set(parseInt(holeNum), score);
-              totalScore += score;
-            }
-          });
-
-          const strokePlayPlayers = [{
-            name: "Player",
-            scores: holeScoresMap,
-            totalScore: totalScore || roundScorecardResult.score || 0,
-          }];
-
-          // Build RoundCardData for the header
-          const roundCardData: RoundCardData = {
-            id: roundScorecardResult.roundId || '',
-            round_name: roundScorecardResult.roundName,
-            course_name: roundScorecardResult.courseName,
-            date: roundScorecardResult.datePlayed,
-            score: roundScorecardResult.scoreVsPar,
-            playerCount: 1,
-            gameMode: 'Stroke Play',
-            gameType: 'round',
-            totalScore: roundScorecardResult.score || 0,
-            holesPlayed: roundScorecardResult.holesPlayed,
-          };
-
-          const handleHeaderClick = () => {
-            if (roundScorecardResult.roundId) {
-              navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
-                entryPoint: 'home', 
-                viewType: 'spectator' 
-              }));
-            } else {
-              toast.error("Round details not found");
-            }
-          };
-
-          const handleScorecardClick = () => {
-            handleHeaderClick();
-          };
-
-          return (
-            <div className="space-y-3">
-              {roundScorecardResult.textContent && (
-                <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundScorecardResult.textContent}</p>
-              )}
-              {/* Round Card Header - Clickable to navigate to leaderboard */}
-              <div onClick={handleHeaderClick} className="cursor-pointer">
-                <RoundCard 
-                  round={roundCardData}
-                  className="border-0 shadow-none hover:shadow-none"
-                />
-              </div>
-
-              {/* Scorecard - Using StrokePlayScorecardView (compact scorecard table, same as in-game leaderboard) */}
-              {courseHoles.length > 0 && (
-                <div onClick={handleScorecardClick} className="cursor-pointer px-4 pt-3 pb-4">
-                  <StrokePlayScorecardView
-                    players={strokePlayPlayers}
-                    courseHoles={courseHoles}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })() : matchPlayScorecardResult ? (
+        ) : roundScorecardResult ? (
+          post.scorecard_snapshot && typeof post.scorecard_snapshot === 'object' && !Array.isArray(post.scorecard_snapshot) ? (
+            <RoundScorecardInPostFromSnapshot
+              roundScorecardResult={roundScorecardResult}
+              textContent={roundScorecardResult.textContent}
+              postScorecardSnapshot={post.scorecard_snapshot}
+            />
+          ) : (
+            // Show round card only if no snapshot exists
+            <RoundCard
+              round={{
+                id: roundScorecardResult.roundId || '',
+                course_name: roundScorecardResult.courseName,
+                date_played: roundScorecardResult.datePlayed,
+                holes_played: roundScorecardResult.holesPlayed,
+                round_name: roundScorecardResult.roundName,
+              }}
+              onClick={() => {
+                if (roundScorecardResult.roundId) {
+                  navigate(`/rounds/${roundScorecardResult.roundId}/leaderboard`);
+                }
+              }}
+            />
+          )
+        ) : matchPlayScorecardResult ? (
           <MatchPlayScorecardInPost
             matchPlayScorecardResult={matchPlayScorecardResult}
             textContent={matchPlayScorecardResult.textContent}
@@ -3165,7 +3353,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             onClick={() => setShowComments(!showComments)}
           >
             <MessageCircle size={18} className="mr-2" />
-            {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
+            {commentCount} {commentCount === 1 ? "Comment" : "Comments"}
           </Button>
         </div>
 
