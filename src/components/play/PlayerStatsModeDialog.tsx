@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ interface PlayerStatsModeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (mode: StatsMode) => Promise<void>;
+  currentMode?: StatsMode;
   saving?: boolean;
 }
 
@@ -24,9 +25,16 @@ export function PlayerStatsModeDialog({
   open,
   onOpenChange,
   onSelect,
+  currentMode,
   saving,
 }: PlayerStatsModeDialogProps) {
-  const [selectedMode, setSelectedMode] = useState<StatsMode>('none');
+  const [selectedMode, setSelectedMode] = useState<StatsMode>(currentMode ?? 'none');
+
+  // Keep dialog selection in sync with the latest saved mode
+  useEffect(() => {
+    if (!open) return;
+    setSelectedMode(currentMode ?? 'none');
+  }, [open, currentMode]);
 
   const handleConfirm = async () => {
     await onSelect(selectedMode);

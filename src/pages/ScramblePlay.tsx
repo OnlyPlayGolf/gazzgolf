@@ -757,6 +757,7 @@ export default function ScramblePlay() {
         open={showStatsModeDialog}
         onOpenChange={setShowStatsModeDialog}
         onSelect={setStatsMode}
+        currentMode={statsMode}
         saving={statsModeSaving}
       />
 

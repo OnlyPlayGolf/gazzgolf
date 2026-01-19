@@ -243,6 +243,22 @@ export default function MatchPlaySetup() {
 
         if (error) throw error;
         createdGames.push({ id: game.id, groupIndex: i });
+
+        // Persist the player's stats mode choice for their match (used by in-game + settings screens)
+        if (group.players.some(p => p.isCurrentUser)) {
+          try {
+            await supabase
+              .from('player_game_stats_mode')
+              .upsert({
+                user_id: user.id,
+                game_id: game.id,
+                game_type: 'match_play',
+                stats_mode: statsMode,
+              }, { onConflict: 'user_id,game_id,game_type' });
+          } catch (e) {
+            console.warn('Failed to save player stats mode preference:', e);
+          }
+        }
       }
 
       if (createdGames.length === 0) {

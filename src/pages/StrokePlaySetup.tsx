@@ -219,6 +219,20 @@ export default function StrokePlaySetup() {
 
       if (error) throw error;
 
+      // Persist the player's stats mode choice for this round (used by in-round settings)
+      try {
+        await supabase
+          .from('player_game_stats_mode')
+          .upsert({
+            user_id: user.id,
+            game_id: round.id,
+            game_type: 'round',
+            stats_mode: statsMode,
+          }, { onConflict: 'user_id,game_id,game_type' });
+      } catch (e) {
+        console.warn('Failed to save player stats mode preference:', e);
+      }
+
       // Create game groups and add players with group references
       const hasMultipleGroups = groups.length > 1;
 

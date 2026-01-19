@@ -483,6 +483,7 @@ export default function CopenhagenPlay() {
         open={showStatsModeDialog}
         onOpenChange={setShowStatsModeDialog}
         onSelect={setStatsMode}
+        currentMode={statsMode}
         saving={statsModeSaving}
       />
 

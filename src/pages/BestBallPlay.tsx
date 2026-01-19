@@ -660,6 +660,13 @@ export default function BestBallPlay() {
       {gameId && <BestBallBottomTabBar gameId={gameId} />}
 
       {/* Stats Mode Dialog */}
+      <PlayerStatsModeDialog
+        open={showStatsModeDialog}
+        onOpenChange={setShowStatsModeDialog}
+        onSelect={setStatsMode}
+        currentMode={statsMode}
+        saving={statsModeSaving}
+      />
 
       {/* Per-player stats entry */}
       {game?.team_a_players?.[0] && (

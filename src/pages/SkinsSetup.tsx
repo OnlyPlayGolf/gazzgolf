@@ -219,6 +219,20 @@ export default function SkinsSetup() {
 
       if (error) throw error;
 
+      // Persist the player's stats mode choice for this game (used by in-game + settings screens)
+      try {
+        await supabase
+          .from('player_game_stats_mode')
+          .upsert({
+            user_id: user.id,
+            game_id: skinsGame.id,
+            game_type: 'skins',
+            stats_mode: statsMode,
+          }, { onConflict: 'user_id,game_id,game_type' });
+      } catch (e) {
+        console.warn('Failed to save player stats mode preference:', e);
+      }
+
       // Save settings for the tracker
       sessionStorage.setItem('skinsSettings', JSON.stringify({
         skinValue,

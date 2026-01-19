@@ -446,6 +446,7 @@ export default function MatchPlayPlay() {
           open={showStatsModeDialog}
           onOpenChange={setShowStatsModeDialog}
           onSelect={setPlayerStatsMode}
+          currentMode={playerStatsMode}
           saving={statsModeSaving}
         />
 
