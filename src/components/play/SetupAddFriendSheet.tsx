@@ -13,7 +13,7 @@ interface Friend {
   id: string;
   display_name: string | null;
   username: string | null;
-  handicap: string | null;
+  handicap?: string | null;
   avatar_url: string | null;
 }
 

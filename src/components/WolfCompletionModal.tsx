@@ -13,7 +13,7 @@ import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 interface CourseHole {
   hole_number: number;
   par: number;
-  stroke_index: number;
+  stroke_index?: number;
 }
 
 interface WolfCompletionModalProps {
