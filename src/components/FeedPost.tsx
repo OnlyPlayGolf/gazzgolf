@@ -39,42 +39,16 @@ import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 
-// Shared cache for course_holes to reduce duplicate requests
-const courseHolesCache = new Map<string, Array<{ hole_number: number; par: number; stroke_index: number }>>();
-const courseHolesFetchPromises = new Map<string, Promise<Array<{ hole_number: number; par: number; stroke_index: number }> | null>>();
-
-// Helper function to fetch course_holes with caching
-const fetchCourseHolesCached = async (courseId: string | null): Promise<Array<{ hole_number: number; par: number; stroke_index: number }> | null> => {
-  if (!courseId) return null;
-  
-  // Check cache first
-  if (courseHolesCache.has(courseId)) {
-    return courseHolesCache.get(courseId)!;
-  }
-  
-  // Check if fetch is already in progress
-  if (courseHolesFetchPromises.has(courseId)) {
-    return courseHolesFetchPromises.get(courseId)!;
-  }
-  
-  // Start fetch
-  const fetchPromise = supabase
-    .from("course_holes")
-    .select("hole_number, par, stroke_index")
-    .eq("course_id", courseId)
-    .order("hole_number")
-    .then(({ data, error }) => {
-      if (error || !data) {
-        courseHolesFetchPromises.delete(courseId);
-        return null;
-      }
-      courseHolesCache.set(courseId, data);
-      courseHolesFetchPromises.delete(courseId);
-      return data;
-    });
-  
-  courseHolesFetchPromises.set(courseId, fetchPromise);
-  return fetchPromise;
+const normalizeCourseHoles = (courseHoles: any) => {
+  if (!Array.isArray(courseHoles) || courseHoles.length === 0) return null;
+  return courseHoles
+    .map((h: any) => ({
+      hole_number: Number(h?.hole_number),
+      par: Number(h?.par),
+      stroke_index: Number(h?.stroke_index ?? h?.hole_number),
+    }))
+    .filter((h: any) => Number.isFinite(h.hole_number) && Number.isFinite(h.par) && Number.isFinite(h.stroke_index))
+    .sort((a: any, b: any) => a.hole_number - b.hole_number) as Array<{ hole_number: number; par: number; stroke_index: number }>;
 };
 
 // Parse round scorecard result from post content (new format with scorecard data)
@@ -131,6 +105,7 @@ const parseRoundScorecardResult = (content: string) => {
       roundId: roundId || null,
       holeScores: scorecardData.scores as Record<number, number>,
       holePars: scorecardData.pars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
       textContent: stripTaggedBlock(content, "ROUND_SCORECARD"),
     };
   } catch (e) {
@@ -168,6 +143,7 @@ const parseMatchPlayScorecardResult = (content: string) => {
         gameId: match[8] || null,
         holeScores,
         holePars: scorecardData.holePars as Record<number, number>,
+        courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
         matchStatus,
         textContent: content.replace(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/s, '').trim()
       };
@@ -201,6 +177,7 @@ const parseBestBallScorecardResult = (content: string) => {
           matchStatusAfter: number;
         }>,
         holePars: scorecardData.holePars as Record<number, number>,
+        courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
         teamAPlayers: scorecardData.teamAPlayers as { id: string; name: string }[],
         teamBPlayers: scorecardData.teamBPlayers as { id: string; name: string }[],
         textContent: content.replace(/\[BEST_BALL_SCORECARD\].+?\[\/BEST_BALL_SCORECARD\]/s, '').trim()
@@ -235,6 +212,7 @@ const parseBestBallStrokePlayScorecardResult = (content: string) => {
           teamBScores: { playerId: string; playerName: string; grossScore: number }[];
         }>,
         holePars: scorecardData.holePars as Record<number, number>,
+        courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
         teamAPlayers: scorecardData.teamAPlayers as { id: string; name: string }[],
         teamBPlayers: scorecardData.teamBPlayers as { id: string; name: string }[],
         textContent: content.replace(/\[BEST_BALL_STROKE_PLAY_SCORECARD\].+?\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/s, '').trim()
@@ -345,6 +323,7 @@ const parseUmbriagioScorecardResult = (content: string) => {
       gameId: gameId || null,
       holePoints: scorecardData.holePoints as Record<number, { teamA: number; teamB: number }>,
       holePars: scorecardData.holePars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
       textContent: stripTaggedBlock(content, "UMBRIAGO_SCORECARD"),
     };
   } catch (e) {
@@ -394,6 +373,7 @@ const parseCopenhagenScorecardResult = (content: string) => {
         { p1: number | null; p2: number | null; p3: number | null; p1pts: number; p2pts: number; p3pts: number }
       >,
       holePars: scorecardData.holePars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
       textContent: stripTaggedBlock(content, "COPENHAGEN_SCORECARD"),
     };
   } catch (e) {
@@ -421,6 +401,7 @@ const parseScrambleScorecardResult = (content: string) => {
       gameId: gameId || null,
       holeScores: scorecardData.holeScores as Record<number, Record<string, number | null>>,
       holePars: scorecardData.holePars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
       teams: scorecardData.teams as Array<{ id: string; name: string; players: Array<{ id: string; name: string }> }>,
       textContent: stripTaggedBlock(content, "SCRAMBLE_SCORECARD"),
     };
@@ -454,6 +435,7 @@ const parseSkinsScorecardResult = (content: string) => {
         number,
         { winnerId: string | null; skinsAvailable: number; par: number; playerScores?: Record<string, number> }
       >,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
       textContent: stripTaggedBlock(content, "SKINS_SCORECARD"),
     };
   } catch (e) {
@@ -485,6 +467,7 @@ const parseWolfScorecardResult = (content: string) => {
         number,
         { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }
       >,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
       textContent: stripTaggedBlock(content, "WOLF_SCORECARD"),
     };
   } catch (e) {
@@ -1097,29 +1080,12 @@ const BestBallScorecardInPost = ({
   const { strokePlayEnabled } = useStrokePlayEnabled(bestBallScorecardResult.gameId || '', 'best_ball');
 
   useEffect(() => {
-    const fetchCourseHoles = async () => {
-      if (bestBallScorecardResult.gameId) {
-        // Try to fetch course holes from game
-        const { data: gameData } = await supabase
-          .from("best_ball_games")
-          .select("course_id, holes_played")
-          .eq("id", bestBallScorecardResult.gameId)
-          .single();
-
-        if (gameData?.course_id) {
-          const holesData = await fetchCourseHolesCached(gameData.course_id);
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
+    const embedded = normalizeCourseHoles((bestBallScorecardResult as any).courseHoles);
+    if (embedded) {
+      setCourseHoles(embedded);
+      setLoading(false);
+      return;
+    }
       // Fallback: construct course holes from holePars
       const holes = Object.keys(bestBallScorecardResult.holePars)
         .map(holeNum => ({
@@ -1130,10 +1096,7 @@ const BestBallScorecardInPost = ({
         .sort((a, b) => a.hole_number - b.hole_number);
       setCourseHoles(holes);
       setLoading(false);
-    };
-
-    fetchCourseHoles();
-  }, [bestBallScorecardResult.gameId, bestBallScorecardResult.holePars]);
+  }, [bestBallScorecardResult.holePars, (bestBallScorecardResult as any).courseHoles]);
 
   // Calculate match result from user's perspective
   const userMatchStatus = bestBallScorecardResult.matchStatus;
@@ -1224,29 +1187,12 @@ const BestBallStrokePlayScorecardInPost = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCourseHoles = async () => {
-      if (bestBallStrokePlayScorecardResult.gameId) {
-        // Try to fetch course holes from game
-        const { data: gameData } = await supabase
-          .from("best_ball_games")
-          .select("course_id, holes_played")
-          .eq("id", bestBallStrokePlayScorecardResult.gameId)
-          .single();
-
-        if (gameData?.course_id) {
-          const holesData = await fetchCourseHolesCached(gameData.course_id);
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
+    const embedded = normalizeCourseHoles((bestBallStrokePlayScorecardResult as any).courseHoles);
+    if (embedded) {
+      setCourseHoles(embedded);
+      setLoading(false);
+      return;
+    }
       // Fallback: construct course holes from holePars
       const holes = Object.keys(bestBallStrokePlayScorecardResult.holePars)
         .map(holeNum => ({
@@ -1257,10 +1203,7 @@ const BestBallStrokePlayScorecardInPost = ({
         .sort((a, b) => a.hole_number - b.hole_number);
       setCourseHoles(holes);
       setLoading(false);
-    };
-
-    fetchCourseHoles();
-  }, [bestBallStrokePlayScorecardResult.gameId, bestBallStrokePlayScorecardResult.holePars]);
+  }, [bestBallStrokePlayScorecardResult.holePars, (bestBallStrokePlayScorecardResult as any).courseHoles]);
 
   const handleRoundCardClick = () => {
     if (bestBallStrokePlayScorecardResult.gameId) {
@@ -1539,11 +1482,17 @@ const UmbriagioScorecardInPost = ({
 
   useEffect(() => {
     const fetchData = async () => {
+      // Prefer embedded course holes from the post payload (avoids course_holes fetches)
+      const embedded = normalizeCourseHoles((umbriagioScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      }
+
       if (umbriagioScorecardResult.gameId) {
-        // Fetch game data (for player names) and course holes
+        // Fetch game data (for player names)
         const { data: gameDataResult } = await supabase
           .from("umbriago_games")
-          .select("course_id, holes_played, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+          .select("team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
           .eq("id", umbriagioScorecardResult.gameId)
           .single();
 
@@ -1554,18 +1503,6 @@ const UmbriagioScorecardInPost = ({
             team_b_player_1: gameDataResult.team_b_player_1,
             team_b_player_2: gameDataResult.team_b_player_2,
           });
-
-          // Fetch course holes
-          if (gameDataResult.course_id) {
-            const holesData = await fetchCourseHolesCached(gameDataResult.course_id);
-
-            if (holesData) {
-              const filteredHoles = gameDataResult.holes_played === 9 
-                ? holesData.slice(0, 9) 
-                : holesData;
-              setCourseHoles(filteredHoles);
-            }
-          }
 
           // Fetch holes for individual player scores (for stroke play)
           if (strokePlayEnabled) {
@@ -1586,19 +1523,21 @@ const UmbriagioScorecardInPost = ({
       }
 
       // Fallback: construct course holes from holePars
-      const holes = Object.keys(umbriagioScorecardResult.holePars)
-        .map(holeNum => ({
-          hole_number: parseInt(holeNum),
-          par: umbriagioScorecardResult.holePars[parseInt(holeNum)],
-          stroke_index: parseInt(holeNum), // Default stroke index
-        }))
-        .sort((a, b) => a.hole_number - b.hole_number);
-      setCourseHoles(holes);
+      if (courseHoles.length === 0) {
+        const holes = Object.keys(umbriagioScorecardResult.holePars)
+          .map(holeNum => ({
+            hole_number: parseInt(holeNum),
+            par: umbriagioScorecardResult.holePars[parseInt(holeNum)],
+            stroke_index: parseInt(holeNum), // Default stroke index
+          }))
+          .sort((a, b) => a.hole_number - b.hole_number);
+        setCourseHoles(holes);
+      }
       setLoading(false);
     };
 
     fetchData();
-  }, [umbriagioScorecardResult.gameId, umbriagioScorecardResult.holePars, strokePlayEnabled]);
+  }, [umbriagioScorecardResult.gameId, umbriagioScorecardResult.holePars, strokePlayEnabled, (umbriagioScorecardResult as any).courseHoles, courseHoles.length]);
 
   // Calculate match result from user's perspective
   const winningTeam = umbriagioScorecardResult.winningTeam;
@@ -1803,23 +1742,12 @@ const CopenhagenScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (copenhagenScorecardResult.gameId) {
-        // Fetch course holes from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("copenhagen_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", copenhagenScorecardResult.gameId)
           .single();
-
-        if (gameData?.course_id) {
-          const holesData = await fetchCourseHolesCached(gameData.course_id);
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
 
         // Calculate user's position (same logic as unifiedRoundsLoader.ts for Profile)
         const { data: { user } } = await supabase.auth.getUser();
@@ -1869,8 +1797,11 @@ const CopenhagenScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holePars
-      if (courseHoles.length === 0) {
+      const embedded = normalizeCourseHoles((copenhagenScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0) {
+        // Fallback: construct course holes from holePars
         const holes = Object.keys(copenhagenScorecardResult.holePars)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -1884,7 +1815,7 @@ const CopenhagenScorecardInPost = ({
     };
 
     fetchData();
-  }, [copenhagenScorecardResult.gameId, copenhagenScorecardResult.holePars]);
+  }, [copenhagenScorecardResult.gameId, copenhagenScorecardResult.holePars, courseHoles.length, (copenhagenScorecardResult as any).courseHoles]);
 
   // Build holes array from scorecard data
   const holes = Object.keys(copenhagenScorecardResult.holeScores).map(holeNum => {
@@ -2097,23 +2028,12 @@ const ScrambleScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (scrambleScorecardResult.gameId) {
-        // Fetch course holes from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("scramble_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", scrambleScorecardResult.gameId)
           .single();
-
-        if (gameData?.course_id) {
-          const holesData = await fetchCourseHolesCached(gameData.course_id);
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
 
         // Calculate user's position
         const { data: { user } } = await supabase.auth.getUser();
@@ -2156,8 +2076,11 @@ const ScrambleScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holePars
-      if (courseHoles.length === 0) {
+      const embedded = normalizeCourseHoles((scrambleScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0) {
+        // Fallback: construct course holes from holePars
         const holesFromPars = Object.keys(scrambleScorecardResult.holePars)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -2171,7 +2094,7 @@ const ScrambleScorecardInPost = ({
     };
 
     fetchData();
-  }, [scrambleScorecardResult.gameId, scrambleScorecardResult.holePars]);
+  }, [scrambleScorecardResult.gameId, scrambleScorecardResult.holePars, courseHoles.length, (scrambleScorecardResult as any).courseHoles]);
 
   // Reconstruct minimal game object
   const game = {
@@ -2271,23 +2194,12 @@ const SkinsScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (skinsScorecardResult.gameId) {
-        // Fetch course holes and game owner from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("skins_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", skinsScorecardResult.gameId)
           .maybeSingle();
-
-        if (gameData?.course_id) {
-          const holesData = await fetchCourseHolesCached(gameData.course_id);
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
 
         // Calculate user's position
         const { data: { user } } = await supabase.auth.getUser();
@@ -2327,8 +2239,11 @@ const SkinsScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holeResults
-      if (courseHoles.length === 0 && skinsScorecardResult.holeResults) {
+      const embedded = normalizeCourseHoles((skinsScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0 && skinsScorecardResult.holeResults) {
+        // Fallback: construct course holes from holeResults
         const holesFromResults = Object.keys(skinsScorecardResult.holeResults)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -2342,7 +2257,7 @@ const SkinsScorecardInPost = ({
     };
 
     fetchData();
-  }, [skinsScorecardResult.gameId, skinsScorecardResult.holeResults, skinsScorecardResult.playerScores]);
+  }, [skinsScorecardResult.gameId, skinsScorecardResult.holeResults, skinsScorecardResult.playerScores, courseHoles.length, (skinsScorecardResult as any).courseHoles]);
 
   const handleHeaderClick = () => {
     if (skinsScorecardResult.gameId) {
@@ -2432,23 +2347,12 @@ const WolfScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (wolfScorecardResult.gameId) {
-        // Fetch course holes and game owner from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("wolf_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", wolfScorecardResult.gameId)
           .single();
-
-        if (gameData?.course_id) {
-          const holesData = await fetchCourseHolesCached(gameData.course_id);
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
 
         // Calculate user's position
         const { data: { user } } = await supabase.auth.getUser();
@@ -2488,8 +2392,11 @@ const WolfScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holeResults
-      if (courseHoles.length === 0 && wolfScorecardResult.holeResults) {
+      const embedded = normalizeCourseHoles((wolfScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0 && wolfScorecardResult.holeResults) {
+        // Fallback: construct course holes from holeResults
         const holesFromResults = Object.keys(wolfScorecardResult.holeResults)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -2503,7 +2410,7 @@ const WolfScorecardInPost = ({
     };
 
     fetchData();
-  }, [wolfScorecardResult.gameId, wolfScorecardResult.holeResults, wolfScorecardResult.playerScores]);
+  }, [wolfScorecardResult.gameId, wolfScorecardResult.holeResults, wolfScorecardResult.playerScores, courseHoles.length, (wolfScorecardResult as any).courseHoles]);
 
   const handleHeaderClick = () => {
     if (wolfScorecardResult.gameId) {
@@ -2575,26 +2482,12 @@ const MatchPlayScorecardInPost = ({
   const { strokePlayEnabled } = useStrokePlayEnabled(matchPlayScorecardResult.gameId || '', 'match_play');
 
   useEffect(() => {
-    const fetchCourseHoles = async () => {
-      if (matchPlayScorecardResult.gameId) {
-        // Try to fetch course holes from game
-        const { data: gameData } = await supabase
-          .from("match_play_games")
-          .select("course_id")
-          .eq("id", matchPlayScorecardResult.gameId)
-          .maybeSingle();
-
-        if (gameData?.course_id) {
-          const holesData = await fetchCourseHolesCached(gameData.course_id);
-
-          if (holesData) {
-            setCourseHoles(holesData);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
+    const embedded = normalizeCourseHoles((matchPlayScorecardResult as any).courseHoles);
+    if (embedded) {
+      setCourseHoles(embedded);
+      setLoading(false);
+      return;
+    }
       // Fallback: construct course holes from holePars
       const holes = Object.keys(matchPlayScorecardResult.holePars)
         .map(holeNum => ({
@@ -2605,10 +2498,7 @@ const MatchPlayScorecardInPost = ({
         .sort((a, b) => a.hole_number - b.hole_number);
       setCourseHoles(holes);
       setLoading(false);
-    };
-
-    fetchCourseHoles();
-  }, [matchPlayScorecardResult.gameId, matchPlayScorecardResult.holePars]);
+  }, [matchPlayScorecardResult.holePars, (matchPlayScorecardResult as any).courseHoles]);
 
   // Convert holeScores to holes array format for MatchPlayScorecardView
   const holes = Object.keys(matchPlayScorecardResult.holeScores).map(holeNum => {

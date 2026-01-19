@@ -88,7 +88,16 @@ export function RoundCompletionModal({
         holeParsObj[hole.hole_number] = hole.par;
       });
       
-      const scorecardData = JSON.stringify({ scores: holeScoresObj, pars: holeParsObj, totalPar });
+      const scorecardData = JSON.stringify({
+        scores: holeScoresObj,
+        pars: holeParsObj,
+        totalPar,
+        courseHoles: courseHoles.map(h => ({
+          hole_number: h.hole_number,
+          par: h.par,
+          stroke_index: h.stroke_index ?? h.hole_number,
+        })),
+      });
 
       // Extended format with scorecard: [ROUND_SCORECARD]name|course|date|score|vspar|holes|totalPar|roundId|scorecardJson[/ROUND_SCORECARD]
       const roundResult = `[ROUND_SCORECARD]${roundName}|${courseName}|${datePlayed}|${totalScore}|${scoreVsPar}|${holesPlayed}|${totalPar}|${roundId || ''}|${scorecardData}[/ROUND_SCORECARD]`;
