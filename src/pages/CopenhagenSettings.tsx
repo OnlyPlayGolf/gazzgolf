@@ -54,7 +54,6 @@ export default function CopenhagenSettings() {
   } = usePlayerStatsMode(gameId, 'copenhagen');
 
   // Game settings state
-  const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
   const [sweepRuleEnabled, setSweepRuleEnabled] = useState(true);
@@ -107,7 +106,6 @@ export default function CopenhagenSettings() {
 
       if (gameData) {
         setGame(gameData as CopenhagenGame);
-        setUseHandicaps(gameData.use_handicaps || false);
 
         // Fetch holes data for completion dialog
         const { data: holesData } = await supabase
@@ -155,14 +153,14 @@ export default function CopenhagenSettings() {
     if (!gameId || !game) return;
 
     try {
-      // Update database for use_handicaps
+      // Update database for use_handicaps (always false)
       await supabase
         .from("copenhagen_games")
-        .update({ use_handicaps: useHandicaps })
+        .update({ use_handicaps: false })
         .eq("id", gameId);
 
       // Save other settings to localStorage
-      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps, sweepRuleEnabled };
+      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps: false, sweepRuleEnabled };
       localStorage.setItem(`copenhagenSettings_${gameId}`, JSON.stringify(settings));
 
       toast({ title: "Settings saved" });
@@ -174,10 +172,10 @@ export default function CopenhagenSettings() {
   // Auto-save settings when they change
   useEffect(() => {
     if (game && gameId) {
-      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps, sweepRuleEnabled };
+      const settings = { mulligansPerPlayer, gimmesEnabled, useHandicaps: false, sweepRuleEnabled };
       localStorage.setItem(`copenhagenSettings_${gameId}`, JSON.stringify(settings));
     }
-  }, [mulligansPerPlayer, gimmesEnabled, useHandicaps, sweepRuleEnabled, gameId, game]);
+  }, [mulligansPerPlayer, gimmesEnabled, sweepRuleEnabled, gameId, game]);
 
   const handleFinishGame = async () => {
     if (!game) return;
@@ -193,7 +191,7 @@ export default function CopenhagenSettings() {
 
       await supabase
         .from("copenhagen_games")
-        .update({ is_finished: true, winner_player: winner, use_handicaps: useHandicaps })
+        .update({ is_finished: true, winner_player: winner, use_handicaps: false })
         .eq("id", game.id);
 
       toast({ title: "Game finished!" });
@@ -248,17 +246,17 @@ export default function CopenhagenSettings() {
   const players: GamePlayer[] = [
     { 
       name: game.player_1, 
-      handicap: useHandicaps ? game.player_1_handicap : undefined,
+      handicap: undefined,
       tee: player1Tee
     },
     { 
       name: game.player_2, 
-      handicap: useHandicaps ? game.player_2_handicap : undefined,
+      handicap: undefined,
       tee: player2Tee
     },
     { 
       name: game.player_3, 
-      handicap: useHandicaps ? game.player_3_handicap : undefined,
+      handicap: undefined,
       tee: player3Tee
     },
   ];
@@ -294,9 +292,7 @@ export default function CopenhagenSettings() {
     teeInfo,
     holesPlayed: game.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
-    scoring: useHandicaps 
-      ? `${stake} per point • Net scoring` 
-      : `${stake} per point • Gross scoring`,
+    scoring: `${stake} per point • Gross scoring`,
     roundName: (game as any).round_name,
   };
 
@@ -345,20 +341,6 @@ export default function CopenhagenSettings() {
           <CardContent className="space-y-4">
             <StrokePlayToggle gameId={gameId} gameType="copenhagen" />
 
-            {/* Use Handicaps toggle */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply player handicaps to scoring
-                </p>
-              </div>
-              <Switch
-                id="handicap"
-                checked={useHandicaps}
-                onCheckedChange={setUseHandicaps}
-              />
-            </div>
 
             {/* Mulligans */}
             <div className="space-y-2">
@@ -434,7 +416,7 @@ export default function CopenhagenSettings() {
         open={showPlayersModal}
         onOpenChange={setShowPlayersModal}
         players={players}
-        useHandicaps={useHandicaps}
+        useHandicaps={false}
       />
 
       <DeleteGameDialog

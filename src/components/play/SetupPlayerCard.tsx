@@ -1,6 +1,6 @@
 import { User, X, Pencil, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn, formatHandicap } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import { getTeeDisplayName } from "@/components/TeeSelector";
 
@@ -31,7 +31,6 @@ export function SetupPlayerCard({
   dragHandleProps,
   showDragHandle = false,
 }: SetupPlayerCardProps) {
-  const hasHandicap = player.handicap !== undefined;
 
   return (
     <div
@@ -64,14 +63,10 @@ export function SetupPlayerCard({
           {player.isCurrentUser && <span className="text-xs text-muted-foreground ml-1">(You)</span>}
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {hasHandicap && (
-            <span className="whitespace-nowrap">HCP: {formatHandicap(player.handicap)}</span>
-          )}
-          {hasHandicap && showTee && player.teeColor && <span>•</span>}
           {showTee && player.teeColor && (
             <span className="truncate">{getTeeDisplayName(player.teeColor)}</span>
           )}
-          {!hasHandicap && !player.teeColor && <span>Tap to edit</span>}
+          {!player.teeColor && <span>Tap to edit</span>}
         </div>
       </div>
 

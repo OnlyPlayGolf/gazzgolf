@@ -408,7 +408,7 @@ export default function MatchPlayPlay() {
                   </Badge>
                 )}
               </div>
-              {game.use_handicaps && game.player_1_handicap && (
+              {false && (
                 <span className="text-sm text-muted-foreground">HCP: {game.player_1_handicap}</span>
               )}
             </div>
@@ -439,7 +439,7 @@ export default function MatchPlayPlay() {
                   </Badge>
                 )}
               </div>
-              {game.use_handicaps && game.player_2_handicap && (
+              {false && (
                 <span className="text-sm text-muted-foreground">HCP: {game.player_2_handicap}</span>
               )}
             </div>

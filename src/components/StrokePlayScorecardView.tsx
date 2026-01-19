@@ -66,14 +66,14 @@ export function StrokePlayScorecardView({
       <Table className="w-full table-fixed">
         <TableHeader>
           <TableRow className="bg-primary">
-            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
+            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {nineHoles.map(hole => (
-              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                 {hole.hole_number}
               </TableHead>
             ))}
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">{nineLabel}</TableHead>
-            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">{nineLabel}</TableHead>
+            <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
               {isBackNine ? 'Tot' : (hasBackNine ? '' : 'Tot')}
             </TableHead>
           </TableRow>

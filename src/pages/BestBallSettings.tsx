@@ -185,13 +185,13 @@ export default function BestBallSettings() {
   const players: GamePlayer[] = [
     ...game.team_a_players.map(p => ({
       name: p.displayName,
-      handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
+      handicap: undefined,
       tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_a_name,
     })),
     ...game.team_b_players.map(p => ({
       name: p.displayName,
-      handicap: game.use_handicaps ? (p as any).playingHandicap ?? (p as any).handicap : undefined,
+      handicap: undefined,
       tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_b_name,
     })),
@@ -219,7 +219,7 @@ export default function BestBallSettings() {
     teeInfo,
     holesPlayed: game.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
-    scoring: game.use_handicaps ? "Net scoring (handicaps enabled)" : "Gross scoring",
+    scoring: "Gross scoring",
     roundName: (game as any).round_name,
   };
 
@@ -271,23 +271,6 @@ export default function BestBallSettings() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>Use Handicaps (Net)</Label>
-                  <p className="text-xs text-muted-foreground">Apply stroke allocation</p>
-                </div>
-                <Switch 
-                  checked={game.use_handicaps} 
-                  onCheckedChange={async (checked) => {
-                    await supabase
-                      .from("best_ball_games")
-                      .update({ use_handicaps: checked })
-                      .eq("id", gameId);
-                    setGame({ ...game, use_handicaps: checked });
-                    toast({ title: checked ? "Handicaps enabled" : "Handicaps disabled" });
-                  }} 
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
                   <Label>Mulligans per Player</Label>
                   <p className="text-xs text-muted-foreground">Extra shots allowed</p>
                 </div>
@@ -302,7 +285,7 @@ export default function BestBallSettings() {
                     setGame({ ...game, mulligans_per_player: mulligans } as any);
                     toast({ title: mulligans === 0 ? "Mulligans disabled" : mulligans === 9 ? "1 mulligan per 9 holes" : `Mulligans set to ${mulligans}` });
                   }}
-                >
+                  >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -337,7 +320,6 @@ export default function BestBallSettings() {
         open={showPlayersModal}
         onOpenChange={setShowPlayersModal}
         players={players}
-        useHandicaps={game.use_handicaps}
       />
 
       <DeleteGameDialog

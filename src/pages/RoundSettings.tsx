@@ -74,7 +74,6 @@ export default function RoundSettings() {
 
   // Game settings state
   const [teeColor, setTeeColor] = useState("white");
-  const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
 
@@ -106,7 +105,6 @@ export default function RoundSettings() {
     if (roundSettings) {
       const settings = JSON.parse(roundSettings);
       setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-      setHandicapEnabled(settings.handicapEnabled || false);
       setGimmesEnabled(settings.gimmesEnabled || false);
       return;
     }
@@ -116,7 +114,6 @@ export default function RoundSettings() {
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
       setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-      setHandicapEnabled(settings.handicapEnabled || false);
       setGimmesEnabled(settings.gimmesEnabled || false);
     }
   };
@@ -125,13 +122,11 @@ export default function RoundSettings() {
     // Save to round-specific localStorage for persistence
     localStorage.setItem(`roundSettings_${roundId}`, JSON.stringify({
       mulligansPerPlayer,
-      handicapEnabled,
       gimmesEnabled,
     }));
     // Also save to session storage for backward compatibility
     sessionStorage.setItem('strokePlaySettings', JSON.stringify({
       mulligansPerPlayer,
-      handicapEnabled,
       gimmesEnabled,
     }));
   };
@@ -140,7 +135,7 @@ export default function RoundSettings() {
     if (!loading) {
       saveSettings();
     }
-  }, [mulligansPerPlayer, handicapEnabled, gimmesEnabled]);
+  }, [mulligansPerPlayer, gimmesEnabled]);
 
   const fetchRound = async () => {
     try {
@@ -192,8 +187,6 @@ export default function RoundSettings() {
         }
         
         // Check if any player has handicap
-        const hasHandicaps = playersData.some(p => p.handicap !== null);
-        setHandicapEnabled(hasHandicaps);
       }
     } catch (error) {
       console.error("Error fetching round:", error);
@@ -337,7 +330,7 @@ export default function RoundSettings() {
     return round.tee_set ? getTeeDisplayName(round.tee_set) : "Not specified";
   })();
 
-  const hasHandicaps = players.some(p => p.handicap !== null);
+  const hasHandicaps = false;
 
   const gameDetails: GameDetailsData = {
     format: "Stroke Play",
@@ -347,7 +340,7 @@ export default function RoundSettings() {
     teeInfo,
     holesPlayed: round.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
-    scoring: hasHandicaps ? "Net scoring (handicaps enabled)" : "Gross scoring",
+    scoring: "Gross scoring",
     roundName: round.round_name,
   };
 
@@ -417,20 +410,6 @@ export default function RoundSettings() {
                 />
               </div>
 
-              {/* Handicap toggle */}
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="space-y-0.5">
-                  <Label htmlFor="handicap">Use Handicaps</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Apply player handicaps to scoring
-                  </p>
-                </div>
-                <Switch
-                  id="handicap"
-                  checked={handicapEnabled}
-                  onCheckedChange={setHandicapEnabled}
-                />
-              </div>
 
               {/* Mulligans */}
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">

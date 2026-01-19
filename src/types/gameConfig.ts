@@ -67,10 +67,6 @@ export interface GameConfiguration {
   teams?: TeamConfig[];
   teamRotation?: boolean;
   
-  // Handicaps
-  useHandicaps: boolean;
-  handicapAdjustments?: HandicapAdjustment[];
-  
   // Game settings
   mulligansPerPlayer?: number;
   gimmesEnabled?: boolean;

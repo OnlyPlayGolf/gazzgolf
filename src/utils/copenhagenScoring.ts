@@ -17,17 +17,17 @@ export function calculateCopenhagenPoints(
   scores: PlayerScore[],
   par: number
 ): HoleResult {
-  // Sort by net score (ascending - lower is better)
-  const sorted = [...scores].sort((a, b) => a.netScore - b.netScore);
+  // Sort by gross score (ascending - lower is better)
+  const sorted = [...scores].sort((a, b) => a.grossScore - b.grossScore);
   
-  const lowest = sorted[0].netScore;
-  const middle = sorted[1].netScore;
-  const highest = sorted[2].netScore;
+  const lowest = sorted[0].grossScore;
+  const middle = sorted[1].grossScore;
+  const highest = sorted[2].grossScore;
   
   // Check for sweep conditions
   // Sweep requires: birdie or better AND win by 2+ strokes over BOTH opponents
   const lowestPlayer = sorted[0];
-  const isBirdieOrBetter = lowestPlayer.netScore <= par - 1;
+  const isBirdieOrBetter = lowestPlayer.grossScore <= par - 1;
   const winsBy2OrMore = (middle - lowest) >= 2 && (highest - lowest) >= 2;
   const isSweep = isBirdieOrBetter && winsBy2OrMore;
   

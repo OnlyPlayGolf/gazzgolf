@@ -17,7 +17,6 @@ import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import {
   calculateBestBall,
   calculateHoleResult,
-  calculateHandicapStrokes,
   formatMatchStatus,
   isMatchFinished,
   getScoreColorClass,
@@ -104,30 +103,27 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
   buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles, game, courseHoles }) => {
     const buildPlayerScores = (
       players: BestBallPlayer[],
-      scoresMap: Record<string, number | null>,
-      useHandicaps: boolean
+      scoresMap: Record<string, number | null>
     ): BestBallPlayerScore[] => {
       return players.map(player => {
         const rawScore = scoresMap[player.odId];
         // Only use the score if it was actually entered (not null)
         const grossScore = rawScore !== null && rawScore !== undefined ? rawScore : null;
-        const handicapStrokes = useHandicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
-        const netScore = grossScore !== null ? grossScore - handicapStrokes : null;
         return {
           playerId: player.odId,
           playerName: player.displayName,
           grossScore,
-          netScore,
-          handicapStrokes,
+          netScore: grossScore,
+          handicapStrokes: 0,
         };
       });
     };
 
-    const teamAPlayerScores = buildPlayerScores(game.team_a_players, scores.teamA, game.use_handicaps);
-    const teamBPlayerScores = buildPlayerScores(game.team_b_players, scores.teamB, game.use_handicaps);
+    const teamAPlayerScores = buildPlayerScores(game.team_a_players, scores.teamA);
+    const teamBPlayerScores = buildPlayerScores(game.team_b_players, scores.teamB);
     
-    const teamAResult = calculateBestBall(teamAPlayerScores, game.use_handicaps);
-    const teamBResult = calculateBestBall(teamBPlayerScores, game.use_handicaps);
+    const teamAResult = calculateBestBall(teamAPlayerScores);
+    const teamBResult = calculateBestBall(teamBPlayerScores);
     
     const holeResult = calculateHoleResult(teamAResult.bestScore, teamBResult.bestScore);
     
@@ -149,15 +145,11 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
       stroke_index: strokeIndex,
       team_a_scores: teamAPlayerScores as unknown as any,
       team_b_scores: teamBPlayerScores as unknown as any,
-      team_a_best_gross: game.use_handicaps 
-        ? teamAPlayerScores.reduce((min, s) => Math.min(min, s.grossScore || Infinity), Infinity)
-        : teamAResult.bestScore,
-      team_a_best_net: game.use_handicaps ? teamAResult.bestScore : null,
+      team_a_best_gross: teamAResult.bestScore,
+      team_a_best_net: null,
       team_a_counting_player: teamAResult.countingPlayer,
-      team_b_best_gross: game.use_handicaps
-        ? teamBPlayerScores.reduce((min, s) => Math.min(min, s.grossScore || Infinity), Infinity)
-        : teamBResult.bestScore,
-      team_b_best_net: game.use_handicaps ? teamBResult.bestScore : null,
+      team_b_best_gross: teamBResult.bestScore,
+      team_b_best_net: null,
       team_b_counting_player: teamBResult.countingPlayer,
       team_a_running_total: teamARunning,
       team_b_running_total: teamBRunning,
@@ -168,8 +160,8 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
   },
   
   buildGameUpdate: ({ game, allHoles, newHoleData }) => {
-    const allHolesTeamA = allHoles.reduce((sum, h) => sum + (game.use_handicaps ? (h.team_a_best_net || 0) : (h.team_a_best_gross || 0)), 0);
-    const allHolesTeamB = allHoles.reduce((sum, h) => sum + (game.use_handicaps ? (h.team_b_best_net || 0) : (h.team_b_best_gross || 0)), 0);
+    const allHolesTeamA = allHoles.reduce((sum, h) => sum + (h.team_a_best_gross || 0), 0);
+    const allHolesTeamB = allHoles.reduce((sum, h) => sum + (h.team_b_best_gross || 0), 0);
 
     return {
       team_a_total: allHolesTeamA,
@@ -345,15 +337,12 @@ export default function BestBallPlay() {
         const grossFromMap = scoresMap?.[player.odId];
         // Only use the score if actually entered (not null)
         const grossScore = grossFromMap !== null && grossFromMap !== undefined ? grossFromMap : null;
-        const handicapStrokes = game.use_handicaps
-          ? calculateHandicapStrokes(player.handicap, strokeIndex)
-          : 0;
         return {
           playerId: player.odId,
           playerName: player.displayName,
           grossScore,
-          netScore: grossScore !== null ? grossScore - handicapStrokes : null,
-          handicapStrokes,
+          netScore: grossScore,
+          handicapStrokes: 0,
         };
       });
     };
@@ -362,8 +351,8 @@ export default function BestBallPlay() {
     const teamBPlayerScores = buildPlayerScores(game.team_b_players, scores?.teamB);
     
     return {
-      teamA: calculateBestBall(teamAPlayerScores, game.use_handicaps),
-      teamB: calculateBestBall(teamBPlayerScores, game.use_handicaps),
+      teamA: calculateBestBall(teamAPlayerScores),
+      teamB: calculateBestBall(teamBPlayerScores),
     };
   };
 
@@ -492,7 +481,7 @@ export default function BestBallPlay() {
   ) => {
     const score = scoresMap[player.odId];
     const hasScore = score !== undefined && score !== null;
-    const handicapStrokes = game.use_handicaps ? calculateHandicapStrokes(player.handicap, strokeIndex) : 0;
+    const handicapStrokes = 0;
     
     return (
       <Card
@@ -503,11 +492,6 @@ export default function BestBallPlay() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-lg font-bold">{player.displayName}</p>
-            {game.use_handicaps && (
-              <div className="text-sm text-muted-foreground">
-                HCP: {player.handicap ?? 0} {handicapStrokes > 0 && `(+${handicapStrokes})`}
-              </div>
-            )}
           </div>
           <div className="text-center">
             <div className={`text-2xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>

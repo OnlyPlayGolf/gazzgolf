@@ -14,7 +14,6 @@ export default function StrokePlaySettings() {
   const { toast } = useToast();
   
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
-  const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
 
   useEffect(() => {
@@ -23,7 +22,6 @@ export default function StrokePlaySettings() {
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
       setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-      setHandicapEnabled(settings.handicapEnabled || false);
       setGimmesEnabled(settings.gimmesEnabled || false);
     }
   }, []);
@@ -31,7 +29,6 @@ export default function StrokePlaySettings() {
   const handleSave = () => {
     const settings = {
       mulligansPerPlayer,
-      handicapEnabled,
       gimmesEnabled,
     };
     sessionStorage.setItem('strokePlaySettings', JSON.stringify(settings));
@@ -71,20 +68,6 @@ export default function StrokePlaySettings() {
               </p>
             </div>
 
-            {/* Handicap toggle */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply player handicaps to scoring
-                </p>
-              </div>
-              <Switch
-                id="handicap"
-                checked={handicapEnabled}
-                onCheckedChange={setHandicapEnabled}
-              />
-            </div>
 
             {/* Mulligans per player */}
             <div className="space-y-2">

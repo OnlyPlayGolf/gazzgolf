@@ -21,7 +21,6 @@ SUPPORTED COMMANDS:
 - Holes: "front 9", "back 9", "holes 1-6", "skip hole 7", "only par 3s"
 - Tees: "back tees", "forward tees", "red tees for player 2"
 - Players: "add John", "4 players", "teams of 2"
-- Handicaps: "use handicaps", "10 strokes for Mike"
 - Settings: "mulligans allowed", "gimmes on"
 
 TEE MAPPING:
@@ -51,8 +50,6 @@ ALWAYS output JSON (wrap in \`\`\`json):
   "teeAssignments": [{"playerIndex": 0, "playerName": "", "defaultTee": "medium", "holeOverrides": []}],
   "teams": null,
   "teamRotation": false,
-  "useHandicaps": false,
-  "handicapAdjustments": null,
   "mulligansPerPlayer": 0,
   "gimmesEnabled": false,
   "bonusRules": null,

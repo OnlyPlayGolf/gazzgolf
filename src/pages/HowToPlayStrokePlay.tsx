@@ -74,10 +74,6 @@ export default function HowToPlayStrokePlay() {
                 When using handicaps, players receive strokes on specific holes based 
                 on the stroke index. The lower the stroke index, the harder the hole.
               </p>
-              <p>
-                Your net score equals your gross score minus the strokes you receive 
-                on each hole.
-              </p>
             </CardContent>
           </Card>
 

@@ -1,6 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScoreInputGrid } from "./ScoreInputGrid";
-import { formatHandicapWithPrefix } from "@/lib/utils";
 
 interface PlayerScoreSheetProps {
   open: boolean;
@@ -61,9 +60,6 @@ export function PlayerScoreSheet({
         <div className="bg-primary text-primary-foreground p-4 rounded-lg mb-4 flex items-center justify-between">
           <div>
             <div className="text-lg font-bold">{playerName}</div>
-            {handicap !== null && handicap !== undefined && (
-              <div className="text-sm opacity-80">{formatHandicapWithPrefix(handicap)}</div>
-            )}
           </div>
           <div className="flex flex-col items-center">
             <div className={`bg-background text-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${currentScore === null || currentScore === 0 || currentScore === -1 ? 'text-muted-foreground' : ''}`}>

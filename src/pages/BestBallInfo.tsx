@@ -67,14 +67,6 @@ export default function BestBallInfo() {
               </ul>
             </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Handicaps (Optional)</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Net scores are calculated for each player when enabled</li>
-                <li>• Best net score from each team counts</li>
-                <li>• Strokes allocated based on stroke index of each hole</li>
-              </ul>
-            </div>
           </CardContent>
         </Card>
       </div>

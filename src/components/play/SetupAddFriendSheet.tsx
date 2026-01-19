@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, Search, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { cn, parseHandicap, formatHandicap } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Friend {
@@ -69,7 +69,7 @@ export function SetupAddFriendSheet({
       if (friendIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, display_name, username, handicap, avatar_url')
+          .select('id, display_name, username, avatar_url')
           .in('id', friendIds);
 
         if (profiles) {
@@ -90,12 +90,9 @@ export function SetupAddFriendSheet({
   });
 
   const handleSelectFriend = (friend: Friend) => {
-    const handicapValue = parseHandicap(friend.handicap);
-    
     const player: Player = {
       odId: friend.id,
       displayName: friend.display_name || friend.username || "Player",
-      handicap: handicapValue,
       teeColor: defaultTee,
       isTemporary: false,
     };
@@ -137,7 +134,6 @@ export function SetupAddFriendSheet({
             ) : (
               <div className="space-y-2">
                 {filteredFriends.map((friend) => {
-                  const handicapValue = parseHandicap(friend.handicap);
                   return (
                     <div
                       key={friend.id}
@@ -151,11 +147,6 @@ export function SetupAddFriendSheet({
                         <div className="font-medium truncate">
                           {friend.display_name || friend.username}
                         </div>
-                        {handicapValue !== undefined && (
-                          <div className="text-sm text-muted-foreground">
-                            HCP: {formatHandicap(handicapValue)}
-                          </div>
-                        )}
                       </div>
                       <Button variant="ghost" size="sm" className="flex-shrink-0">
                         <Check size={16} />

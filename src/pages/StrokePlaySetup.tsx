@@ -54,7 +54,6 @@ export default function StrokePlaySetup() {
   
   // Game settings
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
-  const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
   const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
@@ -145,7 +144,6 @@ export default function StrokePlaySetup() {
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-        setHandicapEnabled(settings.handicapEnabled || false);
         setGimmesEnabled(settings.gimmesEnabled || false);
       }
     };
@@ -258,7 +256,6 @@ export default function StrokePlaySetup() {
           round_id: round.id,
           user_id: p.odId,
           tee_color: p.teeColor || teeColor,
-          handicap: p.handicap,
           group_id: gameGroupId,
           is_guest: false,
         }));
@@ -268,7 +265,6 @@ export default function StrokePlaySetup() {
           round_id: round.id,
           user_id: null,
           tee_color: p.teeColor || teeColor,
-          handicap: p.handicap,
           group_id: gameGroupId,
           guest_name: p.displayName,
           is_guest: true,
@@ -290,7 +286,6 @@ export default function StrokePlaySetup() {
       // Save settings to round-specific localStorage
       localStorage.setItem(`roundSettings_${round.id}`, JSON.stringify({
         mulligansPerPlayer,
-        handicapEnabled,
         gimmesEnabled,
       }));
 
@@ -399,21 +394,6 @@ export default function StrokePlaySetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Handicap toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply player handicaps to scoring
-                </p>
-              </div>
-              <Switch
-                id="handicap"
-                checked={handicapEnabled}
-                onCheckedChange={setHandicapEnabled}
-              />
-            </div>
-
             {/* Mulligans */}
             <div className="space-y-2">
               <Label>Mulligans per Player</Label>

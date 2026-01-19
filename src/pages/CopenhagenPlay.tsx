@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { calculateCopenhagenPoints, calculateNetScore, normalizePoints } from "@/utils/copenhagenScoring";
+import { calculateCopenhagenPoints, normalizePoints } from "@/utils/copenhagenScoring";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,16 +56,10 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
   }),
   
   buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles, game }) => {
-    const netScores = {
-      player1: calculateNetScore(scores.player1, game.use_handicaps ? game.player_1_handicap : null, strokeIndex || 1),
-      player2: calculateNetScore(scores.player2, game.use_handicaps ? game.player_2_handicap : null, strokeIndex || 1),
-      player3: calculateNetScore(scores.player3, game.use_handicaps ? game.player_3_handicap : null, strokeIndex || 1),
-    };
-
     const playerScores = [
-      { grossScore: scores.player1, netScore: netScores.player1, playerIndex: 1 },
-      { grossScore: scores.player2, netScore: netScores.player2, playerIndex: 2 },
-      { grossScore: scores.player3, netScore: netScores.player3, playerIndex: 3 },
+      { grossScore: scores.player1, netScore: scores.player1, playerIndex: 1 },
+      { grossScore: scores.player2, netScore: scores.player2, playerIndex: 2 },
+      { grossScore: scores.player3, netScore: scores.player3, playerIndex: 3 },
     ];
 
     const result = calculateCopenhagenPoints(playerScores, par);
@@ -82,9 +76,9 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
       player_1_gross_score: scores.player1,
       player_2_gross_score: scores.player2,
       player_3_gross_score: scores.player3,
-      player_1_net_score: netScores.player1,
-      player_2_net_score: netScores.player2,
-      player_3_net_score: netScores.player3,
+      player_1_net_score: scores.player1,
+      player_2_net_score: scores.player2,
+      player_3_net_score: scores.player3,
       player_1_hole_points: result.player1Points,
       player_2_hole_points: result.player2Points,
       player_3_hole_points: result.player3Points,

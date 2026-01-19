@@ -279,10 +279,6 @@ export default function SpectateMatchPlay() {
                   <span className="text-muted-foreground">Player 2</span>
                   <span>{game.player_2}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Handicaps</span>
-                  <span>{game.use_handicaps ? "Enabled" : "Disabled"}</span>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

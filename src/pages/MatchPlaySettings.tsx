@@ -183,13 +183,13 @@ export default function MatchPlaySettings() {
     return [
       { 
         name: g.player_1, 
-        handicap: g.use_handicaps ? g.player_1_handicap : undefined,
+        handicap: undefined,
         tee: g.player_1_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
       },
       { 
         name: g.player_2, 
-        handicap: g.use_handicaps ? g.player_2_handicap : undefined,
+        handicap: undefined,
         tee: g.player_2_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
       },
@@ -235,7 +235,7 @@ export default function MatchPlaySettings() {
     teeInfo,
     holesPlayed: game.holes_played,
     currentHole: holesCompleted > 0 ? holesCompleted : undefined,
-    scoring: game.use_handicaps ? "Net scoring (handicaps enabled)" : "Gross scoring",
+    scoring: "Gross scoring",
     roundName: (game as any).round_name,
   };
 
@@ -254,19 +254,6 @@ export default function MatchPlaySettings() {
     }
   };
 
-  const handleUpdateHandicaps = async (enabled: boolean) => {
-    try {
-      await supabase
-        .from("match_play_games")
-        .update({ use_handicaps: enabled })
-        .eq("id", gameId);
-      
-      setGame(prev => prev ? { ...prev, use_handicaps: enabled } : null);
-      toast({ title: "Settings updated" });
-    } catch (error: any) {
-      toast({ title: "Error updating settings", description: error.message, variant: "destructive" });
-    }
-  };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -313,19 +300,6 @@ export default function MatchPlaySettings() {
             <CardContent className="space-y-4">
               <StrokePlayToggle gameId={gameId} gameType="match_play" />
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="handicaps">Use Handicaps</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Apply handicap strokes per hole
-                  </p>
-                </div>
-                <Switch
-                  id="handicaps"
-                  checked={game.use_handicaps}
-                  onCheckedChange={handleUpdateHandicaps}
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="mulligans">Mulligans per Player</Label>
@@ -370,7 +344,7 @@ export default function MatchPlaySettings() {
         open={showPlayersModal}
         onOpenChange={setShowPlayersModal}
         players={players}
-        useHandicaps={game.use_handicaps}
+        useHandicaps={false}
       />
 
       <DeleteGameDialog

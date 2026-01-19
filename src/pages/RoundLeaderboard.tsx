@@ -404,14 +404,14 @@ export default function RoundLeaderboard() {
                     <Table className="w-full table-fixed">
                       <TableHeader>
                         <TableRow className="bg-primary">
-                          <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                           {frontNine.map(hole => (
-                            <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                            <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                               {hole.hole_number}
                             </TableHead>
                           ))}
-                          <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Out</TableHead>
-                          <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Out</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                             {backNine.length > 0 ? '' : 'Tot'}
                           </TableHead>
                         </TableRow>
@@ -468,26 +468,6 @@ export default function RoundLeaderboard() {
                             {backNine.length > 0 ? '' : (hasConceded ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
                           </TableCell>
                         </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Net</TableCell>
-                          {frontNine.map(hole => {
-                            const score = player.scores.get(hole.hole_number);
-                            const hasScore = player.scores.has(hole.hole_number);
-                            return (
-                              <TableCell key={hole.hole_number} className="text-center px-0 py-1">
-                                {hasScore && score && score > 0 ? (
-                                  <ScorecardScoreCell score={score} par={hole.par} />
-                                ) : hasScore ? (score === -1 ? '–' : '') : ''}
-                              </TableCell>
-                            );
-                          })}
-                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                            {hasConceded ? '-' : (frontTotals.totalScore > 0 ? frontTotals.totalScore : '')}
-                          </TableCell>
-                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                            {backNine.length > 0 ? '' : (hasConceded ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
-                          </TableCell>
-                        </TableRow>
                       </TableBody>
                     </Table>
                   </div>
@@ -498,14 +478,14 @@ export default function RoundLeaderboard() {
                       <Table className="w-full table-fixed">
                         <TableHeader>
                           <TableRow className="bg-primary">
-                            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
+                            <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                             {backNine.map(hole => (
-                              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                                 {hole.hole_number}
                               </TableHead>
                             ))}
-                            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">In</TableHead>
-                            <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Tot</TableHead>
+                            <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">In</TableHead>
+                            <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Tot</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -551,26 +531,6 @@ export default function RoundLeaderboard() {
                                     {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                                   </div>
                                 </TableCell>
-                              );
-                            })}
-                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                              {hasConceded ? '-' : (backTotals.totalScore > 0 ? backTotals.totalScore : '')}
-                            </TableCell>
-                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                              {hasConceded ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : '')}
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Net</TableCell>
-                            {backNine.map(hole => {
-                              const score = player.scores.get(hole.hole_number);
-                              const hasScore = player.scores.has(hole.hole_number);
-                              return (
-                                <TableCell key={hole.hole_number} className="text-center px-0 py-1">
-                                  {hasScore && score && score > 0 ? (
-                                    <ScorecardScoreCell score={score} par={hole.par} />
-                                  ) : hasScore ? (score === -1 ? '–' : '') : ''}
-                              </TableCell>
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">

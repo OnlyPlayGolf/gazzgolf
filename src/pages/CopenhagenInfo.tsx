@@ -45,7 +45,7 @@ export default function CopenhagenInfo() {
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <h3 className="font-semibold text-sm">Overview</h3>
               <p className="text-sm text-muted-foreground">
-                Copenhagen (6-Point) is a 3-player golf betting game where 6 points are awarded on every hole. Points are distributed based on net scores, with special rules for ties and sweeps.
+                Copenhagen (6-Point) is a 3-player golf betting game where 6 points are awarded on every hole. Points are distributed based on scores, with special rules for ties and sweeps.
               </p>
             </div>
 
@@ -81,15 +81,6 @@ export default function CopenhagenInfo() {
               </p>
             </div>
 
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <h3 className="font-semibold text-sm">Handicaps</h3>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• <strong>Scratch:</strong> Gross scores compared directly</li>
-                <li>• <strong>Net:</strong> Strokes applied based on handicap and stroke index</li>
-                <li>• Strokes distributed using course stroke index</li>
-                <li>• Different tees accommodated with handicap adjustments</li>
-              </ul>
-            </div>
 
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <h3 className="font-semibold text-sm">Winning</h3>

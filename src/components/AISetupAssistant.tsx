@@ -65,7 +65,6 @@ export function AISetupAssistant({ isOpen, onClose, courseInfo, onApplyConfig, c
     const parts: string[] = [];
     parts.push(config.baseFormat.replace('_', ' '));
     parts.push(`${config.totalHoles} holes`);
-    if (config.useHandicaps) parts.push('handicaps');
     if (config.teams?.length) parts.push(`${config.teams.length} teams`);
     return parts.join(' • ');
   };
@@ -197,7 +196,6 @@ export function AISetupAssistant({ isOpen, onClose, courseInfo, onApplyConfig, c
       <div className="flex flex-wrap gap-1">
         <Badge variant="secondary" className="text-xs">{config.baseFormat.replace('_', ' ')}</Badge>
         <Badge variant="outline" className="text-xs">{config.totalHoles} holes</Badge>
-        {config.useHandicaps && <Badge variant="outline" className="text-xs">handicaps</Badge>}
       </div>
     </div>
   );

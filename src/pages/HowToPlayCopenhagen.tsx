@@ -24,7 +24,7 @@ export default function HowToPlayCopenhagen() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p>Copenhagen (6-Point) is a 3-player golf betting game where 6 points are awarded on every hole.</p>
-            <p>Points are distributed based on net scores, with special rules for ties and sweeps.</p>
+            <p>Points are distributed based on scores, with special rules for ties and sweeps.</p>
           </CardContent>
         </Card>
 

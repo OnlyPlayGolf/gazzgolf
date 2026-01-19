@@ -270,7 +270,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <Card>
           <CardHeader>
-            <CardTitle className="text-center text-2xl">Welcome to Gazz Golf</CardTitle>
+            <CardTitle className="text-center text-2xl">Welcome to OnlyPlay Golf</CardTitle>
           </CardHeader>
           <CardContent>
             {view === 'signin' && (
