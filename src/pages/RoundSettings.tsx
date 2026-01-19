@@ -52,7 +52,7 @@ export default function RoundSettings() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('round', roundId);
   
   // Use standardized navigation hook for back button behavior
   const { handleBack } = useRoundNavigation({
@@ -132,10 +132,10 @@ export default function RoundSettings() {
   };
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && !isSpectator && !isEditWindowExpired) {
       saveSettings();
     }
-  }, [mulligansPerPlayer, gimmesEnabled]);
+  }, [mulligansPerPlayer, gimmesEnabled, loading, isSpectator, isEditWindowExpired]);
 
   const fetchRound = async () => {
     try {
@@ -204,6 +204,7 @@ export default function RoundSettings() {
   };
 
   const handleTeeChange = async (newTee: string) => {
+    if (isSpectator || isEditWindowExpired) return; // Prevent changes when locked
     setTeeColor(newTee);
     if (roundId) {
       await supabase
@@ -379,82 +380,94 @@ export default function RoundSettings() {
           />
         )}
 
-        {/* Game Settings - Hidden for spectators */}
-        {!isSpectator && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Settings size={20} className="text-primary" />
-                  Game Settings
+        {/* Game Settings - Visible for all but locked for spectators or when edit window expired */}
+        {(() => {
+          const isLocked = isSpectator || isEditWindowExpired;
+          return (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-lg">
+                  <div className="flex items-center gap-2">
+                    <Settings size={20} className="text-primary" />
+                    Game Settings
+                    {isLocked && (
+                      <span className="text-xs text-muted-foreground font-normal">
+                        (Locked)
+                      </span>
+                    )}
+                  </div>
+                  {!isLocked && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
+                      className="h-8 w-8"
+                    >
+                      <Settings size={16} />
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Default Tee */}
+                <div className="space-y-2">
+                  <Label>Default Tee Box</Label>
+                  <TeeSelector
+                    value={teeColor}
+                    onValueChange={handleTeeChange}
+                    teeCount={5}
+                    courseTeeNames={null}
+                    disabled={isLocked}
+                  />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Default Tee */}
-              <div className="space-y-2">
-                <Label>Default Tee Box</Label>
-                <TeeSelector
-                  value={teeColor}
-                  onValueChange={handleTeeChange}
-                  teeCount={5}
-                  courseTeeNames={null}
-                />
-              </div>
 
-
-              {/* Mulligans */}
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="space-y-0.5">
-                  <Label>Mulligans per Player</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Extra shots allowed per player
-                  </p>
+                {/* Mulligans */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label>Mulligans per Player</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Extra shots allowed per player
+                    </p>
+                  </div>
+                  <Select 
+                    value={mulligansPerPlayer.toString()} 
+                    onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+                    disabled={isLocked}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">No mulligans</SelectItem>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="9">1 per 9 holes</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select 
-                  value={mulligansPerPlayer.toString()} 
-                  onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No mulligans</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="9">1 per 9 holes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              {/* Gimmes toggle */}
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="space-y-0.5">
-                  <Label htmlFor="gimmes">Allow Gimmes</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Short putts can be conceded
-                  </p>
+                {/* Gimmes toggle */}
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="gimmes">Allow Gimmes</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Short putts can be conceded
+                    </p>
+                  </div>
+                  <Switch
+                    id="gimmes"
+                    checked={gimmesEnabled}
+                    onCheckedChange={setGimmesEnabled}
+                    disabled={isLocked}
+                  />
                 </div>
-                <Switch
-                  id="gimmes"
-                  checked={gimmesEnabled}
-                  onCheckedChange={setGimmesEnabled}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
