@@ -79,6 +79,7 @@ export const TopNavBar = ({ profile }: TopNavBarProps) => {
         {/* Right: Actions */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <AddFriendDialog 
+            showQrTabs={false}
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-white hover:bg-white/20">
                 <UserPlus size={18} fill="white" />

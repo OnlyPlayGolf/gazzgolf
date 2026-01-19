@@ -34,9 +34,15 @@ interface SearchResult {
 interface AddFriendDialogProps {
   trigger?: React.ReactNode;
   onFriendAdded?: () => void;
+  /** Hide QR tabs (Scan QR / My QR) for minimal UI contexts like the top nav */
+  showQrTabs?: boolean;
 }
 
-export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps) => {
+export const AddFriendDialog = ({
+  trigger,
+  onFriendAdded,
+  showQrTabs = true,
+}: AddFriendDialogProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -52,8 +58,12 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
   useEffect(() => {
     if (open) {
       loadCurrentUser();
+      // Ensure we never land on a hidden tab
+      if (!showQrTabs && activeTab !== "search") {
+        setActiveTab("search");
+      }
     }
-  }, [open]);
+  }, [open, showQrTabs, activeTab]);
 
   const loadCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -302,19 +312,23 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={showQrTabs ? "grid w-full grid-cols-3" : "grid w-full grid-cols-1"}>
             <TabsTrigger value="search">
               <Search size={16} className="mr-2" />
               Search
             </TabsTrigger>
-            <TabsTrigger value="scan">
-              <Camera size={16} className="mr-2" />
-              Scan QR
-            </TabsTrigger>
-            <TabsTrigger value="myqr">
-              <QrCode size={16} className="mr-2" />
-              My QR
-            </TabsTrigger>
+            {showQrTabs && (
+              <>
+                <TabsTrigger value="scan">
+                  <Camera size={16} className="mr-2" />
+                  Scan QR
+                </TabsTrigger>
+                <TabsTrigger value="myqr">
+                  <QrCode size={16} className="mr-2" />
+                  My QR
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Search Tab */}
@@ -398,39 +412,43 @@ export const AddFriendDialog = ({ trigger, onFriendAdded }: AddFriendDialogProps
             </div>
           </TabsContent>
 
-          {/* Scan QR Tab */}
-          <TabsContent value="scan" className="space-y-4">
-            <div className="flex flex-col items-center space-y-4">
-              <p className="text-sm text-muted-foreground text-center">
-                Position the QR code within the camera frame to scan
-              </p>
-              <div className="w-full aspect-square max-w-sm rounded-lg overflow-hidden border-2 border-primary">
-                <Scanner
-                  onScan={(result) => {
-                    if (result && result[0]) {
-                      handleQrScan(result[0].rawValue);
-                    }
-                  }}
-                  onError={(error) => console.error(error)}
-                />
-              </div>
-            </div>
-          </TabsContent>
+          {showQrTabs && (
+            <>
+              {/* Scan QR Tab */}
+              <TabsContent value="scan" className="space-y-4">
+                <div className="flex flex-col items-center space-y-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Position the QR code within the camera frame to scan
+                  </p>
+                  <div className="w-full aspect-square max-w-sm rounded-lg overflow-hidden border-2 border-primary">
+                    <Scanner
+                      onScan={(result) => {
+                        if (result && result[0]) {
+                          handleQrScan(result[0].rawValue);
+                        }
+                      }}
+                      onError={(error) => console.error(error)}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
 
-          {/* My QR Tab */}
-          <TabsContent value="myqr" className="space-y-4">
-            <div className="flex flex-col items-center space-y-4 py-4">
-              <div className="bg-white p-4 rounded-lg">
-                <QRCode 
-                  value={`${window.location.origin}/add-friend/${currentUserId}`}
-                  size={200}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground text-center">
-                Share this QR code with friends to let them add you instantly!
-              </p>
-            </div>
-          </TabsContent>
+              {/* My QR Tab */}
+              <TabsContent value="myqr" className="space-y-4">
+                <div className="flex flex-col items-center space-y-4 py-4">
+                  <div className="bg-white p-4 rounded-lg">
+                    <QRCode
+                      value={`${window.location.origin}/add-friend/${currentUserId}`}
+                      size={200}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Share this QR code with friends to let them add you instantly!
+                  </p>
+                </div>
+              </TabsContent>
+            </>
+          )}
         </Tabs>
 
         <AlertDialog
