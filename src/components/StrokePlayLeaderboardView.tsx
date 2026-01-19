@@ -313,19 +313,19 @@ export function StrokePlayLeaderboardView({
                     </Table>
                   </div>
                 )}
-              </>
-            )}
 
-            {/* Per-scorecard actions */}
-            {gameId && gameType && (
-              <div className="px-4 pb-3">
-                <ScorecardActions
-                  gameId={gameId}
-                  gameType={gameType}
-                  scorecardPlayerId={player.id}
-                  scorecardPlayerName={player.name}
-                />
-              </div>
+                {/* Scorecard Actions - Only shown when expanded */}
+                {gameId && gameType && (
+                  <div className="px-4 pb-3">
+                    <ScorecardActions
+                      gameId={gameId}
+                      gameType={gameType}
+                      scorecardPlayerId={player.id}
+                      scorecardPlayerName={player.name}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </Card>
         );

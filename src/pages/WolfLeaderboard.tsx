@@ -261,16 +261,6 @@ export default function WolfLeaderboard() {
               </div>
             </div>
           </div>
-          
-          {/* Per-scorecard actions */}
-          <div className="px-4 pb-3">
-            <ScorecardActions
-              gameId={gameId!}
-              gameType="wolf"
-              scorecardPlayerId={`player_${player.num}`}
-              scorecardPlayerName={player.name}
-            />
-          </div>
         </div>
 
         {/* Scorecard Table - Only shown when expanded */}
@@ -494,6 +484,15 @@ export default function WolfLeaderboard() {
               </div>
             )}
 
+            {/* Scorecard Actions - Only shown when expanded */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="wolf"
+                scorecardPlayerId={`player_${player.num}`}
+                scorecardPlayerName={player.name}
+              />
+            </div>
           </>
         )}
       </Card>

@@ -394,7 +394,7 @@ export default function CopenhagenLeaderboard() {
               </div>
             )}
 
-            {/* Per-scorecard actions */}
+            {/* Scorecard Actions - Only shown when expanded */}
             <div className="px-4 pb-3">
               <ScorecardActions
                 gameId={gameId!}

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Send } from "lucide-react";
+import { Heart, MessageCircle, Send, ChevronRight } from "lucide-react";
+import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
@@ -38,6 +39,8 @@ interface Comment {
   likes_count: number;
   replies_count: number;
   user_has_liked: boolean;
+  is_activity_item: boolean;
+  scorecard_player_name: string | null;
 }
 
 interface Reply {
@@ -68,6 +71,8 @@ export default function UmbriagioFeed() {
   const [replies, setReplies] = useState<Map<string, Reply[]>>(new Map());
   const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [commentsSheetOpen, setCommentsSheetOpen] = useState(false);
+  const [selectedScorecardPlayerName, setSelectedScorecardPlayerName] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -106,15 +111,20 @@ export default function UmbriagioFeed() {
       // Fetch comments for this umbriago game
       const { data: commentsData, error } = await supabase
         .from("round_comments")
-        .select("id, content, hole_number, user_id, created_at")
+        .select("id, content, hole_number, user_id, created_at, is_activity_item, scorecard_player_name")
         .eq("game_id", gameId)
         .eq("game_type", "umbriago")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
+      // Filter: show activity items OR regular feed comments (exclude scorecard-thread comments that aren't activity items)
+      const filteredComments = (commentsData || []).filter(c =>
+        c.is_activity_item || !c.scorecard_player_name
+      );
+
       // Get unique user IDs and fetch profiles
-      const userIds = [...new Set((commentsData || []).map(c => c.user_id))];
+      const userIds = [...new Set(filteredComments.map(c => c.user_id))];
       
       let profilesMap = new Map();
       if (userIds.length > 0) {
@@ -127,7 +137,7 @@ export default function UmbriagioFeed() {
 
       // Fetch likes and replies counts for each comment
       const commentsWithCounts = await Promise.all(
-        (commentsData || []).map(async (comment) => {
+        filteredComments.map(async (comment) => {
           const { count: likesCount } = await supabase
             .from("round_comment_likes")
             .select("*", { count: "exact", head: true })
@@ -155,6 +165,8 @@ export default function UmbriagioFeed() {
             likes_count: likesCount || 0,
             replies_count: repliesCount || 0,
             user_has_liked: userHasLiked,
+            is_activity_item: comment.is_activity_item || false,
+            scorecard_player_name: comment.scorecard_player_name || null,
           };
         })
       );
@@ -386,7 +398,54 @@ export default function UmbriagioFeed() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {comments.map((comment) => (
+                {comments.map((comment) => {
+                  // Activity items (e.g., "X commented on Y's scorecard") - render as clickable
+                  if (comment.is_activity_item && comment.scorecard_player_name) {
+                    const commenterName = getDisplayName(comment.profiles);
+                    const activityHeader = `${commenterName} commented on ${comment.scorecard_player_name}'s scorecard`;
+                    
+                    let commentText = comment.content;
+                    if (comment.content.includes("|||COMMENT_TEXT:")) {
+                      const parts = comment.content.split("|||COMMENT_TEXT:");
+                      commentText = parts[1]?.trim() || "";
+                    } else if (comment.content.includes(" commented on ") && comment.content.includes("'s scorecard")) {
+                      commentText = "";
+                    }
+                    
+                    return (
+                      <Card 
+                        key={comment.id} 
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => {
+                          setSelectedScorecardPlayerName(comment.scorecard_player_name!);
+                          setCommentsSheetOpen(true);
+                        }}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={comment.profiles?.avatar_url || undefined} />
+                              <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 space-y-2">
+                              <div className="inline-flex items-center gap-2 bg-muted/60 px-3 py-1.5 rounded-full">
+                                <span className="text-sm text-muted-foreground">{activityHeader}</span>
+                              </div>
+                              {commentText && (
+                                <p className="text-sm text-foreground">{commentText}</p>
+                              )}
+                              <span className="text-xs text-muted-foreground block">
+                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                              </span>
+                            </div>
+                            <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 mt-2" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+
+                  return (
                   <Card key={comment.id}>
                     <CardContent className="p-4">
                       {/* Comment Header */}
@@ -477,13 +536,26 @@ export default function UmbriagioFeed() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
       </div>
       {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={gameData?.is_finished} />}
+      
+      {/* Scorecard Comments Sheet */}
+      {selectedScorecardPlayerName && (
+        <ScorecardCommentsSheet
+          open={commentsSheetOpen}
+          onOpenChange={setCommentsSheetOpen}
+          gameId={gameId || ""}
+          gameType="umbriago"
+          scorecardPlayerId=""
+          scorecardPlayerName={selectedScorecardPlayerName}
+        />
+      )}
     </div>
   );
 }

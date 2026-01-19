@@ -150,15 +150,14 @@ export function ScorecardCommentsSheet({
       if (commentError) throw commentError;
 
       // Also create an activity item for the Game Feed
-      const activityContent = `${commenterName} commented on ${scorecardPlayerName}'s scorecard`;
-      
+      // Store just the comment text - the header will be built dynamically from profile + scorecard_player_name
       const { error: activityError } = await supabase
         .from("round_comments")
         .insert({
           round_id: gameId,
           game_id: gameId,
           user_id: currentUserId,
-          content: activityContent,
+          content: newComment.trim(),
           game_type: gameType,
           scorecard_player_id: scorecardPlayerId || null,
           scorecard_player_name: scorecardPlayerName,

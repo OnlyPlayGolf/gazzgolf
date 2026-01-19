@@ -404,6 +404,21 @@ export default function BestBallFeed() {
             {comments.map((comment) => {
               // Activity items (e.g., "X commented on Y's scorecard") - render as clickable
               if (comment.is_activity_item && comment.scorecard_player_name) {
+                // Build the activity header dynamically from profile and scorecard_player_name
+                const commenterName = getDisplayName(comment.profiles);
+                const activityHeader = `${commenterName} commented on ${comment.scorecard_player_name}'s scorecard`;
+                
+                // The content is the actual comment text (handle legacy format too)
+                let commentText = comment.content;
+                // Handle legacy format if present
+                if (comment.content.includes("|||COMMENT_TEXT:")) {
+                  const parts = comment.content.split("|||COMMENT_TEXT:");
+                  commentText = parts[1]?.trim() || "";
+                } else if (comment.content.includes(" commented on ") && comment.content.includes("'s scorecard")) {
+                  // Old format where content was just the activity header - no comment text
+                  commentText = "";
+                }
+                
                 return (
                   <Card 
                     key={comment.id} 
@@ -414,18 +429,25 @@ export default function BestBallFeed() {
                     }}
                   >
                     <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={comment.profiles?.avatar_url || undefined} />
                           <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground">{comment.content}</p>
-                          <span className="text-xs text-muted-foreground">
+                        <div className="flex-1 space-y-2">
+                          {/* Activity header with subtle background */}
+                          <div className="inline-flex items-center gap-2 bg-muted/60 px-3 py-1.5 rounded-full">
+                            <span className="text-sm text-muted-foreground">{activityHeader}</span>
+                          </div>
+                          {/* The actual comment text */}
+                          {commentText && (
+                            <p className="text-sm text-foreground">{commentText}</p>
+                          )}
+                          <span className="text-xs text-muted-foreground block">
                             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                           </span>
                         </div>
-                        <ChevronRight size={20} className="text-muted-foreground" />
+                        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 mt-2" />
                       </div>
                     </CardContent>
                   </Card>

@@ -565,18 +565,17 @@ export default function SkinsLeaderboard() {
                     </Table>
                   </div>
                 )}
+                {/* Scorecard Actions - Only shown when expanded */}
+                <div className="px-4 pb-3">
+                  <ScorecardActions
+                    gameId={roundId!}
+                    gameType="skins"
+                    scorecardPlayerId={player.playerId}
+                    scorecardPlayerName={player.name}
+                  />
+                </div>
               </>
             )}
-            
-            {/* Per-scorecard actions */}
-            <div className="px-4 pb-3">
-              <ScorecardActions
-                gameId={roundId!}
-                gameType="skins"
-                scorecardPlayerId={player.playerId}
-                scorecardPlayerName={player.name}
-              />
-            </div>
           </Card>
         );
       })}

@@ -52,13 +52,14 @@ export function ScorecardActions({
 
     setLikesCount(likes || 0);
 
-    // Fetch comments count for this specific scorecard
+    // Fetch comments count for this specific scorecard (exclude activity items)
     const { count: comments } = await supabase
       .from("round_comments")
       .select("*", { count: "exact", head: true })
       .eq("round_id", gameId)
       .eq("game_type", gameType)
-      .eq("scorecard_player_id", scorecardPlayerId);
+      .eq("scorecard_player_id", scorecardPlayerId)
+      .is("is_activity_item", false);
 
     setCommentsCount(comments || 0);
   };
@@ -122,26 +123,26 @@ export function ScorecardActions({
 
   return (
     <>
-      <div className="flex items-center gap-4 pt-3 border-t border-border mt-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`flex items-center gap-1.5 h-8 px-2 ${hasLiked ? 'text-red-500' : 'text-muted-foreground'}`}
+      <div className="flex items-center gap-1 py-2">
+        <button
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
+            hasLiked 
+              ? 'text-red-500 bg-red-50 dark:bg-red-950/30' 
+              : 'text-muted-foreground hover:bg-muted'
+          }`}
           onClick={handleLike}
           disabled={isLiking}
         >
-          <Heart size={16} fill={hasLiked ? "currentColor" : "none"} />
-          <span className="text-xs">{likesCount > 0 ? likesCount : ''}</span>
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex items-center gap-1.5 h-8 px-2 text-muted-foreground"
+          <Heart size={18} fill={hasLiked ? "currentColor" : "none"} strokeWidth={1.5} />
+          {likesCount > 0 && <span className="text-sm font-medium">{likesCount}</span>}
+        </button>
+        <button
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-muted-foreground hover:bg-muted transition-colors"
           onClick={handleComment}
         >
-          <MessageCircle size={16} />
-          <span className="text-xs">{commentsCount > 0 ? commentsCount : ''}</span>
-        </Button>
+          <MessageCircle size={18} strokeWidth={1.5} />
+          {commentsCount > 0 && <span className="text-sm font-medium">{commentsCount}</span>}
+        </button>
       </div>
 
       <ScorecardCommentsSheet

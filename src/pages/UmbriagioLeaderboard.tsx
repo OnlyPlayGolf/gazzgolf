@@ -511,18 +511,17 @@ export default function UmbriagioLeaderboard() {
               </div>
             )}
 
+            {/* Scorecard Actions - Only shown when expanded */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="umbriago"
+                scorecardPlayerId={player.id}
+                scorecardPlayerName={player.name}
+              />
+            </div>
           </>
         )}
-        
-        {/* Per-scorecard actions */}
-        <div className="px-4 pb-3">
-          <ScorecardActions
-            gameId={gameId!}
-            gameType="umbriago"
-            scorecardPlayerId={player.id}
-            scorecardPlayerName={player.name}
-          />
-        </div>
       </Card>
     );
   };
@@ -706,18 +705,17 @@ export default function UmbriagioLeaderboard() {
               </div>
             )}
 
+            {/* Scorecard Actions - Only shown when expanded */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="umbriago"
+                scorecardPlayerId={`team_${team}`}
+                scorecardPlayerName={teamName}
+              />
+            </div>
           </>
         )}
-        
-        {/* Per-scorecard actions */}
-        <div className="px-4 pb-3">
-          <ScorecardActions
-            gameId={gameId!}
-            gameType="umbriago"
-            scorecardPlayerId={`team_${team}`}
-            scorecardPlayerName={teamName}
-          />
-        </div>
       </Card>
     );
   };

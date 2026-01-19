@@ -211,25 +211,26 @@ export function WolfCompletionModal({
         };
       });
 
+      // Build hole results from courseHoles to ensure all holes are included
       const holeResultsData: Record<number, { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }> = {};
-      holes.forEach(hole => {
-        const courseHole = courseHoles.find(ch => ch.hole_number === hole.hole_number);
-        holeResultsData[hole.hole_number] = {
-          scores: {
+      courseHoles.forEach(courseHole => {
+        const hole = holes.find(h => h.hole_number === courseHole.hole_number);
+        holeResultsData[courseHole.hole_number] = {
+          scores: hole ? {
             1: hole.player_1_score,
             2: hole.player_2_score,
             3: hole.player_3_score,
             4: hole.player_4_score,
             5: hole.player_5_score,
-          },
-          points: {
+          } : { 1: null, 2: null, 3: null, 4: null, 5: null },
+          points: hole ? {
             1: hole.player_1_hole_points,
             2: hole.player_2_hole_points,
             3: hole.player_3_hole_points,
             4: hole.player_4_hole_points,
             5: hole.player_5_hole_points,
-          },
-          par: courseHole?.par || 4,
+          } : { 1: null, 2: null, 3: null, 4: null, 5: null },
+          par: courseHole.par,
         };
       });
 
