@@ -381,96 +381,88 @@ export default function RoundSettings() {
         )}
 
         {/* Game Settings - Visible for all but locked for spectators or when edit window expired */}
-        {(() => {
-          const isLocked = isSpectator || (isEditWindowExpired ?? false);
-          if (process.env.NODE_ENV === 'development') {
-            console.log('RoundSettings lock status:', { isSpectator, isEditWindowExpired, isLocked, roundId });
-          }
-          return (
-            <Card className={isLocked ? 'opacity-90' : ''}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-lg">
-                  <div className="flex items-center gap-2">
-                    <Settings size={20} className="text-primary" />
-                    Game Settings
-                    {isLocked && (
-                      <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
-                        (Locked)
-                      </span>
-                    )}
-                  </div>
-                  {!isLocked && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
-                      className="h-8 w-8"
-                    >
-                      <Settings size={16} />
-                    </Button>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Default Tee */}
-                <div className="space-y-2">
-                  <Label>Default Tee Box</Label>
-                  <TeeSelector
-                    value={teeColor}
-                    onValueChange={handleTeeChange}
-                    teeCount={5}
-                    courseTeeNames={null}
-                    disabled={isLocked}
-                  />
-                </div>
+        <Card className={(isSpectator || (isEditWindowExpired ?? false)) ? 'opacity-90' : ''}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-primary" />
+                Game Settings
+                {(isSpectator || (isEditWindowExpired ?? false)) && (
+                  <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
+                    (Locked)
+                  </span>
+                )}
+              </div>
+              {!(isSpectator || (isEditWindowExpired ?? false)) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Default Tee */}
+            <div className="space-y-2">
+              <Label>Default Tee Box</Label>
+              <TeeSelector
+                value={teeColor}
+                onValueChange={handleTeeChange}
+                teeCount={5}
+                courseTeeNames={null}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              />
+            </div>
 
-                {/* Mulligans */}
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="space-y-0.5">
-                    <Label>Mulligans per Player</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Extra shots allowed per player
-                    </p>
-                  </div>
-                  <Select 
-                    value={mulligansPerPlayer.toString()} 
-                    onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
-                    disabled={isLocked}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">No mulligans</SelectItem>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="9">1 per 9 holes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Mulligans */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label>Mulligans per Player</Label>
+                <p className="text-xs text-muted-foreground">
+                  Extra shots allowed per player
+                </p>
+              </div>
+              <Select 
+                value={mulligansPerPlayer.toString()} 
+                onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-                {/* Gimmes toggle */}
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="gimmes">Allow Gimmes</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Short putts can be conceded
-                    </p>
-                  </div>
-                  <Switch
-                    id="gimmes"
-                    checked={gimmesEnabled}
-                    onCheckedChange={setGimmesEnabled}
-                    disabled={isLocked}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })()}
+            {/* Gimmes toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="gimmes">Allow Gimmes</Label>
+                <p className="text-xs text-muted-foreground">
+                  Short putts can be conceded
+                </p>
+              </div>
+              <Switch
+                id="gimmes"
+                checked={gimmesEnabled}
+                onCheckedChange={setGimmesEnabled}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
