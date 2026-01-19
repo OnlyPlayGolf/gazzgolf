@@ -304,7 +304,8 @@ export const OngoingRoundsSection = ({ userId }: OngoingRoundsSectionProps) => {
       <div className="px-4 space-y-3">
         {ongoingGames.map((game) => (
           <Card key={`${game.gameType}-${game.id}`} className="bg-card border-border overflow-hidden">
-            <CardContent className="p-4">
+            <CardContent className="p-4 space-y-3">
+              {/* Header row with title and delete button */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0 space-y-1">
                   {/* Game name/title */}
@@ -330,28 +331,27 @@ export const OngoingRoundsSection = ({ userId }: OngoingRoundsSectionProps) => {
                   </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {game.isOwner && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteClick(game)}
-                    >
-                      <X size={18} />
-                    </Button>
-                  )}
+                {/* Delete button */}
+                {game.isOwner && (
                   <Button
-                    size="sm"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => handleOpenGame(game)}
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                    onClick={() => handleDeleteClick(game)}
                   >
-                    Open
-                    <ChevronRight size={16} className="ml-1" />
+                    <X size={18} />
                   </Button>
-                </div>
+                )}
               </div>
+
+              {/* Open button at bottom */}
+              <Button
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => handleOpenGame(game)}
+              >
+                Open
+                <ChevronRight size={16} className="ml-1" />
+              </Button>
             </CardContent>
           </Card>
         ))}
