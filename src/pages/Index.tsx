@@ -511,11 +511,11 @@ const Index = () => {
           </div>
         )}
 
-        {/* Ongoing Rounds Section */}
-        <OngoingRoundsSection userId={user.id} />
-
         {/* Post Box */}
         <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
+
+        {/* Ongoing Rounds Section */}
+        <OngoingRoundsSection userId={user.id} />
 
         {/* Performance Snapshot */}
         <PerformanceSnapshot userId={user.id} />
