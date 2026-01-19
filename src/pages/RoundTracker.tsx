@@ -84,7 +84,7 @@ export default function RoundTracker() {
   const { toast } = useToast();
   
   // Check spectator status - redirect if not a participant or edit window expired
-  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: spectatorLoading, isEditWindowExpired } = useIsSpectator('round', roundId);
   
   useEffect(() => {
     if (!spectatorLoading && isSpectator && roundId) {
@@ -405,6 +405,16 @@ export default function RoundTracker() {
   const updateScore = async (playerId: string, newScore: number) => {
     // Allow -1 (dash/conceded) and positive scores, reject 0 and other negatives
     if (!currentHole || (newScore < 0 && newScore !== -1)) return;
+    
+    // Prevent editing if 12-hour window has expired after round was finished
+    if (isEditWindowExpired) {
+      toast({
+        title: "Editing locked",
+        description: "Scores cannot be edited 12 hours after the round was started.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Reset manual navigation flag so auto-advance works after score update
     setIsManualNavigation(false);

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 type TeeResult = Database["public"]["Enums"]["tee_result"];
 type ApproachBucket = Database["public"]["Enums"]["approach_bucket"];
@@ -32,6 +33,7 @@ const HoleTracker = () => {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isEditWindowExpired } = useIsSpectator('round', roundId);
   const [round, setRound] = useState<any>(null);
   const [currentHole, setCurrentHole] = useState(1);
   const [holeData, setHoleData] = useState<Record<number, HoleData>>({});
@@ -109,6 +111,16 @@ const HoleTracker = () => {
 
   const saveHole = async () => {
     const data = getCurrentHoleData();
+    
+    // Prevent editing if 12-hour window has expired after round was finished
+    if (isEditWindowExpired) {
+      toast({
+        title: "Editing locked",
+        description: "Scores cannot be edited 12 hours after the round was started.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (data.score <= 0 || data.putts === undefined) {
       toast({

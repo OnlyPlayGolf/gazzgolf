@@ -72,15 +72,15 @@ export function useIsSpectator(
             .eq('id', gameId)
             .single();
 
-          // Rounds don't have is_finished flag, so we check holes_played
+          // Rounds don't have is_finished flag, so we check if holes have been recorded
           const { data: holesData } = await supabase
             .from('holes')
             .select('id')
             .eq('round_id', gameId);
           
-          // A round is "finished" if it has any holes recorded (simple heuristic)
-          // For more accuracy, we'd need an is_finished flag on rounds table
-          isFinished = false; // Rounds don't auto-finish like other game types
+          // A round is "finished" if it has any holes recorded (round has been started)
+          // Once finished, editing is locked 12 hours after the round was created
+          isFinished = (holesData?.length || 0) > 0;
           createdAt = roundData?.created_at || null;
 
           if (roundData?.user_id === user.id) {
