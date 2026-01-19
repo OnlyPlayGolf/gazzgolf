@@ -147,7 +147,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <TopNavBar profile={profile} />
+      <TopNavBar />
       <div className="space-y-6 pt-20">
         {/* Friends On Course Section */}
         {friendsOnCourse.length > 0 && (

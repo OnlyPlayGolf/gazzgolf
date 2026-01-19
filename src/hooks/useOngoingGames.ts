@@ -49,7 +49,12 @@ export function useOngoingGames(user: SupabaseUser | null): { ongoingGames: Ongo
         { data: umbriago },
         { data: matchPlay }
       ] = await Promise.all([
-        supabase.from('rounds').select('id, user_id, course_name, round_name, created_at').gte('created_at', twelveHoursAgo),
+        // Only show ongoing stroke-play rounds created via Play (exclude tracker/add-stats rounds)
+        supabase
+          .from('rounds')
+          .select('id, user_id, course_name, round_name, created_at')
+          .gte('created_at', twelveHoursAgo)
+          .eq('origin', 'play'),
         supabase.from('copenhagen_games').select('id, user_id, course_name, round_name, created_at, is_finished, player_1, player_2, player_3').gte('created_at', twelveHoursAgo).eq('is_finished', false),
         supabase.from('skins_games').select('id, user_id, course_name, round_name, created_at, is_finished, players').gte('created_at', twelveHoursAgo).eq('is_finished', false),
         supabase.from('best_ball_games').select('id, user_id, course_name, round_name, created_at, is_finished, team_a_players, team_b_players').gte('created_at', twelveHoursAgo).eq('is_finished', false),
