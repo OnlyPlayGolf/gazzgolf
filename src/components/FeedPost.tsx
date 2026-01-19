@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,45 +78,69 @@ const fetchCourseHolesCached = async (courseId: string | null): Promise<Array<{ 
 };
 
 // Parse round scorecard result from post content (new format with scorecard data)
-const parseRoundScorecardResult = (content: string) => {
-  // Format: [ROUND_SCORECARD]name|course|date|score|vspar|holes|totalPar|roundId|scorecardJson[/ROUND_SCORECARD]
-  const match = content?.match(/\[ROUND_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[9]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        score: parseInt(match[4]),
-        scoreVsPar: parseInt(match[5]),
-        holesPlayed: parseInt(match[6]),
-        totalPar: parseInt(match[7]),
-        roundId: match[8] || null,
-        holeScores: scorecardData.scores as Record<number, number>,
-        holePars: scorecardData.pars as Record<number, number>,
-        textContent: content.replace(/\[ROUND_SCORECARD\].+?\[\/ROUND_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing scorecard data:', e);
-      return null;
-    }
-  }
-  return null;
+const extractTaggedBlock = (content: string, tag: string) => {
+  const re = new RegExp(`\\[${tag}\\][\\s\\S]*?\\[\\/${tag}\\]`);
+  const match = content.match(re);
+  return match ? match[0] : null;
 };
 
-// When editing, we must never expose embedded result payload blocks (scorecards, drill results, etc.)
-// to the user. This strips those blocks even if parsing fails due to formatting/newlines.
-const getEditablePostText = (content: string | null | undefined) => {
+const stripTaggedBlock = (content: string, tag: string) => {
+  const re = new RegExp(`\\[${tag}\\][\\s\\S]*?\\[\\/${tag}\\]`, "g");
+  return content.replace(re, "").trim();
+};
+
+// When editing or as a safe rendering fallback, we must never expose embedded result payload blocks
+// (scorecards, drill results, etc.) to the user. This strips those blocks even if parsing fails.
+const stripEmbeddedPostBlocks = (content: string | null | undefined) => {
   const raw = content || "";
   return raw
     .replace(/\[DRILL_RESULT\][\s\S]*?\[\/DRILL_RESULT\]/g, "")
     .replace(/\[ROUND_SCORECARD\][\s\S]*?\[\/ROUND_SCORECARD\]/g, "")
     .replace(/\[MATCH_PLAY_SCORECARD\][\s\S]*?\[\/MATCH_PLAY_SCORECARD\]/g, "")
+    .replace(/\[BEST_BALL_SCORECARD\][\s\S]*?\[\/BEST_BALL_SCORECARD\]/g, "")
+    .replace(/\[BEST_BALL_STROKE_PLAY_SCORECARD\][\s\S]*?\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/g, "")
+    .replace(/\[UMBRIAGO_SCORECARD\][\s\S]*?\[\/UMBRIAGO_SCORECARD\]/g, "")
+    .replace(/\[COPENHAGEN_SCORECARD\][\s\S]*?\[\/COPENHAGEN_SCORECARD\]/g, "")
+    .replace(/\[SCRAMBLE_SCORECARD\][\s\S]*?\[\/SCRAMBLE_SCORECARD\]/g, "")
+    .replace(/\[SKINS_SCORECARD\][\s\S]*?\[\/SKINS_SCORECARD\]/g, "")
+    .replace(/\[WOLF_SCORECARD\][\s\S]*?\[\/WOLF_SCORECARD\]/g, "")
     .replace(/\[ROUND_RESULT\][\s\S]*?\[\/ROUND_RESULT\]/g, "")
     .replace(/\[UMBRIAGO_RESULT\][\s\S]*?\[\/UMBRIAGO_RESULT\]/g, "")
     .replace(/\[GAME_RESULT\][\s\S]*?\[\/GAME_RESULT\]/g, "")
     .trim();
+};
+
+const parseRoundScorecardResult = (content: string) => {
+  // Format: [ROUND_SCORECARD]name|course|date|score|vspar|holes|totalPar|roundId|scorecardJson[/ROUND_SCORECARD]
+  const block = extractTaggedBlock(content, "ROUND_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[ROUND_SCORECARD\]/, "").replace(/\[\/ROUND_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 9) return null;
+    const [roundName, courseName, datePlayed, score, scoreVsPar, holesPlayed, totalPar, roundId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      score: parseInt(score),
+      scoreVsPar: parseInt(scoreVsPar),
+      holesPlayed: parseInt(holesPlayed),
+      totalPar: parseInt(totalPar),
+      roundId: roundId || null,
+      holeScores: scorecardData.scores as Record<number, number>,
+      holePars: scorecardData.pars as Record<number, number>,
+      textContent: stripTaggedBlock(content, "ROUND_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing scorecard data:", e);
+    return null;
+  }
+};
+
+const getEditablePostText = (content: string | null | undefined) => {
+  return stripEmbeddedPostBlocks(content);
 };
 
 // Parse match play scorecard result from post content
@@ -285,142 +309,188 @@ const parseRoundResult = (content: string) => {
 // Parse Umbriago scorecard result from post content (new format with scorecard data)
 const parseUmbriagioScorecardResult = (content: string) => {
   // Format: [UMBRIAGO_SCORECARD]roundName|courseName|date|teamAName|teamBName|normalizedA|normalizedB|winningTeam|currentUserTeam|gameId|scorecardJson[/UMBRIAGO_SCORECARD]
-  // Note: winningTeam (group 8) and currentUserTeam (group 9) can be empty, so use .*? instead of .+?
-  const match = content?.match(/\[UMBRIAGO_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.*?)\|(.*?)\|(.+?)\|(.+?)\[\/UMBRIAGO_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[11]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        teamAName: match[4],
-        teamBName: match[5],
-        normalizedA: parseInt(match[6]),
-        normalizedB: parseInt(match[7]),
-        winningTeam: (match[8] === 'A' || match[8] === 'B' || match[8] === 'TIE') ? match[8] as 'A' | 'B' | 'TIE' : null,
-        currentUserTeam: (match[9] === 'A' || match[9] === 'B') ? match[9] as 'A' | 'B' : null,
-        gameId: match[10] || null,
-        holePoints: scorecardData.holePoints as Record<number, { teamA: number; teamB: number }>,
-        holePars: scorecardData.holePars as Record<number, number>,
-        textContent: content.replace(/\[UMBRIAGO_SCORECARD\].+?\[\/UMBRIAGO_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing umbriago scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "UMBRIAGO_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[UMBRIAGO_SCORECARD\]/, "").replace(/\[\/UMBRIAGO_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 11) return null;
+    const [
+      roundName,
+      courseName,
+      datePlayed,
+      teamAName,
+      teamBName,
+      normalizedA,
+      normalizedB,
+      winningTeamRaw,
+      currentUserTeamRaw,
+      gameId,
+      ...jsonParts
+    ] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      teamAName,
+      teamBName,
+      normalizedA: parseInt(normalizedA),
+      normalizedB: parseInt(normalizedB),
+      winningTeam:
+        winningTeamRaw === "A" || winningTeamRaw === "B" || winningTeamRaw === "TIE"
+          ? (winningTeamRaw as "A" | "B" | "TIE")
+          : null,
+      currentUserTeam: currentUserTeamRaw === "A" || currentUserTeamRaw === "B" ? (currentUserTeamRaw as "A" | "B") : null,
+      gameId: gameId || null,
+      holePoints: scorecardData.holePoints as Record<number, { teamA: number; teamB: number }>,
+      holePars: scorecardData.holePars as Record<number, number>,
+      textContent: stripTaggedBlock(content, "UMBRIAGO_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing umbriago scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Copenhagen scorecard result from post content
 const parseCopenhagenScorecardResult = (content: string) => {
   // Format: [COPENHAGEN_SCORECARD]roundName|courseName|date|player1|player2|player3|p1pts|p2pts|p3pts|winner|gameId|scorecardJson[/COPENHAGEN_SCORECARD]
-  const match = content?.match(/\[COPENHAGEN_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/COPENHAGEN_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[12]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        player1: match[4],
-        player2: match[5],
-        player3: match[6],
-        player1Points: parseInt(match[7]),
-        player2Points: parseInt(match[8]),
-        player3Points: parseInt(match[9]),
-        winner: match[10],
-        gameId: match[11] || null,
-        holeScores: scorecardData.holeScores as Record<number, { p1: number | null; p2: number | null; p3: number | null; p1pts: number; p2pts: number; p3pts: number }>,
-        holePars: scorecardData.holePars as Record<number, number>,
-        textContent: content.replace(/\[COPENHAGEN_SCORECARD\].+?\[\/COPENHAGEN_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing copenhagen scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "COPENHAGEN_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[COPENHAGEN_SCORECARD\]/, "").replace(/\[\/COPENHAGEN_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 12) return null;
+    const [
+      roundName,
+      courseName,
+      datePlayed,
+      player1,
+      player2,
+      player3,
+      player1Points,
+      player2Points,
+      player3Points,
+      winner,
+      gameId,
+      ...jsonParts
+    ] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      player1,
+      player2,
+      player3,
+      player1Points: parseInt(player1Points),
+      player2Points: parseInt(player2Points),
+      player3Points: parseInt(player3Points),
+      winner,
+      gameId: gameId || null,
+      holeScores: scorecardData.holeScores as Record<
+        number,
+        { p1: number | null; p2: number | null; p3: number | null; p1pts: number; p2pts: number; p3pts: number }
+      >,
+      holePars: scorecardData.holePars as Record<number, number>,
+      textContent: stripTaggedBlock(content, "COPENHAGEN_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing copenhagen scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Scramble scorecard result from post content
 const parseScrambleScorecardResult = (content: string) => {
   // Format: [SCRAMBLE_SCORECARD]roundName|courseName|date|winningTeam|gameId|scorecardJson[/SCRAMBLE_SCORECARD]
-  const match = content?.match(/\[SCRAMBLE_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/SCRAMBLE_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[6]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        winningTeam: match[4],
-        gameId: match[5] || null,
-        holeScores: scorecardData.holeScores as Record<number, Record<string, number | null>>,
-        holePars: scorecardData.holePars as Record<number, number>,
-        teams: scorecardData.teams as Array<{ id: string; name: string; players: Array<{ id: string; name: string }> }>,
-        textContent: content.replace(/\[SCRAMBLE_SCORECARD\].+?\[\/SCRAMBLE_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing scramble scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "SCRAMBLE_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[SCRAMBLE_SCORECARD\]/, "").replace(/\[\/SCRAMBLE_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 6) return null;
+    const [roundName, courseName, datePlayed, winningTeam, gameId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      winningTeam,
+      gameId: gameId || null,
+      holeScores: scorecardData.holeScores as Record<number, Record<string, number | null>>,
+      holePars: scorecardData.holePars as Record<number, number>,
+      teams: scorecardData.teams as Array<{ id: string; name: string; players: Array<{ id: string; name: string }> }>,
+      textContent: stripTaggedBlock(content, "SCRAMBLE_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing scramble scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Skins scorecard result from post content
 const parseSkinsScorecardResult = (content: string) => {
   // Format: [SKINS_SCORECARD]roundName|courseName|date|winnerId|winnerName|winnerSkins|gameId|scorecardJson[/SKINS_SCORECARD]
-  const match = content?.match(/\[SKINS_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/SKINS_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[8]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        winnerId: match[4],
-        winnerName: match[5],
-        winnerSkins: parseInt(match[6]),
-        gameId: match[7] || null,
-        playerScores: scorecardData.playerScores as Record<string, { name: string; skins: number; total: number }>,
-        holeResults: scorecardData.holeResults as Record<number, { winnerId: string | null; skinsAvailable: number; par: number; playerScores?: Record<string, number> }>,
-        textContent: content.replace(/\[SKINS_SCORECARD\].+?\[\/SKINS_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing skins scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "SKINS_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[SKINS_SCORECARD\]/, "").replace(/\[\/SKINS_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 8) return null;
+    const [roundName, courseName, datePlayed, winnerId, winnerName, winnerSkins, gameId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      winnerId,
+      winnerName,
+      winnerSkins: parseInt(winnerSkins),
+      gameId: gameId || null,
+      playerScores: scorecardData.playerScores as Record<string, { name: string; skins: number; total: number }>,
+      holeResults: scorecardData.holeResults as Record<
+        number,
+        { winnerId: string | null; skinsAvailable: number; par: number; playerScores?: Record<string, number> }
+      >,
+      textContent: stripTaggedBlock(content, "SKINS_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing skins scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Wolf scorecard result from post content
 const parseWolfScorecardResult = (content: string) => {
   // Format: [WOLF_SCORECARD]roundName|courseName|date|winnerName|winnerPoints|gameId|scorecardJson[/WOLF_SCORECARD]
-  const match = content?.match(/\[WOLF_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/WOLF_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[7]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        winnerName: match[4],
-        winnerPoints: parseInt(match[5]),
-        gameId: match[6] || null,
-        playerScores: scorecardData.playerScores as Record<string, { name: string; points: number }>,
-        holeResults: scorecardData.holeResults as Record<number, { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }>,
-        textContent: content.replace(/\[WOLF_SCORECARD\].+?\[\/WOLF_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing wolf scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "WOLF_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[WOLF_SCORECARD\]/, "").replace(/\[\/WOLF_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 7) return null;
+    const [roundName, courseName, datePlayed, winnerName, winnerPoints, gameId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      winnerName,
+      winnerPoints: parseInt(winnerPoints),
+      gameId: gameId || null,
+      playerScores: scorecardData.playerScores as Record<string, { name: string; points: number }>,
+      holeResults: scorecardData.holeResults as Record<
+        number,
+        { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }
+      >,
+      textContent: stripTaggedBlock(content, "WOLF_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing wolf scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Umbriago result from post content (legacy format)
@@ -2708,25 +2778,30 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       // Preserve special result tags if they exist
       let newContent = editPostContent.trim();
       
-      const drillMatch = post.content?.match(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/);
-      const roundScorecardMatch = post.content?.match(/\[ROUND_SCORECARD\].+?\[\/ROUND_SCORECARD\]/);
-      const matchPlayScorecardMatch = post.content?.match(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/);
-      const roundMatch = post.content?.match(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/);
-      const umbriagioMatch = post.content?.match(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/);
-      const gameMatch = post.content?.match(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/);
-      
-      if (drillMatch) {
-        newContent = newContent ? `${newContent}\n${drillMatch[0]}` : drillMatch[0];
-      } else if (roundScorecardMatch) {
-        newContent = newContent ? `${newContent}\n${roundScorecardMatch[0]}` : roundScorecardMatch[0];
-      } else if (matchPlayScorecardMatch) {
-        newContent = newContent ? `${newContent}\n${matchPlayScorecardMatch[0]}` : matchPlayScorecardMatch[0];
-      } else if (roundMatch) {
-        newContent = newContent ? `${newContent}\n${roundMatch[0]}` : roundMatch[0];
-      } else if (umbriagioMatch) {
-        newContent = newContent ? `${newContent}\n${umbriagioMatch[0]}` : umbriagioMatch[0];
-      } else if (gameMatch) {
-        newContent = newContent ? `${newContent}\n${gameMatch[0]}` : gameMatch[0];
+      const embeddedBlockRegexes: RegExp[] = [
+        /\[DRILL_RESULT\][\s\S]*?\[\/DRILL_RESULT\]/g,
+        /\[ROUND_SCORECARD\][\s\S]*?\[\/ROUND_SCORECARD\]/g,
+        /\[MATCH_PLAY_SCORECARD\][\s\S]*?\[\/MATCH_PLAY_SCORECARD\]/g,
+        /\[BEST_BALL_SCORECARD\][\s\S]*?\[\/BEST_BALL_SCORECARD\]/g,
+        /\[BEST_BALL_STROKE_PLAY_SCORECARD\][\s\S]*?\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/g,
+        /\[UMBRIAGO_SCORECARD\][\s\S]*?\[\/UMBRIAGO_SCORECARD\]/g,
+        /\[COPENHAGEN_SCORECARD\][\s\S]*?\[\/COPENHAGEN_SCORECARD\]/g,
+        /\[SCRAMBLE_SCORECARD\][\s\S]*?\[\/SCRAMBLE_SCORECARD\]/g,
+        /\[SKINS_SCORECARD\][\s\S]*?\[\/SKINS_SCORECARD\]/g,
+        /\[WOLF_SCORECARD\][\s\S]*?\[\/WOLF_SCORECARD\]/g,
+        /\[ROUND_RESULT\][\s\S]*?\[\/ROUND_RESULT\]/g,
+        /\[UMBRIAGO_RESULT\][\s\S]*?\[\/UMBRIAGO_RESULT\]/g,
+        /\[GAME_RESULT\][\s\S]*?\[\/GAME_RESULT\]/g,
+      ];
+
+      const preservedBlocks: string[] = [];
+      for (const re of embeddedBlockRegexes) {
+        const matches = post.content?.match(re);
+        if (matches?.length) preservedBlocks.push(...matches);
+      }
+
+      if (preservedBlocks.length) {
+        newContent = [newContent, ...preservedBlocks].filter(Boolean).join("\n");
       }
 
       const { error } = await supabase
@@ -2916,19 +2991,65 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
   // Check if this post contains a drill result, round result, umbriago result, match play result, best ball result, or game result
-  const drillResult = parseDrillResult(post.content);
-  const roundScorecardResult = parseRoundScorecardResult(post.content);
-  const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
-  const bestBallScorecardResult = parseBestBallScorecardResult(post.content);
-  const bestBallStrokePlayScorecardResult = parseBestBallStrokePlayScorecardResult(post.content);
-  const roundResult = !roundScorecardResult ? parseRoundResult(post.content) : null;
-  const umbriagioScorecardResult = parseUmbriagioScorecardResult(post.content);
-  const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(post.content) : null;
-  const copenhagenScorecardResult = parseCopenhagenScorecardResult(post.content);
-  const scrambleScorecardResult = parseScrambleScorecardResult(post.content);
-  const skinsScorecardResult = parseSkinsScorecardResult(post.content);
-  const wolfScorecardResult = parseWolfScorecardResult(post.content);
-  const gameResult = !matchPlayScorecardResult && !bestBallScorecardResult && !bestBallStrokePlayScorecardResult && !copenhagenScorecardResult && !scrambleScorecardResult && !skinsScorecardResult && !wolfScorecardResult ? parseGameResult(post.content) : null;
+  const parsed = useMemo(() => {
+    const content = String(post.content || "");
+    const drillResult = parseDrillResult(content);
+    const roundScorecardResult = parseRoundScorecardResult(content);
+    const matchPlayScorecardResult = parseMatchPlayScorecardResult(content);
+    const bestBallScorecardResult = parseBestBallScorecardResult(content);
+    const bestBallStrokePlayScorecardResult = parseBestBallStrokePlayScorecardResult(content);
+    const roundResult = !roundScorecardResult ? parseRoundResult(content) : null;
+    const umbriagioScorecardResult = parseUmbriagioScorecardResult(content);
+    const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(content) : null;
+    const copenhagenScorecardResult = parseCopenhagenScorecardResult(content);
+    const scrambleScorecardResult = parseScrambleScorecardResult(content);
+    const skinsScorecardResult = parseSkinsScorecardResult(content);
+    const wolfScorecardResult = parseWolfScorecardResult(content);
+    const gameResult =
+      !matchPlayScorecardResult &&
+      !bestBallScorecardResult &&
+      !bestBallStrokePlayScorecardResult &&
+      !copenhagenScorecardResult &&
+      !scrambleScorecardResult &&
+      !skinsScorecardResult &&
+      !wolfScorecardResult
+        ? parseGameResult(content)
+        : null;
+    const safeFallbackText = stripEmbeddedPostBlocks(content);
+    return {
+      drillResult,
+      roundScorecardResult,
+      matchPlayScorecardResult,
+      bestBallScorecardResult,
+      bestBallStrokePlayScorecardResult,
+      roundResult,
+      umbriagioScorecardResult,
+      umbriagioResult,
+      copenhagenScorecardResult,
+      scrambleScorecardResult,
+      skinsScorecardResult,
+      wolfScorecardResult,
+      gameResult,
+      safeFallbackText,
+    };
+  }, [post.content]);
+
+  const {
+    drillResult,
+    roundScorecardResult,
+    matchPlayScorecardResult,
+    bestBallScorecardResult,
+    bestBallStrokePlayScorecardResult,
+    roundResult,
+    umbriagioScorecardResult,
+    umbriagioResult,
+    copenhagenScorecardResult,
+    scrambleScorecardResult,
+    skinsScorecardResult,
+    wolfScorecardResult,
+    gameResult,
+    safeFallbackText,
+  } = parsed;
 
   return (
     <>
@@ -3323,8 +3444,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               />
             )}
           </div>
-        ) : post.content && (
-          <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
+        ) : safeFallbackText && (
+          <p className="text-foreground whitespace-pre-wrap">{safeFallbackText}</p>
         )}
 
         {/* Post Image */}

@@ -1,4 +1,4 @@
-export const APP_NAME = "AppName";
+export const APP_NAME = "OnlyPlay Golf";
 
 export const STORAGE_KEYS = {
   DISPLAY_NAME: "app_display_name",
