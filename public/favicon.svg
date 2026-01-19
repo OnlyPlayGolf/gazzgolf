@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none" role="img" aria-label="OnlyPlay Golf">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B3D2E" />
+      <stop offset="1" stop-color="#0E5A3E" />
+    </linearGradient>
+  </defs>
+
+  <rect width="128" height="128" rx="28" fill="url(#g)" />
+
+  <!-- Golf ball -->
+  <circle cx="86" cy="40" r="16" fill="#F8FAFC" opacity="0.95" />
+  <circle cx="80" cy="36" r="2" fill="#CBD5E1" />
+  <circle cx="88" cy="34" r="2" fill="#CBD5E1" />
+  <circle cx="92" cy="40" r="2" fill="#CBD5E1" />
+  <circle cx="84" cy="44" r="2" fill="#CBD5E1" />
+
+  <!-- OP monogram -->
+  <path
+    d="M30 88V40h22c14 0 22 7.5 22 18.5S66 77 52 77H42v11H30Zm12-23h10c7 0 10-3.2 10-6.5S59 52 52 52H42v13Zm42 23V40h16c18 0 28 8.8 28 24s-10 24-28 24H84Zm12-12h4c11 0 16-4.5 16-12s-5-12-16-12h-4v24Z"
+    fill="#E2E8F0"
+  />
+</svg>
