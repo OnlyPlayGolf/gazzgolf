@@ -294,7 +294,7 @@ export default function RoundSettings() {
     return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
   };
 
-  if (loading || !round) {
+  if (loading || !round || isSpectatorLoading) {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
@@ -383,15 +383,19 @@ export default function RoundSettings() {
         {/* Game Settings - Visible for all but locked for spectators or when edit window expired */}
         {(() => {
           const isLocked = isSpectator || isEditWindowExpired;
+          // Debug logging (remove in production)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('RoundSettings lock status:', { isSpectator, isEditWindowExpired, isLocked });
+          }
           return (
-            <Card>
+            <Card className={isLocked ? 'opacity-90' : ''}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between text-lg">
                   <div className="flex items-center gap-2">
                     <Settings size={20} className="text-primary" />
                     Game Settings
                     {isLocked && (
-                      <span className="text-xs text-muted-foreground font-normal">
+                      <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
                         (Locked)
                       </span>
                     )}
