@@ -1,0 +1,16 @@
+{
+  "name": "OnlyPlay Golf",
+  "short_name": "OnlyPlay",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B3D2E",
+  "theme_color": "#0B3D2E",
+  "icons": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
