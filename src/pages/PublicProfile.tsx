@@ -514,33 +514,37 @@ export default function PublicProfile() {
           )}
         </div>
 
-        {/* Posts Section - locked if not friends */}
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-foreground mb-3">Posts</h2>
-          {isFriend ? (
-            userPosts.length > 0 ? (
-              <div className="space-y-4">
-                {userPosts.map((post) => (
-                  <FeedPost key={post.id} post={post} currentUserId={currentUserId || ''} onPostDeleted={loadData} />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">No posts yet</p>
-                </CardContent>
-              </Card>
-            )
-          ) : (
+        {/* Posts Section Header */}
+        <h2 className="text-xl font-bold text-foreground mb-3">Posts</h2>
+      </div>
+
+      {/* Posts Section - locked if not friends, edge to edge */}
+      {isFriend ? (
+        userPosts.length > 0 ? (
+          <div className="space-y-0 mb-6">
+            {userPosts.map((post) => (
+              <FeedPost key={post.id} post={post} currentUserId={currentUserId || ''} onPostDeleted={loadData} />
+            ))}
+          </div>
+        ) : (
+          <div className="px-4 mb-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <Lock size={24} className="mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground">Add {displayName} as a friend to see their posts</p>
+                <p className="text-muted-foreground">No posts yet</p>
               </CardContent>
             </Card>
-          )}
+          </div>
+        )
+      ) : (
+        <div className="px-4 mb-6">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <Lock size={24} className="mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground">Add {displayName} as a friend to see their posts</p>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      )}
 
       {/* QR Code Dialog */}
       <Dialog open={showQRCode} onOpenChange={setShowQRCode}>

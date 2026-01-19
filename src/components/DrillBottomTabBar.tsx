@@ -26,7 +26,7 @@ export function DrillBottomTabBar({ drillSlug }: DrillBottomTabBarProps) {
           return (
             <button
               key={tab.id}
-              onClick={() => navigate(tab.path)}
+              onClick={() => navigate(tab.path, { replace: true })}
               className={`flex flex-col items-center gap-1 py-3 px-2 flex-1 transition-colors ${
                 isActive 
                   ? "text-primary" 

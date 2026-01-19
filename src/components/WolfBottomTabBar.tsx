@@ -31,7 +31,7 @@ export function WolfBottomTabBar({ gameId, isSpectator = false }: WolfBottomTabB
           return (
             <button
               key={tab.id}
-              onClick={() => navigate(tab.path)}
+              onClick={() => navigate(tab.path, { replace: true })}
               className={`flex flex-col items-center gap-0.5 py-1.5 px-1 flex-1 transition-colors ${
                 isActive 
                   ? "text-primary" 

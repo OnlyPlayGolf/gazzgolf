@@ -25,9 +25,11 @@ export default function AllRoundsPage() {
   const [loading, setLoading] = useState(true);
   const [profileName, setProfileName] = useState<string>("");
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deleteMode, setDeleteMode] = useState(false);
   const [roundToDelete, setRoundToDelete] = useState<RoundCardData | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showCannotDeleteDialog, setShowCannotDeleteDialog] = useState(false);
 
   useEffect(() => {
     loadRounds();
@@ -45,6 +47,7 @@ export default function AllRoundsPage() {
       return;
     }
 
+    setCurrentUserId(user?.id || null);
     setIsOwnProfile(!userId || userId === user?.id);
 
     const { data: profileData } = await supabase
@@ -62,9 +65,16 @@ export default function AllRoundsPage() {
     setLoading(false);
   };
 
+  // Check if the current user owns this round and can delete it
+  const canDeleteRound = (round: RoundCardData) => {
+    return currentUserId && round.ownerUserId === currentUserId;
+  };
+
   const handleRoundClick = (round: RoundCardData) => {
-    if (deleteMode) {
+    if (canDeleteRound(round)) {
       setRoundToDelete(round);
+    } else {
+      setShowCannotDeleteDialog(true);
     }
   };
 
@@ -97,35 +107,91 @@ export default function AllRoundsPage() {
           .eq('id', proRound.id);
       }
 
+      // Delete round comments
+      await supabase.from('round_comments').delete().eq('round_id', roundId);
+
+      let deleteResult: { error: any; count: number | null } = { error: null, count: null };
+
       // Delete based on game type
       if (gameType === 'stroke_play' || gameType === 'round') {
         // Delete holes first
         await supabase.from('holes').delete().eq('round_id', roundId);
         // Delete round players
         await supabase.from('round_players').delete().eq('round_id', roundId);
-        // Delete the round
-        await supabase.from('rounds').delete().eq('id', roundId);
+        // Delete the round and check if it was actually deleted
+        const { data, error } = await supabase
+          .from('rounds')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
       } else if (gameType === 'match_play') {
         await supabase.from('match_play_holes').delete().eq('game_id', roundId);
-        await supabase.from('match_play_games').delete().eq('id', roundId);
+        const { data, error } = await supabase
+          .from('match_play_games')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
       } else if (gameType === 'best_ball') {
         await supabase.from('best_ball_holes').delete().eq('game_id', roundId);
-        await supabase.from('best_ball_games').delete().eq('id', roundId);
+        const { data, error } = await supabase
+          .from('best_ball_games')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
       } else if (gameType === 'copenhagen') {
         await supabase.from('copenhagen_holes').delete().eq('game_id', roundId);
-        await supabase.from('copenhagen_games').delete().eq('id', roundId);
+        const { data, error } = await supabase
+          .from('copenhagen_games')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
       } else if (gameType === 'scramble') {
         await supabase.from('scramble_holes').delete().eq('game_id', roundId);
-        await supabase.from('scramble_games').delete().eq('id', roundId);
+        const { data, error } = await supabase
+          .from('scramble_games')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
       } else if (gameType === 'skins') {
         await supabase.from('skins_holes').delete().eq('game_id', roundId);
-        await supabase.from('skins_games').delete().eq('id', roundId);
+        const { data, error } = await supabase
+          .from('skins_games')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
       } else if (gameType === 'umbriago') {
         await supabase.from('umbriago_holes').delete().eq('game_id', roundId);
-        await supabase.from('umbriago_games').delete().eq('id', roundId);
+        const { data, error } = await supabase
+          .from('umbriago_games')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
       } else if (gameType === 'wolf') {
         await supabase.from('wolf_holes').delete().eq('game_id', roundId);
-        await supabase.from('wolf_games').delete().eq('id', roundId);
+        const { data, error } = await supabase
+          .from('wolf_games')
+          .delete()
+          .eq('id', roundId)
+          .select();
+        deleteResult = { error, count: data?.length ?? 0 };
+      }
+
+      if (deleteResult.error) {
+        throw deleteResult.error;
+      }
+
+      // Check if anything was actually deleted (RLS may have blocked it)
+      if (deleteResult.count === 0) {
+        setRoundToDelete(null);
+        setShowCannotDeleteDialog(true);
+        return;
       }
 
       toast.success("Round deleted successfully");
@@ -186,18 +252,23 @@ export default function AllRoundsPage() {
           </div>
         ) : rounds.length > 0 ? (
           <div className="space-y-3">
-            {rounds.map((round) => (
-              <div 
-                key={`${round.gameType || 'round'}-${round.id}`}
-                onClick={() => handleRoundClick(round)}
-                className={deleteMode ? "cursor-pointer" : ""}
-              >
+            {rounds.map((round) => {
+              const canDelete = canDeleteRound(round);
+              return (
                 <RoundCard 
+                  key={`${round.gameType || 'round'}-${round.id}`}
                   round={round} 
-                  className={deleteMode ? "ring-2 ring-destructive/50 hover:ring-destructive" : ""}
+                  onClick={deleteMode ? () => handleRoundClick(round) : undefined}
+                  disabled={deleteMode}
+                  className={deleteMode 
+                    ? canDelete 
+                      ? "ring-2 ring-destructive/50 hover:ring-destructive cursor-pointer" 
+                      : "opacity-50 cursor-pointer"
+                    : ""
+                  }
                 />
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-12 text-muted-foreground">
@@ -206,6 +277,7 @@ export default function AllRoundsPage() {
         )}
       </div>
 
+      {/* Delete confirmation dialog for owned rounds */}
       <AlertDialog open={!!roundToDelete} onOpenChange={() => setRoundToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -222,6 +294,23 @@ export default function AllRoundsPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cannot delete dialog for non-owned rounds */}
+      <AlertDialog open={showCannotDeleteDialog} onOpenChange={setShowCannotDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cannot Delete Round</AlertDialogTitle>
+            <AlertDialogDescription>
+              You can only delete rounds you created.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowCannotDeleteDialog(false)}>
+              Done
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
