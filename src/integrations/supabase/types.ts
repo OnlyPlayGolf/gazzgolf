@@ -895,7 +895,9 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          group_type: string | null
           id: string
+          image_url: string | null
           is_coach_group: boolean
           name: string
           owner_id: string
@@ -903,7 +905,9 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description?: string | null
+          group_type?: string | null
           id?: string
+          image_url?: string | null
           is_coach_group?: boolean
           name: string
           owner_id: string
@@ -911,7 +915,9 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string | null
+          group_type?: string | null
           id?: string
+          image_url?: string | null
           is_coach_group?: boolean
           name?: string
           owner_id?: string

@@ -510,11 +510,11 @@ const Index = () => {
           </div>
         )}
 
-        {/* Post Box */}
-        <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
-
         {/* Performance Snapshot */}
         <PerformanceSnapshot userId={user.id} />
+
+        {/* Post Box */}
+        <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
 
         {/* Friends Activity Feed */}
         {(friendsPosts.length > 0 || friendsActivity.length > 0) && (

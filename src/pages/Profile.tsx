@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Star, Plus, MessageCircle, Crown, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
+import { Star, Plus, MessageCircle, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
 import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
 
 interface Friend {
   id: string;
@@ -32,6 +33,7 @@ interface Group {
   description?: string;
   created_at?: string;
   image_url?: string;
+  group_type?: 'player' | 'coach' | null;
 }
 
 const Profile = () => {
@@ -159,13 +161,32 @@ const Profile = () => {
 
     try {
       // Load groups with member counts
-      const { data: groupsData } = await (supabase as any)
+      // NOTE: `groups.group_type` may not exist yet in the remote DB if migrations haven't been applied.
+      // We attempt to select it, and gracefully fall back to a select without it.
+      let groupsData: any[] | null = null;
+      let groupsError: any = null;
+
+      ({ data: groupsData, error: groupsError } = await (supabase as any)
         .from('group_members')
         .select(`
-          groups(id, name, owner_id, created_at, description, image_url),
+          groups(id, name, owner_id, created_at, description, image_url, group_type),
           role
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id));
+
+      if (groupsError) {
+        ({ data: groupsData, error: groupsError } = await (supabase as any)
+          .from('group_members')
+          .select(`
+            groups(id, name, owner_id, created_at, description, image_url),
+            role
+          `)
+          .eq('user_id', user.id));
+      }
+
+      if (groupsError) {
+        throw groupsError;
+      }
 
       // Get member counts for each group
       const groupsList = await Promise.all(
@@ -175,6 +196,17 @@ const Profile = () => {
             .select('*', { count: 'exact', head: true })
             .eq('group_id', g.groups.id);
 
+          // Derive group_type for backward compatibility if DB column doesn't exist / isn't selected.
+          let derivedGroupType: 'player' | 'coach' | null = g.groups.group_type ?? null;
+          if (!derivedGroupType) {
+            const { count: adminCount } = await (supabase as any)
+              .from('group_members')
+              .select('*', { count: 'exact', head: true })
+              .eq('group_id', g.groups.id)
+              .eq('role', 'admin');
+            derivedGroupType = (adminCount || 0) > 0 ? 'coach' : 'player';
+          }
+
           return {
             id: g.groups.id,
             name: g.groups.name,
@@ -183,7 +215,8 @@ const Profile = () => {
             member_count: count || 0,
             created_at: g.groups.created_at,
             description: g.groups.description,
-            image_url: g.groups.image_url
+            image_url: g.groups.image_url,
+            group_type: derivedGroupType,
           };
         })
       );
@@ -275,15 +308,33 @@ const Profile = () => {
       }
 
       // Step 2: Create the group
-      const { data: groupData, error: groupError } = await (supabase as any)
+      // NOTE: `groups.group_type` may not exist yet in the remote DB if migrations haven't been applied.
+      // Try inserting with group_type, and fall back to an insert without it.
+      let groupData: any = null;
+      let groupError: any = null;
+
+      ({ data: groupData, error: groupError } = await (supabase as any)
         .from('groups')
         .insert({
           name: groupName.trim(),
           owner_id: user.id,
-          image_url: imageUrl
+          image_url: imageUrl,
+          group_type: groupType === "Coach" ? "coach" : "player",
         })
         .select()
-        .single();
+        .single());
+
+      if (groupError && String(groupError.message || '').toLowerCase().includes('group_type')) {
+        ({ data: groupData, error: groupError } = await (supabase as any)
+          .from('groups')
+          .insert({
+            name: groupName.trim(),
+            owner_id: user.id,
+            image_url: imageUrl,
+          })
+          .select()
+          .single());
+      }
 
       if (groupError) {
         console.error('Error creating group:', groupError);
@@ -785,9 +836,6 @@ const Profile = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-foreground text-lg">{group.name}</h3>
-                        {(group.role === 'owner' || group.role === 'admin') && (
-                          <Crown size={16} className="text-yellow-500 fill-current" />
-                        )}
                       </div>
                       
                       <div className="flex items-center gap-3">
@@ -795,7 +843,7 @@ const Profile = () => {
                           {group.member_count} {group.member_count === 1 ? 'member' : 'members'}
                         </p>
                         <Badge variant="outline" className="text-xs">
-                          {group.role === 'owner' || group.role === 'admin' ? 'Coach' : 'Player'}
+                          {getGroupRoleLabel({ role: group.role, groupType: group.group_type })}
                         </Badge>
                       </div>
 
