@@ -34,10 +34,15 @@ const Index = () => {
 
   // Progressive loading hooks - each section manages its own loading state
   const { profile, loading: profileLoading } = useHomeProfile(user);
-  const { friendsOnCourse, loading: friendsOnCourseLoading } = useFriendsOnCourse(user);
+  const { friendsOnCourse, loading: friendsOnCourseLoading, refresh: refreshFriendsOnCourse } = useFriendsOnCourse(user);
   const { ongoingGames, loading: ongoingGamesLoading, refresh: refreshOngoingGames } = useOngoingGames(user);
   const { performanceStats, loading: keyInsightsLoading } = useKeyInsights(user);
   const { friendsPosts, loading: feedPostsLoading, refresh: refreshFeedPosts } = useFeedPosts(user);
+
+  const handleGameDeleted = async () => {
+    // Refresh both ongoing games and friends on course when a game is deleted
+    await Promise.all([refreshOngoingGames(), refreshFriendsOnCourse()]);
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -241,7 +246,7 @@ const Index = () => {
         )}
 
         {/* Ongoing Rounds Section - renders when data is available */}
-        {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={refreshOngoingGames} />}
+        {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={handleGameDeleted} />}
 
         {/* Performance Snapshot - always renders (handles loading internally) */}
         <PerformanceSnapshot performanceStats={performanceStats} />
