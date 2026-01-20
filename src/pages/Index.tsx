@@ -90,9 +90,9 @@ const Index = () => {
           {/* Welcome Header */}
           <div className="text-center">
             <img 
-              src="/og-image.svg"
+              src="/src/assets/onlyplay-golf-logo.png"
               alt="OnlyPlay Golf" 
-              className="h-28 mx-auto"
+              className="h-28 mx-auto brightness-0"
             />
             <p className="text-primary text-base -mt-1">Train & Play. Like a game. Together.</p>
           </div>
