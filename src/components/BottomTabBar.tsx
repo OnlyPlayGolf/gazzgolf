@@ -64,17 +64,17 @@ export const BottomTabBar = () => {
                 "flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] text-[10px] font-medium transition-colors",
                 isActive 
                   ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-primary/60 hover:text-primary"
               )}
             >
               <Icon 
                 size={20} 
                 className={cn(
                   "mb-0.5",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-primary/60"
                 )} 
               />
-              <span className={cn(isActive ? "text-primary" : "text-muted-foreground")}>
+              <span className={cn(isActive ? "text-primary" : "text-primary/60")}>
                 {tab.label}
               </span>
             </button>
