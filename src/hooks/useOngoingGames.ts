@@ -15,8 +15,8 @@ export interface OngoingGame {
 }
 
 export function useOngoingGames(user: SupabaseUser | null): { ongoingGames: OngoingGame[]; loading: boolean; refresh: () => Promise<void> } {
-  const [ongoingGames, setOngoingGames] = useState<OngoingGame[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [ongoingGames, setOngoingGames] = useState<OngoingGame[]>(() => []);
+  const [loading, setLoading] = useState<boolean>(() => true);
 
   const loadOngoingGames = useCallback(async () => {
     if (!user) {
