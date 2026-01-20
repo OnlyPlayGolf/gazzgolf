@@ -523,7 +523,7 @@ const ProRoundSetup = () => {
         )}
 
         <Button
-          className="w-full mt-6 mb-6 bg-green-500 hover:bg-green-600 text-white"
+          className="w-full mt-6 mb-6"
           onClick={() => navigate('/statistics')}
         >
           View All Statistics
