@@ -266,9 +266,6 @@ const Index = () => {
             </ScrollArea>
           </div>
         )}
-        
-        {/* Performance Snapshot */}
-        <PerformanceSnapshot userId={user.id} />
 
 
         {/* Post Box - renders when profile is loaded */}
