@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 
 interface CourseHole {
   hole_number: number;
@@ -428,14 +429,16 @@ export default function MatchPlayLeaderboard() {
                 
                 {allGamesWithHoles.map((gameWithHoles, index) => (
                   <TabsContent key={index} value={index.toString()}>
-                    {renderMatchCard(gameWithHoles, index)}
+                    <FadeSlide>{renderMatchCard(gameWithHoles, index)}</FadeSlide>
                   </TabsContent>
                 ))}
                 
                 <TabsContent value="all" className="space-y-4">
-                  {allGamesWithHoles.map((gameWithHoles, index) => 
-                    renderMatchCard(gameWithHoles, index)
-                  )}
+                  <FadeSlide>
+                    {allGamesWithHoles.map((gameWithHoles, index) => 
+                      renderMatchCard(gameWithHoles, index)
+                    )}
+                  </FadeSlide>
                 </TabsContent>
               </Tabs>
             ) : (

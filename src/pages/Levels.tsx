@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 import { Target, CheckCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -239,111 +240,115 @@ const Levels = () => {
 
           {/* Play Tab - Current Level */}
           <TabsContent value="play" className="mt-0">
-            {currentLevel && (
-              <Card className="rounded-2xl shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-semibold text-foreground">
-                          Level {currentLevel.level}: {currentLevel.title}
-                        </h3>
-                        <Badge className={`text-xs rounded-full ${getTypeColor(currentLevel.type)}`}>
-                          {currentLevel.type}
-                        </Badge>
+            <FadeSlide>
+              {currentLevel && (
+                <Card className="rounded-2xl shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-xl font-semibold text-foreground">
+                            Level {currentLevel.level}: {currentLevel.title}
+                          </h3>
+                          <Badge className={`text-xs rounded-full ${getTypeColor(currentLevel.type)}`}>
+                            {currentLevel.type}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Distance</p>
+                        <p className="font-semibold text-foreground">{currentLevel.distance}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Distance</p>
-                      <p className="font-semibold text-foreground">{currentLevel.distance}</p>
+
+                    <p className="text-muted-foreground mb-4">{currentLevel.description}</p>
+
+                    <div className="flex items-center gap-2 mb-6">
+                      <Target size={16} className="text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground"><strong>Target:</strong> <strong>{currentLevel.target}</strong></span>
+                      <Badge variant="outline" className={getDifficultyColor(currentLevel.difficulty)}>
+                        {currentLevel.difficulty}
+                      </Badge>
                     </div>
-                  </div>
 
-                  <p className="text-muted-foreground mb-4">{currentLevel.description}</p>
-
-                  <div className="flex items-center gap-2 mb-6">
-                    <Target size={16} className="text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground"><strong>Target:</strong> <strong>{currentLevel.target}</strong></span>
-                    <Badge variant="outline" className={getDifficultyColor(currentLevel.difficulty)}>
-                      {currentLevel.difficulty}
-                    </Badge>
-                  </div>
-
-                  {!isLevelStarted ? (
-                    <Button
-                      onClick={handleStartLevel}
-                      className="w-full rounded-2xl bg-foreground text-background hover:bg-foreground/90"
-                      size="lg"
-                    >
-                      Start Level
-                    </Button>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
+                    {!isLevelStarted ? (
                       <Button
-                        onClick={() => handleCompleteLevel(currentLevel.id)}
-                        className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
+                        onClick={handleStartLevel}
+                        className="w-full rounded-2xl bg-foreground text-background hover:bg-foreground/90"
                         size="lg"
                       >
-                        Completed
+                        Start Level
                       </Button>
-                      <Button
-                        onClick={() => handleFailLevel(currentLevel.id)}
-                        variant="outline"
-                        className="rounded-2xl"
-                        size="lg"
-                      >
-                        Failed
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          onClick={() => handleCompleteLevel(currentLevel.id)}
+                          className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
+                          size="lg"
+                        >
+                          Completed
+                        </Button>
+                        <Button
+                          onClick={() => handleFailLevel(currentLevel.id)}
+                          variant="outline"
+                          className="rounded-2xl"
+                          size="lg"
+                        >
+                          Failed
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </FadeSlide>
           </TabsContent>
 
           {/* All Levels Tab */}
           <TabsContent value="all-levels" className="mt-0">
-            <div className="space-y-3">
-              {levels.map((level) => (
-                <Card
-                  key={level.id}
-                  className={`rounded-2xl transition-all ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm"}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-foreground">Level {level.level}: {level.title}</h4>
-                          <Badge className={`text-xs rounded-full ${getTypeColor(level.type)}`}>{level.type}</Badge>
-                          {level.completed && <CheckCircle size={16} className="text-primary" />}
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{level.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Target size={12} />
-                            <span><strong>Target:</strong> <strong>{level.target}</strong></span>
+            <FadeSlide>
+              <div className="space-y-3">
+                {levels.map((level) => (
+                  <Card
+                    key={level.id}
+                    className={`rounded-2xl transition-all ${level.completed ? "bg-muted/50 opacity-75" : "shadow-sm"}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-foreground">Level {level.level}: {level.title}</h4>
+                            <Badge className={`text-xs rounded-full ${getTypeColor(level.type)}`}>{level.type}</Badge>
+                            {level.completed && <CheckCircle size={16} className="text-primary" />}
                           </div>
-                          <Badge variant="outline" className={`${getDifficultyColor(level.difficulty)} text-xs`}>
-                            {level.difficulty}
-                          </Badge>
+                          <p className="text-sm text-muted-foreground mb-2">{level.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Target size={12} />
+                              <span><strong>Target:</strong> <strong>{level.target}</strong></span>
+                            </div>
+                            <Badge variant="outline" className={`${getDifficultyColor(level.difficulty)} text-xs`}>
+                              {level.difficulty}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-sm font-semibold text-foreground mb-2">{level.distance}</p>
+                          {level.completed && (
+                            <Badge variant="outline" className="text-xs">Completed</Badge>
+                          )}
+                          {(level as any).attempts && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {(level as any).attempts} attempt{(level as any).attempts > 1 ? 's' : ''}
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right ml-4">
-                        <p className="text-sm font-semibold text-foreground mb-2">{level.distance}</p>
-                        {level.completed && (
-                          <Badge variant="outline" className="text-xs">Completed</Badge>
-                        )}
-                        {(level as any).attempts && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {(level as any).attempts} attempt{(level as any).attempts > 1 ? 's' : ''}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </FadeSlide>
           </TabsContent>
         </Tabs>
       </div>

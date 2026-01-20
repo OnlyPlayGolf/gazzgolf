@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Trophy, Star, Target } from "lucide-react";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -381,93 +382,97 @@ const Leaderboards = () => {
                   </TabsList>
 
                   <TabsContent value="friends" className="mt-4">
-                    {friendsDrillLeaderboard.length > 0 ? (
-                      <div className="space-y-2">
-                        {friendsDrillLeaderboard.map((entry, index) => {
-                          const isCurrentUser = entry.user_id === user?.id;
-                          return (
-                            <div 
-                              key={entry.user_id} 
-                              className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="w-8 text-center">
-                                  {index + 1}
-                                </Badge>
-                                <ProfilePhoto
-                                  src={entry.avatar_url}
-                                  alt={entry.display_name || entry.username || "User"}
-                                  fallback={entry.display_name || entry.username || "?"}
-                                  size="sm"
-                                />
-                                <div>
-                                  <p className="font-medium text-foreground text-sm">
-                                    {entry.display_name || entry.username || 'Unknown'}
-                                    {isCurrentUser && ' (You)'}
+                    <FadeSlide>
+                      {friendsDrillLeaderboard.length > 0 ? (
+                        <div className="space-y-2">
+                          {friendsDrillLeaderboard.map((entry, index) => {
+                            const isCurrentUser = entry.user_id === user?.id;
+                            return (
+                              <div 
+                                key={entry.user_id} 
+                                className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="outline" className="w-8 text-center">
+                                    {index + 1}
+                                  </Badge>
+                                  <ProfilePhoto
+                                    src={entry.avatar_url}
+                                    alt={entry.display_name || entry.username || "User"}
+                                    fallback={entry.display_name || entry.username || "?"}
+                                    size="sm"
+                                  />
+                                  <div>
+                                    <p className="font-medium text-foreground text-sm">
+                                      {entry.display_name || entry.username || 'Unknown'}
+                                      {isCurrentUser && ' (You)'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-foreground">
+                                    {entry.best_score}
                                   </p>
+                                  <p className="text-xs text-muted-foreground">points</p>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-foreground">
-                                  {entry.best_score}
-                                </p>
-                                <p className="text-xs text-muted-foreground">points</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm text-center py-4">
-                        Complete this drill to see your score!
-                      </p>
-                    )}
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-4">
+                          Complete this drill to see your score!
+                        </p>
+                      )}
+                    </FadeSlide>
                   </TabsContent>
 
                   <TabsContent value="groups" className="mt-4">
-                    {groupsDrillLeaderboard.length > 0 ? (
-                      <div className="space-y-2">
-                        {groupsDrillLeaderboard.map((entry, index) => {
-                          const isCurrentUser = entry.user_id === user?.id;
-                          return (
-                            <div 
-                              key={entry.user_id} 
-                              className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="w-8 text-center">
-                                  {index + 1}
-                                </Badge>
-                                <ProfilePhoto
-                                  src={entry.avatar_url}
-                                  alt={entry.display_name || entry.username || "User"}
-                                  fallback={entry.display_name || entry.username || "?"}
-                                  size="sm"
-                                />
-                                <div>
-                                  <p className="font-medium text-foreground text-sm">
-                                    {entry.display_name || entry.username || 'Unknown'}
-                                    {isCurrentUser && ' (You)'}
+                    <FadeSlide>
+                      {groupsDrillLeaderboard.length > 0 ? (
+                        <div className="space-y-2">
+                          {groupsDrillLeaderboard.map((entry, index) => {
+                            const isCurrentUser = entry.user_id === user?.id;
+                            return (
+                              <div 
+                                key={entry.user_id} 
+                                className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="outline" className="w-8 text-center">
+                                    {index + 1}
+                                  </Badge>
+                                  <ProfilePhoto
+                                    src={entry.avatar_url}
+                                    alt={entry.display_name || entry.username || "User"}
+                                    fallback={entry.display_name || entry.username || "?"}
+                                    size="sm"
+                                  />
+                                  <div>
+                                    <p className="font-medium text-foreground text-sm">
+                                      {entry.display_name || entry.username || 'Unknown'}
+                                      {isCurrentUser && ' (You)'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-foreground">
+                                    {entry.best_score}
                                   </p>
+                                  <p className="text-xs text-muted-foreground">points</p>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-foreground">
-                                  {entry.best_score}
-                                </p>
-                                <p className="text-xs text-muted-foreground">points</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-sm text-center py-4">
-                        {favoriteGroupIds.length === 0 
-                          ? 'Add favorite groups to see leaderboards' 
-                          : 'Complete this drill to see your score!'}
-                      </p>
-                    )}
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-4">
+                          {favoriteGroupIds.length === 0 
+                            ? 'Add favorite groups to see leaderboards' 
+                            : 'Complete this drill to see your score!'}
+                        </p>
+                      )}
+                    </FadeSlide>
                   </TabsContent>
                 </Tabs>
               )}
