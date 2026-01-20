@@ -1315,8 +1315,7 @@ const RoundScorecardInPostFromSnapshot = ({
                 });
                 setProfileMap(map);
               }
-            })
-            .catch((profileError) => {
+            }).then(undefined, (profileError) => {
               console.error('Error fetching profiles:', profileError);
               // Continue without profile data - will use display_name from snapshot
             });
@@ -3147,9 +3146,12 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               round={{
                 id: roundScorecardResult.roundId || '',
                 course_name: roundScorecardResult.courseName,
-                date_played: roundScorecardResult.datePlayed,
-                holes_played: roundScorecardResult.holesPlayed,
+                date: roundScorecardResult.datePlayed,
+                holesPlayed: roundScorecardResult.holesPlayed,
                 round_name: roundScorecardResult.roundName,
+                score: 0,
+                playerCount: 1,
+                gameMode: 'Stroke Play',
               }}
               onClick={() => {
                 if (roundScorecardResult.roundId) {

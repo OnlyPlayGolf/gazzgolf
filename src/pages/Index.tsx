@@ -39,9 +39,10 @@ const Index = () => {
   const { performanceStats, loading: keyInsightsLoading } = useKeyInsights(user);
   const { friendsPosts, loading: feedPostsLoading, refresh: refreshFeedPosts } = useFeedPosts(user);
 
-  const handleGameDeleted = async () => {
+  const handleGameDeleted = () => {
     // Refresh both ongoing games and friends on course when a game is deleted
-    await Promise.all([refreshOngoingGames(), refreshFriendsOnCourse()]);
+    // Using void to fire-and-forget since we don't need to await at the call site
+    void Promise.all([refreshOngoingGames(), refreshFriendsOnCourse()]);
   };
 
   useEffect(() => {

@@ -43,7 +43,7 @@ const GAME_FORMAT_LABELS: Record<GameType, string> = {
 
 interface OngoingRoundsSectionProps {
   ongoingGames: OngoingGame[];
-  onGameDeleted?: () => void;
+  onGameDeleted?: () => void | Promise<void>;
 }
 
 export const OngoingRoundsSection = ({ ongoingGames, onGameDeleted }: OngoingRoundsSectionProps) => {

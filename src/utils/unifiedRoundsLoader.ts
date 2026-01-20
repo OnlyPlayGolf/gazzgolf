@@ -305,7 +305,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:290',message:'Before Promise.all',data:{promiseCount:allPromises.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
   // #endregion
   const results = await Promise.all(allPromises.map((p, idx) => 
-    p.catch((err: any) => {
+    Promise.resolve(p).catch((err: any) => {
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:290',message:'Promise.all error',data:{promiseIndex:idx,errorCode:err?.code,errorMessage:err?.message,errorDetails:err?.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
       // #endregion

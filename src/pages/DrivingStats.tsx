@@ -113,7 +113,7 @@ export default function DrivingStats() {
 
         let query = supabase
           .from('pro_stats_rounds')
-          .select('id, created_at')
+          .select('id, created_at, external_round_id')
           .eq('user_id', user.id)
           .eq('holes_played', 18);
 
@@ -229,7 +229,7 @@ export default function DrivingStats() {
         }
 
         // Normalize by rounds count
-        const rounds = proRounds.length;
+        const rounds = validProRounds.length;
 
         setSgStats({
           sgOffTheTee: sgOffTheTee / rounds,
