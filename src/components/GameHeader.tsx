@@ -6,6 +6,13 @@ interface GameHeaderProps {
   gameTitle: string;
   courseName: string;
   pageTitle: string;
+ wille
+  /** Optional override for back button behavior */
+  onBack?: () => void;
+  /** If true, user is admin/creator and gets action sheet on back */
+  isAdmin?: boolean;
+
+ main
   /** If true, back button is hidden (e.g., for pages that manage their own navigation) */
   hideBackButton?: boolean;
 }
@@ -14,12 +21,56 @@ export function GameHeader({
   gameTitle,
   courseName,
   pageTitle,
+ wille
+  onBack,
+  isAdmin = false,
+
+ main
   hideBackButton = false,
 }: GameHeaderProps) {
   const navigate = useNavigate();
 
   const handleBackClick = () => {
+ wille
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (isAdmin && onFinish && onSaveAndExit && onDelete) {
+      // Admin: show action sheet
+      setShowActionSheet(true);
+    } else {
+      // Spectator/Participant: go back to previous page
+      navigate(-1);
+    }
+  };
+
+  const handleFinish = () => {
+    setShowActionSheet(false);
+    onFinish?.();
+  };
+
+  const handleSaveAndExit = () => {
+    setShowActionSheet(false);
+    onSaveAndExit?.();
+  };
+
+  const handleDeleteClick = () => {
+    setShowActionSheet(false);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete?.();
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+
     navigate('/');
+ main
   };
 
   return (

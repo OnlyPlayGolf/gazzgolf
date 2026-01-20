@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target, TrendingUp, BarChart3, ChevronRight, ArrowUp, ArrowDown, Minus } from "lucide-react";
-import { fetchUserStats, formatScore, formatSG, formatPercentage, getSGLevel, AllStats, StatLevel } from "@/utils/statisticsCalculations";
+import { fetchUserStats, formatScore, formatSG, formatPercentage, getSGLevel, getStatLevel, AllStats, StatLevel } from "@/utils/statisticsCalculations";
 import { cn } from "@/lib/utils";
 
 interface StatisticsOverviewProps {
@@ -90,6 +90,7 @@ export function StatisticsOverview({ userId, isOwnProfile = true }: StatisticsOv
   const scoringLevel = stats ? getScoringLevel(stats.scoring.scoringAverage) : 'average';
   const girLevel = stats ? getGIRLevel(stats.accuracy.greensInRegulation) : 'average';
   const sgLevel = stats ? getSGLevel(stats.strokesGained.total) : 'average';
+  const fairwaysLevel = stats ? getStatLevel(stats.accuracy.fairwaysHit, 'fairwaysHit') : 'average';
 
   return (
     <div className="mb-6">
@@ -159,33 +160,26 @@ export function StatisticsOverview({ userId, isOwnProfile = true }: StatisticsOv
           </CardContent>
         </Card>
 
-        {/* Strokes Gained Total */}
+        {/* Fairways Hit */}
         <Card className={cn(
           "bg-card hover:bg-accent/50 transition-all border-2",
-          sgLevel === 'strength' && "border-success/30",
-          sgLevel === 'needs-improvement' && "border-destructive/30",
-          sgLevel === 'average' && "border-transparent"
+          fairwaysLevel === 'strength' && "border-success/30",
+          fairwaysLevel === 'needs-improvement' && "border-destructive/30",
+          fairwaysLevel === 'average' && "border-transparent"
         )}>
           <CardContent className="p-3 text-center">
             <TrendingUp className="h-5 w-5 mx-auto mb-1.5 text-primary" />
-            <p className="text-[10px] text-muted-foreground mb-1">SG Total</p>
-            <p className={cn(
-              "text-xl font-bold",
-              stats?.strokesGained.total !== null && stats.strokesGained.total >= 0 
-                ? "text-success" 
-                : stats?.strokesGained.total !== null 
-                  ? "text-destructive" 
-                  : "text-foreground"
-            )}>
-              {stats?.strokesGained.total !== null 
-                ? formatSG(stats.strokesGained.total)
+            <p className="text-[10px] text-muted-foreground mb-1">Fairways Hit</p>
+            <p className="text-xl font-bold text-foreground">
+              {stats?.accuracy.fairwaysHit !== null
+                ? formatPercentage(stats.accuracy.fairwaysHit)
                 : '-'}
             </p>
             <p className="text-[9px] text-muted-foreground mt-0.5">
               per round
             </p>
             <div className="mt-1.5">
-              <StatLevelIndicator level={sgLevel} />
+              <StatLevelIndicator level={fairwaysLevel} />
             </div>
           </CardContent>
         </Card>

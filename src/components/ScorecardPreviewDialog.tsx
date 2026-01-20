@@ -104,6 +104,11 @@ export function ScorecardPreviewDialog({
     }
   }, [scannedData]);
 
+  const yardsToMeters = (yards: number): number => {
+    // 1 meter = 1.09361 yards
+    return Math.round(yards / 1.09361);
+  };
+
   const getFlag = (): string => {
     if (isUSA) return "🇺🇸";
     if (countryCode && countryFlags[countryCode.toUpperCase()]) {
@@ -147,14 +152,42 @@ export function ScorecardPreviewDialog({
       const location = buildLocation();
       
       // Create the course
-      const { data: courseData, error: courseError } = await supabase
+      const desiredCountryCode = isUSA ? "US" : (countryCode?.trim() ? countryCode.trim().toUpperCase() : null);
+
+      // country_code may not exist in hosted DB yet; try with it, then fallback without.
+      const createCourseWithCountry = await supabase
         .from("courses")
         .insert({
           name: courseName.trim(),
-          location: location || null
-        })
+          location: location || null,
+          country_code: desiredCountryCode,
+        } as any)
         .select()
         .single();
+
+      const courseData = createCourseWithCountry.data as any;
+      let courseError = createCourseWithCountry.error as any;
+
+      if (courseError) {
+        const msg = (courseError?.message || courseError?.details || "").toString().toLowerCase();
+        const missingCountry = msg.includes("country_code") && (msg.includes("does not exist") || msg.includes("column"));
+        if (missingCountry) {
+          const retry = await supabase
+            .from("courses")
+            .insert({
+              name: courseName.trim(),
+              location: location || null,
+            } as any)
+            .select()
+            .single();
+          courseError = retry.error as any;
+          if (retry.data) {
+            (courseData as any).id = retry.data.id;
+            (courseData as any).name = retry.data.name;
+            (courseData as any).location = retry.data.location;
+          }
+        }
+      }
 
       if (courseError) throw courseError;
 
@@ -164,7 +197,9 @@ export function ScorecardPreviewDialog({
         hole_number: hole.holeNumber,
         par: hole.par,
         stroke_index: hole.strokeIndex || hole.holeNumber,
-        white_distance: hole.distance || null
+        white_distance: hole.distance
+          ? (isUSA ? yardsToMeters(hole.distance) : hole.distance)
+          : null
       }));
 
       const { error: holesError } = await supabase

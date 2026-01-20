@@ -20,6 +20,8 @@ interface Shot {
   endLie?: LieType | 'green' | 'OB';
   strokesGained: number;
   isOB?: boolean;
+  isPenalty?: boolean;
+  penaltyType?: 'hazard' | 'ob';
 }
 
 interface InRoundStrokesGainedProps {
@@ -60,7 +62,7 @@ export function InRoundStrokesGained({
   const [startDistance, setStartDistance] = useState("");
   const [startLie, setStartLie] = useState<LieType | 'green'>('tee');
   const [endDistance, setEndDistance] = useState("");
-  const [endLie, setEndLie] = useState<LieType | 'green' | 'OB' | ''>('');
+  const [endLie, setEndLie] = useState<LieType | 'green' | 'OB' | 'recovery' | 'hazard' | 'other' | ''>('');
   const [missedSide, setMissedSide] = useState<'left' | 'right' | ''>('');
   
   const autoAdvanceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -348,13 +350,68 @@ export function InRoundStrokesGained({
 
     if (!endLie) return;
 
+    // Hazard: add played shot, then auto-add penalty stroke and advance
+    if (endLie === 'hazard') {
+      const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+      const sgShot = sgCalculator.calculateStrokesGained(
+        drillType,
+        start,
+        startLie,
+        false,
+        'rough',
+        end
+      );
+
+      const hazardShot: Shot = {
+        type: shotType,
+        startDistance: start,
+        startLie,
+        holed: false,
+        endDistance: end,
+        endLie: 'rough',
+        strokesGained: sgShot,
+      };
+
+      const penaltyShot: Shot = {
+        type: shotType,
+        startDistance: end,
+        startLie: 'rough',
+        holed: false,
+        endDistance: end,
+        endLie: 'rough',
+        strokesGained: -1,
+        isPenalty: true,
+        penaltyType: 'hazard',
+      };
+
+      // Clear inputs and add shots
+      const savedEndDistance = endDistance;
+      setEndDistance("");
+      setEndLie('');
+      setMissedSide('');
+
+      const newShots = [...shots, hazardShot, penaltyShot];
+      setShots(newShots);
+      saveShots(newShots);
+
+      // Next playable shot starts from the drop (end distance) in rough
+      setStartDistance(savedEndDistance);
+      setStartLie('rough');
+      setShotType('approach');
+      return;
+    }
+
     const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+    const effectiveEndLie: LieType | 'green' | 'OB' =
+      endLie === 'recovery' || endLie === 'other'
+        ? 'rough'
+        : (endLie as LieType | 'green' | 'OB');
     const sg = sgCalculator.calculateStrokesGained(
       drillType,
       start,
       startLie,
       false,
-      endLie as LieType | 'green',
+      (effectiveEndLie === 'OB' ? 'rough' : effectiveEndLie) as any,
       end
     );
 
@@ -364,7 +421,7 @@ export function InRoundStrokesGained({
       startLie,
       holed: false,
       endDistance: end,
-      endLie: endLie as LieType | 'green' | 'OB',
+      endLie: effectiveEndLie === 'OB' ? 'OB' : effectiveEndLie,
       strokesGained: sg,
     };
 
@@ -381,7 +438,7 @@ export function InRoundStrokesGained({
 
     // Set up for next shot
     setStartDistance(savedEndDistance);
-    setStartLie(savedEndLie as LieType | 'green');
+    setStartLie((savedEndLie === 'recovery' || savedEndLie === 'other') ? 'rough' : (savedEndLie as LieType | 'green'));
   };
 
   const addHoledShot = (autoHole: boolean = false) => {
@@ -468,6 +525,8 @@ export function InRoundStrokesGained({
       endLie: startLie,
       strokesGained: 0,
       isOB: false,
+      isPenalty: true,
+      penaltyType: 'ob',
     };
 
     // Clear inputs and add shots
@@ -682,7 +741,7 @@ export function InRoundStrokesGained({
                 <div className="space-y-1">
                   <Label className="text-xs">End Lie</Label>
                   <div className="grid grid-cols-3 gap-1">
-                    {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
+                    {(['green', 'fairway', 'rough', 'sand', 'recovery', 'hazard', 'other'] as const).map((lie) => (
                       <Button
                         key={lie}
                         variant={endLie === lie ? "default" : "outline"}
@@ -690,7 +749,15 @@ export function InRoundStrokesGained({
                         size="sm"
                         className="text-xs h-8"
                       >
-                        {lie === 'sand' ? 'Bunker' : lie.charAt(0).toUpperCase() + lie.slice(1)}
+                        {lie === 'sand'
+                          ? 'Bunker'
+                          : lie === 'recovery'
+                            ? 'Recovery'
+                            : lie === 'hazard'
+                              ? 'Hazard'
+                              : lie === 'other'
+                                ? 'Other'
+                                : lie.charAt(0).toUpperCase() + lie.slice(1)}
                       </Button>
                     ))}
                     <Button
@@ -777,6 +844,7 @@ export function InRoundStrokesGained({
                             {shot.type} • {shot.startDistance}m
                             {shot.holed && " → Holed"}
                             {shot.isOB && " → OB"}
+                            {shot.isPenalty && " • Penalty"}
                           </span>
                           <span className={shot.strokesGained >= 0 ? 'text-green-600' : 'text-red-600'}>
                             {shot.strokesGained >= 0 ? '+' : ''}{shot.strokesGained.toFixed(2)}

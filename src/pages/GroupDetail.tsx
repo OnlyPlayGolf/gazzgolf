@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Crown, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, UserPlus, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, Crown, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
 import { GroupDrillHistory } from "@/components/GroupDrillHistory";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { FadeSlide } from "@/components/motion/FadeSlide";
 import { formatDistanceToNow } from "date-fns";
+import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
+import { getPublicAppUrl } from "@/utils/publicAppUrl";
 
 const getDrillDisplayTitle = (title: string): string => {
   if (title === "Up & Down Putting Drill") return "Up & Down Putting";
@@ -37,9 +40,12 @@ const isCoachRole = (role: 'owner' | 'admin' | 'member' | null): boolean => {
   return role === 'owner' || role === 'admin';
 };
 
-// Get display role label
-const getDisplayRole = (role: 'owner' | 'admin' | 'member'): string => {
-  return role === 'owner' || role === 'admin' ? 'Coach' : 'Player';
+// Get display role label (varies by group type)
+const getDisplayRole = (
+  role: 'owner' | 'admin' | 'member',
+  groupType?: 'player' | 'coach' | null
+): string => {
+  return getGroupRoleLabel({ role, groupType });
 };
 
 interface Friend {
@@ -164,6 +170,7 @@ const GroupDetail = () => {
   const [editGroupName, setEditGroupName] = useState("");
   const [editGroupDescription, setEditGroupDescription] = useState("");
   const [editGroupImage, setEditGroupImage] = useState<File | null>(null);
+  const [editShowCoachProfileResults, setEditShowCoachProfileResults] = useState(false);
   const [updatingGroup, setUpdatingGroup] = useState(false);
   
   // Leaderboard tab state
@@ -245,7 +252,6 @@ useEffect(() => {
     if (groupId && user) {
       loadGroupData();
       loadDrills();
-      loadGroupLevelsLeaderboard();
     }
   }, [groupId, user]);
 
@@ -339,7 +345,11 @@ useEffect(() => {
     }
   };
 
-  const loadDrillLeaderboard = async (drillTitle: string, lowerIsBetter: boolean) => {
+  const loadDrillLeaderboard = async (
+    drillTitle: string,
+    lowerIsBetter: boolean,
+    showCoachResultsOverride?: boolean
+  ) => {
     if (!groupId || !group) return;
 
     setLoadingLeaderboard(true);
@@ -354,7 +364,7 @@ useEffect(() => {
         return;
       }
 
-      // Get all group members - exclude coaches (owner/admin)
+      // Get all group members
       const { data: groupMembers } = await supabase
         .from('group_members')
         .select('user_id, role')
@@ -366,9 +376,15 @@ useEffect(() => {
         return;
       }
 
-      // Filter out coaches (owners and admins) - only players appear on leaderboard
-      const playerMembers = groupMembers.filter(m => m.role === 'member');
-      const memberIds = playerMembers.map(m => m.user_id);
+      const showCoachResults =
+        showCoachResultsOverride ?? (effectiveGroupType === 'coach' && !!group?.show_coach_profile_results);
+
+      // For coach groups, exclude coaches from leaderboards.
+      // For player groups, include all members (including owner).
+      const leaderboardMembers = (effectiveGroupType === 'player' || showCoachResults)
+        ? groupMembers
+        : groupMembers.filter(m => m.role === 'member');
+      const memberIds = leaderboardMembers.map(m => m.user_id);
 
       // Get best scores for all group members, only including drills completed after group creation
       const groupCreatedAt = group.created_at;
@@ -439,8 +455,8 @@ useEffect(() => {
     }
   };
 
-  const loadGroupLevelsLeaderboard = async () => {
-    if (!groupId || !user) return;
+  const loadGroupLevelsLeaderboard = async (showCoachResultsOverride?: boolean) => {
+    if (!groupId || !user || !group) return;
     setLoadingGroupLevels(true);
     try {
       const { data, error } = await supabase
@@ -449,24 +465,26 @@ useEffect(() => {
         console.error('Error loading group levels leaderboard:', error);
         setGroupLevelsLeaderboard([]);
       } else {
-        // Get coach user IDs to filter them out
-        const { data: groupMembers } = await supabase
-          .from('group_members')
-          .select('user_id, role')
-          .eq('group_id', groupId);
-        
-        const coachIds = new Set(
-          (groupMembers || [])
-            .filter(m => m.role === 'owner' || m.role === 'admin')
-            .map(m => m.user_id)
-        );
-        
-        // Filter out coaches from the leaderboard
-        const filteredData = (data || []).filter(
-          (entry: GroupLevelLeaderboardEntry) => !coachIds.has(entry.user_id)
-        );
-        
-        setGroupLevelsLeaderboard(filteredData);
+        const showCoachResults =
+          showCoachResultsOverride ?? (effectiveGroupType === 'coach' && !!group?.show_coach_profile_results);
+        if (effectiveGroupType === 'player' || showCoachResults) {
+          // Player groups: include everyone
+          // Coach groups: include coaches when enabled
+          setGroupLevelsLeaderboard(data || []);
+        } else {
+          // Coach groups: filter out coaches (owner/admin) when toggle is OFF
+          const coachIds = new Set(
+            (members || [])
+              .filter(m => m.role === 'owner' || m.role === 'admin')
+              .map(m => m.user_id)
+          );
+          
+          const filteredData = (data || []).filter(
+            (entry: GroupLevelLeaderboardEntry) => !coachIds.has(entry.user_id)
+          );
+          
+          setGroupLevelsLeaderboard(filteredData);
+        }
       }
     } catch (e) {
       console.error('Error loading group levels leaderboard:', e);
@@ -509,21 +527,27 @@ useEffect(() => {
 
   const handleSearchUsers = async (query: string) => {
     setSearchQuery(query);
-    
+
     if (!query.trim()) {
       setSearchResults([]);
       return;
     }
 
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url')
-      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-      .limit(20);
+    // Global user search (includes non-friends) via RPC (safe across profiles RLS)
+    const { data, error } = await supabase
+      .rpc('search_profiles', { q: query.trim(), max_results: 20 });
+
+    if (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+      return;
+    }
 
     // Filter out users already in the group
     const memberIds = new Set(members.map(m => m.user_id));
-    const available = data?.filter(p => !memberIds.has(p.id) && p.id !== user?.id) || [];
+    const available = (data || []).filter((p: any) =>
+      p?.id && !memberIds.has(p.id) && p.id !== user?.id
+    );
 
     setSearchResults(available);
   };
@@ -663,7 +687,7 @@ useEffect(() => {
   const handleCopyInviteLink = () => {
     if (!currentInvite) return;
     
-    const inviteUrl = `${window.location.origin}/invite/${currentInvite.code}`;
+    const inviteUrl = `${getPublicAppUrl()}/invite/${currentInvite.code}`;
     navigator.clipboard.writeText(inviteUrl);
     
     toast({
@@ -735,13 +759,13 @@ useEffect(() => {
 
       setCurrentInvite(null);
       toast({
-        title: "Invite revoked",
+        title: "Invite link revoked",
         description: "This invite link can no longer be used",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to revoke invite",
+        description: error.message || "Failed to revoke link",
         variant: "destructive",
       });
     } finally {
@@ -876,10 +900,29 @@ useEffect(() => {
     }
   };
 
-  const canAddMembers = isCoachRole(currentUserRole);
-  const canManageGroup = isCoachRole(currentUserRole);
-  const canRemoveMembers = isCoachRole(currentUserRole);
-  const canPromoteMembers = isCoachRole(currentUserRole);
+  // group_type might not exist yet if DB migrations haven't been applied.
+  // Fall back to the same heuristic as our backfill: any admin => coach, otherwise player.
+  const effectiveGroupType: 'player' | 'coach' = (group?.group_type === 'player' || group?.group_type === 'coach')
+    ? group.group_type
+    : (group?.is_coach_group ? 'coach' : (members.some(m => m.role === 'admin') ? 'coach' : 'player'));
+  const isPlayerGroup = effectiveGroupType === 'player';
+  const isCoachGroup = effectiveGroupType === 'coach';
+  const isGroupMember = currentUserRole !== null;
+
+  // (Re)load level leaderboard once group + members are ready, and when coach visibility changes
+  useEffect(() => {
+    if (!groupId || !user || !group) return;
+    if (members.length === 0) return;
+    loadGroupLevelsLeaderboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, user, group?.id, group?.group_type, group?.is_coach_group, group?.show_coach_profile_results, members]);
+
+  // Player groups: any member can manage/add/invite. Only owner can remove others.
+  // Coach groups: preserve existing coach-role gating.
+  const canAddMembers = isPlayerGroup ? isGroupMember : isCoachRole(currentUserRole);
+  const canManageGroup = isPlayerGroup ? isGroupMember : isCoachRole(currentUserRole);
+  const canRemoveMembers = isPlayerGroup ? currentUserRole === 'owner' : isCoachRole(currentUserRole);
+  const canPromoteMembers = isPlayerGroup ? false : isCoachRole(currentUserRole);
 
   const handleRemoveMember = async (member: Member) => {
     if (!groupId || !canRemoveMembers) return;
@@ -1023,6 +1066,7 @@ useEffect(() => {
       setEditGroupName(group.name || "");
       setEditGroupDescription(group.description || "");
       setEditGroupImage(null);
+      setEditShowCoachProfileResults(!!group.show_coach_profile_results);
     }
   }, [showManageDialog, group]);
 
@@ -1039,13 +1083,34 @@ useEffect(() => {
     setUpdatingGroup(true);
     try {
       // Update group name and description
-      const { error: updateError } = await supabase
+      const updatePayload: any = {
+        name: editGroupName.trim(),
+        description: editGroupDescription.trim() || null,
+      };
+      // Coach groups only: persist flag controlling coach results visibility
+      if (isCoachGroup) {
+        updatePayload.show_coach_profile_results = editShowCoachProfileResults;
+      }
+
+      let updateError: any = null;
+      let updatedGroup: any = null;
+      ({ data: updatedGroup, error: updateError } = await (supabase as any)
         .from('groups')
-        .update({
-          name: editGroupName.trim(),
-          description: editGroupDescription.trim() || null
-        })
-        .eq('id', groupId);
+        .update(updatePayload)
+        .eq('id', groupId)
+        .select('*')
+        .maybeSingle());
+
+      // Backward compatibility if column not yet deployed
+      if (updateError && isCoachGroup && updateError.message?.includes('show_coach_profile_results')) {
+        ({ error: updateError } = await (supabase as any)
+          .from('groups')
+          .update({
+            name: editGroupName.trim(),
+            description: editGroupDescription.trim() || null,
+          })
+          .eq('id', groupId));
+      }
 
       if (updateError) throw updateError;
 
@@ -1061,7 +1126,22 @@ useEffect(() => {
       });
 
       setShowManageDialog(false);
-      loadGroupData(); // Reload group data
+      // Update local group state immediately if we got it back
+      if (updatedGroup) {
+        setGroup(updatedGroup);
+      }
+      await loadGroupData(); // Reload group data (includes show_coach_profile_results)
+
+      // Refresh leaderboards immediately so coach visibility toggles apply without needing a full page reload
+      const showCoachResultsAfterSave = isCoachGroup && editShowCoachProfileResults;
+      await loadGroupLevelsLeaderboard(showCoachResultsAfterSave);
+      const drillTitle = selectedDrill || drills[0]?.title || null;
+      if (drillTitle) {
+        const drill = drills.find(d => d.title === drillTitle);
+        if (drill) {
+          await loadDrillLeaderboard(drill.title, drill.lower_is_better, showCoachResultsAfterSave);
+        }
+      }
     } catch (error: any) {
       console.error('Error updating group:', error);
       toast({
@@ -1072,27 +1152,6 @@ useEffect(() => {
     } finally {
       setUpdatingGroup(false);
     }
-  };
-
-  const getRoleIcon = (role: string, member?: Member) => {
-    if (role === 'owner') return <Crown size={16} className="text-yellow-500" />;
-    if (role === 'admin') {
-      // If current user is owner, make the crown clickable to demote
-      if (currentUserRole === 'owner' && member) {
-        return (
-          <Crown 
-            size={16} 
-            className="text-yellow-500 cursor-pointer hover:text-orange-500 transition-colors" 
-            onClick={(e) => {
-              e.stopPropagation();
-              setMemberToDemote(member);
-            }}
-          />
-        );
-      }
-      return <Crown size={16} className="text-yellow-500" />;
-    }
-    return null;
   };
 
   if (!group) {
@@ -1131,7 +1190,6 @@ useEffect(() => {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
-                  {currentUserRole === 'owner' && <Crown size={20} className="text-yellow-500" />}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {members.length} {members.length === 1 ? 'member' : 'members'}
@@ -1178,7 +1236,7 @@ useEffect(() => {
                   }}
                 >
                   <UserPlus size={20} />
-                  Invite Friends
+                  Invite Players
                 </Button>
               )}
               
@@ -1205,7 +1263,7 @@ useEffect(() => {
                 </Button>
               )}
 
-              {canManageGroup && (
+              {currentUserRole === 'owner' && (
                 <Button
                   variant="destructive"
                   className="w-full justify-start gap-3"
@@ -1391,9 +1449,19 @@ useEffect(() => {
 
               {/* History Tab */}
               <TabsContent value="history">
+ wille
+                {groupId && (
+                  <GroupDrillHistory
+                    groupId={groupId}
+                    groupCreatedAt={group?.created_at}
+                    includeCoaches={effectiveGroupType === 'coach' && !!group?.show_coach_profile_results}
+                  />
+                )}
+
                 <FadeSlide>
                   {groupId && <GroupDrillHistory groupId={groupId} groupCreatedAt={group?.created_at} />}
                 </FadeSlide>
+ main
               </TabsContent>
 
               {/* Play Tab */}
@@ -1444,9 +1512,11 @@ useEffect(() => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {getRoleIcon(member.role, member)}
                   <Badge variant={isCoachRole(member.role) ? 'default' : 'secondary'}>
-                    {getDisplayRole(member.role)}
+                    {getDisplayRole(
+                      member.role,
+                      (group?.group_type ?? (members.some(m => m.role === 'admin') ? 'coach' : 'player'))
+                    )}
                   </Badge>
                   {/* Promote to Coach button - only show for non-coaches, and only to coaches */}
                   {canPromoteMembers && !isCoachRole(member.role) && (
@@ -1460,7 +1530,7 @@ useEffect(() => {
                       }}
                       title="Promote to Coach"
                     >
-                      <Crown size={16} />
+                      <Shield size={16} />
                     </Button>
                   )}
                   {/* Remove member button - only show to coaches, not for owner */}
@@ -1575,54 +1645,9 @@ useEffect(() => {
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Invite Friends</DialogTitle>
+            <DialogTitle>Invite Players</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Add Friends Directly */}
-            {canAddMembers && friends.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-medium">Your Friends</h3>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {friends.map((friend) => (
-                    <div
-                      key={friend.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer"
-                      onClick={() => handleToggleUser(friend.id)}
-                    >
-                      <Checkbox
-                        checked={selectedUsers.has(friend.id)}
-                        onCheckedChange={() => handleToggleUser(friend.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <Avatar>
-                        <AvatarImage src={friend.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          {friend.display_name || friend.username || 'Unknown'}
-                        </div>
-                        {friend.username && (
-                          <div className="text-sm text-muted-foreground">
-                            @{friend.username}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  onClick={handleAddMembers}
-                  disabled={loading || selectedUsers.size === 0}
-                  className="w-full"
-                >
-                  {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}Friend${selectedUsers.size !== 1 ? 's' : ''}`}
-                </Button>
-              </div>
-            )}
-
             {/* Search Users */}
             {canAddMembers && (
               <div className="space-y-3">
@@ -1688,6 +1713,51 @@ useEffect(() => {
               </div>
             )}
 
+            {/* Add Friends Directly */}
+            {canAddMembers && friends.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-medium">Your Friends</h3>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {friends.map((friend) => (
+                    <div
+                      key={friend.id}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer"
+                      onClick={() => handleToggleUser(friend.id)}
+                    >
+                      <Checkbox
+                        checked={selectedUsers.has(friend.id)}
+                        onCheckedChange={() => handleToggleUser(friend.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <Avatar>
+                        <AvatarImage src={friend.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {(friend.display_name || friend.username || 'U').charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {friend.display_name || friend.username || 'Unknown'}
+                        </div>
+                        {friend.username && (
+                          <div className="text-sm text-muted-foreground">
+                            @{friend.username}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  onClick={handleAddMembers}
+                  disabled={loading || selectedUsers.size === 0}
+                  className="w-full"
+                >
+                  {loading ? "Adding..." : `Add ${selectedUsers.size > 0 ? `${selectedUsers.size} ` : ''}Friend${selectedUsers.size !== 1 ? 's' : ''}`}
+                </Button>
+              </div>
+            )}
+
             {/* Invite Link */}
             {canAddMembers && (
               <div className="space-y-3">
@@ -1696,7 +1766,7 @@ useEffect(() => {
                   <div className="space-y-3">
                     <div className="flex gap-2">
                       <Input
-                        value={`${window.location.origin}/invite/${currentInvite.code}`}
+                        value={`${getPublicAppUrl()}/invite/${currentInvite.code}`}
                         readOnly
                         className="flex-1 text-sm"
                       />
@@ -1722,8 +1792,7 @@ useEffect(() => {
                         className="flex-1"
                         size="sm"
                       >
-                        <Trash2 size={16} className="mr-2" />
-                        Revoke
+                        Revoke Link
                       </Button>
                     </div>
                   </div>
@@ -1783,6 +1852,21 @@ useEffect(() => {
                 rows={1}
               />
             </div>
+
+            {/* Coach group setting */}
+            {isCoachGroup && (
+              <div className="border border-border rounded-lg p-3 bg-secondary/10">
+                <div className="flex items-center justify-between gap-4">
+                  <Label className="text-foreground">
+                    Show coach’s profile & results
+                  </Label>
+                  <Switch
+                    checked={editShowCoachProfileResults}
+                    onCheckedChange={setEditShowCoachProfileResults}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Group Image Upload */}
             <div>

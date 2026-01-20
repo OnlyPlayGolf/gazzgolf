@@ -41,8 +41,11 @@ export function SetupAddFriendSheet({
   defaultTee = DEFAULT_MEN_TEE,
 }: SetupAddFriendSheetProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; display_name: string | null; username: string | null; avatar_url?: string | null }>>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -50,11 +53,55 @@ export function SetupAddFriendSheet({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        setSearchLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setCurrentUserId(user.id);
+
+        const { data, error } = await supabase
+          .rpc('search_profiles', { q, max_results: 20 });
+
+        if (error) {
+          console.error('Error searching players:', error);
+          setSearchResults([]);
+          return;
+        }
+
+        const available = (data || [])
+          .filter((p: any) => p?.id && p.id !== user.id && !existingPlayerIds.includes(p.id))
+          .map((p: any) => ({
+            id: p.id as string,
+            display_name: (p.display_name ?? null) as string | null,
+            username: (p.username ?? null) as string | null,
+            avatar_url: (p.avatar_url ?? null) as string | null,
+          }));
+
+        setSearchResults(available);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, searchQuery, existingPlayerIds]);
+
   const loadFriends = async () => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setCurrentUserId(user.id);
 
       const { data: friendPairs } = await supabase
         .from('friends_pairs')
@@ -89,7 +136,13 @@ export function SetupAddFriendSheet({
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+ wille
+  const handleSelectFriend = (friend: { id: string; display_name: string | null; username: string | null; handicap?: string | null }) => {
+    const handicapValue = parseHandicap(friend.handicap ?? null);
+    
+
   const handleSelectFriend = (friend: Friend) => {
+ main
     const player: Player = {
       odId: friend.id,
       displayName: friend.display_name || friend.username || "Player",
@@ -105,14 +158,14 @@ export function SetupAddFriendSheet({
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="h-[70vh] rounded-t-xl">
         <SheetHeader className="pb-4">
-          <SheetTitle>Add Friend</SheetTitle>
+          <SheetTitle>Add Player</SheetTitle>
         </SheetHeader>
 
         <div className="space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search friends..."
+              placeholder="Search players..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -122,23 +175,40 @@ export function SetupAddFriendSheet({
           <ScrollArea className="h-[calc(70vh-140px)]">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <p className="text-muted-foreground">Loading friends...</p>
+                <p className="text-muted-foreground">Loading...</p>
               </div>
-            ) : filteredFriends.length === 0 ? (
+            ) : searchLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">Searching...</p>
+              </div>
+            ) : (searchQuery.trim() ? searchResults : filteredFriends).length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <User className="h-12 w-12 text-muted-foreground mb-2" />
                 <p className="text-muted-foreground">
-                  {searchQuery ? "No friends match your search" : "No friends available to add"}
+                  {searchQuery ? "No players match your search" : "No players available to add"}
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
+ wille
+                {(searchQuery.trim()
+                  ? searchResults.map((p) => ({
+                      id: p.id,
+                      display_name: p.display_name,
+                      username: p.username,
+                      handicap: null as string | null,
+                    }))
+                  : filteredFriends
+                ).map((friend) => {
+                  const handicapValue = parseHandicap((friend as any).handicap ?? null);
+
                 {filteredFriends.map((friend) => {
+ main
                   return (
                     <div
                       key={friend.id}
                       className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-colors"
-                      onClick={() => handleSelectFriend(friend)}
+                      onClick={() => handleSelectFriend(friend as any)}
                     >
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                         <User size={20} className="text-muted-foreground" />

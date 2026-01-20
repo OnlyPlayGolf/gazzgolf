@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Calendar, ChevronRight } from "lucide-react";
+import { Loader2, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
 interface StatsRound {
   id: string;
   proStatsRoundId: string;
   externalRoundId: string | null;
+  round_name?: string | null;
   course_name: string;
   date_played: string;
   holes_played: number;
@@ -89,12 +90,14 @@ export const StatsRoundsHistory = () => {
           let datePlayed: string = proRound.created_at || new Date().toISOString();
           let teeSet: string | null = null;
           let roundType: string | null = null;
+          let roundName: string | null = null;
+          let courseName: string = proRound.course_name || "Unknown Course";
           let roundId = proRound.external_round_id || proRound.id;
 
           if (proRound.external_round_id) {
             const { data: roundData } = await supabase
               .from("rounds")
-              .select("id, date_played, tee_set, round_type")
+              .select("id, date_played, tee_set, round_type, round_name, course_name")
               .eq("id", proRound.external_round_id)
               .maybeSingle();
 
@@ -102,13 +105,16 @@ export const StatsRoundsHistory = () => {
               datePlayed = roundData.date_played || datePlayed;
               teeSet = roundData.tee_set;
               roundType = roundData.round_type;
+              roundName = roundData.round_name;
+              courseName = roundData.course_name || courseName;
             }
           }
           return {
             id: roundId || proRound.id,
             proStatsRoundId: proRound.id,
             externalRoundId: proRound.external_round_id,
-            course_name: proRound.course_name || "Unknown Course",
+            round_name: roundName,
+            course_name: courseName,
             date_played: datePlayed || new Date().toISOString(),
             holes_played: proRound.holes_played || 18,
             tee_set: teeSet,
@@ -143,16 +149,19 @@ export const StatsRoundsHistory = () => {
     }
   };
 
-  const formatScore = (round: StatsRound) => {
-    if (round.total_score === undefined) return "—";
-    const diff = round.total_score - (round.total_par || 0);
+  const getScoreToPar = (round: StatsRound) => {
+    if (round.total_score === undefined) return null;
+    return round.total_score - (round.total_par || 0);
+  };
+
+  const formatScoreToPar = (diff: number | null) => {
+    if (diff === null) return "—";
     if (diff === 0) return "E";
     return diff > 0 ? `+${diff}` : `${diff}`;
   };
 
-  const getScoreColor = (round: StatsRound) => {
-    if (round.total_score === undefined) return "text-muted-foreground";
-    const diff = round.total_score - (round.total_par || 0);
+  const getScoreToParColor = (diff: number | null) => {
+    if (diff === null) return "text-muted-foreground";
     return diff <= 0 ? "text-emerald-600" : "text-foreground";
   };
 
@@ -219,10 +228,13 @@ export const StatsRoundsHistory = () => {
                       >
                         <CardContent className="p-4">
                           <div className="flex items-center gap-4">
-                            {/* Left: Score */}
+                            {/* Left: Total score + to-par */}
                             <div className="flex-shrink-0 w-14 text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(round)}`}>
-                                {formatScore(round)}
+                              <div className="text-2xl font-bold text-foreground">
+                                {round.total_score ?? "—"}
+                              </div>
+                              <div className={`text-sm ${getScoreToParColor(getScoreToPar(round))}`}>
+                                {formatScoreToPar(getScoreToPar(round))}
                               </div>
                             </div>
                             
@@ -230,7 +242,7 @@ export const StatsRoundsHistory = () => {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <h3 className="font-semibold text-foreground truncate">
-                                  {round.course_name}
+                                  {round.round_name || "Round"}
                                 </h3>
                                 {!round.externalRoundId && (
                                   <span className="px-1.5 py-0.5 rounded bg-destructive/10 text-destructive text-xs">
@@ -238,24 +250,13 @@ export const StatsRoundsHistory = () => {
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                                <span>{format(new Date(round.date_played), "MMM d")}</span>
-                                <span>·</span>
-                                <span>{round.holes_played} holes</span>
-                              </div>
-                              {round.round_type && (
-                                <div className="mt-1">
-                                  <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-primary text-xs">
-                                    {roundTypeLabels[round.round_type] || round.round_type}
-                                  </span>
-                                </div>
-                              )}
+                              <p className="text-sm text-muted-foreground truncate">
+                                {round.course_name} · {format(new Date(round.date_played), "MMM d")}
+                              </p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {round.holes_played} holes{round.round_type ? ` · ${roundTypeLabels[round.round_type] || round.round_type}` : ""}
+                              </p>
                             </div>
-                            
-                            {/* Right: Chevron */}
-                            {round.externalRoundId && (
-                              <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
-                            )}
                           </div>
                         </CardContent>
                       </Card>

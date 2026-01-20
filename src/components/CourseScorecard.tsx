@@ -9,11 +9,14 @@ interface CourseHole {
   hole_number: number;
   par: number;
   stroke_index: number;
+  black_distance: number | null;
   white_distance: number | null;
   yellow_distance: number | null;
   blue_distance: number | null;
   red_distance: number | null;
   orange_distance: number | null;
+  silver_distance: number | null;
+  gold_distance: number | null;
 }
 
 interface CourseScorecardProps {
@@ -23,11 +26,22 @@ interface CourseScorecardProps {
 }
 
 const TEE_COLUMN_MAP: Record<string, keyof CourseHole> = {
+  // Color-based tees (used throughout Play setup)
+  black: "black_distance",
+  blue: "blue_distance",
+  white: "white_distance",
+  silver: "silver_distance",
+  gold: "gold_distance",
+  yellow: "yellow_distance",
+  red: "red_distance",
+  orange: "orange_distance",
+
+  // Legacy difficulty-based values (backward compatible)
   shortest: "red_distance",
   short: "yellow_distance",
   medium: "white_distance",
   long: "blue_distance",
-  longest: "orange_distance",
+  longest: "black_distance",
 };
 
 export function CourseScorecard({ courseId, selectedTee = "medium", selectedHoles = "18" }: CourseScorecardProps) {

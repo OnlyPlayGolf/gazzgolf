@@ -11,10 +11,17 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import onlyPlayLogo from "@/assets/onlyplay-golf-logo.png";
 interface TopNavBarProps {
+ wille
+  hideNotifications?: boolean;
+}
+
+export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
+
   profile?: any;
 }
 
 export const TopNavBar = ({ profile }: TopNavBarProps) => {
+ main
   const navigate = useNavigate();
   const location = useLocation();
   const [visible, setVisible] = useState(true);
@@ -86,13 +93,15 @@ export const TopNavBar = ({ profile }: TopNavBarProps) => {
               </Button>
             }
           />
-          <NotificationsSheet 
-            trigger={
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
-                <Bell size={18} fill="white" strokeWidth={0} />
-              </Button>
-            }
-          />
+          {!hideNotifications && (
+            <NotificationsSheet 
+              trigger={
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
+                  <Bell size={18} fill="white" strokeWidth={0} />
+                </Button>
+              }
+            />
+          )}
           <MessagesSheet 
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">

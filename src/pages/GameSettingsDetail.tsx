@@ -12,7 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { TeeSelector, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { TeeSelector, STANDARD_TEE_OPTIONS, normalizeValue } from "@/components/TeeSelector";
 import { GroupCard } from "@/components/play/GroupCard";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
@@ -50,6 +50,7 @@ export default function GameSettingsDetail() {
   // Groups & Players state
   const [groups, setGroups] = useState<PlayerGroup[]>([]);
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
+  const [availableCourseTees, setAvailableCourseTees] = useState<string[]>(STANDARD_TEE_OPTIONS.map(t => t.value));
   
   // Game Settings state
   const [settingsExpanded, setSettingsExpanded] = useState(true);
@@ -87,20 +88,110 @@ export default function GameSettingsDetail() {
 
   const fetchCourseTees = async (courseId: string) => {
     try {
+      const DEFAULT_TEE_LABELS: Record<string, string> = {
+        black: "Black",
+        blue: "Blue",
+        white: "White",
+        silver: "Silver",
+        gold: "Gold",
+        yellow: "Yellow",
+        red: "Red",
+        orange: "Orange",
+      };
+
+      const STANDARD_TEE_ORDER = ["black", "blue", "white", "silver", "gold", "yellow", "red", "orange"];
+      const TEE_DISTANCE_COLUMNS: Record<string, string> = {
+        black: "black_distance",
+        blue: "blue_distance",
+        white: "white_distance",
+        silver: "silver_distance",
+        gold: "gold_distance",
+        yellow: "yellow_distance",
+        red: "red_distance",
+        orange: "orange_distance",
+      };
+
       const { data: courseData } = await supabase
         .from("courses")
         .select("tee_names")
         .eq("id", courseId)
         .single();
-      
-      if (courseData?.tee_names) {
-        setCourseTeeNames(courseData.tee_names as Record<string, string>);
+
+      const { data: holesData, error: holesError } = await supabase
+        .from("course_holes")
+        .select("*")
+        .eq("course_id", courseId)
+        .order("hole_number")
+        ;
+
+      if (holesError) throw holesError;
+
+      const firstHole = holesData?.[0] as any;
+      if (firstHole) {
+        const tees: string[] = [];
+        if (firstHole.black_distance) tees.push("black");
+        if (firstHole.blue_distance) tees.push("blue");
+        if (firstHole.white_distance) tees.push("white");
+        if (firstHole.silver_distance) tees.push("silver");
+        if (firstHole.gold_distance) tees.push("gold");
+        if (firstHole.yellow_distance) tees.push("yellow");
+        if (firstHole.red_distance) tees.push("red");
+        if (firstHole.orange_distance) tees.push("orange");
+
+        const totals: Record<string, number> = {};
+        for (const tee of tees) totals[tee] = 0;
+        for (const hole of (holesData || []) as any[]) {
+          for (const tee of tees) {
+            const col = TEE_DISTANCE_COLUMNS[tee];
+            const v = col ? hole?.[col] : null;
+            if (typeof v === "number" && Number.isFinite(v)) totals[tee] += v;
+          }
+        }
+        const orderedAvailable = [...tees].sort((a, b) => (totals[b] || 0) - (totals[a] || 0));
+        const allEqual = orderedAvailable.length > 1
+          ? orderedAvailable.every(t => (totals[t] || 0) === (totals[orderedAvailable[0]] || 0))
+          : false;
+        const finalAvailable = allEqual ? STANDARD_TEE_ORDER.filter(t => tees.includes(t)) : orderedAvailable;
+
+        setAvailableCourseTees(finalAvailable.length > 0 ? finalAvailable : STANDARD_TEE_OPTIONS.map(t => t.value));
+
+        // Normalize tee_names from DB (object or array) and filter to available tees only
+        const rawTeeNames = (courseData?.tee_names || null) as any;
+        const normalizedTeeNames: Record<string, string> = {};
+        if (rawTeeNames && typeof rawTeeNames === "object" && !Array.isArray(rawTeeNames)) {
+          for (const [k, v] of Object.entries(rawTeeNames)) {
+            if (!k) continue;
+            normalizedTeeNames[String(k).toLowerCase()] = String(v);
+          }
+        } else if (Array.isArray(rawTeeNames)) {
+          for (const v of rawTeeNames) {
+            if (!v) continue;
+            normalizedTeeNames[String(v).toLowerCase()] = String(v);
+          }
+        }
+
+        const filteredCourseTeeNames: Record<string, string> = {};
+        for (const key of (finalAvailable.length > 0 ? finalAvailable : tees)) {
+          filteredCourseTeeNames[key] = normalizedTeeNames[key] || DEFAULT_TEE_LABELS[key] || key;
+        }
+        setCourseTeeNames(Object.keys(filteredCourseTeeNames).length > 0 ? filteredCourseTeeNames : null);
+
+        // Apply user's preferred default tee (supports difficulty prefs like "longest") and ensure it's valid,
+        // and keep players in sync.
+        const preferredRaw = (defaultTee || "").toLowerCase();
+        const mapped = normalizeValue(preferredRaw, finalAvailable.length > 0 ? finalAvailable : tees);
+        const effective = (finalAvailable.includes(mapped) ? mapped : (finalAvailable[0] || mapped || "white"));
+        if (defaultTee !== effective) {
+          handleDefaultTeeChange(effective);
+        }
       } else {
-        setCourseTeeNames(null);
+        setAvailableCourseTees(STANDARD_TEE_OPTIONS.map(t => t.value));
+        setCourseTeeNames((courseData?.tee_names as any) || null);
       }
     } catch (error) {
       console.error("Error fetching course tees:", error);
       setCourseTeeNames(null);
+      setAvailableCourseTees(STANDARD_TEE_OPTIONS.map(t => t.value));
     }
   };
 
@@ -822,7 +913,7 @@ export default function GameSettingsDetail() {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-lg font-semibold">Game Settings</h1>
+          <h1 className="text-lg font-semibold">Game Formats</h1>
         </div>
       </div>
 
@@ -903,6 +994,19 @@ export default function GameSettingsDetail() {
               )}
             </div>
 
+            {/* Tee Selection (course-specific) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tees</Label>
+              <TeeSelector
+                value={defaultTee}
+                onValueChange={(tee) => handleDefaultTeeChange(tee)}
+                teeCount={availableCourseTees.length || 5}
+                courseTeeNames={courseTeeNames}
+                triggerClassName="w-full justify-between"
+                disabled={!selectedCourse}
+              />
+            </div>
+
             {/* Holes Selection */}
             <div className="space-y-1.5">
               <Label className="text-xs">Holes</Label>
@@ -964,7 +1068,7 @@ export default function GameSettingsDetail() {
                   key={group.id}
                   group={group}
                   groupIndex={index}
-                  availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
+                  availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
                   courseTeeNames={courseTeeNames}
                   canDelete={groups.length > 1}
                   onUpdateName={(name) => updateGroupName(group.id, name)}
@@ -987,13 +1091,13 @@ export default function GameSettingsDetail() {
           </CardContent>
         </Card>
 
-        {/* Game Settings */}
+        {/* Game Formats */}
         <Collapsible open={settingsExpanded} onOpenChange={setSettingsExpanded}>
           <Card>
             <CollapsibleTrigger asChild>
               <CardHeader className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Game Settings</CardTitle>
+                  <CardTitle className="text-lg">Game Formats</CardTitle>
                   {settingsExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                 </div>
               </CardHeader>
@@ -1002,8 +1106,6 @@ export default function GameSettingsDetail() {
               <CardContent className="space-y-4 pt-0">
                 {/* Game Format */}
                 <div className="space-y-3">
-                  <Label className="text-xs">Game Format</Label>
-                  
                   {/* Individual Games */}
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Individual</p>
@@ -1112,7 +1214,7 @@ export default function GameSettingsDetail() {
           setEditingPlayerGroupId(null);
         }}
         player={editingPlayer}
-        availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
+        availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
         courseTeeNames={courseTeeNames}
         onSave={handleSavePlayer}
       />

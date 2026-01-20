@@ -20,12 +20,28 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
+ wille
+import { hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
+
+type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
+
+interface FriendOnCourseData {
+  friendId: string;
+  friendName: string;
+  friendAvatar: string | null;
+  gameId: string;
+  gameType: GameType;
+  courseName: string;
+  createdAt: string;
+}
+
 import { OngoingRoundsSection } from "@/components/OngoingRoundsSection";
 import { useHomeProfile } from "@/hooks/useHomeProfile";
 import { useFriendsOnCourse, FriendOnCourseData } from "@/hooks/useFriendsOnCourse";
 import { useOngoingGames } from "@/hooks/useOngoingGames";
 import { useKeyInsights } from "@/hooks/useKeyInsights";
 import { useFeedPosts } from "@/hooks/useFeedPosts";
+ main
 
 const Index = () => {
   const navigate = useNavigate();
@@ -62,23 +78,24 @@ const Index = () => {
 
   useEffect(() => {
     if (user) {
+ wille
+      loadUserData();
+      void (async () => {
+        await hydrateLevelsProgressFromDB();
+        loadCurrentLevel();
+      })();
+    } else {
+      setLoading(false);
+
       loadCurrentLevel();
+ main
     }
   }, [user?.id]);
 
   const loadCurrentLevel = () => {
     const levels = getLevelsWithProgress();
-    // Pick the most recently completed level (by completedAt)
-    const completedLevels = levels
-      .filter(l => l.completed && typeof l.completedAt === 'number')
-      .sort((a, b) => (b.completedAt as number) - (a.completedAt as number));
-
-    if (completedLevels.length > 0) {
-      setCurrentLevelId(completedLevels[0].id);
-    } else if (levels.length > 0) {
-      // If none completed yet, use the very first level
-      setCurrentLevelId(levels[0].id);
-    }
+    const next = levels.find(l => !l.completed) || levels[levels.length - 1];
+    if (next) setCurrentLevelId(next.id);
   };
 
   const handlePostCreated = () => {
@@ -254,6 +271,16 @@ const Index = () => {
           </div>
         )}
 
+ wille
+        {/* Performance Snapshot */}
+        <PerformanceSnapshot userId={user.id} />
+
+        {/* Post Box */}
+        <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
+
+        {/* Friends Activity Feed */}
+        {!loading && (friendsPosts.length > 0 || friendsActivity.length > 0) ? (
+
         {/* Post Box - renders when profile is loaded */}
         {!profileLoading && user && (
           <PostBox profile={profile} userId={user.id} onPostCreated={handlePostCreated} />
@@ -267,6 +294,7 @@ const Index = () => {
 
         {/* Friends Activity Feed - renders when data is available */}
         {!feedPostsLoading && user && friendsPosts.length > 0 && (
+ main
           <div className="space-y-4">
             {/* Posts */}
             {friendsPosts.slice(0, postsToShow).map((post) => (
@@ -285,7 +313,17 @@ const Index = () => {
               </div>
             )}
           </div>
-        )}
+        ) : !loading ? (
+          <div className="px-4 pb-6">
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">
+                  No posts yet. Share a drill, round or comment to get started!
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ const getDrillDisplayTitle = (title: string): string => {
 interface GroupDrillHistoryProps {
   groupId: string;
   groupCreatedAt?: string;
+  includeCoaches?: boolean;
 }
 
 interface DrillResultWithProfile {
@@ -71,7 +72,7 @@ interface DrillInfo {
   title: string;
 }
 
-export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistoryProps) {
+export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = false }: GroupDrillHistoryProps) {
   const [results, setResults] = useState<DrillResultWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrill, setSelectedDrill] = useState<string>("all");
@@ -98,8 +99,11 @@ export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistory
           return;
         }
 
-        // Filter out coaches (owner/admin) - only show players in history
-        const playerMembers = groupMembers.filter((m: any) => m.role === 'member');
+        // Coach groups default: only show players in history.
+        // When includeCoaches is enabled, include everyone (including owner/admin).
+        const playerMembers = includeCoaches
+          ? groupMembers
+          : groupMembers.filter((m: any) => m.role === 'member');
         
         const memberIds = playerMembers.map(m => m.user_id);
         const memberProfiles = playerMembers.map((m: any) => ({
@@ -170,7 +174,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistory
     };
 
     fetchGroupHistory();
-  }, [groupId, groupCreatedAt]);
+  }, [groupId, groupCreatedAt, includeCoaches]);
 
   const filteredResults = results.filter(result => {
     const drillMatch = selectedDrill === "all" || result.drill_title === selectedDrill;

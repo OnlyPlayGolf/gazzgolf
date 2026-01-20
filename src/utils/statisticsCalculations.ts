@@ -377,8 +377,8 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   };
 
   // Variables to accumulate pro stats data for Basic Stats
-  let proFairwaysHit = 0;
-  let proFairwayAttempts = 0;
+  // Fairways: compute as % per round (average of each round's fairway%)
+  const proFairwaysByRound = new Map<string, { attempts: number; hits: number }>();
   let proGIRCount = 0;
   let proGIRAttempts = 0;
   let proScramblingSuccess = 0;
@@ -394,7 +394,7 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     const roundIds = proRounds.map(r => r.id);
     const { data: holes } = await supabase
       .from('pro_stats_holes')
-      .select('par, score, putts, pro_shot_data')
+      .select('pro_round_id, par, score, putts, pro_shot_data')
       .in('pro_round_id', roundIds);
 
     if (holes && holes.length > 0) {
@@ -454,9 +454,14 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
           if (par >= 4) {
             const teeShot = shots.find(s => s.type === 'tee');
             if (teeShot && teeShot.endLie) {
-              proFairwayAttempts++;
-              if (teeShot.endLie === 'fairway') {
-                proFairwaysHit++;
+              const proRoundId = (hole as any).pro_round_id as string | undefined;
+              if (proRoundId) {
+                const existing = proFairwaysByRound.get(proRoundId) ?? { attempts: 0, hits: 0 };
+                existing.attempts += 1;
+                if (teeShot.endLie === 'fairway') {
+                  existing.hits += 1;
+                }
+                proFairwaysByRound.set(proRoundId, existing);
               }
             }
           }
@@ -538,10 +543,18 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
 
   // Merge pro stats into accuracy and putting if we have pro data
   // Pro stats take precedence if available, otherwise fall back to regular round data
-  if (proFairwayAttempts > 0) {
+  if (proFairwaysByRound.size > 0) {
+    const perRoundPercentages: number[] = [];
+    for (const { attempts, hits } of proFairwaysByRound.values()) {
+      if (attempts > 0) {
+        perRoundPercentages.push((hits / attempts) * 100);
+      }
+    }
     accuracy = {
       ...accuracy,
-      fairwaysHit: (proFairwaysHit / proFairwayAttempts) * 100,
+      fairwaysHit: perRoundPercentages.length > 0
+        ? perRoundPercentages.reduce((sum, pct) => sum + pct, 0) / perRoundPercentages.length
+        : null,
     };
   }
   
