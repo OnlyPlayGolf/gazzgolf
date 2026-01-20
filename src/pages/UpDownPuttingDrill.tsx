@@ -52,7 +52,7 @@ const UpDownPuttingDrill = () => {
         </Routes>
       </div>
       
-      <DrillBottomTabBar drillSlug="up-down-putting" />
+      <DrillBottomTabBar drillSlug="up-down-putting" hideDrillWord />
     </div>
   );
 };

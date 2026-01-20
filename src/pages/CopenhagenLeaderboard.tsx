@@ -214,7 +214,7 @@ export default function CopenhagenLeaderboard() {
                   <TableRow className="bg-primary">
                     <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                     {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                         {hole.hole_number}
                       </TableHead>
                     ))}
@@ -394,7 +394,7 @@ export default function CopenhagenLeaderboard() {
               </div>
             )}
 
-            {/* Per-scorecard actions */}
+            {/* Scorecard Actions - Only shown when expanded */}
             <div className="px-4 pb-3">
               <ScorecardActions
                 gameId={gameId!}
@@ -452,11 +452,6 @@ export default function CopenhagenLeaderboard() {
         gameTitle={game.round_name || "Copenhagen"}
         courseName={game.course_name}
         pageTitle="Leaderboard"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Copenhagen Game"
       />
 
       <LeaderboardModeTabs

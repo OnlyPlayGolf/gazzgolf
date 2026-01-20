@@ -115,7 +115,6 @@ export function UmbriagioScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
-              showNetRow={false}
               showTeamColors={true}
             />
           ) : (

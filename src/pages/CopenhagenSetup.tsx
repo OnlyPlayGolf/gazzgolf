@@ -45,7 +45,6 @@ export default function CopenhagenSetup() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
-  const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
   const [sweepRuleEnabled, setSweepRuleEnabled] = useState(true);
@@ -79,7 +78,6 @@ export default function CopenhagenSetup() {
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
-        setUseHandicaps(settings.useHandicaps || false);
         setGimmesEnabled(settings.gimmesEnabled || false);
         setSweepRuleEnabled(settings.sweepRuleEnabled !== false);
         savedDefaultTee = settings.defaultTee || prefDefaultTee;
@@ -191,13 +189,13 @@ export default function CopenhagenSetup() {
           player_1: players[0].displayName,
           player_2: players[1].displayName,
           player_3: players[2].displayName,
-          player_1_handicap: useHandicaps ? players[0].handicap : null,
-          player_2_handicap: useHandicaps ? players[1].handicap : null,
-          player_3_handicap: useHandicaps ? players[2].handicap : null,
+          player_1_handicap: null,
+          player_2_handicap: null,
+          player_3_handicap: null,
           player_1_tee: players[0].teeColor || null,
           player_2_tee: players[1].teeColor || null,
           player_3_tee: players[2].teeColor || null,
-          use_handicaps: useHandicaps,
+          use_handicaps: false,
           stats_mode: statsMode,
         })
         .select()
@@ -205,8 +203,22 @@ export default function CopenhagenSetup() {
 
       if (error) throw error;
 
+      // Persist the player's stats mode choice for this game (used by in-game + settings screens)
+      try {
+        await supabase
+          .from('player_game_stats_mode')
+          .upsert({
+            user_id: user.id,
+            game_id: game.id,
+            game_type: 'copenhagen',
+            stats_mode: statsMode,
+          }, { onConflict: 'user_id,game_id,game_type' });
+      } catch (e) {
+        console.warn('Failed to save player stats mode preference:', e);
+      }
+
       // Save settings to game-specific localStorage and session storage
-      const copenhagenSettings = { mulligansPerPlayer, useHandicaps, gimmesEnabled, sweepRuleEnabled, defaultTee };
+      const copenhagenSettings = { mulligansPerPlayer, gimmesEnabled, sweepRuleEnabled, defaultTee };
       localStorage.setItem(`copenhagenSettings_${game.id}`, JSON.stringify(copenhagenSettings));
       sessionStorage.setItem('copenhagenSettings', JSON.stringify(copenhagenSettings));
 
@@ -293,21 +305,6 @@ export default function CopenhagenSetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Use Handicaps toggle */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply player handicaps to scoring
-                </p>
-              </div>
-              <Switch
-                id="handicap"
-                checked={useHandicaps}
-                onCheckedChange={setUseHandicaps}
-              />
-            </div>
-
             {/* Mulligans */}
             <div className="space-y-2">
               <Label>Mulligans per Player</Label>

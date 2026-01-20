@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
@@ -93,7 +93,6 @@ export default function ScrambleSettings() {
         } as ScrambleGame;
         setGame(typedGame);
         setMinDrives(data.min_drives_per_player?.toString() || 'none');
-        setUseHandicaps(data.use_handicaps);
         setScoringType(data.scoring_type as 'gross' | 'net');
 
         // Fetch holes data for completion dialog
@@ -148,7 +147,7 @@ export default function ScrambleSettings() {
     scoringType?: 'gross' | 'net';
   }) => {
     const minDrivesValue = updates.minDrives ?? minDrives;
-    const useHandicapsValue = updates.useHandicaps ?? useHandicaps;
+    const useHandicapsValue = false;
     const scoringTypeValue = updates.scoringType ?? scoringType;
 
     const { error } = await supabase
@@ -191,7 +190,7 @@ export default function ScrambleSettings() {
       toast.success("Game finished!");
       setShowCompletionDialog(true);
     } catch (error) {
-      toast.error("Failed to finish game");
+      toast.error("Failed to finish round");
     }
   };
 
@@ -237,7 +236,7 @@ export default function ScrambleSettings() {
   const players: GamePlayer[] = game.teams.flatMap((team) =>
     team.players.map(p => ({
       name: p.name,
-      handicap: useHandicaps ? p.handicap : undefined,
+      handicap: undefined,
       tee: p.tee || defaultTee, // Individual player tee from DB, fallback to default
       team: team.name,
     }))
@@ -334,15 +333,7 @@ export default function ScrambleSettings() {
                 </Select>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Use Handicaps</Label>
-                  <p className="text-xs text-muted-foreground">Apply handicap strokes</p>
-                </div>
-                <Switch checked={useHandicaps} onCheckedChange={handleUseHandicapsChange} />
-              </div>
-
-              {useHandicaps && (
+              {false && (
                 <div className="flex items-center justify-between">
                   <Label>Scoring Type</Label>
                   <Select value={scoringType} onValueChange={handleScoringTypeChange}>
@@ -365,7 +356,6 @@ export default function ScrambleSettings() {
           <RoundActionsSection
           isAdmin={currentUserId === game.user_id}
           onFinish={handleFinishGame}
-          onSaveAndExit={() => navigate('/profile')}
           onDelete={() => setShowDeleteDialog(true)}
             onLeave={() => setShowLeaveDialog(true)}
           />
@@ -376,7 +366,7 @@ export default function ScrambleSettings() {
         open={showPlayersModal}
         onOpenChange={setShowPlayersModal}
         players={players}
-        useHandicaps={useHandicaps}
+        useHandicaps={false}
       />
 
       <DeleteGameDialog

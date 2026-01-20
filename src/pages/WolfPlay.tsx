@@ -16,16 +16,6 @@ import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import { WolfCompletionModal } from "@/components/WolfCompletionModal";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface WolfScores {
   scores: (number | null)[];
@@ -184,7 +174,6 @@ export default function WolfPlay() {
     }
   }, [isSpectator, spectatorLoading, gameId, navigate]);
   
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<number | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [currentComment, setCurrentComment] = useState("");
@@ -242,16 +231,6 @@ export default function WolfPlay() {
   const wolfPosition = game?.wolf_position as 'first' | 'last' || 'last';
   const currentWolfPlayer = getWolfPlayerForHole(currentHole, getPlayerCount(), wolfPosition);
 
-  // Show stats mode dialog on first load if not set
-  useEffect(() => {
-    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
-      const hasShownDialog = sessionStorage.getItem(`wolfStatsModeShown_${gameId}`);
-      if (!hasShownDialog) {
-        setShowStatsModeDialog(true);
-        sessionStorage.setItem(`wolfStatsModeShown_${gameId}`, 'true');
-      }
-    }
-  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   // Auto-advance to next hole when all scores and wolf choice are entered
   useEffect(() => {
@@ -389,7 +368,7 @@ export default function WolfPlay() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/rounds-play")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -718,38 +697,12 @@ export default function WolfPlay() {
 
       {gameId && <WolfBottomTabBar gameId={gameId} />}
 
-      {/* Exit Dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={() => {
-              setShowExitDialog(false);
-              navigate("/rounds-play");
-            }}>
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => deleteGame()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Stats Mode Dialog */}
       <PlayerStatsModeDialog
         open={showStatsModeDialog}
         onOpenChange={setShowStatsModeDialog}
         onSelect={setStatsMode}
+        currentMode={statsMode}
         saving={statsModeSaving}
       />
 

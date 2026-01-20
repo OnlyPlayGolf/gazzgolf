@@ -40,7 +40,8 @@ export default function ScrambleSummary() {
     if (scrambleHoles) {
       setHoles(scrambleHoles.map(h => ({
         ...h,
-        team_scores: (h.team_scores as Record<string, number | null>) || {}
+        team_scores: (h.team_scores as Record<string, number | null>) || {},
+        team_tee_shots: ((h as Record<string, unknown>).team_tee_shots as Record<string, string>) || {}
       })));
     }
   };

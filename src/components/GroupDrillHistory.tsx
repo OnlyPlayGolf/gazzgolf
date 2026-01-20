@@ -6,6 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
+const getDrillDisplayTitle = (title: string): string => {
+  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
+  if (title === "Short Putting Test") return "Short Putting";
+  return title;
+};
+
 interface GroupDrillHistoryProps {
   groupId: string;
   groupCreatedAt?: string;
@@ -235,7 +241,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
                 <optgroup key={category} label={category}>
                   {categoryDrills.map(drill => (
                     <option key={drill.id} value={drill.title}>
-                      {drill.title}
+                      {getDrillDisplayTitle(drill.title)}
                     </option>
                   ))}
                 </optgroup>
@@ -269,7 +275,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
                     {result.display_name || result.username || 'Unknown'}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {result.drill_title}
+                    {getDrillDisplayTitle(result.drill_title)}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">

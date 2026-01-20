@@ -118,11 +118,7 @@ export default function HowToPlayBestBall() {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>
-                When using handicaps, each player's net score is calculated based 
-                on their handicap and the hole's stroke index.
-              </p>
-              <p>
-                The team's best <strong>net score</strong> counts for each hole.
+                The team's best score counts for each hole.
               </p>
               <p>
                 This applies to both Match Play and Stroke Play modes.

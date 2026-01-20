@@ -39,7 +39,6 @@ export default function ScrambleSetup() {
   
   // Game settings
   const [minDrivesPerPlayer, setMinDrivesPerPlayer] = useState<number | null>(null);
-  const [useHandicaps, setUseHandicaps] = useState(false);
   const [scoringType, setScoringType] = useState<'gross' | 'net'>('gross');
   const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
@@ -170,7 +169,7 @@ export default function ScrambleSetup() {
           holes_played: getHolesPlayed(),
           teams: teamsWithPlayers as unknown as any,
           min_drives_per_player: minDrivesPerPlayer,
-          use_handicaps: useHandicaps,
+          use_handicaps: false,
           scoring_type: scoringType,
           stats_mode: statsMode,
         })
@@ -178,6 +177,20 @@ export default function ScrambleSetup() {
         .single();
 
       if (error) throw error;
+
+      // Persist the player's stats mode choice for this game (used by in-game + settings screens)
+      try {
+        await supabase
+          .from('player_game_stats_mode')
+          .upsert({
+            user_id: user.id,
+            game_id: game.id,
+            game_type: 'scramble',
+            stats_mode: statsMode,
+          }, { onConflict: 'user_id,game_id,game_type' });
+      } catch (e) {
+        console.warn('Failed to save player stats mode preference:', e);
+      }
 
       toast({ title: "Game started!", description: `Good luck at ${selectedCourse.name}` });
       navigate(`/scramble/${game.id}/play`);
@@ -283,23 +296,8 @@ export default function ScrambleSetup() {
               </Select>
             </div>
 
-            {/* Handicap toggle */}
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="handicap">Use Handicaps</Label>
-                <p className="text-xs text-muted-foreground">
-                  Apply team handicaps to scoring
-                </p>
-              </div>
-              <Switch
-                id="handicap"
-                checked={useHandicaps}
-                onCheckedChange={setUseHandicaps}
-              />
-            </div>
-
-            {/* Scoring Type (only when handicaps enabled) */}
-            {useHandicaps && (
+            {/* Scoring Type */}
+            {false && (
               <div className="space-y-2">
                 <Label>Scoring Type</Label>
                 <Select value={scoringType} onValueChange={(v) => setScoringType(v as 'gross' | 'net')}>

@@ -173,14 +173,14 @@ export function StrokePlayLeaderboardView({
                   <Table className="w-full table-fixed">
                     <TableHeader>
                       <TableRow className="bg-primary">
-                        <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                         {frontNine.map(hole => (
-                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                          <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                             {hole.hole_number}
                           </TableHead>
                         ))}
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Out</TableHead>
-                        <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Out</TableHead>
+                        <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                           {backNine.length > 0 ? '' : 'Tot'}
                         </TableHead>
                       </TableRow>
@@ -247,14 +247,14 @@ export function StrokePlayLeaderboardView({
                     <Table className="w-full table-fixed">
                       <TableHeader>
                         <TableRow className="bg-primary">
-                          <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                           {backNine.map(hole => (
-                            <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                            <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                               {hole.hole_number}
                             </TableHead>
                           ))}
-                          <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">In</TableHead>
-                          <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Tot</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">In</TableHead>
+                          <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Tot</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -313,19 +313,19 @@ export function StrokePlayLeaderboardView({
                     </Table>
                   </div>
                 )}
-              </>
-            )}
 
-            {/* Per-scorecard actions */}
-            {gameId && gameType && (
-              <div className="px-4 pb-3">
-                <ScorecardActions
-                  gameId={gameId}
-                  gameType={gameType}
-                  scorecardPlayerId={player.id}
-                  scorecardPlayerName={player.name}
-                />
-              </div>
+                {/* Scorecard Actions - Only shown when expanded */}
+                {gameId && gameType && (
+                  <div className="px-4 pb-3">
+                    <ScorecardActions
+                      gameId={gameId}
+                      gameType={gameType}
+                      scorecardPlayerId={player.id}
+                      scorecardPlayerName={player.name}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </Card>
         );

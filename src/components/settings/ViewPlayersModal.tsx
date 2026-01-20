@@ -24,8 +24,7 @@ function formatHandicap(handicap: number | null | undefined): string {
 export function ViewPlayersModal({ 
   open, 
   onOpenChange, 
-  players,
-  useHandicaps = false
+  players
 }: ViewPlayersModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,12 +53,6 @@ export function ViewPlayersModal({
                   </div>
                 </div>
               </div>
-              {useHandicaps && player.handicap !== undefined && (
-                <div className="text-right shrink-0 ml-2">
-                  <p className="text-xs text-muted-foreground">HCP</p>
-                  <p className="font-medium">{formatHandicap(player.handicap)}</p>
-                </div>
-              )}
             </div>
           ))}
           {players.length === 0 && (

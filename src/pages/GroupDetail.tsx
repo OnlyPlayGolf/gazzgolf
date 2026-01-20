@@ -16,9 +16,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 import { formatDistanceToNow } from "date-fns";
 import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
 import { getPublicAppUrl } from "@/utils/publicAppUrl";
+
+const getDrillDisplayTitle = (title: string): string => {
+  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
+  if (title === "Short Putting Test") return "Short Putting";
+  return title;
+};
 
 interface Member {
   user_id: string;
@@ -1301,8 +1308,9 @@ useEffect(() => {
 
               {/* Drills Tab */}
               <TabsContent value="drills" className="space-y-4">
-                {drills.length > 0 && (
-                  <div className="space-y-3">
+                <FadeSlide>
+                  {drills.length > 0 && (
+                    <div className="space-y-3">
                     <select
                       value={selectedDrill || ''}
                       onChange={(e) => {
@@ -1338,7 +1346,7 @@ useEffect(() => {
                             <optgroup key={category} label={category}>
                               {categoryDrills.map(drill => (
                                 <option key={drill.id} value={drill.title}>
-                                  {drill.title}
+                                  {getDrillDisplayTitle(drill.title)}
                                 </option>
                               ))}
                             </optgroup>
@@ -1389,55 +1397,59 @@ useEffect(() => {
                       </p>
                     )}
                   </div>
-                )}
+                  )}
+                </FadeSlide>
               </TabsContent>
 
               {/* Levels Tab */}
               <TabsContent value="levels" className="space-y-4">
-                {loadingGroupLevels ? (
-                  <p className="text-center text-muted-foreground py-8">Loading...</p>
-                ) : groupLevelsLeaderboard.length > 0 ? (
-                  <div className="space-y-2">
-                     {groupLevelsLeaderboard.map((entry, index) => (
-                      <div
-                        key={entry.user_id}
-                        className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
-                      >
-                        <div className="font-bold text-sm text-muted-foreground w-8">
-                          #{index + 1}
-                        </div>
-                        <Avatar 
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => navigate(`/user/${entry.user_id}`)}
+                <FadeSlide>
+                  {loadingGroupLevels ? (
+                    <p className="text-center text-muted-foreground py-8">Loading...</p>
+                  ) : groupLevelsLeaderboard.length > 0 ? (
+                    <div className="space-y-2">
+                      {groupLevelsLeaderboard.map((entry, index) => (
+                        <div
+                          key={entry.user_id}
+                          className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
                         >
-                          <AvatarImage src={entry.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div 
-                            className="font-medium cursor-pointer hover:underline"
+                          <div className="font-bold text-sm text-muted-foreground w-8">
+                            #{index + 1}
+                          </div>
+                          <Avatar 
+                            className="cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => navigate(`/user/${entry.user_id}`)}
                           >
-                            {entry.display_name || entry.username || 'Unknown'}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {entry.completed_levels} levels completed • Highest: Level {entry.highest_level || 0}
+                            <AvatarImage src={entry.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div 
+                              className="font-medium cursor-pointer hover:underline"
+                              onClick={() => navigate(`/user/${entry.user_id}`)}
+                            >
+                              {entry.display_name || entry.username || 'Unknown'}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {entry.completed_levels} levels completed • Highest: Level {entry.highest_level || 0}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    No level progress yet
-                  </p>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">
+                      No level progress yet
+                    </p>
+                  )}
+                </FadeSlide>
               </TabsContent>
 
               {/* History Tab */}
               <TabsContent value="history">
+ wille
                 {groupId && (
                   <GroupDrillHistory
                     groupId={groupId}
@@ -1445,13 +1457,20 @@ useEffect(() => {
                     includeCoaches={effectiveGroupType === 'coach' && !!group?.show_coach_profile_results}
                   />
                 )}
+
+                <FadeSlide>
+                  {groupId && <GroupDrillHistory groupId={groupId} groupCreatedAt={group?.created_at} />}
+                </FadeSlide>
+ main
               </TabsContent>
 
               {/* Play Tab */}
               <TabsContent value="play">
-                <p className="text-center text-muted-foreground py-8">
-                  Play leaderboard coming soon
-                </p>
+                <FadeSlide>
+                  <p className="text-center text-muted-foreground py-8">
+                    Play leaderboard coming soon
+                  </p>
+                </FadeSlide>
               </TabsContent>
             </Tabs>
           </CardContent>

@@ -110,14 +110,14 @@ export function StrokePlayScorecardCard({
           <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow className="bg-primary">
-                <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
+                <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                 {frontNineHoles.map(hole => (
-                  <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                  <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                     {hole}
                   </TableHead>
                 ))}
-                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Out</TableHead>
-                <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Out</TableHead>
+                <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
                   {!hasBackNine ? 'Tot' : ''}
                 </TableHead>
               </TableRow>
@@ -167,14 +167,14 @@ export function StrokePlayScorecardCard({
               <Table className="w-full table-fixed">
                 <TableHeader>
                   <TableRow className="bg-primary">
-                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0.5 py-1 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                     {backNineHoles.map(hole => (
-                      <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                      <TableHead key={hole} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                         {hole}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">In</TableHead>
-                    <TableHead className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">Tot</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">In</TableHead>
+                    <TableHead className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">Tot</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

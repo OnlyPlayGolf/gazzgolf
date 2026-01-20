@@ -37,7 +37,6 @@ export default function BestBallSetup() {
   
   // Game settings
   const [gameType, setGameType] = useState<GameType>('match');
-  const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [teamAName, setTeamAName] = useState("Team A");
   const [teamBName, setTeamBName] = useState("Team B");
@@ -262,7 +261,7 @@ export default function BestBallSetup() {
           team_a_players: teamA as unknown as any,
           team_b_name: teamBName,
           team_b_players: teamB as unknown as any,
-          use_handicaps: useHandicaps,
+          use_handicaps: false,
           mulligans_per_player: mulligansPerPlayer,
           stats_mode: statsMode,
         }])
@@ -270,6 +269,20 @@ export default function BestBallSetup() {
         .single();
 
       if (error) throw error;
+
+      // Persist the player's stats mode choice for this game (used by in-game + settings screens)
+      try {
+        await supabase
+          .from('player_game_stats_mode')
+          .upsert({
+            user_id: user.id,
+            game_id: game.id,
+            game_type: 'best_ball',
+            stats_mode: statsMode,
+          }, { onConflict: 'user_id,game_id,game_type' });
+      } catch (e) {
+        console.warn('Failed to save player stats mode preference:', e);
+      }
 
       toast({ title: "Best Ball game started!" });
       navigate(`/best-ball/${game.id}/play`);
@@ -438,13 +451,6 @@ export default function BestBallSetup() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Use Handicaps (Net)</Label>
-                <p className="text-xs text-muted-foreground">Apply stroke allocation</p>
-              </div>
-              <Switch checked={useHandicaps} onCheckedChange={setUseHandicaps} />
-            </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label>Mulligans per Player</Label>

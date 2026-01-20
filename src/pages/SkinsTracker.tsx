@@ -91,18 +91,6 @@ export default function SkinsTracker() {
   
   // Per-player stats mode
   const { statsMode, loading: statsModeLoading, saving: statsModeSaving, setStatsMode } = usePlayerStatsMode(roundId, 'skins');
-  
-  // Show stats mode dialog on first load if not set
-  useEffect(() => {
-    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
-      // Check if this is first time (no stats mode set yet)
-      const hasShownDialog = sessionStorage.getItem(`skinsStatsModeShown_${roundId}`);
-      if (!hasShownDialog) {
-        setShowStatsModeDialog(true);
-        sessionStorage.setItem(`skinsStatsModeShown_${roundId}`, 'true');
-      }
-    }
-  }, [statsModeLoading, statsMode, game, loading, roundId]);
 
   useEffect(() => {
     if (roundId) {
@@ -443,11 +431,6 @@ export default function SkinsTracker() {
         gameTitle={game.round_name || 'Skins'}
         courseName={game.course_name}
         pageTitle="Skins"
-        isAdmin={isAdmin}
-        onFinish={handleFinishRound}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Skins Game"
       />
 
       {/* Hole Navigation Bar */}
@@ -624,7 +607,7 @@ export default function SkinsTracker() {
               setSelectedPlayer(nextPlayer);
             } else {
               setShowScoreSheet(false);
-              // Don't auto-show completion dialog - user must click "FINISH GAME" button
+              // Don't auto-show completion dialog - user must click "FINISH ROUND" button
             }
           }}
         />
@@ -635,6 +618,7 @@ export default function SkinsTracker() {
         open={showStatsModeDialog}
         onOpenChange={setShowStatsModeDialog}
         onSelect={setStatsMode}
+        currentMode={statsMode}
         saving={statsModeSaving}
       />
 

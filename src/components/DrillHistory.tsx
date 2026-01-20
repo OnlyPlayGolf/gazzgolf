@@ -12,6 +12,8 @@ import {
 
 interface DrillHistoryProps {
   drillTitle: string;
+  /** Removes the word “Drill” from visible copy (used for specific drills) */
+  hideDrillWord?: boolean;
 }
 
 const DRILL_ALIASES: Record<string, string[]> = {
@@ -41,7 +43,7 @@ interface DrillResult {
   attempts_json: any;
 }
 
-export function DrillHistory({ drillTitle }: DrillHistoryProps) {
+export function DrillHistory({ drillTitle, hideDrillWord = false }: DrillHistoryProps) {
   const [results, setResults] = useState<DrillResult[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -100,12 +102,14 @@ export function DrillHistory({ drillTitle }: DrillHistoryProps) {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-foreground">
               <Newspaper size={20} className="text-primary" />
-              Drill History
+              {hideDrillWord ? "History" : "Drill History"}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground text-center py-8">
-              No drill results yet. Complete the drill to see your history here.
+              {hideDrillWord
+                ? "No results yet. Complete the practice to see your history here."
+                : "No drill results yet. Complete the drill to see your history here."}
             </p>
           </CardContent>
         </Card>

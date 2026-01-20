@@ -4,6 +4,7 @@ import { ArrowLeft, Target, Trophy, Calendar, TrendingUp, Info, BarChart3, Clock
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -211,6 +212,7 @@ export default function DrillResultDetail() {
 
           {/* Results Tab */}
           <TabsContent value="results" className="space-y-4">
+            <FadeSlide>
             {/* Score Card */}
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
               <CardContent className="p-6 text-center">
@@ -304,10 +306,12 @@ export default function DrillResultDetail() {
                 </div>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
 
           {/* History Tab */}
           <TabsContent value="history" className="space-y-4">
+            <FadeSlide>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -386,10 +390,12 @@ export default function DrillResultDetail() {
                 </CardContent>
               </Card>
             )}
+            </FadeSlide>
           </TabsContent>
 
           {/* Info Tab */}
           <TabsContent value="info" className="space-y-4">
+            <FadeSlide>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -423,6 +429,7 @@ export default function DrillResultDetail() {
                 </div>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
         </Tabs>
       </div>

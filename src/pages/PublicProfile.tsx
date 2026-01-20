@@ -13,6 +13,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
 import { RoundCardData } from "@/components/RoundCard";
 import { parseHandicap, formatHandicap } from "@/lib/utils";
+import { fetchPostsEngagement } from "@/utils/postsEngagement";
 
 interface Profile {
   id: string;
@@ -46,6 +47,9 @@ export default function PublicProfile() {
   const [recentRounds, setRecentRounds] = useState<RoundCardData[]>([]);
   const [averageScore, setAverageScore] = useState<number | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [postsCursor, setPostsCursor] = useState<string | null>(null);
+  const [postsHasMore, setPostsHasMore] = useState(false);
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
@@ -54,10 +58,15 @@ export default function PublicProfile() {
     loadData();
   }, [userId]);
 
+  const POSTS_PAGE_SIZE = 10;
+
   const loadData = async () => {
     if (!userId) return;
 
     setLoading(true);
+    setUserPosts([]);
+    setPostsCursor(null);
+    setPostsHasMore(false);
 
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
@@ -189,10 +198,66 @@ export default function PublicProfile() {
         )
       `)
       .eq('user_id', targetUserId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(POSTS_PAGE_SIZE + 1);
 
     if (postsData) {
-      setUserPosts(postsData);
+      const page = postsData.slice(0, POSTS_PAGE_SIZE);
+      const engagement = await fetchPostsEngagement(
+        page.map((p: any) => p.id),
+        currentUser || null
+      );
+      setUserPosts(
+        page.map((p: any) => ({
+          ...p,
+          _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
+        }))
+      );
+      setPostsHasMore(postsData.length > POSTS_PAGE_SIZE);
+      setPostsCursor(page.length > 0 ? page[page.length - 1].created_at : null);
+    }
+  };
+
+  const loadMorePosts = async () => {
+    if (postsLoadingMore || !postsHasMore || !postsCursor || !userId) return;
+    setPostsLoadingMore(true);
+    try {
+      const { data: morePosts, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profile:user_id (
+            display_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('user_id', userId)
+        .lt('created_at', postsCursor)
+        .order('created_at', { ascending: false })
+        .limit(POSTS_PAGE_SIZE + 1);
+
+      if (error) {
+        console.error('Error loading more posts:', error);
+        return;
+      }
+
+      const nextPage = (morePosts || []).slice(0, POSTS_PAGE_SIZE);
+      const engagement = await fetchPostsEngagement(
+        nextPage.map((p: any) => p.id),
+        currentUserId
+      );
+      setUserPosts((prev) => [
+        ...prev,
+        ...nextPage.map((p: any) => ({
+          ...p,
+          _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
+        })),
+      ]);
+      setPostsHasMore((morePosts || []).length > POSTS_PAGE_SIZE);
+      setPostsCursor(nextPage.length > 0 ? nextPage[nextPage.length - 1].created_at : postsCursor);
+    } finally {
+      setPostsLoadingMore(false);
     }
   };
 
@@ -525,6 +590,18 @@ export default function PublicProfile() {
             {userPosts.map((post) => (
               <FeedPost key={post.id} post={post} currentUserId={currentUserId || ''} onPostDeleted={loadData} />
             ))}
+            {postsHasMore && (
+              <div className="px-4 py-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={loadMorePosts}
+                  disabled={postsLoadingMore}
+                >
+                  {postsLoadingMore ? "Loading..." : "View More"}
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="px-4 mb-6">

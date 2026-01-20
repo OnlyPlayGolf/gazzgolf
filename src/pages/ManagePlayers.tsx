@@ -266,9 +266,6 @@ export default function ManagePlayers() {
                 <p className="font-semibold">
                   {currentUser.display_name || currentUser.username}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Playing HCP: {currentUser.handicap || '+0'}
-                </p>
               </div>
             </div>
 

@@ -1,5 +1,34 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Helper function to filter out orphaned pro_stats_rounds (where external_round_id points to a deleted round)
+export async function filterValidProStatsRounds(proRounds: Array<{ id: string; external_round_id?: string | null }>): Promise<Array<{ id: string }>> {
+  if (!proRounds || proRounds.length === 0) {
+    return [];
+  }
+
+  const roundsWithExternalId = proRounds.filter(pr => pr.external_round_id);
+  if (roundsWithExternalId.length === 0) {
+    // All rounds are standalone (no external_round_id), so they're all valid
+    return proRounds.map(pr => ({ id: pr.id }));
+  }
+
+  const externalRoundIds = roundsWithExternalId.map(pr => pr.external_round_id!);
+  // Check which rounds still exist
+  const { data: existingRounds } = await supabase
+    .from('rounds')
+    .select('id')
+    .in('id', externalRoundIds);
+  
+  const existingRoundIds = new Set((existingRounds || []).map(r => r.id));
+  
+  // Filter to only include pro_stats_rounds where:
+  // 1. external_round_id is null (standalone pro stats rounds), OR
+  // 2. external_round_id exists AND the round still exists
+  return proRounds
+    .filter(pr => !pr.external_round_id || existingRoundIds.has(pr.external_round_id))
+    .map(pr => ({ id: pr.id }));
+}
+
 // Stat performance levels
 export type StatLevel = 'strength' | 'average' | 'needs-improvement';
 
@@ -328,10 +357,14 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   }
 
   // Fetch strokes gained from pro_stats if available
-  const { data: proRounds } = await supabase
+  const { data: allProRounds } = await supabase
     .from('pro_stats_rounds')
-    .select('id, holes_played')
+    .select('id, holes_played, external_round_id')
     .eq('user_id', userId);
+
+  // Filter out orphaned pro_stats_rounds (where external_round_id exists but the round doesn't)
+  const validProRounds = await filterValidProStatsRounds(allProRounds || []);
+  const proRounds = validProRounds.map(pr => ({ id: pr.id, holes_played: allProRounds?.find(apr => apr.id === pr.id)?.holes_played || 18 }));
 
   let strokesGained: StrokesGainedStats = {
     total: null,

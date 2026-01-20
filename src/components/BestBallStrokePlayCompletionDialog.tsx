@@ -202,6 +202,11 @@ export function BestBallStrokePlayCompletionDialog({
           })
         ),
         holePars: Object.fromEntries(courseHoles.map(ch => [ch.hole_number, ch.par])),
+        courseHoles: courseHoles.map(ch => ({
+          hole_number: ch.hole_number,
+          par: ch.par,
+          stroke_index: ch.stroke_index ?? ch.hole_number,
+        })),
         teamAPlayers: game.team_a_players.map(p => ({ id: p.odId, name: p.displayName })),
         teamBPlayers: game.team_b_players.map(p => ({ id: p.odId, name: p.displayName })),
       };

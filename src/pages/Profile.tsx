@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +7,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+ wille
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Star, Plus, MessageCircle, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
+
+import { Star, Plus, MessageCircle, Crown, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info, Loader2 } from "lucide-react";
+ main
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
+ wille
 import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
+
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { searchProfilesTypeahead } from "@/utils/profileSearch";
+ main
 
 interface Friend {
   id: string;
@@ -55,7 +65,10 @@ const Profile = () => {
   const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
+  const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; avatar_url?: string | null }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 300);
+  const searchRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -100,15 +113,24 @@ const Profile = () => {
     }
   }, [isCreateGroupOpen, groupDescription]);
 
-  // Search users when search term changes
+  // Search users (typeahead) for adding group members
   useEffect(() => {
-    const searchUsers = async () => {
-      if (!searchTerm.trim() || !user) {
-        setSearchResults([]);
-        return;
-      }
+    if (!user) return;
 
+    if (debouncedSearchTerm.length < 2) {
+      searchRequestIdRef.current += 1; // invalidate in-flight requests
+      setSearchLoading(false);
+      setSearchResults([]);
+      return;
+    }
+
+    let cancelled = false;
+    const requestId = ++searchRequestIdRef.current;
+
+    const run = async () => {
+      setSearchLoading(true);
       try {
+ wille
         // Global user search (includes non-friends) via RPC (safe across profiles RLS)
         const { data, error } = await supabase
           .rpc('search_profiles', { q: searchTerm.trim(), max_results: 20 });
@@ -127,15 +149,27 @@ const Profile = () => {
             }));
           setSearchResults(normalized);
         }
+
+        const rows = await searchProfilesTypeahead(supabase as any, debouncedSearchTerm, { limit: 20 });
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        setSearchResults(rows);
+ main
       } catch (error) {
-        console.error('Error in searchUsers:', error);
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        console.error('Error searching users:', error);
         setSearchResults([]);
+      } finally {
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        setSearchLoading(false);
       }
     };
 
-    const timeoutId = setTimeout(searchUsers, 300); // Debounce search
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, user]);
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearchTerm, user]);
 
   // Realtime subscription for friendships changes
   useEffect(() => {
@@ -194,6 +228,7 @@ const Profile = () => {
         throw groupsError;
       }
 
+ wille
       // Get member counts for each group
       const groupsList = await Promise.all(
         (groupsData || []).map(async (g: any) => {
@@ -226,6 +261,39 @@ const Profile = () => {
           };
         })
       );
+
+      // Batch member counts for all groups (avoid N+1)
+      const groupRows = (groupsData || []).filter((g: any) => g?.groups?.id);
+      const groupIds = groupRows.map((g: any) => g.groups.id);
+      const memberCountMap = new Map<string, number>();
+
+      if (groupIds.length > 0) {
+        const { data: allMembers, error: membersError } = await (supabase as any)
+          .from("group_members")
+          .select("group_id")
+          .in("group_id", groupIds);
+
+        if (membersError) {
+          console.error("Error loading group member counts:", membersError);
+        } else {
+          (allMembers || []).forEach((m: any) => {
+            if (!m?.group_id) return;
+            memberCountMap.set(m.group_id, (memberCountMap.get(m.group_id) || 0) + 1);
+          });
+        }
+      }
+
+      const groupsList = groupRows.map((g: any) => ({
+        id: g.groups.id,
+        name: g.groups.name,
+        owner_id: g.groups.owner_id,
+        role: g.role,
+        member_count: memberCountMap.get(g.groups.id) || 0,
+        created_at: g.groups.created_at,
+        description: g.groups.description,
+        image_url: g.groups.image_url,
+      }));
+main
 
       setGroups(groupsList);
 
@@ -721,9 +789,18 @@ const Profile = () => {
                               onChange={(e) => setSearchTerm(e.target.value)}
                               className="w-full"
                             />
-                            {searchTerm && (
+                            {searchTerm.trim().length > 0 && (
                               <div className="border border-border rounded-lg max-h-[200px] overflow-y-auto">
-                                {searchResults.length > 0 ? (
+                                {searchTerm.trim().length < 2 ? (
+                                  <p className="text-sm text-muted-foreground p-3 text-center">
+                                    Type 2+ characters to search
+                                  </p>
+                                ) : searchLoading ? (
+                                  <div className="flex items-center justify-center p-3 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Searching...
+                                  </div>
+                                ) : searchResults.length > 0 ? (
                                   searchResults.map((user) => (
                                     <label
                                       key={user.id}

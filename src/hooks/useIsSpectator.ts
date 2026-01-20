@@ -70,17 +70,17 @@ export function useIsSpectator(
             .from('rounds')
             .select('user_id, created_at')
             .eq('id', gameId)
-            .single();
+            .maybeSingle();
 
-          // Rounds don't have is_finished flag, so we check holes_played
+          // Rounds don't have is_finished flag, so we check if holes have been recorded
           const { data: holesData } = await supabase
             .from('holes')
             .select('id')
             .eq('round_id', gameId);
           
-          // A round is "finished" if it has any holes recorded (simple heuristic)
-          // For more accuracy, we'd need an is_finished flag on rounds table
-          isFinished = false; // Rounds don't auto-finish like other game types
+          // A round is "finished" if it has any holes recorded (round has been started)
+          // Once finished, editing is locked 12 hours after the round was created
+          isFinished = (holesData?.length || 0) > 0;
           createdAt = roundData?.created_at || null;
 
           if (roundData?.user_id === user.id) {
@@ -97,46 +97,74 @@ export function useIsSpectator(
             isParticipant = !!playerData;
           }
         } else if (gameType === 'match_play') {
-          const { data } = await supabase.from('match_play_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:100',message:'Before match_play_games.maybeSingle()',data:{gameId,gameType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          const { data, error } = await supabase.from('match_play_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
+          // #region agent log
+          if(error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:100',message:'match_play_games.maybeSingle() ERROR',data:{errorCode:error.code,errorMessage:error.message,errorDetails:error.details,gameId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'best_ball') {
-          const { data } = await supabase.from('best_ball_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('best_ball_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'copenhagen') {
-          const { data } = await supabase.from('copenhagen_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('copenhagen_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'scramble') {
-          const { data } = await supabase.from('scramble_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('scramble_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'skins') {
-          const { data } = await supabase.from('skins_games').select('user_id, is_finished, created_at, players').eq('id', gameId).single();
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:120',message:'Before skins_games.maybeSingle()',data:{gameId,gameType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          const { data, error } = await supabase.from('skins_games').select('user_id, is_finished, created_at, players').eq('id', gameId).maybeSingle();
+          // #region agent log
+          if(error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:120',message:'skins_games.maybeSingle() ERROR',data:{errorCode:error.code,errorMessage:error.message,errorDetails:error.details,gameId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           // Check if user is owner OR in the players array
           const players = Array.isArray(data?.players) ? data.players as { odId: string }[] : [];
           isParticipant = data?.user_id === user.id || players.some(p => p.odId === user.id);
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'umbriago') {
-          const { data } = await supabase.from('umbriago_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('umbriago_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'wolf') {
-          const { data } = await supabase.from('wolf_games' as any).select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('wolf_games' as any).select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = (data as any)?.user_id === user.id;
           isFinished = (data as any)?.is_finished || false;
           createdAt = (data as any)?.created_at || null;
         }
 
         // Check if the 12-hour editing window has expired
-        const editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
+        // For rounds: lock if finished (has holes) OR if round is older than 12 hours (regardless of holes)
+        let editWindowExpired = false;
+        if (gameType === 'round') {
+          if (isFinished) {
+            // Round has holes - use standard 12-hour check
+            editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
+          } else if (createdAt) {
+            // Round has no holes yet, but check if it's older than 12 hours anyway
+            const createdDate = new Date(createdAt);
+            const now = new Date();
+            const hoursSinceCreation = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+            editWindowExpired = hoursSinceCreation > EDIT_WINDOW_HOURS;
+          }
+        } else {
+          // For other game types, use standard logic
+          editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
+        }
         setIsEditWindowExpired(editWindowExpired);
 
         // User is spectator ONLY if not a participant

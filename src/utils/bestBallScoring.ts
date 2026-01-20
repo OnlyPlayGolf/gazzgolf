@@ -4,12 +4,9 @@ import { BestBallPlayerScore } from "@/types/bestBall";
  * Calculate best ball score for a team on a hole
  */
 export function calculateBestBall(
-  scores: BestBallPlayerScore[],
-  useHandicaps: boolean
+  scores: BestBallPlayerScore[]
 ): { bestScore: number | null; countingPlayer: string | null } {
-  const validScores = scores.filter(s => 
-    useHandicaps ? s.netScore !== null : s.grossScore !== null
-  );
+  const validScores = scores.filter(s => s.grossScore !== null);
 
   if (validScores.length === 0) {
     return { bestScore: null, countingPlayer: null };
@@ -17,8 +14,8 @@ export function calculateBestBall(
 
   let best: BestBallPlayerScore | null = null;
   for (const score of validScores) {
-    const currentScore = useHandicaps ? score.netScore! : score.grossScore!;
-    const bestScore = best ? (useHandicaps ? best.netScore! : best.grossScore!) : Infinity;
+    const currentScore = score.grossScore!;
+    const bestScore = best ? best.grossScore! : Infinity;
     
     if (currentScore < bestScore) {
       best = score;
@@ -26,7 +23,7 @@ export function calculateBestBall(
   }
 
   return {
-    bestScore: best ? (useHandicaps ? best.netScore! : best.grossScore!) : null,
+    bestScore: best ? best.grossScore! : null,
     countingPlayer: best?.playerName || null,
   };
 }

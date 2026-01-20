@@ -144,7 +144,7 @@ export function CopenhagenScorecardView({
               <TableRow className="bg-primary">
                 <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                 {frontNine.map(hole => (
-                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                     {hole.hole_number}
                   </TableHead>
                 ))}
@@ -251,7 +251,6 @@ export function CopenhagenScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
-              showNetRow={false}
             />
           ) : (
             renderCopenhagenScorecard()

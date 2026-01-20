@@ -634,7 +634,7 @@ export default function RoundsPlay() {
       groups: updatedGroups,
       strokePlaySettings: {
         mulligansPerPlayer: config.mulligansPerPlayer || 0,
-        handicapEnabled: config.useHandicaps,
+        handicapEnabled: false,
         gimmesEnabled: config.gimmesEnabled || false,
       },
       aiConfigApplied: true,

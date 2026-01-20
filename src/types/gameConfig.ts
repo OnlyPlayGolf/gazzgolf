@@ -67,10 +67,6 @@ export interface GameConfiguration {
   teams?: TeamConfig[];
   teamRotation?: boolean;
   
-  // Handicaps
-  useHandicaps: boolean;
-  handicapAdjustments?: HandicapAdjustment[];
-  
   // Game settings
   mulligansPerPlayer?: number;
   gimmesEnabled?: boolean;
@@ -80,6 +76,9 @@ export interface GameConfiguration {
   
   // Mini-matches (for segmented games)
   miniMatches?: MiniMatch[];
+  
+  // Handicap adjustments
+  handicapAdjustments?: HandicapAdjustment[];
   
   // AI assumptions and notes
   assumptions: string[];

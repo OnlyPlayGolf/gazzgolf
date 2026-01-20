@@ -4,6 +4,7 @@ import { ArrowLeft, Info, Newspaper, List, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -226,6 +227,7 @@ export default function SpectateMatchPlay() {
 
           {/* Leaderboard/Status Tab */}
           <TabsContent value="leaderboard" className="mt-4 space-y-4">
+            <FadeSlide>
             <div className="grid grid-cols-2 gap-4">
               <Card className="p-4 text-center">
                 <p className="font-semibold text-blue-600">{game.player_1}</p>
@@ -258,10 +260,12 @@ export default function SpectateMatchPlay() {
                 </div>
               </Card>
             )}
+            </FadeSlide>
           </TabsContent>
 
           {/* Info Tab */}
           <TabsContent value="info" className="mt-4">
+            <FadeSlide>
             <Card>
               <CardHeader>
                 <CardTitle>Game Information</CardTitle>
@@ -279,16 +283,14 @@ export default function SpectateMatchPlay() {
                   <span className="text-muted-foreground">Player 2</span>
                   <span>{game.player_2}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Handicaps</span>
-                  <span>{game.use_handicaps ? "Enabled" : "Disabled"}</span>
-                </div>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
 
           {/* Feed Tab */}
           <TabsContent value="feed" className="mt-4 space-y-4">
+            <FadeSlide>
             {currentUserId && (
               <Card className="p-4">
                 <div className="flex gap-2">
@@ -335,10 +337,12 @@ export default function SpectateMatchPlay() {
                 </Card>
               ))
             )}
+            </FadeSlide>
           </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="mt-4">
+            <FadeSlide>
             <Card>
               <CardHeader>
                 <CardTitle>Game Settings</CardTitle>
@@ -349,6 +353,7 @@ export default function SpectateMatchPlay() {
                 </p>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
         </Tabs>
       </div>

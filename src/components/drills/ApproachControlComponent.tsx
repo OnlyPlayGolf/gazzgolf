@@ -327,10 +327,14 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
             <CardTitle>Shot #{currentShot} of 14</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
+            <div className="p-3 bg-muted/50 rounded-md text-center">
               <div className="text-sm text-muted-foreground">Distance</div>
-              <div className="text-xl font-bold text-primary">{currentShotInfo.distance}m</div>
-              <div className="text-sm font-medium text-foreground mt-1 capitalize">Target: {currentShotInfo.side} side</div>
+              <div className="text-xl font-bold text-foreground">
+                {currentShotInfo.distance}m
+              </div>
+              <div className="text-sm font-medium text-foreground mt-1 capitalize">
+                Target: {currentShotInfo.side} side
+              </div>
             </div>
             
             <div className="text-center">

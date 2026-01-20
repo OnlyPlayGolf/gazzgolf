@@ -120,7 +120,7 @@ export function MatchPlayScorecardView({
           <TableRow className="bg-primary">
             <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
             {nineHoles.map(hole => (
-              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+              <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                 {hole.hole_number}
               </TableHead>
             ))}
@@ -255,7 +255,6 @@ export function MatchPlayScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={courseHoles}
-              showNetRow={false}
             />
           ) : (
             <div className="border rounded-lg overflow-hidden">

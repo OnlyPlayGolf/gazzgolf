@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TeeSelector } from "@/components/TeeSelector";
-import { formatHandicap, parseHandicap } from "@/lib/utils";
 
 interface Player {
   odId: string;
@@ -31,14 +30,11 @@ export function SetupPlayerEditSheet({
   onSave,
 }: SetupPlayerEditSheetProps) {
   const [displayName, setDisplayName] = useState("");
-  const [handicap, setHandicap] = useState("");
   const [teeColor, setTeeColor] = useState("");
 
   useEffect(() => {
     if (player) {
       setDisplayName(player.displayName);
-      // Format handicap for display in input field
-      setHandicap(formatHandicap(player.handicap));
       setTeeColor(player.teeColor || "");
     }
   }, [player]);
@@ -51,7 +47,6 @@ export function SetupPlayerEditSheet({
       displayName: player.isTemporary || player.isCurrentUser
         ? (displayName.trim() || player.displayName)
         : player.displayName,
-      handicap: parseHandicap(handicap),
       teeColor: teeColor || player.teeColor,
     };
     
@@ -85,16 +80,6 @@ export function SetupPlayerEditSheet({
                 Only guest player names can be edited
               </p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="player-handicap">Handicap</Label>
-            <Input
-              id="player-handicap"
-              value={handicap}
-              onChange={(e) => setHandicap(e.target.value)}
-              placeholder="e.g. 15 or +2.4"
-            />
           </div>
 
           <div className="space-y-2">

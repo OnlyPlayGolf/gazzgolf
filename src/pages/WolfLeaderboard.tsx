@@ -261,16 +261,6 @@ export default function WolfLeaderboard() {
               </div>
             </div>
           </div>
-          
-          {/* Per-scorecard actions */}
-          <div className="px-4 pb-3">
-            <ScorecardActions
-              gameId={gameId!}
-              gameType="wolf"
-              scorecardPlayerId={`player_${player.num}`}
-              scorecardPlayerName={player.name}
-            />
-          </div>
         </div>
 
         {/* Scorecard Table - Only shown when expanded */}
@@ -283,7 +273,7 @@ export default function WolfLeaderboard() {
                   <TableRow className="bg-primary">
                     <TableHead className="text-center font-bold text-[10px] px-0 py-1 w-[44px] bg-primary text-primary-foreground">Hole</TableHead>
                     {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-primary-foreground">
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1 bg-primary text-white">
                         {hole.hole_number}
                       </TableHead>
                     ))}
@@ -494,6 +484,15 @@ export default function WolfLeaderboard() {
               </div>
             )}
 
+            {/* Scorecard Actions - Only shown when expanded */}
+            <div className="px-4 pb-3">
+              <ScorecardActions
+                gameId={gameId!}
+                gameType="wolf"
+                scorecardPlayerId={`player_${player.num}`}
+                scorecardPlayerName={player.name}
+              />
+            </div>
           </>
         )}
       </Card>
@@ -523,11 +522,6 @@ export default function WolfLeaderboard() {
         gameTitle={game.round_name || "Wolf"}
         courseName={game.course_name}
         pageTitle="Leaderboard"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Wolf Game"
       />
 
       <LeaderboardModeTabs

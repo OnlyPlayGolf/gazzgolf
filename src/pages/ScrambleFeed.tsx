@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
-import { Send } from "lucide-react";
+import { Send, ChevronRight } from "lucide-react";
+import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { GameHeader } from "@/components/GameHeader";
@@ -24,6 +26,8 @@ interface Comment {
     username: string | null;
     avatar_url: string | null;
   };
+  is_activity_item?: boolean;
+  scorecard_player_name?: string | null;
 }
 
 export default function ScrambleFeed() {
@@ -36,6 +40,8 @@ export default function ScrambleFeed() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [commentsSheetOpen, setCommentsSheetOpen] = useState(false);
+  const [selectedScorecardPlayerName, setSelectedScorecardPlayerName] = useState<string | null>(null);
 
   useEffect(() => {
     if (gameId) {
@@ -62,20 +68,25 @@ export default function ScrambleFeed() {
   const fetchComments = async () => {
     const { data } = await supabase
       .from('round_comments')
-      .select('*, hole_number')
+      .select('*, hole_number, is_activity_item, scorecard_player_name')
       .eq('game_id', gameId)
       .eq('game_type', 'scramble')
       .order('created_at', { ascending: false });
 
     if (data) {
+      // Filter: show activity items OR regular feed comments (exclude scorecard-thread comments that aren't activity items)
+      const filteredData = data.filter(c =>
+        c.is_activity_item || !c.scorecard_player_name
+      );
+
       // Fetch profiles for comments
-      const userIds = [...new Set(data.map(c => c.user_id))];
+      const userIds = [...new Set(filteredData.map(c => c.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, display_name, username, avatar_url')
         .in('id', userIds);
 
-      const commentsWithProfiles = data.map(comment => ({
+      const commentsWithProfiles = filteredData.map(comment => ({
         ...comment,
         profile: profiles?.find(p => p.id === comment.user_id)
       }));
@@ -143,11 +154,6 @@ export default function ScrambleFeed() {
         gameTitle={gameData?.round_name || "Scramble"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Scramble Game"
       />
 
       <div className="p-4 space-y-4">
@@ -189,7 +195,56 @@ export default function ScrambleFeed() {
           </div>
         ) : (
           <div className="space-y-3">
-            {comments.map((comment) => (
+            {comments.map((comment) => {
+              // Activity items (e.g., "X commented on Y's scorecard") - render as clickable
+              if (comment.is_activity_item && comment.scorecard_player_name) {
+                const commenterName = comment.profile?.display_name || comment.profile?.username || 'Unknown';
+                const activityHeader = `${commenterName} commented on ${comment.scorecard_player_name}'s scorecard`;
+                
+                let commentText = comment.content;
+                if (comment.content.includes("|||COMMENT_TEXT:")) {
+                  const parts = comment.content.split("|||COMMENT_TEXT:");
+                  commentText = parts[1]?.trim() || "";
+                } else if (comment.content.includes(" commented on ") && comment.content.includes("'s scorecard")) {
+                  commentText = "";
+                }
+                
+                return (
+                  <Card 
+                    key={comment.id} 
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      setSelectedScorecardPlayerName(comment.scorecard_player_name!);
+                      setCommentsSheetOpen(true);
+                    }}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={comment.profile?.avatar_url || undefined} />
+                          <AvatarFallback className="text-sm">
+                            {(comment.profile?.display_name || comment.profile?.username || 'U').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-2">
+                          <div className="inline-flex items-center gap-2 bg-muted/60 px-3 py-1.5 rounded-full">
+                            <span className="text-sm text-muted-foreground">{activityHeader}</span>
+                          </div>
+                          {commentText && (
+                            <p className="text-sm text-foreground">{commentText}</p>
+                          )}
+                          <span className="text-xs text-muted-foreground block">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 mt-2" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+
+              return (
               <Card key={comment.id}>
                 <CardContent className="p-3">
                   <div className="flex items-start gap-3">
@@ -215,12 +270,25 @@ export default function ScrambleFeed() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       <ScrambleBottomTabBar gameId={gameId!} />
+      
+      {/* Scorecard Comments Sheet */}
+      {selectedScorecardPlayerName && (
+        <ScorecardCommentsSheet
+          open={commentsSheetOpen}
+          onOpenChange={setCommentsSheetOpen}
+          gameId={gameId || ""}
+          gameType="scramble"
+          scorecardPlayerId=""
+          scorecardPlayerName={selectedScorecardPlayerName}
+        />
+      )}
     </div>
   );
 }

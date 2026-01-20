@@ -179,6 +179,11 @@ export function CopenhagenCompletionDialog({
       const scorecardJson = JSON.stringify({
         holeScores: holeScoresData,
         holePars: holeParsData,
+        courseHoles: courseHoles.map(h => ({
+          hole_number: h.hole_number,
+          par: h.par,
+          stroke_index: h.stroke_index ?? h.hole_number,
+        })),
       });
 
       // Create structured copenhagen scorecard marker

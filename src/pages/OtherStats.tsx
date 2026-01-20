@@ -77,15 +77,34 @@ export default function OtherStats() {
         proQuery = proQuery.gte('created_at', dateFilter);
       }
 
-      const { data: proRounds } = await proQuery;
+      const { data: allProRounds } = await proQuery;
 
-      if (!proRounds || proRounds.length === 0) {
+      if (!allProRounds || allProRounds.length === 0) {
         setStats(null);
         setLoading(false);
         return;
       }
 
-      const roundIds = proRounds.map(r => r.id);
+      // Filter out orphaned pro_stats_rounds (where external_round_id points to a deleted round)
+      const roundsWithExternalId = allProRounds.filter(pr => pr.external_round_id);
+      let validProRounds = allProRounds;
+      if (roundsWithExternalId.length > 0) {
+        const externalRoundIds = roundsWithExternalId.map(pr => pr.external_round_id!);
+        const { data: existingRounds } = await supabase
+          .from('rounds')
+          .select('id')
+          .in('id', externalRoundIds);
+        const existingRoundIds = new Set((existingRounds || []).map(r => r.id));
+        validProRounds = allProRounds.filter(pr => !pr.external_round_id || existingRoundIds.has(pr.external_round_id));
+      }
+
+      if (validProRounds.length === 0) {
+        setStats(null);
+        setLoading(false);
+        return;
+      }
+
+      const roundIds = validProRounds.map(r => r.id);
 
       const { data: holesData } = await supabase
         .from('pro_stats_holes')

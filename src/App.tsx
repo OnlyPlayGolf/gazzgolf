@@ -1,11 +1,10 @@
 import React, { useEffect } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { migrateStorageKeys } from "@/utils/storageManager";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Index from "./pages/Index";
 import DrillsCategories from "./pages/DrillsCategories";
 import CategoryDrills from "./pages/CategoryDrills";
@@ -152,6 +151,171 @@ import ScorecardScanner from "./pages/ScorecardScanner";
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
 
+const AnimatedAppRoutes = () => {
+  const location = useLocation();
+  const shouldReduceMotion = useReducedMotion();
+
+  const y = 10;
+  const transition = {
+    duration: 0.2,
+    ease: [0.22, 1, 0.36, 1],
+  } as const;
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={location.pathname}
+        className="min-h-[100dvh]"
+        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -y }}
+        transition={transition}
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Index />} />
+          <Route path="/practice" element={<Practice />} />
+          <Route path="/categories" element={<DrillsCategories />} />
+          <Route path="/drills" element={<DrillsCategories />} />
+          <Route path="/drills/:categoryId" element={<CategoryDrills />} />
+          <Route path="/drills/:drillId/detail" element={<DrillDetail />} />
+          <Route path="/levels" element={<LevelSelection />} />
+          <Route path="/levels/:difficulty" element={<Levels />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/user/:userId" element={<PublicProfile />} />
+          <Route path="/user/:userId/rounds" element={<FriendRounds />} />
+          <Route path="/add-friend/:userId" element={<AddFriendFromQR />} />
+          <Route path="/groups" element={<Groups />} />
+          <Route path="/profile-settings" element={<ProfileSettings />} />
+          <Route path="/performance-stats" element={<PerformanceStats />} />
+          <Route path="/statistics" element={<Statistics />} />
+          <Route path="/statistics/putting-detail" element={<PuttingStats />} />
+          <Route path="/statistics/approach-detail" element={<ApproachStats />} />
+          <Route path="/statistics/driving" element={<DrivingStats />} />
+          <Route path="/statistics/short-game-detail" element={<ShortGameStats />} />
+          <Route path="/statistics/other" element={<OtherStats />} />
+          <Route path="/statistics/scoring-sg" element={<ScoringStats />} />
+          <Route path="/statistics/:category" element={<StatDetail />} />
+          <Route path="/scorecard-scanner" element={<ScorecardScanner />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/leaderboards" element={<Leaderboards />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/account-membership" element={<AccountMembership />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/metrics" element={<SettingsMetrics />} />
+          <Route path="/settings/language" element={<SettingsLanguage />} />
+          <Route path="/settings/notifications" element={<SettingsNotifications />} />
+          <Route path="/settings/privacy" element={<SettingsPrivacy />} />
+          <Route path="/settings/preferences" element={<SettingsAppPreferences />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/feedback" element={<Feedback />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/friends" element={<Friends />} />
+          <Route path="/user-drills" element={<UserDrills />} />
+          <Route path="/create-drill" element={<CreateDrill />} />
+          <Route path="/run-drill/:drillId" element={<RunDrill />} />
+          <Route path="/drill-results/:drillId" element={<DrillResults />} />
+          <Route path="/drill-result/:resultId" element={<DrillResultDetail />} />
+          <Route path="/group/:groupId" element={<GroupDetail />} />
+          <Route path="/invite/:code" element={<AcceptInvite />} />
+          <Route path="/rounds" element={<Rounds />} />
+          <Route path="/rounds-play" element={<RoundsPlay />} />
+          <Route path="/stroke-play/how-to-play" element={<HowToPlayStrokePlay />} />
+          <Route path="/stroke-play/settings" element={<StrokePlaySettings />} />
+          <Route path="/stroke-play/setup" element={<StrokePlaySetup />} />
+          <Route path="/played-rounds" element={<PlayedRounds />} />
+          <Route path="/rounds/manage-players" element={<ManagePlayers />} />
+          <Route path="/rounds/setup" element={<RoundSetup />} />
+          <Route path="/rounds/:roundId/track" element={<RoundTracker />} />
+          <Route path="/rounds/:roundId/info" element={<RoundInfo />} />
+          <Route path="/rounds/:roundId/feed" element={<RoundFeed />} />
+          <Route path="/rounds/:roundId/leaderboard" element={<RoundLeaderboard />} />
+          <Route path="/rounds/:roundId/settings" element={<RoundSettings />} />
+          <Route path="/rounds/:roundId/stats" element={<HoleTracker />} />
+          <Route path="/rounds/:roundId/summary" element={<RoundSummary />} />
+          <Route path="/rounds/:roundId/detail" element={<RoundDetail />} />
+          <Route path="/rounds/:roundId" element={<RoundSummary />} />
+          <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
+          <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
+          <Route path="/rounds/:roundId/basic-track" element={<BasicStatsTracker />} />
+          <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
+          <Route path="/umbriago/how-to-play" element={<HowToPlayUmbriago />} />
+          <Route path="/umbriago/setup" element={<UmbriagioSetup />} />
+          <Route path="/umbriago/:gameId/play" element={<UmbriagioPlay />} />
+          <Route path="/umbriago/:gameId/info" element={<UmbriagioInfo />} />
+          <Route path="/umbriago/:gameId/feed" element={<UmbriagioFeed />} />
+          <Route path="/umbriago/:gameId/leaderboard" element={<UmbriagioLeaderboard />} />
+          <Route path="/umbriago/:gameId/settings" element={<UmbriagioSettings />} />
+          <Route path="/umbriago/:gameId/summary" element={<UmbriagioSummary />} />
+          <Route path="/wolf/how-to-play" element={<HowToPlayWolf />} />
+          <Route path="/wolf/setup" element={<WolfSetup />} />
+          <Route path="/wolf/:gameId/play" element={<WolfPlay />} />
+          <Route path="/wolf/:gameId/info" element={<WolfInfo />} />
+          <Route path="/wolf/:gameId/feed" element={<WolfFeed />} />
+          <Route path="/wolf/:gameId/leaderboard" element={<WolfLeaderboard />} />
+          <Route path="/wolf/:gameId/settings" element={<WolfSettings />} />
+          <Route path="/copenhagen/how-to-play" element={<HowToPlayCopenhagen />} />
+          <Route path="/copenhagen/setup" element={<CopenhagenSetup />} />
+          <Route path="/copenhagen/:gameId/play" element={<CopenhagenPlay />} />
+          <Route path="/copenhagen/:gameId/info" element={<CopenhagenInfo />} />
+          <Route path="/copenhagen/:gameId/feed" element={<CopenhagenFeed />} />
+          <Route path="/copenhagen/:gameId/leaderboard" element={<CopenhagenLeaderboard />} />
+          <Route path="/copenhagen/:gameId/settings" element={<CopenhagenSettings />} />
+          <Route path="/match-play/how-to-play" element={<HowToPlayMatchPlay />} />
+          <Route path="/match-play/setup" element={<MatchPlaySetup />} />
+          <Route path="/match-play/:gameId/play" element={<MatchPlayPlay />} />
+          <Route path="/match-play/:gameId/info" element={<MatchPlayInfo />} />
+          <Route path="/match-play/:gameId/feed" element={<MatchPlayFeed />} />
+          <Route path="/match-play/:gameId/leaderboard" element={<MatchPlayLeaderboard />} />
+          <Route path="/match-play/:gameId/settings" element={<MatchPlaySettings />} />
+          <Route path="/match-play/:gameId/summary" element={<MatchPlaySummary />} />
+          <Route path="/spectate/round/:roundId" element={<SpectateRound />} />
+          <Route path="/spectate/match-play/:gameId" element={<SpectateMatchPlay />} />
+          <Route path="/best-ball/how-to-play" element={<HowToPlayBestBall />} />
+          <Route path="/best-ball/setup" element={<BestBallSetup />} />
+          <Route path="/best-ball/:gameId/play" element={<BestBallPlay />} />
+          <Route path="/best-ball/:gameId/info" element={<BestBallInfo />} />
+          <Route path="/best-ball/:gameId/feed" element={<BestBallFeed />} />
+          <Route path="/best-ball/:gameId/leaderboard" element={<BestBallLeaderboard />} />
+          <Route path="/best-ball/:gameId/settings" element={<BestBallSettings />} />
+          <Route path="/best-ball/:gameId/summary" element={<BestBallSummary />} />
+          <Route path="/scramble/how-to-play" element={<HowToPlayScramble />} />
+          <Route path="/scramble/setup" element={<ScrambleSetup />} />
+          <Route path="/scramble/:gameId/play" element={<ScramblePlay />} />
+          <Route path="/scramble/:gameId/info" element={<ScrambleInfo />} />
+          <Route path="/scramble/:gameId/feed" element={<ScrambleFeed />} />
+          <Route path="/scramble/:gameId/leaderboard" element={<ScrambleLeaderboard />} />
+          <Route path="/scramble/:gameId/settings" element={<ScrambleSettings />} />
+          <Route path="/scramble/:gameId/summary" element={<ScrambleSummary />} />
+          <Route path="/skins/how-to-play" element={<HowToPlaySkins />} />
+          <Route path="/skins/setup" element={<SkinsSetup />} />
+          <Route path="/skins/:roundId/track" element={<SkinsTracker />} />
+          <Route path="/skins/:roundId/info" element={<SkinsInfo />} />
+          <Route path="/skins/:roundId/feed" element={<SkinsFeed />} />
+          <Route path="/skins/:roundId/leaderboard" element={<SkinsLeaderboard />} />
+          <Route path="/skins/:roundId/settings" element={<SkinsSettings />} />
+          <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
+          <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
+          <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />
+          <Route path="/drill/short-putting-test/*" element={<ShortPuttingDrill />} />
+          <Route path="/drill/jason-day-lag/*" element={<JasonDayLagDrill />} />
+          <Route path="/drill/8-ball-drill/*" element={<EightBallDrill />} />
+          <Route path="/drill/shot-shape-master/*" element={<ShotShapeMasterDrill />} />
+          <Route path="/drill/approach-control/*" element={<ApproachControlDrill />} />
+          <Route path="/drill/wedges-progression/*" element={<WedgesProgressionDrill />} />
+          <Route path="/drill/wedges-2-laps/*" element={<Wedges2LapsDrill />} />
+          <Route path="/drill/tw-9-windows/*" element={<TW9WindowsDrill />} />
+          <Route path="/drill/driver-control/*" element={<DriverControlDrill />} />
+          <Route path="/drill/up-downs-test/*" element={<UpDownsTestDrill />} />
+          <Route path="/drill/easy-chip/*" element={<EasyChipDrill />} />
+          <Route path="/game-settings/:gameType/:gameId" element={<GameSettingsDetail />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 const App = () => {
   useEffect(() => {
     // Run storage migration on app startup
@@ -161,150 +325,9 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
         <div className="relative">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/practice" element={<Practice />} />
-            <Route path="/categories" element={<DrillsCategories />} />
-            <Route path="/drills" element={<DrillsCategories />} />
-            <Route path="/drills/:categoryId" element={<CategoryDrills />} />
-            <Route path="/drills/:drillId/detail" element={<DrillDetail />} />
-            <Route path="/levels" element={<LevelSelection />} />
-            <Route path="/levels/:difficulty" element={<Levels />} />
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/user/:userId" element={<PublicProfile />} />
-            <Route path="/user/:userId/rounds" element={<FriendRounds />} />
-            <Route path="/add-friend/:userId" element={<AddFriendFromQR />} />
-            <Route path="/groups" element={<Groups />} />
-            <Route path="/profile-settings" element={<ProfileSettings />} />
-            <Route path="/performance-stats" element={<PerformanceStats />} />
-            <Route path="/statistics" element={<Statistics />} />
-            <Route path="/statistics/putting-detail" element={<PuttingStats />} />
-            <Route path="/statistics/approach-detail" element={<ApproachStats />} />
-            <Route path="/statistics/driving" element={<DrivingStats />} />
-            <Route path="/statistics/short-game-detail" element={<ShortGameStats />} />
-            <Route path="/statistics/other" element={<OtherStats />} />
-            <Route path="/statistics/scoring-sg" element={<ScoringStats />} />
-            <Route path="/statistics/:category" element={<StatDetail />} />
-            <Route path="/scorecard-scanner" element={<ScorecardScanner />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/leaderboards" element={<Leaderboards />} />
-            <Route path="/menu" element={<Menu />} />
-            <Route path="/account-membership" element={<AccountMembership />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/settings/metrics" element={<SettingsMetrics />} />
-            <Route path="/settings/language" element={<SettingsLanguage />} />
-            <Route path="/settings/notifications" element={<SettingsNotifications />} />
-            <Route path="/settings/privacy" element={<SettingsPrivacy />} />
-            <Route path="/settings/preferences" element={<SettingsAppPreferences />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/feedback" element={<Feedback />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/friends" element={<Friends />} />
-            <Route path="/user-drills" element={<UserDrills />} />
-            <Route path="/create-drill" element={<CreateDrill />} />
-            <Route path="/run-drill/:drillId" element={<RunDrill />} />
-            <Route path="/drill-results/:drillId" element={<DrillResults />} />
-            <Route path="/drill-result/:resultId" element={<DrillResultDetail />} />
-            <Route path="/group/:groupId" element={<GroupDetail />} />
-            <Route path="/invite/:code" element={<AcceptInvite />} />
-            <Route path="/rounds" element={<Rounds />} />
-            <Route path="/rounds-play" element={<RoundsPlay />} />
-            <Route path="/stroke-play/how-to-play" element={<HowToPlayStrokePlay />} />
-            <Route path="/stroke-play/settings" element={<StrokePlaySettings />} />
-            <Route path="/stroke-play/setup" element={<StrokePlaySetup />} />
-            <Route path="/played-rounds" element={<PlayedRounds />} />
-            <Route path="/rounds/manage-players" element={<ManagePlayers />} />
-            <Route path="/rounds/setup" element={<RoundSetup />} />
-            <Route path="/rounds/:roundId/track" element={<RoundTracker />} />
-            <Route path="/rounds/:roundId/info" element={<RoundInfo />} />
-            <Route path="/rounds/:roundId/feed" element={<RoundFeed />} />
-            <Route path="/rounds/:roundId/leaderboard" element={<RoundLeaderboard />} />
-            <Route path="/rounds/:roundId/settings" element={<RoundSettings />} />
-            <Route path="/rounds/:roundId/stats" element={<HoleTracker />} />
-            <Route path="/rounds/:roundId/summary" element={<RoundSummary />} />
-            <Route path="/rounds/:roundId/detail" element={<RoundDetail />} />
-            <Route path="/rounds/:roundId" element={<RoundSummary />} />
-            <Route path="/rounds/pro-setup" element={<ProRoundSetup />} />
-            <Route path="/rounds/:roundId/pro-track" element={<ProHoleTracker />} />
-            <Route path="/rounds/:roundId/basic-track" element={<BasicStatsTracker />} />
-            <Route path="/rounds/:roundId/pro-summary" element={<ProRoundSummary />} />
-            <Route path="/umbriago/how-to-play" element={<HowToPlayUmbriago />} />
-            <Route path="/umbriago/setup" element={<UmbriagioSetup />} />
-            <Route path="/umbriago/:gameId/play" element={<UmbriagioPlay />} />
-            <Route path="/umbriago/:gameId/info" element={<UmbriagioInfo />} />
-            <Route path="/umbriago/:gameId/feed" element={<UmbriagioFeed />} />
-            <Route path="/umbriago/:gameId/leaderboard" element={<UmbriagioLeaderboard />} />
-            <Route path="/umbriago/:gameId/settings" element={<UmbriagioSettings />} />
-            <Route path="/umbriago/:gameId/summary" element={<UmbriagioSummary />} />
-            <Route path="/wolf/how-to-play" element={<HowToPlayWolf />} />
-            <Route path="/wolf/setup" element={<WolfSetup />} />
-            <Route path="/wolf/:gameId/play" element={<WolfPlay />} />
-            <Route path="/wolf/:gameId/info" element={<WolfInfo />} />
-            <Route path="/wolf/:gameId/feed" element={<WolfFeed />} />
-            <Route path="/wolf/:gameId/leaderboard" element={<WolfLeaderboard />} />
-            <Route path="/wolf/:gameId/settings" element={<WolfSettings />} />
-            <Route path="/copenhagen/how-to-play" element={<HowToPlayCopenhagen />} />
-            <Route path="/copenhagen/setup" element={<CopenhagenSetup />} />
-            <Route path="/copenhagen/:gameId/play" element={<CopenhagenPlay />} />
-            <Route path="/copenhagen/:gameId/info" element={<CopenhagenInfo />} />
-            <Route path="/copenhagen/:gameId/feed" element={<CopenhagenFeed />} />
-            <Route path="/copenhagen/:gameId/leaderboard" element={<CopenhagenLeaderboard />} />
-            <Route path="/copenhagen/:gameId/settings" element={<CopenhagenSettings />} />
-            <Route path="/match-play/how-to-play" element={<HowToPlayMatchPlay />} />
-            <Route path="/match-play/setup" element={<MatchPlaySetup />} />
-            <Route path="/match-play/:gameId/play" element={<MatchPlayPlay />} />
-            <Route path="/match-play/:gameId/info" element={<MatchPlayInfo />} />
-            <Route path="/match-play/:gameId/feed" element={<MatchPlayFeed />} />
-            <Route path="/match-play/:gameId/leaderboard" element={<MatchPlayLeaderboard />} />
-            <Route path="/match-play/:gameId/settings" element={<MatchPlaySettings />} />
-            <Route path="/match-play/:gameId/summary" element={<MatchPlaySummary />} />
-            <Route path="/spectate/round/:roundId" element={<SpectateRound />} />
-            <Route path="/spectate/match-play/:gameId" element={<SpectateMatchPlay />} />
-            <Route path="/best-ball/how-to-play" element={<HowToPlayBestBall />} />
-            <Route path="/best-ball/setup" element={<BestBallSetup />} />
-            <Route path="/best-ball/:gameId/play" element={<BestBallPlay />} />
-            <Route path="/best-ball/:gameId/info" element={<BestBallInfo />} />
-            <Route path="/best-ball/:gameId/feed" element={<BestBallFeed />} />
-            <Route path="/best-ball/:gameId/leaderboard" element={<BestBallLeaderboard />} />
-            <Route path="/best-ball/:gameId/settings" element={<BestBallSettings />} />
-            <Route path="/best-ball/:gameId/summary" element={<BestBallSummary />} />
-            <Route path="/scramble/how-to-play" element={<HowToPlayScramble />} />
-            <Route path="/scramble/setup" element={<ScrambleSetup />} />
-            <Route path="/scramble/:gameId/play" element={<ScramblePlay />} />
-            <Route path="/scramble/:gameId/info" element={<ScrambleInfo />} />
-            <Route path="/scramble/:gameId/feed" element={<ScrambleFeed />} />
-            <Route path="/scramble/:gameId/leaderboard" element={<ScrambleLeaderboard />} />
-            <Route path="/scramble/:gameId/settings" element={<ScrambleSettings />} />
-            <Route path="/scramble/:gameId/summary" element={<ScrambleSummary />} />
-            <Route path="/skins/how-to-play" element={<HowToPlaySkins />} />
-            <Route path="/skins/setup" element={<SkinsSetup />} />
-            <Route path="/skins/:roundId/track" element={<SkinsTracker />} />
-            <Route path="/skins/:roundId/info" element={<SkinsInfo />} />
-            <Route path="/skins/:roundId/feed" element={<SkinsFeed />} />
-            <Route path="/skins/:roundId/leaderboard" element={<SkinsLeaderboard />} />
-            <Route path="/skins/:roundId/settings" element={<SkinsSettings />} />
-            <Route path="/drill/aggressive-putting/*" element={<AggressivePuttingDrill />} />
-            <Route path="/drill/pga-tour-18/*" element={<PGATour18Drill />} />
-            <Route path="/drill/up-down-putting/*" element={<UpDownPuttingDrill />} />
-            <Route path="/drill/short-putting-test/*" element={<ShortPuttingDrill />} />
-            <Route path="/drill/jason-day-lag/*" element={<JasonDayLagDrill />} />
-            <Route path="/drill/8-ball-drill/*" element={<EightBallDrill />} />
-            <Route path="/drill/shot-shape-master/*" element={<ShotShapeMasterDrill />} />
-            <Route path="/drill/approach-control/*" element={<ApproachControlDrill />} />
-            <Route path="/drill/wedges-progression/*" element={<WedgesProgressionDrill />} />
-            <Route path="/drill/wedges-2-laps/*" element={<Wedges2LapsDrill />} />
-            <Route path="/drill/tw-9-windows/*" element={<TW9WindowsDrill />} />
-            <Route path="/drill/driver-control/*" element={<DriverControlDrill />} />
-            <Route path="/drill/up-downs-test/*" element={<UpDownsTestDrill />} />
-            <Route path="/drill/easy-chip/*" element={<EasyChipDrill />} />
-            <Route path="/game-settings/:gameType/:gameId" element={<GameSettingsDetail />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatedAppRoutes />
           <BottomTabBar />
         </div>
       </BrowserRouter>

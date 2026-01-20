@@ -15,8 +15,10 @@ export const BottomTabBar = () => {
   const navigate = useNavigate();
 
   // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, umbriago, wolf, copenhagen, match play, scramble, skins, and game settings detail
+  const isBasicStatsAdd = /^\/rounds\/[^/]+\/basic-track$/.test(location.pathname);
+  const isAddStatsEntry = location.pathname === '/rounds/pro-setup';
   const hideTabBar = (
-    (location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds') ||
+    ((location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds') && !isBasicStatsAdd && !isAddStatsEntry) ||
     location.pathname.startsWith('/drill/') ||
     location.pathname.startsWith('/umbriago/') ||
     location.pathname.startsWith('/wolf/') ||

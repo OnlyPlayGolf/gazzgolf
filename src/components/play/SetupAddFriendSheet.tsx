@@ -6,14 +6,14 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, Search, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { cn, parseHandicap, formatHandicap } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { DEFAULT_MEN_TEE } from "@/components/TeeSelector";
 
 interface Friend {
   id: string;
   display_name: string | null;
   username: string | null;
-  handicap: string | null;
+  handicap?: string | null;
   avatar_url: string | null;
 }
 
@@ -116,7 +116,7 @@ export function SetupAddFriendSheet({
       if (friendIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, display_name, username, handicap, avatar_url')
+          .select('id, display_name, username, avatar_url')
           .in('id', friendIds);
 
         if (profiles) {
@@ -136,13 +136,16 @@ export function SetupAddFriendSheet({
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+ wille
   const handleSelectFriend = (friend: { id: string; display_name: string | null; username: string | null; handicap?: string | null }) => {
     const handicapValue = parseHandicap(friend.handicap ?? null);
     
+
+  const handleSelectFriend = (friend: Friend) => {
+ main
     const player: Player = {
       odId: friend.id,
       displayName: friend.display_name || friend.username || "Player",
-      handicap: handicapValue,
       teeColor: defaultTee,
       isTemporary: false,
     };
@@ -187,6 +190,7 @@ export function SetupAddFriendSheet({
               </div>
             ) : (
               <div className="space-y-2">
+ wille
                 {(searchQuery.trim()
                   ? searchResults.map((p) => ({
                       id: p.id,
@@ -197,6 +201,9 @@ export function SetupAddFriendSheet({
                   : filteredFriends
                 ).map((friend) => {
                   const handicapValue = parseHandicap((friend as any).handicap ?? null);
+
+                {filteredFriends.map((friend) => {
+ main
                   return (
                     <div
                       key={friend.id}
@@ -210,11 +217,6 @@ export function SetupAddFriendSheet({
                         <div className="font-medium truncate">
                           {friend.display_name || friend.username}
                         </div>
-                        {handicapValue !== undefined && (
-                          <div className="text-sm text-muted-foreground">
-                            HCP: {formatHandicap(handicapValue)}
-                          </div>
-                        )}
                       </div>
                       <Button variant="ghost" size="sm" className="flex-shrink-0">
                         <Check size={16} />

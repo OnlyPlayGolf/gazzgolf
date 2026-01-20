@@ -27,7 +27,7 @@ interface WolfHoleData {
 interface CourseHole {
   hole_number: number;
   par: number;
-  stroke_index: number;
+  stroke_index?: number;
 }
 
 interface WolfScorecardViewProps {
@@ -115,7 +115,7 @@ export function WolfScorecardView({
             <TableRow className="bg-primary">
               <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
               {nineHoles.map(hole => (
-                <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                   {hole.hole_number}
                 </TableHead>
               ))}
@@ -267,7 +267,6 @@ export function WolfScorecardView({
             <StrokePlayScorecardView
               players={strokePlayPlayers}
               courseHoles={effectiveCourseHoles}
-              showNetRow={false}
             />
           ) : (
             renderWolfScorecard()

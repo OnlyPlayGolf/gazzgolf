@@ -1,13 +1,5 @@
-import { TopNavBar } from "@/components/TopNavBar";
 import DrillLeaderboard from "@/components/DrillLeaderboard";
 
 export default function ApproachControlLeaderboard() {
-  return (
-    <div className="pb-20 min-h-screen bg-background">
-      <TopNavBar />
-      <div className="p-4 pt-20">
-        <DrillLeaderboard drillId="approach-control" drillName="Approach Control" />
-      </div>
-    </div>
-  );
+  return <DrillLeaderboard drillId="approach-control" drillName="Approach Control" />;
 }

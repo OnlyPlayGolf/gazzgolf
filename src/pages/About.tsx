@@ -33,7 +33,7 @@ const About = () => {
                 <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-primary flex items-center justify-center">
                   <span className="text-3xl font-bold text-primary-foreground">GG</span>
                 </div>
-                <h2 className="text-2xl font-bold text-foreground">Gazz Golf</h2>
+                <h2 className="text-2xl font-bold text-foreground">OnlyPlay Golf</h2>
                 <p className="text-muted-foreground">Version {appVersion}</p>
               </div>
               
@@ -125,7 +125,7 @@ const About = () => {
                 Made with <Heart className="h-3 w-3 inline text-destructive" /> for golfers everywhere
               </p>
               <p className="text-center text-xs text-muted-foreground mt-2">
-                © 2024 Gazz Golf. All rights reserved.
+                © 2024 OnlyPlay Golf. All rights reserved.
               </p>
             </CardContent>
           </Card>

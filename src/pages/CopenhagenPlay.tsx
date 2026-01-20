@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useGameScoring, GameScoringConfig } from "@/hooks/useGameScoring";
 import { CopenhagenGame, CopenhagenHole } from "@/types/copenhagen";
 import { CopenhagenBottomTabBar } from "@/components/CopenhagenBottomTabBar";
-import { calculateCopenhagenPoints, calculateNetScore, normalizePoints } from "@/utils/copenhagenScoring";
+import { calculateCopenhagenPoints, normalizePoints } from "@/utils/copenhagenScoring";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,16 +14,6 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface CopenhagenScores {
   player1: number;
@@ -56,16 +46,10 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
   }),
   
   buildHoleData: ({ gameId, holeNumber, par, strokeIndex, scores, previousHoles, game }) => {
-    const netScores = {
-      player1: calculateNetScore(scores.player1, game.use_handicaps ? game.player_1_handicap : null, strokeIndex || 1),
-      player2: calculateNetScore(scores.player2, game.use_handicaps ? game.player_2_handicap : null, strokeIndex || 1),
-      player3: calculateNetScore(scores.player3, game.use_handicaps ? game.player_3_handicap : null, strokeIndex || 1),
-    };
-
     const playerScores = [
-      { grossScore: scores.player1, netScore: netScores.player1, playerIndex: 1 },
-      { grossScore: scores.player2, netScore: netScores.player2, playerIndex: 2 },
-      { grossScore: scores.player3, netScore: netScores.player3, playerIndex: 3 },
+      { grossScore: scores.player1, netScore: scores.player1, playerIndex: 1 },
+      { grossScore: scores.player2, netScore: scores.player2, playerIndex: 2 },
+      { grossScore: scores.player3, netScore: scores.player3, playerIndex: 3 },
     ];
 
     const result = calculateCopenhagenPoints(playerScores, par);
@@ -82,9 +66,9 @@ const createCopenhagenConfig = (gameId: string): GameScoringConfig<CopenhagenGam
       player_1_gross_score: scores.player1,
       player_2_gross_score: scores.player2,
       player_3_gross_score: scores.player3,
-      player_1_net_score: netScores.player1,
-      player_2_net_score: netScores.player2,
-      player_3_net_score: netScores.player3,
+      player_1_net_score: scores.player1,
+      player_2_net_score: scores.player2,
+      player_3_net_score: scores.player3,
       player_1_hole_points: result.player1Points,
       player_2_hole_points: result.player2Points,
       player_3_hole_points: result.player3Points,
@@ -125,7 +109,6 @@ export default function CopenhagenPlay() {
     }
   }, [isSpectator, spectatorLoading, gameId, navigate]);
   
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<1 | 2 | 3 | null>(null);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [pendingAutoAdvance, setPendingAutoAdvance] = useState(false);
@@ -160,16 +143,6 @@ export default function CopenhagenPlay() {
   };
   const holeDistance = getHoleDistance();
 
-  // Show stats mode dialog on first load if not set
-  useEffect(() => {
-    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
-      const hasShownDialog = sessionStorage.getItem(`copenhagenStatsModeShown_${gameId}`);
-      if (!hasShownDialog) {
-        setShowStatsModeDialog(true);
-        sessionStorage.setItem(`copenhagenStatsModeShown_${gameId}`, 'true');
-      }
-    }
-  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   // Load mulligan settings on mount
   useEffect(() => {
@@ -363,7 +336,7 @@ export default function CopenhagenPlay() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/rounds-play")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -505,38 +478,12 @@ export default function CopenhagenPlay() {
 
       {gameId && !spectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
 
-      {/* Exit Dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={() => {
-              setShowExitDialog(false);
-              navigate("/rounds-play");
-            }}>
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => deleteGame()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Stats Mode Dialog */}
       <PlayerStatsModeDialog
         open={showStatsModeDialog}
         onOpenChange={setShowStatsModeDialog}
         onSelect={setStatsMode}
+        currentMode={statsMode}
         saving={statsModeSaving}
       />
 

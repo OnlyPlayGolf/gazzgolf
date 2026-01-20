@@ -19,6 +19,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
+ wille
 import { hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
@@ -33,18 +34,26 @@ interface FriendOnCourseData {
   createdAt: string;
 }
 
+import { OngoingRoundsSection } from "@/components/OngoingRoundsSection";
+import { useHomeProfile } from "@/hooks/useHomeProfile";
+import { useFriendsOnCourse, FriendOnCourseData } from "@/hooks/useFriendsOnCourse";
+import { useOngoingGames } from "@/hooks/useOngoingGames";
+import { useKeyInsights } from "@/hooks/useKeyInsights";
+import { useFeedPosts } from "@/hooks/useFeedPosts";
+ main
+
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
-  const [friendsCount, setFriendsCount] = useState(0);
-  const [friendsAvatars, setFriendsAvatars] = useState<any[]>([]);
-  const [friendsOnCourse, setFriendsOnCourse] = useState<FriendOnCourseData[]>([]);
-  const [friendsActivity, setFriendsActivity] = useState<any[]>([]);
-  const [friendsPosts, setFriendsPosts] = useState<any[]>([]);
+  const [postsToShow, setPostsToShow] = useState(10);
+
+  // Progressive loading hooks - each section manages its own loading state
+  const { profile, loading: profileLoading } = useHomeProfile(user);
+  const { friendsOnCourse, loading: friendsOnCourseLoading } = useFriendsOnCourse(user);
+  const { ongoingGames, loading: ongoingGamesLoading, refresh: refreshOngoingGames } = useOngoingGames(user);
+  const { performanceStats, loading: keyInsightsLoading } = useKeyInsights(user);
+  const { friendsPosts, loading: feedPostsLoading, refresh: refreshFeedPosts } = useFeedPosts(user);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -62,6 +71,7 @@ const Index = () => {
 
   useEffect(() => {
     if (user) {
+ wille
       loadUserData();
       void (async () => {
         await hydrateLevelsProgressFromDB();
@@ -69,8 +79,11 @@ const Index = () => {
       })();
     } else {
       setLoading(false);
+
+      loadCurrentLevel();
+ main
     }
-  }, [user]);
+  }, [user?.id]);
 
   const loadCurrentLevel = () => {
     const levels = getLevelsWithProgress();
@@ -78,275 +91,9 @@ const Index = () => {
     if (next) setCurrentLevelId(next.id);
   };
 
-  const loadUserData = async () => {
-    if (!user) return;
-    
-    try {
-      setLoading(true);
-      
-      // Load profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      setProfile(profileData);
-
-      // Load friends count and avatars
-      const { data: friendsData } = await supabase
-        .from('friendships')
-        .select('user_a, user_b, requester, addressee')
-        .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
-        .eq('status', 'accepted');
-
-      if (friendsData && friendsData.length > 0) {
-        setFriendsCount(friendsData.length);
-        
-        // Get friend user IDs
-        const friendIds = friendsData.map(f => 
-          f.user_a === user.id ? f.user_b : f.user_a
-        ).slice(0, 3); // Only get first 3 for avatars
-
-        // Load friend profiles
-        const { data: friendProfiles } = await supabase
-          .from('profiles')
-          .select('id, avatar_url, display_name, username')
-          .in('id', friendIds);
-
-        setFriendsAvatars(friendProfiles || []);
-      } else {
-        setFriendsCount(0);
-        setFriendsAvatars([]);
-      }
-
-      // Load friends' recent activity and posts
-      if (friendsData && friendsData.length > 0) {
-        const friendIds = friendsData.map(f => 
-          f.user_a === user.id ? f.user_b : f.user_a
-        );
-
-        // Get friends' posts (and own posts)
-        const { data: posts } = await supabase
-          .from('posts')
-          .select(`
-            *,
-            profile:user_id (
-              display_name,
-              username,
-              avatar_url
-            )
-          `)
-          .or(`user_id.in.(${[user.id, ...friendIds].join(',')}),user_id.eq.${user.id}`)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        if (posts) {
-          setFriendsPosts(posts);
-        }
-
-        // Get friends' recent rounds
-        const { data: friendRounds } = await supabase
-          .from('rounds')
-          .select('id, user_id, course_name, date_played, created_at')
-          .in('user_id', friendIds)
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        if (friendRounds) {
-          // Get friend profiles and round summaries
-          const activityWithDetails = await Promise.all(
-            friendRounds.map(async (round) => {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('display_name, username, avatar_url')
-                .eq('id', round.user_id)
-                .single();
-
-              const { data: summary } = await supabase
-                .from('round_summaries')
-                .select('total_score, total_par')
-                .eq('round_id', round.id)
-                .maybeSingle();
-
-              return {
-                ...round,
-                profile,
-                summary
-              };
-            })
-          );
-
-          setFriendsActivity(activityWithDetails);
-        }
-
-        // Fetch friends' games from last 12 hours for "Friends on Course"
-        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-        const friendsOnCourseData: FriendOnCourseData[] = [];
-
-        // Fetch all game types from friends in parallel
-        const [
-          { data: friendRoundsLive },
-          { data: friendCopenhagen },
-          { data: friendSkins },
-          { data: friendBestBall },
-          { data: friendScramble },
-          { data: friendWolf },
-          { data: friendUmbriago },
-          { data: friendMatchPlay }
-        ] = await Promise.all([
-          supabase.from('rounds').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-          supabase.from('copenhagen_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-          supabase.from('skins_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-          supabase.from('best_ball_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-          supabase.from('scramble_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, teams').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-          supabase.from('wolf_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-          supabase.from('umbriago_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-          supabase.from('match_play_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
-        ]);
-
-        // Collect all games with their owner user IDs
-        const allGames: { gameId: string; gameType: GameType; userId: string; courseName: string; createdAt: string }[] = [];
-
-        // Process rounds
-        for (const round of friendRoundsLive || []) {
-          allGames.push({
-            gameId: round.id,
-            gameType: 'round',
-            userId: round.user_id,
-            courseName: round.course_name,
-            createdAt: round.created_at,
-          });
-        }
-
-        // Process Copenhagen games
-        for (const game of friendCopenhagen || []) {
-          allGames.push({
-            gameId: game.id,
-            gameType: 'copenhagen',
-            userId: game.user_id,
-            courseName: game.course_name,
-            createdAt: game.created_at,
-          });
-        }
-
-        // Process Skins games
-        for (const game of friendSkins || []) {
-          allGames.push({
-            gameId: game.id,
-            gameType: 'skins',
-            userId: game.user_id,
-            courseName: game.course_name,
-            createdAt: game.created_at,
-          });
-        }
-
-        // Process Best Ball games
-        for (const game of friendBestBall || []) {
-          allGames.push({
-            gameId: game.id,
-            gameType: 'best_ball',
-            userId: game.user_id,
-            courseName: game.course_name,
-            createdAt: game.created_at,
-          });
-        }
-
-        // Process Scramble games
-        for (const game of friendScramble || []) {
-          allGames.push({
-            gameId: game.id,
-            gameType: 'scramble',
-            userId: game.user_id,
-            courseName: game.course_name,
-            createdAt: game.created_at,
-          });
-        }
-
-        // Process Wolf games
-        for (const game of friendWolf || []) {
-          allGames.push({
-            gameId: game.id,
-            gameType: 'wolf',
-            userId: game.user_id,
-            courseName: game.course_name,
-            createdAt: game.created_at,
-          });
-        }
-
-        // Process Umbriago games
-        for (const game of friendUmbriago || []) {
-          allGames.push({
-            gameId: game.id,
-            gameType: 'umbriago',
-            userId: game.user_id,
-            courseName: game.course_name,
-            createdAt: game.created_at,
-          });
-        }
-
-        // Process Match Play games
-        for (const game of friendMatchPlay || []) {
-          allGames.push({
-            gameId: game.id,
-            gameType: 'match_play',
-            userId: game.user_id,
-            courseName: game.course_name,
-            createdAt: game.created_at,
-          });
-        }
-
-        // Collect unique friend user IDs on course
-        const uniqueFriendIds = [...new Set(allGames.map(g => g.userId))];
-
-        // Fetch profiles for all friends on course
-        if (uniqueFriendIds.length > 0) {
-          const { data: onCourseProfiles } = await supabase
-            .from('profiles')
-            .select('id, display_name, username, avatar_url')
-            .in('id', uniqueFriendIds);
-
-          const profileMap = new Map(
-            (onCourseProfiles || []).map(p => [p.id, p])
-          );
-
-          // Create FriendOnCourseData entries
-          for (const game of allGames) {
-            const profile = profileMap.get(game.userId);
-            const displayName = profile?.display_name || profile?.username || 'Friend';
-            const firstName = displayName.split(' ')[0];
-            
-            friendsOnCourseData.push({
-              friendId: game.userId,
-              friendName: firstName,
-              friendAvatar: profile?.avatar_url || null,
-              gameId: game.gameId,
-              gameType: game.gameType,
-              courseName: game.courseName,
-              createdAt: game.createdAt,
-            });
-          }
-        }
-
-        // Sort by most recently started (createdAt desc)
-        friendsOnCourseData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setFriendsOnCourse(friendsOnCourseData);
-      }
-
-      // Load recent activity (rounds)
-      const { data: recentRounds } = await supabase
-        .from('rounds')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date_played', { ascending: false })
-        .limit(3);
-
-      setRecentActivity(recentRounds || []);
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handlePostCreated = () => {
+    // Refresh feed posts when a new post is created
+    refreshFeedPosts();
   };
 
   if (!user) {
@@ -505,6 +252,7 @@ const Index = () => {
           </div>
         )}
 
+ wille
         {/* Performance Snapshot */}
         <PerformanceSnapshot userId={user.id} />
 
@@ -513,58 +261,37 @@ const Index = () => {
 
         {/* Friends Activity Feed */}
         {!loading && (friendsPosts.length > 0 || friendsActivity.length > 0) ? (
+
+        {/* Post Box - renders when profile is loaded */}
+        {!profileLoading && user && (
+          <PostBox profile={profile} userId={user.id} onPostCreated={handlePostCreated} />
+        )}
+
+        {/* Ongoing Rounds Section - renders when data is available */}
+        {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={refreshOngoingGames} />}
+
+        {/* Performance Snapshot - always renders (handles loading internally) */}
+        <PerformanceSnapshot performanceStats={performanceStats} />
+
+        {/* Friends Activity Feed - renders when data is available */}
+        {!feedPostsLoading && user && friendsPosts.length > 0 && (
+ main
           <div className="space-y-4">
-            
             {/* Posts */}
-            {friendsPosts.map((post) => (
-              <FeedPost key={post.id} post={post} currentUserId={user.id} onPostDeleted={loadUserData} />
+            {friendsPosts.slice(0, postsToShow).map((post) => (
+              <FeedPost key={post.id} post={post} currentUserId={user.id} onPostDeleted={refreshFeedPosts} />
             ))}
-
-            {/* Round Activity */}
-            {friendsActivity.length > 0 && (
-              <Card className="rounded-none border-x-0">
-                <CardContent className="space-y-3 pt-6">
-                  {friendsActivity.map((activity) => {
-                    const friendName = activity.profile?.display_name || activity.profile?.username || 'A friend';
-                    const scoreDiff = activity.summary?.total_score && activity.summary?.total_par 
-                      ? activity.summary.total_score - activity.summary.total_par 
-                      : null;
-                    const scoreDisplay = scoreDiff === null 
-                      ? '' 
-                      : scoreDiff === 0 
-                      ? ' (E)' 
-                      : scoreDiff > 0 
-                      ? ` (+${scoreDiff})` 
-                      : ` (${scoreDiff})`;
-
-                    return (
-                      <div
-                        key={activity.id}
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                        onClick={() => navigate(`/rounds/${activity.id}/summary`)}
-                      >
-                        <ProfilePhoto
-                          src={activity.profile?.avatar_url}
-                          alt={friendName}
-                          fallback={friendName}
-                          size="md"
-                          className="border border-border"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground">
-                            <span className="font-semibold">{friendName}</span> completed a round
-                            {scoreDisplay && <span className="text-primary font-semibold">{scoreDisplay}</span>}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {activity.course_name} • {new Date(activity.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
+            {/* View More Button */}
+            {friendsPosts.length > postsToShow && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setPostsToShow(prev => prev + 10)}
+                  className="w-full max-w-md"
+                >
+                  View More
+                </Button>
+              </div>
             )}
           </div>
         ) : !loading ? (

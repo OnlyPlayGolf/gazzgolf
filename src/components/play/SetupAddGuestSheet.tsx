@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DEFAULT_MEN_TEE } from "@/components/TeeSelector";
-import { parseHandicap } from "@/lib/utils";
 
 interface Player {
   odId: string;
@@ -29,7 +28,6 @@ export function SetupAddGuestSheet({
 }: SetupAddGuestSheetProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [handicap, setHandicap] = useState("");
 
   const handleAdd = () => {
     if (!firstName.trim()) return;
@@ -41,7 +39,6 @@ export function SetupAddGuestSheet({
     const player: Player = {
       odId: `temp_${Date.now()}`,
       displayName,
-      handicap: parseHandicap(handicap),
       teeColor: defaultTee,
       isTemporary: true,
     };
@@ -49,7 +46,6 @@ export function SetupAddGuestSheet({
     onAddPlayer(player);
     setFirstName("");
     setLastName("");
-    setHandicap("");
     onClose();
   };
 
@@ -78,16 +74,6 @@ export function SetupAddGuestSheet({
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Enter last name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="guest-handicap">Handicap (optional)</Label>
-            <Input
-              id="guest-handicap"
-              value={handicap}
-              onChange={(e) => setHandicap(e.target.value)}
-              placeholder="e.g. 15 or +2.4"
             />
           </div>
 

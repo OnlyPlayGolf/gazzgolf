@@ -323,7 +323,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
                     variant="outline"
                     className="w-full"
                   >
-                    Reset Drill
+                    Reset
                   </Button>
                 </div>
               </CardContent>

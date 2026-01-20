@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Bell, MessageCircle, ArrowLeft, Menu, Trophy, TrendingUp, Users, Zap, Settings, Info, MessageSquare, User as UserIcon, Mail, ChevronRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { AddFriendDialog } from "./AddFriendDialog";
 import { NotificationsSheet } from "./NotificationsSheet";
 import { MessagesSheet } from "./MessagesSheet";
@@ -12,13 +11,19 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface TopNavBarProps {
+ wille
   hideNotifications?: boolean;
 }
 
 export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
+
+  profile?: any;
+}
+
+export const TopNavBar = ({ profile }: TopNavBarProps) => {
+ main
   const navigate = useNavigate();
   const location = useLocation();
-  const [profile, setProfile] = useState<any>(null);
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,10 +38,6 @@ export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
     { id: 'settings', label: 'Settings', icon: Settings, available: false },
     { id: 'about', label: 'About', icon: Info, available: false },
   ];
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,19 +57,6 @@ export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
-
-  const loadProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    setProfile(profileData);
-  };
 
   // Never show back button in TopNavBar
   
@@ -98,6 +86,7 @@ export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
         {/* Right: Actions */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <AddFriendDialog 
+            showQrTabs={false}
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-white hover:bg-white/20">
                 <UserPlus size={18} fill="white" />

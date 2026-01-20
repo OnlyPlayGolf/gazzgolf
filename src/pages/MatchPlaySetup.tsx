@@ -51,7 +51,6 @@ export default function MatchPlaySetup() {
   const [groups, setGroups] = useState<MatchGroup[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   
-  const [useHandicaps, setUseHandicaps] = useState(false);
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
@@ -229,10 +228,10 @@ export default function MatchPlaySetup() {
             round_name: savedRoundName || null,
             holes_played: holesPlayed,
             player_1: group.players[0].displayName,
-            player_1_handicap: group.players[0].handicap || null,
+            player_1_handicap: null,
             player_2: group.players[1].displayName,
-            player_2_handicap: group.players[1].handicap || null,
-            use_handicaps: useHandicaps,
+            player_2_handicap: null,
+            use_handicaps: false,
             mulligans_per_player: mulligansPerPlayer,
             stats_mode: statsMode,
             match_status: 0,
@@ -244,6 +243,22 @@ export default function MatchPlaySetup() {
 
         if (error) throw error;
         createdGames.push({ id: game.id, groupIndex: i });
+
+        // Persist the player's stats mode choice for their match (used by in-game + settings screens)
+        if (group.players.some(p => p.isCurrentUser)) {
+          try {
+            await supabase
+              .from('player_game_stats_mode')
+              .upsert({
+                user_id: user.id,
+                game_id: game.id,
+                game_type: 'match_play',
+                stats_mode: statsMode,
+              }, { onConflict: 'user_id,game_id,game_type' });
+          } catch (e) {
+            console.warn('Failed to save player stats mode preference:', e);
+          }
+        }
       }
 
       if (createdGames.length === 0) {
@@ -435,21 +450,7 @@ export default function MatchPlaySetup() {
             <CardTitle className="text-lg">Game Settings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="handicaps">Use Handicaps</Label>
-              <Switch
-                id="handicaps"
-                checked={useHandicaps}
-                onCheckedChange={setUseHandicaps}
-              />
-            </div>
-            {useHandicaps && (
-              <p className="text-xs text-muted-foreground">
-                Strokes will be allocated based on handicap difference and stroke index
-              </p>
-            )}
-
-            <div className="space-y-2 pt-2">
+            <div className="space-y-2">
               <Label htmlFor="mulligans">Mulligans per Player</Label>
               <Select 
                 value={mulligansPerPlayer.toString()} 
