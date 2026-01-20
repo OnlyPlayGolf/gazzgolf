@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Calendar, MapPin, Edit, Trash2, ChevronRight } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -40,10 +40,16 @@ interface Summary {
   date_played: string;
   tee_set: string;
   holes_played: number;
-  total_score: number;
-  total_par: number;
-  score_vs_par: number;
+  total_score: number | null;
+  total_par: number | null;
+  score_vs_par: number | null;
 }
+
+const roundTypeLabels: Record<string, string> = {
+  fun_practice: "Fun/Practice",
+  qualifying: "Qualifying",
+  tournament: "Tournament",
+};
 
 interface SGBreakdown {
   offTheTee: number;
@@ -78,8 +84,10 @@ const ProRoundSummary = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [roundMeta, setRoundMeta] = useState<{ round_name: string | null; round_type: string | null } | null>(null);
   const [sgBreakdown, setSgBreakdown] = useState<SGBreakdown | null>(null);
   const [traditionalStats, setTraditionalStats] = useState<TraditionalStats | null>(null);
+  const [computedTotals, setComputedTotals] = useState<{ totalScore: number; totalPar: number; scoreVsPar: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,6 +105,19 @@ const ProRoundSummary = () => {
 
       if (summaryError) throw summaryError;
       setSummary(summaryData);
+
+      // Fetch round meta (name + type) for display
+      const { data: roundData } = await supabase
+        .from("rounds")
+        .select("round_name, round_type")
+        .eq("id", roundId)
+        .maybeSingle();
+      if (roundData) {
+        setRoundMeta({
+          round_name: roundData.round_name,
+          round_type: roundData.round_type,
+        });
+      }
 
       // Get pro stats round ID - use the one with the most holes if there are duplicates
       const { data: proRounds } = await supabase
@@ -136,6 +157,24 @@ const ProRoundSummary = () => {
       if (holesError) throw holesError;
 
       console.log('Pro Stats holes found:', holesData?.length || 0);
+
+      // Compute totals for the header card from pro_stats_holes (round_summaries can be NULL for pro stats rounds)
+      const { data: scoreHoles, error: scoreHolesError } = await supabase
+        .from("pro_stats_holes")
+        .select("score, par")
+        .eq("pro_round_id", proRoundId);
+      if (scoreHolesError) throw scoreHolesError;
+      if (scoreHoles && scoreHoles.length > 0) {
+        const totalScore = scoreHoles.reduce((sum, h) => sum + (h.score ?? 0), 0);
+        const totalPar = scoreHoles.reduce((sum, h) => sum + (h.par ?? 0), 0);
+        setComputedTotals({
+          totalScore,
+          totalPar,
+          scoreVsPar: totalScore - totalPar,
+        });
+      } else {
+        setComputedTotals(null);
+      }
 
       // Calculate detailed strokes gained breakdown
       if (holesData && holesData.length > 0) {
@@ -320,6 +359,20 @@ const ProRoundSummary = () => {
     return value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
   };
 
+  const displayTotalScore = summary.total_score ?? computedTotals?.totalScore ?? null;
+  const displayScoreVsPar = summary.score_vs_par ?? computedTotals?.scoreVsPar ?? null;
+
+  const formatScoreToPar = (diff: number | null) => {
+    if (diff === null) return "—";
+    if (diff === 0) return "E";
+    return diff > 0 ? `+${diff}` : `${diff}`;
+  };
+
+  const getScoreToParColor = (diff: number | null) => {
+    if (diff === null) return "text-muted-foreground";
+    return diff <= 0 ? "text-emerald-600" : "text-foreground";
+  };
+
   const handleDelete = async () => {
     try {
       // Get pro stats round
@@ -385,40 +438,38 @@ const ProRoundSummary = () => {
         {(() => {
           // Consider round finished if holes_played >= 18 (full round) or if there's no more holes to play
           const isFinished = summary.holes_played >= 18;
+          const displayRoundName = roundMeta?.round_name || "Round";
+          const displayRoundType = roundMeta?.round_type || null;
           const cardContent = (
-            <Card className={`bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 ${!isFinished ? 'cursor-pointer hover:border-primary/40 transition-colors' : ''}`}>
+            <Card
+              className={`bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all ${
+                !isFinished ? "cursor-pointer" : ""
+              }`}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
-                  {/* Left: Score */}
+                  {/* Left: Total score + to-par */}
                   <div className="flex-shrink-0 w-14 text-center">
-                    <div className={`text-2xl font-bold ${summary.score_vs_par <= 0 ? "text-emerald-600" : "text-foreground"}`}>
-                      {summary.score_vs_par === 0 ? "E" : 
-                       summary.score_vs_par > 0 ? `+${summary.score_vs_par}` : 
-                       summary.score_vs_par}
+                    <div className="text-2xl font-bold text-foreground">
+                      {displayTotalScore ?? "—"}
+                    </div>
+                    <div className={`text-sm ${getScoreToParColor(displayScoreVsPar)}`}>
+                      {formatScoreToPar(displayScoreVsPar)}
                     </div>
                   </div>
                   
                   {/* Middle: Details */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground truncate">
-                      {summary.course_name}
+                      {displayRoundName}
                     </h3>
-                    <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                      <span>{format(new Date(summary.date_played), "MMM d")}</span>
-                      <span>·</span>
-                      <span>{summary.holes_played} holes</span>
-                    </div>
-                    <div className="mt-1">
-                      <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-primary text-xs">
-                        Fun/Practice
-                      </span>
-                    </div>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {summary.course_name} · {format(new Date(summary.date_played), "MMM d")}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {summary.holes_played} holes{displayRoundType ? ` · ${roundTypeLabels[displayRoundType] || displayRoundType}` : ""}
+                    </p>
                   </div>
-
-                  {/* Right: Chevron for unfinished rounds */}
-                  {!isFinished && (
-                    <ChevronRight className="text-muted-foreground" size={20} />
-                  )}
                 </div>
               </CardContent>
             </Card>

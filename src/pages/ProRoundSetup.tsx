@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Check, ChevronsUpDown, TrendingUp, ClipboardList, Camera } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown, TrendingUp, ClipboardList, Camera, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatsRoundsHistory } from "@/components/StatsRoundsHistory";
 import {
@@ -12,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
   Command,
   CommandEmpty,
@@ -23,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
 import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
+import { format } from "date-fns";
 
 type StatsMode = "strokes_gained" | "basic_stats";
 
@@ -51,6 +54,9 @@ const ProRoundSetup = () => {
   const [availableTees, setAvailableTees] = useState<AvailableTee[]>([]);
   const [roundType, setRoundType] = useState<RoundType>("fun_practice");
   const [courseSearchOpen, setCourseSearchOpen] = useState(false);
+  const [roundName, setRoundName] = useState("");
+  const [datePlayed, setDatePlayed] = useState(new Date().toISOString().split("T")[0]);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -212,6 +218,8 @@ const ProRoundSetup = () => {
           {
             user_id: user.id,
             course_name: selectedCourse?.name || "",
+            round_name: roundName.trim() || null,
+            date_played: datePlayed,
             tee_set: selectedTeeDisplay || null,
             holes_played: holesPlayed,
             starting_hole: startingHole,
@@ -288,7 +296,7 @@ const ProRoundSetup = () => {
         </Card>
 
         {/* Stats Mode Selector */}
-        <div className="mb-6">
+        <div className={cn("mb-6", statsMode && "mb-0")}>
           <Label className="text-lg font-semibold mb-3 block">Choose Stats Mode</Label>
           <div className="grid grid-cols-2 gap-4">
             <Card 
@@ -343,6 +351,49 @@ const ProRoundSetup = () => {
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Round Name & Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Round Name</Label>
+                  <Input
+                    value={roundName}
+                    onChange={(e) => setRoundName(e.target.value)}
+                    placeholder="Round name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {format(new Date(datePlayed + 'T12:00:00'), "MMM d, yyyy")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={new Date(datePlayed + 'T12:00:00')}
+                        onSelect={(date) => {
+                          if (date) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            setDatePlayed(`${year}-${month}-${day}`);
+                            setDatePopoverOpen(false);
+                          }
+                        }}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label>Course</Label>
                 <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
@@ -457,11 +508,18 @@ const ProRoundSetup = () => {
                 className="w-full"
                 size="lg"
               >
-                {loading ? "Starting..." : "Add Stats"}
+                {loading ? "Starting..." : "Enter Stats"}
               </Button>
             </CardContent>
           </Card>
         )}
+
+        <Button
+          className="w-full mt-6 mb-6 bg-green-500 hover:bg-green-600 text-white"
+          onClick={() => navigate('/statistics')}
+        >
+          View All Statistics
+        </Button>
 
         <StatsRoundsHistory />
       </div>
