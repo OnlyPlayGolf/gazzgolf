@@ -16,6 +16,7 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { parseHandicapForSort } from "@/lib/utils";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { searchProfilesTypeahead } from "@/utils/profileSearch";
+import { getPublicProfilesMap } from "@/utils/publicProfiles";
 
 interface Friend {
   id: string;
@@ -112,66 +113,69 @@ const Friends = () => {
       const incoming: Friend[] = [];
       const outgoing: Friend[] = [];
 
+      const acceptedFriendIds: string[] = [];
+      const incomingIds: string[] = [];
+      const outgoingIds: string[] = [];
+
       for (const friendship of friendshipsData || []) {
         if (friendship.status === 'accepted') {
           const friendId = friendship.requester === user.id ? friendship.addressee : friendship.requester;
-          const { data: friendProfile } = await supabase
-            .from('profiles')
-            .select('display_name, username, handicap, home_club, avatar_url')
-            .eq('id', friendId)
-            .single();
-
-          if (friendProfile) {
-            acceptedFriends.push({
-              id: friendId,
-              display_name: friendProfile.display_name,
-              username: friendProfile.username,
-              handicap: friendProfile.handicap,
-              home_club: friendProfile.home_club,
-              avatar_url: friendProfile.avatar_url,
-              status: 'accepted',
-              is_requester: friendship.requester === user.id
-            });
-          }
+          acceptedFriendIds.push(friendId);
         } else if (friendship.status === 'pending') {
           if (friendship.addressee === user.id) {
-            const { data: requesterProfile } = await supabase
-              .from('profiles')
-              .select('display_name, username, avatar_url')
-              .eq('id', friendship.requester)
-              .single();
-
-            if (requesterProfile) {
-              incoming.push({
-                id: friendship.requester,
-                display_name: requesterProfile.display_name,
-                username: requesterProfile.username,
-                handicap: null,
-                home_club: null,
-                avatar_url: requesterProfile.avatar_url,
-                status: 'pending',
-                is_requester: false
-              });
-            }
+            incomingIds.push(friendship.requester);
           } else {
-            const { data: addresseeProfile } = await supabase
-              .from('profiles')
-              .select('display_name, username, avatar_url')
-              .eq('id', friendship.addressee)
-              .single();
+            outgoingIds.push(friendship.addressee);
+          }
+        }
+      }
 
-            if (addresseeProfile) {
-              outgoing.push({
-                id: friendship.addressee,
-                display_name: addresseeProfile.display_name,
-                username: addresseeProfile.username,
-                handicap: null,
-                home_club: null,
-                avatar_url: addresseeProfile.avatar_url,
-                status: 'pending',
-                is_requester: true
-              });
-            }
+      // Hydrate profiles via RPC (bypasses profiles RLS safely).
+      const profileMap = await getPublicProfilesMap(supabase as any, [
+        ...acceptedFriendIds,
+        ...incomingIds,
+        ...outgoingIds,
+      ]);
+
+      for (const friendship of friendshipsData || []) {
+        if (friendship.status === 'accepted') {
+          const friendId = friendship.requester === user.id ? friendship.addressee : friendship.requester;
+          const p = profileMap.get(friendId);
+          acceptedFriends.push({
+            id: friendId,
+            display_name: p?.display_name ?? null,
+            username: p?.username ?? null,
+            handicap: p?.handicap ?? null,
+            home_club: p?.home_club ?? null,
+            avatar_url: p?.avatar_url ?? null,
+            status: 'accepted',
+            is_requester: friendship.requester === user.id
+          });
+        } else if (friendship.status === 'pending') {
+          if (friendship.addressee === user.id) {
+            const p = profileMap.get(friendship.requester);
+            incoming.push({
+              id: friendship.requester,
+              display_name: p?.display_name ?? null,
+              username: p?.username ?? null,
+              handicap: p?.handicap ?? null,
+              home_club: p?.home_club ?? null,
+              avatar_url: p?.avatar_url ?? null,
+              status: 'pending',
+              is_requester: false
+            });
+          } else {
+            const p = profileMap.get(friendship.addressee);
+            outgoing.push({
+              id: friendship.addressee,
+              display_name: p?.display_name ?? null,
+              username: p?.username ?? null,
+              handicap: p?.handicap ?? null,
+              home_club: p?.home_club ?? null,
+              avatar_url: p?.avatar_url ?? null,
+              status: 'pending',
+              is_requester: true
+            });
           }
         }
       }

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { fetchPostsEngagement } from "@/utils/postsEngagement";
+import { getPublicProfilesMap } from "@/utils/publicProfiles";
 
 export function useFeedPosts(user: SupabaseUser | null) {
   const [friendsPosts, setFriendsPosts] = useState<any[]>([]);
@@ -44,14 +45,32 @@ export function useFeedPosts(user: SupabaseUser | null) {
           .limit(20);
 
         if (posts) {
+          const profileMap = await getPublicProfilesMap(
+            supabase as any,
+            posts.map((p: any) => p.user_id)
+          );
           const engagement = await fetchPostsEngagement(
             posts.map((p: any) => p.id),
             user.id
           );
-          const withEngagement = posts.map((p: any) => ({
-            ...p,
-            _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
-          }));
+          const withEngagement = posts.map((p: any) => {
+            const publicProfile = profileMap.get(p.user_id);
+            const mergedProfile = {
+              ...(p.profile || {}),
+              ...(publicProfile
+                ? {
+                    display_name: publicProfile.display_name,
+                    username: publicProfile.username,
+                    avatar_url: publicProfile.avatar_url,
+                  }
+                : {}),
+            };
+            return {
+              ...p,
+              profile: mergedProfile,
+              _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
+            };
+          });
           setFriendsPosts(withEngagement);
         }
       } else {
@@ -71,14 +90,32 @@ export function useFeedPosts(user: SupabaseUser | null) {
           .limit(20);
 
         if (posts) {
+          const profileMap = await getPublicProfilesMap(
+            supabase as any,
+            posts.map((p: any) => p.user_id)
+          );
           const engagement = await fetchPostsEngagement(
             posts.map((p: any) => p.id),
             user.id
           );
-          const withEngagement = posts.map((p: any) => ({
-            ...p,
-            _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
-          }));
+          const withEngagement = posts.map((p: any) => {
+            const publicProfile = profileMap.get(p.user_id);
+            const mergedProfile = {
+              ...(p.profile || {}),
+              ...(publicProfile
+                ? {
+                    display_name: publicProfile.display_name,
+                    username: publicProfile.username,
+                    avatar_url: publicProfile.avatar_url,
+                  }
+                : {}),
+            };
+            return {
+              ...p,
+              profile: mergedProfile,
+              _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
+            };
+          });
           setFriendsPosts(withEngagement);
         }
       }
