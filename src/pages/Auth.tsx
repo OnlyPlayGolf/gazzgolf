@@ -8,7 +8,6 @@ import { ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useNavigate, useLocation } from "react-router-dom";
-> main
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
