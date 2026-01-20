@@ -274,11 +274,6 @@ const Index = () => {
         {/* Performance Snapshot */}
         <PerformanceSnapshot userId={user.id} />
 
-        {/* Post Box */}
-        <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
-
-        {/* Friends Activity Feed */}
-        {!loading && (friendsPosts.length > 0 || friendsActivity.length > 0) ? (
 
         {/* Post Box - renders when profile is loaded */}
         {!profileLoading && user && (
@@ -293,7 +288,6 @@ const Index = () => {
 
         {/* Friends Activity Feed - renders when data is available */}
         {!feedPostsLoading && user && friendsPosts.length > 0 && (
- main
           <div className="space-y-4">
             {/* Posts */}
             {friendsPosts.slice(0, postsToShow).map((post) => (
