@@ -27,6 +27,7 @@ import { CourseScorecard } from "@/components/CourseScorecard";
 import { validateAllGroupsForFormat, formatSupportsMultipleGroups } from "@/utils/groupValidation";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
 import { getDefaultRoundName } from "@/utils/roundCounter";
+import AuthGuard from "@/components/AuthGuard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +58,7 @@ interface Course {
   tee_names?: Record<string, string> | null;
 }
 
-export default function RoundsPlay() {
+function RoundsPlayContent() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -1144,5 +1145,13 @@ export default function RoundsPlay() {
         onSave={handleSavePlayer}
       />
     </div>
+  );
+}
+
+export default function RoundsPlay() {
+  return (
+    <AuthGuard>
+      <RoundsPlayContent />
+    </AuthGuard>
   );
 }

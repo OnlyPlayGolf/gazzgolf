@@ -141,9 +141,17 @@ const Index = () => {
           </div>
 
           {/* CTA */}
-          <div className="mt-8">
+          <div className="mt-8 space-y-3">
             <Button onClick={() => navigate('/auth')} className="w-full" size="lg">
               Sign In to Get Started
+            </Button>
+            <Button 
+              onClick={() => navigate('/auth', { state: { view: 'signup' } })} 
+              variant="outline"
+              className="w-full" 
+              size="lg"
+            >
+              Create New Account
             </Button>
           </div>
         </div>
