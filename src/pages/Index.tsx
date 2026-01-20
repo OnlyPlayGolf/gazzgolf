@@ -102,6 +102,20 @@ const Index = () => {
 
           {/* Feature Cards */}
           <div className="grid grid-cols-1 gap-2">
+            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/friends')}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
+                    <Users size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Play With Friends</h3>
+                    <p className="text-sm text-muted-foreground">Create groups, share rounds, and see who's on top.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/categories')}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
@@ -125,20 +139,6 @@ const Index = () => {
                   <div>
                     <h3 className="font-semibold text-foreground">Play Rounds & Games</h3>
                     <p className="text-sm text-muted-foreground">Log rounds and compete in game modes with friends.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/friends')}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
-                    <Users size={24} className="text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Play With Friends</h3>
-                    <p className="text-sm text-muted-foreground">Create groups, share rounds, and see who's on top.</p>
                   </div>
                 </div>
               </CardContent>
