@@ -283,7 +283,9 @@ const Profile = () => {
         }
       }
 
-      const groupsList = groupRows.map((g: any) => ({
+      // NOTE: Name intentionally avoids collisions with other branches that may also
+      // declare a `groupsList` in this scope (e.g. older N+1 count implementations).
+      const groupsListWithCounts = groupRows.map((g: any) => ({
         id: g.groups.id,
         name: g.groups.name,
         owner_id: g.groups.owner_id,
@@ -295,7 +297,7 @@ const Profile = () => {
       }));
 main
 
-      setGroups(groupsList);
+      setGroups(groupsListWithCounts);
 
       // Load favorite groups
       const { data: settingsData } = await (supabase as any)
