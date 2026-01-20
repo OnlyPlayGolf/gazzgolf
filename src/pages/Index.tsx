@@ -285,36 +285,43 @@ const Index = () => {
         <PerformanceSnapshot performanceStats={performanceStats} />
 
         {/* Friends Activity Feed - renders when data is available */}
-        {!feedPostsLoading && user && friendsPosts.length > 0 && (
-          <div className="space-y-4">
-            {/* Posts */}
-            {friendsPosts.slice(0, postsToShow).map((post) => (
-              <FeedPost key={post.id} post={post} currentUserId={user.id} onPostDeleted={refreshFeedPosts} />
-            ))}
-            {/* View More Button */}
-            {friendsPosts.length > postsToShow && (
-              <div className="flex justify-center pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setPostsToShow(prev => prev + 10)}
-                  className="w-full max-w-md"
-                >
-                  View More
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : !loading ? (
-          <div className="px-4 pb-6">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-muted-foreground">
-                  No posts yet. Share a drill, round or comment to get started!
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        ) : null}
+{!feedPostsLoading && user && friendsPosts.length > 0 ? (
+  <div className="space-y-4">
+    {/* Posts */}
+    {friendsPosts.slice(0, postsToShow).map((post) => (
+      <FeedPost
+        key={post.id}
+        post={post}
+        currentUserId={user.id}
+        onPostDeleted={refreshFeedPosts}
+      />
+    ))}
+
+    {/* View More Button */}
+    {friendsPosts.length > postsToShow && (
+      <div className="flex justify-center pt-4">
+        <Button
+          variant="outline"
+          onClick={() => setPostsToShow((prev) => prev + 10)}
+          className="w-full max-w-md"
+        >
+          View More
+        </Button>
+      </div>
+    )}
+  </div>
+) : !loading ? (
+  <div className="px-4 pb-6">
+    <Card>
+      <CardContent className="p-6 text-center">
+        <p className="text-muted-foreground">
+          No posts yet. Share a drill, round or comment to get started!
+        </p>
+      </CardContent>
+    </Card>
+  </div>
+) : null}
+
       </div>
     </div>
   );
