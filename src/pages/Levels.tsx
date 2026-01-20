@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, CheckCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getLevelsWithProgress, getCompletionStats, completeLevelz, getLevelProgress } from "@/utils/levelsManager";
+import { getLevelsWithProgress, getCompletionStats, completeLevelz, getLevelProgress, hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
 import { Level } from "@/types/levels";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,6 +23,7 @@ const Levels = () => {
 
   useEffect(() => {
     const loadData = async () => {
+      await hydrateLevelsProgressFromDB();
       const allLevels = getLevelsWithProgress();
       const filteredLevels = allLevels.filter(
         (level) => level.difficulty.toLowerCase() === (difficulty || "beginner").toLowerCase()

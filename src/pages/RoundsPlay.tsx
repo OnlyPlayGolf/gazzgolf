@@ -22,7 +22,7 @@ import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
 import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState, RoundType } from "@/types/playSetup";
 import { cn, parseHandicap } from "@/lib/utils";
-import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS } from "@/components/TeeSelector";
+import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS, normalizeValue } from "@/components/TeeSelector";
 import { CourseScorecard } from "@/components/CourseScorecard";
 import { validateAllGroupsForFormat, formatSupportsMultipleGroups } from "@/utils/groupValidation";
 import { GAME_FORMAT_PLAYER_REQUIREMENTS } from "@/types/gameGroups";
@@ -63,11 +63,13 @@ export default function RoundsPlay() {
   
   // Core state
   const [setupState, setSetupState] = useState<PlaySetupState>(getInitialPlaySetupState());
+  const [numberOfRoundsText, setNumberOfRoundsText] = useState<string>("1");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [teeCount, setTeeCount] = useState(5);
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
+  const [availableCourseTees, setAvailableCourseTees] = useState<string[]>(STANDARD_TEE_OPTIONS.map(t => t.value));
   const [courseHoles, setCourseHoles] = useState<{ holeNumber: number; par: number; strokeIndex: number }[]>([]);
   
   // UI state
@@ -102,6 +104,12 @@ export default function RoundsPlay() {
     }
   }, [selectedCourse]);
 
+  // Keep the editable text input in sync with the underlying numeric value,
+  // but only when the user isn't actively clearing it.
+  useEffect(() => {
+    setNumberOfRoundsText(prev => (prev.trim() === "" ? prev : String(setupState.numberOfRounds || 1)));
+  }, [setupState.numberOfRounds]);
+
   // Check for active rounds where user is participant but not creator
   const checkForActiveRounds = async () => {
     try {
@@ -123,7 +131,7 @@ export default function RoundsPlay() {
       // Find rounds where user is participant but not creator, created recently
       const { data: activeRounds } = await supabase
         .from('rounds')
-        .select('id, course_name, round_name, user_id, holes_played, created_at')
+        .select('id, course_name, round_name, user_id, holes_played, created_at, event_id')
         .in('id', roundIds)
         .neq('user_id', user.id)
         .gte('created_at', twentyFourHoursAgo)
@@ -131,7 +139,21 @@ export default function RoundsPlay() {
         .limit(1);
       
       if (activeRounds && activeRounds.length > 0) {
-        const round = activeRounds[0];
+        let round = activeRounds[0] as any;
+
+        // If this is part of an event (multi-round tournament), join the first round
+        if (round?.event_id) {
+          const { data: firstRounds } = await supabase
+            .from('rounds')
+            .select('id, course_name, round_name, user_id, holes_played, created_at, event_id')
+            .eq('event_id', round.event_id)
+            .order('created_at', { ascending: true })
+            .limit(1);
+
+          if (firstRounds && firstRounds.length > 0) {
+            round = firstRounds[0] as any;
+          }
+        }
         
         // Get creator profile
         const { data: creatorProfile } = await supabase
@@ -223,6 +245,7 @@ export default function RoundsPlay() {
     const savedGroups = sessionStorage.getItem('playGroups');
     const savedAIConfig = sessionStorage.getItem('aiGameConfig');
     const savedGameFormat = sessionStorage.getItem('gameFormat');
+    const savedNumberOfRounds = sessionStorage.getItem('numberOfRounds');
 
     if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
 
@@ -232,6 +255,10 @@ export default function RoundsPlay() {
       if (savedRoundName) updated.roundName = savedRoundName;
       if (savedDate) updated.datePlayed = savedDate;
       if (savedGameFormat) updated.gameFormat = savedGameFormat as any;
+      if (savedNumberOfRounds) {
+        const parsed = parseInt(savedNumberOfRounds, 10);
+        updated.numberOfRounds = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      }
       if (savedAIConfig) {
         const config = JSON.parse(savedAIConfig);
         updated.aiConfigApplied = true;
@@ -330,6 +357,29 @@ export default function RoundsPlay() {
 
   const fetchCourseTees = async (courseId: string) => {
     try {
+      const DEFAULT_TEE_LABELS: Record<string, string> = {
+        black: "Black",
+        blue: "Blue",
+        white: "White",
+        silver: "Silver",
+        gold: "Gold",
+        yellow: "Yellow",
+        red: "Red",
+        orange: "Orange",
+      };
+
+      const STANDARD_TEE_ORDER = ["black", "blue", "white", "silver", "gold", "yellow", "red", "orange"];
+      const TEE_DISTANCE_COLUMNS: Record<string, string> = {
+        black: "black_distance",
+        blue: "blue_distance",
+        white: "white_distance",
+        silver: "silver_distance",
+        gold: "gold_distance",
+        yellow: "yellow_distance",
+        red: "red_distance",
+        orange: "orange_distance",
+      };
+
       // Fetch course for tee names
       const { data: courseData } = await supabase
         .from("courses")
@@ -337,12 +387,6 @@ export default function RoundsPlay() {
         .eq("id", courseId)
         .single();
       
-      if (courseData?.tee_names) {
-        setCourseTeeNames(courseData.tee_names as Record<string, string>);
-      } else {
-        setCourseTeeNames(null);
-      }
-
       const { data, error } = await supabase
         .from("course_holes")
         .select("*")
@@ -354,24 +398,62 @@ export default function RoundsPlay() {
       if (data && data.length > 0) {
         const firstHole = data[0];
         const tees: string[] = [];
-        if (firstHole.white_distance) tees.push("white");
-        if (firstHole.yellow_distance) tees.push("yellow");
+        if (firstHole.black_distance) tees.push("black");
         if (firstHole.blue_distance) tees.push("blue");
+        if (firstHole.white_distance) tees.push("white");
+        if (firstHole.silver_distance) tees.push("silver");
+        if (firstHole.gold_distance) tees.push("gold");
+        if (firstHole.yellow_distance) tees.push("yellow");
         if (firstHole.red_distance) tees.push("red");
         if (firstHole.orange_distance) tees.push("orange");
 
-        setTeeCount(tees.length || 5);
+        // Prefer ordering tees by total distance (robust for 6+ tees), fallback to standard order
+        const totals: Record<string, number> = {};
+        for (const tee of tees) totals[tee] = 0;
+        for (const hole of (data as any[])) {
+          for (const tee of tees) {
+            const col = TEE_DISTANCE_COLUMNS[tee];
+            const v = col ? hole?.[col] : null;
+            if (typeof v === "number" && Number.isFinite(v)) totals[tee] += v;
+          }
+        }
+        const orderedAvailable = [...tees].sort((a, b) => (totals[b] || 0) - (totals[a] || 0));
+        // If totals are all equal (e.g. missing), fall back to standard color ordering
+        const allEqual = orderedAvailable.length > 1
+          ? orderedAvailable.every(t => (totals[t] || 0) === (totals[orderedAvailable[0]] || 0))
+          : false;
+        const finalAvailable = allEqual ? STANDARD_TEE_ORDER.filter(t => tees.includes(t)) : orderedAvailable;
+
+        setAvailableCourseTees(finalAvailable.length > 0 ? finalAvailable : STANDARD_TEE_OPTIONS.map(t => t.value));
+        setTeeCount(finalAvailable.length || tees.length || 5);
+
+        // Build tee labels that include ONLY tees available for this course
+        const rawTeeNames = (courseData?.tee_names || null) as any;
+        const normalizedTeeNames: Record<string, string> = {};
+        if (rawTeeNames && typeof rawTeeNames === "object" && !Array.isArray(rawTeeNames)) {
+          for (const [k, v] of Object.entries(rawTeeNames)) {
+            if (!k) continue;
+            normalizedTeeNames[String(k).toLowerCase()] = String(v);
+          }
+        } else if (Array.isArray(rawTeeNames)) {
+          for (const v of rawTeeNames) {
+            if (!v) continue;
+            normalizedTeeNames[String(v).toLowerCase()] = String(v);
+          }
+        }
+
+        const filteredCourseTeeNames: Record<string, string> = {};
+        for (const key of (finalAvailable.length > 0 ? finalAvailable : tees)) {
+          filteredCourseTeeNames[key] = normalizedTeeNames[key] || DEFAULT_TEE_LABELS[key] || key;
+        }
+        setCourseTeeNames(Object.keys(filteredCourseTeeNames).length > 0 ? filteredCourseTeeNames : null);
         
-        // Update default tee for all players if not set
-        if (!setupState.teeColor) {
-          setSetupState(prev => ({
-            ...prev,
-            teeColor: "white",
-            groups: prev.groups.map(g => ({
-              ...g,
-              players: g.players.map(p => ({ ...p, teeColor: p.teeColor || "white" }))
-            }))
-          }));
+        // Apply user's preferred default tee (supports difficulty prefs like "longest") and ensure it's valid.
+        const preferredRaw = (setupState.teeColor || DEFAULT_MEN_TEE).toLowerCase();
+        const mapped = normalizeValue(preferredRaw, finalAvailable.length > 0 ? finalAvailable : tees);
+        const effective = (finalAvailable.includes(mapped) ? mapped : (finalAvailable[0] || mapped || "white"));
+        if (setupState.teeColor !== effective) {
+          handleDefaultTeeChange(effective);
         }
 
         setCourseHoles(data.map(h => ({
@@ -384,6 +466,7 @@ export default function RoundsPlay() {
       console.error("Error fetching tees:", error);
       setTeeCount(5);
       setCourseTeeNames(null);
+      setAvailableCourseTees(STANDARD_TEE_OPTIONS.map(t => t.value));
     }
   };
 
@@ -575,6 +658,7 @@ export default function RoundsPlay() {
     sessionStorage.setItem('datePlayer', setupState.datePlayed);
     sessionStorage.setItem('playGroups', JSON.stringify(setupState.groups));
     sessionStorage.setItem('gameFormat', setupState.gameFormat);
+    sessionStorage.setItem('numberOfRounds', String(setupState.numberOfRounds || 1));
   };
 
   const getHolesPlayed = (holeCount: HoleCount): number => {
@@ -643,6 +727,18 @@ export default function RoundsPlay() {
     if (playerValidationError) {
       toast({ title: "Invalid player count", description: playerValidationError, variant: "destructive" });
       return;
+    }
+
+    // Validate Number of Rounds on start (allow temporary empty while typing)
+    if (setupState.gameFormat === "stroke_play") {
+      const raw = numberOfRoundsText.trim();
+      const parsed = raw ? parseInt(raw, 10) : NaN;
+      const next = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      if (next !== setupState.numberOfRounds || raw === "") {
+        setSetupState(prev => ({ ...prev, numberOfRounds: next }));
+        setNumberOfRoundsText(String(next));
+        sessionStorage.setItem('numberOfRounds', String(next));
+      }
     }
 
     saveState();
@@ -874,6 +970,19 @@ export default function RoundsPlay() {
               )}
             </div>
 
+            {/* Tee Selection (course-specific) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tees</Label>
+              <TeeSelector
+                value={setupState.teeColor}
+                onValueChange={(tee) => handleDefaultTeeChange(tee)}
+                teeCount={availableCourseTees.length || 5}
+                courseTeeNames={courseTeeNames}
+                triggerClassName="w-full justify-between"
+                disabled={!selectedCourse}
+              />
+            </div>
+
             {/* Holes Selection */}
             <div className="space-y-1.5">
               <Label className="text-xs">Holes</Label>
@@ -894,6 +1003,38 @@ export default function RoundsPlay() {
                 ))}
               </div>
             </div>
+
+            {/* Number of Rounds (Stroke Play only) */}
+            {setupState.gameFormat === "stroke_play" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Number of Rounds</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={numberOfRoundsText}
+                  onChange={(e) => {
+                    const nextRaw = e.target.value;
+                    // Allow empty while typing; allow digits only
+                    if (nextRaw !== "" && !/^\d+$/.test(nextRaw)) return;
+
+                    setNumberOfRoundsText(nextRaw);
+
+                    const parsed = nextRaw ? parseInt(nextRaw, 10) : NaN;
+                    if (Number.isFinite(parsed) && parsed > 0) {
+                      setSetupState(prev => ({ ...prev, numberOfRounds: parsed }));
+                    }
+                  }}
+                  onBlur={() => {
+                    const raw = numberOfRoundsText.trim();
+                    const parsed = raw ? parseInt(raw, 10) : NaN;
+                    const next = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+                    setNumberOfRoundsText(String(next));
+                    setSetupState(prev => ({ ...prev, numberOfRounds: next }));
+                  }}
+                />
+              </div>
+            )}
 
             {/* Round Type */}
             <div className="space-y-1.5">
@@ -951,7 +1092,7 @@ export default function RoundsPlay() {
                   key={group.id}
                   group={group}
                   groupIndex={index}
-                  availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
+                  availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
                   courseTeeNames={courseTeeNames}
                   canDelete={setupState.groups.length > 1}
                   onUpdateName={(name) => updateGroupName(group.id, name)}
@@ -974,13 +1115,13 @@ export default function RoundsPlay() {
           </CardContent>
         </Card>
 
-        {/* Game Settings */}
+        {/* Game Formats */}
         <Collapsible open={settingsExpanded} onOpenChange={setSettingsExpanded}>
           <Card>
             <CollapsibleTrigger asChild>
               <CardHeader className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Game Settings</CardTitle>
+                  <CardTitle className="text-lg">Game Formats</CardTitle>
                   {settingsExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                 </div>
               </CardHeader>
@@ -989,8 +1130,6 @@ export default function RoundsPlay() {
               <CardContent className="space-y-4 pt-0">
                 {/* Game Format */}
                 <div className="space-y-3">
-                  <Label className="text-xs">Game Format</Label>
-                  
                   {/* Individual Games */}
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Individual</p>

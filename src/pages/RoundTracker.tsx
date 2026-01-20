@@ -33,6 +33,7 @@ interface Round {
   tee_set: string;
   holes_played: number;
   date_played: string;
+  event_id?: string | null;
   round_name?: string | null;
   origin?: string | null;
   user_id: string;
@@ -693,7 +694,36 @@ export default function RoundTracker() {
 
   const handleFinishRound = () => {
     setShowCompletionDialog(false);
-    // Navigate to round summary to show results and share option
+    // Tournament: auto-advance to next round in event
+    if (round?.event_id) {
+      void (async () => {
+        try {
+          const { data: eventRounds, error } = await supabase
+            .from("rounds")
+            .select("id, created_at")
+            .eq("event_id", round.event_id)
+            .order("created_at", { ascending: true });
+
+          if (error) throw error;
+
+          const ids = (eventRounds || []).map(r => r.id);
+          const idx = ids.findIndex(id => id === roundId);
+          const nextId = idx >= 0 ? ids[idx + 1] : null;
+
+          if (nextId) {
+            navigate(`/rounds/${nextId}/track`);
+            return;
+          }
+        } catch (e) {
+          console.error("Error advancing to next tournament round:", e);
+        }
+        // Fallback to summary if something goes wrong
+        navigate(`/rounds/${roundId}/summary`);
+      })();
+      return;
+    }
+
+    // Single-round: Navigate to round summary to show results and share option
     navigate(`/rounds/${roundId}/summary`);
   };
 

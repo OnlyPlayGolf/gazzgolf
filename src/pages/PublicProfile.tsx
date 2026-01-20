@@ -530,7 +530,9 @@ export default function PublicProfile() {
           <div className="px-4 mb-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-muted-foreground">No posts yet</p>
+                <p className="text-muted-foreground">
+                  No posts yet. Share a drill, round or comment to get started!
+                </p>
               </CardContent>
             </Card>
           </div>

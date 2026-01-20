@@ -20,6 +20,8 @@ interface Shot {
   endLie?: LieType | 'green' | 'OB';
   strokesGained: number;
   isOB?: boolean;
+  isPenalty?: boolean;
+  penaltyType?: 'hazard' | 'ob';
 }
 
 interface ProHoleData {
@@ -57,7 +59,7 @@ const ProHoleTracker = () => {
   const [startLie, setStartLie] = useState<LieType | 'green'>('tee');
   const [holed, setHoled] = useState(false);
   const [endDistance, setEndDistance] = useState("");
-  const [endLie, setEndLie] = useState<LieType | 'green' | 'OB' | ''>(''); // No preset
+  const [endLie, setEndLie] = useState<LieType | 'green' | 'OB' | 'recovery' | 'hazard' | 'other' | ''>(''); // No preset
   const [missedSide, setMissedSide] = useState<'left' | 'right' | ''>('');
   
   // Ref for the 2-second auto-advance timer when user enters 0
@@ -473,13 +475,79 @@ const ProHoleTracker = () => {
       return;
     }
 
+    // Hazard: add played shot, then auto-add a penalty stroke and advance
+    if (endLie === 'hazard') {
+      const end = parseFloat(normalizedEndDistance);
+      if (isNaN(end)) {
+        toast({ title: "Enter end distance", variant: "destructive" });
+        return;
+      }
+
+      const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+      const sgShot = sgCalculator.calculateStrokesGained(
+        drillType,
+        start,
+        startLie,
+        false,
+        'rough',
+        end
+      );
+
+      const hazardShot: Shot = {
+        type: shotType,
+        startDistance: start,
+        startLie,
+        holed: false,
+        endDistance: end,
+        endLie: 'rough',
+        strokesGained: sgShot,
+      };
+
+      // Auto penalty stroke (1 shot, no position change)
+      const penaltyShot: Shot = {
+        type: shotType,
+        startDistance: end,
+        startLie: 'rough',
+        holed: false,
+        endDistance: end,
+        endLie: 'rough',
+        strokesGained: -1,
+        isPenalty: true,
+        penaltyType: 'hazard',
+      };
+
+      const currentData = getCurrentHoleData();
+      const updatedShots = [...currentData.shots, hazardShot, penaltyShot];
+      setHoleData({
+        ...holeData,
+        [currentHole]: {
+          par,
+          shots: updatedShots,
+        },
+      });
+
+      // Next playable shot starts from the drop (end distance) in rough
+      setStartDistance(String(end));
+      setStartLie('rough');
+      setShotType('approach');
+      setEndDistance("");
+      setEndLie('');
+      setMissedSide('');
+      setHoled(false);
+      return;
+    }
+
     const drillType = shotType === 'putt' ? 'putting' : 'longGame';
+    const effectiveEndLie: LieType | 'green' =
+      endLie === 'recovery' || endLie === 'other'
+        ? 'rough'
+        : (endLie as LieType | 'green');
     const sg = sgCalculator.calculateStrokesGained(
       drillType,
       start,
       startLie,
       false,
-      endLie as LieType | 'green',
+      effectiveEndLie,
       end
     );
 
@@ -489,7 +557,7 @@ const ProHoleTracker = () => {
       startLie,
       holed: false,
       endDistance: end,
-      endLie: endLie as LieType | 'green',
+      endLie: effectiveEndLie,
       strokesGained: sg,
     };
 
@@ -504,14 +572,14 @@ const ProHoleTracker = () => {
 
     // Reset inputs and set next shot's start to this shot's end
     setStartDistance(endDistance); // Next shot starts where this one ended
-    setStartLie(endLie as LieType | 'green'); // Next shot starts from this lie
+    setStartLie(effectiveEndLie); // Next shot starts from this lie
     setEndDistance("");
     setEndLie(''); // Reset end lie for next shot
     setMissedSide(''); // Reset missed side
     setHoled(false);
     
     // Auto-set next shot type
-    if (endLie === 'green') {
+    if (effectiveEndLie === 'green') {
       setShotType('putt');
     } else {
       setShotType('approach');
@@ -600,6 +668,8 @@ const ProHoleTracker = () => {
       endLie: startLie, // Back to same lie for replay
       strokesGained: 0, // Penalty stroke, no SG
       isOB: false, // This is the penalty, not OB itself
+      isPenalty: true,
+      penaltyType: 'ob',
     };
 
     const currentData = getCurrentHoleData();
@@ -886,14 +956,22 @@ const ProHoleTracker = () => {
             <div>
               <Label>End Lie</Label>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                {(['green', 'fairway', 'rough', 'sand'] as const).map((lie) => (
+                {(['green', 'fairway', 'rough', 'sand', 'recovery', 'hazard', 'other'] as const).map((lie) => (
                   <Button
                     key={lie}
                     variant={endLie === lie ? "default" : "outline"}
                     onClick={() => setEndLie(lie)}
                     size="sm"
                   >
-                    {lie === 'sand' ? 'Bunker' : lie.charAt(0).toUpperCase() + lie.slice(1)}
+                    {lie === 'sand'
+                      ? 'Bunker'
+                      : lie === 'recovery'
+                        ? 'Recovery'
+                        : lie === 'hazard'
+                          ? 'Hazard'
+                          : lie === 'other'
+                            ? 'Other'
+                            : lie.charAt(0).toUpperCase() + lie.slice(1)}
                   </Button>
                 ))}
                 <Button
@@ -981,6 +1059,7 @@ const ProHoleTracker = () => {
                           {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
                           {shot.holed && " • Holed"}
                           {shot.isOB && " • OB"}
+                          {shot.isPenalty && " • Penalty"}
                         </span>
                       </div>
                       <span className="text-muted-foreground text-sm">

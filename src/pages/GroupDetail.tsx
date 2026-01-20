@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, UserPlus, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, UserPlus, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, Crown, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
 import { GroupDrillHistory } from "@/components/GroupDrillHistory";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
+import { getPublicAppUrl } from "@/utils/publicAppUrl";
 
 interface Member {
   user_id: string;
@@ -161,6 +163,7 @@ const GroupDetail = () => {
   const [editGroupName, setEditGroupName] = useState("");
   const [editGroupDescription, setEditGroupDescription] = useState("");
   const [editGroupImage, setEditGroupImage] = useState<File | null>(null);
+  const [editShowCoachProfileResults, setEditShowCoachProfileResults] = useState(false);
   const [updatingGroup, setUpdatingGroup] = useState(false);
   
   // Leaderboard tab state
@@ -242,7 +245,6 @@ useEffect(() => {
     if (groupId && user) {
       loadGroupData();
       loadDrills();
-      loadGroupLevelsLeaderboard();
     }
   }, [groupId, user]);
 
@@ -336,7 +338,11 @@ useEffect(() => {
     }
   };
 
-  const loadDrillLeaderboard = async (drillTitle: string, lowerIsBetter: boolean) => {
+  const loadDrillLeaderboard = async (
+    drillTitle: string,
+    lowerIsBetter: boolean,
+    showCoachResultsOverride?: boolean
+  ) => {
     if (!groupId || !group) return;
 
     setLoadingLeaderboard(true);
@@ -363,10 +369,12 @@ useEffect(() => {
         return;
       }
 
+      const showCoachResults =
+        showCoachResultsOverride ?? (effectiveGroupType === 'coach' && !!group?.show_coach_profile_results);
+
       // For coach groups, exclude coaches from leaderboards.
       // For player groups, include all members (including owner).
-      const isPlayerGroup = group?.group_type === 'player';
-      const leaderboardMembers = isPlayerGroup
+      const leaderboardMembers = (effectiveGroupType === 'player' || showCoachResults)
         ? groupMembers
         : groupMembers.filter(m => m.role === 'member');
       const memberIds = leaderboardMembers.map(m => m.user_id);
@@ -440,8 +448,8 @@ useEffect(() => {
     }
   };
 
-  const loadGroupLevelsLeaderboard = async () => {
-    if (!groupId || !user) return;
+  const loadGroupLevelsLeaderboard = async (showCoachResultsOverride?: boolean) => {
+    if (!groupId || !user || !group) return;
     setLoadingGroupLevels(true);
     try {
       const { data, error } = await supabase
@@ -450,19 +458,16 @@ useEffect(() => {
         console.error('Error loading group levels leaderboard:', error);
         setGroupLevelsLeaderboard([]);
       } else {
-        const isPlayerGroup = group?.group_type === 'player';
-        if (isPlayerGroup) {
+        const showCoachResults =
+          showCoachResultsOverride ?? (effectiveGroupType === 'coach' && !!group?.show_coach_profile_results);
+        if (effectiveGroupType === 'player' || showCoachResults) {
           // Player groups: include everyone
+          // Coach groups: include coaches when enabled
           setGroupLevelsLeaderboard(data || []);
         } else {
-          // Coach groups: filter out coaches
-          const { data: groupMembers } = await supabase
-            .from('group_members')
-            .select('user_id, role')
-            .eq('group_id', groupId);
-          
+          // Coach groups: filter out coaches (owner/admin) when toggle is OFF
           const coachIds = new Set(
-            (groupMembers || [])
+            (members || [])
               .filter(m => m.role === 'owner' || m.role === 'admin')
               .map(m => m.user_id)
           );
@@ -515,21 +520,27 @@ useEffect(() => {
 
   const handleSearchUsers = async (query: string) => {
     setSearchQuery(query);
-    
+
     if (!query.trim()) {
       setSearchResults([]);
       return;
     }
 
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url')
-      .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
-      .limit(20);
+    // Global user search (includes non-friends) via RPC (safe across profiles RLS)
+    const { data, error } = await supabase
+      .rpc('search_profiles', { q: query.trim(), max_results: 20 });
+
+    if (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+      return;
+    }
 
     // Filter out users already in the group
     const memberIds = new Set(members.map(m => m.user_id));
-    const available = data?.filter(p => !memberIds.has(p.id) && p.id !== user?.id) || [];
+    const available = (data || []).filter((p: any) =>
+      p?.id && !memberIds.has(p.id) && p.id !== user?.id
+    );
 
     setSearchResults(available);
   };
@@ -669,7 +680,7 @@ useEffect(() => {
   const handleCopyInviteLink = () => {
     if (!currentInvite) return;
     
-    const inviteUrl = `${window.location.origin}/invite/${currentInvite.code}`;
+    const inviteUrl = `${getPublicAppUrl()}/invite/${currentInvite.code}`;
     navigator.clipboard.writeText(inviteUrl);
     
     toast({
@@ -741,13 +752,13 @@ useEffect(() => {
 
       setCurrentInvite(null);
       toast({
-        title: "Invite revoked",
+        title: "Invite link revoked",
         description: "This invite link can no longer be used",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to revoke invite",
+        description: error.message || "Failed to revoke link",
         variant: "destructive",
       });
     } finally {
@@ -886,9 +897,18 @@ useEffect(() => {
   // Fall back to the same heuristic as our backfill: any admin => coach, otherwise player.
   const effectiveGroupType: 'player' | 'coach' = (group?.group_type === 'player' || group?.group_type === 'coach')
     ? group.group_type
-    : (members.some(m => m.role === 'admin') ? 'coach' : 'player');
+    : (group?.is_coach_group ? 'coach' : (members.some(m => m.role === 'admin') ? 'coach' : 'player'));
   const isPlayerGroup = effectiveGroupType === 'player';
+  const isCoachGroup = effectiveGroupType === 'coach';
   const isGroupMember = currentUserRole !== null;
+
+  // (Re)load level leaderboard once group + members are ready, and when coach visibility changes
+  useEffect(() => {
+    if (!groupId || !user || !group) return;
+    if (members.length === 0) return;
+    loadGroupLevelsLeaderboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId, user, group?.id, group?.group_type, group?.is_coach_group, group?.show_coach_profile_results, members]);
 
   // Player groups: any member can manage/add/invite. Only owner can remove others.
   // Coach groups: preserve existing coach-role gating.
@@ -1039,6 +1059,7 @@ useEffect(() => {
       setEditGroupName(group.name || "");
       setEditGroupDescription(group.description || "");
       setEditGroupImage(null);
+      setEditShowCoachProfileResults(!!group.show_coach_profile_results);
     }
   }, [showManageDialog, group]);
 
@@ -1055,13 +1076,34 @@ useEffect(() => {
     setUpdatingGroup(true);
     try {
       // Update group name and description
-      const { error: updateError } = await supabase
+      const updatePayload: any = {
+        name: editGroupName.trim(),
+        description: editGroupDescription.trim() || null,
+      };
+      // Coach groups only: persist flag controlling coach results visibility
+      if (isCoachGroup) {
+        updatePayload.show_coach_profile_results = editShowCoachProfileResults;
+      }
+
+      let updateError: any = null;
+      let updatedGroup: any = null;
+      ({ data: updatedGroup, error: updateError } = await (supabase as any)
         .from('groups')
-        .update({
-          name: editGroupName.trim(),
-          description: editGroupDescription.trim() || null
-        })
-        .eq('id', groupId);
+        .update(updatePayload)
+        .eq('id', groupId)
+        .select('*')
+        .maybeSingle());
+
+      // Backward compatibility if column not yet deployed
+      if (updateError && isCoachGroup && updateError.message?.includes('show_coach_profile_results')) {
+        ({ error: updateError } = await (supabase as any)
+          .from('groups')
+          .update({
+            name: editGroupName.trim(),
+            description: editGroupDescription.trim() || null,
+          })
+          .eq('id', groupId));
+      }
 
       if (updateError) throw updateError;
 
@@ -1077,7 +1119,22 @@ useEffect(() => {
       });
 
       setShowManageDialog(false);
-      loadGroupData(); // Reload group data
+      // Update local group state immediately if we got it back
+      if (updatedGroup) {
+        setGroup(updatedGroup);
+      }
+      await loadGroupData(); // Reload group data (includes show_coach_profile_results)
+
+      // Refresh leaderboards immediately so coach visibility toggles apply without needing a full page reload
+      const showCoachResultsAfterSave = isCoachGroup && editShowCoachProfileResults;
+      await loadGroupLevelsLeaderboard(showCoachResultsAfterSave);
+      const drillTitle = selectedDrill || drills[0]?.title || null;
+      if (drillTitle) {
+        const drill = drills.find(d => d.title === drillTitle);
+        if (drill) {
+          await loadDrillLeaderboard(drill.title, drill.lower_is_better, showCoachResultsAfterSave);
+        }
+      }
     } catch (error: any) {
       console.error('Error updating group:', error);
       toast({
@@ -1172,7 +1229,7 @@ useEffect(() => {
                   }}
                 >
                   <UserPlus size={20} />
-                  Invite Friends
+                  Invite Players
                 </Button>
               )}
               
@@ -1381,7 +1438,13 @@ useEffect(() => {
 
               {/* History Tab */}
               <TabsContent value="history">
-                {groupId && <GroupDrillHistory groupId={groupId} groupCreatedAt={group?.created_at} />}
+                {groupId && (
+                  <GroupDrillHistory
+                    groupId={groupId}
+                    groupCreatedAt={group?.created_at}
+                    includeCoaches={effectiveGroupType === 'coach' && !!group?.show_coach_profile_results}
+                  />
+                )}
               </TabsContent>
 
               {/* Play Tab */}
@@ -1563,7 +1626,7 @@ useEffect(() => {
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Invite Friends</DialogTitle>
+            <DialogTitle>Invite Players</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {/* Search Users */}
@@ -1684,7 +1747,7 @@ useEffect(() => {
                   <div className="space-y-3">
                     <div className="flex gap-2">
                       <Input
-                        value={`${window.location.origin}/invite/${currentInvite.code}`}
+                        value={`${getPublicAppUrl()}/invite/${currentInvite.code}`}
                         readOnly
                         className="flex-1 text-sm"
                       />
@@ -1710,8 +1773,7 @@ useEffect(() => {
                         className="flex-1"
                         size="sm"
                       >
-                        <Trash2 size={16} className="mr-2" />
-                        Revoke
+                        Revoke Link
                       </Button>
                     </div>
                   </div>
@@ -1771,6 +1833,21 @@ useEffect(() => {
                 rows={1}
               />
             </div>
+
+            {/* Coach group setting */}
+            {isCoachGroup && (
+              <div className="border border-border rounded-lg p-3 bg-secondary/10">
+                <div className="flex items-center justify-between gap-4">
+                  <Label className="text-foreground">
+                    Show coach’s profile & results
+                  </Label>
+                  <Switch
+                    checked={editShowCoachProfileResults}
+                    onCheckedChange={setEditShowCoachProfileResults}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Group Image Upload */}
             <div>

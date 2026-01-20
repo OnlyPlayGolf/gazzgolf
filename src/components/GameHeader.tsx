@@ -14,6 +14,8 @@ interface GameHeaderProps {
   gameTitle: string;
   courseName: string;
   pageTitle: string;
+  /** Optional override for back button behavior */
+  onBack?: () => void;
   /** If true, user is admin/creator and gets action sheet on back */
   isAdmin?: boolean;
   /** If true, back button is hidden (e.g., for pages that manage their own navigation) */
@@ -32,6 +34,7 @@ export function GameHeader({
   gameTitle,
   courseName,
   pageTitle,
+  onBack,
   isAdmin = false,
   hideBackButton = false,
   onFinish,
@@ -45,6 +48,10 @@ export function GameHeader({
   const [deleting, setDeleting] = useState(false);
 
   const handleBackClick = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (isAdmin && onFinish && onSaveAndExit && onDelete) {
       // Admin: show action sheet
       setShowActionSheet(true);

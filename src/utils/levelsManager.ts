@@ -49,6 +49,37 @@ export const saveLevelProgress = (progress: Record<string, LevelProgress>) => {
   setStorageItem(STORAGE_KEYS.LEVELS_STATE, progress);
 };
 
+// Hydrate local progress cache from Supabase (source of truth)
+export const hydrateLevelsProgressFromDB = async (): Promise<void> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('level_progress')
+      .select('level_id, completed, completed_at, attempts')
+      .eq('user_id', user.id);
+
+    if (error) throw error;
+
+    const next: Record<string, LevelProgress> = {};
+    for (const row of (data || []) as any[]) {
+      if (!row?.level_id) continue;
+      const completedAt = row.completed_at ? Date.parse(row.completed_at) : 0;
+      next[row.level_id] = {
+        levelId: row.level_id,
+        completed: !!row.completed,
+        completedAt: Number.isFinite(completedAt) ? completedAt : 0,
+        attempts: row.attempts ?? 1,
+      };
+    }
+
+    saveLevelProgress(next);
+  } catch (e) {
+    console.error('Error hydrating level progress from database:', e);
+  }
+};
+
 // Mark level as completed and sync to database
 export const completeLevelz = async (levelId: string, attempts: number = 1, completed: boolean = true) => {
   const progress = getLevelProgress();
@@ -62,7 +93,7 @@ export const completeLevelz = async (levelId: string, attempts: number = 1, comp
   };
   saveLevelProgress(progress);
 
-  // Sync to database with manual upsert (no unique index required)
+  // Sync to database (Supabase is source of truth)
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -71,38 +102,29 @@ export const completeLevelz = async (levelId: string, attempts: number = 1, comp
     const levels = loadLevels();
     const level = levels.find(l => l.id === levelId);
     const levelNumber = level?.level ?? null;
+    const completedAt = existingProgress?.completedAt
+      ? new Date(existingProgress.completedAt).toISOString()
+      : null;
 
-    const { data: existing } = await supabase
+    // If completing now, always set completed_at to now. If failing/uncompleting, preserve existing.
+    const completed_at = completed ? new Date().toISOString() : completedAt;
+
+    const { error } = await supabase
       .from('level_progress')
-      .select('id, attempts, completed')
-      .eq('user_id', user.id)
-      .eq('level_id', levelId)
-      .maybeSingle();
-
-    if (existing) {
-      await supabase
-        .from('level_progress')
-        .update({
-          completed: completed,
-          completed_at: completed ? new Date().toISOString() : (existing as any).completed_at,
-          attempts: attempts ?? existing.attempts ?? 1,
-          level_number: levelNumber,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', (existing as any).id);
-    } else {
-      await supabase
-        .from('level_progress')
-        .insert({
+      .upsert(
+        {
           user_id: user.id,
           level_id: levelId,
-          completed: completed,
-          completed_at: completed ? new Date().toISOString() : null,
+          completed,
+          completed_at,
           attempts: attempts ?? 1,
           level_number: levelNumber,
           updated_at: new Date().toISOString(),
-        });
-    }
+        } as any,
+        { onConflict: 'user_id,level_id' }
+      );
+
+    if (error) throw error;
   } catch (error) {
     console.error('Error syncing level progress to database:', error);
   }

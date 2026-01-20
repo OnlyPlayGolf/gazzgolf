@@ -25,8 +25,11 @@ export function AddPlayerDialog({
   defaultTee,
 }: AddPlayerDialogProps) {
   const [friends, setFriends] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [friendsLoading, setFriendsLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   
   // Temp player form
   const [tempFirstName, setTempFirstName] = useState("");
@@ -39,11 +42,52 @@ export function AddPlayerDialog({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        setSearchLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .rpc('search_profiles', { q, max_results: 20 });
+
+        if (error) {
+          console.error("Error searching players:", error);
+          setSearchResults([]);
+          return;
+        }
+
+        const available = (data || []).filter((p: any) =>
+          p?.id &&
+          p.id !== user.id &&
+          !existingPlayerIds.includes(p.id)
+        );
+
+        setSearchResults(available);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timeoutId);
+  }, [isOpen, searchQuery, existingPlayerIds]);
+
   const fetchFriends = async () => {
     try {
-      setLoading(true);
+      setFriendsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setCurrentUserId(user.id);
 
       const { data, error } = await supabase
         .from('friendships')
@@ -81,7 +125,7 @@ export function AddPlayerDialog({
     } catch (error) {
       console.error("Error fetching friends:", error);
     } finally {
-      setLoading(false);
+      setFriendsLoading(false);
     }
   };
 
@@ -120,12 +164,7 @@ export function AddPlayerDialog({
     setTempHandicap("");
   };
 
-  const filteredFriends = friends.filter(
-    (f) =>
-      !existingPlayerIds.includes(f.id) &&
-      (f.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        f.username?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredFriends = friends.filter((f) => !existingPlayerIds.includes(f.id));
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -144,7 +183,7 @@ export function AddPlayerDialog({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search friends..."
+                placeholder="Search players..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -152,14 +191,16 @@ export function AddPlayerDialog({
             </div>
             
             <div className="max-h-64 overflow-y-auto space-y-2">
-              {loading ? (
+              {friendsLoading ? (
                 <p className="text-center text-muted-foreground py-4">Loading...</p>
-              ) : filteredFriends.length === 0 ? (
+              ) : searchLoading ? (
+                <p className="text-center text-muted-foreground py-4">Searching...</p>
+              ) : (searchQuery.trim() ? searchResults : filteredFriends).length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">
-                  {searchQuery ? "No friends found" : "All friends already added"}
+                  {searchQuery ? "No players found" : "No players available to add"}
                 </p>
               ) : (
-                filteredFriends.map((friend) => {
+                (searchQuery.trim() ? searchResults : filteredFriends).map((friend) => {
                   const handicap = friend.handicap ? parseFloat(friend.handicap) : undefined;
                   const formatHandicap = (hcp: number | undefined): string => {
                     if (hcp === undefined) return "";
@@ -182,10 +223,12 @@ export function AddPlayerDialog({
                         <p className="font-medium text-sm truncate">
                           {friend.display_name || friend.username}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          @{friend.username}
-                          {handicap !== undefined && ` · HCP: ${formatHandicap(handicap)}`}
-                        </p>
+                        {friend.username && (
+                          <p className="text-xs text-muted-foreground">
+                            @{friend.username}
+                            {handicap !== undefined && ` · HCP: ${formatHandicap(handicap)}`}
+                          </p>
+                        )}
                       </div>
                       <Plus className="w-5 h-5 text-primary" />
                     </button>

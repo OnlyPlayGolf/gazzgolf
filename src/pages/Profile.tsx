@@ -5,15 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Star, Plus, MessageCircle, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { Star, Plus, MessageCircle, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
-import { NotificationsSheet } from "@/components/NotificationsSheet";
 import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
 
 interface Friend {
@@ -108,18 +109,23 @@ const Profile = () => {
       }
 
       try {
+        // Global user search (includes non-friends) via RPC (safe across profiles RLS)
         const { data, error } = await supabase
-          .from('profiles')
-          .select('id, display_name, username')
-          .neq('id', user.id) // Exclude current user
-          .or(`display_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
-          .limit(20);
+          .rpc('search_profiles', { q: searchTerm.trim(), max_results: 20 });
 
         if (error) {
           console.error('Error searching users:', error);
           setSearchResults([]);
         } else {
-          setSearchResults(data || []);
+          // Normalize shape to what the UI expects
+          const normalized = (data || [])
+            .filter((u: any) => u?.id && u.id !== user.id)
+            .map((u: any) => ({
+              id: u.id as string,
+              display_name: (u.display_name ?? null) as string | null,
+              username: (u.username ?? null) as string | null,
+            }));
+          setSearchResults(normalized);
         }
       } catch (error) {
         console.error('Error in searchUsers:', error);
@@ -331,6 +337,8 @@ const Profile = () => {
             name: groupName.trim(),
             owner_id: user.id,
             image_url: imageUrl,
+            // Backward compatibility when group_type column doesn't exist yet
+            is_coach_group: groupType === "Coach",
           })
           .select()
           .single());
@@ -582,36 +590,27 @@ const Profile = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <TopNavBar />
+      <TopNavBar hideNotifications />
       <div className="p-4 pt-20">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 gap-3">
           <h1 className="text-2xl font-bold text-foreground">My Groups</h1>
         </div>
 
-        <p className="text-muted-foreground text-sm mb-6">
-          Connect and compete with your golf friends
-        </p>
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <p className="text-muted-foreground text-sm">
+            Connect and compete with your golf friends
+          </p>
+          <Button
+            size="sm"
+            className="shrink-0 px-3 gap-3"
+            onClick={() => setIsCreateGroupOpen(true)}
+          >
+            <Plus size={16} />
+            Create Group
+          </Button>
+        </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3 mb-6">
-          <NotificationsSheet 
-            trigger={
-              <Button 
-                variant="outline" 
-                className="flex-1"
-              >
-                <UserPlus size={16} className="mr-2" />
-                Check Invitations
-              </Button>
-            }
-          />
-          <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex-1">
-                <Plus size={16} className="mr-2" />
-                Create Group
-              </Button>
-            </DialogTrigger>
+        <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
                     <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col" hideCloseButton>
                       <DialogHeader className="flex-shrink-0">
                         <DialogTitle className="text-xl font-semibold text-center">Create New Group</DialogTitle>
@@ -619,22 +618,81 @@ const Profile = () => {
                       <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0">
                         {/* Group Type Toggle */}
                         <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant={groupType === "Player" ? "default" : "outline"}
-                            className="flex-1"
-                            onClick={() => setGroupType("Player")}
-                          >
-                            Player
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={groupType === "Coach" ? "default" : "outline"}
-                            className="flex-1"
-                            onClick={() => setGroupType("Coach")}
-                          >
-                            Coach
-                          </Button>
+                          <div className="relative flex-1">
+                            <Button
+                              type="button"
+                              variant={groupType === "Player" ? "default" : "outline"}
+                              className="w-full pr-10"
+                              onClick={() => setGroupType("Player")}
+                            >
+                              Player
+                            </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                side="bottom"
+                                align="end"
+                                sideOffset={8}
+                                className="relative z-[200] w-80 p-3"
+                              >
+                                <PopoverPrimitive.Arrow className="fill-popover" width={14} height={7} />
+                                <div className="space-y-1.5">
+                                  <p className="font-semibold text-foreground">Player group</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    All players can manage the group. All player profiles and results are shown in the group.
+                                  </p>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+
+                          <div className="relative flex-1">
+                            <Button
+                              type="button"
+                              variant={groupType === "Coach" ? "default" : "outline"}
+                              className="w-full pr-10"
+                              onClick={() => setGroupType("Coach")}
+                            >
+                              Coach
+                            </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                side="bottom"
+                                align="end"
+                                sideOffset={8}
+                                className="relative z-[200] w-80 p-3"
+                              >
+                                <PopoverPrimitive.Arrow className="fill-popover" width={14} height={7} />
+                                <div className="space-y-1.5">
+                                  <p className="font-semibold text-foreground">Coach group</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Only the coach can manage the group. Coach’s profile and results are hidden by default and can be shown or edited later.
+                                  </p>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                         </div>
 
                         {/* Group Name */}
@@ -802,7 +860,6 @@ const Profile = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
-        </div>
 
         {/* Groups List */}
         <div className="space-y-4">

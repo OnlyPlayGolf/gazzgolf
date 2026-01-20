@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
 import { SkinsBottomTabBar } from "@/components/SkinsBottomTabBar";
@@ -10,6 +10,7 @@ import { GameHeader } from "@/components/GameHeader";
 
 export default function RoundInfo() {
   const { roundId } = useParams();
+  const navigate = useNavigate();
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
   
   const [origin, setOrigin] = useState<string | null>(null);
@@ -45,7 +46,8 @@ export default function RoundInfo() {
       <GameHeader 
         gameTitle={gameData?.round_name || "Stroke Play"} 
         courseName={gameData?.course_name || ""} 
-        pageTitle="Game info" 
+        pageTitle="Game info"
+        onBack={() => navigate('/')}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
         <Card>

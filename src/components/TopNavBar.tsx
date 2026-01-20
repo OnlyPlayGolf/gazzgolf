@@ -11,7 +11,11 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 
-export const TopNavBar = () => {
+interface TopNavBarProps {
+  hideNotifications?: boolean;
+}
+
+export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [profile, setProfile] = useState<any>(null);
@@ -100,13 +104,15 @@ export const TopNavBar = () => {
               </Button>
             }
           />
-          <NotificationsSheet 
-            trigger={
-              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
-                <Bell size={18} fill="white" strokeWidth={0} />
-              </Button>
-            }
-          />
+          {!hideNotifications && (
+            <NotificationsSheet 
+              trigger={
+                <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">
+                  <Bell size={18} fill="white" strokeWidth={0} />
+                </Button>
+              }
+            />
+          )}
           <MessagesSheet 
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative text-white hover:bg-white/20">

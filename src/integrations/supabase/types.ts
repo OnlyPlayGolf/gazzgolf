@@ -520,6 +520,7 @@ export type Database = {
       }
       courses: {
         Row: {
+          country_code: string | null
           created_at: string
           id: string
           location: string | null
@@ -527,6 +528,7 @@ export type Database = {
           tee_names: Json | null
         }
         Insert: {
+          country_code?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -534,6 +536,7 @@ export type Database = {
           tee_names?: Json | null
         }
         Update: {
+          country_code?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -901,6 +904,7 @@ export type Database = {
           is_coach_group: boolean
           name: string
           owner_id: string
+          show_coach_profile_results: boolean
         }
         Insert: {
           created_at?: string | null
@@ -911,6 +915,7 @@ export type Database = {
           is_coach_group?: boolean
           name: string
           owner_id: string
+          show_coach_profile_results?: boolean
         }
         Update: {
           created_at?: string | null
@@ -921,6 +926,7 @@ export type Database = {
           is_coach_group?: boolean
           name?: string
           owner_id?: string
+          show_coach_profile_results?: boolean
         }
         Relationships: [
           {
@@ -1642,6 +1648,7 @@ export type Database = {
       round_players: {
         Row: {
           created_at: string
+          event_player_id: string | null
           group_id: string | null
           guest_name: string | null
           handicap: number | null
@@ -1654,6 +1661,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          event_player_id?: string | null
           group_id?: string | null
           guest_name?: string | null
           handicap?: number | null
@@ -1666,6 +1674,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          event_player_id?: string | null
           group_id?: string | null
           guest_name?: string | null
           handicap?: number | null
