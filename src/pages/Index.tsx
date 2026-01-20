@@ -274,7 +274,7 @@ const Index = () => {
         )}
 
         {/* Ongoing Rounds Section - renders when data is available */}
-        {!ongoingGamesLoading && (
+{!ongoingGamesLoading && (
   <OngoingRoundsSection
     ongoingGames={ongoingGames}
     onGameDeleted={handleGameDeleted}
