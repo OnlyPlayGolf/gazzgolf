@@ -1,10 +1,13 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Lock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { toast } from "sonner";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -14,6 +17,9 @@ interface AuthGuardProps {
 const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,6 +40,21 @@ const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) {
+      toast.error(error.message);
+    }
+    setIsSubmitting(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -50,32 +71,64 @@ const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Lock className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle>Sign In Required</CardTitle>
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-2xl font-serif">Welcome to OnlyPlay Golf</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-center">
-            <p className="text-muted-foreground">
-              You need to be signed in to access this feature.
-            </p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => navigate('/auth')}
-                className="w-full bg-primary hover:bg-primary/90"
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/auth', { state: { view: 'forgot' } })}
+                className="text-sm text-primary hover:underline block text-center w-full"
               >
-                <User className="mr-2 h-4 w-4" />
-                Sign In / Sign Up
+                Forgot Password?
+              </button>
+              <Button 
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Logging in...' : 'Log In'}
               </Button>
               <Button 
+                type="button"
                 variant="outline"
-                onClick={() => navigate('/drills')}
+                onClick={() => navigate('/auth', { state: { view: 'signup' } })}
                 className="w-full"
               >
-                Continue as Guest
+                Create New Account
               </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
       </div>
