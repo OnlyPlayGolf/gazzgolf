@@ -242,7 +242,7 @@ export default function ApproachStats() {
 
         let proQuery = supabase
           .from('pro_stats_rounds')
-          .select('id, created_at')
+          .select('id, created_at, external_round_id')
           .eq('user_id', user.id)
           .eq('holes_played', 18);
 
@@ -345,7 +345,7 @@ export default function ApproachStats() {
             }
           });
 
-          const validRounds = proRounds.length;
+          const validRounds = validProRounds.length;
           setProRoundsCount(validRounds);
 
           if (validRounds > 0) {
