@@ -277,7 +277,12 @@ const Index = () => {
         )}
 
         {/* Ongoing Rounds Section - renders when data is available */}
-        {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={handleGameDeleted} />}
+        {!ongoingGamesLoading && (
+  <OngoingRoundsSection
+    ongoingGames={ongoingGames}
+    onGameDeleted={handleGameDeleted}
+  />
+)}
 
         {/* Performance Snapshot - always renders (handles loading internally) */}
         <PerformanceSnapshot performanceStats={performanceStats} />
