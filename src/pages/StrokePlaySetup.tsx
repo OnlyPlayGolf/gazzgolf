@@ -203,6 +203,7 @@ export default function StrokePlaySetup() {
 
       // Determine starting hole based on selectedHoles
       const startingHole = selectedHoles === 'back9' ? 10 : 1;
+      
       // Stable identity per player across rounds (registered: user_id, guests: generated UUID)
       const guestEventPlayerIds = new Map<string, string>();
       const getEventPlayerIdForPlayer = (p: any): string => {
@@ -215,14 +216,13 @@ export default function StrokePlaySetup() {
         return next;
       };
 
-      const createGroupsAndPlayersForRound = async (roundId: string) => {
-        // Create game groups and add players with group references
-        const hasMultipleGroups = groups.length > 1;
+      const isMissingColumnError = (err: any, column: string): boolean => {
+        const msg = (err?.message || err?.details || err?.hint || "").toString().toLowerCase();
+        return msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("column"));
+      };
 
-        const isMissingColumnError = (err: any, column: string): boolean => {
-          const msg = (err?.message || err?.details || err?.hint || "").toString().toLowerCase();
-          return msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("column"));
-        };
+      const createGroupsAndPlayersForRound = async (roundId: string) => {
+        const hasMultipleGroups = groups.length > 1;
 
         for (let i = 0; i < groups.length; i++) {
           const group = groups[i];
@@ -248,42 +248,6 @@ export default function StrokePlaySetup() {
               gameGroupId = gameGroup.id;
             }
           }
-
-      // Create the round
-      const { data: round, error } = await supabase
-        .from("rounds")
-        .insert({
-          user_id: user.id,
-          course_name: selectedCourse.name,
-          round_name: roundName || null,
-          tee_set: teeColor,
-          holes_played: getHolesPlayed(),
-          starting_hole: startingHole,
-          origin: 'play',
-          date_played: datePlayed,
-          stats_mode: statsMode,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Persist the player's stats mode choice for this round (used by in-round settings)
-      try {
-        await supabase
-          .from('player_game_stats_mode')
-          .upsert({
-            user_id: user.id,
-            game_id: round.id,
-            game_type: 'round',
-            stats_mode: statsMode,
-          }, { onConflict: 'user_id,game_id,game_type' });
-      } catch (e) {
-        console.warn('Failed to save player stats mode preference:', e);
-      }
-
-      // Create game groups and add players with group references
-      const hasMultipleGroups = groups.length > 1;
 
           // Add registered players to database
           const registeredPlayers = group.players.filter(p => !p.isTemporary);
@@ -338,7 +302,6 @@ export default function StrokePlaySetup() {
         // Save settings to round-specific localStorage
         localStorage.setItem(`roundSettings_${roundId}`, JSON.stringify({
           mulligansPerPlayer,
-          handicapEnabled,
           gimmesEnabled,
         }));
       };
@@ -362,6 +325,20 @@ export default function StrokePlaySetup() {
           .single();
 
         if (error) throw error;
+
+        // Persist the player's stats mode choice for this round
+        try {
+          await supabase
+            .from('player_game_stats_mode')
+            .upsert({
+              user_id: user.id,
+              game_id: round.id,
+              game_type: 'round',
+              stats_mode: statsMode,
+            }, { onConflict: 'user_id,game_id,game_type' });
+        } catch (e) {
+          console.warn('Failed to save player stats mode preference:', e);
+        }
 
         await createGroupsAndPlayersForRound(round.id);
 
@@ -405,58 +382,17 @@ export default function StrokePlaySetup() {
             })
             .select()
             .single();
+          
           if (error) throw error;
-
-          if (groupError) {
-            console.error("Error creating game group:", groupError);
-          } else {
-            gameGroupId = gameGroup.id;
-          }
-        }
-
-        // Add registered players to database
-        const registeredPlayers = group.players.filter(p => !p.isTemporary);
-        const guestPlayers = group.players.filter(p => p.isTemporary);
-
-        // Add registered players to database
-        const registeredPlayersToAdd = registeredPlayers.map(p => ({
-          round_id: round.id,
-          user_id: p.odId,
-          tee_color: p.teeColor || teeColor,
-          group_id: gameGroupId,
-          is_guest: false,
-        }));
-
-        // Add guest players to database
-        const guestPlayersToAdd = guestPlayers.map(p => ({
-          round_id: round.id,
-          user_id: null,
-          tee_color: p.teeColor || teeColor,
-          group_id: gameGroupId,
-          guest_name: p.displayName,
-          is_guest: true,
-        }));
-
-        const allPlayersToAdd = [...registeredPlayersToAdd, ...guestPlayersToAdd];
-
-        if (allPlayersToAdd.length > 0) {
-          const { error: playersError } = await supabase
-            .from('round_players')
-            .insert(allPlayersToAdd);
 
           createdRoundIds.push(round.id);
           await createGroupsAndPlayersForRound(round.id);
         }
+
         const firstRoundId = createdRoundIds[0];
         toast({ title: "Tournament started!", description: `Round 1 at ${selectedCourse.name}` });
         navigate(`/rounds/${firstRoundId}/track`);
       }
-
-      // Save settings to round-specific localStorage
-      localStorage.setItem(`roundSettings_${round.id}`, JSON.stringify({
-        mulligansPerPlayer,
-        gimmesEnabled,
-      }));
 
       // Clear setup sessionStorage
       sessionStorage.removeItem('roundPlayers');

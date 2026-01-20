@@ -64,9 +64,9 @@ export const TopNavBar = ({ profile, hideNotifications = false }: TopNavBarProps
       <div className="bg-primary px-4 py-3 flex items-center justify-between">
         {/* Left: Logo */}
         <img
-          src="/favicon.svg"
+          src="/src/assets/onlyplay-golf-logo.png"
           alt="OnlyPlay Golf"
-          className="h-10 w-10 cursor-pointer"
+          className="h-14 brightness-0 invert cursor-pointer"
           onClick={() => {
             navigate('/');
             window.scrollTo({ top: 0, behavior: 'smooth' });

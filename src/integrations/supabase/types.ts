@@ -898,7 +898,6 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
-          group_type: string | null
           id: string
           image_url: string | null
           is_coach_group: boolean
@@ -909,7 +908,6 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description?: string | null
-          group_type?: string | null
           id?: string
           image_url?: string | null
           is_coach_group?: boolean
@@ -920,7 +918,6 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string | null
-          group_type?: string | null
           id?: string
           image_url?: string | null
           is_coach_group?: boolean
@@ -1668,7 +1665,6 @@ export type Database = {
       round_players: {
         Row: {
           created_at: string
-          event_player_id: string | null
           group_id: string | null
           guest_name: string | null
           handicap: number | null
@@ -1681,7 +1677,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          event_player_id?: string | null
           group_id?: string | null
           guest_name?: string | null
           handicap?: number | null
@@ -1694,7 +1689,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          event_player_id?: string | null
           group_id?: string | null
           guest_name?: string | null
           handicap?: number | null
