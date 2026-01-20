@@ -9,7 +9,7 @@ import { MessagesSheet } from "./MessagesSheet";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
-
+import onlyPlayLogo from "@/assets/onlyplay-golf-logo.png";
 interface TopNavBarProps {
  wille
   hideNotifications?: boolean;
@@ -68,16 +68,16 @@ export const TopNavBar = ({ profile }: TopNavBarProps) => {
       )}
     >
       <div className="bg-primary px-4 py-3 flex items-center justify-between">
-        {/* Left: Title */}
-        <h1 
-          className="text-primary-foreground font-luxury font-semibold text-2xl cursor-pointer"
+        {/* Left: Logo */}
+        <img 
+          src={onlyPlayLogo}
+          alt="OnlyPlay Golf"
+          className="h-14 cursor-pointer brightness-0 invert"
           onClick={() => {
             navigate('/');
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-        >
-          OnlyPlay Golf
-        </h1>
+        />
 
         {/* Center: Empty space for balance */}
         <div className="flex-1 flex justify-center">

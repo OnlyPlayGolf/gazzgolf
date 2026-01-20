@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react";
+ wille
 import { useLocation, useNavigate } from "react-router-dom";
+
+import { useNavigate, useLocation } from "react-router-dom";
+> main
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
@@ -34,7 +38,10 @@ const Auth = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation'>('signin');
+  
+  // Check if we should start on signup view from navigation state
+  const initialView = (location.state as { view?: string } | null)?.view === 'signup' ? 'signup' : 'signin';
+  const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation'>(initialView);
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
 
   // Form states

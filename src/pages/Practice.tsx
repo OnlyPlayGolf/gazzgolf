@@ -2,8 +2,9 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, Trophy, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AuthGuard from "@/components/AuthGuard";
 
-const Practice = () => {
+const PracticeContent = () => {
   const navigate = useNavigate();
 
   return (
@@ -91,6 +92,14 @@ const Practice = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Practice = () => {
+  return (
+    <AuthGuard>
+      <PracticeContent />
+    </AuthGuard>
   );
 };
 

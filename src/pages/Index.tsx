@@ -50,10 +50,16 @@ const Index = () => {
 
   // Progressive loading hooks - each section manages its own loading state
   const { profile, loading: profileLoading } = useHomeProfile(user);
-  const { friendsOnCourse, loading: friendsOnCourseLoading } = useFriendsOnCourse(user);
+  const { friendsOnCourse, loading: friendsOnCourseLoading, refresh: refreshFriendsOnCourse } = useFriendsOnCourse(user);
   const { ongoingGames, loading: ongoingGamesLoading, refresh: refreshOngoingGames } = useOngoingGames(user);
   const { performanceStats, loading: keyInsightsLoading } = useKeyInsights(user);
   const { friendsPosts, loading: feedPostsLoading, refresh: refreshFeedPosts } = useFeedPosts(user);
+
+  const handleGameDeleted = () => {
+    // Refresh both ongoing games and friends on course when a game is deleted
+    // Using void to fire-and-forget since we don't need to await at the call site
+    void Promise.all([refreshOngoingGames(), refreshFriendsOnCourse()]);
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -152,9 +158,17 @@ const Index = () => {
           </div>
 
           {/* CTA */}
-          <div className="mt-8">
+          <div className="mt-8 space-y-3">
             <Button onClick={() => navigate('/auth')} className="w-full" size="lg">
               Sign In to Get Started
+            </Button>
+            <Button 
+              onClick={() => navigate('/auth', { state: { view: 'signup' } })} 
+              variant="outline"
+              className="w-full" 
+              size="lg"
+            >
+              Create New Account
             </Button>
           </div>
         </div>
@@ -268,7 +282,7 @@ const Index = () => {
         )}
 
         {/* Ongoing Rounds Section - renders when data is available */}
-        {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={refreshOngoingGames} />}
+        {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={handleGameDeleted} />}
 
         {/* Performance Snapshot - always renders (handles loading internally) */}
         <PerformanceSnapshot performanceStats={performanceStats} />
