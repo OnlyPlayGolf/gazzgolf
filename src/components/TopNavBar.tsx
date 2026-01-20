@@ -62,7 +62,7 @@ export const TopNavBar = ({ profile, hideNotifications = false }: TopNavBarProps
         visible ? "translate-y-0" : "-translate-y-full"
       )}
     >
-      <div className="bg-primary px-4 py-3 flex items-center justify-between">
+      <div className="bg-primary px-4 py-1.5 flex items-center justify-between">
         {/* Left: Logo */}
         <img
           src={onlyplayLogo}
