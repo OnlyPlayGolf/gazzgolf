@@ -9,6 +9,7 @@ import { MessagesSheet } from "./MessagesSheet";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
+import onlyplayLogo from "@/assets/onlyplay-golf-logo.png";
 
 interface TopNavBarProps {
   hideNotifications?: boolean;
@@ -64,7 +65,7 @@ export const TopNavBar = ({ profile, hideNotifications = false }: TopNavBarProps
       <div className="bg-primary px-4 py-3 flex items-center justify-between">
         {/* Left: Logo */}
         <img
-          src="/src/assets/onlyplay-golf-logo.png"
+          src={onlyplayLogo}
           alt="OnlyPlay Golf"
           className="h-14 brightness-0 invert cursor-pointer"
           onClick={() => {
