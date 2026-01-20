@@ -1,4 +1,4 @@
-groimport { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProfilePhoto } from "@/components/ProfilePhoto";
@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap, Star, Menu as MenuIcon, User as UserIcon, MessageSquare, Settings, Info, Mail } from "lucide-react";
-import onlyplayLogo from "@/assets/onlyplay-golf-logo.png";
 import { getLevelsWithProgress } from "@/utils/levelsManager";
 import {
   Sheet,
@@ -21,18 +20,6 @@ import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
 import { hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
-
-type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
-
-interface FriendOnCourseData {
-  friendId: string;
-  friendName: string;
-  friendAvatar: string | null;
-  gameId: string;
-  gameType: GameType;
-  courseName: string;
-  createdAt: string;
-}
 
 import { OngoingRoundsSection } from "@/components/OngoingRoundsSection";
 import { useHomeProfile } from "@/hooks/useHomeProfile";
@@ -76,14 +63,11 @@ const Index = () => {
 
   useEffect(() => {
     if (user) {
-      loadUserData();
       void (async () => {
         await hydrateLevelsProgressFromDB();
         loadCurrentLevel();
       })();
     } else {
-      setLoading(false);
-
       loadCurrentLevel();
     }
   }, [user?.id]);
@@ -106,7 +90,7 @@ const Index = () => {
           {/* Welcome Header */}
           <div className="text-center">
             <img 
-              src={onlyplayLogo} 
+              src="/og-image.svg"
               alt="OnlyPlay Golf" 
               className="h-28 mx-auto"
             />
@@ -284,8 +268,8 @@ const Index = () => {
         {/* Performance Snapshot - always renders (handles loading internally) */}
         <PerformanceSnapshot performanceStats={performanceStats} />
 
-       {/* Friends Activity Feed - renders when data is available */}
-{!feedPostsLoading && user && friendsPosts.length > 0 ? (
+        {/* Friends Activity Feed */}
+        {!feedPostsLoading && user && friendsPosts.length > 0 ? (
   <div className="space-y-4">
     {/* Posts */}
     {friendsPosts.slice(0, postsToShow).map((post) => (
@@ -310,7 +294,7 @@ const Index = () => {
       </div>
     )}
   </div>
-) : !loading ? (
+) : (!feedPostsLoading && user) ? (
   <div className="px-4 pb-6">
     <Card>
       <CardContent className="p-6 text-center">

@@ -203,8 +203,6 @@ export default function StrokePlaySetup() {
 
       // Determine starting hole based on selectedHoles
       const startingHole = selectedHoles === 'back9' ? 10 : 1;
-
- wille
       // Stable identity per player across rounds (registered: user_id, guests: generated UUID)
       const guestEventPlayerIds = new Map<string, string>();
       const getEventPlayerIdForPlayer = (p: any): string => {
@@ -286,7 +284,6 @@ export default function StrokePlaySetup() {
 
       // Create game groups and add players with group references
       const hasMultipleGroups = groups.length > 1;
- main
 
           // Add registered players to database
           const registeredPlayers = group.players.filter(p => !p.isTemporary);
@@ -408,8 +405,6 @@ export default function StrokePlaySetup() {
             })
             .select()
             .single();
-
- wille
           if (error) throw error;
 
           if (groupError) {
@@ -448,13 +443,10 @@ export default function StrokePlaySetup() {
           const { error: playersError } = await supabase
             .from('round_players')
             .insert(allPlayersToAdd);
- main
 
           createdRoundIds.push(round.id);
           await createGroupsAndPlayersForRound(round.id);
         }
-
- wille
         const firstRoundId = createdRoundIds[0];
         toast({ title: "Tournament started!", description: `Round 1 at ${selectedCourse.name}` });
         navigate(`/rounds/${firstRoundId}/track`);
@@ -465,7 +457,6 @@ export default function StrokePlaySetup() {
         mulligansPerPlayer,
         gimmesEnabled,
       }));
- main
 
       // Clear setup sessionStorage
       sessionStorage.removeItem('roundPlayers');

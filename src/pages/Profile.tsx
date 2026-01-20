@@ -7,25 +7,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
- wille
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
-import { Star, Plus, MessageCircle, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
-
 import { Star, Plus, MessageCircle, Crown, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info, Loader2 } from "lucide-react";
- main
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
- wille
 import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
 
 import { NotificationsSheet } from "@/components/NotificationsSheet";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { searchProfilesTypeahead } from "@/utils/profileSearch";
- main
 
 interface Friend {
   id: string;
@@ -130,30 +124,9 @@ const Profile = () => {
     const run = async () => {
       setSearchLoading(true);
       try {
- wille
-        // Global user search (includes non-friends) via RPC (safe across profiles RLS)
-        const { data, error } = await supabase
-          .rpc('search_profiles', { q: searchTerm.trim(), max_results: 20 });
-
-        if (error) {
-          console.error('Error searching users:', error);
-          setSearchResults([]);
-        } else {
-          // Normalize shape to what the UI expects
-          const normalized = (data || [])
-            .filter((u: any) => u?.id && u.id !== user.id)
-            .map((u: any) => ({
-              id: u.id as string,
-              display_name: (u.display_name ?? null) as string | null,
-              username: (u.username ?? null) as string | null,
-            }));
-          setSearchResults(normalized);
-        }
-
         const rows = await searchProfilesTypeahead(supabase as any, debouncedSearchTerm, { limit: 20 });
         if (cancelled || requestId !== searchRequestIdRef.current) return;
         setSearchResults(rows);
- main
       } catch (error) {
         if (cancelled || requestId !== searchRequestIdRef.current) return;
         console.error('Error searching users:', error);
@@ -228,40 +201,6 @@ const Profile = () => {
         throw groupsError;
       }
 
- wille
-      // Get member counts for each group
-      const groupsList = await Promise.all(
-        (groupsData || []).map(async (g: any) => {
-          const { count } = await (supabase as any)
-            .from('group_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('group_id', g.groups.id);
-
-          // Derive group_type for backward compatibility if DB column doesn't exist / isn't selected.
-          let derivedGroupType: 'player' | 'coach' | null = g.groups.group_type ?? null;
-          if (!derivedGroupType) {
-            const { count: adminCount } = await (supabase as any)
-              .from('group_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('group_id', g.groups.id)
-              .eq('role', 'admin');
-            derivedGroupType = (adminCount || 0) > 0 ? 'coach' : 'player';
-          }
-
-          return {
-            id: g.groups.id,
-            name: g.groups.name,
-            owner_id: g.groups.owner_id,
-            role: g.role,
-            member_count: count || 0,
-            created_at: g.groups.created_at,
-            description: g.groups.description,
-            image_url: g.groups.image_url,
-            group_type: derivedGroupType,
-          };
-        })
-      );
-
       // Batch member counts for all groups (avoid N+1)
       const groupRows = (groupsData || []).filter((g: any) => g?.groups?.id);
       const groupIds = groupRows.map((g: any) => g.groups.id);
@@ -295,7 +234,6 @@ const Profile = () => {
         description: g.groups.description,
         image_url: g.groups.image_url,
       }));
-main
 
       setGroups(groupsListWithCounts);
 

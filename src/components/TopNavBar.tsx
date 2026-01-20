@@ -9,19 +9,13 @@ import { MessagesSheet } from "./MessagesSheet";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
-import onlyPlayLogo from "@/assets/onlyplay-golf-logo.png";
+
 interface TopNavBarProps {
- wille
   hideNotifications?: boolean;
-}
-
-export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
-
   profile?: any;
 }
 
-export const TopNavBar = ({ profile }: TopNavBarProps) => {
- main
+export const TopNavBar = ({ profile, hideNotifications = false }: TopNavBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [visible, setVisible] = useState(true);
@@ -69,10 +63,10 @@ export const TopNavBar = ({ profile }: TopNavBarProps) => {
     >
       <div className="bg-primary px-4 py-3 flex items-center justify-between">
         {/* Left: Logo */}
-        <img 
-          src={onlyPlayLogo}
+        <img
+          src="/favicon.svg"
           alt="OnlyPlay Golf"
-          className="h-14 cursor-pointer brightness-0 invert"
+          className="h-10 w-10 cursor-pointer"
           onClick={() => {
             navigate('/');
             window.scrollTo({ top: 0, behavior: 'smooth' });
