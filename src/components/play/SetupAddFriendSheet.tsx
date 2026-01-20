@@ -136,13 +136,8 @@ export function SetupAddFriendSheet({
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
- wille
   const handleSelectFriend = (friend: { id: string; display_name: string | null; username: string | null; handicap?: string | null }) => {
     const handicapValue = parseHandicap(friend.handicap ?? null);
-    
-
-  const handleSelectFriend = (friend: Friend) => {
- main
     const player: Player = {
       odId: friend.id,
       displayName: friend.display_name || friend.username || "Player",
@@ -190,7 +185,6 @@ export function SetupAddFriendSheet({
               </div>
             ) : (
               <div className="space-y-2">
- wille
                 {(searchQuery.trim()
                   ? searchResults.map((p) => ({
                       id: p.id,
@@ -201,9 +195,6 @@ export function SetupAddFriendSheet({
                   : filteredFriends
                 ).map((friend) => {
                   const handicapValue = parseHandicap((friend as any).handicap ?? null);
-
-                {filteredFriends.map((friend) => {
- main
                   return (
                     <div
                       key={friend.id}

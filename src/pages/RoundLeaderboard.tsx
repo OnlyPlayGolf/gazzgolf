@@ -420,15 +420,12 @@ export default function RoundLeaderboard() {
         gameTitle={round.round_name || "Stroke Play"}
         courseName={round.course_name}
         pageTitle="Leaderboard"
- wille
         onBack={() => navigate('/')}
         isAdmin={isAdmin}
         onFinish={handleFinishGame}
         onSaveAndExit={() => navigate('/profile')}
         onDelete={handleDeleteGame}
         gameName="Round"
-
- main
       />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">
@@ -603,7 +600,6 @@ export default function RoundLeaderboard() {
                             {backNine.length > 0 ? '' : (hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
                           </TableCell>
                         </TableRow>
- wille
                         <TableRow>
                           <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Net</TableCell>
                           {frontNine.map(hole => {
@@ -625,8 +621,6 @@ export default function RoundLeaderboard() {
                             {backNine.length > 0 ? '' : (hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
                           </TableCell>
                         </TableRow>
-
- main
                       </TableBody>
                     </Table>
                   </div>
@@ -701,7 +695,6 @@ export default function RoundLeaderboard() {
                               {hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : '')}
                             </TableCell>
                           </TableRow>
-< wille
                           <TableRow>
                             <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Net</TableCell>
                             {backNine.map(hole => {
@@ -723,8 +716,6 @@ export default function RoundLeaderboard() {
                               {hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : '')}
                             </TableCell>
                           </TableRow>
-=
-> main
                         </TableBody>
                       </Table>
                     </div>

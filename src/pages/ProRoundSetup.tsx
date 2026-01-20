@@ -25,11 +25,8 @@ import {
 import { cn } from "@/lib/utils";
 import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
 import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
- wille
 import { format } from "date-fns";
-
 import { TopNavBar } from "@/components/TopNavBar";
- main
 
 type StatsMode = "strokes_gained" | "basic_stats";
 

@@ -1449,7 +1449,6 @@ useEffect(() => {
 
               {/* History Tab */}
               <TabsContent value="history">
- wille
                 {groupId && (
                   <GroupDrillHistory
                     groupId={groupId}
@@ -1457,11 +1456,6 @@ useEffect(() => {
                     includeCoaches={effectiveGroupType === 'coach' && !!group?.show_coach_profile_results}
                   />
                 )}
-
-                <FadeSlide>
-                  {groupId && <GroupDrillHistory groupId={groupId} groupCreatedAt={group?.created_at} />}
-                </FadeSlide>
- main
               </TabsContent>
 
               {/* Play Tab */}

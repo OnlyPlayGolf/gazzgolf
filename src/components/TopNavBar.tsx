@@ -11,17 +11,11 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import onlyPlayLogo from "@/assets/onlyplay-golf-logo.png";
 interface TopNavBarProps {
- wille
   hideNotifications?: boolean;
-}
-
-export const TopNavBar = ({ hideNotifications = false }: TopNavBarProps) => {
-
   profile?: any;
 }
 
-export const TopNavBar = ({ profile }: TopNavBarProps) => {
- main
+export const TopNavBar = ({ hideNotifications = false, profile }: TopNavBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [visible, setVisible] = useState(true);

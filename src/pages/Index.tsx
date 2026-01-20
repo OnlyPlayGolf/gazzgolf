@@ -19,7 +19,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
- wille
 import { hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
@@ -40,7 +39,6 @@ import { useFriendsOnCourse, FriendOnCourseData } from "@/hooks/useFriendsOnCour
 import { useOngoingGames } from "@/hooks/useOngoingGames";
 import { useKeyInsights } from "@/hooks/useKeyInsights";
 import { useFeedPosts } from "@/hooks/useFeedPosts";
- main
 
 const Index = () => {
   const navigate = useNavigate();
@@ -77,7 +75,6 @@ const Index = () => {
 
   useEffect(() => {
     if (user) {
- wille
       loadUserData();
       void (async () => {
         await hydrateLevelsProgressFromDB();
@@ -85,9 +82,7 @@ const Index = () => {
       })();
     } else {
       setLoading(false);
-
       loadCurrentLevel();
- main
     }
   }, [user?.id]);
 
@@ -266,16 +261,6 @@ const Index = () => {
           </div>
         )}
 
- wille
-        {/* Performance Snapshot */}
-        <PerformanceSnapshot userId={user.id} />
-
-        {/* Post Box */}
-        <PostBox profile={profile} userId={user.id} onPostCreated={loadUserData} />
-
-        {/* Friends Activity Feed */}
-        {!loading && (friendsPosts.length > 0 || friendsActivity.length > 0) ? (
-
         {/* Post Box - renders when profile is loaded */}
         {!profileLoading && user && (
           <PostBox profile={profile} userId={user.id} onPostCreated={handlePostCreated} />
@@ -288,8 +273,7 @@ const Index = () => {
         <PerformanceSnapshot performanceStats={performanceStats} />
 
         {/* Friends Activity Feed - renders when data is available */}
-        {!feedPostsLoading && user && friendsPosts.length > 0 && (
- main
+        {!feedPostsLoading && user && friendsPosts.length > 0 ? (
           <div className="space-y-4">
             {/* Posts */}
             {friendsPosts.slice(0, postsToShow).map((post) => (
@@ -308,7 +292,7 @@ const Index = () => {
               </div>
             )}
           </div>
-        ) : !loading ? (
+        ) : !feedPostsLoading && user ? (
           <div className="px-4 pb-6">
             <Card>
               <CardContent className="p-6 text-center">
