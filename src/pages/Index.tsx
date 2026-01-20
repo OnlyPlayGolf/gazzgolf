@@ -109,22 +109,8 @@ const Index = () => {
                     <Target size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Practice Drills</h3>
-                    <p className="text-sm text-muted-foreground">Improve your skills with targeted drills</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/levels')}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
-                    <TrendingUp size={24} className="text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Level Challenges</h3>
-                    <p className="text-sm text-muted-foreground">Complete levels and track your progress</p>
+                    <h3 className="font-semibold text-foreground">Practice Like a Game</h3>
+                    <p className="text-sm text-muted-foreground">Play drills, track scores, and climb the leaderboards.</p>
                   </div>
                 </div>
               </CardContent>
@@ -137,8 +123,22 @@ const Index = () => {
                     <Calendar size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Round Tracker</h3>
-                    <p className="text-sm text-muted-foreground">Log and analyze your golf rounds</p>
+                    <h3 className="font-semibold text-foreground">Play Rounds & Games</h3>
+                    <p className="text-sm text-muted-foreground">Log rounds and compete in game modes with friends.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/friends')}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
+                    <Users size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Play With Friends</h3>
+                    <p className="text-sm text-muted-foreground">Create groups, share rounds, and see who's on top.</p>
                   </div>
                 </div>
               </CardContent>
