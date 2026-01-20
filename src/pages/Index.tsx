@@ -103,10 +103,10 @@ const Index = () => {
           {/* Feature Cards */}
           <div className="grid grid-cols-1 gap-2">
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/friends')}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
-                    <Users size={24} className="text-primary" />
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-primary text-primary-foreground rounded-full">
+                    <Users size={20} className="text-primary" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Play With Friends</h3>
@@ -117,10 +117,10 @@ const Index = () => {
             </Card>
 
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/categories')}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
-                    <Target size={24} className="text-primary" />
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-primary text-primary-foreground rounded-full">
+                    <Target size={20} className="text-primary" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Practice Like a Game</h3>
@@ -131,10 +131,10 @@ const Index = () => {
             </Card>
 
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/rounds')}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
-                    <Calendar size={24} className="text-primary" />
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-primary text-primary-foreground rounded-full">
+                    <Calendar size={20} className="text-primary" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">Play Rounds & Games</h3>
