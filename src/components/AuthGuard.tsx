@@ -72,7 +72,7 @@ const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl font-serif">Welcome to OnlyPlay Golf</CardTitle>
+            <CardTitle className="text-center text-2xl">Welcome to OnlyPlay Golf</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
