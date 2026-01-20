@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap, Star, Menu as MenuIcon, User as UserIcon, MessageSquare, Settings, Info, Mail } from "lucide-react";
+import onlyplayLogo from "@/assets/onlyplay-golf-logo.png";
 import { getLevelsWithProgress } from "@/utils/levelsManager";
 import {
   Sheet,
@@ -91,7 +92,11 @@ const Index = () => {
         <div className="p-4 space-y-6">
           {/* Welcome Header */}
           <div className="text-center pt-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Golf Training</h1>
+            <img 
+              src={onlyplayLogo} 
+              alt="OnlyPlay Golf" 
+              className="h-20 mx-auto mb-4"
+            />
             <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
           </div>
 
