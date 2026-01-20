@@ -14,6 +14,7 @@ import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
 import { RoundCardData } from "@/components/RoundCard";
 import { parseHandicap, formatHandicap } from "@/lib/utils";
 import { fetchPostsEngagement } from "@/utils/postsEngagement";
+import { getPublicProfilesMap } from "@/utils/publicProfiles";
 
 interface Profile {
   id: string;
@@ -78,12 +79,9 @@ export default function PublicProfile() {
       return;
     }
 
-    // Load the viewed user's profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    // Load the viewed user's profile via RPC (bypasses profiles RLS safely)
+    const profileMap = await getPublicProfilesMap(supabase as any, [userId]);
+    const profileData = profileMap.get(userId) || null;
 
     if (!profileData) {
       toast({
@@ -163,12 +161,12 @@ export default function PublicProfile() {
         f.requester === targetUserId ? f.addressee : f.requester
       );
 
-      const { data: friendsProfiles } = await supabase
-        .from('profiles')
-        .select('id, display_name, username, avatar_url')
-        .in('id', friendIds);
-
-      setFriends(friendsProfiles || []);
+      const friendProfileMap = await getPublicProfilesMap(supabase as any, friendIds);
+      setFriends(
+        friendIds
+          .map((id) => friendProfileMap.get(id))
+          .filter(Boolean) as any
+      );
     }
 
     // Load unified rounds (includes all game types)
@@ -203,6 +201,10 @@ export default function PublicProfile() {
 
     if (postsData) {
       const page = postsData.slice(0, POSTS_PAGE_SIZE);
+      const postProfileMap = await getPublicProfilesMap(
+        supabase as any,
+        page.map((p: any) => p.user_id)
+      );
       const engagement = await fetchPostsEngagement(
         page.map((p: any) => p.id),
         currentUser || null
@@ -210,6 +212,16 @@ export default function PublicProfile() {
       setUserPosts(
         page.map((p: any) => ({
           ...p,
+          profile: {
+            ...(p.profile || {}),
+            ...(postProfileMap.get(p.user_id)
+              ? {
+                  display_name: postProfileMap.get(p.user_id)!.display_name,
+                  username: postProfileMap.get(p.user_id)!.username,
+                  avatar_url: postProfileMap.get(p.user_id)!.avatar_url,
+                }
+              : {}),
+          },
           _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
         }))
       );
