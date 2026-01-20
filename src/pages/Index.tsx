@@ -89,19 +89,19 @@ const Index = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-3">
           {/* Welcome Header */}
-          <div className="text-center pt-2">
+          <div className="text-center">
             <img 
               src={onlyplayLogo} 
               alt="OnlyPlay Golf" 
-              className="h-40 mx-auto mb-1"
+              className="h-32 mx-auto"
             />
-            <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
+            <p className="text-muted-foreground text-sm">Track your progress, complete drills, and improve your game</p>
           </div>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 gap-4 mt-8">
+          <div className="grid grid-cols-1 gap-3">
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/categories')}>
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
