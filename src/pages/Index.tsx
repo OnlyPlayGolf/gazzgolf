@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+groimport { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProfilePhoto } from "@/components/ProfilePhoto";
@@ -284,7 +284,7 @@ const Index = () => {
         {/* Performance Snapshot - always renders (handles loading internally) */}
         <PerformanceSnapshot performanceStats={performanceStats} />
 
-        {/* Friends Activity Feed - renders when data is available */}
+       {/* Friends Activity Feed - renders when data is available */}
 {!feedPostsLoading && user && friendsPosts.length > 0 ? (
   <div className="space-y-4">
     {/* Posts */}
