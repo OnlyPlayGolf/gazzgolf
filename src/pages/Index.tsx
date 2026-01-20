@@ -20,7 +20,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
- wille
 import { hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
 
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
@@ -41,7 +40,6 @@ import { useFriendsOnCourse, FriendOnCourseData } from "@/hooks/useFriendsOnCour
 import { useOngoingGames } from "@/hooks/useOngoingGames";
 import { useKeyInsights } from "@/hooks/useKeyInsights";
 import { useFeedPosts } from "@/hooks/useFeedPosts";
- main
 
 const Index = () => {
   const navigate = useNavigate();
@@ -78,7 +76,6 @@ const Index = () => {
 
   useEffect(() => {
     if (user) {
- wille
       loadUserData();
       void (async () => {
         await hydrateLevelsProgressFromDB();
@@ -88,7 +85,6 @@ const Index = () => {
       setLoading(false);
 
       loadCurrentLevel();
- main
     }
   }, [user?.id]);
 
