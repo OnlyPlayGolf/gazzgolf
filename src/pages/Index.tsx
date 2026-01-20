@@ -95,7 +95,7 @@ const Index = () => {
             <img 
               src={onlyplayLogo} 
               alt="OnlyPlay Golf" 
-              className="h-20 mx-auto mb-4"
+              className="h-40 mx-auto mb-4"
             />
             <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
           </div>
