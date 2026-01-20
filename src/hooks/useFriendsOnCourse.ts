@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -18,7 +18,7 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
   const [friendsOnCourse, setFriendsOnCourse] = useState<FriendOnCourseData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadFriendsOnCourse = useCallback(async () => {
+  const loadFriendsOnCourse = async () => {
     if (!user) {
       setFriendsOnCourse([]);
       setLoading(false);
@@ -147,65 +147,11 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  };
 
   useEffect(() => {
     loadFriendsOnCourse();
-  }, [loadFriendsOnCourse]);
-
-  // Subscribe to realtime DELETE events on all game tables
-  // This ensures Friends on Course updates when any round is deleted
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('friends-on-course-deletes')
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'rounds' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'copenhagen_games' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'skins_games' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'best_ball_games' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'scramble_games' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'wolf_games' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'umbriago_games' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'match_play_games' },
-        () => { loadFriendsOnCourse(); }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, loadFriendsOnCourse]);
+  }, [user?.id]);
 
   return { friendsOnCourse, loading, refresh: loadFriendsOnCourse };
 }
