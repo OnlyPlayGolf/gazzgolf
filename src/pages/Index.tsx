@@ -89,13 +89,13 @@ const Index = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-4">
           {/* Welcome Header */}
-          <div className="text-center pt-8">
+          <div className="text-center pt-2">
             <img 
               src={onlyplayLogo} 
               alt="OnlyPlay Golf" 
-              className="h-40 mx-auto mb-4"
+              className="h-40 mx-auto mb-1"
             />
             <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
           </div>
