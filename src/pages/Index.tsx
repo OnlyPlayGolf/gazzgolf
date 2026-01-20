@@ -97,7 +97,7 @@ const Index = () => {
               alt="OnlyPlay Golf" 
               className="h-28 mx-auto"
             />
-            <p className="text-muted-foreground text-sm -mt-1">Train & Play. Like a game. Together.</p>
+            <p className="text-primary/80 text-base -mt-1">Train & Play. Like a game. Together.</p>
           </div>
 
           {/* Feature Cards */}
