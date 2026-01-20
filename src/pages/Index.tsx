@@ -270,8 +270,7 @@ const Index = () => {
             </ScrollArea>
           </div>
         )}
-
- wille
+        
         {/* Performance Snapshot */}
         <PerformanceSnapshot userId={user.id} />
 
