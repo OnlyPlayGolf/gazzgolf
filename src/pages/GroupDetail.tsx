@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, UserPlus, Shield, Search, Link2, Copy, RefreshCw, Trash2, Trophy, Crown, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
+import { ArrowLeft, UserPlus, Search, Link2, Copy, RefreshCw, Trash2, Trophy, Crown, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
 import { GroupDrillHistory } from "@/components/GroupDrillHistory";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -922,7 +923,7 @@ useEffect(() => {
   const canAddMembers = isPlayerGroup ? isGroupMember : isCoachRole(currentUserRole);
   const canManageGroup = isPlayerGroup ? isGroupMember : isCoachRole(currentUserRole);
   const canRemoveMembers = isPlayerGroup ? currentUserRole === 'owner' : isCoachRole(currentUserRole);
-  const canPromoteMembers = isPlayerGroup ? false : isCoachRole(currentUserRole);
+  const canChangeRoles = isPlayerGroup ? false : currentUserRole === 'owner';
 
   const handleRemoveMember = async (member: Member) => {
     if (!groupId || !canRemoveMembers) return;
@@ -956,7 +957,7 @@ useEffect(() => {
   };
 
   const handlePromoteMember = async (member: Member) => {
-    if (!groupId || !canPromoteMembers) return;
+    if (!groupId || !canChangeRoles) return;
 
     setLoading(true);
     try {
@@ -1524,23 +1525,50 @@ useEffect(() => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={isCoachRole(member.role) ? 'default' : 'secondary'}>
-                    {getDisplayRole(member.role, effectiveGroupType)}
-                  </Badge>
-                  {/* Promote to Coach button - only show for non-coaches, and only to coaches */}
-                  {canPromoteMembers && !isCoachRole(member.role) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMemberToPromote(member);
-                      }}
-                      title="Promote to Coach"
-                    >
-                      <Shield size={16} />
-                    </Button>
+                  {/* Role badge - clickable dropdown for coach groups when owner can change roles */}
+                  {isCoachGroup && canChangeRoles && member.role !== 'owner' ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Badge 
+                          variant={isCoachRole(member.role) ? 'default' : 'secondary'}
+                          className="cursor-pointer hover:opacity-80"
+                        >
+                          {getDisplayRole(member.role, effectiveGroupType)}
+                        </Badge>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-32 p-1" align="end">
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            variant={isCoachRole(member.role) ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="justify-start"
+                            onClick={() => {
+                              if (!isCoachRole(member.role)) {
+                                setMemberToPromote(member);
+                              }
+                            }}
+                          >
+                            Coach
+                          </Button>
+                          <Button
+                            variant={!isCoachRole(member.role) ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="justify-start"
+                            onClick={() => {
+                              if (isCoachRole(member.role)) {
+                                setMemberToDemote(member);
+                              }
+                            }}
+                          >
+                            Player
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <Badge variant={isCoachRole(member.role) ? 'default' : 'secondary'}>
+                      {getDisplayRole(member.role, effectiveGroupType)}
+                    </Badge>
                   )}
                   {/* Remove member button - only show to coaches, not for owner */}
                   {canRemoveMembers && member.role !== 'owner' && member.user_id !== user?.id && (
