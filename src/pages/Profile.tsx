@@ -578,15 +578,18 @@ const Profile = () => {
       .slice(0, 2);
   };
 
-  // Sort groups to show favorites first
+  // Sort groups to show favorites first, then alphabetically
   const sortedGroups = useMemo(() => {
     return [...groups].sort((a, b) => {
       const aIsFavorite = favoriteGroupIds.includes(a.id);
       const bIsFavorite = favoriteGroupIds.includes(b.id);
       
+      // Favorites first
       if (aIsFavorite && !bIsFavorite) return -1;
       if (!aIsFavorite && bIsFavorite) return 1;
-      return 0;
+      
+      // Within same category, sort alphabetically (A-Z)
+      return a.name.localeCompare(b.name);
     });
   }, [groups, favoriteGroupIds]);
 
