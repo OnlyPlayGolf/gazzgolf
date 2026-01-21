@@ -125,7 +125,7 @@ SET search_path = public
 AS $$
 DECLARE
   prefs RECORD;
-  current_time TIME;
+  v_current_time TIME;
   in_quiet_hours BOOLEAN := false;
 BEGIN
   -- Get user preferences
@@ -145,15 +145,15 @@ BEGIN
 
   -- Check quiet hours
   IF prefs.quiet_hours_enabled AND prefs.quiet_hours_start IS NOT NULL AND prefs.quiet_hours_end IS NOT NULL THEN
-    current_time := CURRENT_TIME;
+    v_current_time := CURRENT_TIME;
     
     -- Handle quiet hours that span midnight (e.g., 22:00 to 08:00)
     IF prefs.quiet_hours_start > prefs.quiet_hours_end THEN
       -- Spanning midnight
-      in_quiet_hours := current_time >= prefs.quiet_hours_start OR current_time <= prefs.quiet_hours_end;
+      in_quiet_hours := v_current_time >= prefs.quiet_hours_start OR v_current_time <= prefs.quiet_hours_end;
     ELSE
       -- Same day
-      in_quiet_hours := current_time >= prefs.quiet_hours_start AND current_time <= prefs.quiet_hours_end;
+      in_quiet_hours := v_current_time >= prefs.quiet_hours_start AND v_current_time <= prefs.quiet_hours_end;
     END IF;
 
     IF in_quiet_hours THEN
