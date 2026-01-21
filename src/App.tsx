@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { migrateStorageKeys } from "@/utils/storageManager";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import DrillsCategories from "./pages/DrillsCategories";
 import CategoryDrills from "./pages/CategoryDrills";
@@ -316,6 +317,28 @@ const AnimatedAppRoutes = () => {
   );
 };
 
+const AuthAwareBottomTabBar = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session?.user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setIsLoggedIn(!!session?.user);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!isLoggedIn) return null;
+
+  return <BottomTabBar />;
+};
+
 const App = () => {
   useEffect(() => {
     // Run storage migration on app startup
@@ -328,7 +351,7 @@ const App = () => {
         <BrowserRouter>
         <div className="relative">
           <AnimatedAppRoutes />
-          <BottomTabBar />
+          <AuthAwareBottomTabBar />
         </div>
       </BrowserRouter>
     </TooltipProvider>
