@@ -164,6 +164,7 @@ const GroupDetail = () => {
   const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const [memberToPromote, setMemberToPromote] = useState<Member | null>(null);
   const [memberToDemote, setMemberToDemote] = useState<Member | null>(null);
+  const [openRolePopover, setOpenRolePopover] = useState<string | null>(null);
   const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
   const [deletingGroup, setDeletingGroup] = useState(false);
   
@@ -1527,7 +1528,10 @@ useEffect(() => {
                 <div className="flex items-center gap-2">
                   {/* Role badge - clickable dropdown for coach groups when owner can change roles */}
                   {isCoachGroup && canChangeRoles && member.role !== 'owner' ? (
-                    <Popover>
+                    <Popover 
+                      open={openRolePopover === member.user_id} 
+                      onOpenChange={(open) => setOpenRolePopover(open ? member.user_id : null)}
+                    >
                       <PopoverTrigger asChild>
                         <button type="button" className="focus:outline-none">
                           <Badge 
@@ -1538,7 +1542,7 @@ useEffect(() => {
                           </Badge>
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-32 p-1 z-50" align="end">
+                      <PopoverContent className="w-32 p-1 z-[101]" align="end">
                         <div className="flex flex-col gap-1">
                           <Button
                             variant={isCoachRole(member.role) ? 'secondary' : 'ghost'}
@@ -1546,8 +1550,9 @@ useEffect(() => {
                             className="justify-start"
                             onClick={() => {
                               if (!isCoachRole(member.role)) {
-                                setMemberToPromote(member);
+                                handlePromoteMember(member);
                               }
+                              setOpenRolePopover(null);
                             }}
                           >
                             Coach
@@ -1558,8 +1563,9 @@ useEffect(() => {
                             className="justify-start"
                             onClick={() => {
                               if (isCoachRole(member.role)) {
-                                setMemberToDemote(member);
+                                handleDemoteMember(member);
                               }
+                              setOpenRolePopover(null);
                             }}
                           >
                             Player
