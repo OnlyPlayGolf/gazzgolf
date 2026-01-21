@@ -13,7 +13,7 @@ interface GetGroupRoleLabelArgs {
  * - Coach groups: owner/admin -> Coach, member -> Player
  */
 export function getGroupRoleLabel({ groupType, role }: GetGroupRoleLabelArgs): string {
-  const effectiveGroupType: GroupType = groupType === 'player' ? 'player' : 'coach';
+  const effectiveGroupType: GroupType = groupType === 'coach' ? 'coach' : 'player';
 
   if (effectiveGroupType === 'player') {
     return role === 'owner' ? 'Owner' : 'Player';
