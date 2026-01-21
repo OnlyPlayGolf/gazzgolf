@@ -126,8 +126,14 @@ export function SetupAddFriendSheet({
     } catch (error) {
       console.error('Error loading friends:', error);
     } finally {
-      setLoading(false);
+    setLoading(false);
     }
+  };
+
+  const parseHandicap = (value: string | null): number | undefined => {
+    if (value === null || value === undefined || value === '') return undefined;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? undefined : parsed;
   };
 
   const filteredFriends = friends.filter(friend => {
@@ -141,6 +147,7 @@ export function SetupAddFriendSheet({
     const player: Player = {
       odId: friend.id,
       displayName: friend.display_name || friend.username || "Player",
+      handicap: handicapValue,
       teeColor: defaultTee,
       isTemporary: false,
     };
