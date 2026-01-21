@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundCard, RoundCardData } from "@/components/RoundCard";
 import { loadUnifiedRounds } from "@/utils/unifiedRoundsLoader";
+import { filterMultiRoundGames } from "@/utils/filterMultiRoundGames";
 import { toast } from "@/lib/notify";
 import {
   AlertDialog,
@@ -64,7 +65,8 @@ export default function AllRoundsPage() {
     }
 
     const unifiedRounds = await loadUnifiedRounds(targetUserId);
-    setRounds(unifiedRounds);
+    const filteredRounds = filterMultiRoundGames(unifiedRounds);
+    setRounds(filteredRounds);
     setLoading(false);
   };
 

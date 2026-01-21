@@ -2,6 +2,98 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
+/**
+ * Extracts the round number from a round name pattern like "Event Name - Round 3"
+ * Returns null if pattern doesn't match
+ */
+function extractRoundNumber(roundName: string | null | undefined): number | null {
+  if (!roundName) return null;
+  
+  // Match patterns like "Event - Round 3" or "Event - Round 1"
+  const match = roundName.match(/- Round (\d+)$/i);
+  if (match && match[1]) {
+    const roundNum = parseInt(match[1], 10);
+    return isNaN(roundNum) ? null : roundNum;
+  }
+  
+  return null;
+}
+
+/**
+ * Filters stroke play rounds to show only the latest round from each multi-round game (same event_id)
+ */
+function filterMultiRoundRounds(rounds: Array<{ id: string; event_id: string | null; round_name: string | null; created_at: string }>): Array<{ id: string; event_id: string | null; round_name: string | null; created_at: string }> {
+  // Separate rounds with event_id from those without
+  const multiRoundRounds: Array<{ id: string; event_id: string; round_name: string | null; created_at: string }> = [];
+  const singleRounds: Array<{ id: string; event_id: string | null; round_name: string | null; created_at: string }> = [];
+  
+  for (const round of rounds) {
+    if (round.event_id) {
+      multiRoundRounds.push(round as { id: string; event_id: string; round_name: string | null; created_at: string });
+    } else {
+      singleRounds.push(round);
+    }
+  }
+  
+  // Group multi-round games by event_id
+  const roundsByEvent = new Map<string, Array<{ id: string; event_id: string; round_name: string | null; created_at: string }>>();
+  
+  for (const round of multiRoundRounds) {
+    const eventId = round.event_id;
+    if (!roundsByEvent.has(eventId)) {
+      roundsByEvent.set(eventId, []);
+    }
+    roundsByEvent.get(eventId)!.push(round);
+  }
+  
+  // For each event, keep only the latest round
+  const filteredMultiRoundRounds: Array<{ id: string; event_id: string | null; round_name: string | null; created_at: string }> = [];
+  
+  for (const [eventId, eventRounds] of roundsByEvent.entries()) {
+    if (eventRounds.length === 1) {
+      // Single round in event - keep it
+      filteredMultiRoundRounds.push(eventRounds[0]);
+    } else {
+      // Multiple rounds - find the latest one
+      let latestRound: { id: string; event_id: string; round_name: string | null; created_at: string } | null = null;
+      let highestRoundNumber: number | null = null;
+      let latestCreatedAt: string | null = null;
+      
+      for (const round of eventRounds) {
+        const roundNumber = extractRoundNumber(round.round_name);
+        
+        if (roundNumber !== null) {
+          // Use round number to determine latest
+          if (highestRoundNumber === null || roundNumber > highestRoundNumber) {
+            highestRoundNumber = roundNumber;
+            latestRound = round;
+          } else if (roundNumber === highestRoundNumber) {
+            // Tie on round number - use created_at as tiebreaker
+            if (!latestCreatedAt || round.created_at > latestCreatedAt) {
+              latestCreatedAt = round.created_at;
+              latestRound = round;
+            }
+          }
+        } else {
+          // Can't extract round number - use created_at
+          if (latestCreatedAt === null || round.created_at > latestCreatedAt) {
+            latestCreatedAt = round.created_at;
+            latestRound = round;
+          }
+        }
+      }
+      
+      // If we found a latest round, add it
+      if (latestRound) {
+        filteredMultiRoundRounds.push(latestRound);
+      }
+    }
+  }
+  
+  // Combine filtered multi-round rounds with single rounds
+  return [...filteredMultiRoundRounds, ...singleRounds];
+}
+
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
 export interface FriendOnCourseData {
@@ -58,7 +150,7 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
         { data: friendUmbriago },
         { data: friendMatchPlay }
       ] = await Promise.all([
-        supabase.from('rounds').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+        supabase.from('rounds').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
         supabase.from('copenhagen_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
         supabase.from('skins_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
         supabase.from('best_ball_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
@@ -68,18 +160,31 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
         supabase.from('match_play_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
       ]);
 
+      // Filter multi-round stroke play games to show only latest round
+      const filteredRounds = filterMultiRoundRounds(
+        (friendRoundsLive || []).map(r => ({
+          id: r.id,
+          event_id: r.event_id,
+          round_name: r.round_name,
+          created_at: r.created_at,
+        }))
+      );
+      const filteredRoundIds = new Set(filteredRounds.map(r => r.id));
+
       // Collect all games with their owner user IDs
       const allGames: { gameId: string; gameType: GameType; userId: string; courseName: string; createdAt: string }[] = [];
 
-      // Process rounds
+      // Process rounds (only include filtered rounds)
       for (const round of friendRoundsLive || []) {
-        allGames.push({
-          gameId: round.id,
-          gameType: 'round',
-          userId: round.user_id,
-          courseName: round.course_name,
-          createdAt: round.created_at,
-        });
+        if (filteredRoundIds.has(round.id)) {
+          allGames.push({
+            gameId: round.id,
+            gameType: 'round',
+            userId: round.user_id,
+            courseName: round.course_name,
+            createdAt: round.created_at,
+          });
+        }
       }
 
       // Process other game types

@@ -2,6 +2,112 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
+/**
+ * Extracts the round number from a round name pattern like "Event Name - Round 3"
+ * Returns null if pattern doesn't match
+ */
+function extractRoundNumber(roundName: string | null | undefined): number | null {
+  if (!roundName) return null;
+  
+  // Match patterns like "Event - Round 3" or "Event - Round 1"
+  const match = roundName.match(/- Round (\d+)$/i);
+  if (match && match[1]) {
+    const roundNum = parseInt(match[1], 10);
+    return isNaN(roundNum) ? null : roundNum;
+  }
+  
+  return null;
+}
+
+/**
+ * Filters stroke play rounds to show only the latest round from each multi-round game (same event_id)
+ */
+function filterMultiRoundOngoingGames(
+  rounds: Array<{ id: string; event_id: string | null; round_name: string | null; created_at: string; user_id: string; course_name: string }>,
+  games: OngoingGame[]
+): OngoingGame[] {
+  // Create a map of round id to event_id
+  const roundEventMap = new Map<string, string | null>();
+  for (const round of rounds) {
+    roundEventMap.set(round.id, round.event_id);
+  }
+  
+  // Separate stroke play games with event_id from others
+  const strokePlayGamesWithEvent: Array<{ game: OngoingGame; eventId: string }> = [];
+  const otherGames: OngoingGame[] = [];
+  
+  for (const game of games) {
+    if (game.gameType === 'round') {
+      const eventId = roundEventMap.get(game.id);
+      if (eventId) {
+        strokePlayGamesWithEvent.push({ game, eventId });
+      } else {
+        // Single round game (no event_id) - keep it
+        otherGames.push(game);
+      }
+    } else {
+      otherGames.push(game);
+    }
+  }
+  
+  // Group by event_id
+  const gamesByEvent = new Map<string, OngoingGame[]>();
+  
+  for (const { game, eventId } of strokePlayGamesWithEvent) {
+    if (!gamesByEvent.has(eventId)) {
+      gamesByEvent.set(eventId, []);
+    }
+    gamesByEvent.get(eventId)!.push(game);
+  }
+  
+  // For each event, keep only the latest round
+  const filteredStrokePlayGames: OngoingGame[] = [];
+  
+  for (const [eventId, eventGames] of gamesByEvent.entries()) {
+    if (eventGames.length === 1) {
+      // Single round in event - keep it
+      filteredStrokePlayGames.push(eventGames[0]);
+    } else {
+      // Multiple rounds - find the latest one
+      let latestGame: OngoingGame | null = null;
+      let highestRoundNumber: number | null = null;
+      let latestCreatedAt: string | null = null;
+      
+      for (const game of eventGames) {
+        const roundNumber = extractRoundNumber(game.roundName);
+        
+        if (roundNumber !== null) {
+          // Use round number to determine latest
+          if (highestRoundNumber === null || roundNumber > highestRoundNumber) {
+            highestRoundNumber = roundNumber;
+            latestGame = game;
+          } else if (roundNumber === highestRoundNumber) {
+            // Tie on round number - use created_at as tiebreaker
+            if (!latestCreatedAt || game.createdAt > latestCreatedAt) {
+              latestCreatedAt = game.createdAt;
+              latestGame = game;
+            }
+          }
+        } else {
+          // Can't extract round number - use created_at
+          if (latestCreatedAt === null || game.createdAt > latestCreatedAt) {
+            latestCreatedAt = game.createdAt;
+            latestGame = game;
+          }
+        }
+      }
+      
+      // If we found a latest game, add it
+      if (latestGame) {
+        filteredStrokePlayGames.push(latestGame);
+      }
+    }
+  }
+  
+  // Combine filtered stroke play games with other games
+  return [...filteredStrokePlayGames, ...otherGames];
+}
+
 type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
 
 export interface OngoingGame {
@@ -52,7 +158,7 @@ export function useOngoingGames(user: SupabaseUser | null): { ongoingGames: Ongo
         // Only show ongoing stroke-play rounds created via Play (exclude tracker/add-stats rounds)
         supabase
           .from('rounds')
-          .select('id, user_id, course_name, round_name, created_at')
+          .select('id, user_id, course_name, round_name, created_at, event_id')
           .gte('created_at', twelveHoursAgo)
           .eq('origin', 'play'),
         supabase.from('copenhagen_games').select('id, user_id, course_name, round_name, created_at, is_finished, player_1, player_2, player_3').gte('created_at', twelveHoursAgo).eq('is_finished', false),
@@ -79,10 +185,19 @@ export function useOngoingGames(user: SupabaseUser | null): { ongoingGames: Ongo
       }
 
       // Process rounds - user owns or participates
+      const processedRounds: Array<{ id: string; event_id: string | null; round_name: string | null; created_at: string; user_id: string; course_name: string }> = [];
       for (const round of rounds || []) {
         const isOwner = round.user_id === user.id;
         const isParticipant = participatingRoundIds.includes(round.id);
         if (isOwner || isParticipant) {
+          processedRounds.push({
+            id: round.id,
+            event_id: round.event_id || null,
+            round_name: round.round_name,
+            created_at: round.created_at || '',
+            user_id: round.user_id,
+            course_name: round.course_name,
+          });
           games.push({
             id: round.id,
             gameType: 'round',
@@ -217,10 +332,13 @@ export function useOngoingGames(user: SupabaseUser | null): { ongoingGames: Ongo
         }
       }
 
+      // Filter multi-round stroke play games to show only latest round
+      const filteredGames = filterMultiRoundOngoingGames(processedRounds, games);
+      
       // Sort by most recent
-      games.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      filteredGames.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      setOngoingGames(games);
+      setOngoingGames(filteredGames);
     } catch (error) {
       console.error('Error loading ongoing games:', error);
     } finally {
