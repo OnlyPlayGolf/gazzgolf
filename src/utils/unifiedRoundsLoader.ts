@@ -92,7 +92,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     supabase
       .from("rounds")
       .select(
-        "id, course_name, round_name, date_played, origin, user_id, created_at, holes_played, tee_set"
+        "id, course_name, round_name, date_played, origin, user_id, created_at, holes_played, tee_set, event_id"
       )
       .eq("user_id", targetUserId)
       .or("origin.eq.play,origin.is.null,origin.eq.tracker")
@@ -418,7 +418,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     const { data } = await supabase
       .from("rounds")
       .select(
-        "id, course_name, round_name, date_played, origin, user_id, created_at, holes_played, tee_set"
+        "id, course_name, round_name, date_played, origin, user_id, created_at, holes_played, tee_set, event_id"
       )
       .in("id", missingParticipantIds);
 
@@ -479,6 +479,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       totalScore,
       totalPar,
       ownerUserId: round.user_id,
+      event_id: round.event_id || null,
       _sortCreatedAt: round.created_at || `${round.date_played}T00:00:00Z`,
     });
   }

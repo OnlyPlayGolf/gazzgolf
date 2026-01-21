@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Check, Plus, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { RoundBottomTabBar } from "@/components/RoundBottomTabBar";
@@ -9,7 +9,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
 import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
-import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import { canEditGroupScores } from "@/types/gameGroups";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StatsMode } from "@/pages/StrokePlaySetup";
@@ -90,7 +89,6 @@ export default function RoundTracker() {
   const [groups, setGroups] = useState<GameGroup[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [currentUserGroupId, setCurrentUserGroupId] = useState<string | null>(null);
-  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
@@ -631,7 +629,6 @@ export default function RoundTracker() {
   // Check if we've reached the end of planned holes
   const isAtLastPlannedHole = currentHoleIndex === roundState.plannedHoles - 1;
   const isAtLastCurrentHole = currentHoleIndex === courseHoles.length - 1;
-  const isExtraHoles = courseHoles.length > roundState.plannedHoles;
   
   // Check if all holes have scores for all players
   const allHolesScored = courseHoles.length > 0 && players.length > 0 && players.every(player => {
@@ -685,12 +682,7 @@ export default function RoundTracker() {
     }
   }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation, round?.stats_mode, holeStatsSaved, currentHole?.hole_number]);
 
-  const handleShowCompletionDialog = () => {
-    setShowCompletionDialog(true);
-  };
-
   const handleFinishRound = () => {
-    setShowCompletionDialog(false);
     // Tournament: auto-advance to next round in event
     if (round?.event_id) {
       void (async () => {
@@ -722,45 +714,6 @@ export default function RoundTracker() {
 
     // Single-round: Navigate to round summary to show results and share option
     navigate(`/rounds/${roundId}/summary`);
-  };
-
-  const handleContinuePlaying = async () => {
-    setShowCompletionDialog(false);
-    
-    // Add one more hole to the round
-    const nextHoleNumber = courseHoles.length + 1;
-    const defaultPar = [4, 4, 3, 5, 4, 4, 3, 4, 5];
-    
-    const newHole: CourseHole = {
-      hole_number: nextHoleNumber,
-      par: defaultPar[(nextHoleNumber - 1) % 9],
-      stroke_index: nextHoleNumber,
-    };
-    
-    setCourseHoles([...courseHoles, newHole]);
-    setRoundState(prev => ({ ...prev, currentTotalHoles: prev.currentTotalHoles + 1 }));
-    
-    // Move to the new hole
-    setCurrentHoleIndex(courseHoles.length);
-    
-    // Update the round's holes_played count in the database
-    try {
-      await supabase
-        .from("rounds")
-        .update({ holes_played: nextHoleNumber })
-        .eq("id", roundId);
-    } catch (error) {
-      console.error("Error updating holes_played:", error);
-    }
-    
-    toast({
-      title: "Extra hole added",
-      description: `Hole ${nextHoleNumber} added to your round`,
-    });
-  };
-
-  const handleGoBack = () => {
-    setShowCompletionDialog(false);
   };
 
   const handleDeleteRound = async () => {
@@ -1064,30 +1017,8 @@ export default function RoundTracker() {
             );
           })
         )}
-        
-        {/* Show completion button when at the last hole AND all holes have scores */}
-        {isAtLastCurrentHole && allHolesScored && (
-          <Button
-            onClick={handleShowCompletionDialog}
-            className="w-full bg-[hsl(120,20%,35%)] hover:bg-[hsl(120,20%,30%)] text-white"
-            size="lg"
-          >
-            <Check size={20} className="mr-2" />
-            {isExtraHoles ? "Finish Extra Holes" : "Complete Round"}
-          </Button>
-        )}
       </div>
 
-      {/* Round Completion Dialog */}
-      <RoundCompletionDialog
-        open={showCompletionDialog}
-        onOpenChange={setShowCompletionDialog}
-        holesPlayed={courseHoles.length}
-        plannedHoles={roundState.plannedHoles}
-        onFinishRound={handleFinishRound}
-        onContinuePlaying={handleContinuePlaying}
-        onGoBack={handleGoBack}
-      />
 
       {/* Score Input Sheet */}
       {selectedPlayer && currentHole && (
@@ -1133,10 +1064,6 @@ export default function RoundTracker() {
               } else {
                 // All players have scores - close the sheet
                 setShowScoreSheet(false);
-                // Show completion dialog if at last hole
-                if (currentHoleIndex >= courseHoles.length - 1) {
-                  setShowCompletionDialog(true);
-                }
               }
             }}
           />

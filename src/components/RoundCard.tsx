@@ -21,6 +21,7 @@ export interface RoundCardData {
   totalScore?: number | null;
   totalPar?: number | null;
   ownerUserId?: string;
+  event_id?: string | null;
   
   // Copenhagen-specific: player's position (1, 2, or 3) and final score (e.g., "8-3-0")
   position?: number | null;
