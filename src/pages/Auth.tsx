@@ -21,7 +21,10 @@ const signUpSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(100, { message: "Password must be less than 100 characters" }),
   confirmPassword: z.string(),
   firstName: z.string().trim().min(1, { message: "First name is required" }).max(50, { message: "First name must be less than 50 characters" }),
-  lastName: z.string().trim().min(1, { message: "Last name is required" }).max(50, { message: "Last name must be less than 50 characters" })
+  lastName: z.string().trim().min(1, { message: "Last name is required" }).max(50, { message: "Last name must be less than 50 characters" }),
+  country: z.string().trim().min(1, { message: "Country is required" }).max(80, { message: "Country must be less than 80 characters" }),
+  homeClub: z.string().trim().min(1, { message: "Home club is required" }).max(120, { message: "Home club must be less than 120 characters" }),
+  handicap: z.string().trim().min(1, { message: "Handicap is required" }).max(20, { message: "Handicap must be less than 20 characters" })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -46,6 +49,9 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [country, setCountry] = useState('');
+  const [homeClub, setHomeClub] = useState('');
+  const [handicap, setHandicap] = useState('');
 
   // If we arrived via invite link, persist invite code so post-auth can resume.
   useEffect(() => {
@@ -173,7 +179,16 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      const validatedData = signUpSchema.parse({ email, password, confirmPassword, firstName, lastName });
+      const validatedData = signUpSchema.parse({
+        email,
+        password,
+        confirmPassword,
+        firstName,
+        lastName,
+        country,
+        homeClub,
+        handicap,
+      });
       setLoading(true);
 
       const pendingInviteCode = localStorage.getItem('pending_invite_code');
@@ -190,7 +205,10 @@ const Auth = () => {
           data: {
             display_name: displayName,
             first_name: validatedData.firstName,
-            last_name: validatedData.lastName
+            last_name: validatedData.lastName,
+            country: validatedData.country,
+            home_club: validatedData.homeClub,
+            handicap: validatedData.handicap,
           }
         }
       });
@@ -221,6 +239,9 @@ const Auth = () => {
       setConfirmPassword('');
       setFirstName('');
       setLastName('');
+      setCountry('');
+      setHomeClub('');
+      setHandicap('');
       
       // Show confirmation screen instead of redirecting to signin
       setView('confirmation');
@@ -391,6 +412,54 @@ const Auth = () => {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-country">Country</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="signup-country"
+                      type="text"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder="Enter your country"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-homeclub">Home Club</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="signup-homeclub"
+                      type="text"
+                      value={homeClub}
+                      onChange={(e) => setHomeClub(e.target.value)}
+                      placeholder="Enter your home club"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-handicap">Handicap</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="signup-handicap"
+                      type="text"
+                      value={handicap}
+                      onChange={(e) => setHandicap(e.target.value)}
+                      placeholder="e.g. 12.4 or +2.4"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
@@ -459,6 +528,9 @@ const Auth = () => {
                     setConfirmPassword('');
                     setFirstName('');
                     setLastName('');
+                    setCountry('');
+                    setHomeClub('');
+                    setHandicap('');
                   }}
                 >
                   Back to Log In

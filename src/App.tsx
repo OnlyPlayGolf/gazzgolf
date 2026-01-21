@@ -6,6 +6,7 @@ import { BottomTabBar } from "@/components/BottomTabBar";
 import { migrateStorageKeys } from "@/utils/storageManager";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { syncOwnProfileFromAuthUser } from "@/utils/syncOwnProfileFromAuth";
 import Index from "./pages/Index";
 import DrillsCategories from "./pages/DrillsCategories";
 import CategoryDrills from "./pages/CategoryDrills";
@@ -339,6 +340,30 @@ const AuthAwareBottomTabBar = () => {
   return <BottomTabBar />;
 };
 
+const AuthProfileBootstrap = () => {
+  useEffect(() => {
+    let cancelled = false;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      if (session?.user) void syncOwnProfileFromAuthUser(session.user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) void syncOwnProfileFromAuthUser(session.user);
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return null;
+};
+
 const App = () => {
   useEffect(() => {
     // Run storage migration on app startup
@@ -350,6 +375,7 @@ const App = () => {
       <TooltipProvider>
         <BrowserRouter>
         <div className="relative">
+          <AuthProfileBootstrap />
           <AnimatedAppRoutes />
           <AuthAwareBottomTabBar />
         </div>
