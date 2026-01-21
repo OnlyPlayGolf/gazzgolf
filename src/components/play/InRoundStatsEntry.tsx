@@ -51,57 +51,65 @@ export function InRoundStatsEntry({
   const [isOpen, setIsOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [loadedHoleNumber, setLoadedHoleNumber] = useState<number | null>(null);
 
   // Basic stats fields
   const [fairwayResult, setFairwayResult] = useState<'hit' | 'left' | 'right' | null>(null);
   const [chipBunkerShots, setChipBunkerShots] = useState("");
   const [putts, setPutts] = useState("");
 
-  // Load existing stats if available
+  // Single effect to handle hole changes: reset fields first, then load existing data
   useEffect(() => {
-    loadExistingStats();
-  }, [roundId, holeNumber, playerId]);
-
-  // Reset saved indicator when hole changes
-  useEffect(() => {
+    // Only run when hole actually changes
+    if (loadedHoleNumber === holeNumber) return;
+    
+    // Track that we're handling this hole
+    setLoadedHoleNumber(holeNumber);
+    
+    // Reset fields immediately
     setSaved(false);
-  }, [holeNumber]);
+    setFairwayResult(null);
+    setChipBunkerShots("");
+    setPutts("");
+    
+    // Then load existing stats (if any)
+    const loadExistingStats = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-  const loadExistingStats = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Look for existing pro_stats_holes linked to this round
-      const { data: proRound } = await supabase
-        .from('pro_stats_rounds')
-        .select('id')
-        .eq('external_round_id', roundId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (proRound) {
-        const { data: existingHole } = await supabase
-          .from('pro_stats_holes')
-          .select('pro_shot_data, putts')
-          .eq('pro_round_id', proRound.id)
-          .eq('hole_number', holeNumber)
+        const { data: proRound } = await supabase
+          .from('pro_stats_rounds')
+          .select('id')
+          .eq('external_round_id', roundId)
+          .eq('user_id', user.id)
           .maybeSingle();
 
-        if (existingHole?.pro_shot_data) {
-          const shotData = existingHole.pro_shot_data as any;
-          if (shotData.basicStats) {
-            setFairwayResult(shotData.basicStats.fairwayResult || null);
-            setChipBunkerShots(String(shotData.basicStats.chipBunkerShots || 0));
-            setPutts(String(existingHole.putts || 0));
-            setSaved(true);
+        if (proRound) {
+          const { data: existingHole } = await supabase
+            .from('pro_stats_holes')
+            .select('pro_shot_data, putts')
+            .eq('pro_round_id', proRound.id)
+            .eq('hole_number', holeNumber)
+            .maybeSingle();
+
+          if (existingHole?.pro_shot_data) {
+            const shotData = existingHole.pro_shot_data as any;
+            if (shotData.basicStats) {
+              setFairwayResult(shotData.basicStats.fairwayResult || null);
+              setChipBunkerShots(String(shotData.basicStats.chipBunkerShots || 0));
+              setPutts(String(existingHole.putts || 0));
+              setSaved(true);
+            }
           }
         }
+      } catch (error) {
+        console.error("Error loading existing stats:", error);
       }
-    } catch (error) {
-      console.error("Error loading existing stats:", error);
-    }
-  };
+    };
+    
+    loadExistingStats();
+  }, [holeNumber, roundId, loadedHoleNumber]);
 
   const calculateGIR = (holePar: number, holeScore: number, holePutts: number): boolean => {
     const strokesBeforePutting = holeScore - holePutts;
