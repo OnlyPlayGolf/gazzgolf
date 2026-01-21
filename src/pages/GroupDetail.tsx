@@ -1529,14 +1529,16 @@ useEffect(() => {
                   {isCoachGroup && canChangeRoles && member.role !== 'owner' ? (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Badge 
-                          variant={isCoachRole(member.role) ? 'default' : 'secondary'}
-                          className="cursor-pointer hover:opacity-80"
-                        >
-                          {getDisplayRole(member.role, effectiveGroupType)}
-                        </Badge>
+                        <button type="button" className="focus:outline-none">
+                          <Badge 
+                            variant={isCoachRole(member.role) ? 'default' : 'secondary'}
+                            className="cursor-pointer hover:opacity-80"
+                          >
+                            {getDisplayRole(member.role, effectiveGroupType)}
+                          </Badge>
+                        </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-32 p-1" align="end">
+                      <PopoverContent className="w-32 p-1 z-50" align="end">
                         <div className="flex flex-col gap-1">
                           <Button
                             variant={isCoachRole(member.role) ? 'secondary' : 'ghost'}
