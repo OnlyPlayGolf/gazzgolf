@@ -136,7 +136,8 @@ export function SetupAddFriendSheet({
     return name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  const handleSelectFriend = (friend: { id: string; display_name: string | null; username: string | null }) => {
+  const handleSelectFriend = (friend: { id: string; display_name: string | null; username: string | null; handicap?: string | null }) => {
+    const handicapValue = parseHandicap(friend.handicap ?? null);
     const player: Player = {
       odId: friend.id,
       displayName: friend.display_name || friend.username || "Player",
@@ -184,25 +185,36 @@ export function SetupAddFriendSheet({
               </div>
             ) : (
               <div className="space-y-2">
-                {(searchQuery.trim() ? searchResults : filteredFriends).map((friend) => (
-                  <div
-                    key={friend.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-colors"
-                    onClick={() => handleSelectFriend(friend)}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                      <User size={20} className="text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">
-                        {friend.display_name || friend.username}
+                {(searchQuery.trim()
+                  ? searchResults.map((p) => ({
+                      id: p.id,
+                      display_name: p.display_name,
+                      username: p.username,
+                      handicap: null as string | null,
+                    }))
+                  : filteredFriends
+                ).map((friend) => {
+                  const handicapValue = parseHandicap((friend as any).handicap ?? null);
+                  return (
+                    <div
+                      key={friend.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-colors"
+                      onClick={() => handleSelectFriend(friend as any)}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <User size={20} className="text-muted-foreground" />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">
+                          {friend.display_name || friend.username}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="flex-shrink-0">
+                        <Check size={16} />
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" className="flex-shrink-0">
-                      <Check size={16} />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </ScrollArea>

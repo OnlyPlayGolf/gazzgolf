@@ -1196,7 +1196,6 @@ useEffect(() => {
                 </p>
                 {group.created_at && (
                   <div className="flex items-center gap-1.5 mt-1">
-                    <Calendar size={14} className="text-muted-foreground" />
                     <p className="text-xs text-muted-foreground">
                       Created {new Date(group.created_at).toLocaleDateString('en-US', { 
                         month: 'short', 
@@ -1449,15 +1448,13 @@ useEffect(() => {
 
               {/* History Tab */}
               <TabsContent value="history">
-                <FadeSlide>
-                  {groupId && (
-                    <GroupDrillHistory
-                      groupId={groupId}
-                      groupCreatedAt={group?.created_at}
-                      includeCoaches={effectiveGroupType === 'coach' && !!group?.show_coach_profile_results}
-                    />
-                  )}
-                </FadeSlide>
+                {groupId && (
+                  <GroupDrillHistory
+                    groupId={groupId}
+                    groupCreatedAt={group?.created_at}
+                    includeCoaches={effectiveGroupType === 'coach' && !!group?.show_coach_profile_results}
+                  />
+                )}
               </TabsContent>
 
               {/* Play Tab */}

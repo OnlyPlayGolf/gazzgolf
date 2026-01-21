@@ -9,14 +9,13 @@ import { MessagesSheet } from "./MessagesSheet";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
-import onlyplayLogo from "@/assets/onlyplay-golf-logo.png";
-
+import onlyPlayLogo from "@/assets/onlyplay-golf-logo.png";
 interface TopNavBarProps {
   hideNotifications?: boolean;
   profile?: any;
 }
 
-export const TopNavBar = ({ profile, hideNotifications = false }: TopNavBarProps) => {
+export const TopNavBar = ({ hideNotifications = false, profile }: TopNavBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [visible, setVisible] = useState(true);
@@ -62,12 +61,12 @@ export const TopNavBar = ({ profile, hideNotifications = false }: TopNavBarProps
         visible ? "translate-y-0" : "-translate-y-full"
       )}
     >
-      <div className="bg-primary px-4 py-1.5 flex items-center justify-between">
+      <div className="bg-primary px-4 py-3 flex items-center justify-between">
         {/* Left: Logo */}
-        <img
-          src={onlyplayLogo}
+        <img 
+          src={onlyPlayLogo}
           alt="OnlyPlay Golf"
-          className="h-14 brightness-0 invert cursor-pointer"
+          className="h-14 cursor-pointer brightness-0 invert"
           onClick={() => {
             navigate('/');
             window.scrollTo({ top: 0, behavior: 'smooth' });

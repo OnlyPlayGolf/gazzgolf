@@ -203,7 +203,7 @@ export default function StrokePlaySetup() {
 
       // Determine starting hole based on selectedHoles
       const startingHole = selectedHoles === 'back9' ? 10 : 1;
-      
+
       // Stable identity per player across rounds (registered: user_id, guests: generated UUID)
       const guestEventPlayerIds = new Map<string, string>();
       const getEventPlayerIdForPlayer = (p: any): string => {
@@ -216,13 +216,14 @@ export default function StrokePlaySetup() {
         return next;
       };
 
-      const isMissingColumnError = (err: any, column: string): boolean => {
-        const msg = (err?.message || err?.details || err?.hint || "").toString().toLowerCase();
-        return msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("column"));
-      };
-
       const createGroupsAndPlayersForRound = async (roundId: string) => {
+        // Create game groups and add players with group references
         const hasMultipleGroups = groups.length > 1;
+
+        const isMissingColumnError = (err: any, column: string): boolean => {
+          const msg = (err?.message || err?.details || err?.hint || "").toString().toLowerCase();
+          return msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("column"));
+        };
 
         for (let i = 0; i < groups.length; i++) {
           const group = groups[i];
@@ -302,6 +303,7 @@ export default function StrokePlaySetup() {
         // Save settings to round-specific localStorage
         localStorage.setItem(`roundSettings_${roundId}`, JSON.stringify({
           mulligansPerPlayer,
+          handicapEnabled,
           gimmesEnabled,
         }));
       };
@@ -325,20 +327,6 @@ export default function StrokePlaySetup() {
           .single();
 
         if (error) throw error;
-
-        // Persist the player's stats mode choice for this round
-        try {
-          await supabase
-            .from('player_game_stats_mode')
-            .upsert({
-              user_id: user.id,
-              game_id: round.id,
-              game_type: 'round',
-              stats_mode: statsMode,
-            }, { onConflict: 'user_id,game_id,game_type' });
-        } catch (e) {
-          console.warn('Failed to save player stats mode preference:', e);
-        }
 
         await createGroupsAndPlayersForRound(round.id);
 
@@ -382,7 +370,7 @@ export default function StrokePlaySetup() {
             })
             .select()
             .single();
-          
+
           if (error) throw error;
 
           createdRoundIds.push(round.id);

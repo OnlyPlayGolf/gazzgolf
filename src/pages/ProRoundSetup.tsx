@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { RoundTypeSelector, RoundType } from "@/components/RoundTypeSelector";
 import { getDefaultTeeFromPreferences } from "@/utils/teeSystem";
 import { format } from "date-fns";
-
 import { TopNavBar } from "@/components/TopNavBar";
 
 type StatsMode = "strokes_gained" | "basic_stats";
@@ -267,18 +266,14 @@ const ProRoundSetup = () => {
       <TopNavBar />
       <div className="p-4 pt-20">
         <div className="mb-4">
-          <h1 className="text-2xl font-bold text-foreground">Add Stats</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/practice")}>
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-2xl font-bold text-foreground">Add Stats</h1>
+          </div>
           <p className="text-muted-foreground text-sm">Create a stats round and start entering your scorecard</p>
         </div>
-
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/practice")}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2" size={20} />
-          Back
-        </Button>
 
         {/* Scan Scorecard Option */}
         <Card className="mb-6 border-dashed">

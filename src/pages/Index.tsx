@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Target, TrendingUp, Users, Calendar, ChevronRight, Trophy, Zap, Star, Menu as MenuIcon, User as UserIcon, MessageSquare, Settings, Info, Mail } from "lucide-react";
-import onlyplayLogo from "@/assets/onlyplay-golf-logo.png";
 import { getLevelsWithProgress } from "@/utils/levelsManager";
 import {
   Sheet,
@@ -21,6 +20,18 @@ import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
 import { hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
+
+type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
+
+interface FriendOnCourseData {
+  friendId: string;
+  friendName: string;
+  friendAvatar: string | null;
+  gameId: string;
+  gameType: GameType;
+  courseName: string;
+  createdAt: string;
+}
 
 import { OngoingRoundsSection } from "@/components/OngoingRoundsSection";
 import { useHomeProfile } from "@/hooks/useHomeProfile";
@@ -87,56 +98,52 @@ const Index = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <div className="p-4 space-y-2">
+        <div className="p-4 space-y-6">
           {/* Welcome Header */}
-          <div className="text-center">
-            <img 
-              src={onlyplayLogo}
-              alt="OnlyPlay Golf" 
-              className="h-28 mx-auto [filter:invert(27%)_sepia(69%)_saturate(605%)_hue-rotate(104deg)_brightness(92%)_contrast(90%)]"
-            />
-            <p className="text-primary text-base -mt-1">Train & Play. Like a game. Together.</p>
+          <div className="text-center pt-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Golf Training</h1>
+            <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
           </div>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 gap-2">
-            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/friends')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-primary text-primary-foreground rounded-full">
-                    <Users size={20} className="text-primary" />
+          <div className="grid grid-cols-1 gap-4 mt-8">
+            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/categories')}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
+                    <Target size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Play With Friends</h3>
-                    <p className="text-sm text-muted-foreground">Create groups, share rounds, and see who's on top.</p>
+                    <h3 className="font-semibold text-foreground">Practice Drills</h3>
+                    <p className="text-sm text-muted-foreground">Improve your skills with targeted drills</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/categories')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-primary text-primary-foreground rounded-full">
-                    <Target size={20} className="text-primary" />
+            <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/levels')}>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
+                    <TrendingUp size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Practice Like a Game</h3>
-                    <p className="text-sm text-muted-foreground">Play drills, track scores, and climb the leaderboards.</p>
+                    <h3 className="font-semibold text-foreground">Level Challenges</h3>
+                    <p className="text-sm text-muted-foreground">Complete levels and track your progress</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/rounds')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-primary text-primary-foreground rounded-full">
-                    <Calendar size={20} className="text-primary" />
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary text-primary-foreground rounded-full">
+                    <Calendar size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Play Rounds & Games</h3>
-                    <p className="text-sm text-muted-foreground">Log rounds and compete in game modes with friends.</p>
+                    <h3 className="font-semibold text-foreground">Round Tracker</h3>
+                    <p className="text-sm text-muted-foreground">Log and analyze your golf rounds</p>
                   </div>
                 </div>
               </CardContent>
@@ -252,61 +259,48 @@ const Index = () => {
           </div>
         )}
 
+        {/* Ongoing Rounds Section - renders when data is available */}
+        {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={handleGameDeleted} />}
+
+        {/* Performance Snapshot - always renders (handles loading internally) */}
+        <PerformanceSnapshot performanceStats={performanceStats} />
 
         {/* Post Box - renders when profile is loaded */}
         {!profileLoading && user && (
           <PostBox profile={profile} userId={user.id} onPostCreated={handlePostCreated} />
         )}
 
-        {/* Ongoing Rounds Section - renders when data is available */}
-{!ongoingGamesLoading && (
-  <OngoingRoundsSection
-    ongoingGames={ongoingGames}
-    onGameDeleted={handleGameDeleted}
-  />
-)}
-
-        {/* Performance Snapshot - always renders (handles loading internally) */}
-        <PerformanceSnapshot performanceStats={performanceStats} />
-
-        {/* Friends Activity Feed */}
+        {/* Friends Activity Feed - renders when data is available */}
         {!feedPostsLoading && user && friendsPosts.length > 0 ? (
-  <div className="space-y-4">
-    {/* Posts */}
-    {friendsPosts.slice(0, postsToShow).map((post) => (
-      <FeedPost
-        key={post.id}
-        post={post}
-        currentUserId={user.id}
-        onPostDeleted={refreshFeedPosts}
-      />
-    ))}
-
-    {/* View More Button */}
-    {friendsPosts.length > postsToShow && (
-      <div className="flex justify-center pt-4">
-        <Button
-          variant="outline"
-          onClick={() => setPostsToShow((prev) => prev + 10)}
-          className="w-full max-w-md"
-        >
-          View More
-        </Button>
-      </div>
-    )}
-  </div>
-) : (!feedPostsLoading && user) ? (
-  <div className="px-4 pb-6">
-    <Card>
-      <CardContent className="p-6 text-center">
-        <p className="text-muted-foreground">
-          No posts yet. Share a drill, round or comment to get started!
-        </p>
-      </CardContent>
-    </Card>
-  </div>
-) : null}
-
+          <div className="space-y-4">
+            {/* Posts */}
+            {friendsPosts.slice(0, postsToShow).map((post) => (
+              <FeedPost key={post.id} post={post} currentUserId={user.id} onPostDeleted={refreshFeedPosts} />
+            ))}
+            {/* View More Button */}
+            {friendsPosts.length > postsToShow && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setPostsToShow(prev => prev + 10)}
+                  className="w-full max-w-md"
+                >
+                  View More
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : !feedPostsLoading && user ? (
+          <div className="px-4 pb-6">
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">
+                  No posts yet. Share a drill, round or comment to get started!
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
       </div>
     </div>
   );

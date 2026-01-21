@@ -8,12 +8,8 @@ interface GameHeaderProps {
   pageTitle: string;
   /** Optional override for back button behavior */
   onBack?: () => void;
-  /** Optional admin actions (currently not shown in UI) */
+  /** If true, user is admin/creator and gets action sheet on back */
   isAdmin?: boolean;
-  onFinish?: () => void;
-  onSaveAndExit?: () => void;
-  onDelete?: () => void | Promise<void>;
-  gameName?: string;
   /** If true, back button is hidden (e.g., for pages that manage their own navigation) */
   hideBackButton?: boolean;
 }
@@ -23,6 +19,7 @@ export function GameHeader({
   courseName,
   pageTitle,
   onBack,
+  isAdmin = false,
   hideBackButton = false,
 }: GameHeaderProps) {
   const navigate = useNavigate();
@@ -32,7 +29,40 @@ export function GameHeader({
       onBack();
       return;
     }
-    navigate(-1);
+    if (isAdmin && onFinish && onSaveAndExit && onDelete) {
+      // Admin: show action sheet
+      setShowActionSheet(true);
+    } else {
+      // Spectator/Participant: go back to previous page
+      navigate(-1);
+    }
+  };
+
+  const handleFinish = () => {
+    setShowActionSheet(false);
+    onFinish?.();
+  };
+
+  const handleSaveAndExit = () => {
+    setShowActionSheet(false);
+    onSaveAndExit?.();
+  };
+
+  const handleDeleteClick = () => {
+    setShowActionSheet(false);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete?.();
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+
+    navigate('/');
   };
 
   return (
@@ -53,12 +83,8 @@ export function GameHeader({
         
         {/* Centered title and course */}
         <div className="text-center">
-          <h1 className="text-base font-semibold text-foreground">{pageTitle}</h1>
-          <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-foreground/80">{gameTitle}</span>
-            {" • "}
-            {courseName}
-          </p>
+          <h1 className="text-xl font-bold text-foreground">{gameTitle}</h1>
+          <p className="text-sm text-muted-foreground">{courseName}</p>
         </div>
       </div>
     </div>
