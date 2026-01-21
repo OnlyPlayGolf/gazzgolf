@@ -185,6 +185,11 @@ export function SkinsShareDialogWithScorecard({
       const scorecardJson = JSON.stringify({
         playerScores: playerScoresData,
         holeResults: holeResultsData,
+        courseHoles: effectiveCourseHoles.map(h => ({
+          hole_number: h.hole_number,
+          par: h.par,
+          stroke_index: h.stroke_index ?? h.hole_number,
+        })),
       });
 
       // Create structured skins scorecard marker
@@ -236,7 +241,7 @@ export function SkinsShareDialogWithScorecard({
             <TableRow className="bg-primary">
               <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
               {nineHoles.map(hole => (
-                <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5">
+                <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                   {hole.hole_number}
                 </TableHead>
               ))}

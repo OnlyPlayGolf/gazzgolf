@@ -77,6 +77,9 @@ export interface GameConfiguration {
   // Mini-matches (for segmented games)
   miniMatches?: MiniMatch[];
   
+  // Handicap adjustments
+  handicapAdjustments?: HandicapAdjustment[];
+  
   // AI assumptions and notes
   assumptions: string[];
   notes?: string;

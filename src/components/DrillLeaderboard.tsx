@@ -212,7 +212,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                     key={entry.user_id} 
                     className={cn(
                       "flex items-center justify-between p-3 rounded-md",
-                      entry.user_id === user?.id ? "bg-primary text-primary-foreground border border-primary/20" : "bg-secondary/30"
+                      "bg-secondary/30"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -239,7 +239,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                       <span 
                         className={cn(
                           "font-medium cursor-pointer hover:underline",
-                          entry.user_id === user?.id && "font-bold text-primary"
+                          entry.user_id === user?.id && "font-bold"
                         )}
                         onClick={() => handleProfileClick(entry.user_id)}
                       >
@@ -247,9 +247,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                         {entry.user_id === user?.id && " (You)"}
                       </span>
                     </div>
-                    <Badge variant="outline" className={cn(
-                      entry.user_id === user?.id && "border-primary text-primary"
-                    )}>
+                    <Badge variant="outline">
                       {entry.best_score} {getScoreUnit(drillName)}
                     </Badge>
                   </div>

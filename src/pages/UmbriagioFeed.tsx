@@ -337,11 +337,6 @@ export default function UmbriagioFeed() {
         gameTitle={gameData?.round_name || "Umbriago"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Umbriago Game"
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

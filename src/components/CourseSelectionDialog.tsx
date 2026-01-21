@@ -11,7 +11,7 @@ import { AddCourseMethodDialog } from "./AddCourseMethodDialog";
 import { ScanScorecardDialog } from "./ScanScorecardDialog";
 import { ScorecardPreviewDialog } from "./ScorecardPreviewDialog";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 interface Course {
   id: string;
   name: string;

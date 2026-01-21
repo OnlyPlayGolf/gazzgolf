@@ -21,19 +21,27 @@ serve(async (req) => {
       )
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
-    if (!LOVABLE_API_KEY) {
+    const AI_GATEWAY_URL = Deno.env.get('AI_GATEWAY_URL')
+    const AI_GATEWAY_API_KEY = Deno.env.get('AI_GATEWAY_API_KEY')
+    if (!AI_GATEWAY_URL) {
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ error: 'AI_GATEWAY_URL is not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+    if (!AI_GATEWAY_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'AI_GATEWAY_API_KEY is not configured' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
-    // Call the Lovable AI gateway to analyze the scorecard
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Call the AI gateway to analyze the scorecard
+    const gatewayUrl = `${AI_GATEWAY_URL.replace(/\/$/, '')}/v1/chat/completions`
+    const response = await fetch(gatewayUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_GATEWAY_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -125,10 +133,11 @@ Return ONLY the JSON object, no markdown or additional text.`
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

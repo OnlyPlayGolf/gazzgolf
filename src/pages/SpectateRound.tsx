@@ -4,6 +4,7 @@ import { ArrowLeft, Info, Newspaper, List, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -314,6 +315,7 @@ export default function SpectateRound() {
 
           {/* Leaderboard Tab */}
           <TabsContent value="leaderboard" className="mt-4 space-y-4">
+            <FadeSlide>
             {players.length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">No scores recorded yet</p>
@@ -431,10 +433,12 @@ export default function SpectateRound() {
                 );
               })
             )}
+            </FadeSlide>
           </TabsContent>
 
           {/* Info Tab */}
           <TabsContent value="info" className="mt-4">
+            <FadeSlide>
             <Card>
               <CardHeader>
                 <CardTitle>Round Information</CardTitle>
@@ -458,10 +462,12 @@ export default function SpectateRound() {
                 </div>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
 
           {/* Feed Tab */}
           <TabsContent value="feed" className="mt-4 space-y-4">
+            <FadeSlide>
             {/* Comment Input */}
             {currentUserId && (
               <Card className="p-4">
@@ -510,10 +516,12 @@ export default function SpectateRound() {
                 </Card>
               ))
             )}
+            </FadeSlide>
           </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="mt-4">
+            <FadeSlide>
             <Card>
               <CardHeader>
                 <CardTitle>Game Settings</CardTitle>
@@ -524,6 +532,7 @@ export default function SpectateRound() {
                 </p>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
         </Tabs>
       </div>

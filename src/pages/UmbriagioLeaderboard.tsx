@@ -370,7 +370,7 @@ export default function UmbriagioLeaderboard() {
                   <TableRow className="bg-primary">
                     <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary text-primary-foreground z-10">Hole</TableHead>
                     {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px] bg-primary text-white">
                         {hole.hole_number}
                       </TableHead>
                     ))}
@@ -592,7 +592,7 @@ export default function UmbriagioLeaderboard() {
                   <TableRow className="bg-primary">
                     <TableHead className="text-center font-bold text-xs px-1 py-2 sticky left-0 bg-primary text-primary-foreground z-10">Hole</TableHead>
                     {frontNine.map(hole => (
-                      <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px]">
+                      <TableHead key={hole.hole_number} className="text-center font-bold text-xs px-2 py-2 w-[32px] bg-primary text-white">
                         {hole.hole_number}
                       </TableHead>
                     ))}
@@ -750,11 +750,6 @@ export default function UmbriagioLeaderboard() {
         gameTitle={game.round_name || "Umbriago"}
         courseName={game.course_name}
         pageTitle="Leaderboard"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Umbriago Game"
       />
 
       <LeaderboardModeTabs

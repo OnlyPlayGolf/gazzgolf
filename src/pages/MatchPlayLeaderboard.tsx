@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 
 interface CourseHole {
   hole_number: number;
@@ -222,7 +223,7 @@ export default function MatchPlayLeaderboard() {
               <TableRow className="bg-primary">
                 <TableHead className="text-center font-bold text-[10px] px-0.5 py-1.5 bg-primary text-primary-foreground w-[44px]">Hole</TableHead>
                 {nineHoles.map(hole => (
-                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-primary-foreground">
+                  <TableHead key={hole.hole_number} className="text-center font-bold text-[10px] px-0 py-1.5 bg-primary text-white">
                     {hole.hole_number}
                   </TableHead>
                 ))}
@@ -392,11 +393,6 @@ export default function MatchPlayLeaderboard() {
         gameTitle={currentGame.round_name || "Match Play"}
         courseName={currentGame.course_name}
         pageTitle="Leaderboard"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Match Play Game"
       />
 
       <LeaderboardModeTabs
@@ -433,14 +429,16 @@ export default function MatchPlayLeaderboard() {
                 
                 {allGamesWithHoles.map((gameWithHoles, index) => (
                   <TabsContent key={index} value={index.toString()}>
-                    {renderMatchCard(gameWithHoles, index)}
+                    <FadeSlide>{renderMatchCard(gameWithHoles, index)}</FadeSlide>
                   </TabsContent>
                 ))}
                 
                 <TabsContent value="all" className="space-y-4">
-                  {allGamesWithHoles.map((gameWithHoles, index) => 
-                    renderMatchCard(gameWithHoles, index)
-                  )}
+                  <FadeSlide>
+                    {allGamesWithHoles.map((gameWithHoles, index) => 
+                      renderMatchCard(gameWithHoles, index)
+                    )}
+                  </FadeSlide>
                 </TabsContent>
               </Tabs>
             ) : (

@@ -54,13 +54,14 @@ export default function RoundFeed() {
   const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
   const { isAdmin } = useGameAdminStatus('round', roundId);
   
-  // Use standardized navigation hook for back button behavior
+  // Use standardized navigation hook for back button behavior (still used for some deep links)
   const { handleBack } = useRoundNavigation({
     gameId: roundId || '',
     mode: 'round',
   });
   
   const [origin, setOrigin] = useState<string | null>(null);
+  const [roundInfo, setRoundInfo] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -91,10 +92,16 @@ export default function RoundFeed() {
   const fetchRoundData = async () => {
     const { data } = await supabase
       .from("rounds")
-      .select("origin")
+      .select("origin, round_name, course_name")
       .eq("id", roundId)
       .single();
-    setOrigin(data?.origin || null);
+    if (data) {
+      setOrigin(data.origin || null);
+      setRoundInfo({ round_name: data.round_name, course_name: data.course_name });
+    } else {
+      setOrigin(null);
+      setRoundInfo(null);
+    }
   };
 
   const fetchComments = async () => {
@@ -316,23 +323,14 @@ export default function RoundFeed() {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {isSpectator && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground p-4">
-          <div className="relative flex items-center justify-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-0 text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={handleBack}
-            >
-              <ArrowLeft size={20} />
-            </Button>
-            <h2 className="text-lg font-bold">Game Feed</h2>
-          </div>
-        </div>
+      {roundInfo && (
+        <GameHeader
+          gameTitle={roundInfo.round_name || "Round"}
+          courseName={roundInfo.course_name}
+          pageTitle="Game Feed"
+        />
       )}
-      <div className={`p-4 max-w-2xl mx-auto space-y-4 ${isSpectator ? 'pt-20' : 'pt-6'}`}>
-        {!isSpectator && <h1 className="text-2xl font-bold">Game Feed</h1>}
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
 
         {/* New Comment Box */}
         {currentUserId && (

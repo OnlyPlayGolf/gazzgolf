@@ -203,6 +203,20 @@ export default function CopenhagenSetup() {
 
       if (error) throw error;
 
+      // Persist the player's stats mode choice for this game (used by in-game + settings screens)
+      try {
+        await supabase
+          .from('player_game_stats_mode')
+          .upsert({
+            user_id: user.id,
+            game_id: game.id,
+            game_type: 'copenhagen',
+            stats_mode: statsMode,
+          }, { onConflict: 'user_id,game_id,game_type' });
+      } catch (e) {
+        console.warn('Failed to save player stats mode preference:', e);
+      }
+
       // Save settings to game-specific localStorage and session storage
       const copenhagenSettings = { mulligansPerPlayer, gimmesEnabled, sweepRuleEnabled, defaultTee };
       localStorage.setItem(`copenhagenSettings_${game.id}`, JSON.stringify(copenhagenSettings));

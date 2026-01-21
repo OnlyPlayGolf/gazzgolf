@@ -288,10 +288,14 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
             <CardTitle>Shot #{currentShot} of 14</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
+            <div className="p-3 bg-muted/50 rounded-md text-center">
               <div className="text-sm text-muted-foreground">Required Shot</div>
-              <div className="text-xl font-bold text-primary capitalize">{currentShotInfo.shape}</div>
-              <div className="text-sm font-medium text-foreground mt-1">{currentShotInfo.club}</div>
+              <div className="text-xl font-bold text-foreground capitalize">
+                {currentShotInfo.shape}
+              </div>
+              <div className="text-sm font-medium text-foreground mt-1">
+                {currentShotInfo.club}
+              </div>
             </div>
             
             <div className="text-center">

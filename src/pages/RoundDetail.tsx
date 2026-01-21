@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FadeSlide } from "@/components/motion/FadeSlide";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TopNavBar } from "@/components/TopNavBar";
 import { GolfScoreDisplay } from "@/components/GolfScoreDisplay";
@@ -217,6 +218,7 @@ export default function RoundDetail() {
 
           {/* Leaderboard Tab */}
           <TabsContent value="leaderboard" className="space-y-2">
+            <FadeSlide>
             {players.length > 0 ? (
               players.map((player, index) => (
                 <Collapsible
@@ -344,10 +346,12 @@ export default function RoundDetail() {
                 </CardContent>
               </Card>
             )}
+            </FadeSlide>
           </TabsContent>
 
           {/* Game Settings Tab */}
           <TabsContent value="settings">
+            <FadeSlide>
             <Card>
               <CardContent className="p-4 space-y-4">
                 <div>
@@ -397,10 +401,12 @@ export default function RoundDetail() {
                 </div>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
 
           {/* Game Info Tab */}
           <TabsContent value="info">
+            <FadeSlide>
             <Card>
               <CardContent className="p-4 space-y-4">
                 <div>
@@ -447,6 +453,7 @@ export default function RoundDetail() {
                 </div>
               </CardContent>
             </Card>
+            </FadeSlide>
           </TabsContent>
           
           {/* Fixed Bottom Tab Bar */}

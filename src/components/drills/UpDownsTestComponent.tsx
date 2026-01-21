@@ -300,9 +300,9 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
             </Button>
           </div>
 
-          <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
+          <div className="p-3 bg-muted/50 rounded-md text-center">
             <div className="text-sm text-muted-foreground">Current Station</div>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-2xl font-bold text-foreground">
               {currentStation?.lie} - {currentStation?.distance}m
             </div>
           </div>

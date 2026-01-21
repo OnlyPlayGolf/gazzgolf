@@ -12,6 +12,7 @@ interface ViewPlayersModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   players: GamePlayer[];
+  useHandicaps?: boolean;
 }
 
 function formatHandicap(handicap: number | null | undefined): string {

@@ -21,16 +21,6 @@ import {
   isMatchFinished,
   getScoreColorClass,
 } from "@/utils/bestBallScoring";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface BestBallScores {
   teamA: Record<string, number | null>;
@@ -192,7 +182,6 @@ export default function BestBallPlay() {
     }
   }, [isSpectator, spectatorLoading, gameId, navigate]);
   
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [activePlayerSheet, setActivePlayerSheet] = useState<{ team: 'A' | 'B', playerId: string } | null>(null);
   const [shouldSaveOnComplete, setShouldSaveOnComplete] = useState(false);
   const [showStatsModeDialog, setShowStatsModeDialog] = useState(false);
@@ -235,16 +224,6 @@ export default function BestBallPlay() {
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
   
-  // Show stats mode dialog on first load if not set
-  useEffect(() => {
-    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
-      const hasShownDialog = sessionStorage.getItem(`bestBallStatsModeShown_${gameId}`);
-      if (!hasShownDialog) {
-        setShowStatsModeDialog(true);
-        sessionStorage.setItem(`bestBallStatsModeShown_${gameId}`, 'true');
-      }
-    }
-  }, [statsModeLoading, statsMode, game, loading, gameId]);
   
   // Get hole distance from course data based on tee set
   const currentCourseHole = courseHoles.find(h => h.hole_number === currentHole);
@@ -525,7 +504,7 @@ export default function BestBallPlay() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/rounds-play")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -680,38 +659,12 @@ export default function BestBallPlay() {
 
       {gameId && <BestBallBottomTabBar gameId={gameId} />}
 
-      {/* Exit Dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={() => {
-              setShowExitDialog(false);
-              navigate("/rounds-play");
-            }}>
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => deleteGame()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Stats Mode Dialog */}
       <PlayerStatsModeDialog
         open={showStatsModeDialog}
         onOpenChange={setShowStatsModeDialog}
         onSelect={setStatsMode}
+        currentMode={statsMode}
         saving={statsModeSaving}
       />
 

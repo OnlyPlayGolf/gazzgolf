@@ -6,9 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
+const getDrillDisplayTitle = (title: string): string => {
+  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
+  if (title === "Short Putting Test") return "Short Putting";
+  return title;
+};
+
 interface GroupDrillHistoryProps {
   groupId: string;
   groupCreatedAt?: string;
+  includeCoaches?: boolean;
 }
 
 interface DrillResultWithProfile {
@@ -65,7 +72,7 @@ interface DrillInfo {
   title: string;
 }
 
-export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistoryProps) {
+export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = false }: GroupDrillHistoryProps) {
   const [results, setResults] = useState<DrillResultWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrill, setSelectedDrill] = useState<string>("all");
@@ -92,8 +99,11 @@ export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistory
           return;
         }
 
-        // Filter out coaches (owner/admin) - only show players in history
-        const playerMembers = groupMembers.filter((m: any) => m.role === 'member');
+        // Coach groups default: only show players in history.
+        // When includeCoaches is enabled, include everyone (including owner/admin).
+        const playerMembers = includeCoaches
+          ? groupMembers
+          : groupMembers.filter((m: any) => m.role === 'member');
         
         const memberIds = playerMembers.map(m => m.user_id);
         const memberProfiles = playerMembers.map((m: any) => ({
@@ -164,7 +174,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistory
     };
 
     fetchGroupHistory();
-  }, [groupId, groupCreatedAt]);
+  }, [groupId, groupCreatedAt, includeCoaches]);
 
   const filteredResults = results.filter(result => {
     const drillMatch = selectedDrill === "all" || result.drill_title === selectedDrill;
@@ -231,7 +241,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistory
                 <optgroup key={category} label={category}>
                   {categoryDrills.map(drill => (
                     <option key={drill.id} value={drill.title}>
-                      {drill.title}
+                      {getDrillDisplayTitle(drill.title)}
                     </option>
                   ))}
                 </optgroup>
@@ -265,7 +275,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt }: GroupDrillHistory
                     {result.display_name || result.username || 'Unknown'}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {result.drill_title}
+                    {getDrillDisplayTitle(result.drill_title)}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { formatDistanceToNow, format } from "date-fns";
 import { RoundCard, RoundCardData } from "./RoundCard";
 import { UmbriagioScorecardView } from "./UmbriagioScorecardView";
@@ -39,32 +39,83 @@ import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 import { getGameRoute } from "@/utils/unifiedRoundsLoader";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 
+const normalizeCourseHoles = (courseHoles: any) => {
+  if (!Array.isArray(courseHoles) || courseHoles.length === 0) return null;
+  return courseHoles
+    .map((h: any) => ({
+      hole_number: Number(h?.hole_number),
+      par: Number(h?.par),
+      stroke_index: Number(h?.stroke_index ?? h?.hole_number),
+    }))
+    .filter((h: any) => Number.isFinite(h.hole_number) && Number.isFinite(h.par) && Number.isFinite(h.stroke_index))
+    .sort((a: any, b: any) => a.hole_number - b.hole_number) as Array<{ hole_number: number; par: number; stroke_index: number }>;
+};
+
 // Parse round scorecard result from post content (new format with scorecard data)
+const extractTaggedBlock = (content: string, tag: string) => {
+  const re = new RegExp(`\\[${tag}\\][\\s\\S]*?\\[\\/${tag}\\]`);
+  const match = content.match(re);
+  return match ? match[0] : null;
+};
+
+const stripTaggedBlock = (content: string, tag: string) => {
+  const re = new RegExp(`\\[${tag}\\][\\s\\S]*?\\[\\/${tag}\\]`, "g");
+  return content.replace(re, "").trim();
+};
+
+// When editing or as a safe rendering fallback, we must never expose embedded result payload blocks
+// (scorecards, drill results, etc.) to the user. This strips those blocks even if parsing fails.
+const stripEmbeddedPostBlocks = (content: string | null | undefined) => {
+  const raw = content || "";
+  return raw
+    .replace(/\[DRILL_RESULT\][\s\S]*?\[\/DRILL_RESULT\]/g, "")
+    .replace(/\[ROUND_SCORECARD\][\s\S]*?\[\/ROUND_SCORECARD\]/g, "")
+    .replace(/\[MATCH_PLAY_SCORECARD\][\s\S]*?\[\/MATCH_PLAY_SCORECARD\]/g, "")
+    .replace(/\[BEST_BALL_SCORECARD\][\s\S]*?\[\/BEST_BALL_SCORECARD\]/g, "")
+    .replace(/\[BEST_BALL_STROKE_PLAY_SCORECARD\][\s\S]*?\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/g, "")
+    .replace(/\[UMBRIAGO_SCORECARD\][\s\S]*?\[\/UMBRIAGO_SCORECARD\]/g, "")
+    .replace(/\[COPENHAGEN_SCORECARD\][\s\S]*?\[\/COPENHAGEN_SCORECARD\]/g, "")
+    .replace(/\[SCRAMBLE_SCORECARD\][\s\S]*?\[\/SCRAMBLE_SCORECARD\]/g, "")
+    .replace(/\[SKINS_SCORECARD\][\s\S]*?\[\/SKINS_SCORECARD\]/g, "")
+    .replace(/\[WOLF_SCORECARD\][\s\S]*?\[\/WOLF_SCORECARD\]/g, "")
+    .replace(/\[ROUND_RESULT\][\s\S]*?\[\/ROUND_RESULT\]/g, "")
+    .replace(/\[UMBRIAGO_RESULT\][\s\S]*?\[\/UMBRIAGO_RESULT\]/g, "")
+    .replace(/\[GAME_RESULT\][\s\S]*?\[\/GAME_RESULT\]/g, "")
+    .trim();
+};
+
 const parseRoundScorecardResult = (content: string) => {
   // Format: [ROUND_SCORECARD]name|course|date|score|vspar|holes|totalPar|roundId|scorecardJson[/ROUND_SCORECARD]
-  const match = content?.match(/\[ROUND_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/ROUND_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[9]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        score: parseInt(match[4]),
-        scoreVsPar: parseInt(match[5]),
-        holesPlayed: parseInt(match[6]),
-        totalPar: parseInt(match[7]),
-        roundId: match[8] || null,
-        holeScores: scorecardData.scores as Record<number, number>,
-        holePars: scorecardData.pars as Record<number, number>,
-        textContent: content.replace(/\[ROUND_SCORECARD\].+?\[\/ROUND_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "ROUND_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[ROUND_SCORECARD\]/, "").replace(/\[\/ROUND_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 9) return null;
+    const [roundName, courseName, datePlayed, score, scoreVsPar, holesPlayed, totalPar, roundId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      score: parseInt(score),
+      scoreVsPar: parseInt(scoreVsPar),
+      holesPlayed: parseInt(holesPlayed),
+      totalPar: parseInt(totalPar),
+      roundId: roundId || null,
+      holeScores: scorecardData.scores as Record<number, number>,
+      holePars: scorecardData.pars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
+      textContent: stripTaggedBlock(content, "ROUND_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing scorecard data:", e);
+    return null;
   }
-  return null;
+};
+
+const getEditablePostText = (content: string | null | undefined) => {
+  return stripEmbeddedPostBlocks(content);
 };
 
 // Parse match play scorecard result from post content
@@ -92,6 +143,7 @@ const parseMatchPlayScorecardResult = (content: string) => {
         gameId: match[8] || null,
         holeScores,
         holePars: scorecardData.holePars as Record<number, number>,
+        courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
         matchStatus,
         textContent: content.replace(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/s, '').trim()
       };
@@ -125,6 +177,7 @@ const parseBestBallScorecardResult = (content: string) => {
           matchStatusAfter: number;
         }>,
         holePars: scorecardData.holePars as Record<number, number>,
+        courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
         teamAPlayers: scorecardData.teamAPlayers as { id: string; name: string }[],
         teamBPlayers: scorecardData.teamBPlayers as { id: string; name: string }[],
         textContent: content.replace(/\[BEST_BALL_SCORECARD\].+?\[\/BEST_BALL_SCORECARD\]/s, '').trim()
@@ -159,6 +212,7 @@ const parseBestBallStrokePlayScorecardResult = (content: string) => {
           teamBScores: { playerId: string; playerName: string; grossScore: number }[];
         }>,
         holePars: scorecardData.holePars as Record<number, number>,
+        courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
         teamAPlayers: scorecardData.teamAPlayers as { id: string; name: string }[],
         teamBPlayers: scorecardData.teamBPlayers as { id: string; name: string }[],
         textContent: content.replace(/\[BEST_BALL_STROKE_PLAY_SCORECARD\].+?\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/s, '').trim()
@@ -233,142 +287,193 @@ const parseRoundResult = (content: string) => {
 // Parse Umbriago scorecard result from post content (new format with scorecard data)
 const parseUmbriagioScorecardResult = (content: string) => {
   // Format: [UMBRIAGO_SCORECARD]roundName|courseName|date|teamAName|teamBName|normalizedA|normalizedB|winningTeam|currentUserTeam|gameId|scorecardJson[/UMBRIAGO_SCORECARD]
-  // Note: winningTeam (group 8) and currentUserTeam (group 9) can be empty, so use .*? instead of .+?
-  const match = content?.match(/\[UMBRIAGO_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.*?)\|(.*?)\|(.+?)\|(.+?)\[\/UMBRIAGO_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[11]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        teamAName: match[4],
-        teamBName: match[5],
-        normalizedA: parseInt(match[6]),
-        normalizedB: parseInt(match[7]),
-        winningTeam: (match[8] === 'A' || match[8] === 'B' || match[8] === 'TIE') ? match[8] as 'A' | 'B' | 'TIE' : null,
-        currentUserTeam: (match[9] === 'A' || match[9] === 'B') ? match[9] as 'A' | 'B' : null,
-        gameId: match[10] || null,
-        holePoints: scorecardData.holePoints as Record<number, { teamA: number; teamB: number }>,
-        holePars: scorecardData.holePars as Record<number, number>,
-        textContent: content.replace(/\[UMBRIAGO_SCORECARD\].+?\[\/UMBRIAGO_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing umbriago scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "UMBRIAGO_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[UMBRIAGO_SCORECARD\]/, "").replace(/\[\/UMBRIAGO_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 11) return null;
+    const [
+      roundName,
+      courseName,
+      datePlayed,
+      teamAName,
+      teamBName,
+      normalizedA,
+      normalizedB,
+      winningTeamRaw,
+      currentUserTeamRaw,
+      gameId,
+      ...jsonParts
+    ] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      teamAName,
+      teamBName,
+      normalizedA: parseInt(normalizedA),
+      normalizedB: parseInt(normalizedB),
+      winningTeam:
+        winningTeamRaw === "A" || winningTeamRaw === "B" || winningTeamRaw === "TIE"
+          ? (winningTeamRaw as "A" | "B" | "TIE")
+          : null,
+      currentUserTeam: currentUserTeamRaw === "A" || currentUserTeamRaw === "B" ? (currentUserTeamRaw as "A" | "B") : null,
+      gameId: gameId || null,
+      holePoints: scorecardData.holePoints as Record<number, { teamA: number; teamB: number }>,
+      holePars: scorecardData.holePars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
+      textContent: stripTaggedBlock(content, "UMBRIAGO_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing umbriago scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Copenhagen scorecard result from post content
 const parseCopenhagenScorecardResult = (content: string) => {
   // Format: [COPENHAGEN_SCORECARD]roundName|courseName|date|player1|player2|player3|p1pts|p2pts|p3pts|winner|gameId|scorecardJson[/COPENHAGEN_SCORECARD]
-  const match = content?.match(/\[COPENHAGEN_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/COPENHAGEN_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[12]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        player1: match[4],
-        player2: match[5],
-        player3: match[6],
-        player1Points: parseInt(match[7]),
-        player2Points: parseInt(match[8]),
-        player3Points: parseInt(match[9]),
-        winner: match[10],
-        gameId: match[11] || null,
-        holeScores: scorecardData.holeScores as Record<number, { p1: number | null; p2: number | null; p3: number | null; p1pts: number; p2pts: number; p3pts: number }>,
-        holePars: scorecardData.holePars as Record<number, number>,
-        textContent: content.replace(/\[COPENHAGEN_SCORECARD\].+?\[\/COPENHAGEN_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing copenhagen scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "COPENHAGEN_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[COPENHAGEN_SCORECARD\]/, "").replace(/\[\/COPENHAGEN_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 12) return null;
+    const [
+      roundName,
+      courseName,
+      datePlayed,
+      player1,
+      player2,
+      player3,
+      player1Points,
+      player2Points,
+      player3Points,
+      winner,
+      gameId,
+      ...jsonParts
+    ] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      player1,
+      player2,
+      player3,
+      player1Points: parseInt(player1Points),
+      player2Points: parseInt(player2Points),
+      player3Points: parseInt(player3Points),
+      winner,
+      gameId: gameId || null,
+      holeScores: scorecardData.holeScores as Record<
+        number,
+        { p1: number | null; p2: number | null; p3: number | null; p1pts: number; p2pts: number; p3pts: number }
+      >,
+      holePars: scorecardData.holePars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
+      textContent: stripTaggedBlock(content, "COPENHAGEN_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing copenhagen scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Scramble scorecard result from post content
 const parseScrambleScorecardResult = (content: string) => {
   // Format: [SCRAMBLE_SCORECARD]roundName|courseName|date|winningTeam|gameId|scorecardJson[/SCRAMBLE_SCORECARD]
-  const match = content?.match(/\[SCRAMBLE_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/SCRAMBLE_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[6]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        winningTeam: match[4],
-        gameId: match[5] || null,
-        holeScores: scorecardData.holeScores as Record<number, Record<string, number | null>>,
-        holePars: scorecardData.holePars as Record<number, number>,
-        teams: scorecardData.teams as Array<{ id: string; name: string; players: Array<{ id: string; name: string }> }>,
-        textContent: content.replace(/\[SCRAMBLE_SCORECARD\].+?\[\/SCRAMBLE_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing scramble scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "SCRAMBLE_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[SCRAMBLE_SCORECARD\]/, "").replace(/\[\/SCRAMBLE_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 6) return null;
+    const [roundName, courseName, datePlayed, winningTeam, gameId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      winningTeam,
+      gameId: gameId || null,
+      holeScores: scorecardData.holeScores as Record<number, Record<string, number | null>>,
+      holePars: scorecardData.holePars as Record<number, number>,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
+      teams: scorecardData.teams as Array<{ id: string; name: string; players: Array<{ id: string; name: string }> }>,
+      textContent: stripTaggedBlock(content, "SCRAMBLE_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing scramble scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Skins scorecard result from post content
 const parseSkinsScorecardResult = (content: string) => {
   // Format: [SKINS_SCORECARD]roundName|courseName|date|winnerId|winnerName|winnerSkins|gameId|scorecardJson[/SKINS_SCORECARD]
-  const match = content?.match(/\[SKINS_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/SKINS_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[8]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        winnerId: match[4],
-        winnerName: match[5],
-        winnerSkins: parseInt(match[6]),
-        gameId: match[7] || null,
-        playerScores: scorecardData.playerScores as Record<string, { name: string; skins: number; total: number }>,
-        holeResults: scorecardData.holeResults as Record<number, { winnerId: string | null; skinsAvailable: number; par: number; playerScores?: Record<string, number> }>,
-        textContent: content.replace(/\[SKINS_SCORECARD\].+?\[\/SKINS_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing skins scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "SKINS_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[SKINS_SCORECARD\]/, "").replace(/\[\/SKINS_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 8) return null;
+    const [roundName, courseName, datePlayed, winnerId, winnerName, winnerSkins, gameId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      winnerId,
+      winnerName,
+      winnerSkins: parseInt(winnerSkins),
+      gameId: gameId || null,
+      playerScores: scorecardData.playerScores as Record<string, { name: string; skins: number; total: number }>,
+      holeResults: scorecardData.holeResults as Record<
+        number,
+        { winnerId: string | null; skinsAvailable: number; par: number; playerScores?: Record<string, number> }
+      >,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
+      textContent: stripTaggedBlock(content, "SKINS_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing skins scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Wolf scorecard result from post content
 const parseWolfScorecardResult = (content: string) => {
   // Format: [WOLF_SCORECARD]roundName|courseName|date|winnerName|winnerPoints|gameId|scorecardJson[/WOLF_SCORECARD]
-  const match = content?.match(/\[WOLF_SCORECARD\](.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\|(.+?)\[\/WOLF_SCORECARD\]/);
-  if (match) {
-    try {
-      const scorecardData = JSON.parse(match[7]);
-      return {
-        roundName: match[1],
-        courseName: match[2],
-        datePlayed: match[3],
-        winnerName: match[4],
-        winnerPoints: parseInt(match[5]),
-        gameId: match[6] || null,
-        playerScores: scorecardData.playerScores as Record<string, { name: string; points: number }>,
-        holeResults: scorecardData.holeResults as Record<number, { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }>,
-        textContent: content.replace(/\[WOLF_SCORECARD\].+?\[\/WOLF_SCORECARD\]/, '').trim()
-      };
-    } catch (e) {
-      console.error('Error parsing wolf scorecard data:', e);
-      return null;
-    }
+  const block = extractTaggedBlock(content, "WOLF_SCORECARD");
+  if (!block) return null;
+  try {
+    const inner = block.replace(/^\[WOLF_SCORECARD\]/, "").replace(/\[\/WOLF_SCORECARD\]$/, "");
+    const parts = inner.split("|");
+    if (parts.length < 7) return null;
+    const [roundName, courseName, datePlayed, winnerName, winnerPoints, gameId, ...jsonParts] = parts;
+    const scorecardData = JSON.parse(jsonParts.join("|"));
+    return {
+      roundName,
+      courseName,
+      datePlayed,
+      winnerName,
+      winnerPoints: parseInt(winnerPoints),
+      gameId: gameId || null,
+      playerScores: scorecardData.playerScores as Record<string, { name: string; points: number }>,
+      holeResults: scorecardData.holeResults as Record<
+        number,
+        { scores: Record<number, number | null>; points: Record<number, number | null>; par: number }
+      >,
+      courseHoles: scorecardData.courseHoles as Array<{ hole_number: number; par: number; stroke_index?: number }> | undefined,
+      textContent: stripTaggedBlock(content, "WOLF_SCORECARD"),
+    };
+  } catch (e) {
+    console.error("Error parsing wolf scorecard data:", e);
+    return null;
   }
-  return null;
 };
 
 // Parse Umbriago result from post content (legacy format)
@@ -581,7 +686,7 @@ const GameResultCardFromDB = ({
             .from(tableName as any)
             .select(selectFields)
             .eq("id", gameId)
-            .single(),
+            .maybeSingle(),
           supabase
             .from("profiles")
             .select("display_name, username")
@@ -975,33 +1080,12 @@ const BestBallScorecardInPost = ({
   const { strokePlayEnabled } = useStrokePlayEnabled(bestBallScorecardResult.gameId || '', 'best_ball');
 
   useEffect(() => {
-    const fetchCourseHoles = async () => {
-      if (bestBallScorecardResult.gameId) {
-        // Try to fetch course holes from game
-        const { data: gameData } = await supabase
-          .from("best_ball_games")
-          .select("course_id, holes_played")
-          .eq("id", bestBallScorecardResult.gameId)
-          .single();
-
-        if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
+    const embedded = normalizeCourseHoles((bestBallScorecardResult as any).courseHoles);
+    if (embedded) {
+      setCourseHoles(embedded);
+      setLoading(false);
+      return;
+    }
       // Fallback: construct course holes from holePars
       const holes = Object.keys(bestBallScorecardResult.holePars)
         .map(holeNum => ({
@@ -1012,10 +1096,7 @@ const BestBallScorecardInPost = ({
         .sort((a, b) => a.hole_number - b.hole_number);
       setCourseHoles(holes);
       setLoading(false);
-    };
-
-    fetchCourseHoles();
-  }, [bestBallScorecardResult.gameId, bestBallScorecardResult.holePars]);
+  }, [bestBallScorecardResult.holePars, (bestBallScorecardResult as any).courseHoles]);
 
   // Calculate match result from user's perspective
   const userMatchStatus = bestBallScorecardResult.matchStatus;
@@ -1106,33 +1187,12 @@ const BestBallStrokePlayScorecardInPost = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCourseHoles = async () => {
-      if (bestBallStrokePlayScorecardResult.gameId) {
-        // Try to fetch course holes from game
-        const { data: gameData } = await supabase
-          .from("best_ball_games")
-          .select("course_id, holes_played")
-          .eq("id", bestBallStrokePlayScorecardResult.gameId)
-          .single();
-
-        if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
+    const embedded = normalizeCourseHoles((bestBallStrokePlayScorecardResult as any).courseHoles);
+    if (embedded) {
+      setCourseHoles(embedded);
+      setLoading(false);
+      return;
+    }
       // Fallback: construct course holes from holePars
       const holes = Object.keys(bestBallStrokePlayScorecardResult.holePars)
         .map(holeNum => ({
@@ -1143,10 +1203,7 @@ const BestBallStrokePlayScorecardInPost = ({
         .sort((a, b) => a.hole_number - b.hole_number);
       setCourseHoles(holes);
       setLoading(false);
-    };
-
-    fetchCourseHoles();
-  }, [bestBallStrokePlayScorecardResult.gameId, bestBallStrokePlayScorecardResult.holePars]);
+  }, [bestBallStrokePlayScorecardResult.holePars, (bestBallStrokePlayScorecardResult as any).courseHoles]);
 
   const handleRoundCardClick = () => {
     if (bestBallStrokePlayScorecardResult.gameId) {
@@ -1199,6 +1256,203 @@ const BestBallStrokePlayScorecardInPost = ({
   );
 };
 
+// Component to display round scorecard in posts using snapshot from posts table
+const RoundScorecardInPostFromSnapshot = ({
+  roundScorecardResult,
+  textContent,
+  postScorecardSnapshot,
+}: {
+  roundScorecardResult: NonNullable<ReturnType<typeof parseRoundScorecardResult>>;
+  textContent?: string;
+  postScorecardSnapshot?: any;
+}) => {
+  const navigate = useNavigate();
+  const [snapshot, setSnapshot] = useState<any>(postScorecardSnapshot || null);
+  const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [profileMap, setProfileMap] = useState<Map<string, { display_name: string | null; username: string | null }>>(new Map());
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Use snapshot from post if available and valid (object, not array, not null)
+      if (postScorecardSnapshot && 
+          typeof postScorecardSnapshot === 'object' && 
+          !Array.isArray(postScorecardSnapshot) &&
+          postScorecardSnapshot.holes &&
+          postScorecardSnapshot.players) {
+        console.log('[Scorecard] Using snapshot from post');
+        setSnapshot(postScorecardSnapshot);
+        
+        // Build course holes from snapshot
+        const snapshotHoles = postScorecardSnapshot.holes || [];
+        const holes = snapshotHoles.map((h: number) => {
+          // Try to get par from embedded data first, fallback to 4
+          const par = roundScorecardResult.holePars?.[h] || 4;
+          return {
+            hole_number: h,
+            par: par,
+            stroke_index: h,
+          };
+        });
+        setCourseHoles(holes);
+
+        // Fetch profiles for all players in snapshot (non-blocking)
+        const players = postScorecardSnapshot.players || [];
+        const userIds = players
+          .map((p: any) => p.user_id)
+          .filter((id: string | null) => id !== null);
+        
+        if (userIds.length > 0) {
+          supabase
+            .from('profiles')
+            .select('id, display_name, username')
+            .in('id', userIds)
+            .then(({ data: profiles }) => {
+              if (profiles) {
+                const map = new Map<string, { display_name: string | null; username: string | null }>();
+                profiles.forEach(p => {
+                  map.set(p.id, { display_name: p.display_name, username: p.username });
+                });
+                setProfileMap(map);
+              }
+            }).then(undefined, (profileError) => {
+              console.error('Error fetching profiles:', profileError);
+              // Continue without profile data - will use display_name from snapshot
+            });
+        }
+        
+        setLoading(false);
+        return;
+      }
+
+      // No snapshot - fallback to embedded data
+      console.warn('[Scorecard] No snapshot found in post - using embedded data');
+      const courseHolesFromPars = Object.keys(roundScorecardResult.holePars || {})
+        .map(holeNum => ({
+          hole_number: parseInt(holeNum),
+          par: roundScorecardResult.holePars[parseInt(holeNum)],
+          stroke_index: parseInt(holeNum),
+        }))
+        .sort((a, b) => a.hole_number - b.hole_number);
+      setCourseHoles(courseHolesFromPars);
+      setLoading(false);
+    };
+
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postScorecardSnapshot, roundScorecardResult.roundId]); // Depend on postScorecardSnapshot
+
+  // Build strokePlayPlayers from snapshot or fallback to embedded data
+  const buildPlayers = () => {
+    if (snapshot && snapshot.players) {
+      return snapshot.players.map((p: any) => {
+        const profile = p.user_id ? profileMap.get(p.user_id) : null;
+        const displayName = p.display_name || profile?.display_name || profile?.username || p.guest_name || 'Player';
+        
+        const scoresMap = new Map<number, number>();
+        if (p.scores && Array.isArray(p.scores)) {
+          p.scores.forEach((score: number | null, index: number) => {
+            if (score !== null && score > 0) {
+              scoresMap.set(index + 1, score);
+            }
+          });
+        }
+
+        return {
+          name: displayName,
+          scores: scoresMap,
+          totalScore: p.total || 0,
+        };
+      });
+    } else {
+      // Fallback to embedded data
+      const holeScoresMap = new Map<number, number>();
+      let totalScore = 0;
+      Object.entries(roundScorecardResult.holeScores || {}).forEach(([holeNum, score]) => {
+        if (score && score > 0) {
+          holeScoresMap.set(parseInt(holeNum), score);
+          totalScore += score;
+        }
+      });
+
+      return [{
+        name: "Player",
+        scores: holeScoresMap,
+        totalScore: totalScore || roundScorecardResult.score || 0,
+      }];
+    }
+  };
+
+  const strokePlayPlayers = buildPlayers();
+
+  // Build RoundCardData for the header
+  const roundCardData: RoundCardData = {
+    id: roundScorecardResult.roundId || '',
+    round_name: roundScorecardResult.roundName,
+    course_name: roundScorecardResult.courseName,
+    date: roundScorecardResult.datePlayed,
+    score: roundScorecardResult.scoreVsPar,
+    playerCount: strokePlayPlayers.length,
+    gameMode: 'Stroke Play',
+    gameType: 'round',
+    totalScore: roundScorecardResult.score || 0,
+    holesPlayed: roundScorecardResult.holesPlayed,
+  };
+
+  const handleHeaderClick = () => {
+    if (roundScorecardResult.roundId) {
+      navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
+        entryPoint: 'home', 
+        viewType: 'spectator' 
+      }));
+    } else {
+      toast.error("Round details not found");
+    }
+  };
+
+  const handleScorecardClick = () => {
+    handleHeaderClick();
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {textContent && (
+          <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+        )}
+        <div className="text-muted-foreground text-sm p-4">Loading scorecard...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {textContent && (
+        <p className="text-foreground whitespace-pre-wrap leading-relaxed">{textContent}</p>
+      )}
+      {/* Round Card Header - Clickable to navigate to leaderboard */}
+      <div onClick={handleHeaderClick} className="cursor-pointer">
+        <RoundCard 
+          round={roundCardData}
+          className="border-0 shadow-none hover:shadow-none"
+        />
+      </div>
+
+      {/* Scorecard - Using StrokePlayScorecardView (compact scorecard table, same as in-game leaderboard) */}
+      {courseHoles.length > 0 && strokePlayPlayers.length > 0 ? (
+        <div onClick={handleScorecardClick} className="cursor-pointer px-4 pt-3 pb-4">
+          <StrokePlayScorecardView
+            players={strokePlayPlayers}
+            courseHoles={courseHoles}
+          />
+        </div>
+      ) : snapshot === null ? (
+        <div className="text-muted-foreground text-sm p-4">Loading scorecard...</div>
+      ) : null}
+    </div>
+  );
+};
+
 // Component to display Umbriago scorecard in posts
 const UmbriagioScorecardInPost = ({
   umbriagioScorecardResult,
@@ -1227,11 +1481,17 @@ const UmbriagioScorecardInPost = ({
 
   useEffect(() => {
     const fetchData = async () => {
+      // Prefer embedded course holes from the post payload (avoids course_holes fetches)
+      const embedded = normalizeCourseHoles((umbriagioScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      }
+
       if (umbriagioScorecardResult.gameId) {
-        // Fetch game data (for player names) and course holes
+        // Fetch game data (for player names)
         const { data: gameDataResult } = await supabase
           .from("umbriago_games")
-          .select("course_id, holes_played, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
+          .select("team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2")
           .eq("id", umbriagioScorecardResult.gameId)
           .single();
 
@@ -1242,22 +1502,6 @@ const UmbriagioScorecardInPost = ({
             team_b_player_1: gameDataResult.team_b_player_1,
             team_b_player_2: gameDataResult.team_b_player_2,
           });
-
-          // Fetch course holes
-          if (gameDataResult.course_id) {
-            const { data: holesData } = await supabase
-              .from("course_holes")
-              .select("hole_number, par, stroke_index")
-              .eq("course_id", gameDataResult.course_id)
-              .order("hole_number");
-
-            if (holesData) {
-              const filteredHoles = gameDataResult.holes_played === 9 
-                ? holesData.slice(0, 9) 
-                : holesData;
-              setCourseHoles(filteredHoles);
-            }
-          }
 
           // Fetch holes for individual player scores (for stroke play)
           if (strokePlayEnabled) {
@@ -1278,19 +1522,21 @@ const UmbriagioScorecardInPost = ({
       }
 
       // Fallback: construct course holes from holePars
-      const holes = Object.keys(umbriagioScorecardResult.holePars)
-        .map(holeNum => ({
-          hole_number: parseInt(holeNum),
-          par: umbriagioScorecardResult.holePars[parseInt(holeNum)],
-          stroke_index: parseInt(holeNum), // Default stroke index
-        }))
-        .sort((a, b) => a.hole_number - b.hole_number);
-      setCourseHoles(holes);
+      if (courseHoles.length === 0) {
+        const holes = Object.keys(umbriagioScorecardResult.holePars)
+          .map(holeNum => ({
+            hole_number: parseInt(holeNum),
+            par: umbriagioScorecardResult.holePars[parseInt(holeNum)],
+            stroke_index: parseInt(holeNum), // Default stroke index
+          }))
+          .sort((a, b) => a.hole_number - b.hole_number);
+        setCourseHoles(holes);
+      }
       setLoading(false);
     };
 
     fetchData();
-  }, [umbriagioScorecardResult.gameId, umbriagioScorecardResult.holePars, strokePlayEnabled]);
+  }, [umbriagioScorecardResult.gameId, umbriagioScorecardResult.holePars, strokePlayEnabled, (umbriagioScorecardResult as any).courseHoles, courseHoles.length]);
 
   // Calculate match result from user's perspective
   const winningTeam = umbriagioScorecardResult.winningTeam;
@@ -1495,27 +1741,12 @@ const CopenhagenScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (copenhagenScorecardResult.gameId) {
-        // Fetch course holes from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("copenhagen_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", copenhagenScorecardResult.gameId)
           .single();
-
-        if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
 
         // Calculate user's position (same logic as unifiedRoundsLoader.ts for Profile)
         const { data: { user } } = await supabase.auth.getUser();
@@ -1565,8 +1796,11 @@ const CopenhagenScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holePars
-      if (courseHoles.length === 0) {
+      const embedded = normalizeCourseHoles((copenhagenScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0) {
+        // Fallback: construct course holes from holePars
         const holes = Object.keys(copenhagenScorecardResult.holePars)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -1580,7 +1814,7 @@ const CopenhagenScorecardInPost = ({
     };
 
     fetchData();
-  }, [copenhagenScorecardResult.gameId, copenhagenScorecardResult.holePars]);
+  }, [copenhagenScorecardResult.gameId, copenhagenScorecardResult.holePars, courseHoles.length, (copenhagenScorecardResult as any).courseHoles]);
 
   // Build holes array from scorecard data
   const holes = Object.keys(copenhagenScorecardResult.holeScores).map(holeNum => {
@@ -1793,27 +2027,12 @@ const ScrambleScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (scrambleScorecardResult.gameId) {
-        // Fetch course holes from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("scramble_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", scrambleScorecardResult.gameId)
           .single();
-
-        if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
 
         // Calculate user's position
         const { data: { user } } = await supabase.auth.getUser();
@@ -1856,8 +2075,11 @@ const ScrambleScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holePars
-      if (courseHoles.length === 0) {
+      const embedded = normalizeCourseHoles((scrambleScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0) {
+        // Fallback: construct course holes from holePars
         const holesFromPars = Object.keys(scrambleScorecardResult.holePars)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -1871,7 +2093,7 @@ const ScrambleScorecardInPost = ({
     };
 
     fetchData();
-  }, [scrambleScorecardResult.gameId, scrambleScorecardResult.holePars]);
+  }, [scrambleScorecardResult.gameId, scrambleScorecardResult.holePars, courseHoles.length, (scrambleScorecardResult as any).courseHoles]);
 
   // Reconstruct minimal game object
   const game = {
@@ -1971,27 +2193,12 @@ const SkinsScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (skinsScorecardResult.gameId) {
-        // Fetch course holes and game owner from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("skins_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", skinsScorecardResult.gameId)
-          .single();
-
-        if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
+          .maybeSingle();
 
         // Calculate user's position
         const { data: { user } } = await supabase.auth.getUser();
@@ -2031,8 +2238,11 @@ const SkinsScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holeResults
-      if (courseHoles.length === 0 && skinsScorecardResult.holeResults) {
+      const embedded = normalizeCourseHoles((skinsScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0 && skinsScorecardResult.holeResults) {
+        // Fallback: construct course holes from holeResults
         const holesFromResults = Object.keys(skinsScorecardResult.holeResults)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -2046,7 +2256,7 @@ const SkinsScorecardInPost = ({
     };
 
     fetchData();
-  }, [skinsScorecardResult.gameId, skinsScorecardResult.holeResults, skinsScorecardResult.playerScores]);
+  }, [skinsScorecardResult.gameId, skinsScorecardResult.holeResults, skinsScorecardResult.playerScores, courseHoles.length, (skinsScorecardResult as any).courseHoles]);
 
   const handleHeaderClick = () => {
     if (skinsScorecardResult.gameId) {
@@ -2136,27 +2346,12 @@ const WolfScorecardInPost = ({
   useEffect(() => {
     const fetchData = async () => {
       if (wolfScorecardResult.gameId) {
-        // Fetch course holes and game owner from game data
+        // Fetch game owner id (used for tie-breaking when determining user position)
         const { data: gameData } = await supabase
           .from("wolf_games")
-          .select("course_id, holes_played, user_id")
+          .select("user_id")
           .eq("id", wolfScorecardResult.gameId)
           .single();
-
-        if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
-
-          if (holesData) {
-            const filteredHoles = gameData.holes_played === 9 
-              ? holesData.slice(0, 9) 
-              : holesData;
-            setCourseHoles(filteredHoles);
-          }
-        }
 
         // Calculate user's position
         const { data: { user } } = await supabase.auth.getUser();
@@ -2196,8 +2391,11 @@ const WolfScorecardInPost = ({
         }
       }
 
-      // Fallback: construct course holes from holeResults
-      if (courseHoles.length === 0 && wolfScorecardResult.holeResults) {
+      const embedded = normalizeCourseHoles((wolfScorecardResult as any).courseHoles);
+      if (embedded) {
+        setCourseHoles(embedded);
+      } else if (courseHoles.length === 0 && wolfScorecardResult.holeResults) {
+        // Fallback: construct course holes from holeResults
         const holesFromResults = Object.keys(wolfScorecardResult.holeResults)
           .map(holeNum => ({
             hole_number: parseInt(holeNum),
@@ -2211,7 +2409,7 @@ const WolfScorecardInPost = ({
     };
 
     fetchData();
-  }, [wolfScorecardResult.gameId, wolfScorecardResult.holeResults, wolfScorecardResult.playerScores]);
+  }, [wolfScorecardResult.gameId, wolfScorecardResult.holeResults, wolfScorecardResult.playerScores, courseHoles.length, (wolfScorecardResult as any).courseHoles]);
 
   const handleHeaderClick = () => {
     if (wolfScorecardResult.gameId) {
@@ -2283,30 +2481,12 @@ const MatchPlayScorecardInPost = ({
   const { strokePlayEnabled } = useStrokePlayEnabled(matchPlayScorecardResult.gameId || '', 'match_play');
 
   useEffect(() => {
-    const fetchCourseHoles = async () => {
-      if (matchPlayScorecardResult.gameId) {
-        // Try to fetch course holes from game
-        const { data: gameData } = await supabase
-          .from("match_play_games")
-          .select("course_id")
-          .eq("id", matchPlayScorecardResult.gameId)
-          .single();
-
-        if (gameData?.course_id) {
-          const { data: holesData } = await supabase
-            .from("course_holes")
-            .select("hole_number, par, stroke_index")
-            .eq("course_id", gameData.course_id)
-            .order("hole_number");
-
-          if (holesData) {
-            setCourseHoles(holesData);
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
+    const embedded = normalizeCourseHoles((matchPlayScorecardResult as any).courseHoles);
+    if (embedded) {
+      setCourseHoles(embedded);
+      setLoading(false);
+      return;
+    }
       // Fallback: construct course holes from holePars
       const holes = Object.keys(matchPlayScorecardResult.holePars)
         .map(holeNum => ({
@@ -2317,10 +2497,7 @@ const MatchPlayScorecardInPost = ({
         .sort((a, b) => a.hole_number - b.hole_number);
       setCourseHoles(holes);
       setLoading(false);
-    };
-
-    fetchCourseHoles();
-  }, [matchPlayScorecardResult.gameId, matchPlayScorecardResult.holePars]);
+  }, [matchPlayScorecardResult.holePars, (matchPlayScorecardResult as any).courseHoles]);
 
   // Convert holeScores to holes array format for MatchPlayScorecardView
   const holes = Object.keys(matchPlayScorecardResult.holeScores).map(holeNum => {
@@ -2420,8 +2597,10 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const location = useLocation();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
   const [comments, setComments] = useState<any[]>([]);
   const [showComments, setShowComments] = useState(false);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -2433,6 +2612,19 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const isOwnPost = post.user_id === currentUserId;
+
+  // Initialize engagement counts from preloaded data (non-blocking).
+  // Parents (Home/Profile) batch-fetch these to avoid N+1 requests.
+  useEffect(() => {
+    const engagement = post?._engagement;
+    setLiked(!!engagement?.likedByMe);
+    setLikeCount(typeof engagement?.likeCount === "number" ? engagement.likeCount : 0);
+    setCommentCount(typeof engagement?.commentCount === "number" ? engagement.commentCount : 0);
+    // Reset per-post comment state when switching posts.
+    setComments([]);
+    setShowComments(false);
+    setCommentsLoaded(false);
+  }, [post?.id]);
 
   const handleProfileClick = (userId: string) => {
     navigate(`/user/${userId}`);
@@ -2464,23 +2656,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   };
 
   const handleEditPost = () => {
-    // Extract just the text content (without special result tags)
-    const drillResult = parseDrillResult(post.content);
-    const roundScorecardResult = parseRoundScorecardResult(post.content);
-    const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
-    const roundResult = parseRoundResult(post.content);
-    const umbriagioResult = parseUmbriagioResult(post.content);
-    const gameResult = parseGameResult(post.content);
-    
-    let textContent = post.content || "";
-    if (drillResult) textContent = drillResult.textContent;
-    else if (roundScorecardResult) textContent = roundScorecardResult.textContent;
-    else if (matchPlayScorecardResult) textContent = matchPlayScorecardResult.textContent;
-    else if (roundResult) textContent = roundResult.textContent;
-    else if (umbriagioResult) textContent = umbriagioResult.textContent;
-    else if (gameResult) textContent = gameResult.textContent;
-    
-    setEditPostContent(textContent);
+    // Only allow editing the user's caption text (never embedded payload blocks).
+    setEditPostContent(getEditablePostText(post.content));
     setIsEditingPost(true);
   };
 
@@ -2490,25 +2667,30 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
       // Preserve special result tags if they exist
       let newContent = editPostContent.trim();
       
-      const drillMatch = post.content?.match(/\[DRILL_RESULT\].+?\[\/DRILL_RESULT\]/);
-      const roundScorecardMatch = post.content?.match(/\[ROUND_SCORECARD\].+?\[\/ROUND_SCORECARD\]/);
-      const matchPlayScorecardMatch = post.content?.match(/\[MATCH_PLAY_SCORECARD\].+?\[\/MATCH_PLAY_SCORECARD\]/);
-      const roundMatch = post.content?.match(/\[ROUND_RESULT\].+?\[\/ROUND_RESULT\]/);
-      const umbriagioMatch = post.content?.match(/\[UMBRIAGO_RESULT\].+?\[\/UMBRIAGO_RESULT\]/);
-      const gameMatch = post.content?.match(/\[GAME_RESULT\].+?\[\/GAME_RESULT\]/);
-      
-      if (drillMatch) {
-        newContent = newContent ? `${newContent}\n${drillMatch[0]}` : drillMatch[0];
-      } else if (roundScorecardMatch) {
-        newContent = newContent ? `${newContent}\n${roundScorecardMatch[0]}` : roundScorecardMatch[0];
-      } else if (matchPlayScorecardMatch) {
-        newContent = newContent ? `${newContent}\n${matchPlayScorecardMatch[0]}` : matchPlayScorecardMatch[0];
-      } else if (roundMatch) {
-        newContent = newContent ? `${newContent}\n${roundMatch[0]}` : roundMatch[0];
-      } else if (umbriagioMatch) {
-        newContent = newContent ? `${newContent}\n${umbriagioMatch[0]}` : umbriagioMatch[0];
-      } else if (gameMatch) {
-        newContent = newContent ? `${newContent}\n${gameMatch[0]}` : gameMatch[0];
+      const embeddedBlockRegexes: RegExp[] = [
+        /\[DRILL_RESULT\][\s\S]*?\[\/DRILL_RESULT\]/g,
+        /\[ROUND_SCORECARD\][\s\S]*?\[\/ROUND_SCORECARD\]/g,
+        /\[MATCH_PLAY_SCORECARD\][\s\S]*?\[\/MATCH_PLAY_SCORECARD\]/g,
+        /\[BEST_BALL_SCORECARD\][\s\S]*?\[\/BEST_BALL_SCORECARD\]/g,
+        /\[BEST_BALL_STROKE_PLAY_SCORECARD\][\s\S]*?\[\/BEST_BALL_STROKE_PLAY_SCORECARD\]/g,
+        /\[UMBRIAGO_SCORECARD\][\s\S]*?\[\/UMBRIAGO_SCORECARD\]/g,
+        /\[COPENHAGEN_SCORECARD\][\s\S]*?\[\/COPENHAGEN_SCORECARD\]/g,
+        /\[SCRAMBLE_SCORECARD\][\s\S]*?\[\/SCRAMBLE_SCORECARD\]/g,
+        /\[SKINS_SCORECARD\][\s\S]*?\[\/SKINS_SCORECARD\]/g,
+        /\[WOLF_SCORECARD\][\s\S]*?\[\/WOLF_SCORECARD\]/g,
+        /\[ROUND_RESULT\][\s\S]*?\[\/ROUND_RESULT\]/g,
+        /\[UMBRIAGO_RESULT\][\s\S]*?\[\/UMBRIAGO_RESULT\]/g,
+        /\[GAME_RESULT\][\s\S]*?\[\/GAME_RESULT\]/g,
+      ];
+
+      const preservedBlocks: string[] = [];
+      for (const re of embeddedBlockRegexes) {
+        const matches = post.content?.match(re);
+        if (matches?.length) preservedBlocks.push(...matches);
+      }
+
+      if (preservedBlocks.length) {
+        newContent = [newContent, ...preservedBlocks].filter(Boolean).join("\n");
       }
 
       const { error } = await supabase
@@ -2536,23 +2718,6 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     setEditPostContent("");
   };
 
-  useEffect(() => {
-    loadLikes();
-    loadComments();
-  }, [post.id]);
-
-  const loadLikes = async () => {
-    const { data: likes } = await supabase
-      .from("post_likes")
-      .select("*")
-      .eq("post_id", post.id);
-
-    if (likes) {
-      setLikeCount(likes.length);
-      setLiked(likes.some((like) => like.user_id === currentUserId));
-    }
-  };
-
   const loadComments = async () => {
     const { data } = await supabase
       .from("post_comments")
@@ -2569,8 +2734,26 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
     if (data) {
       setComments(data);
+      setCommentCount(data.length);
+      try {
+        const { setCachedPostEngagement } = await import("@/utils/postsEngagement");
+        setCachedPostEngagement(post.id, currentUserId, {
+          likeCount,
+          commentCount: data.length,
+          likedByMe: liked,
+        });
+      } catch {
+        // ignore cache update failures
+      }
     }
   };
+
+  useEffect(() => {
+    if (showComments && !commentsLoaded) {
+      loadComments();
+      setCommentsLoaded(true);
+    }
+  }, [showComments, commentsLoaded]);
 
   const handleLike = async () => {
     try {
@@ -2580,14 +2763,38 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
           .delete()
           .eq("post_id", post.id)
           .eq("user_id", currentUserId);
-        setLiked(false);
-        setLikeCount((prev) => prev - 1);
+        const nextLiked = false;
+        const nextLikeCount = Math.max(0, likeCount - 1);
+        setLiked(nextLiked);
+        setLikeCount(nextLikeCount);
+        try {
+          const { setCachedPostEngagement } = await import("@/utils/postsEngagement");
+          setCachedPostEngagement(post.id, currentUserId, {
+            likeCount: nextLikeCount,
+            commentCount,
+            likedByMe: nextLiked,
+          });
+        } catch {
+          // ignore cache update failures
+        }
       } else {
         await supabase
           .from("post_likes")
           .insert({ post_id: post.id, user_id: currentUserId });
-        setLiked(true);
-        setLikeCount((prev) => prev + 1);
+        const nextLiked = true;
+        const nextLikeCount = likeCount + 1;
+        setLiked(nextLiked);
+        setLikeCount(nextLikeCount);
+        try {
+          const { setCachedPostEngagement } = await import("@/utils/postsEngagement");
+          setCachedPostEngagement(post.id, currentUserId, {
+            likeCount: nextLikeCount,
+            commentCount,
+            likedByMe: nextLiked,
+          });
+        } catch {
+          // ignore cache update failures
+        }
       }
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -2673,19 +2880,65 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
   // Check if this post contains a drill result, round result, umbriago result, match play result, best ball result, or game result
-  const drillResult = parseDrillResult(post.content);
-  const roundScorecardResult = parseRoundScorecardResult(post.content);
-  const matchPlayScorecardResult = parseMatchPlayScorecardResult(post.content);
-  const bestBallScorecardResult = parseBestBallScorecardResult(post.content);
-  const bestBallStrokePlayScorecardResult = parseBestBallStrokePlayScorecardResult(post.content);
-  const roundResult = !roundScorecardResult ? parseRoundResult(post.content) : null;
-  const umbriagioScorecardResult = parseUmbriagioScorecardResult(post.content);
-  const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(post.content) : null;
-  const copenhagenScorecardResult = parseCopenhagenScorecardResult(post.content);
-  const scrambleScorecardResult = parseScrambleScorecardResult(post.content);
-  const skinsScorecardResult = parseSkinsScorecardResult(post.content);
-  const wolfScorecardResult = parseWolfScorecardResult(post.content);
-  const gameResult = !matchPlayScorecardResult && !bestBallScorecardResult && !bestBallStrokePlayScorecardResult && !copenhagenScorecardResult && !scrambleScorecardResult && !skinsScorecardResult && !wolfScorecardResult ? parseGameResult(post.content) : null;
+  const parsed = useMemo(() => {
+    const content = String(post.content || "");
+    const drillResult = parseDrillResult(content);
+    const roundScorecardResult = parseRoundScorecardResult(content);
+    const matchPlayScorecardResult = parseMatchPlayScorecardResult(content);
+    const bestBallScorecardResult = parseBestBallScorecardResult(content);
+    const bestBallStrokePlayScorecardResult = parseBestBallStrokePlayScorecardResult(content);
+    const roundResult = !roundScorecardResult ? parseRoundResult(content) : null;
+    const umbriagioScorecardResult = parseUmbriagioScorecardResult(content);
+    const umbriagioResult = !umbriagioScorecardResult ? parseUmbriagioResult(content) : null;
+    const copenhagenScorecardResult = parseCopenhagenScorecardResult(content);
+    const scrambleScorecardResult = parseScrambleScorecardResult(content);
+    const skinsScorecardResult = parseSkinsScorecardResult(content);
+    const wolfScorecardResult = parseWolfScorecardResult(content);
+    const gameResult =
+      !matchPlayScorecardResult &&
+      !bestBallScorecardResult &&
+      !bestBallStrokePlayScorecardResult &&
+      !copenhagenScorecardResult &&
+      !scrambleScorecardResult &&
+      !skinsScorecardResult &&
+      !wolfScorecardResult
+        ? parseGameResult(content)
+        : null;
+    const safeFallbackText = stripEmbeddedPostBlocks(content);
+    return {
+      drillResult,
+      roundScorecardResult,
+      matchPlayScorecardResult,
+      bestBallScorecardResult,
+      bestBallStrokePlayScorecardResult,
+      roundResult,
+      umbriagioScorecardResult,
+      umbriagioResult,
+      copenhagenScorecardResult,
+      scrambleScorecardResult,
+      skinsScorecardResult,
+      wolfScorecardResult,
+      gameResult,
+      safeFallbackText,
+    };
+  }, [post.content]);
+
+  const {
+    drillResult,
+    roundScorecardResult,
+    matchPlayScorecardResult,
+    bestBallScorecardResult,
+    bestBallStrokePlayScorecardResult,
+    roundResult,
+    umbriagioScorecardResult,
+    umbriagioResult,
+    copenhagenScorecardResult,
+    scrambleScorecardResult,
+    skinsScorecardResult,
+    wolfScorecardResult,
+    gameResult,
+    safeFallbackText,
+  } = parsed;
 
   return (
     <>
@@ -2880,86 +3133,34 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               }}
             />
           </div>
-        ) : roundScorecardResult ? (() => {
-          // Build courseHoles from holePars
-          const courseHoles = Object.keys(roundScorecardResult.holePars)
-            .map(holeNum => ({
-              hole_number: parseInt(holeNum),
-              par: roundScorecardResult.holePars[parseInt(holeNum)],
-              stroke_index: parseInt(holeNum),
-            }))
-            .sort((a, b) => a.hole_number - b.hole_number);
-
-          // Build strokePlayPlayers from holeScores
-          const holeScoresMap = new Map<number, number>();
-          let totalScore = 0;
-          Object.entries(roundScorecardResult.holeScores || {}).forEach(([holeNum, score]) => {
-            if (score && score > 0) {
-              holeScoresMap.set(parseInt(holeNum), score);
-              totalScore += score;
-            }
-          });
-
-          const strokePlayPlayers = [{
-            name: "Player",
-            scores: holeScoresMap,
-            totalScore: totalScore || roundScorecardResult.score || 0,
-          }];
-
-          // Build RoundCardData for the header
-          const roundCardData: RoundCardData = {
-            id: roundScorecardResult.roundId || '',
-            round_name: roundScorecardResult.roundName,
-            course_name: roundScorecardResult.courseName,
-            date: roundScorecardResult.datePlayed,
-            score: roundScorecardResult.scoreVsPar,
-            playerCount: 1,
-            gameMode: 'Stroke Play',
-            gameType: 'round',
-            totalScore: roundScorecardResult.score || 0,
-            holesPlayed: roundScorecardResult.holesPlayed,
-          };
-
-          const handleHeaderClick = () => {
-            if (roundScorecardResult.roundId) {
-              navigate(buildGameUrl('round', roundScorecardResult.roundId, 'leaderboard', { 
-                entryPoint: 'home', 
-                viewType: 'spectator' 
-              }));
-            } else {
-              toast.error("Round details not found");
-            }
-          };
-
-          const handleScorecardClick = () => {
-            handleHeaderClick();
-          };
-
-          return (
-            <div className="space-y-3">
-              {roundScorecardResult.textContent && (
-                <p className="text-foreground whitespace-pre-wrap leading-relaxed">{roundScorecardResult.textContent}</p>
-              )}
-              {/* Round Card Header - Clickable to navigate to leaderboard */}
-              <div onClick={handleHeaderClick} className="cursor-pointer">
-                <RoundCard 
-                  round={roundCardData}
-                  className="border-0 shadow-none hover:shadow-none"
-                />
-              </div>
-
-              {/* Scorecard - Using StrokePlayScorecardView (compact scorecard table, same as in-game leaderboard) */}
-              {courseHoles.length > 0 && (
-                <div onClick={handleScorecardClick} className="cursor-pointer px-4 pt-3 pb-4">
-                  <StrokePlayScorecardView
-                    players={strokePlayPlayers}
-                    courseHoles={courseHoles}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })() : matchPlayScorecardResult ? (
+        ) : roundScorecardResult ? (
+          post.scorecard_snapshot && typeof post.scorecard_snapshot === 'object' && !Array.isArray(post.scorecard_snapshot) ? (
+            <RoundScorecardInPostFromSnapshot
+              roundScorecardResult={roundScorecardResult}
+              textContent={roundScorecardResult.textContent}
+              postScorecardSnapshot={post.scorecard_snapshot}
+            />
+          ) : (
+            // Show round card only if no snapshot exists
+            <RoundCard
+              round={{
+                id: roundScorecardResult.roundId || '',
+                course_name: roundScorecardResult.courseName,
+                date: roundScorecardResult.datePlayed,
+                holesPlayed: roundScorecardResult.holesPlayed,
+                round_name: roundScorecardResult.roundName,
+                score: 0,
+                playerCount: 1,
+                gameMode: 'Stroke Play',
+              }}
+              onClick={() => {
+                if (roundScorecardResult.roundId) {
+                  navigate(`/rounds/${roundScorecardResult.roundId}/leaderboard`);
+                }
+              }}
+            />
+          )
+        ) : matchPlayScorecardResult ? (
           <MatchPlayScorecardInPost
             matchPlayScorecardResult={matchPlayScorecardResult}
             textContent={matchPlayScorecardResult.textContent}
@@ -3135,8 +3336,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               />
             )}
           </div>
-        ) : post.content && (
-          <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
+        ) : safeFallbackText && (
+          <p className="text-foreground whitespace-pre-wrap">{safeFallbackText}</p>
         )}
 
         {/* Post Image */}
@@ -3165,7 +3366,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             onClick={() => setShowComments(!showComments)}
           >
             <MessageCircle size={18} className="mr-2" />
-            {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
+            {commentCount} {commentCount === 1 ? "Comment" : "Comments"}
           </Button>
         </div>
 

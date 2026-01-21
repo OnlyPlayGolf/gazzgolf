@@ -17,6 +17,7 @@ import { ProfileRoundsSection } from "@/components/ProfileRoundsSection";
 import { RoundCardData } from "@/components/RoundCard";
 import { loadUnifiedRounds } from "@/utils/unifiedRoundsLoader";
 import { parseHandicap, formatHandicap } from "@/lib/utils";
+import { fetchPostsEngagement } from "@/utils/postsEngagement";
 
 interface Profile {
   id: string;
@@ -48,12 +49,20 @@ export default function UserProfile() {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [postsCursor, setPostsCursor] = useState<string | null>(null);
+  const [postsHasMore, setPostsHasMore] = useState(false);
+  const [postsLoadingMore, setPostsLoadingMore] = useState(false);
 
   useEffect(() => {
     loadProfileData();
   }, []);
 
+  const POSTS_PAGE_SIZE = 10;
+
   const loadProfileData = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserProfile.tsx:56',message:'loadProfileData entry',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       navigate('/auth');
@@ -61,11 +70,17 @@ export default function UserProfile() {
     }
 
     // Load profile
-    const { data: profileData } = await supabase
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserProfile.tsx:64',message:'Before profiles.single() query',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
+    // #region agent log
+    if(profileError) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserProfile.tsx:68',message:'profiles.single() ERROR',data:{errorCode:profileError.code,errorMessage:profileError.message,errorDetails:profileError.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
 
     setProfile(profileData);
 
@@ -101,7 +116,21 @@ export default function UserProfile() {
     setFriendsCount(totalFriendsCount || 0);
 
     // Load unified rounds (includes all game types)
-    const allRounds = await loadUnifiedRounds(user.id);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserProfile.tsx:104',message:'Before loadUnifiedRounds',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    let allRounds;
+    try {
+      allRounds = await loadUnifiedRounds(user.id);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserProfile.tsx:104',message:'loadUnifiedRounds success',data:{roundsCount:allRounds.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+    } catch (err: any) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'UserProfile.tsx:104',message:'loadUnifiedRounds ERROR',data:{errorMessage:err?.message,errorCode:err?.code,errorStack:err?.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      allRounds = [];
+    }
     
     setRoundsCount(allRounds.length);
     setRecentRounds(allRounds.slice(0, 3));
@@ -126,10 +155,71 @@ export default function UserProfile() {
         )
       `)
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(POSTS_PAGE_SIZE + 1);
 
     if (postsData) {
-      setUserPosts(postsData);
+      const page = postsData.slice(0, POSTS_PAGE_SIZE);
+      const engagement = await fetchPostsEngagement(
+        page.map((p: any) => p.id),
+        user.id
+      );
+      setUserPosts(
+        page.map((p: any) => ({
+          ...p,
+          _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
+        }))
+      );
+      const hasMore = postsData.length > POSTS_PAGE_SIZE;
+      setPostsHasMore(hasMore);
+      setPostsCursor(page.length > 0 ? page[page.length - 1].created_at : null);
+    }
+  };
+
+  const loadMorePosts = async () => {
+    if (postsLoadingMore || !postsHasMore || !postsCursor) return;
+    setPostsLoadingMore(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: morePosts, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profile:user_id (
+            display_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .lt('created_at', postsCursor)
+        .order('created_at', { ascending: false })
+        .limit(POSTS_PAGE_SIZE + 1);
+
+      if (error) {
+        console.error('Error loading more posts:', error);
+        return;
+      }
+
+      const nextPage = (morePosts || []).slice(0, POSTS_PAGE_SIZE);
+      const engagement = await fetchPostsEngagement(
+        nextPage.map((p: any) => p.id),
+        user.id
+      );
+      setUserPosts((prev) => [
+        ...prev,
+        ...nextPage.map((p: any) => ({
+          ...p,
+          _engagement: engagement[p.id] || { likeCount: 0, commentCount: 0, likedByMe: false },
+        })),
+      ]);
+      const hasMore = (morePosts || []).length > POSTS_PAGE_SIZE;
+      setPostsHasMore(hasMore);
+      setPostsCursor(nextPage.length > 0 ? nextPage[nextPage.length - 1].created_at : postsCursor);
+    } finally {
+      setPostsLoadingMore(false);
     }
   };
 
@@ -502,12 +592,26 @@ export default function UserProfile() {
           {userPosts.map((post) => (
             <FeedPost key={post.id} post={post} currentUserId={profile.id} onPostDeleted={loadProfileData} />
           ))}
+          {postsHasMore && (
+            <div className="px-4 py-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={loadMorePosts}
+                disabled={postsLoadingMore}
+              >
+                {postsLoadingMore ? "Loading..." : "View More"}
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="px-4 mb-6">
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">No posts yet</p>
+              <p className="text-muted-foreground">
+                No posts yet. Share a drill, round or comment to get started!
+              </p>
               <Button
                 variant="link"
                 className="text-primary mt-2"

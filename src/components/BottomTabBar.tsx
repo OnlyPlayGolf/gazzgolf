@@ -15,8 +15,10 @@ export const BottomTabBar = () => {
   const navigate = useNavigate();
 
   // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, umbriago, wolf, copenhagen, match play, scramble, skins, and game settings detail
+  const isBasicStatsAdd = /^\/rounds\/[^/]+\/basic-track$/.test(location.pathname);
+  const isAddStatsEntry = location.pathname === '/rounds/pro-setup';
   const hideTabBar = (
-    (location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds') ||
+    ((location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds') && !isBasicStatsAdd && !isAddStatsEntry) ||
     location.pathname.startsWith('/drill/') ||
     location.pathname.startsWith('/umbriago/') ||
     location.pathname.startsWith('/wolf/') ||
@@ -62,17 +64,17 @@ export const BottomTabBar = () => {
                 "flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] text-[10px] font-medium transition-colors",
                 isActive 
                   ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-primary/60 hover:text-primary"
               )}
             >
               <Icon 
                 size={20} 
                 className={cn(
                   "mb-0.5",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-primary/60"
                 )} 
               />
-              <span className={cn(isActive ? "text-primary" : "text-muted-foreground")}>
+              <span className={cn(isActive ? "text-primary" : "text-primary/60")}>
                 {tab.label}
               </span>
             </button>

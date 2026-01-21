@@ -41,7 +41,27 @@ function dedupeById<T extends { id: string }>(games: T[]): T[] {
   return Array.from(map.values());
 }
 
+const UNIFIED_ROUNDS_CACHE_TTL_MS = 30_000;
+const unifiedRoundsCache = new Map<string, { ts: number; data: UnifiedRound[] }>();
+
+export function invalidateUnifiedRoundsCache(userId?: string) {
+  if (userId) {
+    unifiedRoundsCache.delete(userId);
+  } else {
+    unifiedRoundsCache.clear();
+  }
+}
+
 export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRound[]> {
+  // Guard: return empty array if no userId
+  if (!targetUserId) return [];
+
+  const cached = unifiedRoundsCache.get(targetUserId);
+  const now = Date.now();
+  if (cached && now - cached.ts < UNIFIED_ROUNDS_CACHE_TTL_MS) {
+    return cached.data;
+  }
+  
   const allRounds: UnifiedRoundWithSort[] = [];
 
   // 1) Participant round ids + participant name(s) (used for shared games)
@@ -62,6 +82,9 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     .map((v) => v.trim());
 
   const participantNames = Array.from(new Set(participantNamesRaw));
+  
+  // Prepare JSON string for cs filter - use userId as JSON array
+  const userIdNeedle = JSON.stringify([targetUserId]);
 
   // 2) Core owned-game queries
   const corePromises = [
@@ -95,14 +118,34 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       .from("skins_games")
       .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, players")
       .eq("user_id", targetUserId)
-      .then((r) => r),
+      .then((r) => {
+        // #region agent log
+        if(r.error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:95',message:'skins_games owned ERROR',data:{targetUserId,errorCode:r.error.code,errorMessage:r.error.message,errorDetails:r.error.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        // Handle 400 errors gracefully
+        if (r.error && (r.error.code === '400' || r.error.code === 'PGRST116')) {
+          console.warn('Error fetching skins_games owned, returning empty:', r.error);
+          return { data: [], error: null };
+        }
+        return r;
+      }),
 
     // 4: best ball owned
     supabase
       .from("best_ball_games")
       .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
       .eq("user_id", targetUserId)
-      .then((r) => r),
+      .then((r) => {
+        // #region agent log
+        if(r.error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:103',message:'best_ball_games owned ERROR',data:{targetUserId,errorCode:r.error.code,errorMessage:r.error.message,errorDetails:r.error.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        // Handle 400 errors gracefully
+        if (r.error && (r.error.code === '400' || r.error.code === 'PGRST116')) {
+          console.warn('Error fetching best_ball_games owned, returning empty:', r.error);
+          return { data: [], error: null };
+        }
+        return r;
+      }),
 
     // 5: scramble owned
     supabase
@@ -136,47 +179,60 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   // 3) Participant queries (games where user's name appears in player fields)
   // We'll fetch for each name and merge later
 
-  // Skins: players jsonb array with { name: ... }
-  const skinsParticipantPromises = participantNames.map((name) =>
-    supabase
-      .from("skins_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, players")
-      .contains("players", [{ name }])
-      .then((r) => r)
-  );
+  // Skins: players jsonb array - use cs filter with JSON string
+  const skinsParticipantPromises = [supabase
+    .from("skins_games")
+    .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, players")
+    .filter("players", "cs", userIdNeedle)
+    .then((r) => {
+      // #region agent log
+      if(r.error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:143',message:'skins_games.cs() ERROR',data:{targetUserId,errorCode:r.error.code,errorMessage:r.error.message,errorDetails:r.error.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      // Handle errors gracefully
+      if (r.error && (r.error.code === '22P02' || r.error.code === '400' || r.error.message?.includes('invalid input syntax for type json'))) {
+        console.warn('Error fetching skins_games participant, skipping:', r.error);
+        return { data: [], error: null };
+      }
+      return r;
+    })
+  ];
 
-  // Copenhagen: player_1, player_2, player_3 text columns
-  const copenhagenParticipantPromises = participantNames.flatMap((name) => [
-    supabase
-      .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
-      .eq("player_1", name)
-      .then((r) => r),
-    supabase
-      .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
-      .eq("player_2", name)
-      .then((r) => r),
-    supabase
-      .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
-      .eq("player_3", name)
-      .then((r) => r),
-  ]);
+  const escapeOrVal = (v: string) => `"${String(v).replace(/"/g, '\\"')}"`;
+  const participantOrInList = participantNames.map(escapeOrVal).join(",");
 
-  // Best Ball: team_a_players and team_b_players jsonb arrays with { name: ... }
-  const bestBallParticipantPromises = participantNames.flatMap((name) => [
-    supabase
-      .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
-      .contains("team_a_players", [{ name }])
-      .then((r) => r),
-    supabase
-      .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
-      .contains("team_b_players", [{ name }])
-      .then((r) => r),
-  ]);
+  // Copenhagen: single query using OR across participant columns (avoid 3 requests)
+  const copenhagenParticipantPromises =
+    participantNames.length > 0
+      ? [
+          supabase
+            .from("copenhagen_games")
+            .select(
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points"
+            )
+            .or(
+              `player_1.in.(${participantOrInList}),player_2.in.(${participantOrInList}),player_3.in.(${participantOrInList})`
+            )
+            .then((r) => r),
+        ]
+      : [];
+
+  // Best Ball: team_a_players and team_b_players jsonb arrays - use cs filter with JSON string
+  const bestBallParticipantPromises = [supabase
+    .from("best_ball_games")
+    .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
+    .or(`team_a_players.cs.${userIdNeedle},team_b_players.cs.${userIdNeedle}`)
+    .then((r) => {
+      // #region agent log
+      if(r.error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:170',message:'best_ball_games.cs() ERROR',data:{targetUserId,errorCode:r.error.code,errorMessage:r.error.message,errorDetails:r.error.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      // Handle errors gracefully
+      if (r.error && (r.error.code === '22P02' || r.error.code === '400' || r.error.message?.includes('invalid input syntax for type json'))) {
+        console.warn('Error fetching best_ball_games participant, skipping:', r.error);
+        return { data: [], error: null };
+      }
+      return r;
+    })
+  ];
 
   // Scramble: teams jsonb - we'll fetch all accessible and filter in code
   const scrambleParticipantPromises = participantNames.length > 0
@@ -188,72 +244,51 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       ]
     : [];
 
-  // Wolf: player_1 through player_5 text columns
-  const wolfParticipantPromises = participantNames.flatMap((name) => [
-    supabase
-      .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
-      .eq("player_1", name)
-      .then((r) => r),
-    supabase
-      .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
-      .eq("player_2", name)
-      .then((r) => r),
-    supabase
-      .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
-      .eq("player_3", name)
-      .then((r) => r),
-    supabase
-      .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
-      .eq("player_4", name)
-      .then((r) => r),
-    supabase
-      .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
-      .eq("player_5", name)
-      .then((r) => r),
-  ]);
+  // Wolf: single query using OR across participant columns (avoid 5 requests)
+  const wolfParticipantPromises =
+    participantNames.length > 0
+      ? [
+          supabase
+            .from("wolf_games")
+            .select(
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished"
+            )
+            .or(
+              `player_1.in.(${participantOrInList}),player_2.in.(${participantOrInList}),player_3.in.(${participantOrInList}),player_4.in.(${participantOrInList}),player_5.in.(${participantOrInList})`
+            )
+            .then((r) => r),
+        ]
+      : [];
 
-  // Umbriago: team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2
-  const umbriagioParticipantPromises = participantNames.flatMap((name) => [
-    supabase
-      .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
-      .eq("team_a_player_1", name)
-      .then((r) => r),
-    supabase
-      .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
-      .eq("team_a_player_2", name)
-      .then((r) => r),
-    supabase
-      .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
-      .eq("team_b_player_1", name)
-      .then((r) => r),
-    supabase
-      .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
-      .eq("team_b_player_2", name)
-      .then((r) => r),
-  ]);
+  // Umbriago: single query using OR across participant columns (avoid 4 requests)
+  const umbriagioParticipantPromises =
+    participantNames.length > 0
+      ? [
+          supabase
+            .from("umbriago_games")
+            .select(
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished"
+            )
+            .or(
+              `team_a_player_1.in.(${participantOrInList}),team_a_player_2.in.(${participantOrInList}),team_b_player_1.in.(${participantOrInList}),team_b_player_2.in.(${participantOrInList})`
+            )
+            .then((r) => r),
+        ]
+      : [];
 
-  // Match Play: player_1, player_2 text columns
-  const matchPlayParticipantPromises = participantNames.flatMap((name) => [
-    supabase
-      .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status")
-      .eq("player_1", name)
-      .then((r) => r),
-    supabase
-      .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status")
-      .eq("player_2", name)
-      .then((r) => r),
-  ]);
+  // Match Play: single query using OR across participant columns (avoid 2 requests)
+  const matchPlayParticipantPromises =
+    participantNames.length > 0
+      ? [
+          supabase
+            .from("match_play_games")
+            .select(
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status"
+            )
+            .or(`player_1.in.(${participantOrInList}),player_2.in.(${participantOrInList})`)
+            .then((r) => r),
+        ]
+      : [];
 
   const allPromises = [
     ...corePromises,
@@ -266,7 +301,17 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     ...matchPlayParticipantPromises,
   ];
 
-  const results = await Promise.all(allPromises);
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:290',message:'Before Promise.all',data:{promiseCount:allPromises.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+  const results = await Promise.all(allPromises.map((p, idx) => 
+    Promise.resolve(p).catch((err: any) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:290',message:'Promise.all error',data:{promiseIndex:idx,errorCode:err?.code,errorMessage:err?.message,errorDetails:err?.details},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      return { data: null, error: err };
+    })
+  ));
 
   // Parse results back
   let idx = 0;
@@ -274,11 +319,17 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   const roundSummariesRes = results[idx++];
   const copenhagenOwnedRes = results[idx++];
   const skinsOwnedRes = results[idx++];
+  // #region agent log
+  if(skinsOwnedRes?.error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:297',message:'skinsOwnedRes ERROR',data:{errorCode:skinsOwnedRes.error.code,errorMessage:skinsOwnedRes.error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   const bestBallOwnedRes = results[idx++];
   const scrambleOwnedRes = results[idx++];
   const wolfOwnedRes = results[idx++];
   const umbriagioOwnedRes = results[idx++];
   const matchPlayOwnedRes = results[idx++];
+  // #region agent log
+  if(matchPlayOwnedRes?.error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'unifiedRoundsLoader.ts:301',message:'matchPlayOwnedRes ERROR',data:{errorCode:matchPlayOwnedRes.error.code,errorMessage:matchPlayOwnedRes.error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
 
   const skinsParticipantRes = results.slice(idx, idx + skinsParticipantPromises.length);
   idx += skinsParticipantPromises.length;
@@ -965,7 +1016,9 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     return toSortTime(b._sortCreatedAt) - toSortTime(a._sortCreatedAt);
   });
 
-  return allRounds.map(({ _sortCreatedAt, ...rest }) => rest);
+  const finalRounds = allRounds.map(({ _sortCreatedAt, ...rest }) => rest);
+  unifiedRoundsCache.set(targetUserId, { ts: now, data: finalRounds });
+  return finalRounds;
 }
 
 export function getGameRoute(gameType: GameType, gameId: string, returnTo?: string): string {

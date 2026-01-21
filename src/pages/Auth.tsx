@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { getPublicAppUrl } from "@/utils/publicAppUrl";
 
 const baseAuthSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
@@ -28,11 +29,15 @@ const signUpSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation'>('signin');
+  
+  // Check if we should start on signup view from navigation state
+  const initialView = (location.state as { view?: string } | null)?.view === 'signup' ? 'signup' : 'signin';
+  const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation'>(initialView);
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
 
   // Form states
@@ -41,6 +46,21 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+
+  // If we arrived via invite link, persist invite code so post-auth can resume.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const invite = params.get('invite');
+    const nextView = params.get('view');
+
+    if (invite) {
+      localStorage.setItem('pending_invite_code', invite);
+    }
+
+    if (nextView === 'signup' || nextView === 'signin') {
+      setView(nextView);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     let isMounted = true;
@@ -156,7 +176,10 @@ const Auth = () => {
       const validatedData = signUpSchema.parse({ email, password, confirmPassword, firstName, lastName });
       setLoading(true);
 
-      const redirectUrl = `${window.location.origin}/`;
+      const pendingInviteCode = localStorage.getItem('pending_invite_code');
+      const redirectUrl = pendingInviteCode
+        ? `${getPublicAppUrl()}/auth?invite=${encodeURIComponent(pendingInviteCode)}`
+        : `${getPublicAppUrl()}/`;
       const displayName = `${validatedData.firstName} ${validatedData.lastName}`;
       
       const { error } = await supabase.auth.signUp({

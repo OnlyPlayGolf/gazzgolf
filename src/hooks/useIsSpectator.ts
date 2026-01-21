@@ -70,7 +70,7 @@ export function useIsSpectator(
             .from('rounds')
             .select('user_id, created_at')
             .eq('id', gameId)
-            .single();
+            .maybeSingle();
 
           // Rounds don't have is_finished flag, so we check if holes have been recorded
           const { data: holesData } = await supabase
@@ -97,39 +97,51 @@ export function useIsSpectator(
             isParticipant = !!playerData;
           }
         } else if (gameType === 'match_play') {
-          const { data } = await supabase.from('match_play_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:100',message:'Before match_play_games.maybeSingle()',data:{gameId,gameType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          const { data, error } = await supabase.from('match_play_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
+          // #region agent log
+          if(error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:100',message:'match_play_games.maybeSingle() ERROR',data:{errorCode:error.code,errorMessage:error.message,errorDetails:error.details,gameId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'best_ball') {
-          const { data } = await supabase.from('best_ball_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('best_ball_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'copenhagen') {
-          const { data } = await supabase.from('copenhagen_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('copenhagen_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'scramble') {
-          const { data } = await supabase.from('scramble_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('scramble_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'skins') {
-          const { data } = await supabase.from('skins_games').select('user_id, is_finished, created_at, players').eq('id', gameId).single();
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:120',message:'Before skins_games.maybeSingle()',data:{gameId,gameType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          const { data, error } = await supabase.from('skins_games').select('user_id, is_finished, created_at, players').eq('id', gameId).maybeSingle();
+          // #region agent log
+          if(error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useIsSpectator.ts:120',message:'skins_games.maybeSingle() ERROR',data:{errorCode:error.code,errorMessage:error.message,errorDetails:error.details,gameId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           // Check if user is owner OR in the players array
           const players = Array.isArray(data?.players) ? data.players as { odId: string }[] : [];
           isParticipant = data?.user_id === user.id || players.some(p => p.odId === user.id);
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'umbriago') {
-          const { data } = await supabase.from('umbriago_games').select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('umbriago_games').select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = data?.user_id === user.id;
           isFinished = data?.is_finished || false;
           createdAt = data?.created_at || null;
         } else if (gameType === 'wolf') {
-          const { data } = await supabase.from('wolf_games' as any).select('user_id, is_finished, created_at').eq('id', gameId).single();
+          const { data } = await supabase.from('wolf_games' as any).select('user_id, is_finished, created_at').eq('id', gameId).maybeSingle();
           isParticipant = (data as any)?.user_id === user.id;
           isFinished = (data as any)?.is_finished || false;
           createdAt = (data as any)?.created_at || null;

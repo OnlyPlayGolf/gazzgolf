@@ -1,20 +1,25 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Star, Plus, MessageCircle, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { Star, Plus, MessageCircle, Crown, UserPlus, Users, Calendar, Menu, ChevronRight, Mail, User as UserIcon, Settings as SettingsIcon, Info, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
-import { NotificationsSheet } from "@/components/NotificationsSheet";
 import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
+
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { searchProfilesTypeahead } from "@/utils/profileSearch";
 
 interface Friend {
   id: string;
@@ -54,7 +59,10 @@ const Profile = () => {
   const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
+  const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; avatar_url?: string | null }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 300);
+  const searchRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -99,37 +107,42 @@ const Profile = () => {
     }
   }, [isCreateGroupOpen, groupDescription]);
 
-  // Search users when search term changes
+  // Search users (typeahead) for adding group members
   useEffect(() => {
-    const searchUsers = async () => {
-      if (!searchTerm.trim() || !user) {
-        setSearchResults([]);
-        return;
-      }
+    if (!user) return;
 
+    if (debouncedSearchTerm.length < 2) {
+      searchRequestIdRef.current += 1; // invalidate in-flight requests
+      setSearchLoading(false);
+      setSearchResults([]);
+      return;
+    }
+
+    let cancelled = false;
+    const requestId = ++searchRequestIdRef.current;
+
+    const run = async () => {
+      setSearchLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, display_name, username')
-          .neq('id', user.id) // Exclude current user
-          .or(`display_name.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`)
-          .limit(20);
-
-        if (error) {
-          console.error('Error searching users:', error);
-          setSearchResults([]);
-        } else {
-          setSearchResults(data || []);
-        }
+        const rows = await searchProfilesTypeahead(supabase as any, debouncedSearchTerm, { limit: 20 });
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        setSearchResults(rows);
       } catch (error) {
-        console.error('Error in searchUsers:', error);
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        console.error('Error searching users:', error);
         setSearchResults([]);
+      } finally {
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        setSearchLoading(false);
       }
     };
 
-    const timeoutId = setTimeout(searchUsers, 300); // Debounce search
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, user]);
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearchTerm, user]);
 
   // Realtime subscription for friendships changes
   useEffect(() => {
@@ -188,40 +201,41 @@ const Profile = () => {
         throw groupsError;
       }
 
-      // Get member counts for each group
-      const groupsList = await Promise.all(
-        (groupsData || []).map(async (g: any) => {
-          const { count } = await (supabase as any)
-            .from('group_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('group_id', g.groups.id);
+      // Batch member counts for all groups (avoid N+1)
+      const groupRows = (groupsData || []).filter((g: any) => g?.groups?.id);
+      const groupIds = groupRows.map((g: any) => g.groups.id);
+      const memberCountMap = new Map<string, number>();
 
-          // Derive group_type for backward compatibility if DB column doesn't exist / isn't selected.
-          let derivedGroupType: 'player' | 'coach' | null = g.groups.group_type ?? null;
-          if (!derivedGroupType) {
-            const { count: adminCount } = await (supabase as any)
-              .from('group_members')
-              .select('*', { count: 'exact', head: true })
-              .eq('group_id', g.groups.id)
-              .eq('role', 'admin');
-            derivedGroupType = (adminCount || 0) > 0 ? 'coach' : 'player';
-          }
+      if (groupIds.length > 0) {
+        const { data: allMembers, error: membersError } = await (supabase as any)
+          .from("group_members")
+          .select("group_id")
+          .in("group_id", groupIds);
 
-          return {
-            id: g.groups.id,
-            name: g.groups.name,
-            owner_id: g.groups.owner_id,
-            role: g.role,
-            member_count: count || 0,
-            created_at: g.groups.created_at,
-            description: g.groups.description,
-            image_url: g.groups.image_url,
-            group_type: derivedGroupType,
-          };
-        })
-      );
+        if (membersError) {
+          console.error("Error loading group member counts:", membersError);
+        } else {
+          (allMembers || []).forEach((m: any) => {
+            if (!m?.group_id) return;
+            memberCountMap.set(m.group_id, (memberCountMap.get(m.group_id) || 0) + 1);
+          });
+        }
+      }
 
-      setGroups(groupsList);
+      // NOTE: Name intentionally avoids collisions with other branches that may also
+      // declare a `groupsList` in this scope (e.g. older N+1 count implementations).
+      const groupsListWithCounts = groupRows.map((g: any) => ({
+        id: g.groups.id,
+        name: g.groups.name,
+        owner_id: g.groups.owner_id,
+        role: g.role,
+        member_count: memberCountMap.get(g.groups.id) || 0,
+        created_at: g.groups.created_at,
+        description: g.groups.description,
+        image_url: g.groups.image_url,
+      }));
+
+      setGroups(groupsListWithCounts);
 
       // Load favorite groups
       const { data: settingsData } = await (supabase as any)
@@ -331,6 +345,8 @@ const Profile = () => {
             name: groupName.trim(),
             owner_id: user.id,
             image_url: imageUrl,
+            // Backward compatibility when group_type column doesn't exist yet
+            is_coach_group: groupType === "Coach",
           })
           .select()
           .single());
@@ -582,36 +598,27 @@ const Profile = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <TopNavBar />
+      <TopNavBar hideNotifications />
       <div className="p-4 pt-20">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 gap-3">
           <h1 className="text-2xl font-bold text-foreground">My Groups</h1>
         </div>
 
-        <p className="text-muted-foreground text-sm mb-6">
-          Connect and compete with your golf friends
-        </p>
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <p className="text-muted-foreground text-sm">
+            Connect and compete with your golf friends
+          </p>
+          <Button
+            size="sm"
+            className="shrink-0 px-3 gap-3"
+            onClick={() => setIsCreateGroupOpen(true)}
+          >
+            <Plus size={16} />
+            Create Group
+          </Button>
+        </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3 mb-6">
-          <NotificationsSheet 
-            trigger={
-              <Button 
-                variant="outline" 
-                className="flex-1"
-              >
-                <UserPlus size={16} className="mr-2" />
-                Check Invitations
-              </Button>
-            }
-          />
-          <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex-1">
-                <Plus size={16} className="mr-2" />
-                Create Group
-              </Button>
-            </DialogTrigger>
+        <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
                     <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col" hideCloseButton>
                       <DialogHeader className="flex-shrink-0">
                         <DialogTitle className="text-xl font-semibold text-center">Create New Group</DialogTitle>
@@ -619,22 +626,81 @@ const Profile = () => {
                       <div className="space-y-4 py-2 overflow-y-auto flex-1 min-h-0">
                         {/* Group Type Toggle */}
                         <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant={groupType === "Player" ? "default" : "outline"}
-                            className="flex-1"
-                            onClick={() => setGroupType("Player")}
-                          >
-                            Player
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={groupType === "Coach" ? "default" : "outline"}
-                            className="flex-1"
-                            onClick={() => setGroupType("Coach")}
-                          >
-                            Coach
-                          </Button>
+                          <div className="relative flex-1">
+                            <Button
+                              type="button"
+                              variant={groupType === "Player" ? "default" : "outline"}
+                              className="w-full pr-10"
+                              onClick={() => setGroupType("Player")}
+                            >
+                              Player
+                            </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                side="bottom"
+                                align="end"
+                                sideOffset={8}
+                                className="relative z-[200] w-80 p-3"
+                              >
+                                <PopoverPrimitive.Arrow className="fill-popover" width={14} height={7} />
+                                <div className="space-y-1.5">
+                                  <p className="font-semibold text-foreground">Player group</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    All players can manage the group. All player profiles and results are shown in the group.
+                                  </p>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+
+                          <div className="relative flex-1">
+                            <Button
+                              type="button"
+                              variant={groupType === "Coach" ? "default" : "outline"}
+                              className="w-full pr-10"
+                              onClick={() => setGroupType("Coach")}
+                            >
+                              Coach
+                            </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                side="bottom"
+                                align="end"
+                                sideOffset={8}
+                                className="relative z-[200] w-80 p-3"
+                              >
+                                <PopoverPrimitive.Arrow className="fill-popover" width={14} height={7} />
+                                <div className="space-y-1.5">
+                                  <p className="font-semibold text-foreground">Coach group</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Only the coach can manage the group. Coach’s profile and results are hidden by default and can be shown or edited later.
+                                  </p>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                         </div>
 
                         {/* Group Name */}
@@ -663,9 +729,18 @@ const Profile = () => {
                               onChange={(e) => setSearchTerm(e.target.value)}
                               className="w-full"
                             />
-                            {searchTerm && (
+                            {searchTerm.trim().length > 0 && (
                               <div className="border border-border rounded-lg max-h-[200px] overflow-y-auto">
-                                {searchResults.length > 0 ? (
+                                {searchTerm.trim().length < 2 ? (
+                                  <p className="text-sm text-muted-foreground p-3 text-center">
+                                    Type 2+ characters to search
+                                  </p>
+                                ) : searchLoading ? (
+                                  <div className="flex items-center justify-center p-3 text-sm text-muted-foreground">
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Searching...
+                                  </div>
+                                ) : searchResults.length > 0 ? (
                                   searchResults.map((user) => (
                                     <label
                                       key={user.id}
@@ -802,7 +877,6 @@ const Profile = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
-        </div>
 
         {/* Groups List */}
         <div className="space-y-4">

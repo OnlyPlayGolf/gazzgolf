@@ -449,10 +449,9 @@ export default function SimpleSkinsSettings() {
           <RoundActionsSection
             isAdmin={currentUserId === game.user_id}
             onFinish={handleFinishRound}
-            onSaveAndExit={() => navigate('/profile')}
             onDelete={() => setShowDeleteDialog(true)}
             onLeave={() => setShowLeaveDialog(true)}
-            finishLabel="Finish Game"
+            finishLabel="Finish Round"
           />
         )}
       </div>

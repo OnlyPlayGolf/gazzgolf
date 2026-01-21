@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { Send, ChevronRight } from "lucide-react";
 import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
@@ -154,11 +154,6 @@ export default function ScrambleFeed() {
         gameTitle={gameData?.round_name || "Scramble"}
         courseName={gameData?.course_name || ""}
         pageTitle="Game feed"
-        isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Scramble Game"
       />
 
       <div className="p-4 space-y-4">

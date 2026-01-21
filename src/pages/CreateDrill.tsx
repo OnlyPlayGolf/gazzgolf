@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { UserDrill, DrillType } from '@/types/drills';
 import { LieType } from '@/utils/csvParser';
 import { setStorageItem, getStorageItem } from '@/utils/storageManager';

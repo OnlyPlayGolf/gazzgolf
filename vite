@@ -1,0 +1,115 @@
+
+
+  VITE v5.4.19  ready in 270 ms
+
+  ➜  Local:   http://localhost:8080/
+  ➜  Network: http://10.0.0.90:8080/
+  ➜  press h + enter to show help
+Browserslist: browsers data (caniuse-l
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: http
+  Why you should do it regularly: https://github.com/browserslist/update-db#
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+10:16:09 PM [vite] page reload src/pag
+10:16:09 PM [vite] page reload src/pages/AllRoundsPage.tsx
+10:16:27 PM [vite] page reload src/pag
+10:16:27 PM [vite] page reload src/pages/AllRoundsPage.tsx (x2)
+10:16:34 PM [vite] page reload src/pag
+10:16:34 PM [vite] page reload src/pages/AllRoundsPage.tsx (x3)
+10:25:06 PM [vite] hmr update /src/pag
+10:25:06 PM [vite] hmr update /src/pages/UserProfile.tsx, /src/index.css
+10:25:22 PM [vir update /src/pag
+10:25:22 PM [vite] hmr update /src/pages/PublicProfile.tsx, /src/index.css
+10:34:51 PM [vite] page reload src/pag
+10:34:51 PM [vite] page reload src/pages/AllRoundsPage.tsx
+10:36:05 PM [vite] hmr update /src/com
+10:36:05 PM [vite] hmr update /src/components/FeedPost.tsx, /src/index.css
+10:36:05 PM [vite] hmr update /src/pag
+10:36:05 PM [vite] hmr update /src/pages/Index.tsx, /src/index.css
+10:36:05 PM [vite] hmr update /src/com
+10:36:05 PM [vite] hmr update /src/components/PostBox.tsx, /src/index.css
+10:36:06 PM [vite] hmr update /src/com
+10:36:06 PM [vite] hmr update /src/components/PerformanceSnapshot.tsx, /src/
+10:36:06 PM [vite] hmr update /src/components/PerformanceSnapshot.tsx, /src/index.css
+10:36:07 PM [vite] page reload src/pag
+10:36:07 PM [vite] page reload src/pages/AllRoundsPage.tsx
+10:36:08 PM [vite] hmr update /src/pag
+10:36:08 PM [vite] hmr update /src/pages/UserProfile.tsx, /src/index.css
+10:36:08 PM [vite] hmr update /src/pag
+10:36:08 PM [vite] hmr update /src/pages/UserProfile.tsx, /src/index.css (x2
+10:36:08 PM [vite] hmr update /src/pages/UserProfile.tsx, /src/index.css (x2)
+10:36:09 PM [vite] hmr update /src/pag
+10:36:09 PM [vite] hmr update /src/pages/PublicProfile.tsx, /src/index.css
+10:41:04 PM [vite] page reload src/pag
+10:41:04 PM [vite] page reload src/pages/AllRoundsPage.tsx
+10:41:10 PM [vite] page reload src/pag
+10:41:10 PM [vite] page reload src/pages/AllRoundsPage.tsx (x2)
+10:41:17 PM [vite] page reload src/pag
+10:41:17 PM [vite] page reload src/pages/AllRoundsPage.tsx (x3)
+10:41:27 PM [vite] page reload src/pag
+10:41:27 PM [vite] page reload src/pages/AllRoundsPage.tsx (x4)
+10:41:39 PM [vite] hmr update /src/com
+10:41:39 PM [vite] hmr update /src/components/RoundCard.tsx, /src/index.css
+10:48:03 PM [vite] hmr update /src/ind
+10:48:03 PM [vite] hmr update /src/index.css, /src/pages/UserProfile.tsx, /s
+10:48:03 PM [vite] hmr update /src/index.css, /src/pages/UserProfile.tsx, /src/pages/FriendRounds.tsx, /src/pages/
+10:48:03 PM [vite] hmr update /src/index.css, /src/pages/UserProfile.tsx, /src/pages/FriendRounds.tsx, /src/pages/PublicProfile.tsx, /src/pages/PlayedRo
+10:48:03 PM [vite] hmr update /src/index.css, /src/pages/UserProfile.tsx, /src/pages/FriendRounds.tsx, /src/pages/PublicProfile.tsx, /src/pages/PlayedRounds.tsx, /src/components/RoundCard.ts
+10:48:03 PM [vite] hmr update /src/index.css, /src/pages/UserProfile.tsx, /src/pages/FriendRounds.tsx, /src/pages/PublicProfile.tsx, /src/pages/PlayedRounds.tsx, /src/components/RoundCard.tsx
+10:52:07 PM [vite] hmr update /src/pag
+10:52:07 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css
+10:54:35 PM [vite] hmr update /src/pag
+10:54:35 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x2)
+10:54:46 PM [vite] hmr update /src/pag
+10:54:46 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x3)
+10:56:23 PM [vite] hmr update /src/pag
+10:56:23 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x4)
+10:57:41 PM [vite] hmr update /src/com
+10:57:41 PM [vite] hmr update /src/components/ui/dialog.tsx, /src/index.css
+10:57:46 PM [vite] hmr update /src/pag
+10:57:46 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css
+10:59:12 PM [vite] hmr update /src/pag
+10:59:12 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x2)
+11:03:40 PM [vite] hmr update /src/pag
+11:03:40 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x3)
+11:03:45 PM [vite] hmr update /src/pag
+11:03:45 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x4)
+11:03:50 PM [vite] hmr update /src/pag
+11:03:50 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x5)
+11:04:10 PM [vite] hmr update /src/pag
+11:04:10 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x6)
+11:04:20 PM [vite] hmr update /src/pag
+11:04:20 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x7)
+11:04:32 PM [vite] hmr update /src/pag
+11:04:32 PM [vite] hmr update /src/pages/Profile.tsx, /src/index.css (x8)
+11:05:11 PM [vite] hmr update /src/pag
+11:05:11 PM [vite] hmr update /src/pages/GroupDetail.tsx, /src/index.css
+11:42:25 PM [vite] hmr update /src/pag
+11:42:25 PM [vite] hmr update /src/pages/GroupDetail.tsx, /src/index.css (x2
+11:42:25 PM [vite] hmr update /src/pages/GroupDetail.tsx, /src/index.css (x2)
+11:51:12 PM [vite] hmr update /src/com
+11:51:12 PM [vite] hmr update /src/components/RoundCard.tsx, /src/index.css
+11:51:14 PM [vite] page reload src/pag
+11:51:14 PM [vite] page reload src/pages/AllRoundsPage.tsx
+12:20:29 AM [vite] page reload src/pag
+12:20:29 AM [vite] page reload src/pages/AllRoundsPage.tsx (x2)
+12:23:11 AM [vite] page reload src/pag
+12:23:11 AM [vite] page reload src/pages/AllRoundsPage.tsx (x3)
+12:23:13 AM [vite] page reload src/pag
+12:23:13 AM [vite] page reload src/pages/AllRoundsPage.tsx (x4)
+12:23:16 AM [vite] page reload src/pag
+12:23:16 AM [vite] page reload src/pages/AllRoundsPage.tsx (x5)
+12:23:18 AM [vite] page reload src/pag
+12:23:18 AM [vite] page reload src/pages/AllRoundsPage.tsx (x6)
+12:23:20 AM [vite] page reload src/pag
+12:23:20 AM [vite] page reload src/pages/AllRoundsPage.tsx (x7)
+12:23:22 AM [vite] page reload src/pag
+12:23:22 AM [vite] page reload src/pages/AllRoundsPage.tsx (x8)
+12:23:25 AM [vite] page reload src/pag
+12:23:25 AM [vite] page reload src/pages/AllRoundsPage.tsx (x9)
+12:23:27 AM [vite] page reload src/pag
+12:23:27 AM [vite] page reload src/pages/AllRoundsPage.tsx (x10)
+npm run dev
+^Cnpm run dev
+npm run dev

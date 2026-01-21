@@ -93,7 +93,15 @@ export function MatchPlayCompletionModal({
         holeParsObj[hole.hole_number] = hole.par;
       });
 
-      const scorecardData = JSON.stringify({ holeScores: holeScoresObj, holePars: holeParsObj });
+      const scorecardData = JSON.stringify({
+        holeScores: holeScoresObj,
+        holePars: holeParsObj,
+        courseHoles: courseHoles.map(h => ({
+          hole_number: h.hole_number,
+          par: h.par,
+          stroke_index: h.stroke_index ?? h.hole_number,
+        })),
+      });
       const resultText = game.final_result || `${player1HolesWon}-${player2HolesWon}`;
 
       const roundResult = `[MATCH_PLAY_SCORECARD]${game.round_name || 'Match Play'}|${game.course_name}|${game.date_played}|${game.player_1}|${game.player_2}|${resultText}|${game.winner_player || ''}|${game.id}|${scorecardData}[/MATCH_PLAY_SCORECARD]`;

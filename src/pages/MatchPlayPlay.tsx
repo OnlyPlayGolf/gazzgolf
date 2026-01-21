@@ -22,17 +22,6 @@ import {
   isMatchFinished,
   getFinalResult,
 } from "@/utils/matchPlayScoring";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
 interface MatchPlayScores {
   player1: number;
   player2: number;
@@ -132,7 +121,6 @@ export default function MatchPlayPlay() {
     }
   }, [isSpectator, spectatorLoading, gameId, navigate]);
   
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<1 | 2 | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
@@ -174,25 +162,9 @@ export default function MatchPlayPlay() {
     const loadUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
-      
-      // Show stats mode dialog if user hasn't set their preference yet
-      if (user && !statsModeLoading && playerStatsMode === 'none') {
-        // Check if this is first load (no existing preference)
-        const { data } = await supabase
-          .from('player_game_stats_mode')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('game_id', gameId)
-          .eq('game_type', 'match_play')
-          .maybeSingle();
-        
-        if (!data) {
-          setShowStatsModeDialog(true);
-        }
-      }
     };
     loadUser();
-  }, [gameId, statsModeLoading]);
+  }, [gameId]);
   
   // Reset stats saved when hole changes
   useEffect(() => {
@@ -343,7 +315,7 @@ export default function MatchPlayPlay() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/rounds-play")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -474,6 +446,7 @@ export default function MatchPlayPlay() {
           open={showStatsModeDialog}
           onOpenChange={setShowStatsModeDialog}
           onSelect={setPlayerStatsMode}
+          currentMode={playerStatsMode}
           saving={statsModeSaving}
         />
 
@@ -544,33 +517,6 @@ export default function MatchPlayPlay() {
       </div>
 
       {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
-
-      {/* Exit Dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={() => {
-              setShowExitDialog(false);
-              navigate("/rounds-play");
-            }}>
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={handleDeleteGame}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

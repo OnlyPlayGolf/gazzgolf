@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProfilePhoto } from "@/components/ProfilePhoto";
@@ -7,13 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Users, UserPlus, Search, Check, X, ArrowUp, ArrowDown, MessageCircle, ArrowLeft } from "lucide-react";
+import { Users, UserPlus, Search, Check, X, ArrowUp, ArrowDown, MessageCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { TopNavBar } from "@/components/TopNavBar";
 import { parseHandicapForSort } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { searchProfilesTypeahead } from "@/utils/profileSearch";
+import { getPublicProfilesMap } from "@/utils/publicProfiles";
 
 interface Friend {
   id: string;
@@ -44,6 +47,8 @@ const Friends = () => {
   const [friendSearch, setFriendSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const debouncedQuery = useDebouncedValue(friendSearch.trim(), 300);
+  const searchRequestIdRef = useRef(0);
   
   // Remove friend dialog
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
@@ -108,66 +113,69 @@ const Friends = () => {
       const incoming: Friend[] = [];
       const outgoing: Friend[] = [];
 
+      const acceptedFriendIds: string[] = [];
+      const incomingIds: string[] = [];
+      const outgoingIds: string[] = [];
+
       for (const friendship of friendshipsData || []) {
         if (friendship.status === 'accepted') {
           const friendId = friendship.requester === user.id ? friendship.addressee : friendship.requester;
-          const { data: friendProfile } = await supabase
-            .from('profiles')
-            .select('display_name, username, handicap, home_club, avatar_url')
-            .eq('id', friendId)
-            .single();
-
-          if (friendProfile) {
-            acceptedFriends.push({
-              id: friendId,
-              display_name: friendProfile.display_name,
-              username: friendProfile.username,
-              handicap: friendProfile.handicap,
-              home_club: friendProfile.home_club,
-              avatar_url: friendProfile.avatar_url,
-              status: 'accepted',
-              is_requester: friendship.requester === user.id
-            });
-          }
+          acceptedFriendIds.push(friendId);
         } else if (friendship.status === 'pending') {
           if (friendship.addressee === user.id) {
-            const { data: requesterProfile } = await supabase
-              .from('profiles')
-              .select('display_name, username, avatar_url')
-              .eq('id', friendship.requester)
-              .single();
-
-            if (requesterProfile) {
-              incoming.push({
-                id: friendship.requester,
-                display_name: requesterProfile.display_name,
-                username: requesterProfile.username,
-                handicap: null,
-                home_club: null,
-                avatar_url: requesterProfile.avatar_url,
-                status: 'pending',
-                is_requester: false
-              });
-            }
+            incomingIds.push(friendship.requester);
           } else {
-            const { data: addresseeProfile } = await supabase
-              .from('profiles')
-              .select('display_name, username, avatar_url')
-              .eq('id', friendship.addressee)
-              .single();
+            outgoingIds.push(friendship.addressee);
+          }
+        }
+      }
 
-            if (addresseeProfile) {
-              outgoing.push({
-                id: friendship.addressee,
-                display_name: addresseeProfile.display_name,
-                username: addresseeProfile.username,
-                handicap: null,
-                home_club: null,
-                avatar_url: addresseeProfile.avatar_url,
-                status: 'pending',
-                is_requester: true
-              });
-            }
+      // Hydrate profiles via RPC (bypasses profiles RLS safely).
+      const profileMap = await getPublicProfilesMap(supabase as any, [
+        ...acceptedFriendIds,
+        ...incomingIds,
+        ...outgoingIds,
+      ]);
+
+      for (const friendship of friendshipsData || []) {
+        if (friendship.status === 'accepted') {
+          const friendId = friendship.requester === user.id ? friendship.addressee : friendship.requester;
+          const p = profileMap.get(friendId);
+          acceptedFriends.push({
+            id: friendId,
+            display_name: p?.display_name ?? null,
+            username: p?.username ?? null,
+            handicap: p?.handicap ?? null,
+            home_club: p?.home_club ?? null,
+            avatar_url: p?.avatar_url ?? null,
+            status: 'accepted',
+            is_requester: friendship.requester === user.id
+          });
+        } else if (friendship.status === 'pending') {
+          if (friendship.addressee === user.id) {
+            const p = profileMap.get(friendship.requester);
+            incoming.push({
+              id: friendship.requester,
+              display_name: p?.display_name ?? null,
+              username: p?.username ?? null,
+              handicap: p?.handicap ?? null,
+              home_club: p?.home_club ?? null,
+              avatar_url: p?.avatar_url ?? null,
+              status: 'pending',
+              is_requester: false
+            });
+          } else {
+            const p = profileMap.get(friendship.addressee);
+            outgoing.push({
+              id: friendship.addressee,
+              display_name: p?.display_name ?? null,
+              username: p?.username ?? null,
+              handicap: p?.handicap ?? null,
+              home_club: p?.home_club ?? null,
+              avatar_url: p?.avatar_url ?? null,
+              status: 'pending',
+              is_requester: true
+            });
           }
         }
       }
@@ -180,45 +188,60 @@ const Friends = () => {
     }
   };
 
-  const handleSearchFriends = async () => {
-    if (!friendSearch.trim() || !user) return;
-    setLoading(true);
-    
-    try {
-      const { data, error } = await supabase
-        .rpc('search_profiles', { q: friendSearch.trim(), max_results: 10 });
+  useEffect(() => {
+    if (!isAddFriendOpen) return;
+    if (!user) return;
 
-      if (error) throw error;
-
-      // Enrich results with friendship status
-      const enrichedResults = await Promise.all(
-        (data || []).map(async (profile: any) => {
-          const { data: friendship } = await supabase
-            .from('friendships')
-            .select('id, status, requester')
-            .or(`and(requester.eq.${user.id},addressee.eq.${profile.id}),and(requester.eq.${profile.id},addressee.eq.${user.id})`)
-            .maybeSingle();
-
-          return {
-            ...profile,
-            friendshipStatus: friendship?.status || null,
-            isRequester: friendship?.requester === user.id
-          };
-        })
-      );
-
-      setSearchResults(enrichedResults);
-    } catch (error) {
-      console.error('Error searching friends:', error);
-      toast({
-        title: "Error",
-        description: "Failed to search for users",
-        variant: "destructive"
-      });
-    } finally {
+    if (debouncedQuery.length < 2) {
+      searchRequestIdRef.current += 1; // invalidate in-flight requests
       setLoading(false);
+      setSearchResults([]);
+      return;
     }
-  };
+
+    let cancelled = false;
+    const requestId = ++searchRequestIdRef.current;
+
+    const run = async () => {
+      setLoading(true);
+      try {
+        const rows = await searchProfilesTypeahead(supabase as any, debouncedQuery, { limit: 20 });
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+
+        const enrichedResults = await Promise.all(
+          rows.map(async (profile: any) => {
+            const { data: friendship } = await supabase
+              .from('friendships')
+              .select('id, status, requester')
+              .or(`and(requester.eq.${user.id},addressee.eq.${profile.id}),and(requester.eq.${profile.id},addressee.eq.${user.id})`)
+              .maybeSingle();
+
+            return {
+              ...profile,
+              friendshipStatus: friendship?.status || null,
+              isRequester: friendship?.requester === user.id
+            };
+          })
+        );
+
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        setSearchResults(enrichedResults);
+      } catch (error) {
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        console.error('Error searching friends:', error);
+        setSearchResults([]);
+      } finally {
+        if (cancelled || requestId !== searchRequestIdRef.current) return;
+        setLoading(false);
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAddFriendOpen, user, debouncedQuery]);
 
   const handleSendFriendRequest = async (friendId: string) => {
     if (!user) return;
@@ -472,23 +495,34 @@ const Friends = () => {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="friend-search">Search by username or name</Label>
-                      <div className="flex gap-2 mt-2">
+                      <div className="relative mt-2">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="friend-search"
                           value={friendSearch}
                           onChange={(e) => setFriendSearch(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSearchFriends()}
                           placeholder="Enter username or name"
+                          className="pl-9"
                         />
-                        <Button onClick={handleSearchFriends} disabled={loading}>
-                          <Search size={16} />
-                        </Button>
                       </div>
                     </div>
                     
-                    {searchResults.length > 0 && (
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {searchResults.map((result) => (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {loading ? (
+                        <div className="flex items-center justify-center py-8 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Searching...
+                        </div>
+                      ) : debouncedQuery.length < 2 ? (
+                        <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                          Type 2+ characters to search
+                        </div>
+                      ) : searchResults.length === 0 ? (
+                        <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                          No users found
+                        </div>
+                      ) : (
+                        searchResults.map((result) => (
                           <div key={result.id} className="flex items-center justify-between p-3 border rounded-lg">
                             <div 
                               className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity flex-1"
@@ -528,9 +562,9 @@ const Friends = () => {
                               </Button>
                             )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        ))
+                      )}
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>

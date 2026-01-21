@@ -12,18 +12,6 @@ import { ScoreMoreSheet } from "@/components/play/ScoreMoreSheet";
 import { RoundCompletionDialog } from "@/components/RoundCompletionDialog";
 import { canEditGroupScores } from "@/types/gameGroups";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-
 import { StatsMode } from "@/pages/StrokePlaySetup";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 
@@ -33,6 +21,7 @@ interface Round {
   tee_set: string;
   holes_played: number;
   date_played: string;
+  event_id?: string | null;
   round_name?: string | null;
   origin?: string | null;
   user_id: string;
@@ -101,7 +90,6 @@ export default function RoundTracker() {
   const [groups, setGroups] = useState<GameGroup[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [currentUserGroupId, setCurrentUserGroupId] = useState<string | null>(null);
-  const [showExitDialog, setShowExitDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RoundPlayer | null>(null);
   const [showScoreSheet, setShowScoreSheet] = useState(false);
@@ -703,7 +691,36 @@ export default function RoundTracker() {
 
   const handleFinishRound = () => {
     setShowCompletionDialog(false);
-    // Navigate to round summary to show results and share option
+    // Tournament: auto-advance to next round in event
+    if (round?.event_id) {
+      void (async () => {
+        try {
+          const { data: eventRounds, error } = await supabase
+            .from("rounds")
+            .select("id, created_at")
+            .eq("event_id", round.event_id)
+            .order("created_at", { ascending: true });
+
+          if (error) throw error;
+
+          const ids = (eventRounds || []).map(r => r.id);
+          const idx = ids.findIndex(id => id === roundId);
+          const nextId = idx >= 0 ? ids[idx + 1] : null;
+
+          if (nextId) {
+            navigate(`/rounds/${nextId}/track`);
+            return;
+          }
+        } catch (e) {
+          console.error("Error advancing to next tournament round:", e);
+        }
+        // Fallback to summary if something goes wrong
+        navigate(`/rounds/${roundId}/summary`);
+      })();
+      return;
+    }
+
+    // Single-round: Navigate to round summary to show results and share option
     navigate(`/rounds/${roundId}/summary`);
   };
 
@@ -836,7 +853,7 @@ export default function RoundTracker() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowExitDialog(true)}
+              onClick={() => navigate("/")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -1141,38 +1158,6 @@ export default function RoundTracker() {
       )}
 
       <RoundBottomTabBar roundId={roundId!} />
-
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Round</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this round?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <AlertDialogAction
-              onClick={() => {
-                setShowExitDialog(false);
-                navigate("/");
-              }}
-              className="w-full"
-            >
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={() => {
-                setShowExitDialog(false);
-                handleDeleteRound();
-              }}
-              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Round
-            </AlertDialogAction>
-            <AlertDialogCancel className="w-full mt-0">Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

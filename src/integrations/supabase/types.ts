@@ -520,6 +520,7 @@ export type Database = {
       }
       courses: {
         Row: {
+          country_code: string | null
           created_at: string
           id: string
           location: string | null
@@ -527,6 +528,7 @@ export type Database = {
           tee_names: Json | null
         }
         Insert: {
+          country_code?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -534,6 +536,7 @@ export type Database = {
           tee_names?: Json | null
         }
         Update: {
+          country_code?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -895,32 +898,32 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
-          group_type: string | null
           id: string
           image_url: string | null
           is_coach_group: boolean
           name: string
           owner_id: string
+          show_coach_profile_results: boolean
         }
         Insert: {
           created_at?: string | null
           description?: string | null
-          group_type?: string | null
           id?: string
           image_url?: string | null
           is_coach_group?: boolean
           name: string
           owner_id: string
+          show_coach_profile_results?: boolean
         }
         Update: {
           created_at?: string | null
           description?: string | null
-          group_type?: string | null
           id?: string
           image_url?: string | null
           is_coach_group?: boolean
           name?: string
           owner_id?: string
+          show_coach_profile_results?: boolean
         }
         Relationships: [
           {
@@ -1411,6 +1414,8 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          round_id: string | null
+          scorecard_snapshot: Json | null
           updated_at: string
           user_id: string
         }
@@ -1419,6 +1424,8 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          round_id?: string | null
+          scorecard_snapshot?: Json | null
           updated_at?: string
           user_id: string
         }
@@ -1427,10 +1434,26 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          round_id?: string | null
+          scorecard_snapshot?: Json | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "round_summaries"
+            referencedColumns: ["round_id"]
+          },
+          {
+            foreignKeyName: "posts_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]
@@ -1711,6 +1734,7 @@ export type Database = {
           origin: string | null
           round_name: string | null
           round_type: string | null
+          scorecard_snapshot: Json | null
           starting_hole: number | null
           stats_mode: string | null
           tee_set: string | null
@@ -1726,6 +1750,7 @@ export type Database = {
           origin?: string | null
           round_name?: string | null
           round_type?: string | null
+          scorecard_snapshot?: Json | null
           starting_hole?: number | null
           stats_mode?: string | null
           tee_set?: string | null
@@ -1741,6 +1766,7 @@ export type Database = {
           origin?: string | null
           round_name?: string | null
           round_type?: string | null
+          scorecard_snapshot?: Json | null
           starting_hole?: number | null
           stats_mode?: string | null
           tee_set?: string | null
@@ -2516,6 +2542,7 @@ export type Database = {
           round_id: string | null
           sand_saves: number | null
           score_vs_par: number | null
+          scorecard_snapshot: Json | null
           tee_set: string | null
           three_putts: number | null
           total_par: number | null
@@ -2531,6 +2558,10 @@ export type Database = {
     }
     Functions: {
       accept_group_invite: { Args: { invite_code: string }; Returns: Json }
+      build_post_scorecard_snapshot: {
+        Args: { p_round_id: string }
+        Returns: Json
+      }
       conversations_overview: {
         Args: never
         Returns: {
@@ -2662,6 +2693,10 @@ export type Database = {
       normalized_friendship_pair: {
         Args: { a: string; b: string }
         Returns: string[]
+      }
+      rebuild_round_scorecard_snapshot: {
+        Args: { p_round_id: string }
+        Returns: undefined
       }
       search_profiles: {
         Args: { max_results?: number; q: string }

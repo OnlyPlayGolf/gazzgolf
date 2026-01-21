@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none" role="img" aria-label="OnlyPlay Golf">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B3D2E" />
+      <stop offset="1" stop-color="#0E5A3E" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <!-- Subtle fairway stripes -->
+  <g opacity="0.16">
+    <rect x="-120" y="440" width="1600" height="90" fill="#000" />
+    <rect x="-120" y="530" width="1600" height="90" fill="#000" />
+  </g>
+
+  <!-- Golf ball + tee -->
+  <g filter="url(#shadow)">
+    <circle cx="230" cy="275" r="120" fill="#F8FAFC" />
+    <circle cx="190" cy="245" r="8" fill="#CBD5E1" />
+    <circle cx="244" cy="230" r="8" fill="#CBD5E1" />
+    <circle cx="285" cy="260" r="8" fill="#CBD5E1" />
+    <circle cx="215" cy="300" r="8" fill="#CBD5E1" />
+    <circle cx="270" cy="305" r="8" fill="#CBD5E1" />
+    <path d="M230 400c-38 0-60 10-60 22 0 12 22 22 60 22s60-10 60-22c0-12-22-22-60-22Z" fill="#0A2E23" opacity="0.35" />
+    <path d="M230 395c-28 0-46 7-46 16s18 16 46 16 46-7 46-16-18-16-46-16Z" fill="#F59E0B" />
+  </g>
+
+  <!-- Text -->
+  <g fill="#E2E8F0">
+    <text x="520" y="285" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="84" font-weight="800">
+      OnlyPlay Golf
+    </text>
+    <text x="520" y="360" font-family="system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="34" font-weight="600" opacity="0.9">
+      Track rounds. Practice smarter. Play better.
+    </text>
+  </g>
+</svg>

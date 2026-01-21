@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { ScrambleBottomTabBar } from "@/components/ScrambleBottomTabBar";
 import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { PlayerScoreSheet } from "@/components/play/PlayerScoreSheet";
@@ -13,16 +13,6 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { PlayerStatsModeDialog } from "@/components/play/PlayerStatsModeDialog";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -86,16 +76,6 @@ export default function ScramblePlay() {
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
 
-  // Show stats mode dialog on first load if not set
-  useEffect(() => {
-    if (!statsModeLoading && statsMode === 'none' && game && !loading) {
-      const hasShownDialog = sessionStorage.getItem(`scrambleStatsModeShown_${gameId}`);
-      if (!hasShownDialog) {
-        setShowStatsModeDialog(true);
-        sessionStorage.setItem(`scrambleStatsModeShown_${gameId}`, 'true');
-      }
-    }
-  }, [statsModeLoading, statsMode, game, loading, gameId]);
 
   useEffect(() => {
     if (gameId) {
@@ -530,7 +510,7 @@ export default function ScramblePlay() {
       .eq('id', gameId);
 
     if (error) {
-      toast.error("Failed to finish game");
+      toast.error("Failed to finish round");
       return;
     }
 
@@ -590,7 +570,7 @@ export default function ScramblePlay() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setExitDialogOpen(true)}
+              onClick={() => navigate("/rounds-play")}
               className="rounded-full"
             >
               <ChevronLeft size={24} />
@@ -714,13 +694,13 @@ export default function ScramblePlay() {
           onSave={handleSaveMore}
         />
 
-        {/* Finish Game button - only shown on last hole when all scores entered */}
+        {/* Finish Round button - only shown on last hole when all scores entered */}
         {isLastHole && allScoresEntered && (
           <Button 
             onClick={finishGame}
             className="w-full"
           >
-            Finish Game
+            Finish Round
           </Button>
         )}
       </div>
@@ -772,35 +752,12 @@ export default function ScramblePlay() {
         </DialogContent>
       </Dialog>
 
-      {/* Exit Dialog */}
-      <AlertDialog open={exitDialogOpen} onOpenChange={setExitDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Exit Game</AlertDialogTitle>
-            <AlertDialogDescription>
-              What would you like to do with this game?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
-            <AlertDialogAction onClick={handleSaveAndExit}>
-              Save and Exit
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={handleDeleteGame}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Game
-            </AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Stats Mode Dialog */}
       <PlayerStatsModeDialog
         open={showStatsModeDialog}
         onOpenChange={setShowStatsModeDialog}
         onSelect={setStatsMode}
+        currentMode={statsMode}
         saving={statsModeSaving}
       />
 

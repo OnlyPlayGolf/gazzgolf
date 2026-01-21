@@ -85,7 +85,12 @@ const AcceptInvite = () => {
   const handleSignIn = () => {
     // Store the invite code in localStorage to resume after login
     localStorage.setItem('pending_invite_code', code || '');
-    navigate('/auth');
+    navigate(`/auth?view=signin&invite=${encodeURIComponent(code || '')}`);
+  };
+
+  const handleCreateAccount = () => {
+    localStorage.setItem('pending_invite_code', code || '');
+    navigate(`/auth?view=signup&invite=${encodeURIComponent(code || '')}`);
   };
 
   if (loading || accepting) {
@@ -115,11 +120,16 @@ const AcceptInvite = () => {
           </CardHeader>
           <CardContent className="space-y-4 text-center">
             <p className="text-muted-foreground">
-              Sign in to accept this group invitation
+              Create an account or sign in to join this group
             </p>
-            <Button onClick={handleSignIn} className="w-full">
-              Sign In
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={handleCreateAccount} className="w-full">
+                Create account
+              </Button>
+              <Button onClick={handleSignIn} variant="outline" className="w-full">
+                Sign in
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
