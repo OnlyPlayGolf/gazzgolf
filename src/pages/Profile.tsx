@@ -230,6 +230,7 @@ const Profile = () => {
         created_at: g.groups.created_at,
         description: g.groups.description,
         image_url: g.groups.image_url,
+        group_type: g.groups.group_type,
       }));
 
       setGroups(groupsList);
