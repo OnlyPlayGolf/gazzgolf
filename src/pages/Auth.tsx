@@ -194,7 +194,7 @@ const Auth = () => {
       const pendingInviteCode = localStorage.getItem('pending_invite_code');
       const redirectUrl = pendingInviteCode
         ? `${getPublicAppUrl()}/auth?invite=${encodeURIComponent(pendingInviteCode)}`
-        : `${getPublicAppUrl()}/`;
+        : `${getPublicAppUrl()}/auth`;
       const displayName = `${validatedData.firstName} ${validatedData.lastName}`;
       
       const { error } = await supabase.auth.signUp({
@@ -214,6 +214,13 @@ const Auth = () => {
       });
 
       if (error) {
+        console.error("[auth.signUp] failed", {
+          message: error.message,
+          name: (error as any)?.name,
+          status: (error as any)?.status,
+          code: (error as any)?.code,
+          redirectUrl,
+        });
         if (error.message.includes('User already registered')) {
           toast({
             title: "Account Exists",
@@ -272,10 +279,17 @@ const Auth = () => {
       setLoading(true);
 
       const { error } = await supabase.auth.resetPasswordForEmail(validatedData.email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${getPublicAppUrl()}/auth`,
       });
 
       if (error) {
+        console.error("[auth.resetPasswordForEmail] failed", {
+          message: error.message,
+          name: (error as any)?.name,
+          status: (error as any)?.status,
+          code: (error as any)?.code,
+          redirectTo: `${getPublicAppUrl()}/auth`,
+        });
         toast({
           title: "Error",
           description: error.message,
