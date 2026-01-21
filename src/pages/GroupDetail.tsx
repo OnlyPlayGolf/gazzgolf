@@ -1525,10 +1525,7 @@ useEffect(() => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={isCoachRole(member.role) ? 'default' : 'secondary'}>
-                    {getDisplayRole(
-                      member.role,
-                      (group?.group_type ?? (members.some(m => m.role === 'admin') ? 'coach' : 'player'))
-                    )}
+                    {getDisplayRole(member.role, effectiveGroupType)}
                   </Badge>
                   {/* Promote to Coach button - only show for non-coaches, and only to coaches */}
                   {canPromoteMembers && !isCoachRole(member.role) && (
