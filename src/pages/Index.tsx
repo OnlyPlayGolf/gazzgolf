@@ -93,7 +93,7 @@ const Index = () => {
             <img 
               src={onlyPlayLogo}
               alt="OnlyPlay Golf"
-              className="h-20 mx-auto mb-4"
+              className="h-40 mx-auto mb-4"
               style={{ filter: 'invert(27%) sepia(69%) saturate(605%) hue-rotate(104deg) brightness(92%) contrast(90%)' }}
             />
             <p className="text-muted-foreground">Train & Play. Like a game. Together.</p>
