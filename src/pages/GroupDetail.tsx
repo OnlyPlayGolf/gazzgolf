@@ -1115,9 +1115,28 @@ useEffect(() => {
       if (updateError) throw updateError;
 
       // Handle group image upload if provided
-      if (editGroupImage) {
-        // TODO: Implement image upload when storage is set up
-        console.log('Group image upload not yet implemented');
+      if (editGroupImage && user) {
+        const fileExt = editGroupImage.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('group-images')
+          .upload(fileName, editGroupImage);
+        
+        if (uploadError) {
+          console.error('Error uploading group image:', uploadError);
+          // Continue without failing - image upload is optional
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('group-images')
+            .getPublicUrl(fileName);
+          
+          // Update the group with the new image URL
+          await supabase
+            .from('groups')
+            .update({ image_url: publicUrl })
+            .eq('id', groupId);
+        }
       }
 
       toast({
