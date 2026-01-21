@@ -75,13 +75,11 @@ const Index = () => {
 
   useEffect(() => {
     if (user) {
-      loadUserData();
       void (async () => {
         await hydrateLevelsProgressFromDB();
         loadCurrentLevel();
       })();
     } else {
-      setLoading(false);
       loadCurrentLevel();
     }
   }, [user?.id]);
@@ -261,16 +259,16 @@ const Index = () => {
           </div>
         )}
 
-        {/* Post Box - renders when profile is loaded */}
-        {!profileLoading && user && (
-          <PostBox profile={profile} userId={user.id} onPostCreated={handlePostCreated} />
-        )}
-
         {/* Ongoing Rounds Section - renders when data is available */}
         {!ongoingGamesLoading && <OngoingRoundsSection ongoingGames={ongoingGames} onGameDeleted={handleGameDeleted} />}
 
         {/* Performance Snapshot - always renders (handles loading internally) */}
         <PerformanceSnapshot performanceStats={performanceStats} />
+
+        {/* Post Box - renders when profile is loaded */}
+        {!profileLoading && user && (
+          <PostBox profile={profile} userId={user.id} onPostCreated={handlePostCreated} />
+        )}
 
         {/* Friends Activity Feed - renders when data is available */}
         {!feedPostsLoading && user && friendsPosts.length > 0 ? (

@@ -595,7 +595,7 @@ const Profile = () => {
 
   return (
     <div className="pb-20 min-h-screen bg-background">
-      <TopNavBar hideNotifications />
+      <TopNavBar />
       <div className="p-4 pt-20">
         <div className="flex items-center justify-between mb-2 gap-3">
           <h1 className="text-2xl font-bold text-foreground">My Groups</h1>
@@ -922,19 +922,6 @@ const Profile = () => {
                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                           {group.description}
                         </p>
-                      )}
-                      
-                      {group.created_at && (
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <Calendar size={14} className="text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">
-                            Created {new Date(group.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric' 
-                            })}
-                          </p>
-                        </div>
                       )}
                     </div>
 
