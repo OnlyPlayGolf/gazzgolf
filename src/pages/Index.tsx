@@ -89,18 +89,18 @@ const Index = () => {
       <div className="min-h-screen bg-background pb-20">
         <div className="p-4 space-y-6">
           {/* Welcome Header with Logo */}
-          <div className="text-center pt-8">
+          <div className="text-center pt-4">
             <img 
               src={onlyPlayLogo}
               alt="OnlyPlay Golf"
-              className="h-40 mx-auto mb-4"
+              className="h-40 mx-auto mb-2"
               style={{ filter: 'invert(27%) sepia(69%) saturate(605%) hue-rotate(104deg) brightness(92%) contrast(90%)' }}
             />
             <p className="text-muted-foreground">Train & Play. Like a game. Together.</p>
           </div>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 gap-4 mt-8">
+          <div className="grid grid-cols-1 gap-4 mt-4">
             <Card className="border-primary/20 hover:border-primary transition-colors cursor-pointer" onClick={() => navigate('/auth')}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
