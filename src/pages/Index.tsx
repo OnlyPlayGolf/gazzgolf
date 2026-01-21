@@ -96,7 +96,7 @@ const Index = () => {
               className="h-20 mx-auto mb-4"
               style={{ filter: 'invert(27%) sepia(69%) saturate(605%) hue-rotate(104deg) brightness(92%) contrast(90%)' }}
             />
-            <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
+            <p className="text-muted-foreground">Train & Play. Like a game. Together.</p>
           </div>
 
           {/* Feature Cards */}
