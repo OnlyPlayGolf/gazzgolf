@@ -11,7 +11,7 @@ import { GameHeader } from "@/components/GameHeader";
 export default function RoundInfo() {
   const { roundId } = useParams();
   const navigate = useNavigate();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('round', roundId);
   
   const [origin, setOrigin] = useState<string | null>(null);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
@@ -36,9 +36,9 @@ export default function RoundInfo() {
   const renderBottomTabBar = () => {
     if (!roundId || isSpectatorLoading) return null;
     if (origin === "skins") {
-      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />;
     }
-    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />;
   };
 
   return (

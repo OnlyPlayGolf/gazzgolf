@@ -398,7 +398,7 @@ export default function RoundTracker() {
     if (isEditWindowExpired) {
       toast({
         title: "Editing locked",
-        description: "Scores cannot be edited 12 hours after the round was started.",
+        description: "Scores cannot be edited 24 hours after the round was started.",
         variant: "destructive",
       });
       return;
@@ -830,7 +830,7 @@ export default function RoundTracker() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading round...</div>
-        {roundId && <RoundBottomTabBar roundId={roundId} />}
+        {roundId && <RoundBottomTabBar roundId={roundId} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -839,7 +839,7 @@ export default function RoundTracker() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Round not found</div>
-        {roundId && <RoundBottomTabBar roundId={roundId} />}
+        {roundId && <RoundBottomTabBar roundId={roundId} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -979,6 +979,7 @@ export default function RoundTracker() {
                           {/* In-round stats entry for current user only */}
                           {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && round.stats_mode && round.stats_mode !== 'none' && (
                             <InRoundStatsEntry
+                              key={`stats-${player.id}-${currentHole.hole_number}`}
                               statsMode={round.stats_mode as StatsMode}
                               roundId={round.id}
                               holeNumber={currentHole.hole_number}
@@ -1045,6 +1046,7 @@ export default function RoundTracker() {
                 {/* In-round stats entry for current user only */}
                 {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && round.stats_mode && round.stats_mode !== 'none' && (
                   <InRoundStatsEntry
+                    key={`stats-${player.id}-${currentHole.hole_number}`}
                     statsMode={round.stats_mode as StatsMode}
                     roundId={round.id}
                     holeNumber={currentHole.hole_number}
@@ -1157,7 +1159,7 @@ export default function RoundTracker() {
         </>
       )}
 
-      <RoundBottomTabBar roundId={roundId!} />
+      <RoundBottomTabBar roundId={roundId!} isEditWindowExpired={isEditWindowExpired} />
     </div>
   );
 }

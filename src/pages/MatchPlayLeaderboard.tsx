@@ -43,7 +43,7 @@ export default function MatchPlayLeaderboard() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('match_play', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'match_play');
   const { isAdmin } = useGameAdminStatus('match_play', gameId);
   const [currentGame, setCurrentGame] = useState<MatchPlayGame | null>(null);
@@ -448,7 +448,7 @@ export default function MatchPlayLeaderboard() {
         )}
       </div>
 
-      {gameId && !isSpectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

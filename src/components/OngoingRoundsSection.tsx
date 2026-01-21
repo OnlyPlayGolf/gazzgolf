@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, MapPin, X, ChevronRight } from "lucide-react";
+import { Users, MapPin, Trash2, ChevronRight } from "lucide-react";
+import { format } from "date-fns";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
 import {
@@ -123,10 +124,12 @@ export const OngoingRoundsSection = ({ ongoingGames, onGameDeleted }: OngoingRou
                     {game.roundName || GAME_FORMAT_LABELS[game.gameType]}
                   </h3>
                   
-                  {/* Course name */}
+                  {/* Course name and date */}
                   <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                     <MapPin size={14} className="flex-shrink-0" />
                     <span className="truncate">{game.courseName}</span>
+                    <span className="flex-shrink-0">·</span>
+                    <span className="flex-shrink-0">{format(new Date(game.createdAt), 'MMM d')}</span>
                   </div>
                   
                   {/* Player count and format */}
@@ -149,7 +152,7 @@ export const OngoingRoundsSection = ({ ongoingGames, onGameDeleted }: OngoingRou
                     className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
                     onClick={() => handleDeleteClick(game)}
                   >
-                    <X size={18} />
+                    <Trash2 size={18} />
                   </Button>
                 )}
               </div>

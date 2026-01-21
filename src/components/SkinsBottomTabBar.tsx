@@ -4,9 +4,10 @@ import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 interface SkinsBottomTabBarProps {
   roundId: string;
   isSpectator?: boolean;
+  isEditWindowExpired?: boolean;
 }
 
-export function SkinsBottomTabBar({ roundId, isSpectator = false }: SkinsBottomTabBarProps) {
+export function SkinsBottomTabBar({ roundId, isSpectator = false, isEditWindowExpired = false }: SkinsBottomTabBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -18,7 +19,8 @@ export function SkinsBottomTabBar({ roundId, isSpectator = false }: SkinsBottomT
     { id: "settings", label: "Settings", icon: Settings, path: `/skins/${roundId}/settings`, hideForSpectator: false },
   ];
 
-  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
+  // Hide "Enter score" tab for spectators OR when edit window has expired
+  const tabs = (isSpectator || isEditWindowExpired) ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">

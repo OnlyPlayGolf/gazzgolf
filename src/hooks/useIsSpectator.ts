@@ -8,10 +8,10 @@ interface SpectatorCheckResult {
   isEditWindowExpired: boolean;
 }
 
-const EDIT_WINDOW_HOURS = 12;
+const EDIT_WINDOW_HOURS = 24;
 
 /**
- * Check if the 12-hour editing window has expired after a round finishes
+ * Check if the 24-hour editing window has expired after a round finishes
  */
 function isEditingWindowExpired(isFinished: boolean, createdAt: string | null): boolean {
   if (!isFinished || !createdAt) return false;
@@ -20,7 +20,7 @@ function isEditingWindowExpired(isFinished: boolean, createdAt: string | null): 
   const now = new Date();
   const hoursSinceCreation = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
   
-  // For finished games, check if 12 hours have passed since creation
+  // For finished games, check if 24 hours have passed since creation
   // (We use created_at as a proxy since we don't have a finished_at timestamp)
   return hoursSinceCreation > EDIT_WINDOW_HOURS;
 }
@@ -63,12 +63,13 @@ export function useIsSpectator(
         let isParticipant = false;
         let isFinished = false;
         let createdAt: string | null = null;
+        let lockReferenceTime: string | null = null; // For multi-round tournaments
 
         if (gameType === 'round') {
           // Check if user is round owner
           const { data: roundData } = await supabase
             .from('rounds')
-            .select('user_id, created_at')
+            .select('user_id, created_at, event_id')
             .eq('id', gameId)
             .maybeSingle();
 
@@ -79,9 +80,24 @@ export function useIsSpectator(
             .eq('round_id', gameId);
           
           // A round is "finished" if it has any holes recorded (round has been started)
-          // Once finished, editing is locked 12 hours after the round was created
+          // Once finished, editing is locked 24 hours after the round was created
           isFinished = (holesData?.length || 0) > 0;
           createdAt = roundData?.created_at || null;
+
+          // For multi-round tournaments, use the last round's created_at for lock calculation
+          lockReferenceTime = createdAt;
+          if (roundData?.event_id) {
+            const { data: eventRounds } = await supabase
+              .from('rounds')
+              .select('created_at')
+              .eq('event_id', roundData.event_id)
+              .order('created_at', { ascending: false })
+              .limit(1);
+            
+            if (eventRounds && eventRounds.length > 0) {
+              lockReferenceTime = eventRounds[0].created_at;
+            }
+          }
 
           if (roundData?.user_id === user.id) {
             isParticipant = true;
@@ -147,19 +163,20 @@ export function useIsSpectator(
           createdAt = (data as any)?.created_at || null;
         }
 
-        // Check if the 12-hour editing window has expired
-        // For rounds: lock if finished (has holes) OR if round is older than 12 hours (regardless of holes)
+        // Check if the 24-hour editing window has expired
+        // For rounds: lock if finished (has holes) OR if round is older than 24 hours (regardless of holes)
+        // For multi-round tournaments, use the last round's created_at for the lock calculation
         let editWindowExpired = false;
         if (gameType === 'round') {
           if (isFinished) {
-            // Round has holes - use standard 12-hour check
-            editWindowExpired = isEditingWindowExpired(isFinished, createdAt);
-          } else if (createdAt) {
-            // Round has no holes yet, but check if it's older than 12 hours anyway
-            const createdDate = new Date(createdAt);
+            // Round has holes - use lock reference time (last round in event, or this round)
+            editWindowExpired = isEditingWindowExpired(isFinished, lockReferenceTime);
+          } else if (lockReferenceTime) {
+            // Round has no holes yet, but check if lock reference time is older than 24 hours
+            const referenceDate = new Date(lockReferenceTime);
             const now = new Date();
-            const hoursSinceCreation = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
-            editWindowExpired = hoursSinceCreation > EDIT_WINDOW_HOURS;
+            const hoursSinceReference = (now.getTime() - referenceDate.getTime()) / (1000 * 60 * 60);
+            editWindowExpired = hoursSinceReference > EDIT_WINDOW_HOURS;
           }
         } else {
           // For other game types, use standard logic

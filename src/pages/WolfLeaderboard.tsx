@@ -44,7 +44,7 @@ export default function WolfLeaderboard() {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   // Check spectator status for leaderboard sorting
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('wolf', gameId);
   const { isAdmin } = useGameAdminStatus('wolf', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'wolf');
 
@@ -547,7 +547,7 @@ export default function WolfLeaderboard() {
         )}
       </div>
 
-      {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
 
       {game && (
         <WolfCompletionModal

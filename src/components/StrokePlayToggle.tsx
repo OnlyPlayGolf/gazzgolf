@@ -5,9 +5,10 @@ import { useStrokePlayEnabled } from "@/hooks/useStrokePlayEnabled";
 interface StrokePlayToggleProps {
   gameId: string | undefined;
   gameType: string;
+  disabled?: boolean;
 }
 
-export function StrokePlayToggle({ gameId, gameType }: StrokePlayToggleProps) {
+export function StrokePlayToggle({ gameId, gameType, disabled = false }: StrokePlayToggleProps) {
   const { strokePlayEnabled, setStrokePlayEnabled } = useStrokePlayEnabled(gameId, gameType);
 
   return (
@@ -18,7 +19,7 @@ export function StrokePlayToggle({ gameId, gameType }: StrokePlayToggleProps) {
           Show individual stroke play scores alongside this game
         </p>
       </div>
-      <Switch checked={strokePlayEnabled} onCheckedChange={setStrokePlayEnabled} />
+      <Switch checked={strokePlayEnabled} onCheckedChange={setStrokePlayEnabled} disabled={disabled} />
     </div>
   );
 }

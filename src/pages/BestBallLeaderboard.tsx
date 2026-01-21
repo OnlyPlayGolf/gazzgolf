@@ -50,7 +50,7 @@ export default function BestBallLeaderboard() {
   const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('best_ball', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'best_ball');
   const { isAdmin } = useGameAdminStatus('best_ball', gameId);
 
@@ -139,7 +139,7 @@ export default function BestBallLeaderboard() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -973,7 +973,7 @@ export default function BestBallLeaderboard() {
         )}
       </div>
 
-      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

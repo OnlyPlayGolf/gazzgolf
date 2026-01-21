@@ -47,7 +47,7 @@ interface Reply {
 export default function WolfFeed() {
   const { gameId } = useParams();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('wolf', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -530,7 +530,7 @@ export default function WolfFeed() {
           </div>
         )}
       </div>
-      {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       
       {/* Scorecard Comments Sheet */}
       {selectedScorecardPlayerName && (

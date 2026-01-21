@@ -101,7 +101,7 @@ export default function CopenhagenPlay() {
   const navigate = useNavigate();
   
   // Check spectator status - redirect if not a participant or edit window expired
-  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('copenhagen', gameId);
+  const { isSpectator, isLoading: spectatorLoading, isEditWindowExpired } = useIsSpectator('copenhagen', gameId);
   
   useEffect(() => {
     if (!spectatorLoading && isSpectator && gameId) {

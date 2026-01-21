@@ -9,7 +9,7 @@ import { GameHeader } from "@/components/GameHeader";
 
 export default function BestBallInfo() {
   const { gameId } = useParams();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('best_ball', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function BestBallInfo() {
         </Card>
       </div>
 
-      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

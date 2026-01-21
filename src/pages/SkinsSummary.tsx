@@ -65,7 +65,7 @@ export default function SkinsSummary() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator } = useIsSpectator('skins', roundId);
+  const { isSpectator, isEditWindowExpired } = useIsSpectator('skins', roundId);
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [players, setPlayers] = useState<SkinsPlayer[]>([]);
   const [holes, setHoles] = useState<SkinsHole[]>([]);
@@ -213,7 +213,7 @@ export default function SkinsSummary() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
+        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -222,7 +222,7 @@ export default function SkinsSummary() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
+        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -365,7 +365,7 @@ export default function SkinsSummary() {
         </div>
       </div>
 
-      <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+      <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />
 
       <SkinsShareDialogWithScorecard
         open={showShareDialog}

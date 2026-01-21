@@ -69,7 +69,7 @@ export default function RoundLeaderboard() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('round', roundId);
   const { isAdmin } = useGameAdminStatus('round', roundId);
   
   const [round, setRound] = useState<Round | null>(null);
@@ -740,9 +740,9 @@ export default function RoundLeaderboard() {
 
       {!isSpectatorLoading && (
         round?.origin === "skins" ? (
-          <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+          <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />
         ) : (
-          <RoundBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+          <RoundBottomTabBar roundId={roundId!} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />
         )
       )}
     </div>

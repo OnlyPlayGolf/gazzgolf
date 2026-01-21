@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,6 @@ import { InRoundStrokesGained } from "./InRoundStrokesGained";
 
 export type StatsMode = 'none' | 'basic' | 'strokes_gained';
 
-interface BasicStatsData {
-  fairwayResult: 'hit' | 'left' | 'right' | null;
-  chipBunkerShots: number;
-  putts: number;
-  gir: boolean;
-}
-
 interface InRoundStatsEntryProps {
   statsMode: StatsMode;
   roundId: string;
@@ -29,7 +22,6 @@ interface InRoundStatsEntryProps {
   isCurrentUser: boolean;
   holeDistance?: number;
   onStatsSaved?: () => void;
-  // Optional: pass course info directly instead of looking up from rounds table
   courseName?: string;
   holesPlayed?: number;
 }
@@ -51,65 +43,77 @@ export function InRoundStatsEntry({
   const [isOpen, setIsOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [loadedHoleNumber, setLoadedHoleNumber] = useState<number | null>(null);
 
-  // Basic stats fields
+  // Simple local state - no parent control
   const [fairwayResult, setFairwayResult] = useState<'hit' | 'left' | 'right' | null>(null);
   const [chipBunkerShots, setChipBunkerShots] = useState("");
   const [putts, setPutts] = useState("");
+  
+  // Track if user has edited to prevent load from overwriting
+  const hasUserEdited = useRef(false);
+  
+  // Track previous hole number to detect actual hole changes
+  const prevHoleRef = useRef<number | null>(null);
 
-  // Single effect to handle hole changes: reset fields first, then load existing data
+  // Load existing stats when component mounts or hole changes
   useEffect(() => {
-    // Only run when hole actually changes
-    if (loadedHoleNumber === holeNumber) return;
+    // Only reset edit tracking when hole ACTUALLY changes (not on remounts)
+    if (prevHoleRef.current !== null && prevHoleRef.current !== holeNumber) {
+      hasUserEdited.current = false;
+      setSaved(false);
+      setFairwayResult(null);
+      setChipBunkerShots("");
+      setPutts("");
+    }
+    prevHoleRef.current = holeNumber;
     
-    // Track that we're handling this hole
-    setLoadedHoleNumber(holeNumber);
+    // Abort flag to ignore stale responses from previous effect runs
+    let isStale = false;
     
-    // Reset fields immediately
-    setSaved(false);
-    setFairwayResult(null);
-    setChipBunkerShots("");
-    setPutts("");
-    
-    // Then load existing stats (if any)
     const loadExistingStats = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || isStale) return;
 
-        const { data: proRound } = await supabase
-          .from('pro_stats_rounds')
-          .select('id')
-          .eq('external_round_id', roundId)
-          .eq('user_id', user.id)
-          .maybeSingle();
+      // Find the pro_stats_round for this round
+      const { data: proRound } = await supabase
+        .from('pro_stats_rounds')
+        .select('id')
+        .eq('external_round_id', roundId)
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-        if (proRound) {
-          const { data: existingHole } = await supabase
-            .from('pro_stats_holes')
-            .select('pro_shot_data, putts')
-            .eq('pro_round_id', proRound.id)
-            .eq('hole_number', holeNumber)
-            .maybeSingle();
+      if (!proRound || isStale) return;
 
-          if (existingHole?.pro_shot_data) {
-            const shotData = existingHole.pro_shot_data as any;
-            if (shotData.basicStats) {
-              setFairwayResult(shotData.basicStats.fairwayResult || null);
-              setChipBunkerShots(String(shotData.basicStats.chipBunkerShots || 0));
-              setPutts(String(existingHole.putts || 0));
-              setSaved(true);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error loading existing stats:", error);
+      // Get the hole stats
+      const { data: holeStats } = await supabase
+        .from('pro_stats_holes')
+        .select('putts, pro_shot_data')
+        .eq('pro_round_id', proRound.id)
+        .eq('hole_number', holeNumber)
+        .maybeSingle();
+
+      // Check stale flag, hasUserEdited, AND holeStats before setting state
+      if (isStale || !holeStats || hasUserEdited.current) return;
+
+      // Restore values from database
+      const basicStats = (holeStats.pro_shot_data as any)?.basicStats;
+      if (basicStats) {
+        setFairwayResult(basicStats.fairwayResult || null);
+        setChipBunkerShots(basicStats.chipBunkerShots?.toString() || "");
       }
+      if (holeStats.putts !== null && holeStats.putts !== undefined) {
+        setPutts(holeStats.putts.toString());
+      }
+      setSaved(true); // Mark as already saved since we loaded existing data
     };
-    
+
     loadExistingStats();
-  }, [holeNumber, roundId, loadedHoleNumber]);
+    
+    // Cleanup: mark this effect as stale if it re-runs
+    return () => {
+      isStale = true;
+    };
+  }, [roundId, holeNumber]);
 
   const calculateGIR = (holePar: number, holeScore: number, holePutts: number): boolean => {
     const strokesBeforePutting = holeScore - holePutts;
@@ -277,7 +281,10 @@ export function InRoundStatsEntry({
                   <Button
                     size="sm"
                     variant={fairwayResult === 'left' ? "default" : "outline"}
-                    onClick={() => setFairwayResult('left')}
+                    onClick={() => {
+                      hasUserEdited.current = true;
+                      setFairwayResult('left');
+                    }}
                     className="flex-1"
                   >
                     Left
@@ -285,7 +292,10 @@ export function InRoundStatsEntry({
                   <Button
                     size="sm"
                     variant={fairwayResult === 'hit' ? "default" : "outline"}
-                    onClick={() => setFairwayResult('hit')}
+                    onClick={() => {
+                      hasUserEdited.current = true;
+                      setFairwayResult('hit');
+                    }}
                     className="flex-1"
                   >
                     Hit
@@ -293,7 +303,10 @@ export function InRoundStatsEntry({
                   <Button
                     size="sm"
                     variant={fairwayResult === 'right' ? "default" : "outline"}
-                    onClick={() => setFairwayResult('right')}
+                    onClick={() => {
+                      hasUserEdited.current = true;
+                      setFairwayResult('right');
+                    }}
                     className="flex-1"
                   >
                     Right
@@ -309,7 +322,11 @@ export function InRoundStatsEntry({
                 type="number"
                 inputMode="numeric"
                 value={chipBunkerShots}
-                onChange={(e) => setChipBunkerShots(e.target.value)}
+                onChange={(e) => {
+                  hasUserEdited.current = true;
+                  setChipBunkerShots(e.target.value);
+                }}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 placeholder="0"
                 className="text-center h-10"
               />
@@ -322,7 +339,11 @@ export function InRoundStatsEntry({
                 type="number"
                 inputMode="numeric"
                 value={putts}
-                onChange={(e) => setPutts(e.target.value)}
+                onChange={(e) => {
+                  hasUserEdited.current = true;
+                  setPutts(e.target.value);
+                }}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 placeholder="Enter putts"
                 className="text-center h-10"
               />

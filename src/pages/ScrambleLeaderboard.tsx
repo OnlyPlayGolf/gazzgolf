@@ -48,7 +48,7 @@ export default function ScrambleLeaderboard() {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('scramble', gameId);
   const { isAdmin } = useGameAdminStatus('scramble', gameId);
 
   const fetchData = useCallback(async () => {
@@ -482,7 +482,7 @@ export default function ScrambleLeaderboard() {
         {teamScores.map((ts, index) => renderTeamCard(ts, index))}
       </div>
 
-      {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
 
       {/* Completion Dialog */}
       {game && (
