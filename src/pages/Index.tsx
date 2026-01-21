@@ -96,7 +96,6 @@ const Index = () => {
               className="h-20 mx-auto mb-4"
               style={{ filter: 'invert(27%) sepia(69%) saturate(605%) hue-rotate(104deg) brightness(92%) contrast(90%)' }}
             />
-            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Golf Training</h1>
             <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
           </div>
 
