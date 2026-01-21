@@ -29,40 +29,8 @@ export function GameHeader({
       onBack();
       return;
     }
-    if (isAdmin && onFinish && onSaveAndExit && onDelete) {
-      // Admin: show action sheet
-      setShowActionSheet(true);
-    } else {
-      // Spectator/Participant: go back to previous page
-      navigate(-1);
-    }
-  };
-
-  const handleFinish = () => {
-    setShowActionSheet(false);
-    onFinish?.();
-  };
-
-  const handleSaveAndExit = () => {
-    setShowActionSheet(false);
-    onSaveAndExit?.();
-  };
-
-  const handleDeleteClick = () => {
-    setShowActionSheet(false);
-    setShowDeleteDialog(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    setDeleting(true);
-    try {
-      await onDelete?.();
-    } finally {
-      setDeleting(false);
-      setShowDeleteDialog(false);
-    }
-
-    navigate('/');
+    // Default: go back to previous page
+    navigate(-1);
   };
 
   return (

@@ -20,18 +20,7 @@ import { PerformanceSnapshot } from "@/components/PerformanceSnapshot";
 import { buildGameUrl } from "@/hooks/useRoundNavigation";
 import { GameMode } from "@/types/roundShell";
 import { hydrateLevelsProgressFromDB } from "@/utils/levelsManager";
-
-type GameType = 'round' | 'copenhagen' | 'skins' | 'best_ball' | 'scramble' | 'wolf' | 'umbriago' | 'match_play';
-
-interface FriendOnCourseData {
-  friendId: string;
-  friendName: string;
-  friendAvatar: string | null;
-  gameId: string;
-  gameType: GameType;
-  courseName: string;
-  createdAt: string;
-}
+import onlyPlayLogo from "@/assets/onlyplay-golf-logo.png";
 
 import { OngoingRoundsSection } from "@/components/OngoingRoundsSection";
 import { useHomeProfile } from "@/hooks/useHomeProfile";
@@ -99,8 +88,14 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="p-4 space-y-6">
-          {/* Welcome Header */}
+          {/* Welcome Header with Logo */}
           <div className="text-center pt-8">
+            <img 
+              src={onlyPlayLogo}
+              alt="OnlyPlay Golf"
+              className="h-20 mx-auto mb-4"
+              style={{ filter: 'invert(27%) sepia(69%) saturate(605%) hue-rotate(104deg) brightness(92%) contrast(90%)' }}
+            />
             <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Golf Training</h1>
             <p className="text-muted-foreground">Track your progress, complete drills, and improve your game</p>
           </div>
