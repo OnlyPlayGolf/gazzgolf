@@ -31,7 +31,7 @@ export default function WolfSettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('wolf', gameId);
   const [game, setGame] = useState<WolfGame | null>(null);
   const [holes, setHoles] = useState<WolfHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
@@ -211,7 +211,7 @@ export default function WolfSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -267,11 +267,20 @@ export default function WolfSettings() {
             saving={statsModeSaving}
           />
         )}
-        {!isSpectator && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between text-lg">
-                <span>Game Rules</span>
+        {/* Game Rules - Visible for all but locked for spectators or when edit window expired */}
+        <Card className={(isSpectator || (isEditWindowExpired ?? false)) ? 'opacity-90' : ''}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-primary" />
+                Game Rules
+                {(isSpectator || (isEditWindowExpired ?? false)) && (
+                  <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
+                    (Locked)
+                  </span>
+                )}
+              </div>
+              {!(isSpectator || (isEditWindowExpired ?? false)) && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -280,79 +289,99 @@ export default function WolfSettings() {
                 >
                   <Settings size={16} />
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <StrokePlayToggle gameId={gameId} gameType="wolf" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <StrokePlayToggle gameId={gameId} gameType="wolf" disabled={isSpectator || (isEditWindowExpired ?? false)} />
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Double</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Allow teams to double the points on a hole
-                  </p>
-                </div>
-                <Switch checked={doubleEnabled} onCheckedChange={handleDoubleChange} />
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Double</Label>
+                <p className="text-xs text-muted-foreground">
+                  Allow teams to double the points on a hole
+                </p>
               </div>
+              <Switch 
+                checked={doubleEnabled} 
+                onCheckedChange={handleDoubleChange} 
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label>Wolf Position</Label>
-                <Select value={wolfPosition} onValueChange={(v) => handleWolfPositionChange(v as 'first' | 'last')}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="last">Wolf tees off Last</SelectItem>
-                    <SelectItem value="first">Wolf tees off First</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>Wolf Position</Label>
+              <Select 
+                value={wolfPosition} 
+                onValueChange={(v) => handleWolfPositionChange(v as 'first' | 'last')}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="last">Wolf tees off Last</SelectItem>
+                  <SelectItem value="first">Wolf tees off First</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Lone Wolf Win Points</Label>
-                <Select value={loneWolfWinPoints.toString()} onValueChange={handleLoneWolfWinChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6].map(n => (
-                      <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>Lone Wolf Win Points</Label>
+              <Select 
+                value={loneWolfWinPoints.toString()} 
+                onValueChange={handleLoneWolfWinChange}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6].map(n => (
+                    <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Lone Wolf Loss Points (per opponent)</Label>
-                <Select value={loneWolfLossPoints.toString()} onValueChange={handleLoneWolfLossChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6].map(n => (
-                      <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>Lone Wolf Loss Points (per opponent)</Label>
+              <Select 
+                value={loneWolfLossPoints.toString()} 
+                onValueChange={handleLoneWolfLossChange}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6].map(n => (
+                    <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Team Win Points (per player)</Label>
-                <Select value={teamWinPoints.toString()} onValueChange={handleTeamWinChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6].map(n => (
-                      <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label>Team Win Points (per player)</Label>
+              <Select 
+                value={teamWinPoints.toString()} 
+                onValueChange={handleTeamWinChange}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6].map(n => (
+                    <SelectItem key={n} value={n.toString()}>{n} points</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            </CardContent>
-          </Card>
-        )}
+          </CardContent>
+        </Card>
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
@@ -386,7 +415,7 @@ export default function WolfSettings() {
         leaving={leaving}
       />
 
-      {gameId && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && <WolfBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
 
       {game && (
         <WolfCompletionModal

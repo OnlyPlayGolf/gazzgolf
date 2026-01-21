@@ -29,7 +29,7 @@ import { ScrambleCompletionDialog } from "@/components/ScrambleCompletionDialog"
 export default function ScrambleSettings() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('scramble', gameId);
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [minDrives, setMinDrives] = useState<string>('none');
@@ -226,7 +226,7 @@ export default function ScrambleSettings() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center pb-20">
         <p>Loading...</p>
-        {gameId && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -298,12 +298,20 @@ export default function ScrambleSettings() {
           />
         )}
 
-        {/* Game Rules - Hidden for spectators */}
-        {!isSpectator && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between text-lg">
-                <span>Game Rules</span>
+        {/* Game Rules - Visible for all but locked for spectators or when edit window expired */}
+        <Card className={(isSpectator || (isEditWindowExpired ?? false)) ? 'opacity-90' : ''}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-primary" />
+                Game Rules
+                {(isSpectator || (isEditWindowExpired ?? false)) && (
+                  <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
+                    (Locked)
+                  </span>
+                )}
+              </div>
+              {!(isSpectator || (isEditWindowExpired ?? false)) && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -312,44 +320,52 @@ export default function ScrambleSettings() {
                 >
                   <Settings size={16} />
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Minimum drives per player</Label>
+                <p className="text-xs text-muted-foreground">Require each player's drive to be used</p>
+              </div>
+              <Select 
+                value={minDrives} 
+                onValueChange={handleMinDrivesChange}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {false && (
               <div className="flex items-center justify-between">
-                <div>
-                  <Label>Minimum drives per player</Label>
-                  <p className="text-xs text-muted-foreground">Require each player's drive to be used</p>
-                </div>
-                <Select value={minDrives} onValueChange={handleMinDrivesChange}>
+                <Label>Scoring Type</Label>
+                <Select 
+                  value={scoringType} 
+                  onValueChange={handleScoringTypeChange}
+                  disabled={isSpectator || (isEditWindowExpired ?? false)}
+                >
                   <SelectTrigger className="w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="gross">Gross</SelectItem>
+                    <SelectItem value="net">Net</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-              {false && (
-                <div className="flex items-center justify-between">
-                  <Label>Scoring Type</Label>
-                  <Select value={scoringType} onValueChange={handleScoringTypeChange}>
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gross">Gross</SelectItem>
-                      <SelectItem value="net">Net</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
@@ -395,7 +411,7 @@ export default function ScrambleSettings() {
         />
       )}
 
-      <ScrambleBottomTabBar gameId={gameId!} isSpectator={isSpectator} />
+      <ScrambleBottomTabBar gameId={gameId!} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />
     </div>
   );
 }

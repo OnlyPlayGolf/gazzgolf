@@ -8,7 +8,7 @@ import { GameHeader } from "@/components/GameHeader";
 
 export default function MatchPlayInfo() {
   const { gameId } = useParams();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('match_play', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {

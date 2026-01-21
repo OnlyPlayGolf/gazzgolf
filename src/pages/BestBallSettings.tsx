@@ -164,7 +164,7 @@ export default function BestBallSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function BestBallSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -342,7 +342,7 @@ export default function BestBallSettings() {
         leaving={leaving}
       />
 
-      {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

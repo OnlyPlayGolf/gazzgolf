@@ -9,7 +9,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 
 export default function SkinsInfo() {
   const { roundId } = useParams();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('skins', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('skins', roundId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {

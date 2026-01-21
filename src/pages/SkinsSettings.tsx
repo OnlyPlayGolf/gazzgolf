@@ -54,7 +54,7 @@ export default function SimpleSkinsSettings() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('skins', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('skins', roundId);
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [players, setPlayers] = useState<SkinsPlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -288,7 +288,7 @@ export default function SimpleSkinsSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />}
+        {roundId && <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -350,15 +350,20 @@ export default function SimpleSkinsSettings() {
           />
         )}
 
-        {/* Game Settings - Hidden for spectators */}
-        {!isSpectator && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Settings size={20} className="text-primary" />
-                  Game Settings
-                </div>
+        {/* Game Settings - Visible for all but locked for spectators or when edit window expired */}
+        <Card className={(isSpectator || (isEditWindowExpired ?? false)) ? 'opacity-90' : ''}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-primary" />
+                Game Settings
+                {(isSpectator || (isEditWindowExpired ?? false)) && (
+                  <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
+                    (Locked)
+                  </span>
+                )}
+              </div>
+              {!(isSpectator || (isEditWindowExpired ?? false)) && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -367,82 +372,86 @@ export default function SimpleSkinsSettings() {
                 >
                   <Settings size={16} />
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <StrokePlayToggle gameId={roundId} gameType="skins" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <StrokePlayToggle gameId={roundId} gameType="skins" disabled={isSpectator || (isEditWindowExpired ?? false)} />
 
-              {/* Default Tee */}
-              <div className="space-y-2">
-                <Label>Default Tee Box</Label>
-                <TeeSelector
-                  value={teeColor}
-                  onValueChange={handleTeeChange}
-                  teeCount={5}
-                  courseTeeNames={null}
-                />
-              </div>
+            {/* Default Tee */}
+            <div className="space-y-2">
+              <Label>Default Tee Box</Label>
+              <TeeSelector
+                value={teeColor}
+                onValueChange={handleTeeChange}
+                teeCount={5}
+                courseTeeNames={null}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              />
+            </div>
 
-              {/* Skin Value */}
-              <div className="space-y-2">
-                <Label>Skin Value</Label>
-                <Select 
-                  value={skinValue.toString()} 
-                  onValueChange={handleSkinValueChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select skin value" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 skin per hole</SelectItem>
-                    <SelectItem value="2">2 skins per hole</SelectItem>
-                    <SelectItem value="5">5 skins per hole</SelectItem>
-                    <SelectItem value="10">10 skins per hole</SelectItem>
-                    <SelectItem value="20">20 skins per hole</SelectItem>
-                    <SelectItem value="50">50 skins per hole</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Skin Value */}
+            <div className="space-y-2">
+              <Label>Skin Value</Label>
+              <Select 
+                value={skinValue.toString()} 
+                onValueChange={handleSkinValueChange}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select skin value" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 skin per hole</SelectItem>
+                  <SelectItem value="2">2 skins per hole</SelectItem>
+                  <SelectItem value="5">5 skins per hole</SelectItem>
+                  <SelectItem value="10">10 skins per hole</SelectItem>
+                  <SelectItem value="20">20 skins per hole</SelectItem>
+                  <SelectItem value="50">50 skins per hole</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Carryover toggle */}
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="space-y-0.5">
-                  <Label htmlFor="carryover">Carryover</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Ties carry the skin to the next hole
-                  </p>
-                </div>
-                <Switch
-                  id="carryover"
-                  checked={carryoverEnabled}
-                  onCheckedChange={handleCarryoverChange}
-                />
+            {/* Carryover toggle */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="carryover">Carryover</Label>
+                <p className="text-xs text-muted-foreground">
+                  Ties carry the skin to the next hole
+                </p>
               </div>
+              <Switch
+                id="carryover"
+                checked={carryoverEnabled}
+                onCheckedChange={handleCarryoverChange}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              />
+            </div>
 
-              {/* Mulligans */}
-              <div className="space-y-2">
-                <Label>Mulligans per Player</Label>
-                <Select 
-                  value={mulligansPerPlayer.toString()} 
-                  onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select mulligans" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No mulligans</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="9">1 per 9 holes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            {/* Mulligans */}
+            <div className="space-y-2">
+              <Label>Mulligans per Player</Label>
+              <Select 
+                value={mulligansPerPlayer.toString()} 
+                onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select mulligans" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
@@ -490,7 +499,7 @@ export default function SimpleSkinsSettings() {
         />
       )}
 
-      <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} />
+      <SkinsBottomTabBar roundId={roundId!} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />
     </div>
   );
 }

@@ -49,7 +49,7 @@ export default function CopenhagenFeed() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('copenhagen', gameId);
   const { isAdmin } = useGameAdminStatus('copenhagen', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -546,7 +546,7 @@ export default function CopenhagenFeed() {
         )}
       </div>
 
-      {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       
       {/* Scorecard Comments Sheet */}
       {selectedScorecardPlayerName && (

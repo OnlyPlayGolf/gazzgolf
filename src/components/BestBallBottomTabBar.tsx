@@ -4,9 +4,10 @@ import { Pencil, Info, Newspaper, List, Settings } from "lucide-react";
 interface BestBallBottomTabBarProps {
   gameId: string;
   isSpectator?: boolean;
+  isEditWindowExpired?: boolean;
 }
 
-export function BestBallBottomTabBar({ gameId, isSpectator = false }: BestBallBottomTabBarProps) {
+export function BestBallBottomTabBar({ gameId, isSpectator = false, isEditWindowExpired = false }: BestBallBottomTabBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -18,7 +19,8 @@ export function BestBallBottomTabBar({ gameId, isSpectator = false }: BestBallBo
     { id: "settings", label: "Settings", icon: Settings, path: `/best-ball/${gameId}/settings`, hideForSpectator: false },
   ];
 
-  const tabs = isSpectator ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
+  // Hide "Enter score" tab for spectators OR when edit window has expired
+  const tabs = (isSpectator || isEditWindowExpired) ? allTabs.filter(tab => !tab.hideForSpectator) : allTabs;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">

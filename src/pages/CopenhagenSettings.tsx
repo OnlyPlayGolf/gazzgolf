@@ -31,7 +31,7 @@ export default function CopenhagenSettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('copenhagen', gameId);
   const [game, setGame] = useState<CopenhagenGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -232,7 +232,7 @@ export default function CopenhagenSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -320,26 +320,33 @@ export default function CopenhagenSettings() {
           />
         )}
 
-        {/* Game Settings - Hidden for spectators */}
-        {!isSpectator && (<Card>
+        {/* Game Settings - Visible for all but locked for spectators or when edit window expired */}
+        <Card className={(isSpectator || (isEditWindowExpired ?? false)) ? 'opacity-90' : ''}>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-lg">
               <div className="flex items-center gap-2">
                 <Settings size={20} className="text-primary" />
                 Game Settings
+                {(isSpectator || (isEditWindowExpired ?? false)) && (
+                  <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
+                    (Locked)
+                  </span>
+                )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/game-settings/copenhagen/${gameId}?returnPath=/copenhagen/${gameId}/settings`)}
-                className="h-8 w-8"
-              >
-                <Settings size={16} />
-              </Button>
+              {!(isSpectator || (isEditWindowExpired ?? false)) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`/game-settings/copenhagen/${gameId}?returnPath=/copenhagen/${gameId}/settings`)}
+                  className="h-8 w-8"
+                >
+                  <Settings size={16} />
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <StrokePlayToggle gameId={gameId} gameType="copenhagen" />
+            <StrokePlayToggle gameId={gameId} gameType="copenhagen" disabled={isSpectator || (isEditWindowExpired ?? false)} />
 
 
             {/* Mulligans */}
@@ -348,6 +355,7 @@ export default function CopenhagenSettings() {
               <Select 
                 value={mulligansPerPlayer.toString()} 
                 onValueChange={(value) => setMulligansPerPlayer(parseInt(value))}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select mulligans" />
@@ -379,6 +387,7 @@ export default function CopenhagenSettings() {
                 id="gimmes"
                 checked={gimmesEnabled}
                 onCheckedChange={setGimmesEnabled}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
               />
             </div>
 
@@ -394,11 +403,11 @@ export default function CopenhagenSettings() {
                 id="sweep"
                 checked={sweepRuleEnabled}
                 onCheckedChange={setSweepRuleEnabled}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
               />
             </div>
           </CardContent>
         </Card>
-        )}
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
@@ -443,7 +452,7 @@ export default function CopenhagenSettings() {
         />
       )}
 
-      {gameId && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

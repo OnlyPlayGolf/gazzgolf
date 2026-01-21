@@ -290,9 +290,9 @@ export default function RoundSettings() {
   const renderBottomTabBar = () => {
     if (!roundId || isSpectatorLoading) return null;
     if (round?.origin === "skins") {
-      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />;
     }
-    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />;
   };
 
   if (loading || !round || isSpectatorLoading) {

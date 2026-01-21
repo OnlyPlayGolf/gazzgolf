@@ -60,7 +60,7 @@ export function GolfScoreDisplay({ score, par, className, size = "sm" }: GolfSco
             "flex items-center justify-center font-bold text-white",
             config.container,
             config.borderRadius,
-            "bg-orange-500"
+            "bg-amber-500"
           )}
         >
           {score}

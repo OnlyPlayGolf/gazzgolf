@@ -113,7 +113,7 @@ export default function MatchPlayPlay() {
   const { toast } = useToast();
   
   // Check spectator status - redirect if not a participant or edit window expired
-  const { isSpectator, isLoading: spectatorLoading } = useIsSpectator('match_play', gameId);
+  const { isSpectator, isLoading: spectatorLoading, isEditWindowExpired } = useIsSpectator('match_play', gameId);
   
   useEffect(() => {
     if (!spectatorLoading && isSpectator && gameId) {
@@ -287,7 +287,7 @@ export default function MatchPlayPlay() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading game...</div>
-        {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -296,7 +296,7 @@ export default function MatchPlayPlay() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -516,7 +516,7 @@ export default function MatchPlayPlay() {
 
       </div>
 
-      {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !spectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

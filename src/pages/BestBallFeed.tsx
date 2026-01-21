@@ -47,7 +47,7 @@ export default function BestBallFeed() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('best_ball', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('best_ball', gameId);
   const { isAdmin } = useGameAdminStatus('best_ball', gameId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -587,7 +587,7 @@ export default function BestBallFeed() {
         scorecardPlayerName={selectedScorecardPlayerName}
       />
 
-      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <BestBallBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

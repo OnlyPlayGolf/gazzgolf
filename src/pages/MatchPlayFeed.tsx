@@ -49,7 +49,7 @@ export default function MatchPlayFeed() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('match_play', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('match_play', gameId);
   const { isAdmin } = useGameAdminStatus('match_play', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -551,7 +551,7 @@ export default function MatchPlayFeed() {
           </div>
         )}
       </div>
-      {gameId && !isSpectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       
       {/* Scorecard Comments Sheet */}
       {selectedScorecardPlayerName && (

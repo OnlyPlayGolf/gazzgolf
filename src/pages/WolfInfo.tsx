@@ -9,7 +9,7 @@ import { GameHeader } from "@/components/GameHeader";
 
 export default function WolfInfo() {
   const { gameId } = useParams();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('wolf', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('wolf', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {

@@ -45,7 +45,7 @@ export default function CopenhagenLeaderboard() {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('copenhagen', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('copenhagen', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'copenhagen');
   const { isAdmin } = useGameAdminStatus('copenhagen', gameId);
 
@@ -475,7 +475,7 @@ export default function CopenhagenLeaderboard() {
         )}
       </div>
 
-      {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <CopenhagenBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
 
       {/* Completion Dialog */}
       {game && (

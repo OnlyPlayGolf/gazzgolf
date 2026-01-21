@@ -9,7 +9,7 @@ import { GameHeader } from "@/components/GameHeader";
 
 export default function UmbriagioInfo() {
   const { gameId } = useParams();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('umbriago', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function UmbriagioInfo() {
           </CardContent>
         </Card>
       </div>
-      {gameId && !isSpectatorLoading && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

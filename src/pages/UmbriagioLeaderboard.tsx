@@ -53,7 +53,7 @@ export default function UmbriagioLeaderboard() {
   const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   
   // Check spectator status - for sorting leaderboard by position
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('umbriago', gameId);
   const { strokePlayEnabled } = useStrokePlayEnabled(gameId, 'umbriago');
   const { isAdmin } = useGameAdminStatus('umbriago', gameId);
 
@@ -847,7 +847,7 @@ export default function UmbriagioLeaderboard() {
           </>
         )}
       </div>
-      {gameId && !isSpectatorLoading && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

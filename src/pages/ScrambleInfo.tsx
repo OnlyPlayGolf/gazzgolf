@@ -9,7 +9,7 @@ import { GameHeader } from "@/components/GameHeader";
 
 export default function ScrambleInfo() {
   const { gameId } = useParams<{ gameId: string }>();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('scramble', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('scramble', gameId);
   const [gameData, setGameData] = useState<{ round_name: string | null; course_name: string } | null>(null);
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function ScrambleInfo() {
         </Card>
       </div>
 
-      {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && !isSpectatorLoading && <ScrambleBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

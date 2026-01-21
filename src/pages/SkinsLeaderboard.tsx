@@ -78,7 +78,7 @@ export default function SkinsLeaderboard() {
   const [leaderboardMode, setLeaderboardMode] = useState<LeaderboardMode>('primary');
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   
-  const { isSpectator } = useIsSpectator('skins', roundId);
+  const { isSpectator, isEditWindowExpired } = useIsSpectator('skins', roundId);
   const { strokePlayEnabled } = useStrokePlayEnabled(roundId, 'skins');
   const { isAdmin } = useGameAdminStatus('skins', roundId);
 

@@ -30,7 +30,7 @@ export default function MatchPlaySettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator } = useIsSpectator('match_play', gameId);
+  const { isSpectator, isEditWindowExpired } = useIsSpectator('match_play', gameId);
   const [game, setGame] = useState<MatchPlayGame | null>(null);
   const [allGamesInEvent, setAllGamesInEvent] = useState<MatchPlayGame[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,7 +161,7 @@ export default function MatchPlaySettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -170,7 +170,7 @@ export default function MatchPlaySettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Game not found</div>
-        {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -279,14 +279,20 @@ export default function MatchPlaySettings() {
           />
         )}
 
-        {/* Game Settings Card - Hidden for spectators */}
-        {!isSpectator && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  Game Settings
-                </div>
+        {/* Game Settings Card - Visible for all but locked for spectators or when edit window expired */}
+        <Card className={(isSpectator || (isEditWindowExpired ?? false)) ? 'opacity-90' : ''}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Settings size={20} className="text-primary" />
+                Game Settings
+                {(isSpectator || (isEditWindowExpired ?? false)) && (
+                  <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
+                    (Locked)
+                  </span>
+                )}
+              </div>
+              {!(isSpectator || (isEditWindowExpired ?? false)) && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -295,38 +301,39 @@ export default function MatchPlaySettings() {
                 >
                   <Settings size={16} />
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <StrokePlayToggle gameId={gameId} gameType="match_play" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <StrokePlayToggle gameId={gameId} gameType="match_play" disabled={isSpectator || (isEditWindowExpired ?? false)} />
 
 
-              <div className="space-y-2">
-                <Label htmlFor="mulligans">Mulligans per Player</Label>
-                <Select 
-                  value={(game.mulligans_per_player || 0).toString()} 
-                  onValueChange={handleUpdateMulligans}
-                >
-                  <SelectTrigger id="mulligans">
-                    <SelectValue placeholder="Select mulligans" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No mulligans</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="9">1 per 9 holes</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Number of allowed do-overs per player
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            <div className="space-y-2">
+              <Label htmlFor="mulligans">Mulligans per Player</Label>
+              <Select 
+                value={(game.mulligans_per_player || 0).toString()} 
+                onValueChange={handleUpdateMulligans}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger id="mulligans">
+                  <SelectValue placeholder="Select mulligans" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No mulligans</SelectItem>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="9">1 per 9 holes</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Number of allowed do-overs per player
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
@@ -360,7 +367,7 @@ export default function MatchPlaySettings() {
         leaving={leaving}
       />
 
-      {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && <MatchPlayBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

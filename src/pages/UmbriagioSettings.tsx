@@ -75,7 +75,7 @@ export default function UmbriagioSettings() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('umbriago', gameId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('umbriago', gameId);
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -313,7 +313,7 @@ export default function UmbriagioSettings() {
     return (
       <div className="min-h-screen pb-24 flex items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
-        {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+        {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
       </div>
     );
   }
@@ -363,15 +363,20 @@ export default function UmbriagioSettings() {
           />
         )}
 
-        {/* Game Settings - Hidden for spectators */}
-        {!isSpectator && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Dice5 size={20} className="text-primary" />
-                  Game Settings
-                </div>
+        {/* Game Settings - Visible for all but locked for spectators or when edit window expired */}
+        <Card className={(isSpectator || (isEditWindowExpired ?? false)) ? 'opacity-90' : ''}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between text-lg">
+              <div className="flex items-center gap-2">
+                <Dice5 size={20} className="text-primary" />
+                Game Settings
+                {(isSpectator || (isEditWindowExpired ?? false)) && (
+                  <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
+                    (Locked)
+                  </span>
+                )}
+              </div>
+              {!(isSpectator || (isEditWindowExpired ?? false)) && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -380,54 +385,62 @@ export default function UmbriagioSettings() {
                 >
                   <Settings size={16} />
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <StrokePlayToggle gameId={gameId} gameType="umbriago" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <StrokePlayToggle gameId={gameId} gameType="umbriago" disabled={isSpectator || (isEditWindowExpired ?? false)} />
 
-              <div className="space-y-2">
-                <Label>Rolls per Team</Label>
-                <Select value={rollsPerTeam.toString()} onValueChange={handleRollsChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No Rolls</SelectItem>
-                    <SelectItem value="1">1 Roll</SelectItem>
-                    <SelectItem value="2">2 Rolls</SelectItem>
-                    <SelectItem value="3">3 Rolls</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  A Roll halves your team's points and doubles the next hole
-                </p>
-              </div>
+            <div className="space-y-2">
+              <Label>Rolls per Team</Label>
+              <Select 
+                value={rollsPerTeam.toString()} 
+                onValueChange={handleRollsChange}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No Rolls</SelectItem>
+                  <SelectItem value="1">1 Roll</SelectItem>
+                  <SelectItem value="2">2 Rolls</SelectItem>
+                  <SelectItem value="3">3 Rolls</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                A Roll halves your team's points and doubles the next hole
+              </p>
+            </div>
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <RefreshCw size={14} />
-                  Team Rotation
-                </Label>
-                <Select value={teamRotation} onValueChange={(v) => handleRotationChange(v as TeamRotation)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Rotation (Fixed Teams)</SelectItem>
-                    <SelectItem value="every9">Rotate Every 9 Holes</SelectItem>
-                    <SelectItem value="every6">Rotate Every 6 Holes</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {teamRotation === "none" && "Teams stay the same for all 18 holes"}
-                  {teamRotation === "every9" && "Teams shuffle randomly after 9 holes"}
-                  {teamRotation === "every6" && "Teams shuffle randomly every 6 holes"}
-                </p>
-                {getRotationPreview()}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <RefreshCw size={14} />
+                Team Rotation
+              </Label>
+              <Select 
+                value={teamRotation} 
+                onValueChange={(v) => handleRotationChange(v as TeamRotation)}
+                disabled={isSpectator || (isEditWindowExpired ?? false)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Rotation (Fixed Teams)</SelectItem>
+                  <SelectItem value="every9">Rotate Every 9 Holes</SelectItem>
+                  <SelectItem value="every6">Rotate Every 6 Holes</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {teamRotation === "none" && "Teams stay the same for all 18 holes"}
+                {teamRotation === "every9" && "Teams shuffle randomly after 9 holes"}
+                {teamRotation === "every6" && "Teams shuffle randomly every 6 holes"}
+              </p>
+              {getRotationPreview()}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Round Actions - Hidden for spectators */}
         {!isSpectator && (
@@ -462,7 +475,7 @@ export default function UmbriagioSettings() {
         leaving={leaving}
       />
 
-      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} />}
+      {gameId && <UmbriagioBottomTabBar gameId={gameId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />}
     </div>
   );
 }

@@ -38,7 +38,7 @@ export function ScorecardScoreCell({ score, par, className }: ScorecardScoreCell
   // Eagle or better (2+ under par) - solid orange circle
   if (diff <= -2) {
     return (
-      <span className={cn(baseShape, circleStyle, "bg-orange-500", className)}>
+      <span className={cn(baseShape, circleStyle, "bg-amber-500", className)}>
         {score}
       </span>
     );
@@ -105,7 +105,7 @@ export function getScoreStyling(score: number | null | undefined, par: number): 
 
   // Eagle or better
   if (diff <= -2) {
-    return { bgColor: 'bg-orange-500', textColor: 'text-white', shape: 'circle', isSpecial: true };
+    return { bgColor: 'bg-amber-500', textColor: 'text-white', shape: 'circle', isSpecial: true };
   }
 
   // Birdie

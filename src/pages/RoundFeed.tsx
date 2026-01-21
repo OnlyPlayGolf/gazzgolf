@@ -51,7 +51,7 @@ export default function RoundFeed() {
   const { roundId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isSpectator, isLoading: isSpectatorLoading } = useIsSpectator('round', roundId);
+  const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('round', roundId);
   const { isAdmin } = useGameAdminStatus('round', roundId);
   
   // Use standardized navigation hook for back button behavior (still used for some deep links)
@@ -316,9 +316,9 @@ export default function RoundFeed() {
   const renderBottomTabBar = () => {
     if (!roundId || isSpectatorLoading) return null;
     if (origin === "skins") {
-      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+      return <SkinsBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />;
     }
-    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} />;
+    return <RoundBottomTabBar roundId={roundId} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />;
   };
 
   return (

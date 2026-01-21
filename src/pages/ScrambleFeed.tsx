@@ -33,6 +33,7 @@ interface Comment {
 export default function ScrambleFeed() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { isSpectator, isEditWindowExpired } = useIsSpectator('scramble', gameId);
   const { isAdmin } = useGameAdminStatus('scramble', gameId);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -276,7 +277,7 @@ export default function ScrambleFeed() {
         )}
       </div>
 
-      <ScrambleBottomTabBar gameId={gameId!} />
+      <ScrambleBottomTabBar gameId={gameId!} isSpectator={isSpectator} isEditWindowExpired={isEditWindowExpired} />
       
       {/* Scorecard Comments Sheet */}
       {selectedScorecardPlayerName && (

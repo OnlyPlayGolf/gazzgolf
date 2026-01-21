@@ -55,6 +55,7 @@ export default function StrokePlaySetup() {
   // Game settings
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
+  const [handicapEnabled, setHandicapEnabled] = useState(false);
   const [statsMode, setStatsMode] = useState<StatsMode>('none');
 
   // Sheet states
@@ -145,6 +146,7 @@ export default function StrokePlaySetup() {
         const settings = JSON.parse(savedSettings);
         setMulligansPerPlayer(settings.mulligansPerPlayer || 0);
         setGimmesEnabled(settings.gimmesEnabled || false);
+        setHandicapEnabled(settings.handicapEnabled || false);
       }
     };
     loadData();

@@ -116,7 +116,7 @@ const HoleTracker = () => {
     if (isEditWindowExpired) {
       toast({
         title: "Editing locked",
-        description: "Scores cannot be edited 12 hours after the round was started.",
+        description: "Scores cannot be edited 24 hours after the round was started.",
         variant: "destructive",
       });
       return;
