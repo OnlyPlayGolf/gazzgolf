@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target, ChevronLeft, ChevronRight } from "lucide-react";
@@ -57,6 +57,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -110,6 +111,9 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       putts: null
     })));
     setCurrentIndex(0);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    isSavingRef.current = false;
     onTabChange?.('score');
   };
 
@@ -154,6 +158,11 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
   };
 
   const handleSaveScore = async (finalAttempts: PuttAttempt[]) => {
+    // Prevent duplicate saves
+    if (savedResultId || isSavingRef.current) {
+      return;
+    }
+
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -164,6 +173,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       return;
     }
 
+    isSavingRef.current = true;
     const totalPutts = finalAttempts.reduce((sum, att) => sum + (att.putts || 0), 0);
 
     try {
@@ -216,6 +226,8 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
         variant: "destructive",
       });
       setIsActive(false);
+    } finally {
+      isSavingRef.current = false;
     }
   };
 
@@ -266,9 +278,9 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
               </Button>
             </div>
 
-            <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
+            <div className="p-3 bg-primary/10 rounded-md text-center border border-primary/20">
               <div className="text-sm text-muted-foreground">Distance</div>
-              <div className="text-2xl font-bold text-primary">{currentDistance}</div>
+              <div className="text-2xl font-bold text-foreground">{currentDistance}</div>
             </div>
 
             <div className="text-center">

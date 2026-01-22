@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
@@ -27,6 +27,8 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
   const [drillStarted, setDrillStarted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [savedScore, setSavedScore] = useState(0);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -64,6 +66,82 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
     });
   }, []);
 
+  // Computed values
+  const totalShots = progress.reduce((sum, p) => sum + p.attempts.length, 0);
+  const completedDistances = progress.filter(p => p.completed).length;
+  const isCompleted = completedDistances === distances.length;
+
+  const saveScore = async (): Promise<void> => {
+    if (!userId) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your score.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (totalShots === 0) {
+      toast({
+        title: "No attempts recorded",
+        description: "Please complete at least one shot before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Capture the score before any state changes
+    const scoreToSave = totalShots;
+
+    try {
+      const drillTitle = "Åberg's Wedge Ladder";
+      
+      const { data: drillData, error: drillError } = await supabase
+        .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
+
+      if (drillError) throw drillError;
+
+      const { data: insertedResult, error: insertError } = await supabase
+        .from('drill_results')
+        .insert([{
+          drill_id: drillData,
+          user_id: userId,
+          total_points: scoreToSave,
+          attempts_json: progress as any,
+        }])
+        .select('id')
+        .single();
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Score saved!",
+        description: `Your score of ${scoreToSave} shots has been saved.`,
+      });
+
+      setSavedScore(scoreToSave);
+      setSavedResultId(insertedResult?.id || null);
+      localStorage.removeItem(STORAGE_KEY);
+      setShowCompletionDialog(true);
+    } catch (error: any) {
+      toast({
+        title: "Error saving score",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Auto-save when drill is completed
+  useEffect(() => {
+    if (isCompleted && userId && !showCompletionDialog && !savedResultId && drillStarted && totalShots > 0 && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [isCompleted, userId, showCompletionDialog, savedResultId, drillStarted, totalShots]);
+
   const initializeDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
     const initialProgress: DistanceProgress[] = distances.map(distance => ({
@@ -74,6 +152,10 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
     setProgress(initialProgress);
     setCurrentDistanceIndex(0);
     setDrillStarted(true);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    setSavedScore(0);
+    isSavingRef.current = false;
     onTabChange?.('score');
   };
 
@@ -104,7 +186,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
       } else {
         toast({
           title: "Drill completed!",
-          description: "All distances completed. Save your score below.",
+          description: "All distances completed!",
         });
       }
     }
@@ -114,68 +196,6 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
     initializeDrill();
   };
 
-  const totalShots = progress.reduce((sum, p) => sum + p.attempts.length, 0);
-  const completedDistances = progress.filter(p => p.completed).length;
-  const isCompleted = completedDistances === distances.length;
-
-  const saveScore = async () => {
-    if (!userId) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in to save your score.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (totalShots === 0) {
-      toast({
-        title: "No attempts recorded",
-        description: "Please complete at least one shot before saving.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Capture the score before any state changes
-    const scoreToSave = totalShots;
-
-    try {
-      const drillTitle = "Åberg's Wedge Ladder";
-      
-      const { data: drillData, error: drillError } = await supabase
-        .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
-
-      if (drillError) throw drillError;
-
-      const { error: insertError } = await supabase
-        .from('drill_results')
-        .insert([{
-          drill_id: drillData,
-          user_id: userId,
-          total_points: scoreToSave,
-          attempts_json: progress as any,
-        }]);
-
-      if (insertError) throw insertError;
-
-      toast({
-        title: "Score saved!",
-        description: `Your score of ${scoreToSave} shots has been saved.`,
-      });
-
-      setSavedScore(scoreToSave);
-      localStorage.removeItem(STORAGE_KEY);
-      setShowCompletionDialog(true);
-    } catch (error: any) {
-      toast({
-        title: "Error saving score",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
   if (!drillStarted) {
     return null;
   }
@@ -183,11 +203,23 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
   return (
     <div className="p-4 pb-24 space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Progress: {completedDistances}/{distances.length} distances</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Total shots: {totalShots}</p>
+        <CardContent className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Total Shots:</span>
+            <span className="font-bold text-2xl">{totalShots}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Completed:</span>
+            <span>{completedDistances}/{distances.length}</span>
+          </div>
+          
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            className="w-full"
+          >
+            Reset Drill
+          </Button>
         </CardContent>
       </Card>
 
@@ -264,62 +296,13 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
         </CardContent>
       </Card>
 
-      {totalShots > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Shots:</span>
-              <span className="font-bold text-2xl">{totalShots}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Completed:</span>
-              <span>{completedDistances}/{distances.length}</span>
-            </div>
-            
-            {userId ? (
-              <div className="space-y-2">
-                <Button
-                  onClick={saveScore}
-                  className="w-full"
-                  disabled={totalShots === 0}
-                >
-                  Save Score
-                </Button>
-                <Button
-                  onClick={handleReset}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Reset Drill
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-sm text-center text-muted-foreground">
-                  Sign in to save your score
-                </p>
-                <Button
-                  onClick={handleReset}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Reset Drill
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
         drillTitle="Åberg's Wedge Ladder"
         score={savedScore}
         unit="shots"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
           onTabChange?.('leaderboard');

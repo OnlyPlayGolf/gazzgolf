@@ -65,6 +65,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
   const [shotSequence, setShotSequence] = useState<Array<{ shape: 'draw' | 'fade'; club: string }>>([]);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
   
   // Current shot input state
   const [correctShape, setCorrectShape] = useState<string>("");
@@ -240,14 +241,16 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
         return;
       }
 
-      const { error: saveError } = await (supabase as any)
+      const { data: insertedResult, error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
           user_id: userId,
           total_points: finalScore,
           attempts_json: finalAttempts
-        });
+        })
+        .select('id')
+        .single();
 
       if (saveError) {
         console.error('Error saving score:', saveError);
@@ -262,6 +265,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
 
       setIsActive(false);
       setFinalScore(finalScore);
+      setSavedResultId(insertedResult?.id || null);
       setShowCompletionDialog(true);
       localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
@@ -427,6 +431,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
         drillTitle="Shot Shape Master"
         score={finalScore}
         unit="points"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

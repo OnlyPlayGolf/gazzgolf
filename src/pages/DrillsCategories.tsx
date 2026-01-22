@@ -30,7 +30,7 @@ const DrillsCategories = () => {
             >
               <ArrowLeft size={20} />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">Test & Drills</h1>
+            <h1 className="text-2xl font-bold text-foreground">Tests & Drills</h1>
           </div>
           <p className="text-muted-foreground">Choose your skill area to practice</p>
         </div>

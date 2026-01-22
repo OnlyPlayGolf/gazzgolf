@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Users, Plus, ChevronDown, ChevronUp, Info, Calendar } from "lucide-react";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,9 +47,13 @@ export default function GameSettingsDetail() {
   const [roundType, setRoundType] = useState<RoundType>("fun_practice");
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [showCourseDialog, setShowCourseDialog] = useState(false);
+  const [numberOfRounds, setNumberOfRounds] = useState(1);
+  const [numberOfRoundsText, setNumberOfRoundsText] = useState<string>("1");
+  const [eventId, setEventId] = useState<string | null>(null);
   
   // Groups & Players state
   const [groups, setGroups] = useState<PlayerGroup[]>([]);
+  const [groupsSnapshot, setGroupsSnapshot] = useState<PlayerGroup[]>([]); // Snapshot for rollback on error
   const [courseTeeNames, setCourseTeeNames] = useState<Record<string, string> | null>(null);
   const [availableCourseTees, setAvailableCourseTees] = useState<string[]>(STANDARD_TEE_OPTIONS.map(t => t.value));
   
@@ -60,10 +65,19 @@ export default function GameSettingsDetail() {
   // Use refs to always have latest values for save (avoids stale closure issues)
   const defaultTeeRef = useRef(defaultTee);
   const groupsRef = useRef(groups);
+  const eventIdRef = useRef<string | null>(null);
+  const numberOfRoundsRef = useRef(numberOfRounds);
   
   // Keep refs in sync with state
   useEffect(() => { defaultTeeRef.current = defaultTee; }, [defaultTee]);
   useEffect(() => { groupsRef.current = groups; }, [groups]);
+  useEffect(() => { eventIdRef.current = eventId; }, [eventId]);
+  useEffect(() => { numberOfRoundsRef.current = numberOfRounds; }, [numberOfRounds]);
+  
+  // Sync numberOfRoundsText with numberOfRounds
+  useEffect(() => {
+    setNumberOfRoundsText(String(numberOfRounds));
+  }, [numberOfRounds]);
   
   // Player management
   const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
@@ -241,9 +255,31 @@ export default function GameSettingsDetail() {
       setRoundName(roundData.round_name || "");
       setDatePlayed(roundData.date_played);
       setSelectedHoles(roundData.holes_played === 18 ? "18" : roundData.starting_hole === 1 ? "front9" : "back9");
-      setDefaultTee(roundData.tee_set || "white");
+      const teeValue = roundData.tee_set || "white";
+      setDefaultTee(teeValue);
+      defaultTeeRef.current = teeValue; // Update ref immediately
       setRoundType((roundData.round_type as RoundType) || "fun_practice");
       setGameFormat(gameType === "skins" ? "skins" : "stroke_play");
+
+      // Fetch and count rounds by event_id
+      if (roundData.event_id) {
+        setEventId(roundData.event_id);
+        eventIdRef.current = roundData.event_id; // Update ref immediately
+        const { data: eventRounds, count } = await supabase
+          .from("rounds")
+          .select("*", { count: "exact" })
+          .eq("event_id", roundData.event_id);
+        
+        if (count !== null) {
+          setNumberOfRounds(count);
+        } else {
+          setNumberOfRounds(1);
+        }
+      } else {
+        setEventId(null);
+        eventIdRef.current = null; // Update ref immediately
+        setNumberOfRounds(1);
+      }
 
       // Fetch course by name
       const { data: courseData } = await supabase
@@ -259,10 +295,17 @@ export default function GameSettingsDetail() {
       }
     }
 
-    // Fetch players
+    // Fetch game groups
+    const { data: gameGroups } = await supabase
+      .from("game_groups")
+      .select("*")
+      .eq("round_id", gameId)
+      .order("group_index");
+
+    // Fetch players with group_id
     const { data: playersData } = await supabase
       .from("round_players")
-      .select("id, user_id, handicap, tee_color, guest_name, is_guest")
+      .select("id, user_id, handicap, tee_color, guest_name, is_guest, group_id")
       .eq("round_id", gameId);
 
     if (playersData && playersData.length > 0) {
@@ -274,7 +317,15 @@ export default function GameSettingsDetail() {
 
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
       
-      const players: Player[] = playersData.map(p => {
+      // Create a map from player identifier to group_id for efficient lookup
+      const playerToGroupMap = new Map<string, string | null>();
+      playersData.forEach(p => {
+        const playerKey = p.user_id || p.id;
+        playerToGroupMap.set(playerKey, p.group_id);
+        console.log(`Loaded player ${p.user_id || p.guest_name || p.id} with group_id: ${p.group_id}`);
+      });
+      
+      const allPlayers: Player[] = playersData.map(p => {
         const profile = p.user_id ? profilesMap.get(p.user_id) : null;
         return {
           odId: p.user_id || p.id,
@@ -287,9 +338,55 @@ export default function GameSettingsDetail() {
         };
       });
 
-      setGroups([{ ...createDefaultGroup(0), players }]);
+      // Reconstruct groups from database
+      if (gameGroups && gameGroups.length > 0) {
+        console.log(`Loading ${gameGroups.length} groups from database:`, gameGroups.map(gg => ({ id: gg.id, name: gg.group_name })));
+        // Multiple groups exist - organize players by group_id
+        const reconstructedGroups: PlayerGroup[] = gameGroups.map((gg, idx) => {
+          const groupPlayers = allPlayers.filter(p => {
+            const playerGroupId = playerToGroupMap.get(p.odId);
+            const matches = playerGroupId === gg.id;
+            if (matches) {
+              console.log(`Assigning player ${p.displayName} to group ${gg.group_name} (id: ${gg.id})`);
+            }
+            return matches;
+          });
+          
+          console.log(`Group ${gg.group_name} (id: ${gg.id}) has ${groupPlayers.length} players`);
+          
+          return {
+            id: gg.id,
+            name: gg.group_name || `Group ${String.fromCharCode(65 + idx)}`,
+            players: groupPlayers,
+            startingHole: gg.starting_hole || undefined,
+            teeTime: gg.tee_time || undefined,
+          };
+        });
+        
+        // Find players without a group_id and assign them to the first group
+        const playersWithoutGroup = allPlayers.filter(p => {
+          const playerGroupId = playerToGroupMap.get(p.odId);
+          return !playerGroupId;
+        });
+        
+        // Add unassigned players to the first group
+        if (playersWithoutGroup.length > 0 && reconstructedGroups.length > 0) {
+          reconstructedGroups[0].players = [...reconstructedGroups[0].players, ...playersWithoutGroup];
+        }
+        
+        setGroups(reconstructedGroups);
+        setGroupsSnapshot(JSON.parse(JSON.stringify(reconstructedGroups))); // Initialize snapshot
+      } else {
+        // No groups exist (single group case) - put all players in one group
+        const singleGroup = [{ ...createDefaultGroup(0), players: allPlayers }];
+        setGroups(singleGroup);
+        setGroupsSnapshot(JSON.parse(JSON.stringify(singleGroup))); // Initialize snapshot
+      }
     } else {
-      setGroups([createDefaultGroup(0)]);
+      // No players - create empty default group
+      const emptyGroup = [createDefaultGroup(0)];
+      setGroups(emptyGroup);
+      setGroupsSnapshot(JSON.parse(JSON.stringify(emptyGroup))); // Initialize snapshot
     }
   };
 
@@ -571,13 +668,278 @@ export default function GameSettingsDetail() {
     }
   };
 
+  const handleNumberOfRoundsChange = async (newCount: number) => {
+    if (newCount === numberOfRounds) return;
+    
+    const previousCount = numberOfRounds; // Store previous value for revert
+    
+    try {
+      // Get current round data to use as template
+      const { data: currentRound } = await supabase
+        .from("rounds")
+        .select("*")
+        .eq("id", gameId)
+        .single();
+
+      if (!currentRound) {
+        toast({ title: "Error", description: "Could not find current round", variant: "destructive" });
+        // Revert state
+        setNumberOfRounds(previousCount);
+        return;
+      }
+
+      const currentCount = previousCount; // Use previousCount instead of numberOfRounds
+      const currentEventId = eventIdRef.current;
+      let newEventId = currentEventId;
+
+      // If going from 1 to multiple rounds, create event_id
+      if (currentCount === 1 && newCount > 1) {
+        newEventId = crypto.randomUUID();
+        // Update current round with event_id
+        await supabase
+          .from("rounds")
+          .update({ event_id: newEventId })
+          .eq("id", gameId);
+        setEventId(newEventId);
+        eventIdRef.current = newEventId; // Update ref immediately
+      }
+
+      if (newCount > currentCount) {
+        // Create new rounds
+        const roundsToCreate = newCount - currentCount;
+        // Use values from currentRound to ensure consistency with database
+        const holesPlayed = currentRound.holes_played;
+        const startingHole = currentRound.starting_hole || 1;
+        const currentDefaultTee = currentRound.tee_set || defaultTeeRef.current;
+        const currentRoundType = (currentRound.round_type as RoundType) || roundType;
+
+        // Get existing rounds to determine next round number
+        const { data: existingRounds } = newEventId
+          ? await supabase
+              .from("rounds")
+              .select("round_name")
+              .eq("event_id", newEventId)
+              .order("created_at", { ascending: true })
+          : { data: [] };
+
+        // Extract round numbers from existing round names (e.g., "Round 1" -> 1)
+        const existingRoundNames = (existingRounds || []).map(r => r.round_name).filter(Boolean) as string[];
+        const roundNumbers = existingRoundNames
+          .map(name => {
+            const match = name.match(/Round\s+(\d+)/i);
+            return match ? parseInt(match[1], 10) : 0;
+          })
+          .filter(num => num > 0);
+        
+        const maxRoundNum = roundNumbers.length > 0 ? Math.max(...roundNumbers) : existingRoundNames.length;
+
+        for (let i = 0; i < roundsToCreate; i++) {
+          const roundNum = maxRoundNum + i + 1;
+          const newRoundName = `Round ${roundNum}`;
+
+          const { data: newRound, error: createError } = await supabase
+            .from("rounds")
+            .insert({
+              user_id: currentRound.user_id,
+              course_name: currentRound.course_name,
+              date_played: currentRound.date_played,
+              holes_played: holesPlayed,
+              starting_hole: startingHole,
+              tee_set: currentDefaultTee,
+              round_type: currentRoundType,
+              round_name: newRoundName,
+              event_id: newEventId,
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Error creating round:", createError);
+            toast({ 
+              title: "Error", 
+              description: `Failed to create round ${roundNum}`, 
+              variant: "destructive" 
+            });
+            return;
+          }
+
+          // Copy players from current round to new round
+          const { data: currentPlayers } = await supabase
+            .from("round_players")
+            .select("*")
+            .eq("round_id", gameId);
+
+          if (currentPlayers && currentPlayers.length > 0) {
+            const playersToInsert = currentPlayers.map(p => ({
+              round_id: newRound.id,
+              user_id: p.user_id,
+              handicap: p.handicap,
+              tee_color: p.tee_color,
+              is_guest: p.is_guest,
+              guest_name: p.guest_name,
+              group_id: p.group_id,
+            }));
+
+            await supabase
+              .from("round_players")
+              .insert(playersToInsert);
+          }
+        }
+
+        // Refresh round count from database to ensure accuracy
+        if (newEventId) {
+          const { count } = await supabase
+            .from("rounds")
+            .select("*", { count: "exact", head: true })
+            .eq("event_id", newEventId);
+          if (count !== null) {
+            setNumberOfRounds(count);
+          } else {
+            setNumberOfRounds(newCount);
+          }
+        } else {
+          setNumberOfRounds(newCount);
+        }
+        toast({ title: "Success", description: `Created ${roundsToCreate} new round${roundsToCreate !== 1 ? "s" : ""}` });
+      } else if (newCount < currentCount) {
+        // Delete rounds (starting from the last ones)
+        const roundsToDelete = currentCount - newCount;
+
+        if (!newEventId) {
+          toast({ 
+            title: "Error", 
+            description: "Cannot delete rounds from single-round game", 
+            variant: "destructive" 
+          });
+          // Revert state
+          setNumberOfRounds(previousCount);
+          return;
+        }
+
+        // Get all rounds in the event, ordered by created_at
+        const { data: allEventRounds } = await supabase
+          .from("rounds")
+          .select("id")
+          .eq("event_id", newEventId)
+          .order("created_at", { ascending: false });
+
+        if (!allEventRounds || allEventRounds.length === 0) {
+          toast({ 
+            title: "Error", 
+            description: "Could not find rounds to delete", 
+            variant: "destructive" 
+          });
+          // Revert state
+          setNumberOfRounds(previousCount);
+          return;
+        }
+
+        // Get the last N rounds (excluding the current one if it's in the list)
+        const roundsToDeleteIds = allEventRounds
+          .filter(r => r.id !== gameId)
+          .slice(0, roundsToDelete)
+          .map(r => r.id);
+
+        // Check if any of these rounds have scores
+        for (const roundId of roundsToDeleteIds) {
+          const { count: holesCount } = await supabase
+            .from("holes")
+            .select("*", { count: "exact", head: true })
+            .eq("round_id", roundId);
+
+          if (holesCount && holesCount > 0) {
+            toast({ 
+              title: "Cannot delete", 
+              description: "Some rounds have scores and cannot be deleted", 
+              variant: "destructive" 
+            });
+            // Revert state
+            setNumberOfRounds(previousCount);
+            return;
+          }
+        }
+
+        // Delete round_players first (cascade should handle this, but being explicit)
+        for (const roundId of roundsToDeleteIds) {
+          await supabase
+            .from("round_players")
+            .delete()
+            .eq("round_id", roundId);
+        }
+
+        // Delete the rounds
+        const { error: deleteRoundsError } = await supabase
+          .from("rounds")
+          .delete()
+          .in("id", roundsToDeleteIds);
+
+        if (deleteRoundsError) {
+          console.error("Error deleting rounds:", deleteRoundsError);
+          throw deleteRoundsError;
+        }
+
+        // Refresh round count from database to ensure accuracy
+        if (newCount === 1) {
+          // If we're back to 1 round, remove event_id
+          await supabase
+            .from("rounds")
+            .update({ event_id: null })
+            .eq("id", gameId);
+          setEventId(null);
+          eventIdRef.current = null; // Update ref immediately
+          setNumberOfRounds(1);
+        } else {
+          // Refresh count from database
+          const { count } = await supabase
+            .from("rounds")
+            .select("*", { count: "exact", head: true })
+            .eq("event_id", newEventId);
+          if (count !== null) {
+            setNumberOfRounds(count);
+          } else {
+            setNumberOfRounds(newCount);
+          }
+        }
+        toast({ title: "Success", description: `Deleted ${roundsToDelete} round${roundsToDelete !== 1 ? "s" : ""}` });
+      }
+    } catch (error: any) {
+      console.error("Error changing number of rounds:", error);
+      // Revert state on error
+      setNumberOfRounds(previousCount);
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to change number of rounds", 
+        variant: "destructive" 
+      });
+    }
+  };
+
   const handleBack = async () => {
-    await saveChanges();
-    navigate(returnPath);
+    // Ensure numberOfRounds is saved if it was changed
+    const raw = numberOfRoundsText.trim();
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    const finalValue = Number.isFinite(parsed) && parsed > 0 ? parsed : numberOfRounds;
+    
+    if (finalValue !== numberOfRounds) {
+      await handleNumberOfRoundsChange(finalValue);
+      // Wait a bit to ensure database operations complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    try {
+      await saveChanges();
+      navigate(returnPath);
+    } catch (error) {
+      // Error already handled in saveChanges, don't navigate if save failed
+      // User can fix the issue and try again
+    }
   };
 
   const saveChanges = async () => {
     setSaving(true);
+    // Create snapshot for rollback on error
+    setGroupsSnapshot(JSON.parse(JSON.stringify(groups)));
+    
     try {
       switch (gameType) {
         case "round":
@@ -605,42 +967,323 @@ export default function GameSettingsDetail() {
           await saveUmbriagioChanges();
           break;
       }
-    } catch (error) {
+      // After successful save, refetch data from DB to ensure state is in sync
+      await fetchGameData();
+      toast({ title: "Success", description: "Changes saved successfully" });
+    } catch (error: any) {
       console.error("Error saving changes:", error);
-      toast({ title: "Error", description: "Failed to save changes", variant: "destructive" });
+      // Rollback to snapshot on error
+      setGroups(groupsSnapshot);
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to save changes. Changes have been reverted.", 
+        variant: "destructive" 
+      });
+      throw error; // Re-throw to allow caller to handle
     } finally {
       setSaving(false);
     }
   };
 
   const saveRoundChanges = async () => {
-    const holesPlayed = selectedHoles === "18" ? 18 : 9;
-    const startingHole = selectedHoles === "back9" ? 10 : 1;
-    const currentDefaultTee = defaultTeeRef.current;
-    const currentGroups = groupsRef.current;
-    
-    await supabase
-      .from("rounds")
-      .update({
-        round_name: roundName || null,
-        date_played: datePlayed,
-        course_name: selectedCourse?.name || "",
-        holes_played: holesPlayed,
-        starting_hole: startingHole,
-        tee_set: currentDefaultTee,
-        round_type: roundType,
-      })
-      .eq("id", gameId);
+    try {
+      const holesPlayed = selectedHoles === "18" ? 18 : 9;
+      const startingHole = selectedHoles === "back9" ? 10 : 1;
+      const currentDefaultTee = defaultTeeRef.current;
+      const currentGroups = groupsRef.current;
+      const currentEventId = eventIdRef.current;
+      
+      const { error: roundUpdateError } = await supabase
+        .from("rounds")
+        .update({
+          round_name: roundName || null,
+          date_played: datePlayed,
+          course_name: selectedCourse?.name || "",
+          holes_played: holesPlayed,
+          starting_hole: startingHole,
+          tee_set: currentDefaultTee,
+          round_type: roundType,
+          event_id: currentEventId,
+        })
+        .eq("id", gameId);
 
-    // Update player tees
-    for (const group of currentGroups) {
-      for (const player of group.players) {
-        await supabase
-          .from("round_players")
-          .update({ tee_color: player.teeColor, handicap: player.handicap })
-          .eq("round_id", gameId)
-          .or(`user_id.eq.${player.odId},id.eq.${player.odId}`);
+      if (roundUpdateError) {
+        console.error("Error updating round:", roundUpdateError);
+        throw roundUpdateError;
       }
+
+    // Fetch existing game groups
+    const { data: existingGroups } = await supabase
+      .from("game_groups")
+      .select("id")
+      .eq("round_id", gameId);
+
+    const existingGroupIds = new Set(existingGroups?.map(g => g.id) || []);
+    const hasMultipleGroups = currentGroups.length > 1;
+
+    console.log(`Saving ${currentGroups.length} groups. hasMultipleGroups: ${hasMultipleGroups}`);
+    console.log('Current groups:', currentGroups.map((g, i) => ({ index: i, name: g.name, id: g.id, playerCount: g.players.length })));
+
+    // Map to store groupId for each group index
+    const groupIdByIndex = new Map<number, string | null>();
+
+    // First pass: Update/create groups and store their IDs
+    for (let i = 0; i < currentGroups.length; i++) {
+      const group = currentGroups[i];
+      let gameGroupId: string | null = null;
+
+      if (hasMultipleGroups) {
+        // Multiple groups - create or update game_groups entry
+        if (group.id && existingGroupIds.has(group.id)) {
+          // Update existing group
+          const { data: updatedGroup, error: updateError } = await supabase
+            .from("game_groups")
+            .update({
+              group_name: group.name,
+              group_index: i,
+              starting_hole: group.startingHole || null,
+              tee_time: group.teeTime || null,
+            })
+            .eq("id", group.id)
+            .select()
+            .single();
+          
+          if (updateError) {
+            console.error("Error updating group:", updateError, { groupId: group.id, groupName: group.name });
+            throw updateError;
+          }
+          
+          if (!updatedGroup) {
+            throw new Error(`Failed to update group: ${group.name}`);
+          }
+          
+          gameGroupId = updatedGroup.id;
+          console.log(`Updated group ${group.name} (index ${i}) with id: ${gameGroupId}`);
+        } else {
+          // Create new group
+          const { data: newGroup, error: insertError } = await supabase
+            .from("game_groups")
+            .insert({
+              round_id: gameId,
+              group_name: group.name,
+              group_index: i,
+              starting_hole: group.startingHole || null,
+              tee_time: group.teeTime || null,
+            })
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error("Error creating group:", insertError, { groupName: group.name, groupIndex: i });
+            throw insertError;
+          }
+          
+          if (!newGroup) {
+            throw new Error(`Failed to create group: ${group.name}`);
+          }
+          
+          gameGroupId = newGroup.id;
+          console.log(`Created new group ${group.name} (index ${i}) with id: ${gameGroupId}`);
+        }
+      }
+      // If single group, gameGroupId remains null (no game_groups entry needed)
+      groupIdByIndex.set(i, gameGroupId);
+    }
+
+    // Validate that all groups have valid IDs when in multiple groups mode
+    if (hasMultipleGroups) {
+      for (let i = 0; i < currentGroups.length; i++) {
+        const gameGroupId = groupIdByIndex.get(i);
+        if (!gameGroupId) {
+          const groupName = currentGroups[i]?.name || `Group ${i + 1}`;
+          console.error(`Group at index ${i} (${groupName}) does not have a valid ID`);
+          throw new Error(`Failed to create/update group: ${groupName}. Please try again.`);
+        }
+      }
+    }
+
+    // Fetch all existing players for this round to track what needs to be inserted/updated/deleted
+    const { data: existingPlayers } = await supabase
+      .from("round_players")
+      .select("id, user_id, is_guest, guest_name")
+      .eq("round_id", gameId);
+
+    // Create maps for quick lookup
+    // Map by user_id for registered players
+    const existingPlayersByUserId = new Map<string, typeof existingPlayers[0]>();
+    // Map by id for guest players (odId matches the round_players.id for guests)
+    const existingPlayersById = new Map<string, typeof existingPlayers[0]>();
+    
+    (existingPlayers || []).forEach(p => {
+      if (p.user_id) {
+        existingPlayersByUserId.set(p.user_id, p);
+      }
+      existingPlayersById.set(p.id, p);
+    });
+
+    // Track which players from DB are still in state (to identify deletions)
+    const playersInState = new Set<string>();
+
+    // Process all players from all groups
+    for (let i = 0; i < currentGroups.length; i++) {
+      const group = currentGroups[i];
+      const gameGroupId = groupIdByIndex.get(i) || null;
+
+      // Process each player in this group
+      for (const player of group.players) {
+        let existingPlayer: typeof existingPlayers[0] | undefined;
+        
+        // Try to find existing player
+        // For registered players: match by user_id
+        if (!player.isTemporary && player.odId) {
+          existingPlayer = existingPlayersByUserId.get(player.odId);
+        }
+        // For guest players: odId is the round_players.id
+        if (!existingPlayer && player.isTemporary) {
+          existingPlayer = existingPlayersById.get(player.odId);
+        }
+
+        if (existingPlayer) {
+          // UPDATE existing player
+          playersInState.add(existingPlayer.id);
+          console.log(`Updating player ${player.displayName} (${player.odId}) in group ${i} (${group.name}) with group_id: ${gameGroupId}`);
+          const { error: updateError } = await supabase
+            .from("round_players")
+            .update({ 
+              tee_color: player.teeColor, 
+              handicap: player.handicap,
+              group_id: gameGroupId,
+            })
+            .eq("id", existingPlayer.id);
+          
+          if (updateError) {
+            console.error("Error updating player:", updateError, { playerId: existingPlayer.id, playerOdId: player.odId, teeColor: player.teeColor, groupId: gameGroupId });
+            throw updateError;
+          }
+        } else {
+          // INSERT new player
+          if (player.isTemporary) {
+            // Guest player
+            console.log(`Inserting guest player ${player.displayName} in group ${i} (${group.name}) with group_id: ${gameGroupId}`);
+            const { data: newPlayer, error: insertError } = await supabase
+              .from("round_players")
+              .insert({
+                round_id: gameId,
+                user_id: null,
+                is_guest: true,
+                guest_name: player.displayName,
+                tee_color: player.teeColor,
+                handicap: player.handicap,
+                group_id: gameGroupId,
+              })
+              .select()
+              .single();
+            
+            if (insertError) {
+              console.error("Error inserting guest player:", insertError, { groupId: gameGroupId });
+              throw insertError;
+            }
+            
+            if (newPlayer) {
+              playersInState.add(newPlayer.id);
+              // Update player's odId in state to match database ID for future saves
+              // Note: This doesn't update the current groups state, but that's okay
+              // since we're about to navigate away. The next time the page loads,
+              // the player will have the correct ID from the database.
+            }
+          } else {
+            // Registered player
+            console.log(`Inserting registered player ${player.displayName} (${player.odId}) in group ${i} (${group.name}) with group_id: ${gameGroupId}`);
+            const { data: newPlayer, error: insertError } = await supabase
+              .from("round_players")
+              .insert({
+                round_id: gameId,
+                user_id: player.odId,
+                is_guest: false,
+                tee_color: player.teeColor,
+                handicap: player.handicap,
+                group_id: gameGroupId,
+              })
+              .select()
+              .single();
+            
+            if (insertError) {
+              console.error("Error inserting registered player:", insertError, { playerOdId: player.odId, teeColor: player.teeColor });
+              throw insertError;
+            }
+            
+            if (newPlayer) {
+              playersInState.add(newPlayer.id);
+            }
+          }
+        }
+      }
+    }
+
+    // DELETE players that are in DB but not in state
+    const playersToDelete = (existingPlayers || []).filter(p => !playersInState.has(p.id));
+    if (playersToDelete.length > 0) {
+      const idsToDelete = playersToDelete.map(p => p.id);
+      const { error: deleteError } = await supabase
+        .from("round_players")
+        .delete()
+        .in("id", idsToDelete);
+      
+      if (deleteError) {
+        console.error("Error deleting players:", deleteError);
+        throw deleteError;
+      }
+    }
+
+    // Delete groups that no longer exist
+    // Only delete groups that are explicitly removed (exist in DB but not in current state)
+    // Don't delete all groups just because current state shows 1 group - preserve existing groups
+    // 
+    // Key fix: Only delete groups if we're in "multiple groups mode" (hasMultipleGroups = true)
+    // OR if we're explicitly transitioning from multiple to single (had groups before, now have 1)
+    // This prevents accidental deletion when state incorrectly shows 1 group due to loading issues
+    if (hasMultipleGroups) {
+      // Multiple groups mode - delete groups that are no longer in current state
+      const currentGroupIds = new Set(
+        currentGroups
+          .map(g => g.id)
+          .filter((id): id is string => id !== undefined && existingGroupIds.has(id))
+      );
+
+      for (const existingId of existingGroupIds) {
+        if (!currentGroupIds.has(existingId)) {
+          await supabase
+            .from("game_groups")
+            .delete()
+            .eq("id", existingId);
+        }
+      }
+    } else {
+      // Single group mode
+      // Only delete all groups if:
+      // 1. We had groups before (existingGroupIds.size > 0), AND
+      // 2. The current single group doesn't have an ID that matches any existing group
+      // This means the user explicitly consolidated groups
+      const currentGroupHasId = currentGroups.length > 0 && 
+        currentGroups[0]?.id && 
+        existingGroupIds.has(currentGroups[0].id);
+      
+      // If we had multiple groups before and now have 1, and that 1 group doesn't match
+      // any existing group, then user consolidated - delete all groups
+      // Otherwise, preserve existing groups (they might be needed if state is incorrect)
+      if (existingGroupIds.size > 1 && !currentGroupHasId) {
+        // User explicitly consolidated from multiple to single - delete all groups
+        await supabase
+          .from("game_groups")
+          .delete()
+          .eq("round_id", gameId);
+      }
+      // If existingGroupIds.size <= 1, we never had multiple groups, so nothing to delete
+      // If currentGroupHasId is true, the single group matches an existing group, so preserve it
+    }
+    } catch (error: any) {
+      console.error("Error in saveRoundChanges:", error);
+      throw error; // Re-throw to be caught by saveChanges wrapper
     }
   };
 
@@ -705,6 +1348,7 @@ export default function GameSettingsDetail() {
   const saveBestBallChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
     const currentGroups = groupsRef.current;
+    const currentDefaultTee = defaultTeeRef.current;
     
     // Get current game data to preserve team structure
     const { data: currentGame } = await supabase
@@ -735,6 +1379,7 @@ export default function GameSettingsDetail() {
           date_played: datePlayed,
           course_name: selectedCourse?.name || "",
           holes_played: holesPlayed,
+          tee_set: currentDefaultTee,
           team_a_players: updatedTeamA,
           team_b_players: updatedTeamB,
         })
@@ -768,6 +1413,7 @@ export default function GameSettingsDetail() {
 
   const saveWolfChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const currentDefaultTee = defaultTeeRef.current;
     
     await supabase
       .from("wolf_games" as any)
@@ -776,13 +1422,15 @@ export default function GameSettingsDetail() {
         date_played: datePlayed,
         course_name: selectedCourse?.name || "",
         holes_played: holesPlayed,
-        tee_set: defaultTee,
+        tee_set: currentDefaultTee,
       })
       .eq("id", gameId);
   };
 
   const saveScrambleChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const currentDefaultTee = defaultTeeRef.current;
+    const currentGroups = groupsRef.current;
     
     // Get current game data to preserve team structure
     const { data: currentGame } = await supabase
@@ -793,7 +1441,7 @@ export default function GameSettingsDetail() {
 
     if (currentGame) {
       const teams = Array.isArray(currentGame.teams) ? currentGame.teams : [];
-      const allPlayers = groups[0]?.players || [];
+      const allPlayers = currentGroups[0]?.players || [];
       
       // Update tees in existing team structures
       const updatedTeams = teams.map((team: any) => ({
@@ -811,7 +1459,7 @@ export default function GameSettingsDetail() {
           date_played: datePlayed,
           course_name: selectedCourse?.name || "",
           holes_played: holesPlayed,
-          tee_set: defaultTee,
+          tee_set: currentDefaultTee,
           teams: updatedTeams,
         })
         .eq("id", gameId);
@@ -820,6 +1468,7 @@ export default function GameSettingsDetail() {
 
   const saveUmbriagioChanges = async () => {
     const holesPlayed = selectedHoles === "18" ? 18 : 9;
+    const currentDefaultTee = defaultTeeRef.current;
     
     await supabase
       .from("umbriago_games")
@@ -828,7 +1477,7 @@ export default function GameSettingsDetail() {
         date_played: datePlayed,
         course_name: selectedCourse?.name || "",
         holes_played: holesPlayed,
-        tee_set: defaultTee,
+        tee_set: currentDefaultTee,
       })
       .eq("id", gameId);
   };
@@ -868,6 +1517,48 @@ export default function GameSettingsDetail() {
     ));
   };
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const sourceGroupId = result.source.droppableId;
+    const destGroupId = result.destination.droppableId;
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+
+    if (sourceGroupId === destGroupId) {
+      // Reorder within same group
+      setGroups(prev => prev.map(g => {
+        if (g.id !== sourceGroupId) return g;
+        const newPlayers = [...g.players];
+        const [removed] = newPlayers.splice(sourceIndex, 1);
+        newPlayers.splice(destIndex, 0, removed);
+        return { ...g, players: newPlayers };
+      }));
+    } else {
+      // Move player between groups
+      setGroups(prev => {
+        const sourceGroup = prev.find(g => g.id === sourceGroupId);
+        if (!sourceGroup) return prev;
+
+        const player = sourceGroup.players[sourceIndex];
+        if (!player) return prev;
+
+        return prev.map(g => {
+          if (g.id === sourceGroupId) {
+            // Remove from source group
+            return { ...g, players: g.players.filter((_, idx) => idx !== sourceIndex) };
+          } else if (g.id === destGroupId) {
+            // Add to destination group at the correct index
+            const newPlayers = [...g.players];
+            newPlayers.splice(destIndex, 0, player);
+            return { ...g, players: newPlayers };
+          }
+          return g;
+        });
+      });
+    }
+  };
+
   const handlePlayerClick = (groupId: string, player: Player) => {
     setEditingPlayer(player);
     setEditingPlayerGroupId(groupId);
@@ -904,16 +1595,31 @@ export default function GameSettingsDetail() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background border-b">
-        <div className="flex items-center p-4">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBack}
+              className="mr-2"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <h1 className="text-lg font-semibold">Game Formats</h1>
+          </div>
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleBack}
-            className="mr-2"
+            onClick={async () => {
+              try {
+                await saveChanges();
+              } catch (error) {
+                // Error already handled in saveChanges
+              }
+            }}
+            disabled={saving}
+            className="ml-auto"
           >
-            <ArrowLeft size={20} />
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
-          <h1 className="text-lg font-semibold">Game Formats</h1>
         </div>
       </div>
 
@@ -1028,6 +1734,50 @@ export default function GameSettingsDetail() {
               </div>
             </div>
 
+            {/* Number of Rounds */}
+            {gameFormat === "stroke_play" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Number of Rounds</Label>
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    min={1}
+                    value={numberOfRoundsText}
+                    onChange={(e) => {
+                      const nextRaw = e.target.value;
+                      // Allow empty while typing; allow digits only
+                      if (nextRaw !== "" && !/^\d+$/.test(nextRaw)) return;
+                      
+                      setNumberOfRoundsText(nextRaw);
+                      
+                      const parsed = nextRaw ? parseInt(nextRaw, 10) : NaN;
+                      if (Number.isFinite(parsed) && parsed > 0) {
+                        setNumberOfRounds(parsed);
+                      }
+                    }}
+                    onBlur={async () => {
+                      const raw = numberOfRoundsText.trim();
+                      const parsed = raw ? parseInt(raw, 10) : NaN;
+                      const next = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+                      
+                      // If value changed, save it
+                      if (next !== numberOfRounds) {
+                        await handleNumberOfRoundsChange(next);
+                      } else {
+                        // Reset text to current value if invalid
+                        setNumberOfRoundsText(String(numberOfRounds));
+                      }
+                    }}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {numberOfRounds} round{numberOfRounds !== 1 ? "s" : ""} in this game
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Round Type */}
             <div className="space-y-1.5">
               <Label className="text-xs">Round Type</Label>
@@ -1062,27 +1812,30 @@ export default function GameSettingsDetail() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="space-y-3">
-              {groups.map((group, index) => (
-                <GroupCard
-                  key={group.id}
-                  group={group}
-                  groupIndex={index}
-                  availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
-                  courseTeeNames={courseTeeNames}
-                  canDelete={groups.length > 1}
-                  onUpdateName={(name) => updateGroupName(group.id, name)}
-                  onAddPlayer={() => {
-                    setActiveGroupId(group.id);
-                    setAddPlayerDialogOpen(true);
-                  }}
-                  onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
-                  onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
-                  onDeleteGroup={() => deleteGroup(group.id)}
-                  onPlayerClick={(player) => handlePlayerClick(group.id, player)}
-                />
-              ))}
-            </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <div className="space-y-3">
+                {groups.map((group, index) => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    groupIndex={index}
+                    availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
+                    courseTeeNames={courseTeeNames}
+                    canDelete={groups.length > 1}
+                    onUpdateName={(name) => updateGroupName(group.id, name)}
+                    onAddPlayer={() => {
+                      setActiveGroupId(group.id);
+                      setAddPlayerDialogOpen(true);
+                    }}
+                    onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
+                    onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
+                    onDeleteGroup={() => deleteGroup(group.id)}
+                    onPlayerClick={(player) => handlePlayerClick(group.id, player)}
+                    enableDrag={true}
+                  />
+                ))}
+              </div>
+            </DragDropContext>
             
             <Button variant="outline" className="w-full" onClick={addGroup}>
               <Plus className="w-4 h-4 mr-2" />

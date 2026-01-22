@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Info, Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { TopNavBar } from "@/components/TopNavBar";
@@ -522,6 +523,54 @@ function RoundsPlayContent() {
           : g
       )
     }));
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const sourceGroupId = result.source.droppableId;
+    const destGroupId = result.destination.droppableId;
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+
+    if (sourceGroupId === destGroupId) {
+      // Reorder within same group
+      setSetupState(prev => ({
+        ...prev,
+        groups: prev.groups.map(g => {
+          if (g.id !== sourceGroupId) return g;
+          const newPlayers = [...g.players];
+          const [removed] = newPlayers.splice(sourceIndex, 1);
+          newPlayers.splice(destIndex, 0, removed);
+          return { ...g, players: newPlayers };
+        })
+      }));
+    } else {
+      // Move player between groups
+      setSetupState(prev => {
+        const sourceGroup = prev.groups.find(g => g.id === sourceGroupId);
+        if (!sourceGroup) return prev;
+
+        const player = sourceGroup.players[sourceIndex];
+        if (!player) return prev;
+
+        return {
+          ...prev,
+          groups: prev.groups.map(g => {
+            if (g.id === sourceGroupId) {
+              // Remove from source group
+              return { ...g, players: g.players.filter((_, idx) => idx !== sourceIndex) };
+            } else if (g.id === destGroupId) {
+              // Add to destination group at the correct index
+              const newPlayers = [...g.players];
+              newPlayers.splice(destIndex, 0, player);
+              return { ...g, players: newPlayers };
+            }
+            return g;
+          })
+        };
+      });
+    }
   };
 
   // Player edit handlers
@@ -1087,27 +1136,30 @@ function RoundsPlayContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="space-y-3">
-              {setupState.groups.map((group, index) => (
-                <GroupCard
-                  key={group.id}
-                  group={group}
-                  groupIndex={index}
-                  availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
-                  courseTeeNames={courseTeeNames}
-                  canDelete={setupState.groups.length > 1}
-                  onUpdateName={(name) => updateGroupName(group.id, name)}
-                  onAddPlayer={() => {
-                    setActiveGroupId(group.id);
-                    setAddPlayerDialogOpen(true);
-                  }}
-                  onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
-                  onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
-                  onDeleteGroup={() => deleteGroup(group.id)}
-                  onPlayerClick={(player) => handlePlayerClick(group.id, player)}
-                />
-              ))}
-            </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <div className="space-y-3">
+                {setupState.groups.map((group, index) => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    groupIndex={index}
+                    availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
+                    courseTeeNames={courseTeeNames}
+                    canDelete={setupState.groups.length > 1}
+                    onUpdateName={(name) => updateGroupName(group.id, name)}
+                    onAddPlayer={() => {
+                      setActiveGroupId(group.id);
+                      setAddPlayerDialogOpen(true);
+                    }}
+                    onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
+                    onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
+                    onDeleteGroup={() => deleteGroup(group.id)}
+                    onPlayerClick={(player) => handlePlayerClick(group.id, player)}
+                    enableDrag={true}
+                  />
+                ))}
+              </div>
+            </DragDropContext>
             
             <Button variant="outline" className="w-full" onClick={addGroup}>
               <Plus className="w-4 h-4 mr-2" />

@@ -86,6 +86,45 @@ export default function RoundLeaderboard() {
     }
   }, [roundId]);
 
+  // Set up realtime subscriptions for players and groups changes
+  useEffect(() => {
+    if (!roundId) return;
+
+    const channel = supabase
+      .channel(`round-leaderboard-participants-${roundId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'round_players',
+          filter: `round_id=eq.${roundId}`,
+        },
+        () => {
+          // Refetch round data when players change
+          fetchRoundData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'game_groups',
+          filter: `round_id=eq.${roundId}`,
+        },
+        () => {
+          // Refetch round data when groups change
+          fetchRoundData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [roundId]);
+
   const fetchRoundData = async () => {
     try {
       // Fetch round details
@@ -463,8 +502,8 @@ export default function RoundLeaderboard() {
           // This sorted array is always used for position calculation
           const sortedForRanking = [...playersWithTotals].sort((a, b) => a.scoreToPar - b.scoreToPar);
           
-          // Display order: sorted in spectator mode, original order otherwise
-          const displayOrder = isSpectator ? sortedForRanking : playersWithTotals;
+          // Display order: always use sorted array (lowest scores on top)
+          const displayOrder = sortedForRanking;
           
           // Helper for position with ties (always use sortedForRanking for correct positions)
           const getPositionLabel = (scoreToPar: number, hasConceded: boolean): string => {
@@ -600,27 +639,6 @@ export default function RoundLeaderboard() {
                             {backNine.length > 0 ? '' : (hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
                           </TableCell>
                         </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Net</TableCell>
-                          {frontNine.map(hole => {
-                            const scores = getScoresForRound(player, selectedRoundId || "");
-                            const score = scores.get(hole.hole_number);
-                            const hasScore = scores.has(hole.hole_number);
-                            return (
-                              <TableCell key={hole.hole_number} className="text-center px-0 py-1">
-                                {hasScore && score && score > 0 ? (
-                                  <ScorecardScoreCell score={score} par={hole.par} />
-                                ) : hasScore ? (score === -1 ? '–' : '') : ''}
-                              </TableCell>
-                            );
-                          })}
-                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                            {hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (frontTotals.totalScore > 0 ? frontTotals.totalScore : '')}
-                          </TableCell>
-                          <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                            {backNine.length > 0 ? '' : (hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : ''))}
-                          </TableCell>
-                        </TableRow>
                       </TableBody>
                     </Table>
                   </div>
@@ -686,27 +704,6 @@ export default function RoundLeaderboard() {
                                     {hasMulligan && <RotateCcw size={8} className="text-amber-500" />}
                                   </div>
                                 </TableCell>
-                              );
-                            })}
-                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                              {hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (backTotals.totalScore > 0 ? backTotals.totalScore : '')}
-                            </TableCell>
-                            <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">
-                              {hasPlayerConcededAnyHole(player, selectedRoundId) ? '-' : (overallTotals.totalScore > 0 ? overallTotals.totalScore : '')}
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium text-muted-foreground text-[10px] px-0.5 py-1 bg-background">Net</TableCell>
-                            {backNine.map(hole => {
-                              const scores = getScoresForRound(player, selectedRoundId || "");
-                              const score = scores.get(hole.hole_number);
-                              const hasScore = scores.has(hole.hole_number);
-                              return (
-                                <TableCell key={hole.hole_number} className="text-center px-0 py-1">
-                                  {hasScore && score && score > 0 ? (
-                                    <ScorecardScoreCell score={score} par={hole.par} />
-                                  ) : hasScore ? (score === -1 ? '–' : '') : ''}
-                              </TableCell>
                               );
                             })}
                             <TableCell className="text-center font-bold bg-muted text-[10px] px-0 py-1">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +26,7 @@ export function DrillCompletionDialog({
   resultId,
   onContinue,
 }: DrillCompletionDialogProps) {
+  const navigate = useNavigate();
   const [isPersonalBest, setIsPersonalBest] = useState(false);
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
@@ -121,7 +123,8 @@ export function DrillCompletionDialog({
       setShowShareForm(false);
       setComment("");
       onOpenChange(false);
-      onContinue();
+      navigate('/categories');
+      onContinue?.();
     } catch (error) {
       console.error('Error sharing result:', error);
       toast({ title: "Error", description: "Failed to share result", variant: "destructive" });
@@ -132,7 +135,8 @@ export function DrillCompletionDialog({
 
   const handleContinue = () => {
     onOpenChange(false);
-    onContinue();
+    navigate('/categories');
+    onContinue?.();
   };
 
   return (
@@ -207,7 +211,7 @@ export function DrillCompletionDialog({
                 className="flex-1"
                 onClick={handleContinue}
               >
-                Continue
+                Done
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>

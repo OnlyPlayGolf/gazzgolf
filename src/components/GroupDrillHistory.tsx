@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProfilePhoto } from "@/components/ProfilePhoto";
-import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -282,10 +281,9 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
                   <p className="font-bold text-primary">
                     {result.total_points} {getScoreUnit(result.drill_title)}
                   </p>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar size={10} />
-                    {format(new Date(result.created_at), 'MMM d')}
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(result.created_at), 'MMM d, yyyy')}
+                  </p>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target, ChevronLeft, ChevronRight } from "lucide-react";
@@ -26,6 +26,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   const initializeStations = () => {
@@ -56,6 +57,18 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
       ...station,
       shots: null,
     }));
+  };
+
+  const startDrill = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    const newStations = initializeStations();
+    setStations(newStations);
+    setCurrentIndex(0);
+    setDrillStarted(true);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    setFinalScore(0);
+    isSavingRef.current = false;
   };
 
   useEffect(() => {
@@ -91,49 +104,15 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     });
   }, []);
 
-  const startDrill = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    const newStations = initializeStations();
-    setStations(newStations);
-    setCurrentIndex(0);
-    setDrillStarted(true);
-  };
-
-  const submitScore = (score: number) => {
-    const updatedStations = [...stations];
-    updatedStations[currentIndex].shots = score;
-    setStations(updatedStations);
-
-    // Check if all 18 are complete
-    const allComplete = updatedStations.every(s => s.shots !== null);
-    if (allComplete) {
-      // Drill complete - show summary
-    } else if (currentIndex < stations.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
+  // Computed values
+  const isComplete = drillStarted && stations.every(s => s.shots !== null);
+  const totalShots = stations.reduce((sum, s) => sum + (s.shots || 0), 0);
+  const upAndDowns = stations.filter(s => s.shots === 1).length;
   const currentStation = stations[currentIndex];
   const canGoBack = currentIndex > 0;
   const canGoForward = currentIndex < 17 && currentStation?.shots !== null;
 
-  const handleBack = () => {
-    if (canGoBack) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const handleForward = () => {
-    if (canGoForward) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const isComplete = drillStarted && stations.every(s => s.shots !== null);
-  const totalShots = stations.reduce((sum, s) => sum + (s.shots || 0), 0);
-  const upAndDowns = stations.filter(s => s.shots === 1).length;
-
-  const saveScore = async () => {
+  const saveScore = async (): Promise<void> => {
     if (!userId) {
       toast({
         title: "Please sign in",
@@ -191,6 +170,42 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
     }
   };
 
+  // Auto-save when drill is completed
+  useEffect(() => {
+    if (isComplete && userId && !showCompletionDialog && !savedResultId && drillStarted && totalShots > 0 && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [isComplete, userId, showCompletionDialog, savedResultId, drillStarted, totalShots]);
+
+  const submitScore = (score: number) => {
+    const updatedStations = [...stations];
+    updatedStations[currentIndex].shots = score;
+    setStations(updatedStations);
+
+    // Check if all 18 are complete
+    const allComplete = updatedStations.every(s => s.shots !== null);
+    if (allComplete) {
+      // Drill complete - show summary
+    } else if (currentIndex < stations.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (canGoBack) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleForward = () => {
+    if (canGoForward) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
   if (!drillStarted) {
     return null;
   }
@@ -235,19 +250,6 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
               ))}
             </div>
           </div>
-
-          {userId ? (
-            <Button onClick={saveScore} className="w-full">
-              Save Score
-            </Button>
-          ) : (
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-2">Sign in to save your score</p>
-              <Button onClick={() => window.location.href = '/auth'} variant="outline" className="w-full">
-                Sign In
-              </Button>
-            </div>
-          )}
 
           <Button onClick={startDrill} variant="outline" className="w-full">
             Start New Drill

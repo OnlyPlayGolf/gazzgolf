@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface AggressivePuttingComponentProps {
   onTabChange?: (tab: string) => void;
@@ -34,6 +35,9 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const [totalAttempts, setTotalAttempts] = useState(0);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -82,6 +86,7 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     setIsActive(true);
     setAttempts([{ attemptNumber: 1, distance: distances[0], outcome: null, points: 0 }]);
     setCurrentIndex(0);
+    setShowCompletionDialog(false);
     onTabChange?.('score');
   };
 
@@ -161,14 +166,16 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
         return;
       }
 
-      const { error: saveError } = await (supabase as any)
+      const { data: insertedResult, error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
           user_id: userId,
           total_points: totalAttempts,
           attempts_json: attempts.filter(a => a.outcome !== null),
-        });
+        })
+        .select('id')
+        .single();
 
       if (saveError) {
         console.error('Error saving score:', saveError);
@@ -186,10 +193,11 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
         description: `You completed the drill in ${totalAttempts} putts!`,
       });
       
+      setSavedResultId(insertedResult?.id || null);
+      setTotalAttempts(totalAttempts);
       localStorage.removeItem(STORAGE_KEY);
       setIsActive(false);
-      onScoreSaved?.();
-      onTabChange?.('leaderboard');
+      setShowCompletionDialog(true);
     } catch (error) {
       console.error('Unexpected error:', error);
       toast({
@@ -201,12 +209,14 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
     }
   };
 
-  if (!isActive) {
+  if (!isActive && !showCompletionDialog) {
     return null;
   }
 
   return (
     <div className="space-y-4">
+      {isActive && (
+        <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -317,6 +327,21 @@ const AggressivePuttingComponent = ({ onTabChange, onScoreSaved }: AggressivePut
           </CardContent>
         </Card>
       )}
+        </>
+      )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Aggressive Putting"
+        score={totalAttempts}
+        unit="putts"
+        resultId={savedResultId || undefined}
+        onContinue={() => {
+          onScoreSaved?.();
+          onTabChange?.('leaderboard');
+        }}
+      />
     </div>
   );
 };

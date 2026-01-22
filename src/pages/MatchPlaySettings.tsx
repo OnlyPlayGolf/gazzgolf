@@ -285,7 +285,7 @@ export default function MatchPlaySettings() {
             <CardTitle className="flex items-center justify-between text-lg">
               <div className="flex items-center gap-2">
                 <Settings size={20} className="text-primary" />
-                Game Settings
+                Settings
                 {(isSpectator || (isEditWindowExpired ?? false)) && (
                   <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
                     (Locked)
