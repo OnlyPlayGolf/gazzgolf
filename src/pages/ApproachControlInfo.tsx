@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, TrendingUp } from "lucide-react";
+import { Target } from "lucide-react";
 
 export default function ApproachControlInfo() {
   return (
@@ -39,11 +39,8 @@ export default function ApproachControlInfo() {
           </ul>
         </div>
 
-        <div className="bg-primary text-primary-foreground rounded-lg p-4 space-y-2">
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <TrendingUp size={16} className="text-primary" />
-            Bonus Streak System
-          </h3>
+        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <h3 className="font-semibold text-sm">Bonus Streak System</h3>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• Hitting 3 consecutive 3-pointers activates a bonus streak</li>
             <li>• While active, each additional 3-pointer earns +1 bonus point until a miss ends the streak</li>

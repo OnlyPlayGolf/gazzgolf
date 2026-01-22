@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TeeSelector, STANDARD_TEE_OPTIONS, getTeeDisplayName } from "@/components/TeeSelector";
+import { getTeeDisplayName } from "@/components/TeeSelector";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
@@ -39,9 +39,11 @@ interface RoundData {
 
 interface RoundPlayer {
   id: string;
-  user_id: string;
+  user_id: string | null;
   handicap: number | null;
   tee_color: string | null;
+  is_guest?: boolean;
+  guest_name?: string | null;
   profiles?: {
     display_name: string | null;
     username: string | null;
@@ -74,7 +76,6 @@ export default function RoundSettings() {
   const [currentPlayerRecord, setCurrentPlayerRecord] = useState<RoundPlayer | null>(null);
 
   // Game settings state
-  const [teeColor, setTeeColor] = useState("white");
   const [mulligansPerPlayer, setMulligansPerPlayer] = useState(0);
   const [gimmesEnabled, setGimmesEnabled] = useState(false);
 
@@ -84,10 +85,16 @@ export default function RoundSettings() {
   useEffect(() => {
     if (roundId) {
       fetchRound();
-      fetchProgress();
       loadSettings();
     }
   }, [roundId]);
+
+  // Fetch progress when currentPlayerRecord is available
+  useEffect(() => {
+    if (roundId && currentPlayerRecord?.id) {
+      fetchProgress();
+    }
+  }, [roundId, currentPlayerRecord?.id]);
 
   // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
   useEffect(() => {
@@ -96,8 +103,56 @@ export default function RoundSettings() {
         fetchRound();
       }
     };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && roundId) {
+        fetchRound();
+      }
+    };
     window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [roundId]);
+
+  // Set up realtime subscriptions for players and groups changes
+  useEffect(() => {
+    if (!roundId) return;
+
+    const channel = supabase
+      .channel(`round-settings-participants-${roundId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'round_players',
+          filter: `round_id=eq.${roundId}`,
+        },
+        () => {
+          // Refetch round data when players change
+          fetchRound();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'game_groups',
+          filter: `round_id=eq.${roundId}`,
+        },
+        () => {
+          // Refetch round data when groups change
+          fetchRound();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [roundId]);
 
   const loadSettings = () => {
@@ -154,36 +209,60 @@ export default function RoundSettings() {
 
       if (roundData) {
         setRound(roundData);
-        if (roundData.tee_set) {
-          setTeeColor(roundData.tee_set);
-        }
       }
 
       const { data: playersData } = await supabase
         .from("round_players")
-        .select("id, user_id, handicap, tee_color")
+        .select("id, user_id, handicap, tee_color, is_guest, guest_name")
         .eq("round_id", roundId);
 
       if (playersData && playersData.length > 0) {
-        // Fetch profiles separately
-        const userIds = playersData.map(p => p.user_id);
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("id, display_name, username, avatar_url")
-          .in("id", userIds);
-
-        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        // Separate registered users and guests
+        const registeredPlayerData = playersData.filter(p => !p.is_guest && p.user_id);
+        const guestPlayerData = playersData.filter(p => p.is_guest);
         
-        const playersWithProfiles = playersData.map(p => ({
-          ...p,
-          profiles: profilesMap.get(p.user_id) || null
-        }));
+        let allPlayers: RoundPlayer[] = [];
+        
+        // Fetch profiles for registered users
+        if (registeredPlayerData.length > 0) {
+          const userIds = registeredPlayerData.map(p => p.user_id).filter((id): id is string => id !== null);
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("id, display_name, username, avatar_url")
+            .in("id", userIds);
 
-        setPlayers(playersWithProfiles as RoundPlayer[]);
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+          
+          const playersWithProfiles = registeredPlayerData.map(p => ({
+            ...p,
+            profiles: profilesMap.get(p.user_id!) || null
+          }));
+
+          allPlayers = playersWithProfiles;
+        }
+        
+        // Add guest players
+        guestPlayerData.forEach(g => {
+          allPlayers.push({
+            id: g.id,
+            user_id: null,
+            handicap: g.handicap,
+            tee_color: g.tee_color,
+            is_guest: true,
+            guest_name: g.guest_name,
+            profiles: {
+              display_name: g.guest_name,
+              username: null,
+              avatar_url: null,
+            },
+          });
+        });
+
+        setPlayers(allPlayers as RoundPlayer[]);
         
         // Find current user's player record
         if (user) {
-          const currentPlayer = playersWithProfiles.find(p => p.user_id === user.id);
+          const currentPlayer = allPlayers.find(p => p.user_id === user.id);
           setCurrentPlayerRecord(currentPlayer as RoundPlayer || null);
         }
         
@@ -197,22 +276,17 @@ export default function RoundSettings() {
   };
 
   const fetchProgress = async () => {
+    if (!currentPlayerRecord?.id) {
+      setHolesCompleted(0);
+      return;
+    }
     const { count } = await supabase
       .from("holes")
       .select("*", { count: "exact", head: true })
-      .eq("round_id", roundId);
+      .eq("round_id", roundId)
+      .eq("player_id", currentPlayerRecord.id)
+      .gt("score", 0); // Only count holes with actual scores
     setHolesCompleted(count || 0);
-  };
-
-  const handleTeeChange = async (newTee: string) => {
-    if (isSpectator || isEditWindowExpired) return; // Prevent changes when locked
-    setTeeColor(newTee);
-    if (roundId) {
-      await supabase
-        .from("rounds")
-        .update({ tee_set: newTee })
-        .eq("id", roundId);
-    }
   };
 
   const handleFinishRound = async () => {
@@ -306,12 +380,15 @@ export default function RoundSettings() {
   // Use individual player tees from DB - these are the actual per-player tees set in Game Settings
   const defaultTee = round.tee_set || 'white';
   const gamePlayers: GamePlayer[] = players.map(p => {
-    const profile = p.profiles;
+    // For guest players, use guest_name; for registered players, use profile
+    const name = p.is_guest 
+      ? (p.guest_name || "Guest")
+      : (p.profiles?.display_name || p.profiles?.username || "Player");
     return {
-      name: profile?.display_name || profile?.username || "Player",
+      name,
       handicap: p.handicap,
       tee: p.tee_color || defaultTee, // Individual player tee from DB, fallback to default
-      avatarUrl: profile?.avatar_url,
+      avatarUrl: p.profiles?.avatar_url,
     };
   });
 
@@ -376,7 +453,7 @@ export default function RoundSettings() {
             <CardTitle className="flex items-center justify-between text-lg">
               <div className="flex items-center gap-2">
                 <Settings size={20} className="text-primary" />
-                Game Settings
+                Settings
                 {(isSpectator || (isEditWindowExpired ?? false)) && (
                   <span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded">
                     (Locked)
@@ -396,18 +473,6 @@ export default function RoundSettings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Default Tee */}
-            <div className="space-y-2">
-              <Label>Default Tee Box</Label>
-              <TeeSelector
-                value={teeColor}
-                onValueChange={handleTeeChange}
-                teeCount={5}
-                courseTeeNames={null}
-                disabled={isSpectator || (isEditWindowExpired ?? false)}
-              />
-            </div>
-
             {/* Mulligans */}
             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
               <div className="space-y-0.5">

@@ -76,6 +76,21 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
 
   const participantRoundIds = participantRounds?.map((rp) => rp.round_id) || [];
   const participantRoundIdSet = new Set(participantRoundIds);
+  
+  // Fetch round_players entries to get player_id for each participant round
+  // This is needed to calculate individual player scores in multi-group rounds
+  const participantPlayerMap = new Map<string, string>(); // round_id -> player_id
+  if (participantRoundIds.length > 0) {
+    const { data: participantPlayerEntries } = await supabase
+      .from("round_players")
+      .select("id, round_id")
+      .eq("user_id", targetUserId)
+      .in("round_id", participantRoundIds);
+    
+    for (const entry of participantPlayerEntries || []) {
+      participantPlayerMap.set(entry.round_id, entry.id);
+    }
+  }
 
   const participantNamesRaw = [targetProfile?.display_name, targetProfile?.username]
     .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
@@ -456,11 +471,53 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     }
   }
 
+  // Batch fetch holes for participant rounds to calculate individual player scores
+  // This ensures we show the correct score for each player in multi-group rounds
+  const participantPlayerIds = Array.from(participantPlayerMap.values());
+  const playerHolesMap = new Map<string, Array<{ score: number; par: number }>>(); // player_id -> holes
+  
+  if (participantPlayerIds.length > 0) {
+    const { data: playerHoles } = await supabase
+      .from("holes")
+      .select("player_id, score, par")
+      .in("player_id", participantPlayerIds)
+      .gt("score", 0);
+    
+    for (const hole of playerHoles || []) {
+      const existing = playerHolesMap.get(hole.player_id) || [];
+      existing.push({ score: hole.score || 0, par: hole.par || 0 });
+      playerHolesMap.set(hole.player_id, existing);
+    }
+  }
+  
+  // Calculate per-player scores
+  const playerScoreMap = new Map<string, { totalScore: number; totalPar: number }>(); // player_id -> { totalScore, totalPar }
+  for (const [playerId, holes] of playerHolesMap.entries()) {
+    const totalScore = holes.reduce((sum, h) => sum + h.score, 0);
+    const totalPar = holes.reduce((sum, h) => sum + h.par, 0);
+    playerScoreMap.set(playerId, { totalScore, totalPar });
+  }
+
   // Regular rounds
   for (const round of userRounds) {
-    const summary = summaryMap.get(round.id) as any | undefined;
-    const totalScore = summary?.total_score ?? null;
-    const totalPar = summary?.total_par ?? null;
+    // Check if targetUserId is a participant in this round
+    const playerId = participantPlayerMap.get(round.id);
+    let totalScore: number | null = null;
+    let totalPar: number | null = null;
+    
+    if (playerId) {
+      // Calculate individual player's score from their holes
+      const playerScore = playerScoreMap.get(playerId);
+      if (playerScore) {
+        totalScore = playerScore.totalScore;
+        totalPar = playerScore.totalPar;
+      }
+    } else {
+      // Fallback to round_summaries for owner-only rounds (when user owns but doesn't participate)
+      const summary = summaryMap.get(round.id) as any | undefined;
+      totalScore = summary?.total_score ?? null;
+      totalPar = summary?.total_par ?? null;
+    }
 
     const scoreVsPar =
       typeof totalScore === "number" && typeof totalPar === "number" ? totalScore - totalPar : 0;

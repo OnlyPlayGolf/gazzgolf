@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Hammer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface WedgesDistanceControlComponentProps {
   onTabChange?: (tab: string) => void;
@@ -62,6 +63,9 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const [completedShots, setCompletedShots] = useState<number[]>([]);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,6 +92,9 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
     setAttempts(newAttempts);
     setDrillStarted(true);
     setCompletedShots([]);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    isSavingRef.current = false;
     onTabChange?.('score');
   };
 
@@ -115,8 +122,19 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
   const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
   const completedAttempts = attempts.filter(a => a.outcome !== null).length;
   const totalAttempts = shots.length;
+  const isComplete = completedAttempts === totalAttempts;
 
-  const saveScore = async () => {
+  // Auto-save when drill is completed
+  useEffect(() => {
+    if (isComplete && userId && !showCompletionDialog && !savedResultId && attempts.length > 0 && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [isComplete, userId, showCompletionDialog, savedResultId, attempts.length]);
+
+  const saveScore = async (): Promise<void> => {
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -143,14 +161,16 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
 
       if (drillError) throw drillError;
 
-      const { error: insertError } = await supabase
+      const { data: insertedResult, error: insertError } = await supabase
         .from('drill_results')
         .insert([{
           drill_id: drillData,
           user_id: userId,
           total_points: totalPoints,
           attempts_json: attempts as any,
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
 
@@ -159,11 +179,8 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
         description: `Your score of ${totalPoints} points has been saved.`,
       });
 
-      if (onScoreSaved) {
-        onScoreSaved();
-      }
-
-      onTabChange?.('leaderboard');
+      setSavedResultId(insertedResult?.id || null);
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({
         title: "Error saving score",
@@ -307,26 +324,23 @@ const WedgesDistanceControlComponent = ({ onTabChange, onScoreSaved }: WedgesDis
                     <p className="text-xl font-semibold">{completedAttempts}/{totalAttempts}</p>
                   </div>
                 </div>
-                <Button
-                  onClick={saveScore}
-                  disabled={completedAttempts === 0}
-                  className="w-full bg-primary hover:bg-primary/90"
-                >
-                  Save Score
-                </Button>
               </CardContent>
             </Card>
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground mb-2">
-                  Sign in to save your score and compete on the leaderboard
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          ) : null}
         </>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Wedges 40–80 m — Distance Control"
+        score={totalPoints}
+        unit="points"
+        resultId={savedResultId || undefined}
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Crown } from "lucide-react";
+import { Trophy, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { cn } from "@/lib/utils";
@@ -223,11 +223,7 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                         index === 2 ? "bg-orange-500/20 text-orange-500" :
                         "bg-primary/20 text-primary"
                       )}>
-                        {index === 0 ? (
-                          <Crown size={16} className="text-yellow-500" />
-                        ) : (
-                          `#${index + 1}`
-                        )}
+                        {index + 1}
                       </div>
                       <ProfilePhoto
                         src={entry.avatar_url}
@@ -244,7 +240,6 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
                         onClick={() => handleProfileClick(entry.user_id)}
                       >
                         {entry.display_name || entry.username || "Unknown"}
-                        {entry.user_id === user?.id && " (You)"}
                       </span>
                     </div>
                     <Badge variant="outline">

@@ -72,10 +72,7 @@ export const canEditGroupScores = (
   playerGroupId: string | null,
   userGroupId: string | null
 ): boolean => {
-  // Round creator can edit all groups
-  if (userId === roundCreatorId) return true;
-  
-  // Players can only edit their own group
+  // All players can only edit their own group
   if (!playerGroupId || !userGroupId) return true; // No groups = single group mode
   return playerGroupId === userGroupId;
 };

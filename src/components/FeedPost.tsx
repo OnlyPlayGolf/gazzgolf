@@ -543,13 +543,14 @@ const parseGameResult = (content: string) => {
 };
 
 // Drill Result Card Component - matches RoundCard layout
-const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, date, onClick }: { 
+const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, date, onClick, clickable = true }: { 
   drillTitle: string; 
   score: string; 
   unit: string; 
   isPersonalBest: boolean;
   date?: string;
   onClick?: () => void;
+  clickable?: boolean;
 }) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -559,10 +560,15 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, date, onClic
     });
   };
 
+  const baseClasses = "bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 transition-all";
+  const clickableClasses = clickable 
+    ? "cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] group"
+    : "";
+
   return (
     <Card 
-      className="cursor-pointer bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all group"
-      onClick={onClick}
+      className={`${baseClasses} ${clickableClasses}`}
+      onClick={clickable ? onClick : undefined}
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
@@ -596,7 +602,9 @@ const DrillResultCard = ({ drillTitle, score, unit, isPersonalBest, date, onClic
           </div>
           
           {/* Right: Chevron */}
-          <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
+          {clickable && (
+            <ChevronRight size={20} className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
+          )}
         </div>
       </CardContent>
     </Card>
@@ -2610,6 +2618,22 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [editPostContent, setEditPostContent] = useState("");
   const [isSavingPost, setIsSavingPost] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  // Comment likes and replies state
+  const [commentLikes, setCommentLikes] = useState<Map<string, { count: number; userHasLiked: boolean }>>(new Map());
+  const [commentReplyCounts, setCommentReplyCounts] = useState<Map<string, number>>(new Map());
+  const [commentReplies, setCommentReplies] = useState<Map<string, Array<{
+    id: string;
+    content: string;
+    user_id: string;
+    created_at: string;
+    profiles: {
+      display_name: string | null;
+      username: string | null;
+      avatar_url: string | null;
+    } | null;
+  }>>>(new Map());
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+  const [replyText, setReplyText] = useState<Map<string, string>>(new Map());
 
   const isOwnPost = post.user_id === currentUserId;
 
@@ -2624,6 +2648,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     setComments([]);
     setShowComments(false);
     setCommentsLoaded(false);
+    setCommentLikes(new Map());
+    setCommentReplyCounts(new Map());
+    setCommentReplies(new Map());
+    setExpandedReplies(new Set());
+    setReplyText(new Map());
   }, [post?.id]);
 
   const handleProfileClick = (userId: string) => {
@@ -2735,6 +2764,51 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     if (data) {
       setComments(data);
       setCommentCount(data.length);
+      
+      // Fetch likes and reply counts for each comment
+      const likesMap = new Map<string, { count: number; userHasLiked: boolean }>();
+      const replyCountsMap = new Map<string, number>();
+      
+      await Promise.all(data.map(async (comment) => {
+        // Fetch like count
+        const { count: likesCount } = await supabase
+          .from("post_comment_likes")
+          .select("*", { count: "exact", head: true })
+          .eq("comment_id", comment.id);
+        
+        // Check if current user has liked
+        let userHasLiked = false;
+        if (currentUserId) {
+          const { data: likeData } = await supabase
+            .from("post_comment_likes")
+            .select("id")
+            .eq("comment_id", comment.id)
+            .eq("user_id", currentUserId)
+            .maybeSingle();
+          userHasLiked = !!likeData;
+        }
+        
+        // Fetch reply count
+        const { count: repliesCount } = await supabase
+          .from("post_comment_replies")
+          .select("*", { count: "exact", head: true })
+          .eq("comment_id", comment.id);
+        
+        likesMap.set(comment.id, {
+          count: likesCount || 0,
+          userHasLiked,
+        });
+        
+        replyCountsMap.set(comment.id, repliesCount || 0);
+      }));
+      
+      setCommentLikes(likesMap);
+      setCommentReplyCounts(replyCountsMap);
+      
+      // Reset expanded replies and loaded replies when comments change
+      setExpandedReplies(new Set());
+      setCommentReplies(new Map());
+      
       try {
         const { setCachedPostEngagement } = await import("@/utils/postsEngagement");
         setCachedPostEngagement(post.id, currentUserId, {
@@ -2872,6 +2946,115 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
     } catch (error) {
       console.error("Error deleting comment:", error);
       toast.error("Failed to delete comment");
+    }
+  };
+
+  const handleLikeComment = async (commentId: string, hasLiked: boolean) => {
+    if (!currentUserId) return;
+
+    try {
+      if (hasLiked) {
+        await supabase
+          .from("post_comment_likes")
+          .delete()
+          .eq("comment_id", commentId)
+          .eq("user_id", currentUserId);
+      } else {
+        await supabase.from("post_comment_likes").insert({
+          comment_id: commentId,
+          user_id: currentUserId,
+        });
+      }
+      
+      // Update local state optimistically
+      const currentLikes = commentLikes.get(commentId) || { count: 0, userHasLiked: false };
+      const newCount = hasLiked ? Math.max(0, currentLikes.count - 1) : currentLikes.count + 1;
+      setCommentLikes(new Map(commentLikes).set(commentId, {
+        count: newCount,
+        userHasLiked: !hasLiked,
+      }));
+      
+      // Refresh to get accurate count
+      await loadComments();
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast.error("Failed to update like");
+      // Rollback on error
+      await loadComments();
+    }
+  };
+
+  const toggleReplies = async (commentId: string) => {
+    const newExpanded = new Set(expandedReplies);
+    
+    if (newExpanded.has(commentId)) {
+      newExpanded.delete(commentId);
+    } else {
+      newExpanded.add(commentId);
+      // Fetch replies if not already loaded
+      if (!commentReplies.has(commentId)) {
+        await loadRepliesForComment(commentId);
+      }
+    }
+    setExpandedReplies(newExpanded);
+  };
+
+  const loadRepliesForComment = async (commentId: string) => {
+    try {
+      const { data: repliesData } = await supabase
+        .from("post_comment_replies")
+        .select("id, content, user_id, created_at")
+        .eq("comment_id", commentId)
+        .order("created_at", { ascending: true });
+
+      if (repliesData) {
+        // Fetch profiles for replies
+        const userIds = [...new Set(repliesData.map(r => r.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, display_name, username, avatar_url")
+          .in("id", userIds);
+
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+        setCommentReplies(prev => new Map(prev).set(commentId, repliesData.map(r => ({
+          ...r,
+          profiles: profilesMap.get(r.user_id) || null
+        }))));
+      }
+    } catch (error) {
+      console.error("Error loading replies:", error);
+    }
+  };
+
+  const handleSubmitReply = async (commentId: string) => {
+    const text = replyText.get(commentId)?.trim();
+    if (!text || !currentUserId) return;
+
+    try {
+      const { error } = await supabase.from("post_comment_replies").insert({
+        comment_id: commentId,
+        user_id: currentUserId,
+        content: text,
+      });
+
+      if (error) throw error;
+
+      setReplyText(prev => new Map(prev).set(commentId, ""));
+      
+      // Refresh replies
+      await loadRepliesForComment(commentId);
+      
+      // Update reply count
+      const { count: repliesCount } = await supabase
+        .from("post_comment_replies")
+        .select("*", { count: "exact", head: true })
+        .eq("comment_id", commentId);
+      
+      setCommentReplyCounts(prev => new Map(prev).set(commentId, repliesCount || 0));
+    } catch (error: any) {
+      console.error("Error posting reply:", error);
+      toast.error("Failed to post reply");
     }
   };
 
@@ -3025,6 +3208,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                 unit={drillResult.unit}
                 isPersonalBest={drillResult.isPersonalBest}
                 date={post.created_at}
+                clickable={false}
               />
             )}
             {roundScorecardResult && (
@@ -3107,30 +3291,7 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               unit={drillResult.unit}
               isPersonalBest={drillResult.isPersonalBest}
               date={post.created_at}
-              onClick={async () => {
-                if (drillResult.resultId) {
-                  navigate(`/drill-result/${drillResult.resultId}`);
-                } else {
-                  // Try to find the result by matching drill title, user, and score
-                  const { data: drillData } = await supabase
-                    .rpc('get_or_create_drill_by_title', { p_title: drillResult.drillTitle });
-                  if (drillData) {
-                    const { data: results } = await supabase
-                      .from('drill_results')
-                      .select('id')
-                      .eq('drill_id', drillData)
-                      .eq('user_id', post.user_id)
-                      .eq('total_points', parseInt(drillResult.score))
-                      .order('created_at', { ascending: false })
-                      .limit(1);
-                    if (results && results.length > 0) {
-                      navigate(`/drill-result/${results[0].id}`);
-                      return;
-                    }
-                  }
-                  toast.error("Result details not found");
-                }
-              }}
+              clickable={false}
             />
           </div>
         ) : roundScorecardResult ? (
@@ -3459,7 +3620,85 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                             </DropdownMenu>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 ml-2">{commentTime}</p>
+                        <div className="flex items-center gap-4 mt-2 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`gap-1 h-7 ${commentLikes.get(comment.id)?.userHasLiked ? "text-red-500" : ""}`}
+                            onClick={() => handleLikeComment(comment.id, commentLikes.get(comment.id)?.userHasLiked || false)}
+                          >
+                            <Heart size={14} fill={commentLikes.get(comment.id)?.userHasLiked ? "currentColor" : "none"} />
+                            {commentLikes.get(comment.id)?.count || 0}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 h-7"
+                            onClick={() => toggleReplies(comment.id)}
+                          >
+                            <MessageCircle size={14} />
+                            {commentReplyCounts.get(comment.id) || 0}
+                          </Button>
+                          <p className="text-xs text-muted-foreground">{commentTime}</p>
+                        </div>
+
+                        {/* Replies Section */}
+                        {expandedReplies.has(comment.id) && (
+                          <div className="mt-3 space-y-3 border-l-2 border-muted pl-4 ml-2">
+                            {commentReplies.get(comment.id)?.map((reply) => {
+                              const replyName = reply.profiles?.display_name || reply.profiles?.username || "User";
+                              const replyTime = formatDistanceToNow(new Date(reply.created_at), { addSuffix: true });
+                              return (
+                                <div key={reply.id} className="flex items-start gap-2">
+                                  <ProfilePhoto
+                                    src={reply.profiles?.avatar_url}
+                                    alt={replyName}
+                                    fallback={replyName}
+                                    size="sm"
+                                    onClick={() => handleProfileClick(reply.user_id)}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="bg-muted/50 rounded-lg p-2">
+                                      <p 
+                                        className="text-xs font-semibold cursor-pointer hover:underline mb-1"
+                                        onClick={() => handleProfileClick(reply.user_id)}
+                                      >
+                                        {replyName}
+                                      </p>
+                                      <p className="text-sm text-foreground">{reply.content}</p>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1 ml-2">{replyTime}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {/* Reply Input */}
+                            {currentUserId && (
+                              <div className="flex gap-2 mt-2">
+                                <Textarea
+                                  placeholder="Write a reply..."
+                                  value={replyText.get(comment.id) || ""}
+                                  onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
+                                  className="min-h-[60px] resize-none"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleSubmitReply(comment.id);
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSubmitReply(comment.id)}
+                                  disabled={!replyText.get(comment.id)?.trim()}
+                                >
+                                  <Send size={14} />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

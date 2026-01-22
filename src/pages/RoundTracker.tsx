@@ -122,6 +122,52 @@ export default function RoundTracker() {
     }
   }, [roundId]);
 
+  // Set up realtime subscriptions for players and groups changes
+  useEffect(() => {
+    if (!roundId) return;
+
+    let mounted = true;
+
+    const channel = supabase
+      .channel(`round-participants-${roundId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'round_players',
+          filter: `round_id=eq.${roundId}`,
+        },
+        () => {
+          // Refetch round data when players change
+          if (mounted) {
+            fetchRoundData();
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'game_groups',
+          filter: `round_id=eq.${roundId}`,
+        },
+        () => {
+          // Refetch round data when groups change
+          if (mounted) {
+            fetchRoundData();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [roundId]);
+
   const loadSettings = () => {
     // First try round-specific settings (from localStorage for persistence)
     const roundSettings = localStorage.getItem(`roundSettings_${roundId}`);
@@ -647,8 +693,8 @@ export default function RoundTracker() {
     
     // Determine which players to check based on group membership
     let playersToCheck = players;
-    if (groups.length > 0 && currentUserGroupId && round?.user_id !== currentUserId) {
-      // Non-creator in a multi-group game: only check players in their group
+    if (groups.length > 0 && currentUserGroupId) {
+      // All players in a multi-group game: only check players in their group
       playersToCheck = players.filter(p => p.group_id === currentUserGroupId);
     }
     
@@ -866,18 +912,23 @@ export default function RoundTracker() {
           <>
             {groups
               .filter((group) => {
-                // Round creator sees all groups; others see only their group
-                if (round.user_id === currentUserId) return true;
-                return group.id === currentUserGroupId;
+                // All players see only their own group, or if currentUserGroupId is null, show first group
+                if (currentUserGroupId) {
+                  return group.id === currentUserGroupId;
+                }
+                // If no currentUserGroupId, show first group (fallback)
+                return group === groups[0];
               })
               .map((group) => {
-                const groupPlayers = players.filter((p) => p.group_id === group.id);
+                const groupPlayers = players.filter((p) => 
+                  p.group_id === group.id || (!p.group_id && group === groups[0])
+                );
                 if (groupPlayers.length === 0) return null;
                 
                 return (
                   <div key={group.id} className="space-y-3">
-                    {/* Group header - only show if round creator viewing multiple groups */}
-                    {round.user_id === currentUserId && groups.length > 1 && (
+                    {/* Group header - show for all players in multi-group games */}
+                    {groups.length > 1 && (
                       <div className="flex items-center gap-2 pt-2">
                         <Badge variant="secondary" className="text-sm">
                           {group.group_name}
@@ -1039,9 +1090,8 @@ export default function RoundTracker() {
             onEnterAndNext={() => {
               const currentHoleNum = currentHole.hole_number;
               
-              // Filter players the current user can edit (same group or round creator sees all)
+              // Filter players the current user can edit (same group only)
               const editablePlayers = players.filter(p => {
-                if (round.user_id === currentUserId) return true;
                 // If groups exist, must be in same group
                 if (groups.length > 0 && currentUserGroupId) {
                   return p.group_id === currentUserGroupId;

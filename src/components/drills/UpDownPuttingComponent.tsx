@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface UpDownPuttingComponentProps {
   onTabChange?: (tab: string) => void;
@@ -47,6 +48,9 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const [currentRound, setCurrentRound] = useState(0);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -99,6 +103,9 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
     }
     setAttempts(newAttempts);
     setDrillStarted(true);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    isSavingRef.current = false;
     onTabChange?.('score');
   };
 
@@ -128,8 +135,19 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
   const completedAttempts = attempts.filter(a => a.outcome !== null).length;
   const totalAttempts = 18;
   const tourAverage = 0.64;
+  const isComplete = completedAttempts === totalAttempts;
 
-  const saveScore = async () => {
+  // Auto-save when drill is completed
+  useEffect(() => {
+    if (isComplete && userId && !showCompletionDialog && !savedResultId && attempts.length > 0 && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [isComplete, userId, showCompletionDialog, savedResultId, attempts.length]);
+
+  const saveScore = async (): Promise<void> => {
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -156,34 +174,27 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
 
       if (drillError) throw drillError;
 
-      const { error: insertError } = await supabase
+      const { data: insertedResult, error: insertError } = await supabase
         .from('drill_results')
         .insert([{
           drill_id: drillData,
           user_id: userId,
           total_points: totalScore,
           attempts_json: attempts as any,
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
 
-      const comparison = totalScore < tourAverage 
-        ? `Great! You're ${(tourAverage - totalScore).toFixed(2)} strokes better than tour average!`
-        : totalScore > tourAverage
-        ? `You're ${(totalScore - tourAverage).toFixed(2)} strokes above tour average. Keep practicing!`
-        : "Perfect! You matched the tour average!";
-
       toast({
         title: "Score saved!",
-        description: `Your score: ${totalScore > 0 ? '+' : ''}${totalScore}. ${comparison}`,
+        description: `Your score: ${totalScore > 0 ? '+' : ''}${totalScore}`,
       });
 
+      setSavedResultId(insertedResult?.id || null);
       localStorage.removeItem(STORAGE_KEY);
-      if (onScoreSaved) {
-        onScoreSaved();
-      }
-
-      onTabChange?.('leaderboard');
+      setShowCompletionDialog(true);
     } catch (error: any) {
       toast({
         title: "Error saving score",
@@ -312,13 +323,6 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
                 </div>
                 <div className="space-y-2">
                   <Button
-                    onClick={saveScore}
-                    disabled={completedAttempts === 0}
-                    className="w-full bg-primary hover:bg-primary/90"
-                  >
-                    Save Score
-                  </Button>
-                  <Button
                     onClick={handleReset}
                     variant="outline"
                     className="w-full"
@@ -339,6 +343,18 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
           )}
         </>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Up & Down Putting Drill"
+        score={totalScore}
+        unit="strokes"
+        resultId={savedResultId || undefined}
+        onContinue={() => {
+          onScoreSaved?.();
+        }}
+      />
     </div>
   );
 };

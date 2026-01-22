@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/lib/notify";
+import { useToast } from "@/hooks/use-toast";
 import { Check, X } from "lucide-react";
 import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
@@ -21,7 +21,19 @@ type Window = {
 const HEIGHT_OPTIONS = ['Low', 'Middle', 'High'] as const;
 const SHAPE_OPTIONS = ['Fade', 'Straight', 'Draw'] as const;
 
+const getSortedWindowsForDisplay = (windows: Window[]): Window[] => {
+  const heightOrder = ['High', 'Middle', 'Low'];
+  const shapeOrder = ['Fade', 'Straight', 'Draw'];
+  
+  return [...windows].sort((a, b) => {
+    const heightDiff = heightOrder.indexOf(a.height) - heightOrder.indexOf(b.height);
+    if (heightDiff !== 0) return heightDiff;
+    return shapeOrder.indexOf(a.shape) - shapeOrder.indexOf(b.shape);
+  });
+};
+
 export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsComponentProps) {
+  const { toast } = useToast();
   const [windows, setWindows] = useState<Window[]>([]);
   const [currentWindowIndex, setCurrentWindowIndex] = useState(0);
   const [totalShots, setTotalShots] = useState(0);
@@ -29,6 +41,8 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
   const [drillStarted, setDrillStarted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [savedScore, setSavedScore] = useState(0);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -67,6 +81,17 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     }
   }, [windows, currentWindowIndex, totalShots, drillStarted]);
 
+  // Auto-save when drill is completed
+  useEffect(() => {
+    const allCompleted = windows.every(w => w.completed);
+    if (allCompleted && userId && !showCompletionDialog && !savedResultId && drillStarted && totalShots > 0 && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [windows, userId, showCompletionDialog, savedResultId, drillStarted, totalShots]);
+
   const initializeDrill = () => {
     // Create all 9 window combinations
     const allWindows: Window[] = [];
@@ -83,6 +108,10 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     setCurrentWindowIndex(0);
     setTotalShots(0);
     setDrillStarted(true);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    setSavedScore(0);
+    isSavingRef.current = false;
     localStorage.removeItem('tw9WindowsState');
   };
 
@@ -113,9 +142,13 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     initializeDrill();
   };
 
-  const saveScore = async () => {
+  const saveScore = async (): Promise<void> => {
     if (!userId) {
-      toast.error("Please sign in to save your score");
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your score.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -123,12 +156,20 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     const scoreToSave = totalShots;
 
     try {
-      const { data: drillData, error: drillError } = await supabase
+      const { data: drillId, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { 
           p_title: "TW's 9 Windows Test" 
         });
 
-      if (drillError) throw drillError;
+      if (drillError || !drillId) {
+        console.error('Drill not found or could not create:', drillError);
+        toast({
+          title: "Error",
+          description: "Could not save score. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const attemptsJson = windows.map((window, index) => ({
         windowNumber: index + 1,
@@ -138,24 +179,42 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
         attempts: window.attempts
       }));
 
-      const { error: insertError } = await supabase
+      const { data: insertedResult, error: insertError } = await supabase
         .from('drill_results')
         .insert({
-          drill_id: drillData,
+          drill_id: drillId,
           user_id: userId,
           total_points: scoreToSave,
           attempts_json: attemptsJson
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('Error saving score:', insertError);
+        toast({
+          title: "Error saving score",
+          description: "Please try again.",
+          variant: "destructive",
         });
+        return;
+      }
 
-      if (insertError) throw insertError;
-
-      toast.success(`Score saved! Total shots: ${scoreToSave}`);
+      toast({
+        title: "Score saved!",
+        description: `Total shots: ${scoreToSave}`,
+      });
       setSavedScore(scoreToSave);
+      setSavedResultId(insertedResult?.id || null);
       localStorage.removeItem('tw9WindowsState');
       setShowCompletionDialog(true);
     } catch (error) {
       console.error('Error saving score:', error);
-      toast.error("Failed to save score");
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -182,8 +241,8 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
             <div className="space-y-2">
               <h3 className="font-semibold text-sm">Windows Completed</h3>
               <div className="grid grid-cols-3 gap-2">
-                {windows.map((window, index) => (
-                  <div key={index} className="p-2 border rounded text-xs bg-muted">
+                {getSortedWindowsForDisplay(windows).map((window) => (
+                  <div key={`${window.height}-${window.shape}`} className="p-2 border rounded text-xs bg-muted">
                     <div className="flex items-center justify-between">
                       <span>{window.height} {window.shape}</span>
                       <Check className="h-3 w-3 text-green-600" />
@@ -193,21 +252,23 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
               </div>
             </div>
 
-            {userId ? (
-              <Button onClick={saveScore} className="w-full">
-                Save Score
-              </Button>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center">
-                Sign in to save your score
-              </p>
-            )}
-
             <Button onClick={initializeDrill} variant="outline" className="w-full">
               Start New Drill
             </Button>
           </CardContent>
         </Card>
+
+        <DrillCompletionDialog
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          drillTitle="TW's 9 Windows Test"
+          score={savedScore}
+          unit="shots"
+          resultId={savedResultId || undefined}
+          onContinue={() => {
+            onScoreSaved?.();
+          }}
+        />
       </div>
     );
   }
@@ -269,23 +330,28 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
           <div className="space-y-2">
             <h3 className="font-semibold text-sm">All Windows</h3>
             <div className="grid grid-cols-3 gap-2">
-              {windows.map((window, index) => (
-                <div 
-                  key={index} 
-                  className={`p-2 border rounded text-xs ${
-                    window.completed 
-                      ? 'bg-green-50 border-green-600' 
-                      : index === currentWindowIndex 
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="truncate">{window.height} {window.shape}</span>
-                    {window.completed && <Check className="h-3 w-3 text-green-600" />}
+              {getSortedWindowsForDisplay(windows).map((window) => {
+                const originalIndex = windows.findIndex(w => 
+                  w.height === window.height && w.shape === window.shape
+                );
+                return (
+                  <div 
+                    key={`${window.height}-${window.shape}`}
+                    className={`p-2 border rounded text-xs ${
+                      window.completed 
+                        ? 'bg-green-50 border-green-600' 
+                        : originalIndex === currentWindowIndex 
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{window.height} {window.shape}</span>
+                      {window.completed && <Check className="h-3 w-3 text-green-600" />}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </CardContent>
@@ -297,6 +363,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
         drillTitle="TW's 9 Windows Test"
         score={savedScore}
         unit="shots"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

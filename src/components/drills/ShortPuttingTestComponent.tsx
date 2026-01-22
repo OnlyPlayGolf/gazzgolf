@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -31,6 +31,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
   const [userId, setUserId] = useState<string | null>(null);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -77,6 +78,16 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
     });
   }, []);
 
+  // Auto-save when drill ends (miss clicked)
+  useEffect(() => {
+    if (drillEnded && consecutiveMakes > 0 && userId && !showCompletionDialog && !savedResultId && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [drillEnded, consecutiveMakes, userId, showCompletionDialog, savedResultId]);
+
   const handleMake = () => {
     // Increase distance for current tee
     const newPositions = [...teePositions];
@@ -94,7 +105,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
     setDrillEnded(true);
   };
 
-  const saveScore = async () => {
+  const saveScore = async (): Promise<void> => {
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -161,6 +172,9 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
     setDrillEnded(false);
     setConsecutiveMakes(0);
     setCurrentTeeIndex(0);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    isSavingRef.current = false;
     setTeePositions([
       { name: '12 o\'clock', distance: 3 },
       { name: '3 o\'clock', distance: 3 },
@@ -222,7 +236,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
                     <div className="grid grid-cols-2 gap-3">
                       <Button
                         onClick={handleMake}
-                        className="bg-green-500 hover:bg-green-600 text-white"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         <CheckCircle2 className="mr-2" size={18} />
                         Made It
@@ -255,36 +269,13 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
                       </p>
                     </div>
 
-                    {userId ? (
-                      <div className="space-y-2">
-                        <Button
-                          onClick={saveScore}
-                          className="w-full bg-primary hover:bg-primary/90"
-                        >
-                          Save Score
-                        </Button>
-                        <Button
-                          onClick={handleReset}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          Try Again
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-muted-foreground">
-                          Sign in to save your score and compete on the leaderboard
-                        </p>
-                        <Button
-                          onClick={handleReset}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          Try Again
-                        </Button>
-                      </>
-                    )}
+                    <Button
+                      onClick={handleReset}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Try Again
+                    </Button>
                   </div>
                 )}
               </div>

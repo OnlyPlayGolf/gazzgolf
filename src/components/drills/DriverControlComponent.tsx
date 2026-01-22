@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Target, TrendingUp } from "lucide-react";
@@ -51,6 +51,8 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
   const [shotSequence, setShotSequence] = useState<ShotStructure[]>([]);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   
   const [selectedResult, setSelectedResult] = useState<string>("");
   
@@ -103,6 +105,9 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
     setBonusStreak(0);
     setShotSequence(sequence);
     setSelectedResult("");
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    isSavingRef.current = false;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       attempts: [],
       currentShot: 1,
@@ -172,6 +177,11 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
   };
 
   const handleSaveScore = async (finalAttempts: Attempt[]) => {
+    // Prevent duplicate saves
+    if (savedResultId || isSavingRef.current) {
+      return;
+    }
+
     if (!userId) {
       toast({
         title: "Not signed in",
@@ -190,6 +200,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
       return;
     }
 
+    isSavingRef.current = true;
     try {
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: 'Driver Control' });
@@ -198,14 +209,16 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
 
       const totalScore = finalAttempts.reduce((sum, a) => sum + a.points + a.bonusPoints, 0);
 
-      const { error: insertError } = await supabase
+      const { data: insertedResult, error: insertError } = await supabase
         .from('drill_results')
         .insert([{
           drill_id: drillData,
           user_id: userId,
           total_points: totalScore,
           attempts_json: finalAttempts as any,
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
 
@@ -216,6 +229,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
 
       localStorage.removeItem(STORAGE_KEY);
       setFinalScore(totalScore);
+      setSavedResultId(insertedResult?.id || null);
       setShowCompletionDialog(true);
     } catch (error) {
       console.error('Error saving score:', error);
@@ -224,6 +238,8 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
         description: "Failed to save score. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      isSavingRef.current = false;
     }
   };
 
@@ -355,6 +371,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
         drillTitle="Driver Control"
         score={finalScore}
         unit="points"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

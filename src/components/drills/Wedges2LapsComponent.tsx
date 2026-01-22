@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,8 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
   const [userId, setUserId] = useState<string | null>(null);
   const [drillStarted, setDrillStarted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -97,6 +99,9 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
     }));
     setAttempts(newAttempts);
     setDrillStarted(true);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    isSavingRef.current = false;
     onTabChange?.('score');
   };
 
@@ -116,8 +121,19 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
   const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
   const completedAttempts = attempts.filter(a => a.outcome !== null).length;
   const totalAttempts = shots.length;
+  const isComplete = completedAttempts === totalAttempts;
 
-  const saveScore = async () => {
+  // Auto-save when drill is completed
+  useEffect(() => {
+    if (isComplete && userId && !showCompletionDialog && !savedResultId && attempts.length > 0 && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [isComplete, userId, showCompletionDialog, savedResultId, attempts.length]);
+
+  const saveScore = async (): Promise<void> => {
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -144,14 +160,16 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
 
       if (drillError) throw drillError;
 
-      const { error: insertError } = await supabase
+      const { data: insertedResult, error: insertError } = await supabase
         .from('drill_results')
         .insert([{
           drill_id: drillData,
           user_id: userId,
           total_points: totalPoints,
           attempts_json: attempts as any,
-        }]);
+        }])
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
 
@@ -160,6 +178,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
         description: `Your score of ${totalPoints} points has been saved.`,
       });
 
+      setSavedResultId(insertedResult?.id || null);
       localStorage.removeItem(STORAGE_KEY);
       setShowCompletionDialog(true);
     } catch (error: any) {
@@ -248,13 +267,6 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
                 </div>
                 <div className="space-y-2">
                   <Button
-                    onClick={saveScore}
-                    disabled={completedAttempts === 0}
-                    className="w-full bg-primary hover:bg-primary/90"
-                  >
-                    Save Score
-                  </Button>
-                  <Button
                     onClick={handleReset}
                     variant="outline"
                     className="w-full"
@@ -289,6 +301,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
         drillTitle="Wedge Point Game"
         score={totalPoints}
         unit="points"
+        resultId={savedResultId || undefined}
         onContinue={() => {
           onScoreSaved?.();
         }}

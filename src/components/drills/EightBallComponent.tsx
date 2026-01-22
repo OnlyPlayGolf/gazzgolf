@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Zap } from "lucide-react";
@@ -54,6 +54,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
   const [currentRound, setCurrentRound] = useState(0);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const isSavingRef = useRef(false);
   const { toast } = useToast();
 
   // Load state from localStorage on mount or auto-start
@@ -105,6 +106,9 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
     }
     setAttempts(newAttempts);
     setCurrentRound(0);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    isSavingRef.current = false;
     onTabChange?.('score');
   };
 
@@ -140,8 +144,19 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
   const totalPoints = attempts.reduce((sum, attempt) => sum + attempt.points, 0);
   const completedAttempts = attempts.filter(a => a.outcome !== null).length;
   const totalAttempts = 40; // 8 stations × 5 rounds
+  const isComplete = completedAttempts === totalAttempts;
 
-  const saveScore = async () => {
+  // Auto-save when drill is completed
+  useEffect(() => {
+    if (isComplete && userId && !showCompletionDialog && !savedResultId && attempts.length > 0 && !isSavingRef.current) {
+      isSavingRef.current = true;
+      saveScore().finally(() => {
+        isSavingRef.current = false;
+      });
+    }
+  }, [isComplete, userId, showCompletionDialog, savedResultId, attempts.length]);
+
+  const saveScore = async (): Promise<void> => {
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -223,11 +238,6 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
                 {completedAttempts}/{totalAttempts} attempts completed
               </div>
             </div>
-            {completedAttempts === totalAttempts && (
-              <Button onClick={saveScore} className="bg-primary hover:bg-primary/90">
-                Save Score
-              </Button>
-            )}
           </div>
 
           <div className="space-y-4">

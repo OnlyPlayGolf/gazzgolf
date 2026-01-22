@@ -91,7 +91,8 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
   };
 
   const handleCompletionContinue = () => {
-    navigate('/drills');
+    // Navigation is now handled by DrillCompletionDialog
+    onScoreSaved?.();
   };
 
   return (
@@ -125,22 +126,6 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
               />
             </div>
 
-            {userId ? (
-              <Button 
-                onClick={saveScore} 
-                className="w-full"
-                disabled={!consecutiveMakes}
-              >
-                Save Score
-              </Button>
-            ) : (
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Sign in to save your score</p>
-                <Button onClick={() => window.location.href = '/auth'} variant="outline" className="w-full">
-                  Sign In
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
