@@ -67,6 +67,30 @@ const PracticeContent = () => {
 
           <Card 
             className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
+            onClick={() => navigate('/leaderboards')}
+          >
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Trophy size={32} className="text-primary" />
+                </div>
+                <div>
+                  <div className="text-2xl">Leaderboards</div>
+                  <div className="text-sm font-normal text-muted-foreground mt-1">
+                    Compete with friends and groups
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                View rankings for drills and level progress
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="border-2 hover:border-primary transition-all duration-200 cursor-pointer"
             onClick={() => navigate('/rounds/pro-setup')}
           >
             <CardHeader className="pb-4">

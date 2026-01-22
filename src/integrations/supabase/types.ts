@@ -1272,6 +1272,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          context_id: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -1283,6 +1284,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          context_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -1294,6 +1296,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          context_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean

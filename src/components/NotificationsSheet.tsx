@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, X, Trophy, Users, MessageCircle, CheckCheck, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Bell, Check, X, Trophy, Users, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,9 +19,16 @@ interface Notification {
   related_user_id: string | null;
   action_url: string | null;
   metadata: Record<string, any> | null;
+  context_id: string | null;
   is_read: boolean;
   created_at: string;
 }
+
+// Notification types that are informational only (no user action required)
+const INFORMATIONAL_TYPES = ['high_score', 'message'];
+
+// Notification types that require user action (accept/decline)
+const ACTIONABLE_TYPES = ['friend_request', 'group_invite'];
 
 interface GroupedNotification {
   key: string;
@@ -165,14 +172,15 @@ export const NotificationsSheet = ({
   const loadUnreadCount = async () => {
     if (!currentUserId) return;
     try {
-      const { count, error } = await supabase
+      // Only count actionable unread notifications for the badge
+      const { data, error } = await supabase
         .from('notifications')
-        .select('id', { count: 'exact', head: true })
+        .select('id, type, is_read')
         .eq('user_id', currentUserId)
         .eq('is_read', false);
 
       if (error) throw error;
-      const nextCount = count ?? 0;
+      const nextCount = (data || []).filter(n => ACTIONABLE_TYPES.includes(n.type)).length;
       setUnreadCount(nextCount);
 
       // Softly animate the badge when new unread arrives
@@ -200,14 +208,58 @@ export const NotificationsSheet = ({
 
       if (error) throw error;
 
-      setNotifications((data || []) as Notification[]);
-      // Keep the unread badge in sync while the sheet is open.
-      const unread = data?.filter(n => !n.is_read).length || 0;
-      setUnreadCount(unread);
-      if (unread > prevUnreadCountRef.current) {
+      const allNotifications = (data || []) as Notification[];
+      
+      // Separate actionable and informational notifications
+      const actionableNotifications = allNotifications.filter(n => ACTIONABLE_TYPES.includes(n.type));
+      const informationalNotifications = allNotifications.filter(n => INFORMATIONAL_TYPES.includes(n.type));
+      
+      // Auto-mark all informational notifications as read (they don't need user action)
+      const unreadInformational = informationalNotifications.filter(n => !n.is_read);
+      
+      if (unreadInformational.length > 0) {
+        // Mark them as read in the database immediately
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .in('id', unreadInformational.map(n => n.id));
+        
+        // Update local state to reflect the change
+        informationalNotifications.forEach(n => {
+          if (INFORMATIONAL_TYPES.includes(n.type)) {
+            n.is_read = true;
+          }
+        });
+      }
+      
+      // Delete informational notifications beyond 30 (keep only the 30 most recent)
+      if (informationalNotifications.length > 30) {
+        const toDelete = informationalNotifications.slice(30);
+        const deleteIds = toDelete.map(n => n.id);
+        
+        await supabase
+          .from('notifications')
+          .delete()
+          .in('id', deleteIds);
+        
+        // Remove deleted notifications from our data
+        informationalNotifications.splice(30);
+      }
+      
+      // Combine: all actionable + limited informational (max 10 for display)
+      const limitedInformational = informationalNotifications.slice(0, 10);
+      const notificationsToShow = [...actionableNotifications, ...limitedInformational]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setNotifications(notificationsToShow);
+      
+      // Only count actionable unread notifications for the badge
+      const actionableUnread = actionableNotifications.filter(n => !n.is_read).length;
+      setUnreadCount(actionableUnread);
+      if (actionableUnread > prevUnreadCountRef.current) {
         setBadgeBumpKey((k) => k + 1);
       }
-      prevUnreadCountRef.current = unread;
+      prevUnreadCountRef.current = actionableUnread;
     } catch (error) {
       console.error('Error loading notifications:', error);
     }
@@ -281,67 +333,45 @@ export const NotificationsSheet = ({
     return sorted;
   }, [notifications]);
 
-  // Batch operations
-  const markAllAsRead = async () => {
-    if (!currentUserId) return;
-    
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', currentUserId)
-        .eq('is_read', false);
-
-      if (error) throw error;
-
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setUnreadCount(0);
-      toast({
-        title: "All notifications marked as read",
-      });
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-      toast({
-        title: "Error",
-        description: "Failed to mark all notifications as read.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+  const handleNotificationClick = async (notification: Notification) => {
+    if (notification.type === 'high_score' && notification.related_id) {
+      // For high_score notifications, fetch the drill title and navigate to leaderboards
+      try {
+        const { data: drillData, error: drillError } = await supabase
+          .from('drills')
+          .select('title')
+          .eq('id', notification.related_id)
+          .single();
+        
+        if (drillError) {
+          console.error('Error fetching drill:', drillError);
+          setOpen(false);
+          navigate('/leaderboards');
+          return;
+        }
+        
+        if (drillData?.title) {
+          // Auto-mark as read
+          if (INFORMATIONAL_TYPES.includes(notification.type)) {
+            markAsRead(notification.id);
+          }
+          setOpen(false);
+          // Navigate to leaderboards with the drill title as a query parameter
+          navigate(`/leaderboards?drill=${encodeURIComponent(drillData.title)}&section=drills`);
+        } else {
+          console.warn('Drill not found for notification:', notification.related_id);
+          setOpen(false);
+          navigate('/leaderboards?section=drills');
+        }
+      } catch (error) {
+        console.error('Error fetching drill info:', error);
+        setOpen(false);
+        navigate('/leaderboards?section=drills');
+      }
+      return;
     }
-  };
-
-  const deleteAllRead = async () => {
-    if (!currentUserId) return;
     
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', currentUserId)
-        .eq('is_read', true);
-
-      if (error) throw error;
-
-      setNotifications(prev => prev.filter(n => !n.is_read));
-      toast({
-        title: "Read notifications deleted",
-      });
-    } catch (error) {
-      console.error('Error deleting read notifications:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete read notifications.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNotificationClick = (notification: Notification) => {
+    // For other notification types, use the standard URL generation
     const url = getNotificationActionUrl(
       notification.type,
       notification.related_id,
@@ -350,7 +380,10 @@ export const NotificationsSheet = ({
     );
     
     if (url) {
-      markAsRead(notification.id);
+      // Auto-mark informational notifications as read when clicked
+      if (INFORMATIONAL_TYPES.includes(notification.type)) {
+        markAsRead(notification.id);
+      }
       setOpen(false);
       navigate(url);
     }
@@ -529,6 +562,12 @@ export const NotificationsSheet = ({
     }
   };
 
+  // Check if a notification type is clickable (should navigate somewhere)
+  const isClickable = (type: string) => type === 'high_score';
+
+  // Check if a notification type requires action buttons (accept/decline)
+  const isActionable = (type: string) => ACTIONABLE_TYPES.includes(type);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -538,34 +577,8 @@ export const NotificationsSheet = ({
         <SheetHeader>
           <SheetTitle>Notifications</SheetTitle>
         </SheetHeader>
-        
-        {/* Batch Actions */}
-        {notifications.length > 0 && (
-          <div className="mt-4 flex gap-2 pb-2 border-b">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={markAllAsRead}
-              disabled={loading || unreadCount === 0}
-              className="flex-1"
-            >
-              <CheckCheck size={14} className="mr-1" />
-              Mark All Read
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={deleteAllRead}
-              disabled={loading || notifications.filter(n => n.is_read).length === 0}
-              className="flex-1"
-            >
-              <Trash2 size={14} className="mr-1" />
-              Delete Read
-            </Button>
-          </div>
-        )}
 
-        <div className="mt-4 space-y-3 flex-1 overflow-y-auto">
+        <div className="mt-6 space-y-3 flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No notifications</p>
           ) : (
@@ -581,7 +594,12 @@ export const NotificationsSheet = ({
                     key={group.key}
                     className={`p-4 border rounded-lg ${
                       group.isRead ? 'bg-background' : 'bg-muted/50'
-                    }`}
+                    } ${INFORMATIONAL_TYPES.includes(group.type) ? 'cursor-pointer hover:bg-muted/70' : ''}`}
+                    onClick={() => {
+                      if (INFORMATIONAL_TYPES.includes(group.type) && group.notifications[0]) {
+                        handleNotificationClick(group.notifications[0]);
+                      }
+                    }}
                   >
                     <div className="flex items-start gap-3">
                       <div className="mt-1">{getIcon(group.type)}</div>
@@ -610,7 +628,10 @@ export const NotificationsSheet = ({
                                 className={`p-2 rounded border ${
                                   notification.is_read ? 'bg-background' : 'bg-muted/30'
                                 }`}
-                                onClick={() => handleNotificationClick(notification)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNotificationClick(notification);
+                                }}
                               >
                                 <p className="text-xs text-muted-foreground">
                                   {getNotificationMessage(notification)}
@@ -627,7 +648,8 @@ export const NotificationsSheet = ({
                           variant="ghost"
                           size="sm"
                           className="mt-2"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const newExpanded = new Set(expandedGroups);
                             if (isExpanded) {
                               newExpanded.delete(group.key);
@@ -650,20 +672,23 @@ export const NotificationsSheet = ({
                           )}
                         </Button>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        {!group.isRead && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              group.notifications.forEach(n => markAsRead(n.id));
-                            }}
-                          >
-                            <Check size={14} />
-                          </Button>
-                        )}
-                      </div>
+                      {ACTIONABLE_TYPES.includes(group.type) && (
+                        <div className="flex flex-col gap-1">
+                          {!group.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                group.notifications.forEach(n => markAsRead(n.id));
+                              }}
+                            >
+                              <Check size={14} />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -722,7 +747,7 @@ export const NotificationsSheet = ({
                         </div>
                       )}
                       
-                      {actions.length > 0 && (
+                      {actions.length > 0 && !INFORMATIONAL_TYPES.includes(notification.type) && (
                         <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
                           {actions.map((action, idx) => (
                             <Button
@@ -736,27 +761,34 @@ export const NotificationsSheet = ({
                           ))}
                         </div>
                       )}
+
+                      {/* Show hint for informational notifications */}
+                      {INFORMATIONAL_TYPES.includes(notification.type) && notification.type === 'high_score' && (
+                        <p className="text-xs text-primary mt-2">Tap to view leaderboard</p>
+                      )}
                     </div>
-                    <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                      {!notification.is_read && (
+                    {ACTIONABLE_TYPES.includes(notification.type) && (
+                      <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                        {!notification.is_read && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => markAsRead(notification.id)}
+                          >
+                            <Check size={14} />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => markAsRead(notification.id)}
+                          onClick={() => deleteNotification(notification.id)}
                         >
-                          <Check size={14} />
+                          <X size={14} />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => deleteNotification(notification.id)}
-                      >
-                        <X size={14} />
-                      </Button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
