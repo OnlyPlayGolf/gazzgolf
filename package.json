@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OnlyPlayGolf/gazzgolf.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -15,7 +19,10 @@
     "supabase:db:push": "npx supabase db push",
     "supabase:db:diff": "npx supabase db diff",
     "supabase:migration:new": "npx supabase migration new",
-    "supabase:status": "npx supabase status"
+    "supabase:status": "npx supabase status",
+    "vercel:login": "vercel login",
+    "vercel:link": "vercel link",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -93,6 +100,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
+    "vercel": "^50.4.9",
     "vite": "^5.4.19"
   }
 }
