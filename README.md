@@ -16,13 +16,20 @@ npm i
 npm run dev
 ```
 
+Copy `env.example` to your local `.env` and adjust as needed.
+
 ### Useful scripts
 
 ```sh
 npm run dev      # start Vite dev server
 npm run build    # production build
 npm run preview  # preview production build locally
+npm run check:email-dns # verify SPF/DKIM/DMARC/MX for onlyplaygolf.com
 ```
+
+### Email sender (Supabase Auth)
+
+To make signup/confirmation emails come from `no-reply@onlyplaygolf.com`, follow the setup guide in `EMAIL_SENDER_SETUP.md`.
 
 ## Built with
 

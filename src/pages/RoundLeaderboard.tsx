@@ -461,10 +461,6 @@ export default function RoundLeaderboard() {
         pageTitle="Leaderboard"
         onBack={() => navigate('/')}
         isAdmin={isAdmin}
-        onFinish={handleFinishGame}
-        onSaveAndExit={() => navigate('/profile')}
-        onDelete={handleDeleteGame}
-        gameName="Round"
       />
 
       <div className="max-w-4xl mx-auto p-4 space-y-4">

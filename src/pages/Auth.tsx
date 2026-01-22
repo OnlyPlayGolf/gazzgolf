@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { getPublicAppUrl } from "@/utils/publicAppUrl";
+import { getFriendlyAuthErrorMessage } from "@/utils/authErrorMessages";
 
 const baseAuthSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
@@ -21,7 +22,10 @@ const signUpSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(100, { message: "Password must be less than 100 characters" }),
   confirmPassword: z.string(),
   firstName: z.string().trim().min(1, { message: "First name is required" }).max(50, { message: "First name must be less than 50 characters" }),
-  lastName: z.string().trim().min(1, { message: "Last name is required" }).max(50, { message: "Last name must be less than 50 characters" })
+  lastName: z.string().trim().min(1, { message: "Last name is required" }).max(50, { message: "Last name must be less than 50 characters" }),
+  country: z.string().trim().min(1, { message: "Country is required" }).max(80, { message: "Country must be less than 80 characters" }),
+  homeClub: z.string().trim().min(1, { message: "Home club is required" }).max(120, { message: "Home club must be less than 120 characters" }),
+  handicap: z.string().trim().min(1, { message: "Handicap is required" }).max(20, { message: "Handicap must be less than 20 characters" })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -39,6 +43,7 @@ const Auth = () => {
   const initialView = (location.state as { view?: string } | null)?.view === 'signup' ? 'signup' : 'signin';
   const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation'>(initialView);
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -46,6 +51,9 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [country, setCountry] = useState('');
+  const [homeClub, setHomeClub] = useState('');
+  const [handicap, setHandicap] = useState('');
 
   // If we arrived via invite link, persist invite code so post-auth can resume.
   useEffect(() => {
@@ -61,6 +69,10 @@ const Auth = () => {
       setView(nextView);
     }
   }, [location.search]);
+
+  useEffect(() => {
+    setFormError(null);
+  }, [view]);
 
   useEffect(() => {
     let isMounted = true;
@@ -121,6 +133,7 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setFormError(null);
       const validatedData = baseAuthSchema.parse({ email, password });
       setLoading(true);
 
@@ -130,19 +143,13 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Sign In Failed",
-            description: "Invalid email or password. Please check your credentials and try again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Sign In Failed", 
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        const friendly = getFriendlyAuthErrorMessage(error, "signIn");
+        setFormError(friendly);
+        toast({
+          title: "Sign in failed",
+          description: friendly,
+          variant: "destructive",
+        });
         return;
       }
 
@@ -152,15 +159,19 @@ const Auth = () => {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const friendly = error.errors[0]?.message || "Something went wrong. Please try again.";
+        setFormError(friendly);
         toast({
           title: "Validation Error",
-          description: error.errors[0].message,
+          description: friendly,
           variant: "destructive",
         });
       } else {
+        const friendly = getFriendlyAuthErrorMessage(error, "signIn");
+        setFormError(friendly);
         toast({
           title: "Error",
-          description: "An unexpected error occurred. Please try again.",
+          description: friendly,
           variant: "destructive",
         });
       }
@@ -173,13 +184,22 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      const validatedData = signUpSchema.parse({ email, password, confirmPassword, firstName, lastName });
+      const validatedData = signUpSchema.parse({
+        email,
+        password,
+        confirmPassword,
+        firstName,
+        lastName,
+        country,
+        homeClub,
+        handicap,
+      });
       setLoading(true);
 
       const pendingInviteCode = localStorage.getItem('pending_invite_code');
       const redirectUrl = pendingInviteCode
         ? `${getPublicAppUrl()}/auth?invite=${encodeURIComponent(pendingInviteCode)}`
-        : `${getPublicAppUrl()}/`;
+        : `${getPublicAppUrl()}/auth`;
       const displayName = `${validatedData.firstName} ${validatedData.lastName}`;
       
       const { error } = await supabase.auth.signUp({
@@ -190,12 +210,22 @@ const Auth = () => {
           data: {
             display_name: displayName,
             first_name: validatedData.firstName,
-            last_name: validatedData.lastName
+            last_name: validatedData.lastName,
+            country: validatedData.country,
+            home_club: validatedData.homeClub,
+            handicap: validatedData.handicap,
           }
         }
       });
 
       if (error) {
+        console.error("[auth.signUp] failed", {
+          message: error.message,
+          name: (error as any)?.name,
+          status: (error as any)?.status,
+          code: (error as any)?.code,
+          redirectUrl,
+        });
         if (error.message.includes('User already registered')) {
           toast({
             title: "Account Exists",
@@ -221,6 +251,9 @@ const Auth = () => {
       setConfirmPassword('');
       setFirstName('');
       setLastName('');
+      setCountry('');
+      setHomeClub('');
+      setHandicap('');
       
       // Show confirmation screen instead of redirecting to signin
       setView('confirmation');
@@ -247,17 +280,27 @@ const Auth = () => {
     e.preventDefault();
     
     try {
+      setFormError(null);
       const validatedData = baseAuthSchema.pick({ email: true }).parse({ email });
       setLoading(true);
 
       const { error } = await supabase.auth.resetPasswordForEmail(validatedData.email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${getPublicAppUrl()}/auth`,
       });
 
       if (error) {
+        console.error("[auth.resetPasswordForEmail] failed", {
+          message: error.message,
+          name: (error as any)?.name,
+          status: (error as any)?.status,
+          code: (error as any)?.code,
+          redirectTo: `${getPublicAppUrl()}/auth`,
+        });
+        const friendly = getFriendlyAuthErrorMessage(error, "resetPassword");
+        setFormError(friendly);
         toast({
           title: "Error",
-          description: error.message,
+          description: friendly,
           variant: "destructive",
         });
         return;
@@ -271,15 +314,19 @@ const Auth = () => {
       setView('signin');
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const friendly = error.errors[0]?.message || "Something went wrong. Please try again.";
+        setFormError(friendly);
         toast({
           title: "Validation Error",
-          description: error.errors[0].message,
+          description: friendly,
           variant: "destructive",
         });
       } else {
+        const friendly = getFriendlyAuthErrorMessage(error, "resetPassword");
+        setFormError(friendly);
         toast({
           title: "Error",
-          description: "An unexpected error occurred. Please try again.",
+          description: friendly,
           variant: "destructive",
         });
       }
@@ -298,6 +345,14 @@ const Auth = () => {
           <CardContent>
             {view === 'signin' && (
               <form onSubmit={handleSignIn} className="space-y-4">
+                {formError && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {formError}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="signin-email">Email</Label>
                   <div className="relative">
@@ -360,6 +415,14 @@ const Auth = () => {
 
             {view === 'signup' && (
               <form onSubmit={handleSignUp} className="space-y-4">
+                {formError && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {formError}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="signup-firstname">First Name</Label>
                   <div className="relative">
@@ -386,6 +449,54 @@ const Auth = () => {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder="Enter your last name"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-country">Country</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="signup-country"
+                      type="text"
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      placeholder="Enter your country"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-homeclub">Home Club</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="signup-homeclub"
+                      type="text"
+                      value={homeClub}
+                      onChange={(e) => setHomeClub(e.target.value)}
+                      placeholder="Enter your home club"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-handicap">Handicap</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="signup-handicap"
+                      type="text"
+                      value={handicap}
+                      onChange={(e) => setHandicap(e.target.value)}
+                      placeholder="e.g. 12.4 or +2.4"
                       className="pl-10"
                       required
                     />
@@ -459,6 +570,9 @@ const Auth = () => {
                     setConfirmPassword('');
                     setFirstName('');
                     setLastName('');
+                    setCountry('');
+                    setHomeClub('');
+                    setHandicap('');
                   }}
                 >
                   Back to Log In
@@ -468,6 +582,14 @@ const Auth = () => {
 
             {view === 'forgot' && (
               <form onSubmit={handleForgotPassword} className="space-y-4">
+                {formError && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {formError}
+                  </div>
+                )}
                 <p className="text-sm text-muted-foreground">
                   Enter your email address and we'll send you a link to reset your password.
                 </p>

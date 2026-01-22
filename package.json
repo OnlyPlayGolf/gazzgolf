@@ -3,12 +3,26 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OnlyPlayGolf/gazzgolf.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "check:email-dns": "node scripts/check-email-dns.mjs onlyplaygolf.com",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supabase:login": "npx supabase login",
+    "supabase:link": "npx supabase link --project-ref rwvrzypgokxbznqjtinn",
+    "supabase:db:push": "npx supabase db push",
+    "supabase:db:diff": "npx supabase db diff",
+    "supabase:migration:new": "npx supabase migration new",
+    "supabase:status": "npx supabase status",
+    "vercel:login": "vercel login",
+    "vercel:link": "vercel link",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -82,9 +96,11 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "postcss": "^8.5.6",
+    "supabase": "^2.72.8",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
+    "vercel": "^50.4.9",
     "vite": "^5.4.19"
   }
 }

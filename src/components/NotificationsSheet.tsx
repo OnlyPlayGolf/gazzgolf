@@ -1,12 +1,14 @@
 import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, X, Trophy, Users, MessageCircle } from "lucide-react";
+import { Bell, Check, X, Trophy, Users, MessageCircle, CheckCheck, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { getNotificationActionUrl, getNotificationActions } from "@/utils/notificationActions";
 
 interface Notification {
   id: string;
@@ -15,8 +17,19 @@ interface Notification {
   message: string;
   related_id: string | null;
   related_user_id: string | null;
+  action_url: string | null;
+  metadata: Record<string, any> | null;
   is_read: boolean;
   created_at: string;
+}
+
+interface GroupedNotification {
+  key: string;
+  type: string;
+  title: string;
+  notifications: Notification[];
+  isRead: boolean;
+  latestTime: Date;
 }
 
 interface NotificationsSheetProps {
@@ -37,6 +50,7 @@ export const NotificationsSheet = ({
   badgeCap = 9,
 }: NotificationsSheetProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number | null>(0);
@@ -45,6 +59,7 @@ export const NotificationsSheet = ({
   const [relatedProfiles, setRelatedProfiles] = useState<Record<string, { display_name: string | null; username: string | null; avatar_url: string | null }>>({});
   const prevUnreadCountRef = useRef<number>(0);
   const [badgeBumpKey, setBadgeBumpKey] = useState(0);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (open) {
@@ -181,7 +196,7 @@ export const NotificationsSheet = ({
         .select('*')
         .eq('user_id', currentUserId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
 
@@ -195,6 +210,149 @@ export const NotificationsSheet = ({
       prevUnreadCountRef.current = unread;
     } catch (error) {
       console.error('Error loading notifications:', error);
+    }
+  };
+
+  // Group notifications by type and related_id (for similar notifications)
+  const groupedNotifications = useMemo(() => {
+    const groups = new Map<string, GroupedNotification>();
+    const ungrouped: Notification[] = [];
+
+    notifications.forEach((notification) => {
+      // Group high_score notifications by drill_id if there are multiple
+      if (notification.type === 'high_score' && notification.related_id) {
+        const key = `high_score_${notification.related_id}`;
+        const existing = groups.get(key);
+        
+        if (existing) {
+          existing.notifications.push(notification);
+          if (new Date(notification.created_at) > existing.latestTime) {
+            existing.latestTime = new Date(notification.created_at);
+            existing.isRead = notification.is_read;
+          }
+        } else {
+          groups.set(key, {
+            key,
+            type: notification.type,
+            title: notification.title,
+            notifications: [notification],
+            isRead: notification.is_read,
+            latestTime: new Date(notification.created_at),
+          });
+        }
+      } else {
+        // Don't group other types
+        ungrouped.push(notification);
+      }
+    });
+
+    // Convert groups to array and filter out single-item groups (show them as ungrouped)
+    const groupedArray: (GroupedNotification | Notification)[] = [];
+    
+    groups.forEach((group) => {
+      if (group.notifications.length > 1) {
+        groupedArray.push(group);
+      } else {
+        ungrouped.push(group.notifications[0]);
+      }
+    });
+
+    // Sort: unread first, then by time
+    const sorted = [
+      ...groupedArray,
+      ...ungrouped
+    ].sort((a, b) => {
+      const aTime = 'notifications' in a 
+        ? a.latestTime.getTime()
+        : new Date(a.created_at).getTime();
+      const bTime = 'notifications' in b
+        ? b.latestTime.getTime()
+        : new Date(b.created_at).getTime();
+      
+      const aRead = 'notifications' in a ? a.isRead : a.is_read;
+      const bRead = 'notifications' in b ? b.isRead : b.is_read;
+      
+      if (aRead !== bRead) {
+        return aRead ? 1 : -1; // Unread first
+      }
+      return bTime - aTime; // Newest first
+    });
+
+    return sorted;
+  }, [notifications]);
+
+  // Batch operations
+  const markAllAsRead = async () => {
+    if (!currentUserId) return;
+    
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', currentUserId)
+        .eq('is_read', false);
+
+      if (error) throw error;
+
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+      toast({
+        title: "All notifications marked as read",
+      });
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAllRead = async () => {
+    if (!currentUserId) return;
+    
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', currentUserId)
+        .eq('is_read', true);
+
+      if (error) throw error;
+
+      setNotifications(prev => prev.filter(n => !n.is_read));
+      toast({
+        title: "Read notifications deleted",
+      });
+    } catch (error) {
+      console.error('Error deleting read notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete read notifications.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    const url = getNotificationActionUrl(
+      notification.type,
+      notification.related_id,
+      notification.related_user_id,
+      notification.action_url
+    );
+    
+    if (url) {
+      markAsRead(notification.id);
+      setOpen(false);
+      navigate(url);
     }
   };
 
@@ -376,75 +534,233 @@ export const NotificationsSheet = ({
       <SheetTrigger asChild>
         {triggerWithBadge}
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md">
+      <SheetContent className="w-full sm:max-w-md flex flex-col">
         <SheetHeader>
           <SheetTitle>Notifications</SheetTitle>
         </SheetHeader>
-        <div className="mt-6 space-y-3 max-h-[calc(100vh-8rem)] overflow-y-auto">
+        
+        {/* Batch Actions */}
+        {notifications.length > 0 && (
+          <div className="mt-4 flex gap-2 pb-2 border-b">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={markAllAsRead}
+              disabled={loading || unreadCount === 0}
+              className="flex-1"
+            >
+              <CheckCheck size={14} className="mr-1" />
+              Mark All Read
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={deleteAllRead}
+              disabled={loading || notifications.filter(n => n.is_read).length === 0}
+              className="flex-1"
+            >
+              <Trash2 size={14} className="mr-1" />
+              Delete Read
+            </Button>
+          </div>
+        )}
+
+        <div className="mt-4 space-y-3 flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No notifications</p>
           ) : (
-            notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-4 border rounded-lg ${
-                  notification.is_read ? 'bg-background' : 'bg-muted/50'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">{getIcon(notification.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm">{notification.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">{getNotificationMessage(notification)}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                    </p>
-                    
-                    {notification.type === 'friend_request' && notification.related_user_id && !notification.is_read && (
-                      <div className="flex gap-2 mt-3">
+            groupedNotifications.map((item) => {
+              // Render grouped notification
+              if ('notifications' in item) {
+                const group = item as GroupedNotification;
+                const isExpanded = expandedGroups.has(group.key);
+                const unreadCount = group.notifications.filter(n => !n.is_read).length;
+                
+                return (
+                  <div
+                    key={group.key}
+                    className={`p-4 border rounded-lg ${
+                      group.isRead ? 'bg-background' : 'bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1">{getIcon(group.type)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm">{group.title}</h4>
+                          <Badge variant="secondary" className="ml-2">
+                            {group.notifications.length}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {unreadCount > 0 
+                            ? `${unreadCount} new ${unreadCount === 1 ? 'update' : 'updates'}`
+                            : `${group.notifications.length} ${group.notifications.length === 1 ? 'notification' : 'notifications'}`
+                          }
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {formatDistanceToNow(group.latestTime, { addSuffix: true })}
+                        </p>
+                        
+                        {isExpanded && (
+                          <div className="mt-3 space-y-2">
+                            {group.notifications.map((notification) => (
+                              <div
+                                key={notification.id}
+                                className={`p-2 rounded border ${
+                                  notification.is_read ? 'bg-background' : 'bg-muted/30'
+                                }`}
+                                onClick={() => handleNotificationClick(notification)}
+                              >
+                                <p className="text-xs text-muted-foreground">
+                                  {getNotificationMessage(notification)}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
                         <Button
+                          variant="ghost"
                           size="sm"
-                          onClick={() => handleFriendRequest(notification.id, notification.related_user_id!, true)}
-                          disabled={loading}
+                          className="mt-2"
+                          onClick={() => {
+                            const newExpanded = new Set(expandedGroups);
+                            if (isExpanded) {
+                              newExpanded.delete(group.key);
+                            } else {
+                              newExpanded.add(group.key);
+                            }
+                            setExpandedGroups(newExpanded);
+                          }}
                         >
-                          <Check size={14} className="mr-1" />
-                          Accept
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleFriendRequest(notification.id, notification.related_user_id!, false)}
-                          disabled={loading}
-                        >
-                          <X size={14} className="mr-1" />
-                          Decline
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp size={14} className="mr-1" />
+                              Collapse
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown size={14} className="mr-1" />
+                              Expand
+                            </>
+                          )}
                         </Button>
                       </div>
-                    )}
+                      <div className="flex flex-col gap-1">
+                        {!group.isRead && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              group.notifications.forEach(n => markAsRead(n.id));
+                            }}
+                          >
+                            <Check size={14} />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    {!notification.is_read && (
+                );
+              }
+              
+              // Render single notification
+              const notification = item as Notification;
+              const actions = getNotificationActions(
+                notification.type,
+                notification.related_id,
+                notification.related_user_id,
+                notification.action_url,
+                (url) => {
+                  markAsRead(notification.id);
+                  setOpen(false);
+                  navigate(url);
+                }
+              );
+              
+              return (
+                <div
+                  key={notification.id}
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                    notification.is_read ? 'bg-background' : 'bg-muted/50'
+                  } hover:bg-muted`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1">{getIcon(notification.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm">{notification.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{getNotificationMessage(notification)}</p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                      </p>
+                      
+                      {notification.type === 'friend_request' && notification.related_user_id && !notification.is_read && (
+                        <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            onClick={() => handleFriendRequest(notification.id, notification.related_user_id!, true)}
+                            disabled={loading}
+                          >
+                            <Check size={14} className="mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleFriendRequest(notification.id, notification.related_user_id!, false)}
+                            disabled={loading}
+                          >
+                            <X size={14} className="mr-1" />
+                            Decline
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {actions.length > 0 && (
+                        <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                          {actions.map((action, idx) => (
+                            <Button
+                              key={idx}
+                              size="sm"
+                              variant={action.variant || 'default'}
+                              onClick={action.action}
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                      {!notification.is_read && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => markAsRead(notification.id)}
+                        >
+                          <Check size={14} />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => markAsRead(notification.id)}
+                        onClick={() => deleteNotification(notification.id)}
                       >
-                        <Check size={14} />
+                        <X size={14} />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => deleteNotification(notification.id)}
-                    >
-                      <X size={14} />
-                    </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </SheetContent>
