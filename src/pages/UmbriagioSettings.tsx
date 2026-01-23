@@ -14,6 +14,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -76,6 +77,7 @@ export default function UmbriagioSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('umbriago', gameId);
+  const { handleBack } = useRoundNavigation({ gameId: gameId || '', mode: 'umbriago' });
   const [game, setGame] = useState<UmbriagioGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -345,6 +347,7 @@ export default function UmbriagioSettings() {
         gameTitle={(game as any).round_name || "Umbriago"}
         courseName={game.course_name}
         pageTitle="Settings"
+        onBack={handleBack}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

@@ -2618,6 +2618,8 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
   const [editPostContent, setEditPostContent] = useState("");
   const [isSavingPost, setIsSavingPost] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
   // Comment likes and replies state
   const [commentLikes, setCommentLikes] = useState<Map<string, { count: number; userHasLiked: boolean }>>(new Map());
   const [commentReplyCounts, setCommentReplyCounts] = useState<Map<string, number>>(new Map());
@@ -2919,30 +2921,48 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
       if (error) throw error;
 
+      // Update local state immediately (like post editing does)
+      // Don't call loadComments() as it can overwrite with stale data
+      setComments(prevComments => 
+        prevComments.map(comment => 
+          comment.id === commentId 
+            ? { ...comment, content: editCommentContent.trim() }
+            : comment
+        )
+      );
+
       setEditingCommentId(null);
       setEditCommentContent("");
-      await loadComments();
       toast.success("Comment updated");
     } catch (error) {
       console.error("Error updating comment:", error);
       toast.error("Failed to update comment");
+      // On error, reload to get accurate state
+      await loadComments();
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+  const handleDeleteComment = (commentId: string) => {
+    setCommentToDelete(commentId);
+    setShowDeleteCommentDialog(true);
+  };
+
+  const handleDeleteCommentConfirm = async () => {
+    if (!commentToDelete || !currentUserId) return;
 
     try {
       const { error } = await supabase
         .from("post_comments")
         .delete()
-        .eq("id", commentId)
+        .eq("id", commentToDelete)
         .eq("user_id", currentUserId);
 
       if (error) throw error;
 
       await loadComments();
       toast.success("Comment deleted");
+      setShowDeleteCommentDialog(false);
+      setCommentToDelete(null);
     } catch (error) {
       console.error("Error deleting comment:", error);
       toast.error("Failed to delete comment");
@@ -3585,12 +3605,15 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                       <>
                         <div className="bg-muted rounded-lg p-2 flex justify-between items-start">
                           <div className="flex-1">
-                            <p 
-                              className="text-sm font-semibold cursor-pointer hover:underline"
-                              onClick={() => handleProfileClick(comment.user_id)}
-                            >
-                              {commentName}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p 
+                                className="text-sm font-semibold cursor-pointer hover:underline"
+                                onClick={() => handleProfileClick(comment.user_id)}
+                              >
+                                {commentName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{commentTime}</p>
+                            </div>
                             <p className="text-sm text-foreground">{comment.content}</p>
                           </div>
                           {isOwnComment && (
@@ -3639,7 +3662,6 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                             <MessageCircle size={14} />
                             {commentReplyCounts.get(comment.id) || 0}
                           </Button>
-                          <p className="text-xs text-muted-foreground">{commentTime}</p>
                         </div>
 
                         {/* Replies Section */}
@@ -3659,15 +3681,17 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                                   />
                                   <div className="flex-1">
                                     <div className="bg-muted/50 rounded-lg p-2">
-                                      <p 
-                                        className="text-xs font-semibold cursor-pointer hover:underline mb-1"
-                                        onClick={() => handleProfileClick(reply.user_id)}
-                                      >
-                                        {replyName}
-                                      </p>
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <p 
+                                          className="text-xs font-semibold cursor-pointer hover:underline"
+                                          onClick={() => handleProfileClick(reply.user_id)}
+                                        >
+                                          {replyName}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">{replyTime}</p>
+                                      </div>
                                       <p className="text-sm text-foreground">{reply.content}</p>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1 ml-2">{replyTime}</p>
                                   </div>
                                 </div>
                               );
@@ -3675,12 +3699,12 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
 
                             {/* Reply Input */}
                             {currentUserId && (
-                              <div className="flex gap-2 mt-2">
+                              <div className="flex gap-2 mt-2 items-center">
                                 <Textarea
                                   placeholder="Write a reply..."
                                   value={replyText.get(comment.id) || ""}
                                   onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
-                                  className="min-h-[60px] resize-none"
+                                  className="min-h-[40px] h-10 py-2 resize-none"
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter" && !e.shiftKey) {
                                       e.preventDefault();
@@ -3689,11 +3713,11 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
                                   }}
                                 />
                                 <Button
-                                  size="sm"
+                                  size="icon"
                                   onClick={() => handleSubmitReply(comment.id)}
                                   disabled={!replyText.get(comment.id)?.trim()}
                                 >
-                                  <Send size={14} />
+                                  <Send size={18} />
                                 </Button>
                               </div>
                             )}
@@ -3750,6 +3774,27 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
             disabled={isDeleting}
           >
             {isDeleting ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Delete Comment Confirmation Dialog */}
+    <AlertDialog open={showDeleteCommentDialog} onOpenChange={setShowDeleteCommentDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Comment?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this comment? This action cannot be undone and the comment will be permanently removed.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setCommentToDelete(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteCommentConfirm}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

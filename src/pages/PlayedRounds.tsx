@@ -219,6 +219,7 @@ const PlayedRounds = () => {
     const roundsToDelete = rounds.filter(r => selectedRounds.has(r.id));
     let successCount = 0;
     let failCount = 0;
+    const deletedRoundIds = new Set<string>();
 
     for (const round of roundsToDelete) {
       const roundId = round.id;
@@ -284,6 +285,9 @@ const PlayedRounds = () => {
 
         if (deleteResult.count > 0) {
           successCount++;
+          deletedRoundIds.add(roundId);
+          // Optimistically update UI by removing the deleted round immediately
+          setRounds(prev => prev.filter(r => r.id !== roundId));
         } else {
           failCount++;
         }
@@ -292,6 +296,13 @@ const PlayedRounds = () => {
         failCount++;
       }
     }
+
+    // Remove deleted rounds from selection
+    setSelectedRounds(prev => {
+      const next = new Set(prev);
+      deletedRoundIds.forEach(id => next.delete(id));
+      return next;
+    });
 
     if (successCount > 0) {
       toast({
@@ -310,7 +321,8 @@ const PlayedRounds = () => {
     setSelectedRounds(new Set());
     setSelectMode(false);
     setDeleteMode(false);
-    fetchPlayedRounds();
+    // Reload to ensure everything is in sync
+    await fetchPlayedRounds();
   };
 
   return (

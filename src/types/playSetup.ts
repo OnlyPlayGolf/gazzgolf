@@ -30,7 +30,6 @@ export interface PlaySetupState {
   } | null;
   selectedHoles: "18" | "front9" | "back9" | "custom";
   customHoles?: number[];
-  numberOfRounds: number;
   teeColor: string;
   gameFormat: "stroke_play" | "umbriago" | "wolf" | "copenhagen" | "match_play" | "scramble" | "best_ball" | "skins";
   groups: PlayerGroup[];
@@ -71,7 +70,6 @@ export const getInitialPlaySetupState = (): PlaySetupState => {
     datePlayed: new Date().toISOString().split('T')[0],
     selectedCourse: null,
     selectedHoles: "18",
-    numberOfRounds: 1,
     teeColor: defaultTee,
     gameFormat: "stroke_play",
     groups: [createDefaultGroup(0)],

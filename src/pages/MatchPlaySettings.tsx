@@ -14,6 +14,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -31,6 +32,7 @@ export default function MatchPlaySettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isEditWindowExpired } = useIsSpectator('match_play', gameId);
+  const { handleBack } = useRoundNavigation({ gameId: gameId || '', mode: 'match_play' });
   const [game, setGame] = useState<MatchPlayGame | null>(null);
   const [allGamesInEvent, setAllGamesInEvent] = useState<MatchPlayGame[]>([]);
   const [loading, setLoading] = useState(true);
@@ -261,6 +263,7 @@ export default function MatchPlaySettings() {
         gameTitle={game.round_name || "Match Play"}
         courseName={game.course_name}
         pageTitle="Settings"
+        onBack={handleBack}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

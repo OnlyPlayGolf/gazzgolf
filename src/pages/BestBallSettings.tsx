@@ -13,6 +13,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   GameDetailsSection,
@@ -31,6 +32,7 @@ export default function BestBallSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('best_ball', gameId);
+  const { handleBack } = useRoundNavigation({ gameId: gameId || '', mode: 'best_ball' });
   const [game, setGame] = useState<BestBallGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -228,7 +230,8 @@ export default function BestBallSettings() {
       <GameHeader 
         gameTitle={(game as any).round_name || "Best Ball"} 
         courseName={game.course_name} 
-        pageTitle="Settings" 
+        pageTitle="Settings"
+        onBack={handleBack}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

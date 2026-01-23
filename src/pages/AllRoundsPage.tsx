@@ -359,12 +359,16 @@ export default function AllRoundsPage() {
     try {
       // Get the rounds to delete
       const roundsToDelete = rounds.filter(r => selectedRounds.has(r.id));
+      const deletedRoundIds = new Set<string>();
 
       for (const round of roundsToDelete) {
         try {
           const deleted = await deleteRoundById(round);
           if (deleted) {
             successCount++;
+            deletedRoundIds.add(round.id);
+            // Optimistically update UI by removing the deleted round immediately
+            setRounds(prev => prev.filter(r => r.id !== round.id));
           } else {
             failCount++;
           }
@@ -374,6 +378,13 @@ export default function AllRoundsPage() {
         }
       }
 
+      // Remove deleted rounds from selection
+      setSelectedRounds(prev => {
+        const next = new Set(prev);
+        deletedRoundIds.forEach(id => next.delete(id));
+        return next;
+      });
+
       if (successCount > 0) {
         toast.success(`${successCount} round${successCount !== 1 ? 's' : ''} deleted successfully`);
       }
@@ -381,15 +392,17 @@ export default function AllRoundsPage() {
         toast.error(`Failed to delete ${failCount} round${failCount !== 1 ? 's' : ''}`);
       }
 
-      // Reset state and reload
+      // Reset state and reload to ensure everything is in sync
       setShowBulkDeleteDialog(false);
       setSelectedRounds(new Set());
       setSelectMode(false);
       setDeleteMode(false);
-      loadRounds();
+      await loadRounds();
     } catch (error) {
       console.error('Error in bulk delete:', error);
       toast.error("Failed to delete rounds");
+      // Reload on error to ensure UI is in sync
+      await loadRounds();
     } finally {
       setDeleting(false);
     }

@@ -47,9 +47,6 @@ export default function GameSettingsDetail() {
   const [roundType, setRoundType] = useState<RoundType>("fun_practice");
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [showCourseDialog, setShowCourseDialog] = useState(false);
-  const [numberOfRounds, setNumberOfRounds] = useState(1);
-  const [numberOfRoundsText, setNumberOfRoundsText] = useState<string>("1");
-  const [eventId, setEventId] = useState<string | null>(null);
   
   // Groups & Players state
   const [groups, setGroups] = useState<PlayerGroup[]>([]);
@@ -65,19 +62,10 @@ export default function GameSettingsDetail() {
   // Use refs to always have latest values for save (avoids stale closure issues)
   const defaultTeeRef = useRef(defaultTee);
   const groupsRef = useRef(groups);
-  const eventIdRef = useRef<string | null>(null);
-  const numberOfRoundsRef = useRef(numberOfRounds);
   
   // Keep refs in sync with state
   useEffect(() => { defaultTeeRef.current = defaultTee; }, [defaultTee]);
   useEffect(() => { groupsRef.current = groups; }, [groups]);
-  useEffect(() => { eventIdRef.current = eventId; }, [eventId]);
-  useEffect(() => { numberOfRoundsRef.current = numberOfRounds; }, [numberOfRounds]);
-  
-  // Sync numberOfRoundsText with numberOfRounds
-  useEffect(() => {
-    setNumberOfRoundsText(String(numberOfRounds));
-  }, [numberOfRounds]);
   
   // Player management
   const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
@@ -668,271 +656,19 @@ export default function GameSettingsDetail() {
     }
   };
 
-  const handleNumberOfRoundsChange = async (newCount: number) => {
-    if (newCount === numberOfRounds) return;
+  const handleBack = () => {
+    // Navigate immediately
+    navigate(returnPath);
     
-    const previousCount = numberOfRounds; // Store previous value for revert
-    
-    try {
-      // Get current round data to use as template
-      const { data: currentRound } = await supabase
-        .from("rounds")
-        .select("*")
-        .eq("id", gameId)
-        .single();
-
-      if (!currentRound) {
-        toast({ title: "Error", description: "Could not find current round", variant: "destructive" });
-        // Revert state
-        setNumberOfRounds(previousCount);
-        return;
+    // Save changes in the background (don't await)
+    (async () => {
+      try {
+        await saveChanges();
+      } catch (error) {
+        // Error already handled in saveChanges with toast
+        console.error("Background save error:", error);
       }
-
-      const currentCount = previousCount; // Use previousCount instead of numberOfRounds
-      const currentEventId = eventIdRef.current;
-      let newEventId = currentEventId;
-
-      // If going from 1 to multiple rounds, create event_id
-      if (currentCount === 1 && newCount > 1) {
-        newEventId = crypto.randomUUID();
-        // Update current round with event_id
-        await supabase
-          .from("rounds")
-          .update({ event_id: newEventId })
-          .eq("id", gameId);
-        setEventId(newEventId);
-        eventIdRef.current = newEventId; // Update ref immediately
-      }
-
-      if (newCount > currentCount) {
-        // Create new rounds
-        const roundsToCreate = newCount - currentCount;
-        // Use values from currentRound to ensure consistency with database
-        const holesPlayed = currentRound.holes_played;
-        const startingHole = currentRound.starting_hole || 1;
-        const currentDefaultTee = currentRound.tee_set || defaultTeeRef.current;
-        const currentRoundType = (currentRound.round_type as RoundType) || roundType;
-
-        // Get existing rounds to determine next round number
-        const { data: existingRounds } = newEventId
-          ? await supabase
-              .from("rounds")
-              .select("round_name")
-              .eq("event_id", newEventId)
-              .order("created_at", { ascending: true })
-          : { data: [] };
-
-        // Extract round numbers from existing round names (e.g., "Round 1" -> 1)
-        const existingRoundNames = (existingRounds || []).map(r => r.round_name).filter(Boolean) as string[];
-        const roundNumbers = existingRoundNames
-          .map(name => {
-            const match = name.match(/Round\s+(\d+)/i);
-            return match ? parseInt(match[1], 10) : 0;
-          })
-          .filter(num => num > 0);
-        
-        const maxRoundNum = roundNumbers.length > 0 ? Math.max(...roundNumbers) : existingRoundNames.length;
-
-        for (let i = 0; i < roundsToCreate; i++) {
-          const roundNum = maxRoundNum + i + 1;
-          const newRoundName = `Round ${roundNum}`;
-
-          const { data: newRound, error: createError } = await supabase
-            .from("rounds")
-            .insert({
-              user_id: currentRound.user_id,
-              course_name: currentRound.course_name,
-              date_played: currentRound.date_played,
-              holes_played: holesPlayed,
-              starting_hole: startingHole,
-              tee_set: currentDefaultTee,
-              round_type: currentRoundType,
-              round_name: newRoundName,
-              event_id: newEventId,
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error("Error creating round:", createError);
-            toast({ 
-              title: "Error", 
-              description: `Failed to create round ${roundNum}`, 
-              variant: "destructive" 
-            });
-            return;
-          }
-
-          // Copy players from current round to new round
-          const { data: currentPlayers } = await supabase
-            .from("round_players")
-            .select("*")
-            .eq("round_id", gameId);
-
-          if (currentPlayers && currentPlayers.length > 0) {
-            const playersToInsert = currentPlayers.map(p => ({
-              round_id: newRound.id,
-              user_id: p.user_id,
-              handicap: p.handicap,
-              tee_color: p.tee_color,
-              is_guest: p.is_guest,
-              guest_name: p.guest_name,
-              group_id: p.group_id,
-            }));
-
-            await supabase
-              .from("round_players")
-              .insert(playersToInsert);
-          }
-        }
-
-        // Refresh round count from database to ensure accuracy
-        if (newEventId) {
-          const { count } = await supabase
-            .from("rounds")
-            .select("*", { count: "exact", head: true })
-            .eq("event_id", newEventId);
-          if (count !== null) {
-            setNumberOfRounds(count);
-          } else {
-            setNumberOfRounds(newCount);
-          }
-        } else {
-          setNumberOfRounds(newCount);
-        }
-        toast({ title: "Success", description: `Created ${roundsToCreate} new round${roundsToCreate !== 1 ? "s" : ""}` });
-      } else if (newCount < currentCount) {
-        // Delete rounds (starting from the last ones)
-        const roundsToDelete = currentCount - newCount;
-
-        if (!newEventId) {
-          toast({ 
-            title: "Error", 
-            description: "Cannot delete rounds from single-round game", 
-            variant: "destructive" 
-          });
-          // Revert state
-          setNumberOfRounds(previousCount);
-          return;
-        }
-
-        // Get all rounds in the event, ordered by created_at
-        const { data: allEventRounds } = await supabase
-          .from("rounds")
-          .select("id")
-          .eq("event_id", newEventId)
-          .order("created_at", { ascending: false });
-
-        if (!allEventRounds || allEventRounds.length === 0) {
-          toast({ 
-            title: "Error", 
-            description: "Could not find rounds to delete", 
-            variant: "destructive" 
-          });
-          // Revert state
-          setNumberOfRounds(previousCount);
-          return;
-        }
-
-        // Get the last N rounds (excluding the current one if it's in the list)
-        const roundsToDeleteIds = allEventRounds
-          .filter(r => r.id !== gameId)
-          .slice(0, roundsToDelete)
-          .map(r => r.id);
-
-        // Check if any of these rounds have scores
-        for (const roundId of roundsToDeleteIds) {
-          const { count: holesCount } = await supabase
-            .from("holes")
-            .select("*", { count: "exact", head: true })
-            .eq("round_id", roundId);
-
-          if (holesCount && holesCount > 0) {
-            toast({ 
-              title: "Cannot delete", 
-              description: "Some rounds have scores and cannot be deleted", 
-              variant: "destructive" 
-            });
-            // Revert state
-            setNumberOfRounds(previousCount);
-            return;
-          }
-        }
-
-        // Delete round_players first (cascade should handle this, but being explicit)
-        for (const roundId of roundsToDeleteIds) {
-          await supabase
-            .from("round_players")
-            .delete()
-            .eq("round_id", roundId);
-        }
-
-        // Delete the rounds
-        const { error: deleteRoundsError } = await supabase
-          .from("rounds")
-          .delete()
-          .in("id", roundsToDeleteIds);
-
-        if (deleteRoundsError) {
-          console.error("Error deleting rounds:", deleteRoundsError);
-          throw deleteRoundsError;
-        }
-
-        // Refresh round count from database to ensure accuracy
-        if (newCount === 1) {
-          // If we're back to 1 round, remove event_id
-          await supabase
-            .from("rounds")
-            .update({ event_id: null })
-            .eq("id", gameId);
-          setEventId(null);
-          eventIdRef.current = null; // Update ref immediately
-          setNumberOfRounds(1);
-        } else {
-          // Refresh count from database
-          const { count } = await supabase
-            .from("rounds")
-            .select("*", { count: "exact", head: true })
-            .eq("event_id", newEventId);
-          if (count !== null) {
-            setNumberOfRounds(count);
-          } else {
-            setNumberOfRounds(newCount);
-          }
-        }
-        toast({ title: "Success", description: `Deleted ${roundsToDelete} round${roundsToDelete !== 1 ? "s" : ""}` });
-      }
-    } catch (error: any) {
-      console.error("Error changing number of rounds:", error);
-      // Revert state on error
-      setNumberOfRounds(previousCount);
-      toast({ 
-        title: "Error", 
-        description: error.message || "Failed to change number of rounds", 
-        variant: "destructive" 
-      });
-    }
-  };
-
-  const handleBack = async () => {
-    // Ensure numberOfRounds is saved if it was changed
-    const raw = numberOfRoundsText.trim();
-    const parsed = raw ? parseInt(raw, 10) : NaN;
-    const finalValue = Number.isFinite(parsed) && parsed > 0 ? parsed : numberOfRounds;
-    
-    if (finalValue !== numberOfRounds) {
-      await handleNumberOfRoundsChange(finalValue);
-      // Wait a bit to ensure database operations complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    try {
-      await saveChanges();
-      navigate(returnPath);
-    } catch (error) {
-      // Error already handled in saveChanges, don't navigate if save failed
-      // User can fix the issue and try again
-    }
+    })();
   };
 
   const saveChanges = async () => {
@@ -1607,19 +1343,6 @@ export default function GameSettingsDetail() {
             </Button>
             <h1 className="text-lg font-semibold">Game Formats</h1>
           </div>
-          <Button
-            onClick={async () => {
-              try {
-                await saveChanges();
-              } catch (error) {
-                // Error already handled in saveChanges
-              }
-            }}
-            disabled={saving}
-            className="ml-auto"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
         </div>
       </div>
 
@@ -1733,50 +1456,6 @@ export default function GameSettingsDetail() {
                 ))}
               </div>
             </div>
-
-            {/* Number of Rounds */}
-            {gameFormat === "stroke_play" && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">Number of Rounds</Label>
-                <div className="space-y-2">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    min={1}
-                    value={numberOfRoundsText}
-                    onChange={(e) => {
-                      const nextRaw = e.target.value;
-                      // Allow empty while typing; allow digits only
-                      if (nextRaw !== "" && !/^\d+$/.test(nextRaw)) return;
-                      
-                      setNumberOfRoundsText(nextRaw);
-                      
-                      const parsed = nextRaw ? parseInt(nextRaw, 10) : NaN;
-                      if (Number.isFinite(parsed) && parsed > 0) {
-                        setNumberOfRounds(parsed);
-                      }
-                    }}
-                    onBlur={async () => {
-                      const raw = numberOfRoundsText.trim();
-                      const parsed = raw ? parseInt(raw, 10) : NaN;
-                      const next = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-                      
-                      // If value changed, save it
-                      if (next !== numberOfRounds) {
-                        await handleNumberOfRoundsChange(next);
-                      } else {
-                        // Reset text to current value if invalid
-                        setNumberOfRoundsText(String(numberOfRounds));
-                      }
-                    }}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {numberOfRounds} round{numberOfRounds !== 1 ? "s" : ""} in this game
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Round Type */}
             <div className="space-y-1.5">

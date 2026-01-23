@@ -14,6 +14,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -55,6 +56,7 @@ export default function SimpleSkinsSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('skins', roundId);
+  const { handleBack } = useRoundNavigation({ gameId: roundId || '', mode: 'skins' });
   const [game, setGame] = useState<SkinsGame | null>(null);
   const [players, setPlayers] = useState<SkinsPlayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -332,6 +334,7 @@ export default function SimpleSkinsSettings() {
         gameTitle={game.round_name || "Skins"}
         courseName={game.course_name}
         pageTitle="Settings"
+        onBack={handleBack}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 
