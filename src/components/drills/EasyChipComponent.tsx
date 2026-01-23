@@ -106,9 +106,9 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-3 bg-primary text-primary-foreground rounded-md text-center">
-              <div className="text-sm text-primary-foreground/80">Distance</div>
-              <div className="text-2xl font-bold text-primary-foreground">10 meters from fairway</div>
+            <div className="p-3 bg-muted rounded-md text-center">
+              <div className="text-sm text-muted-foreground">Distance</div>
+              <div className="text-2xl font-bold text-foreground">Fairway 10 meters</div>
             </div>
 
             <div className="space-y-2">
@@ -124,6 +124,12 @@ const EasyChipComponent = ({ onTabChange, onScoreSaved }: EasyChipComponentProps
                 placeholder="Enter number"
                 className="text-center text-2xl h-14"
               />
+              <Button
+                onClick={saveScore}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Save
+              </Button>
             </div>
 
           </CardContent>

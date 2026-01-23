@@ -202,55 +202,6 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
     <div className="space-y-6">
       {drillStarted && (
         <>
-          {/* Record Your Score */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Record Your Score</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {attempts.map((attempt, idx) => (
-                  <div key={attempt.shotIndex}>
-                    {attempt.shotIndex === 9 && (
-                      <div className="pt-2 pb-4 border-t">
-                        <h4 className="text-lg font-semibold text-primary">Lap 2</h4>
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">
-                          Shot {attempt.shotIndex + 1} - {attempt.distance}
-                        </span>
-                        {attempt.outcome && (
-                          <span className={`text-sm ${
-                            attempt.points >= 2 ? 'text-green-500' : 
-                            attempt.points === 1 ? 'text-yellow-500' :
-                            attempt.points === 0 ? 'text-green-500' : 'text-red-500'
-                          }`}>
-                            {attempt.points > 0 ? '+' : ''}{attempt.points} pts
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-5 gap-2">
-                        {(Object.keys(outcomePoints) as ShotOutcome[]).map((outcome) => (
-                          <Button
-                            key={outcome}
-                            variant={attempt.outcome === outcome ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => updateAttempt(attempt.shotIndex, outcome)}
-                            className="text-xs px-2"
-                          >
-                            {outcomeLabels[outcome]}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Summary Card */}
           {userId ? (
             <Card>
@@ -292,6 +243,55 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
               </CardContent>
             </Card>
           )}
+
+          {/* Record Your Score */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Record Your Score</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {attempts.map((attempt, idx) => (
+                  <div key={attempt.shotIndex}>
+                    {attempt.shotIndex === 9 && (
+                      <div className="pt-2 pb-4 border-t">
+                        <h4 className="text-lg font-semibold text-primary">Lap 2</h4>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">
+                          Shot {attempt.shotIndex + 1} - {attempt.distance.replace('m', ' meters')}
+                        </span>
+                        {attempt.outcome && (
+                          <span className={`text-sm ${
+                            attempt.points >= 2 ? 'text-green-500' : 
+                            attempt.points === 1 ? 'text-yellow-500' :
+                            attempt.points === 0 ? 'text-green-500' : 'text-red-500'
+                          }`}>
+                            {attempt.points > 0 ? '+' : ''}{attempt.points} pts
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-5 gap-2">
+                        {(Object.keys(outcomePoints) as ShotOutcome[]).map((outcome) => (
+                          <Button
+                            key={outcome}
+                            variant={attempt.outcome === outcome ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => updateAttempt(attempt.shotIndex, outcome)}
+                            className="text-xs px-2"
+                          >
+                            {outcomeLabels[outcome]}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
 

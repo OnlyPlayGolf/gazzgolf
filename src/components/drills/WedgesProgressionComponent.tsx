@@ -181,7 +181,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
         setCurrentDistanceIndex(currentDistanceIndex + 1);
         toast({
           title: "Distance completed!",
-          description: `Moving to ${distances[currentDistanceIndex + 1]}m`,
+          description: `Moving to ${distances[currentDistanceIndex + 1]} meters`,
         });
       } else {
         toast({
@@ -227,7 +227,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
         <Card>
           <CardHeader>
             <CardTitle className="text-primary">
-              Current: {distances[currentDistanceIndex]}m
+              Current: {distances[currentDistanceIndex]} meters
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -258,7 +258,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
             
             {progress[currentDistanceIndex]?.attempts.length > 0 && (
               <div>
-                <p className="text-sm font-medium mb-2">Attempts at {distances[currentDistanceIndex]}m:</p>
+                <p className="text-sm font-medium mb-2">Attempts at {distances[currentDistanceIndex]} meters:</p>
                 <p className="text-2xl font-bold text-primary">{progress[currentDistanceIndex].attempts.length}</p>
               </div>
             )}
@@ -285,7 +285,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {p.completed && <CheckCircle2 size={20} className="text-green-600" />}
-                  <span className="font-medium">{p.distance}m</span>
+                  <span className="font-medium">{p.distance} meters</span>
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {p.attempts.length} {p.attempts.length === 1 ? 'shot' : 'shots'}

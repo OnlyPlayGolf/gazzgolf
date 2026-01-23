@@ -216,6 +216,46 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
     <div className="space-y-6">
       {drillStarted && (
         <>
+          {/* Summary Card */}
+          {userId ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Score</p>
+                    <p className="text-3xl font-bold">
+                      {totalScore > 0 ? '+' : ''}{totalScore}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tour avg: +{tourAverage.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-xl font-semibold">{completedAttempts}/{totalAttempts}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Button
+                    onClick={handleReset}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <p className="text-muted-foreground mb-2">
+                  Sign in to save your score and compete on the leaderboard
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Record Your Putts */}
           <Card>
             <CardHeader>
@@ -250,7 +290,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
                               <TrendingDown className="text-primary" size={14} />
                             )}
                             <span className="text-sm text-muted-foreground">
-                              {putt.distance} {putt.direction}
+                              {putt.distance.replace('m', ' meters')} {putt.direction}
                             </span>
                           </div>
                           {attempt?.outcome && (
@@ -301,46 +341,6 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
               </div>
             </CardContent>
           </Card>
-
-          {/* Summary Card */}
-          {userId ? (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Score</p>
-                    <p className="text-3xl font-bold">
-                      {totalScore > 0 ? '+' : ''}{totalScore}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tour avg: +{tourAverage.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-xl font-semibold">{completedAttempts}/{totalAttempts}</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Button
-                    onClick={handleReset}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Reset
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground mb-2">
-                  Sign in to save your score and compete on the leaderboard
-                </p>
-              </CardContent>
-            </Card>
-          )}
         </>
       )}
 

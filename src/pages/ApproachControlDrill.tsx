@@ -27,7 +27,7 @@ export default function ApproachControlDrill() {
             </Button>
             <div className="flex-1 text-center">
               <h1 className="text-xl font-bold">Approach Control</h1>
-              <p className="text-sm text-muted-foreground">Precision from 130-180m</p>
+              <p className="text-sm text-muted-foreground">Precision from 130-180 meters</p>
             </div>
             <div className="w-10" />
           </div>

@@ -5,6 +5,8 @@ import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { STORAGE_KEYS } from "@/constants/app";
 import { getStorageItem, setStorageItem } from "@/utils/storageManager";
+import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface Score {
   name: string;
@@ -38,6 +40,10 @@ export default function AggressivePuttingScore() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [lastScore, setLastScore] = useState<Score | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const [finalScore, setFinalScore] = useState(0);
   
   const tourAverage = 12.28;
 
@@ -81,6 +87,12 @@ export default function AggressivePuttingScore() {
     }
   }, [attempts, currentIndex, isFinished]);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id || null);
+    });
+  }, []);
+
   const initializeDrill = () => {
     localStorage.removeItem(STORAGE_KEY);
     setAttempts([{ attemptNumber: 1, distance: distances[0], outcome: null, points: 0 }]);
@@ -108,7 +120,8 @@ export default function AggressivePuttingScore() {
 
     if (newTotalPoints >= targetPoints) {
       setIsFinished(true);
-      handleSave(updatedAttempts.filter(a => a.outcome !== null).length);
+      const totalPutts = updatedAttempts.filter(a => a.outcome !== null).length;
+      handleSaveToSupabase(totalPutts, updatedAttempts);
     } else {
       // Move to next attempt
       const nextIndex = currentIndex + 1;
@@ -166,6 +179,73 @@ export default function AggressivePuttingScore() {
     });
   };
 
+  const handleSaveToSupabase = async (totalPutts: number, updatedAttempts: Attempt[]) => {
+    // Always save to localStorage for backward compatibility
+    handleSave(totalPutts);
+
+    if (!userId) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your score to the cloud.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: drillId, error: drillError } = await (supabase as any)
+        .rpc('get_or_create_drill_by_title', { p_title: 'Aggressive Putting' });
+
+      if (drillError || !drillId) {
+        console.error('Drill not found or could not create:', drillError);
+        toast({
+          title: "Error",
+          description: "Could not save score to cloud.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: insertedResult, error: saveError } = await (supabase as any)
+        .from('drill_results')
+        .insert({
+          drill_id: drillId,
+          user_id: userId,
+          total_points: totalPutts,
+          attempts_json: updatedAttempts.filter(a => a.outcome !== null),
+        })
+        .select('id')
+        .single();
+
+      if (saveError) {
+        console.error('Error saving score:', saveError);
+        toast({
+          title: "Error saving score",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Score saved!",
+        description: `You completed the drill in ${totalPutts} putts!`,
+      });
+      
+      setSavedResultId(insertedResult?.id || null);
+      setFinalScore(totalPutts);
+      localStorage.removeItem(STORAGE_KEY);
+      setShowCompletionDialog(true);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleReset = () => {
     initializeDrill();
   };
@@ -213,7 +293,7 @@ export default function AggressivePuttingScore() {
           <div className="text-center p-6 bg-muted rounded-lg">
             <div className="text-sm text-muted-foreground mb-2">Distance</div>
             <div className="text-4xl font-bold text-foreground">
-              {currentDistance}m
+              {currentDistance} meters
             </div>
           </div>
 
@@ -252,22 +332,40 @@ export default function AggressivePuttingScore() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {attempts.filter(a => a.outcome !== null).map((attempt, idx) => (
-                <div 
-                  key={attempt.attemptNumber} 
-                  className={`flex justify-between items-center p-2 bg-muted rounded cursor-pointer hover:bg-muted/80 ${
-                    currentIndex === idx ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => setCurrentIndex(idx)}
-                >
-                  <span className="text-sm">Putt {attempt.attemptNumber}: {attempt.distance}m</span>
-                  <span className="text-sm font-semibold">{attempt.outcome} ({attempt.points > 0 ? '+' : ''}{attempt.points})</span>
-                </div>
-              ))}
+              {attempts
+                .filter(a => a.outcome !== null)
+                .reverse()
+                .map((attempt, idx) => {
+                  const originalIndex = attempts.findIndex(a => a.attemptNumber === attempt.attemptNumber);
+                  return (
+                    <div 
+                      key={attempt.attemptNumber} 
+                      className={`flex justify-between items-center p-2 bg-muted rounded cursor-pointer hover:bg-muted/80 ${
+                        currentIndex === originalIndex ? 'ring-2 ring-primary' : ''
+                      }`}
+                      onClick={() => setCurrentIndex(originalIndex)}
+                    >
+                      <span className="text-sm">Putt {attempt.attemptNumber}: {attempt.distance} meters</span>
+                      <span className="text-sm font-semibold">{attempt.outcome} ({attempt.points > 0 ? '+' : ''}{attempt.points})</span>
+                    </div>
+                  );
+                })}
             </div>
           </CardContent>
         </Card>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Aggressive Putting"
+        score={finalScore}
+        unit="putts"
+        resultId={savedResultId || undefined}
+        onContinue={() => {
+          setShowCompletionDialog(false);
+        }}
+      />
     </div>
   );
 }

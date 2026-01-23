@@ -364,37 +364,38 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
       attemptsData[0]?.shots !== undefined;
 
     if (isUpDownsTest) {
-      const upAndDowns = attemptsData.filter((station: any) => station.shots === 1).length;
+      const upAndDowns = attemptsData.filter((station: any) => station.shots !== null && station.shots <= 2).length;
       return (
         <div className="space-y-3 pt-2">
           <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
             <p className="text-sm font-medium text-center">
-              <span className="text-green-600 font-bold">{upAndDowns}/18</span> Up & Downs
+              <span className="text-primary font-bold">{upAndDowns}/18</span> Up & Downs
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {attemptsData.map((station: any, index: number) => (
-              <div
-                key={index}
-                className="p-2 rounded-lg border bg-muted"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-medium">
-                      {station.lie}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {station.distance}m
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${station.shots === 1 ? 'text-green-600' : 'text-primary'}`}>
-                      {station.shots}
-                    </p>
+            {attemptsData.map((station: any, index: number) => {
+              const isUpAndDown = station.shots !== null && station.shots <= 2;
+              return (
+                <div
+                  key={index}
+                  className="p-2 rounded-lg border bg-muted"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">{index + 1}.</span>
+                      <span className="text-xs font-medium">
+                        {station.lie} <span className="text-foreground">{station.distance}m</span>
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-bold ${isUpAndDown ? 'text-primary' : 'text-foreground'}`}>
+                        {station.shots}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
@@ -415,14 +416,25 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
             >
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">
-                    {attempt.attemptNumber
-                      ? `Attempt ${attempt.attemptNumber}`
-                      : `Attempt ${index + 1}`}
-                  </p>
+                  {drillTitle !== "8-Ball Drill" && (
+                    <p className="text-sm font-medium">
+                      {attempt.attemptNumber
+                        ? `Attempt ${attempt.attemptNumber}`
+                        : `Attempt ${index + 1}`}
+                    </p>
+                  )}
                   {attempt.distance && (
                     <p className="text-sm text-muted-foreground">
-                      Distance: {attempt.distance}m
+                      Distance: {(() => {
+                        if (typeof attempt.distance === 'string') {
+                          // Replace "m" with "meters" but preserve "(2ft)" format
+                          let distance = attempt.distance.replace(/(\d+(?:\.\d+)?)m(?=\s|\)|$)/g, '$1 meters');
+                          // Remove any trailing "m" that shouldn't be there
+                          distance = distance.replace(/meters\)m$/, 'meters)');
+                          return distance;
+                        }
+                        return `${attempt.distance} meters`;
+                      })()}
                     </p>
                   )}
                   {attempt.club && (
@@ -452,13 +464,13 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
                   )}
                   {attempt.result && (
                     <p className="text-sm text-muted-foreground">
-                      Result: {attempt.result}
+                      Result: {attempt.result.replace('-', ' ')}
                     </p>
                   )}
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-primary">
-                    {(() => { const v = (attempt.points ?? attempt.score ?? attempt.putts ?? 0) as number; return `${v > 0 ? '+' : ''}${v}`; })()}
+                    {(() => { const v = (attempt.points ?? attempt.score ?? attempt.putts ?? 0) as number; return `${v}`; })()}
                   </p>
                   {attempt.bonusPoints !== undefined && attempt.bonusPoints > 0 && (
                     <p className="text-sm text-green-600">
@@ -597,7 +609,7 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
                           </span>
                         </div>
                         <span className="text-lg font-bold text-foreground">
-                          {result.total_points} {drillTitle === "TW's 9 Windows Test" || drillTitle === "18 Up & Downs" ? 'shots' : drillTitle === "Aggressive Putting" ? 'putts' : 'points'}
+                          {result.total_points} {drillTitle === "TW's 9 Windows Test" || drillTitle === "18 Up & Downs" || drillTitle === "Åberg's Wedge Ladder" ? 'shots' : drillTitle === "Aggressive Putting" || drillTitle === "PGA Tour 18 Holes" || drillTitle === "Short Putting Test" ? 'putts' : drillTitle === "Easy Chip Drill" ? 'in a row' : 'points'}
                         </span>
                       </div>
                     </AccordionTrigger>
