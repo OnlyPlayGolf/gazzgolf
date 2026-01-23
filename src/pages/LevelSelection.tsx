@@ -61,7 +61,14 @@ const LevelSelection = () => {
             </Button>
             <h1 className="text-2xl font-bold text-foreground">Choose Your Level</h1>
           </div>
-          <p className="text-muted-foreground">Select your stage and start leveling up.</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/leaderboards?section=levels')}
+              className="text-primary hover:text-primary/80 font-medium transition-colors underline-offset-4 hover:underline"
+            >
+              Leaderboards
+            </button>
+          </div>
         </div>
 
         {/* Tier Cards */}

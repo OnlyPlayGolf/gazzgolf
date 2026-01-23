@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Trophy, Star, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Trophy, Star, Target, ArrowLeft } from "lucide-react";
 import { FadeSlide } from "@/components/motion/FadeSlide";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -45,15 +46,27 @@ interface DrillLeaderboardEntry {
 
 const Leaderboards = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sectionParam = searchParams.get('section');
+  const drillParam = searchParams.get('drill');
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [favoriteGroupIds, setFavoriteGroupIds] = useState<string[]>([]);
   const [friendsLevelLeaderboard, setFriendsLevelLeaderboard] = useState<LevelLeaderboardEntry[]>([]);
   const [groupsLevelLeaderboard, setGroupsLevelLeaderboard] = useState<LevelLeaderboardEntry[]>([]);
   const [drills, setDrills] = useState<Drill[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [drillLeaderboardType, setDrillLeaderboardType] = useState<'friends' | 'groups'>('friends');
   const [friendsDrillLeaderboard, setFriendsDrillLeaderboard] = useState<DrillLeaderboardEntry[]>([]);
   const [groupsDrillLeaderboard, setGroupsDrillLeaderboard] = useState<DrillLeaderboardEntry[]>([]);
+
+  // Map categories to drill titles
+  const drillCategories: Record<string, string[]> = {
+    'Putting': ['Aggressive Putting', 'PGA Tour 18 Holes', 'Short Putting Test', "Up & Down Putting Drill", "Jason Day's Lag Drill"],
+    'Short Game': ['8-Ball Drill', '18 Up & Downs'],
+    'Approach': ['Approach Control', "TW's 9 Windows Test"],
+    'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -90,6 +103,16 @@ const Leaderboards = () => {
       loadDrillLeaderboards();
     }
   }, [selectedDrill, drillLeaderboardType, user]);
+
+  // Reset selectedDrill when category changes
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      const categoryDrills = drills.filter(d => drillCategories[selectedCategory]?.includes(d.title));
+      if (categoryDrills.length > 0 && !categoryDrills.some(d => d.title === selectedDrill)) {
+        setSelectedDrill(categoryDrills[0].title);
+      }
+    }
+  }, [selectedCategory]);
 
   const loadFavoriteGroups = async () => {
     if (!user) return;
@@ -147,9 +170,24 @@ const Leaderboards = () => {
       if (error) {
         console.error('Error loading drills:', error);
       } else {
-        setDrills(data || []);
-        if (data && data.length > 0) {
-          setSelectedDrill(data[0].title);
+        // Deduplicate by title (keep first occurrence)
+        const uniqueDrills = Array.from(
+          new Map((data || []).map(d => [d.title, d])).values()
+        );
+        setDrills(uniqueDrills);
+        
+        // If drill param is provided, select that drill
+        if (drillParam && uniqueDrills.some(d => d.title === drillParam)) {
+          setSelectedDrill(drillParam);
+          // Set category based on drill
+          for (const [category, titles] of Object.entries(drillCategories)) {
+            if (titles.includes(drillParam)) {
+              setSelectedCategory(category);
+              break;
+            }
+          }
+        } else if (uniqueDrills.length > 0) {
+          setSelectedDrill(uniqueDrills[0].title);
         }
       }
     } catch (error) {
@@ -189,14 +227,193 @@ const Leaderboards = () => {
     return null;
   }
 
+  // Filter drills based on selected category
+  const filteredDrills = selectedCategory === 'all' 
+    ? drills 
+    : drills.filter(d => drillCategories[selectedCategory]?.includes(d.title));
+
   return (
     <div className="pb-20 min-h-screen bg-background">
       <div className="p-4">
-        <h1 className="text-xl font-bold text-foreground mb-6">Leaderboards</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/practice')}
+            className="h-10 w-10"
+          >
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-xl font-bold text-foreground">Leaderboards</h1>
+        </div>
 
         <div className="space-y-6">
+          {/* Drill Leaderboards */}
+          {(!sectionParam || sectionParam === 'drills') && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target size={20} />
+                  Drill Leaderboards
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Select Category</Label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a category..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {Object.keys(drillCategories).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Select Drill</Label>
+                  <Select value={selectedDrill} onValueChange={setSelectedDrill}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a drill..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(drillCategories).map(([category, titles]) => {
+                        const categoryDrills = filteredDrills.filter(d => titles.includes(d.title));
+                        if (categoryDrills.length === 0) return null;
+                        return (
+                          <SelectGroup key={category}>
+                            <SelectLabel>{category}</SelectLabel>
+                            {categoryDrills.map((drill) => (
+                              <SelectItem key={drill.id} value={drill.title}>
+                                {getDrillDisplayTitle(drill.title)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedDrill && (
+                  <Tabs value={drillLeaderboardType} onValueChange={(v) => setDrillLeaderboardType(v as 'friends' | 'groups')}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="friends">
+                        <Users size={16} className="mr-2" />
+                        Friends
+                      </TabsTrigger>
+                      <TabsTrigger value="groups">
+                        <Star size={16} className="mr-2" />
+                        Groups
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="friends" className="mt-4">
+                      <FadeSlide>
+                        {friendsDrillLeaderboard.length > 0 ? (
+                          <div className="space-y-2">
+                            {friendsDrillLeaderboard.map((entry, index) => {
+                              const isCurrentUser = entry.user_id === user?.id;
+                              return (
+                                <div 
+                                  key={entry.user_id} 
+                                  className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="outline" className="w-8 text-center">
+                                      {index + 1}
+                                    </Badge>
+                                    <ProfilePhoto
+                                      src={entry.avatar_url}
+                                      alt={entry.display_name || entry.username || "User"}
+                                      fallback={entry.display_name || entry.username || "?"}
+                                      size="sm"
+                                    />
+                                    <div>
+                                      <p className="font-medium text-foreground text-sm">
+                                        {entry.display_name || entry.username || 'Unknown'}
+                                        {isCurrentUser && ' (You)'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-semibold text-foreground">
+                                      {entry.best_score}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">points</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm text-center py-4">
+                            Complete this drill to see your score!
+                          </p>
+                        )}
+                      </FadeSlide>
+                    </TabsContent>
+
+                    <TabsContent value="groups" className="mt-4">
+                      <FadeSlide>
+                        {groupsDrillLeaderboard.length > 0 ? (
+                          <div className="space-y-2">
+                            {groupsDrillLeaderboard.map((entry, index) => {
+                              const isCurrentUser = entry.user_id === user?.id;
+                              return (
+                                <div 
+                                  key={entry.user_id} 
+                                  className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Badge variant="outline" className="w-8 text-center">
+                                      {index + 1}
+                                    </Badge>
+                                    <ProfilePhoto
+                                      src={entry.avatar_url}
+                                      alt={entry.display_name || entry.username || "User"}
+                                      fallback={entry.display_name || entry.username || "?"}
+                                      size="sm"
+                                    />
+                                    <div>
+                                      <p className="font-medium text-foreground text-sm">
+                                        {entry.display_name || entry.username || 'Unknown'}
+                                        {isCurrentUser && ' (You)'}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-semibold text-foreground">
+                                      {entry.best_score}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">points</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground text-sm text-center py-4">
+                            {favoriteGroupIds.length === 0 
+                              ? 'Add favorite groups to see leaderboards' 
+                              : 'Complete this drill to see your score!'}
+                          </p>
+                        )}
+                      </FadeSlide>
+                    </TabsContent>
+                  </Tabs>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Level Leaderboards */}
-          <Card>
+          {(!sectionParam || sectionParam === 'levels') && (
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trophy size={20} />
@@ -315,169 +532,7 @@ const Leaderboards = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Drill Leaderboards */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target size={20} />
-                Drill Leaderboards
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Drill</Label>
-                <Select value={selectedDrill} onValueChange={setSelectedDrill}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a drill..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Putting</SelectLabel>
-                      {drills.filter(d => ['Aggressive Putting', 'PGA Tour 18 Holes', 'Short Putting Test', "Up & Down Putting Drill", "Jason Day's Lag Drill"].includes(d.title)).map((drill) => (
-                        <SelectItem key={drill.id} value={drill.title}>
-                          {getDrillDisplayTitle(drill.title)}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                    <SelectGroup>
-                      <SelectLabel>Short Game</SelectLabel>
-                      {drills.filter(d => ['8-Ball Drill', '18 Up & Downs'].includes(d.title)).map((drill) => (
-                        <SelectItem key={drill.id} value={drill.title}>
-                          {getDrillDisplayTitle(drill.title)}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                    <SelectGroup>
-                      <SelectLabel>Approach</SelectLabel>
-                      {drills.filter(d => ['Approach Control', "TW's 9 Windows Test"].includes(d.title)).map((drill) => (
-                        <SelectItem key={drill.id} value={drill.title}>
-                          {getDrillDisplayTitle(drill.title)}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                    <SelectGroup>
-                      <SelectLabel>Tee Shots</SelectLabel>
-                      {drills.filter(d => ['Shot Shape Master', 'Driver Control Drill'].includes(d.title)).map((drill) => (
-                        <SelectItem key={drill.id} value={drill.title}>
-                          {getDrillDisplayTitle(drill.title)}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedDrill && (
-                <Tabs value={drillLeaderboardType} onValueChange={(v) => setDrillLeaderboardType(v as 'friends' | 'groups')}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="friends">
-                      <Users size={16} className="mr-2" />
-                      Friends
-                    </TabsTrigger>
-                    <TabsTrigger value="groups">
-                      <Star size={16} className="mr-2" />
-                      Groups
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="friends" className="mt-4">
-                    <FadeSlide>
-                      {friendsDrillLeaderboard.length > 0 ? (
-                        <div className="space-y-2">
-                          {friendsDrillLeaderboard.map((entry, index) => {
-                            const isCurrentUser = entry.user_id === user?.id;
-                            return (
-                              <div 
-                                key={entry.user_id} 
-                                className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="outline" className="w-8 text-center">
-                                    {index + 1}
-                                  </Badge>
-                                  <ProfilePhoto
-                                    src={entry.avatar_url}
-                                    alt={entry.display_name || entry.username || "User"}
-                                    fallback={entry.display_name || entry.username || "?"}
-                                    size="sm"
-                                  />
-                                  <div>
-                                    <p className="font-medium text-foreground text-sm">
-                                      {entry.display_name || entry.username || 'Unknown'}
-                                      {isCurrentUser && ' (You)'}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-semibold text-foreground">
-                                    {entry.best_score}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">points</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-sm text-center py-4">
-                          Complete this drill to see your score!
-                        </p>
-                      )}
-                    </FadeSlide>
-                  </TabsContent>
-
-                  <TabsContent value="groups" className="mt-4">
-                    <FadeSlide>
-                      {groupsDrillLeaderboard.length > 0 ? (
-                        <div className="space-y-2">
-                          {groupsDrillLeaderboard.map((entry, index) => {
-                            const isCurrentUser = entry.user_id === user?.id;
-                            return (
-                              <div 
-                                key={entry.user_id} 
-                                className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Badge variant="outline" className="w-8 text-center">
-                                    {index + 1}
-                                  </Badge>
-                                  <ProfilePhoto
-                                    src={entry.avatar_url}
-                                    alt={entry.display_name || entry.username || "User"}
-                                    fallback={entry.display_name || entry.username || "?"}
-                                    size="sm"
-                                  />
-                                  <div>
-                                    <p className="font-medium text-foreground text-sm">
-                                      {entry.display_name || entry.username || 'Unknown'}
-                                      {isCurrentUser && ' (You)'}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-semibold text-foreground">
-                                    {entry.best_score}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">points</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-sm text-center py-4">
-                          {favoriteGroupIds.length === 0 
-                            ? 'Add favorite groups to see leaderboards' 
-                            : 'Complete this drill to see your score!'}
-                        </p>
-                      )}
-                    </FadeSlide>
-                  </TabsContent>
-                </Tabs>
-              )}
-            </CardContent>
-          </Card>
+          )}
         </div>
       </div>
     </div>
