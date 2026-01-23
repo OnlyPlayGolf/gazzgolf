@@ -13,6 +13,7 @@ import { ScrambleGame, ScrambleTeam, ScrambleHole } from "@/types/scramble";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -30,6 +31,7 @@ export default function ScrambleSettings() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('scramble', gameId);
+  const { handleBack } = useRoundNavigation({ gameId: gameId || '', mode: 'scramble' });
   const [game, setGame] = useState<ScrambleGame | null>(null);
   const [loading, setLoading] = useState(true);
   const [minDrives, setMinDrives] = useState<string>('none');
@@ -280,6 +282,7 @@ export default function ScrambleSettings() {
         gameTitle={(game as any).round_name || "Scramble"}
         courseName={game.course_name}
         pageTitle="Settings"
+        onBack={handleBack}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

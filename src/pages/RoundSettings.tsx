@@ -429,6 +429,7 @@ export default function RoundSettings() {
         gameTitle={round.round_name || "Round"}
         courseName={round.course_name}
         pageTitle="Settings"
+        onBack={handleBack}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

@@ -14,6 +14,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StrokePlayToggle } from "@/components/StrokePlayToggle";
 import { MyStatsSettings } from "@/components/play/MyStatsSettings";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { useRoundNavigation } from "@/hooks/useRoundNavigation";
 import {
   GameDetailsSection,
   GameDetailsData,
@@ -32,6 +33,7 @@ export default function WolfSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isSpectator, isLoading: isSpectatorLoading, isEditWindowExpired } = useIsSpectator('wolf', gameId);
+  const { handleBack } = useRoundNavigation({ gameId: gameId || '', mode: 'wolf' });
   const [game, setGame] = useState<WolfGame | null>(null);
   const [holes, setHoles] = useState<WolfHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
@@ -250,6 +252,7 @@ export default function WolfSettings() {
         gameTitle={(game as any).round_name || "Wolf"}
         courseName={game.course_name}
         pageTitle="Settings"
+        onBack={handleBack}
       />
       <div className="p-4 max-w-2xl mx-auto space-y-4">
 

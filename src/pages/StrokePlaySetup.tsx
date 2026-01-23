@@ -199,10 +199,6 @@ export default function StrokePlaySetup() {
         return;
       }
 
-      const rawNumberOfRounds = sessionStorage.getItem('numberOfRounds');
-      const parsedNumberOfRounds = rawNumberOfRounds ? parseInt(rawNumberOfRounds, 10) : 1;
-      const numberOfRounds = Number.isFinite(parsedNumberOfRounds) && parsedNumberOfRounds > 0 ? parsedNumberOfRounds : 1;
-
       // Determine starting hole based on selectedHoles
       const startingHole = selectedHoles === 'back9' ? 10 : 1;
 
@@ -310,79 +306,29 @@ export default function StrokePlaySetup() {
         }));
       };
 
-      // Create one round (default) or an event + multiple rounds (tournament)
-      if (numberOfRounds <= 1) {
-        const { data: round, error } = await supabase
-          .from("rounds")
-          .insert({
-            user_id: user.id,
-            course_name: selectedCourse.name,
-            round_name: roundName || null,
-            tee_set: teeColor,
-            holes_played: getHolesPlayed(),
-            starting_hole: startingHole,
-            origin: 'play',
-            date_played: datePlayed,
-            stats_mode: statsMode,
-          })
-          .select()
-          .single();
+      // Create a single round
+      const { data: round, error } = await supabase
+        .from("rounds")
+        .insert({
+          user_id: user.id,
+          course_name: selectedCourse.name,
+          round_name: roundName || null,
+          tee_set: teeColor,
+          holes_played: getHolesPlayed(),
+          starting_hole: startingHole,
+          origin: 'play',
+          date_played: datePlayed,
+          stats_mode: statsMode,
+        })
+        .select()
+        .single();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        await createGroupsAndPlayersForRound(round.id);
+      await createGroupsAndPlayersForRound(round.id);
 
-        toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
-        navigate(`/rounds/${round.id}/track`);
-      } else {
-        const { data: event, error: eventError } = await supabase
-          .from("events")
-          .insert({
-            creator_id: user.id,
-            name: roundName || "Stroke Play Tournament",
-            game_type: "stroke_play",
-            course_name: selectedCourse.name,
-            course_id: selectedCourse.id || null,
-            date_played: datePlayed,
-          } as any)
-          .select()
-          .single();
-
-        if (eventError) throw eventError;
-
-        const createdRoundIds: string[] = [];
-
-        for (let i = 0; i < numberOfRounds; i++) {
-          const roundLabel = `Round ${i + 1}`;
-          const perRoundName = roundName ? `${roundName} - ${roundLabel}` : roundLabel;
-
-          const { data: round, error } = await supabase
-            .from("rounds")
-            .insert({
-              user_id: user.id,
-              course_name: selectedCourse.name,
-              round_name: perRoundName,
-              tee_set: teeColor,
-              holes_played: getHolesPlayed(),
-              starting_hole: startingHole,
-              origin: 'play',
-              date_played: datePlayed,
-              stats_mode: statsMode,
-              event_id: event.id,
-            })
-            .select()
-            .single();
-
-          if (error) throw error;
-
-          createdRoundIds.push(round.id);
-          await createGroupsAndPlayersForRound(round.id);
-        }
-
-        const firstRoundId = createdRoundIds[0];
-        toast({ title: "Tournament started!", description: `Round 1 at ${selectedCourse.name}` });
-        navigate(`/rounds/${firstRoundId}/track`);
-      }
+      toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
+      navigate(`/rounds/${round.id}/track`);
 
       // Clear setup sessionStorage
       sessionStorage.removeItem('roundPlayers');
@@ -392,7 +338,6 @@ export default function StrokePlaySetup() {
       sessionStorage.removeItem('roundName');
       sessionStorage.removeItem('datePlayer');
       sessionStorage.removeItem('playGroups');
-      sessionStorage.removeItem('numberOfRounds');
 
     } catch (error: any) {
       toast({ title: "Error creating round", description: error.message, variant: "destructive" });

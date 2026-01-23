@@ -122,6 +122,17 @@ export default function RoundTracker() {
     }
   }, [roundId]);
 
+  // Refetch data when page comes back into focus (e.g., returning from GameSettingsDetail)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (roundId) {
+        fetchRoundData();
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [roundId]);
+
   // Set up realtime subscriptions for players and groups changes
   useEffect(() => {
     if (!roundId) return;

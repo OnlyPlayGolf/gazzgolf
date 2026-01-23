@@ -65,7 +65,6 @@ function RoundsPlayContent() {
   
   // Core state
   const [setupState, setSetupState] = useState<PlaySetupState>(getInitialPlaySetupState());
-  const [numberOfRoundsText, setNumberOfRoundsText] = useState<string>("1");
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showCourseDialog, setShowCourseDialog] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -105,12 +104,6 @@ function RoundsPlayContent() {
       }));
     }
   }, [selectedCourse]);
-
-  // Keep the editable text input in sync with the underlying numeric value,
-  // but only when the user isn't actively clearing it.
-  useEffect(() => {
-    setNumberOfRoundsText(prev => (prev.trim() === "" ? prev : String(setupState.numberOfRounds || 1)));
-  }, [setupState.numberOfRounds]);
 
   // Check for active rounds where user is participant but not creator
   const checkForActiveRounds = async () => {
@@ -247,7 +240,6 @@ function RoundsPlayContent() {
     const savedGroups = sessionStorage.getItem('playGroups');
     const savedAIConfig = sessionStorage.getItem('aiGameConfig');
     const savedGameFormat = sessionStorage.getItem('gameFormat');
-    const savedNumberOfRounds = sessionStorage.getItem('numberOfRounds');
 
     if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
 
@@ -257,10 +249,6 @@ function RoundsPlayContent() {
       if (savedRoundName) updated.roundName = savedRoundName;
       if (savedDate) updated.datePlayed = savedDate;
       if (savedGameFormat) updated.gameFormat = savedGameFormat as any;
-      if (savedNumberOfRounds) {
-        const parsed = parseInt(savedNumberOfRounds, 10);
-        updated.numberOfRounds = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-      }
       if (savedAIConfig) {
         const config = JSON.parse(savedAIConfig);
         updated.aiConfigApplied = true;
@@ -708,7 +696,6 @@ function RoundsPlayContent() {
     sessionStorage.setItem('datePlayer', setupState.datePlayed);
     sessionStorage.setItem('playGroups', JSON.stringify(setupState.groups));
     sessionStorage.setItem('gameFormat', setupState.gameFormat);
-    sessionStorage.setItem('numberOfRounds', String(setupState.numberOfRounds || 1));
   };
 
   const getHolesPlayed = (holeCount: HoleCount): number => {
@@ -777,18 +764,6 @@ function RoundsPlayContent() {
     if (playerValidationError) {
       toast({ title: "Invalid player count", description: playerValidationError, variant: "destructive" });
       return;
-    }
-
-    // Validate Number of Rounds on start (allow temporary empty while typing)
-    if (setupState.gameFormat === "stroke_play") {
-      const raw = numberOfRoundsText.trim();
-      const parsed = raw ? parseInt(raw, 10) : NaN;
-      const next = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-      if (next !== setupState.numberOfRounds || raw === "") {
-        setSetupState(prev => ({ ...prev, numberOfRounds: next }));
-        setNumberOfRoundsText(String(next));
-        sessionStorage.setItem('numberOfRounds', String(next));
-      }
     }
 
     saveState();
@@ -1053,38 +1028,6 @@ function RoundsPlayContent() {
                 ))}
               </div>
             </div>
-
-            {/* Number of Rounds (Stroke Play only) */}
-            {setupState.gameFormat === "stroke_play" && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">Number of Rounds</Label>
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  value={numberOfRoundsText}
-                  onChange={(e) => {
-                    const nextRaw = e.target.value;
-                    // Allow empty while typing; allow digits only
-                    if (nextRaw !== "" && !/^\d+$/.test(nextRaw)) return;
-
-                    setNumberOfRoundsText(nextRaw);
-
-                    const parsed = nextRaw ? parseInt(nextRaw, 10) : NaN;
-                    if (Number.isFinite(parsed) && parsed > 0) {
-                      setSetupState(prev => ({ ...prev, numberOfRounds: parsed }));
-                    }
-                  }}
-                  onBlur={() => {
-                    const raw = numberOfRoundsText.trim();
-                    const parsed = raw ? parseInt(raw, 10) : NaN;
-                    const next = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-                    setNumberOfRoundsText(String(next));
-                    setSetupState(prev => ({ ...prev, numberOfRounds: next }));
-                  }}
-                />
-              </div>
-            )}
 
             {/* Round Type */}
             <div className="space-y-1.5">
