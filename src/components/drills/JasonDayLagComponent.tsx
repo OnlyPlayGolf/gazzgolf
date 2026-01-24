@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DrillCompletionDialog } from "@/components/DrillCompletionDialog";
 
 interface JasonDayLagComponentProps {
   onTabChange?: (tab: string) => void;
@@ -43,6 +44,9 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
   const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [distanceSequence, setDistanceSequence] = useState<number[]>([]);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [savedResultId, setSavedResultId] = useState<string | null>(null);
+  const [finalScore, setFinalScore] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -115,6 +119,9 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
       bonusPoints: 0
     })));
     setCurrentIndex(0);
+    setShowCompletionDialog(false);
+    setSavedResultId(null);
+    setFinalScore(0);
     onTabChange?.('score');
   };
 
@@ -190,14 +197,16 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
         return;
       }
 
-      const { error: saveError } = await (supabase as any)
+      const { data: insertedResult, error: saveError } = await (supabase as any)
         .from('drill_results')
         .insert({
           drill_id: drillId,
           user_id: userId,
           total_points: finalPoints,
           attempts_json: finalAttempts
-        });
+        })
+        .select('id')
+        .single();
 
       if (saveError) {
         console.error('Error saving score:', saveError);
@@ -215,10 +224,11 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
         description: `You scored ${finalPoints} points!`,
       });
       
+      setSavedResultId(insertedResult?.id || null);
+      setFinalScore(finalPoints);
       localStorage.removeItem(STORAGE_KEY);
       setIsActive(false);
-      onScoreSaved?.();
-      onTabChange?.('leaderboard');
+      setShowCompletionDialog(true);
     } catch (error) {
       console.error('Unexpected error:', error);
       toast({
@@ -230,7 +240,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
     }
   };
 
-  if (!isActive || !currentDistance) {
+  if ((!isActive || !currentDistance) && !showCompletionDialog) {
     return null;
   }
 
@@ -283,7 +293,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
           <div className="text-center p-6 bg-muted rounded-lg">
             <div className="text-sm text-muted-foreground mb-2">Distance</div>
             <div className="text-4xl font-bold text-foreground">
-              {currentDistance}m
+              {currentDistance} meters
             </div>
           </div>
 
@@ -335,7 +345,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
                   onClick={() => setCurrentIndex(attempt.puttNumber - 1)}
                 >
                   <span className="text-sm">
-                    Putt {attempt.puttNumber}: {attempt.distance}m
+                    Putt {attempt.puttNumber}: {attempt.distance} m
                   </span>
                   <span className="text-sm font-semibold">
                     {attempt.outcome} ({attempt.points > 0 ? '+' : ''}{attempt.points}
@@ -347,6 +357,19 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
           </CardContent>
         </Card>
       )}
+
+      <DrillCompletionDialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+        drillTitle="Jason Day's Lag Drill"
+        score={finalScore}
+        unit="points"
+        resultId={savedResultId || undefined}
+        onContinue={() => {
+          onScoreSaved?.();
+          onTabChange?.('leaderboard');
+        }}
+      />
     </div>
   );
 };

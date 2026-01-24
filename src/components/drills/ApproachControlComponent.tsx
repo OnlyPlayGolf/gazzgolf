@@ -324,13 +324,13 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
       {isActive && currentShotInfo && (
         <Card>
           <CardHeader>
-            <CardTitle>Shot #{currentShot} of 14</CardTitle>
+            <CardTitle>Shot {currentShot} of 14</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-3 bg-muted/50 rounded-md text-center">
               <div className="text-sm text-muted-foreground">Distance</div>
               <div className="text-xl font-bold text-foreground">
-                {currentShotInfo.distance}m
+                {currentShotInfo.distance} meters
               </div>
               <div className="text-sm font-medium text-foreground mt-1 capitalize">
                 Target: {currentShotInfo.side} side
@@ -457,9 +457,8 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
               {[...attempts].reverse().map((attempt, index) => (
                 <div key={index} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">Shot #{attempt.shotNumber}</span>
-                    <span className="text-xs text-muted-foreground">{attempt.distance}m • {attempt.requiredSide} side</span>
-                    <span className="text-xs text-muted-foreground">{attempt.proximityMeters.toFixed(1)}m proximity</span>
+                    <span className="text-sm font-medium">Shot {attempt.shotNumber}</span>
+                    <span className="text-xs text-muted-foreground">{attempt.distance} meters • {attempt.requiredSide} side</span>
                   </div>
                   <div className="text-right">
                     <span className={`text-sm font-medium ${
@@ -481,8 +480,8 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
                 </div>
               ))}
             </div>
-            <div className="mt-4 p-3 bg-primary text-primary-foreground rounded-md">
-              <div className="text-center font-medium">
+            <div className="mt-4 p-3 bg-background border rounded-md">
+              <div className="text-center font-medium text-foreground">
                 Total: {totalPoints} / {maxPoints} points
               </div>
             </div>

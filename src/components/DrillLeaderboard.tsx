@@ -8,6 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { cn } from "@/lib/utils";
 
+const DRILL_ALIASES: Record<string, string[]> = {
+  "Up & Down Putting Drill": ["Up & Down Putting"],
+  "Wedge Point Game": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
+  "8-Ball Drill": ["8-Ball Drill (points)"],
+  "Driver Control Drill": ["Driver Control"],
+  "18 Up & Downs": []
+};
+
 interface LeaderboardEntry {
   user_id: string;
   display_name: string | null;
@@ -67,20 +75,29 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
   const loadLeaderboards = async (userId?: string) => {
     setLoading(true);
     try {
-      // Get drill UUID and info
-      const { data: drillUuid } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: drillName });
+      // Get all possible drill titles (including aliases)
+      const titles = [drillName, ...(DRILL_ALIASES[drillName] || [])];
+      
+      // Find all matching drills (current and legacy titles)
+      const { data: drillsList } = await supabase
+        .from('drills')
+        .select('id, title')
+        .in('title', titles);
 
-      if (!drillUuid) {
+      if (!drillsList || drillsList.length === 0) {
         setLoading(false);
         return;
       }
+      
+      const drillIds = drillsList.map(d => d.id);
+      const drillUuid = drillIds[0]; // Use first matching drill ID
 
-      // Get drill info to check if lower is better
+      // Get drill info to check if lower is better (use first matching drill)
       const { data: drillInfo } = await (supabase as any)
         .from('drills')
         .select('lower_is_better')
-        .eq('id', drillUuid)
+        .in('id', drillIds)
+        .limit(1)
         .single();
 
       const lowerIsBetter = drillInfo?.lower_is_better || false;
@@ -100,11 +117,11 @@ const DrillLeaderboard: React.FC<DrillLeaderboardProps> = ({
         return;
       }
 
-      // Get current user's best score
+      // Get current user's best score (check all matching drill IDs)
       const { data: userResults } = await (supabase as any)
         .from('drill_results')
         .select('total_points')
-        .eq('drill_id', drillUuid)
+        .in('drill_id', drillIds)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 

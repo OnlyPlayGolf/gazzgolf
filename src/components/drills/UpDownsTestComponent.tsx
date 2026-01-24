@@ -107,7 +107,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
   // Computed values
   const isComplete = drillStarted && stations.every(s => s.shots !== null);
   const totalShots = stations.reduce((sum, s) => sum + (s.shots || 0), 0);
-  const upAndDowns = stations.filter(s => s.shots === 1).length;
+  const upAndDowns = stations.filter(s => s.shots !== null && s.shots <= 2).length;
   const currentStation = stations[currentIndex];
   const canGoBack = currentIndex > 0;
   const canGoForward = currentIndex < 17 && currentStation?.shots !== null;
@@ -221,13 +221,13 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-primary text-primary-foreground rounded-lg p-4 text-center">
+            <div className="bg-muted rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground mb-1">Up & Downs</p>
+              <p className="text-3xl font-bold text-foreground">{upAndDowns}/18</p>
+            </div>
+            <div className="bg-muted rounded-lg p-4 text-center">
               <p className="text-sm text-muted-foreground mb-1">Total Shots</p>
               <p className="text-3xl font-bold text-primary">{totalShots}</p>
-            </div>
-            <div className="bg-green-500/10 rounded-lg p-4 text-center">
-              <p className="text-sm text-muted-foreground mb-1">Up & Downs</p>
-              <p className="text-3xl font-bold text-green-600">{upAndDowns}/18</p>
             </div>
           </div>
 
@@ -240,11 +240,14 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
                   className="bg-muted/50 rounded p-2 text-sm flex justify-between items-center cursor-pointer hover:bg-muted"
                   onClick={() => setCurrentIndex(idx)}
                 >
-                  <span>
-                    {station.lie} {station.distance}m
+                  <span className="flex items-center gap-2">
+                    <span className="text-muted-foreground">{idx + 1}.</span>
+                    <span>
+                      {station.lie} {station.distance} meters
+                    </span>
                   </span>
-                  <span className={station.shots === 1 ? "text-green-600 font-semibold" : ""}>
-                    {station.shots} {station.shots === 1 ? 'shot' : 'shots'}
+                  <span className={station.shots !== null && station.shots <= 2 ? "text-primary font-semibold" : ""}>
+                    {station.shots}
                   </span>
                 </div>
               ))}
@@ -302,16 +305,16 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
             </Button>
           </div>
 
-          <div className="p-3 bg-muted/50 rounded-md text-center">
-            <div className="text-sm text-muted-foreground">Current Station</div>
-            <div className="text-2xl font-bold text-foreground">
-              {currentStation?.lie} - {currentStation?.distance}m
+          <div className="text-center">
+            <div className="text-lg font-medium">
+              Total: {totalShots} shots
             </div>
           </div>
 
-          <div className="text-center">
-            <div className="text-lg font-medium">
-              Current Total: {totalShots} shots
+          <div className="p-3 bg-muted/50 rounded-md text-center">
+            <div className="text-sm text-muted-foreground">Current Station</div>
+            <div className="text-2xl font-bold text-foreground">
+              {currentStation?.lie} {currentStation?.distance} meters
             </div>
           </div>
 
@@ -350,9 +353,11 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {stations.map((station, index) => {
-                if (station.shots === null) return null;
-                return (
+              {stations
+                .map((station, index) => ({ station, index }))
+                .filter(({ station }) => station.shots !== null)
+                .reverse()
+                .map(({ station, index }) => (
                   <div 
                     key={index} 
                     className={`flex justify-between items-center p-2 rounded-md bg-muted/50 cursor-pointer hover:bg-muted/80 ${
@@ -362,7 +367,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
                   >
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">Station #{index + 1}</span>
-                      <span className="text-xs text-muted-foreground">{station.lie} - {station.distance}m</span>
+                      <span className="text-xs text-muted-foreground">{station.lie} {station.distance} meters</span>
                     </div>
                     <div className="text-right">
                       <span className={`text-sm font-medium ${
@@ -375,8 +380,7 @@ const UpDownsTestComponent = ({ onTabChange, onScoreSaved }: UpDownsTestComponen
                       </span>
                     </div>
                   </div>
-                );
-              }).filter(Boolean)}
+                ))}
             </div>
           </CardContent>
         </Card>

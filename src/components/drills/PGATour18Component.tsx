@@ -278,15 +278,15 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
               </Button>
             </div>
 
-            <div className="p-3 bg-primary/10 rounded-md text-center border border-primary/20">
-              <div className="text-sm text-muted-foreground">Distance</div>
-              <div className="text-2xl font-bold text-foreground">{currentDistance}</div>
-            </div>
-
             <div className="text-center">
               <div className="text-lg font-medium">
-                Current Total: {totalPuttsCount} putts
+                Total: {totalPuttsCount} putts
               </div>
+            </div>
+
+            <div className="p-3 bg-primary/10 rounded-md text-center border border-primary/20">
+              <div className="text-sm text-muted-foreground">Distance</div>
+              <div className="text-2xl font-bold text-foreground">{currentDistance?.replace(/(\d+(?:\.\d+)?)m(?=\s|\)|$)/g, '$1 meters')}</div>
             </div>
 
             <div className="space-y-2">

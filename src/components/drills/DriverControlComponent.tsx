@@ -203,7 +203,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
     isSavingRef.current = true;
     try {
       const { data: drillData, error: drillError } = await supabase
-        .rpc('get_or_create_drill_by_title', { p_title: 'Driver Control' });
+        .rpc('get_or_create_drill_by_title', { p_title: 'Driver Control Drill' });
 
       if (drillError) throw drillError;
 
@@ -245,7 +245,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
 
   const currentShotStructure = shotSequence[currentShot - 1];
 
-  if (!isActive || !currentShotStructure) {
+  if ((!isActive || !currentShotStructure) && !showCompletionDialog) {
     return null;
   }
 
@@ -340,7 +340,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {attempts.map((attempt) => (
+              {[...attempts].reverse().map((attempt) => (
                 <div key={attempt.shotNumber} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
                     <span className="font-semibold">Shot {attempt.shotNumber}</span>
@@ -350,7 +350,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={attempt.points >= 0 ? 'text-primary font-semibold' : 'text-destructive font-semibold'}>
-                      {attempt.points >= 0 ? '+' : ''}{attempt.points}
+                      {attempt.points > 0 ? '+' : ''}{attempt.points}
                     </span>
                     {attempt.bonusPoints > 0 && (
                       <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">
@@ -368,7 +368,7 @@ const DriverControlComponent = ({ onTabChange, onScoreSaved }: DriverControlComp
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="Driver Control"
+        drillTitle="Driver Control Drill"
         score={finalScore}
         unit="points"
         resultId={savedResultId || undefined}

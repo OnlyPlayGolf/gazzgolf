@@ -289,7 +289,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
       {isActive && currentShotInfo && (
         <Card>
           <CardHeader>
-            <CardTitle>Shot #{currentShot} of 14</CardTitle>
+            <CardTitle>Shot {currentShot} of 14</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-3 bg-muted/50 rounded-md text-center">
@@ -304,7 +304,7 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
             
             <div className="text-center">
               <div className="text-lg font-medium">
-                Current Score: {totalPoints} points
+                Total: {totalPoints} points
               </div>
               {bonusStreak >= 3 && (
                 <div className="text-sm text-primary font-medium mt-1">
@@ -416,8 +416,8 @@ const ShotShapeMasterComponent = ({ onTabChange, onScoreSaved }: ShotShapeMaster
                 </div>
               ))}
             </div>
-            <div className="mt-4 p-3 bg-primary text-primary-foreground rounded-md">
-              <div className="text-center font-medium">
+            <div className="mt-4 p-3 bg-background border rounded-md">
+              <div className="text-center font-medium text-foreground">
                 Total: {totalPoints} / {maxPoints} points
               </div>
             </div>
