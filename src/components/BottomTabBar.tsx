@@ -60,23 +60,28 @@ export const BottomTabBar = () => {
             <button
               key={tab.id}
               onClick={() => navigate(tab.path)}
-              className={cn(
-                "flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] text-[10px] font-medium transition-colors",
-                isActive 
-                  ? "text-primary" 
-                  : "text-primary/60 hover:text-primary"
-              )}
+              className="flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] transition-colors"
             >
-              <Icon 
-                size={20} 
-                className={cn(
-                  "mb-0.5",
+              <div className={cn(
+                "flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-colors",
+                isActive 
+                  ? "bg-primary/10" 
+                  : ""
+              )}>
+                <Icon 
+                  size={20} 
+                  className={cn(
+                    "mb-0.5",
+                    isActive ? "text-primary" : "text-primary/60"
+                  )} 
+                />
+                <span className={cn(
+                  "text-[10px] font-medium",
                   isActive ? "text-primary" : "text-primary/60"
-                )} 
-              />
-              <span className={cn(isActive ? "text-primary" : "text-primary/60")}>
-                {tab.label}
-              </span>
+                )}>
+                  {tab.label}
+                </span>
+              </div>
             </button>
           );
         })}

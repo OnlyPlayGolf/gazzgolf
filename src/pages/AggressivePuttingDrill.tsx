@@ -34,7 +34,7 @@ const AggressivePuttingDrill = () => {
               <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Aggressive Putting</h1>
+              <h1 className="text-xl font-bold">Aggressive Putting 4-6m</h1>
               <p className="text-sm text-muted-foreground">Reach 15 points as quickly as possible</p>
             </div>
             <div className="w-10" />
@@ -44,7 +44,7 @@ const AggressivePuttingDrill = () => {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        <DrillHighScores drillName="Aggressive Putting" />
+        <DrillHighScores drillName="Aggressive Putting 4-6m" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<AggressivePuttingScore />} />

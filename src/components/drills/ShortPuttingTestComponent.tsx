@@ -125,7 +125,7 @@ const ShortPuttingTestComponent = ({ onTabChange, onScoreSaved }: ShortPuttingTe
     }
 
     try {
-      const drillTitle = 'Short Putting Test';
+      const drillTitle = 'Short Putt Test';
       
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: drillTitle });

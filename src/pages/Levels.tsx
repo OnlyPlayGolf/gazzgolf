@@ -13,6 +13,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 const capitalize = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : "");
 
+// Map route difficulty to display name
+const getDifficultyDisplayName = (difficulty?: string): string => {
+  if (!difficulty) return "First Timer";
+  const lower = difficulty.toLowerCase();
+  if (lower === "beginner") return "First Timer";
+  if (lower === "intermediate") return "Beginner";
+  if (lower === "professional") return "Pro";
+  return capitalize(difficulty);
+};
+
 const Levels = () => {
   const navigate = useNavigate();
   const { difficulty } = useParams<{ difficulty: string }>();
@@ -151,7 +161,7 @@ const Levels = () => {
             >
               <ArrowLeft size={20} />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">{capitalize(difficulty)} Levels</h1>
+            <h1 className="text-2xl font-bold text-foreground">{getDifficultyDisplayName(difficulty)} Levels</h1>
           </div>
           <div className="flex items-start justify-between">
             <div>

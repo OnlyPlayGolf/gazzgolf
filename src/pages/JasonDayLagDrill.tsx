@@ -24,9 +24,9 @@ const JasonDayLagDrill = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-xl font-bold text-foreground">Jason Day's Lag Drill</h1>
+          <h1 className="text-xl font-bold text-foreground">Lag Putting Drill 8-20m</h1>
         </div>
-        <DrillHighScores drillName="Jason Day's Lag Drill" />
+        <DrillHighScores drillName="Lag Putting Drill 8-20m" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<JasonDayLagScore />} />

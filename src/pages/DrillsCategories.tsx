@@ -32,14 +32,6 @@ const DrillsCategories = () => {
             </Button>
             <h1 className="text-2xl font-bold text-foreground">Tests & Drills</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/leaderboards?section=drills')}
-              className="text-primary hover:text-primary/80 font-medium transition-colors underline-offset-4 hover:underline"
-            >
-              Leaderboards
-            </button>
-          </div>
         </div>
 
         <div className="grid gap-4">

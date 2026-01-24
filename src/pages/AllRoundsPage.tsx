@@ -235,9 +235,13 @@ export default function AllRoundsPage() {
         return;
       }
 
+      // Optimistically update UI by removing the deleted round immediately
+      setRounds(prev => prev.filter(r => r.id !== roundId));
+
       toast.success("Round deleted successfully");
       setRoundToDelete(null);
       setDeleteMode(false);
+      // Refetch to ensure everything is in sync (but UI already updated)
       loadRounds();
     } catch (error) {
       console.error('Error deleting round:', error);

@@ -6,8 +6,8 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
 const getDrillDisplayTitle = (title: string): string => {
-  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
-  if (title === "Short Putting Test") return "Short Putting";
+  if (title === "Up & Down Putts 6-10m") return "Up & Down Putts 6-10m";
+  if (title === "Short Putt Test") return "Short Putt Test";
   return title;
 };
 
@@ -30,38 +30,62 @@ interface DrillResultWithProfile {
 
 type DrillCategory = 'Putting' | 'Short Game' | 'Approach' | 'Tee Shots';
 
+// Normalize drill titles (map old titles to new ones)
+const normalizeDrillTitle = (title: string): string => {
+  const titleMap: Record<string, string> = {
+    '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
+  };
+  return titleMap[title] || title;
+};
+
 const getDrillCategory = (drillTitle: string): DrillCategory | null => {
+  // Normalize the title first
+  const normalizedTitle = normalizeDrillTitle(drillTitle);
+  
   const categoryMap: Record<string, DrillCategory> = {
-    'Aggressive Putting': 'Putting',
-    'PGA Tour 18 Holes': 'Putting',
-    'Short Putting Test': 'Putting',
-    "Up & Down Putting Drill": 'Putting',
-    "Jason Day's Lag Drill": 'Putting',
-    '8-Ball Drill': 'Short Game',
+    'Aggressive Putting 4-6m': 'Putting',
+    'PGA Tour 18-hole Test': 'Putting',
+    '18-hole PGA Tour Putting Test': 'Putting', // Legacy title
+    'Short Putt Test': 'Putting',
+    "Up & Down Putts 6-10m": 'Putting',
+    "Lag Putting Drill 8-20m": 'Putting',
+    '8-Ball Circuit': 'Short Game',
     '18 Up & Downs': 'Short Game',
     'Easy Chip Drill': 'Short Game',
-    'Approach Control': 'Approach',
-    "TW's 9 Windows Test": 'Approach',
+    'Approach Control 130-180m': 'Approach',
+    "9 Windows Shot Shape Test": 'Approach',
+    "Wedge Ladder 60-120m": 'Approach',
+    'Wedge Game 40-80m': 'Approach',
     'Shot Shape Master': 'Tee Shots',
     'Driver Control Drill': 'Tee Shots',
   };
-  return categoryMap[drillTitle] || null;
+  return categoryMap[normalizedTitle] || categoryMap[drillTitle] || null;
+};
+
+// Define drill order for each category (matching PuttingDrills.tsx order)
+const drillOrderByCategory: Record<DrillCategory, string[]> = {
+  'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
+  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+  'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
+  'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
 };
 
 const getScoreUnit = (drillName: string): string => {
   const drillUnits: { [key: string]: string } = {
-    "Short Putting Test": "putts",
-    "PGA Tour 18 Holes": "putts",
-    "Up & Down Putting Drill": "pts",
-    "Aggressive Putting": "putts",
-    "8-Ball Drill": "pts",
-    "Approach Control": "pts",
+    "Short Putt Test": "putts",
+    "PGA Tour 18-hole Test": "putts",
+    "Up & Down Putts 6-10m": "pts",
+    "Aggressive Putting 4-6m": "putts",
+    "8-Ball Circuit": "pts",
+    "Approach Control 130-180m": "pts",
     "Shot Shape Master": "pts",
     "Easy Chip Drill": "streak",
     "18 Up & Downs": "shots",
-    "TW's 9 Windows Test": "shots",
+    "9 Windows Shot Shape Test": "shots",
+    "Wedge Ladder 60-120m": "shots",
+    "Wedge Game 40-80m": "pts",
     "Driver Control Drill": "pts",
-    "Jason Day's Lag Drill": "pts",
+    "Lag Putting Drill 8-20m": "pts",
   };
   return drillUnits[drillName] || "pts";
 };
@@ -228,7 +252,10 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
                 if (!drillsByCategory.has(category)) {
                   drillsByCategory.set(category, []);
                 }
-                drillsByCategory.get(category)!.push(drill);
+                // Only add if not already added (avoid duplicates)
+                if (!drillsByCategory.get(category)!.some(d => d.id === drill.id)) {
+                  drillsByCategory.get(category)!.push(drill);
+                }
               }
             });
             
@@ -236,13 +263,30 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
               const categoryDrills = drillsByCategory.get(category);
               if (!categoryDrills || categoryDrills.length === 0) return null;
               
+              // Sort drills to match the order in drillOrderByCategory
+              const order = drillOrderByCategory[category] || [];
+              const sortedDrills = [...categoryDrills].sort((a, b) => {
+                const normalizedA = normalizeDrillTitle(a.title);
+                const normalizedB = normalizeDrillTitle(b.title);
+                const indexA = order.indexOf(normalizedA) !== -1 ? order.indexOf(normalizedA) : order.indexOf(a.title);
+                const indexB = order.indexOf(normalizedB) !== -1 ? order.indexOf(normalizedB) : order.indexOf(b.title);
+                // If drill not in order array, put it at the end
+                if (indexA === -1 && indexB === -1) return 0;
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+              });
+              
               return (
                 <optgroup key={category} label={category}>
-                  {categoryDrills.map(drill => (
-                    <option key={drill.id} value={drill.title}>
-                      {getDrillDisplayTitle(drill.title)}
-                    </option>
-                  ))}
+                  {sortedDrills.map(drill => {
+                    const displayTitle = normalizeDrillTitle(drill.title);
+                    return (
+                      <option key={drill.id} value={drill.title}>
+                        {getDrillDisplayTitle(displayTitle)}
+                      </option>
+                    );
+                  })}
                 </optgroup>
               );
             });

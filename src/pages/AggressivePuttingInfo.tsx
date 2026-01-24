@@ -8,7 +8,7 @@ export default function AggressivePuttingInfo() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="text-primary" />
-            About Aggressive Putting
+            About Aggressive Putting 4-6m
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

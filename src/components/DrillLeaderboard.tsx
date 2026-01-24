@@ -9,9 +9,9 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 import { cn } from "@/lib/utils";
 
 const DRILL_ALIASES: Record<string, string[]> = {
-  "Up & Down Putting Drill": ["Up & Down Putting"],
-  "Wedge Point Game": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
-  "8-Ball Drill": ["8-Ball Drill (points)"],
+  "Up & Down Putts 6-10m": ["Up & Down Putting"],
+  "Wedge Game 40-80m": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
+  "8-Ball Circuit": ["8-Ball Drill (points)"],
   "Driver Control Drill": ["Driver Control"],
   "18 Up & Downs": []
 };
@@ -33,17 +33,17 @@ interface DrillLeaderboardProps {
 
 const getScoreUnit = (drillName: string): string => {
   const drillUnits: { [key: string]: string } = {
-    "Short Putting Test": "putts in a row",
-    "PGA Tour 18 Holes": "putts",
-    "Up & Down Putting Drill": "points",
-    "Aggressive Putting": "putts",
-    "8-Ball Drill": "points",
-    "Approach Control": "points",
+    "Short Putt Test": "putts in a row",
+    "PGA Tour 18-hole Test": "putts",
+    "Up & Down Putts 6-10m": "points",
+    "Aggressive Putting 4-6m": "putts",
+    "8-Ball Circuit": "points",
+    "Approach Control 130-180m": "points",
     "Shot Shape Master": "points",
     "Wedges 40–80 m — Distance Control": "points",
-    "Wedge Point Game": "points",
-    "Åberg's Wedge Ladder": "shots",
-    "TW's 9 Windows Test": "shots",
+    "Wedge Game 40-80m": "points",
+    "Wedge Ladder 60-120m": "shots",
+    "9 Windows Shot Shape Test": "shots",
     "Driver Control Drill": "points",
     "Easy Chip Drill": "in a row",
   };

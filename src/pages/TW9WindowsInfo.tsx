@@ -8,7 +8,7 @@ export default function TW9WindowsInfo() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="text-primary" />
-            About TW's 9 Windows Test
+            About 9 Windows Shot Shape Test
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

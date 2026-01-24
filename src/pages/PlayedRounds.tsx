@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getGameRoute, loadUnifiedRounds, type UnifiedRound } from "@/utils/unifiedRoundsLoader";
+import { getGameRoute, loadUnifiedRounds, invalidateUnifiedRoundsCache, type UnifiedRound } from "@/utils/unifiedRoundsLoader";
 
 const PlayedRounds = () => {
   const navigate = useNavigate();
@@ -195,12 +195,25 @@ const PlayedRounds = () => {
         return;
       }
 
+      // Optimistically update UI by removing the deleted round immediately
+      // Check both id and gameType to handle cases where rounds might have the same id but different gameTypes
+      setRounds(prev => prev.filter(r => 
+        !(r.id === roundId && (r.gameType || 'round') === gameType)
+      ));
+
       toast({
         title: "Round deleted",
         description: "The round has been deleted successfully.",
       });
 
       setDeleteMode(false);
+      
+      // Invalidate cache to ensure fresh data on refetch
+      if (currentUserId) {
+        invalidateUnifiedRoundsCache(currentUserId);
+      }
+      
+      // Refetch to ensure everything is in sync (but UI already updated)
       fetchPlayedRounds();
     } catch (error: any) {
       console.error("Error deleting round:", error);
@@ -287,7 +300,10 @@ const PlayedRounds = () => {
           successCount++;
           deletedRoundIds.add(roundId);
           // Optimistically update UI by removing the deleted round immediately
-          setRounds(prev => prev.filter(r => r.id !== roundId));
+          // Check both id and gameType to handle cases where rounds might have the same id but different gameTypes
+          setRounds(prev => prev.filter(r => 
+            !(r.id === roundId && (r.gameType || 'round') === gameType)
+          ));
         } else {
           failCount++;
         }
@@ -321,6 +337,12 @@ const PlayedRounds = () => {
     setSelectedRounds(new Set());
     setSelectMode(false);
     setDeleteMode(false);
+    
+    // Invalidate cache to ensure fresh data on refetch
+    if (currentUserId) {
+      invalidateUnifiedRoundsCache(currentUserId);
+    }
+    
     // Reload to ensure everything is in sync
     await fetchPlayedRounds();
   };

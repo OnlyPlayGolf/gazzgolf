@@ -178,7 +178,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: 'PGA Tour 18 Holes' });
+        .rpc('get_or_create_drill_by_title', { p_title: 'PGA Tour 18-hole Test' });
 
       if (drillError || !drillId) {
         console.error('Drill not found or could not create:', drillError);
@@ -356,7 +356,7 @@ const PGATour18Component = ({ onTabChange, onScoreSaved }: PGATour18ComponentPro
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="PGA Tour 18 Holes"
+        drillTitle="PGA Tour 18-hole Test"
         score={finalScore}
         unit="putts"
         resultId={savedResultId || undefined}

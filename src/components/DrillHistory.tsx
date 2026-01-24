@@ -29,9 +29,9 @@ interface DrillHistoryProps {
 }
 
 const DRILL_ALIASES: Record<string, string[]> = {
-  "Up & Down Putting Drill": ["Up & Down Putting"],
-  "Wedge Point Game": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
-  "8-Ball Drill": ["8-Ball Drill (points)"],
+  "Up & Down Putts 6-10m": ["Up & Down Putting"],
+  "Wedge Game 40-80m": ["Wedges 40–80 m — 2 Laps", "Wedges 40–80 m — Distance Control"],
+  "8-Ball Circuit": ["8-Ball Drill (points)"],
   "Driver Control Drill": ["Driver Control"],
   "18 Up & Downs": []
 };
@@ -279,7 +279,7 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
   const renderAttemptDetails = (result: DrillResult) => {
     const attemptsData = result.attempts_json;
     
-    // Check if this is TW's 9 Windows Test format
+    // Check if this is 9 Windows Shot Shape Test format
     const isTW9Windows = Array.isArray(attemptsData) && 
       attemptsData.length > 0 && 
       attemptsData[0]?.height !== undefined && 
@@ -416,7 +416,7 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
             >
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  {drillTitle !== "8-Ball Drill" && (
+                  {drillTitle !== "8-Ball Circuit" && (
                     <p className="text-sm font-medium">
                       {attempt.attemptNumber
                         ? `Attempt ${attempt.attemptNumber}`
@@ -609,7 +609,7 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
                           </span>
                         </div>
                         <span className="text-lg font-bold text-foreground">
-                          {result.total_points} {drillTitle === "TW's 9 Windows Test" || drillTitle === "18 Up & Downs" || drillTitle === "Åberg's Wedge Ladder" ? 'shots' : drillTitle === "Aggressive Putting" || drillTitle === "PGA Tour 18 Holes" || drillTitle === "Short Putting Test" ? 'putts' : drillTitle === "Easy Chip Drill" ? 'in a row' : 'points'}
+                          {result.total_points} {drillTitle === "9 Windows Shot Shape Test" || drillTitle === "18 Up & Downs" || drillTitle === "Wedge Ladder 60-120m" ? 'shots' : drillTitle === "Aggressive Putting 4-6m" || drillTitle === "PGA Tour 18-hole Test" || drillTitle === "Short Putt Test" ? 'putts' : drillTitle === "Easy Chip Drill" ? 'in a row' : 'points'}
                         </span>
                       </div>
                     </AccordionTrigger>

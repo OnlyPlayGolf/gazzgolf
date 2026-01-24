@@ -5,7 +5,7 @@ export default function EightBallLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="8-ball-drill"
-        drillName="8-Ball Drill"
+        drillName="8-Ball Circuit"
       />
     </div>
   );

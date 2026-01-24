@@ -94,7 +94,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
     const scoreToSave = totalShots;
 
     try {
-      const drillTitle = "Åberg's Wedge Ladder";
+      const drillTitle = "Wedge Ladder 60-120m";
       
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
@@ -299,7 +299,7 @@ const WedgesProgressionComponent = ({ onTabChange, onScoreSaved }: WedgesProgres
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="Åberg's Wedge Ladder"
+        drillTitle="Wedge Ladder 60-120m"
         score={savedScore}
         unit="shots"
         resultId={savedResultId || undefined}

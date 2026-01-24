@@ -47,7 +47,7 @@ export default function WedgesProgressionDrill() {
               <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Åberg's Wedge Ladder</h1>
+              <h1 className="text-xl font-bold">Wedge Ladder 60-120m</h1>
               <p className="text-sm text-muted-foreground">Distance control progression</p>
             </div>
             <div className="w-10" />
@@ -56,7 +56,7 @@ export default function WedgesProgressionDrill() {
       </div>
 
       <div className="max-w-2xl mx-auto p-4">
-        <DrillHighScores drillName="Åberg's Wedge Ladder" />
+        <DrillHighScores drillName="Wedge Ladder 60-120m" />
         {activeTab === "score" && <WedgesProgressionScore onTabChange={handleTabChange} />}
         {activeTab === "info" && <WedgesProgressionInfo />}
         {activeTab === "feed" && <WedgesProgressionFeed />}

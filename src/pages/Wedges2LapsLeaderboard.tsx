@@ -5,7 +5,7 @@ export default function Wedges2LapsLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="wedges-2-laps"
-        drillName="Wedge Point Game"
+        drillName="Wedge Game 40-80m"
       />
     </div>
   );

@@ -169,7 +169,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
     try {
       // Ensure drill exists and get its UUID by title
       const { data: drillId, error: drillError } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: '8-Ball Drill' });
+        .rpc('get_or_create_drill_by_title', { p_title: '8-Ball Circuit' });
 
       if (drillError || !drillId) {
         console.error('Drill not found or could not create:', drillError);
@@ -317,7 +317,7 @@ const EightBallComponent = ({ onTabChange, onScoreSaved }: EightBallComponentPro
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="8-Ball Drill"
+        drillTitle="8-Ball Circuit"
         score={totalPoints}
         unit="points"
         resultId={savedResultId || undefined}

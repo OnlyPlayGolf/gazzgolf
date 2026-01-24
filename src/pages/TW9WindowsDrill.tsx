@@ -24,9 +24,9 @@ const TW9WindowsDrill = () => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-xl font-bold text-foreground">TW's 9 Windows Test</h1>
+          <h1 className="text-xl font-bold text-foreground">9 Windows Shot Shape Test</h1>
         </div>
-        <DrillHighScores drillName="TW's 9 Windows Test" />
+        <DrillHighScores drillName="9 Windows Shot Shape Test" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<TW9WindowsScore />} />

@@ -5,7 +5,7 @@ export default function ShortPuttingLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="short-putting-test"
-        drillName="Short Putting Test"
+        drillName="Short Putt Test"
       />
     </div>
   );

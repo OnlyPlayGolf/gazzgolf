@@ -6,16 +6,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Users, Trophy, Star, Target, ArrowLeft } from "lucide-react";
+import { Users, Target, ArrowLeft, TrendingUp } from "lucide-react";
 import { FadeSlide } from "@/components/motion/FadeSlide";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 const getDrillDisplayTitle = (title: string): string => {
-  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
-  if (title === "Short Putting Test") return "Short Putting";
+  // Database names are now the display names, so return as-is
   return title;
+};
+
+// Map level category/difficulty to display name
+const getLevelCategoryDisplayName = (category: string): string => {
+  const lower = category.toLowerCase();
+  if (lower === "beginner") return "First Timer";
+  if (lower === "intermediate") return "Beginner";
+  if (lower === "professional") return "Pro";
+  // Capitalize first letter for other categories (Amateur, Tour)
+  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
 };
 
 
@@ -56,16 +65,43 @@ const Leaderboards = () => {
   const [drills, setDrills] = useState<Drill[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [drillLeaderboardType, setDrillLeaderboardType] = useState<'friends' | 'groups'>('friends');
   const [friendsDrillLeaderboard, setFriendsDrillLeaderboard] = useState<DrillLeaderboardEntry[]>([]);
-  const [groupsDrillLeaderboard, setGroupsDrillLeaderboard] = useState<DrillLeaderboardEntry[]>([]);
+  const [mainTab, setMainTab] = useState<'levels' | 'drills'>(
+    sectionParam === 'drills' ? 'drills' : 'levels'
+  );
 
-  // Map categories to drill titles
+  // Normalize drill titles (map old titles to new ones)
+  const normalizeDrillTitle = (title: string): string => {
+    const titleMap: Record<string, string> = {
+      '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
+    };
+    return titleMap[title] || title;
+  };
+
+  // Map categories to drill titles (order matches PuttingDrills.tsx)
   const drillCategories: Record<string, string[]> = {
-    'Putting': ['Aggressive Putting', 'PGA Tour 18 Holes', 'Short Putting Test', "Up & Down Putting Drill", "Jason Day's Lag Drill"],
-    'Short Game': ['8-Ball Drill', '18 Up & Downs'],
-    'Approach': ['Approach Control', "TW's 9 Windows Test"],
+    'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
+    'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+    'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
     'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
+  };
+
+  // Get unit label for drill
+  const getDrillUnit = (drillTitle: string): string => {
+    // Putts
+    if (drillTitle === 'Aggressive Putting 4-6m' || drillTitle === 'PGA Tour 18-hole Test') {
+      return 'putts';
+    }
+    // Shots
+    if (drillTitle === '18 Up & Downs' || drillTitle === "Wedge Ladder 60-120m" || drillTitle === "9 Windows Shot Shape Test") {
+      return 'shots';
+    }
+    // In a row
+    if (drillTitle === 'Easy Chip Drill' || drillTitle === 'Short Putt Test') {
+      return 'in a row';
+    }
+    // Default
+    return 'points';
   };
 
   useEffect(() => {
@@ -99,10 +135,18 @@ const Leaderboards = () => {
   }, [user]);
 
   useEffect(() => {
+    if (sectionParam === 'drills') {
+      setMainTab('drills');
+    } else {
+      setMainTab('levels');
+    }
+  }, [sectionParam]);
+
+  useEffect(() => {
     if (selectedDrill && user) {
       loadDrillLeaderboards();
     }
-  }, [selectedDrill, drillLeaderboardType, user]);
+  }, [selectedDrill, user]);
 
   // Reset selectedDrill when category changes
   useEffect(() => {
@@ -209,15 +253,6 @@ const Leaderboards = () => {
         setFriendsDrillLeaderboard(friendsData || []);
       }
 
-      const { data: groupsData, error: groupsError } = await supabase
-        .rpc('favourite_group_leaderboard_for_drill_by_title', { p_drill_title: selectedDrill });
-
-      if (groupsError) {
-        console.error('Error loading groups drill leaderboard:', groupsError);
-        setGroupsDrillLeaderboard([]);
-      } else {
-        setGroupsDrillLeaderboard(groupsData || []);
-      }
     } catch (error) {
       console.error('Error loading drill leaderboards:', error);
     }
@@ -247,14 +282,90 @@ const Leaderboards = () => {
           <h1 className="text-xl font-bold text-foreground">Leaderboards</h1>
         </div>
 
-        <div className="space-y-6">
-          {/* Drill Leaderboards */}
-          {(!sectionParam || sectionParam === 'drills') && (
+        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'levels' | 'drills')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="levels">
+              <TrendingUp size={16} className="mr-2" />
+              Levels
+            </TabsTrigger>
+            <TabsTrigger value="drills">
+              <Target size={16} className="mr-2" />
+              Drills
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="levels" className="space-y-6">
+            {/* Level Leaderboards */}
+            <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp size={20} />
+                Level Leaderboard
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Friends Level Leaderboard */}
+              <div>
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Users size={16} />
+                  Friends
+                </h3>
+                {friendsLevelLeaderboard.length > 0 ? (
+                  <div className="space-y-2">
+                    {friendsLevelLeaderboard.map((entry, index) => {
+                      return (
+                        <div 
+                          key={entry.user_id} 
+                          className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="w-8 text-center">
+                              {index + 1}
+                            </Badge>
+                            <ProfilePhoto
+                              src={entry.avatar_url}
+                              alt={entry.display_name || entry.username || "User"}
+                              fallback={entry.display_name || entry.username || "?"}
+                              size="sm"
+                            />
+                            <div>
+                              <p className="font-medium text-foreground text-sm">
+                                {entry.display_name || entry.username || 'Unknown'}
+                              </p>
+                              {entry.highest_level && (
+                                <p className="text-xs text-muted-foreground">
+                                  Level {entry.highest_level} • {getLevelCategoryDisplayName(entry.category)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-foreground">
+                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
+                            </p>
+                            <p className="text-xs text-muted-foreground">completed</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm text-center py-4">
+                    Complete levels to see your progress!
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          </TabsContent>
+
+          <TabsContent value="drills" className="space-y-6">
+            {/* Drill Leaderboards */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target size={20} />
-                  Drill Leaderboards
+                  Drills Leaderboards
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -282,16 +393,31 @@ const Leaderboards = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(drillCategories).map(([category, titles]) => {
-                        const categoryDrills = filteredDrills.filter(d => titles.includes(d.title));
+                        // Check both normalized and original titles
+                        const categoryDrills = filteredDrills.filter(d => {
+                          const normalized = normalizeDrillTitle(d.title);
+                          return titles.includes(d.title) || titles.includes(normalized);
+                        });
                         if (categoryDrills.length === 0) return null;
+                        // Sort drills to match the order in drillCategories array
+                        const sortedDrills = categoryDrills.sort((a, b) => {
+                          const normalizedA = normalizeDrillTitle(a.title);
+                          const normalizedB = normalizeDrillTitle(b.title);
+                          const indexA = titles.indexOf(normalizedA) !== -1 ? titles.indexOf(normalizedA) : titles.indexOf(a.title);
+                          const indexB = titles.indexOf(normalizedB) !== -1 ? titles.indexOf(normalizedB) : titles.indexOf(b.title);
+                          return indexA - indexB;
+                        });
                         return (
                           <SelectGroup key={category}>
                             <SelectLabel>{category}</SelectLabel>
-                            {categoryDrills.map((drill) => (
-                              <SelectItem key={drill.id} value={drill.title}>
-                                {getDrillDisplayTitle(drill.title)}
-                              </SelectItem>
-                            ))}
+                            {sortedDrills.map((drill) => {
+                              const displayTitle = normalizeDrillTitle(drill.title);
+                              return (
+                                <SelectItem key={drill.id} value={drill.title}>
+                                  {getDrillDisplayTitle(displayTitle)}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectGroup>
                         );
                       })}
@@ -300,240 +426,58 @@ const Leaderboards = () => {
                 </div>
 
                 {selectedDrill && (
-                  <Tabs value={drillLeaderboardType} onValueChange={(v) => setDrillLeaderboardType(v as 'friends' | 'groups')}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="friends">
-                        <Users size={16} className="mr-2" />
-                        Friends
-                      </TabsTrigger>
-                      <TabsTrigger value="groups">
-                        <Star size={16} className="mr-2" />
-                        Groups
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="friends" className="mt-4">
-                      <FadeSlide>
-                        {friendsDrillLeaderboard.length > 0 ? (
-                          <div className="space-y-2">
-                            {friendsDrillLeaderboard.map((entry, index) => {
-                              const isCurrentUser = entry.user_id === user?.id;
-                              return (
-                                <div 
-                                  key={entry.user_id} 
-                                  className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Badge variant="outline" className="w-8 text-center">
-                                      {index + 1}
-                                    </Badge>
-                                    <ProfilePhoto
-                                      src={entry.avatar_url}
-                                      alt={entry.display_name || entry.username || "User"}
-                                      fallback={entry.display_name || entry.username || "?"}
-                                      size="sm"
-                                    />
-                                    <div>
-                                      <p className="font-medium text-foreground text-sm">
-                                        {entry.display_name || entry.username || 'Unknown'}
-                                        {isCurrentUser && ' (You)'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-semibold text-foreground">
-                                      {entry.best_score}
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Users size={16} />
+                      Friends
+                    </h3>
+                    <FadeSlide>
+                      {friendsDrillLeaderboard.length > 0 ? (
+                        <div className="space-y-2">
+                          {friendsDrillLeaderboard.map((entry, index) => {
+                            return (
+                              <div 
+                                key={entry.user_id} 
+                                className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="outline" className="w-8 text-center">
+                                    {index + 1}
+                                  </Badge>
+                                  <ProfilePhoto
+                                    src={entry.avatar_url}
+                                    alt={entry.display_name || entry.username || "User"}
+                                    fallback={entry.display_name || entry.username || "?"}
+                                    size="sm"
+                                  />
+                                  <div>
+                                    <p className="font-medium text-foreground text-sm">
+                                      {entry.display_name || entry.username || 'Unknown'}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">points</p>
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-sm text-center py-4">
-                            Complete this drill to see your score!
-                          </p>
-                        )}
-                      </FadeSlide>
-                    </TabsContent>
-
-                    <TabsContent value="groups" className="mt-4">
-                      <FadeSlide>
-                        {groupsDrillLeaderboard.length > 0 ? (
-                          <div className="space-y-2">
-                            {groupsDrillLeaderboard.map((entry, index) => {
-                              const isCurrentUser = entry.user_id === user?.id;
-                              return (
-                                <div 
-                                  key={entry.user_id} 
-                                  className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <Badge variant="outline" className="w-8 text-center">
-                                      {index + 1}
-                                    </Badge>
-                                    <ProfilePhoto
-                                      src={entry.avatar_url}
-                                      alt={entry.display_name || entry.username || "User"}
-                                      fallback={entry.display_name || entry.username || "?"}
-                                      size="sm"
-                                    />
-                                    <div>
-                                      <p className="font-medium text-foreground text-sm">
-                                        {entry.display_name || entry.username || 'Unknown'}
-                                        {isCurrentUser && ' (You)'}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-semibold text-foreground">
-                                      {entry.best_score}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">points</p>
-                                  </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-foreground">
+                                    {entry.best_score}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">{getDrillUnit(selectedDrill)}</p>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-sm text-center py-4">
-                            {favoriteGroupIds.length === 0 
-                              ? 'Add favorite groups to see leaderboards' 
-                              : 'Complete this drill to see your score!'}
-                          </p>
-                        )}
-                      </FadeSlide>
-                    </TabsContent>
-                  </Tabs>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-4">
+                          Complete this drill to see your score!
+                        </p>
+                      )}
+                    </FadeSlide>
+                  </div>
                 )}
               </CardContent>
             </Card>
-          )}
-
-          {/* Level Leaderboards */}
-          {(!sectionParam || sectionParam === 'levels') && (
-            <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy size={20} />
-                Level Progress Leaderboards
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Friends Level Leaderboard */}
-              <div>
-                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Users size={16} />
-                  Friends
-                </h3>
-                {friendsLevelLeaderboard.length > 0 ? (
-                  <div className="space-y-2">
-                    {friendsLevelLeaderboard.map((entry, index) => {
-                      const isCurrentUser = entry.user_id === user?.id;
-                      return (
-                        <div 
-                          key={entry.user_id} 
-                          className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary text-primary-foreground border border-primary/20' : 'bg-secondary/50'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="w-8 text-center">
-                              {index + 1}
-                            </Badge>
-                            <ProfilePhoto
-                              src={entry.avatar_url}
-                              alt={entry.display_name || entry.username || "User"}
-                              fallback={entry.display_name || entry.username || "?"}
-                              size="sm"
-                            />
-                            <div>
-                              <p className="font-medium text-foreground text-sm">
-                                {entry.display_name || entry.username || 'Unknown'}
-                                {isCurrentUser && ' (You)'}
-                              </p>
-                              {entry.highest_level && (
-                                <p className="text-xs text-muted-foreground">
-                                  Level {entry.highest_level} • {entry.category}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">
-                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
-                            </p>
-                            <p className="text-xs text-muted-foreground">completed</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-4">
-                    Complete levels to see your progress!
-                  </p>
-                )}
-              </div>
-
-              {/* Groups Level Leaderboard */}
-              <div>
-                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Star size={16} />
-                  Favorite Groups
-                </h3>
-                {groupsLevelLeaderboard.length > 0 ? (
-                  <div className="space-y-2">
-                    {groupsLevelLeaderboard.map((entry, index) => {
-                      const isCurrentUser = entry.user_id === user?.id;
-                      return (
-                        <div 
-                          key={entry.user_id} 
-                          className={`flex items-center justify-between p-3 rounded-md ${isCurrentUser ? 'bg-primary text-primary-foreground border border-primary/20' : 'bg-secondary/50'}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Badge variant="outline" className="w-8 text-center">
-                              {index + 1}
-                            </Badge>
-                            <ProfilePhoto
-                              src={entry.avatar_url}
-                              alt={entry.display_name || entry.username || "User"}
-                              fallback={entry.display_name || entry.username || "?"}
-                              size="sm"
-                            />
-                            <div>
-                              <p className="font-medium text-foreground text-sm">
-                                {entry.display_name || entry.username || 'Unknown'}
-                                {isCurrentUser && ' (You)'}
-                              </p>
-                              {entry.highest_level && (
-                                <p className="text-xs text-muted-foreground">
-                                  Level {entry.highest_level} • {entry.category}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-foreground">
-                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
-                            </p>
-                            <p className="text-xs text-muted-foreground">completed</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm text-center py-4">
-                    {favoriteGroupIds.length === 0 
-                      ? 'Add favorite groups to see leaderboards' 
-                      : 'Complete levels to see your progress!'}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

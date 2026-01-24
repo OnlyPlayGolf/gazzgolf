@@ -184,7 +184,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: "Jason Day's Lag Drill" });
+        .rpc('get_or_create_drill_by_title', { p_title: "Lag Putting Drill 8-20m" });
 
       if (drillError || !drillId) {
         console.error('Drill not found or could not create:', drillError);
@@ -361,7 +361,7 @@ const JasonDayLagComponent = ({ onTabChange, onScoreSaved }: JasonDayLagComponen
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="Jason Day's Lag Drill"
+        drillTitle="Lag Putting Drill 8-20m"
         score={finalScore}
         unit="points"
         resultId={savedResultId || undefined}

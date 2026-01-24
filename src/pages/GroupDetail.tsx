@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, UserPlus, Search, Link2, Copy, RefreshCw, Trash2, Trophy, Crown, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
 import { GroupDrillHistory } from "@/components/GroupDrillHistory";
+import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
@@ -23,9 +24,45 @@ import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
 import { getPublicAppUrl } from "@/utils/publicAppUrl";
 
 const getDrillDisplayTitle = (title: string): string => {
-  if (title === "Up & Down Putting Drill") return "Up & Down Putting";
-  if (title === "Short Putting Test") return "Short Putting";
+  if (title === "Up & Down Putts 6-10m") return "Up & Down Putts 6-10m";
+  if (title === "Short Putt Test") return "Short Putt Test";
   return title;
+};
+
+// Map level category/difficulty to display name
+const getLevelCategoryDisplayName = (category: string): string => {
+  const lower = category.toLowerCase();
+  if (lower === "beginner") return "First Timer";
+  if (lower === "intermediate") return "Beginner";
+  if (lower === "professional") return "Pro";
+  // Capitalize first letter for other categories (Amateur, Tour)
+  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+};
+
+// Define drill order for each category (matching PuttingDrills.tsx order)
+const drillOrderByCategory: Record<DrillCategory, string[]> = {
+  'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
+  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+  'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
+  'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
+};
+
+// Get unit label for drill (matching Leaderboards page)
+const getDrillUnit = (drillTitle: string): string => {
+  // Putts
+    if (drillTitle === 'Aggressive Putting 4-6m' || drillTitle === 'PGA Tour 18-hole Test') {
+    return 'putts';
+  }
+  // Shots
+  if (drillTitle === '18 Up & Downs' || drillTitle === "Wedge Ladder 60-120m" || drillTitle === "9 Windows Shot Shape Test") {
+    return 'shots';
+  }
+  // In a row
+  if (drillTitle === 'Easy Chip Drill' || drillTitle === 'Short Putt Test') {
+    return 'in a row';
+  }
+  // Default
+  return 'points';
 };
 
 interface Member {
@@ -64,40 +101,56 @@ interface Drill {
 
 type DrillCategory = 'Putting' | 'Short Game' | 'Approach' | 'Tee Shots';
 
+// Normalize drill titles (map old titles to new ones)
+const normalizeDrillTitle = (title: string): string => {
+  const titleMap: Record<string, string> = {
+    '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
+  };
+  return titleMap[title] || title;
+};
+
 const getDrillCategory = (drillTitle: string): DrillCategory | null => {
+  // Normalize the title first
+  const normalizedTitle = normalizeDrillTitle(drillTitle);
+  
   // Explicit mapping of drill titles to categories
   const categoryMap: Record<string, DrillCategory> = {
-    'Aggressive Putting': 'Putting',
-    'PGA Tour 18 Holes': 'Putting',
-    'Short Putting Test': 'Putting',
-    "Up & Down Putting Drill": 'Putting',
-    "Jason Day's Lag Drill": 'Putting',
-    '8-Ball Drill': 'Short Game',
+    'Aggressive Putting 4-6m': 'Putting',
+    'PGA Tour 18-hole Test': 'Putting',
+    '18-hole PGA Tour Putting Test': 'Putting', // Legacy title
+    'Short Putt Test': 'Putting',
+    "Up & Down Putts 6-10m": 'Putting',
+    "Lag Putting Drill 8-20m": 'Putting',
+    '8-Ball Circuit': 'Short Game',
     '18 Up & Downs': 'Short Game',
     'Easy Chip Drill': 'Short Game',
-    'Approach Control': 'Approach',
-    "TW's 9 Windows Test": 'Approach',
+    'Approach Control 130-180m': 'Approach',
+    "9 Windows Shot Shape Test": 'Approach',
+    "Wedge Ladder 60-120m": 'Approach',
+    'Wedge Game 40-80m': 'Approach',
     'Shot Shape Master': 'Tee Shots',
     'Driver Control Drill': 'Tee Shots',
   };
   
-  // Return null for drills not in the map (like Wedges drills)
-  return categoryMap[drillTitle] || null;
+  return categoryMap[normalizedTitle] || categoryMap[drillTitle] || null;
 };
 
 const getScoreUnit = (drillName: string): string => {
   const drillUnits: { [key: string]: string } = {
-    "Short Putting Test": "putts in a row",
-    "PGA Tour 18 Holes": "putts",
-    "Up & Down Putting Drill": "points",
-    "Aggressive Putting": "putts",
-    "8-Ball Drill": "points",
-    "Approach Control": "points",
+    "Short Putt Test": "putts in a row",
+    "PGA Tour 18-hole Test": "putts",
+    "Up & Down Putts 6-10m": "points",
+    "Aggressive Putting 4-6m": "putts",
+    "8-Ball Circuit": "points",
+    "Approach Control 130-180m": "points",
     "Shot Shape Master": "points",
     "Wedges 40–80 m — Distance Control": "points",
-    "Wedge Point Game": "points",
-    "Åberg's Wedge Ladder": "shots",
+    "Wedge Game 40-80m": "points",
+    "Wedge Ladder 60-120m": "shots",
     "Easy Chip Drill": "in a row",
+    "18 Up & Downs": "shots",
+    "9 Windows Shot Shape Test": "shots",
+    "Lag Putting Drill 8-20m": "points",
   };
   return drillUnits[drillName] || "points";
 };
@@ -1353,7 +1406,10 @@ useEffect(() => {
                             if (!drillsByCategory.has(category)) {
                               drillsByCategory.set(category, []);
                             }
-                            drillsByCategory.get(category)!.push(drill);
+                            // Only add if not already added (avoid duplicates)
+                            if (!drillsByCategory.get(category)!.some(d => d.id === drill.id)) {
+                              drillsByCategory.get(category)!.push(drill);
+                            }
                           }
                         });
                         
@@ -1362,13 +1418,30 @@ useEffect(() => {
                           const categoryDrills = drillsByCategory.get(category);
                           if (!categoryDrills || categoryDrills.length === 0) return null;
                           
+                          // Sort drills to match the order in drillOrderByCategory
+                          const order = drillOrderByCategory[category] || [];
+                          const sortedDrills = [...categoryDrills].sort((a, b) => {
+                            const normalizedA = normalizeDrillTitle(a.title);
+                            const normalizedB = normalizeDrillTitle(b.title);
+                            const indexA = order.indexOf(normalizedA) !== -1 ? order.indexOf(normalizedA) : order.indexOf(a.title);
+                            const indexB = order.indexOf(normalizedB) !== -1 ? order.indexOf(normalizedB) : order.indexOf(b.title);
+                            // If drill not in order array, put it at the end
+                            if (indexA === -1 && indexB === -1) return 0;
+                            if (indexA === -1) return 1;
+                            if (indexB === -1) return -1;
+                            return indexA - indexB;
+                          });
+                          
                           return (
                             <optgroup key={category} label={category}>
-                              {categoryDrills.map(drill => (
-                                <option key={drill.id} value={drill.title}>
-                                  {getDrillDisplayTitle(drill.title)}
-                                </option>
-                              ))}
+                              {sortedDrills.map(drill => {
+                                const displayTitle = normalizeDrillTitle(drill.title);
+                                return (
+                                  <option key={drill.id} value={drill.title}>
+                                    {getDrillDisplayTitle(displayTitle)}
+                                  </option>
+                                );
+                              })}
                             </optgroup>
                           );
                         });
@@ -1382,32 +1455,30 @@ useEffect(() => {
                         {drillLeaderboard.map((entry, index) => (
                           <div
                             key={entry.user_id}
-                            className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
+                            className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
                           >
-                            <div className="font-bold text-sm text-muted-foreground w-8">
-                              #{index + 1}
-                            </div>
-                            <Avatar 
-                              className="cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() => navigate(`/user/${entry.user_id}`)}
-                            >
-                              <AvatarImage src={entry.avatar_url || undefined} />
-                              <AvatarFallback>
-                                {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div 
-                                className="font-medium cursor-pointer hover:underline"
-                                onClick={() => navigate(`/user/${entry.user_id}`)}
-                              >
-                                {entry.display_name || entry.username || 'Unknown'}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {entry.best_score} {getScoreUnit(selectedDrill || '')}
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="w-8 text-center">
+                                {index + 1}
+                              </Badge>
+                              <ProfilePhoto
+                                src={entry.avatar_url}
+                                alt={entry.display_name || entry.username || "User"}
+                                fallback={entry.display_name || entry.username || "?"}
+                                size="sm"
+                              />
+                              <div>
+                                <p className="font-medium text-foreground text-sm">
+                                  {entry.display_name || entry.username || 'Unknown'}
+                                </p>
                               </div>
                             </div>
-                            {index === 0 && <Crown size={20} className="text-yellow-500" />}
+                            <div className="text-right">
+                              <p className="font-semibold text-foreground">
+                                {entry.best_score}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{getDrillUnit(selectedDrill || '')}</p>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1431,30 +1502,34 @@ useEffect(() => {
                       {groupLevelsLeaderboard.map((entry, index) => (
                         <div
                           key={entry.user_id}
-                          className="flex items-center gap-2 p-3 rounded-lg bg-secondary/30"
+                          className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
                         >
-                          <div className="font-bold text-sm text-muted-foreground w-8">
-                            #{index + 1}
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="w-8 text-center">
+                              {index + 1}
+                            </Badge>
+                            <ProfilePhoto
+                              src={entry.avatar_url}
+                              alt={entry.display_name || entry.username || "User"}
+                              fallback={entry.display_name || entry.username || "?"}
+                              size="sm"
+                            />
+                            <div>
+                              <p className="font-medium text-foreground text-sm">
+                                {entry.display_name || entry.username || 'Unknown'}
+                              </p>
+                              {entry.highest_level && (
+                                <p className="text-xs text-muted-foreground">
+                                  Level {entry.highest_level} • {getLevelCategoryDisplayName(entry.category)}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <Avatar 
-                            className="cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => navigate(`/user/${entry.user_id}`)}
-                          >
-                            <AvatarImage src={entry.avatar_url || undefined} />
-                            <AvatarFallback>
-                              {(entry.display_name || entry.username || 'U').charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div 
-                              className="font-medium cursor-pointer hover:underline"
-                              onClick={() => navigate(`/user/${entry.user_id}`)}
-                            >
-                              {entry.display_name || entry.username || 'Unknown'}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {entry.completed_levels} levels completed • Highest: Level {entry.highest_level || 0}
-                            </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-foreground">
+                              {entry.completed_levels} level{entry.completed_levels !== 1 ? 's' : ''}
+                            </p>
+                            <p className="text-xs text-muted-foreground">completed</p>
                           </div>
                         </div>
                       ))}
