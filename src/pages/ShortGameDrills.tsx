@@ -58,7 +58,7 @@ const ShortGameDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>8-Ball Drill</div>
+                  <div>8-Ball Circuit</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Short Game • Circuit points
                   </div>

@@ -263,7 +263,7 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: 'Approach Control' });
+        .rpc('get_or_create_drill_by_title', { p_title: 'Approach Control 130-180m' });
 
       if (drillError || !drillId) {
         console.error('Drill not found or could not create:', drillError);
@@ -492,7 +492,7 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="Approach Control"
+        drillTitle="Approach Control 130-180m"
         score={finalScore}
         unit="points"
         resultId={savedResultId || undefined}

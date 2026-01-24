@@ -26,7 +26,7 @@ export default function ApproachControlDrill() {
               <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Approach Control</h1>
+              <h1 className="text-xl font-bold">Approach Control 130-180m</h1>
               <p className="text-sm text-muted-foreground">Precision from 130-180 meters</p>
             </div>
             <div className="w-10" />
@@ -35,7 +35,7 @@ export default function ApproachControlDrill() {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        <DrillHighScores drillName="Approach Control" />
+        <DrillHighScores drillName="Approach Control 130-180m" />
         <Routes>
           <Route path="/" element={<Navigate to="score" replace />} />
           <Route path="score" element={<ApproachControlScore />} />

@@ -32,7 +32,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Short Putting</div>
+                  <div>Short Putt Test</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • Under pressure
                   </div>
@@ -58,7 +58,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>PGA Tour 18 Holes</div>
+                  <div>PGA Tour 18-hole Test</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • Mixed distances
                   </div>
@@ -84,7 +84,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Aggressive Putting</div>
+                  <div>Aggressive Putting 4-6m</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • 4m, 5m, 6m cycle
                   </div>
@@ -110,7 +110,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Up & Down Putting</div>
+                  <div>Up & Down Putts 6-10m</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • Uphill & downhill
                   </div>
@@ -136,7 +136,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>Jason Day's Lag Drill</div>
+                  <div>Lag Putting Drill 8-20m</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • 8-20m lag putting
                   </div>

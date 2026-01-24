@@ -5,7 +5,7 @@ export default function UpDownPuttingLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="up-down-putting"
-        drillName="Up & Down Putting Drill"
+        drillName="Up & Down Putts 6-10m"
       />
     </div>
   );

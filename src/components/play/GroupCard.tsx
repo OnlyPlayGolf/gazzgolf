@@ -51,19 +51,15 @@ function PlayerRow({
   dragHandleProps,
 }: PlayerRowProps) {
   return (
-    <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border/50">
-      {showDragHandle && (
-        <div
-          {...dragHandleProps}
-          className="cursor-grab active:cursor-grabbing shrink-0"
-        >
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-        </div>
-      )}
-      
-      <button
+    <div 
+      className={`flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border/50 ${
+        dragHandleProps ? "cursor-grab active:cursor-grabbing" : ""
+      }`}
+      {...(dragHandleProps || {})}
+    >
+      <div
         onClick={() => onPlayerClick(player)}
-        className="flex items-center gap-2 flex-1 min-w-0 text-left hover:bg-muted/50 rounded p-1 -m-1 transition-colors"
+        className="flex items-center gap-2 flex-1 min-w-0 text-left hover:bg-muted/50 rounded p-1 -m-1 transition-colors cursor-pointer"
       >
         <Avatar className="h-8 w-8 shrink-0">
           <AvatarImage src={player.avatarUrl} />
@@ -81,7 +77,7 @@ function PlayerRow({
             </p>
           )}
         </div>
-      </button>
+      </div>
       
       <TeeSelector
         value={player.teeColor}
@@ -199,7 +195,12 @@ export function GroupCard({
                 ) : (
                   <div className="space-y-2">
                     {group.players.map((player, playerIndex) => (
-                      <Draggable key={player.odId} draggableId={player.odId} index={playerIndex}>
+                      <Draggable 
+                        key={player.odId} 
+                        draggableId={player.odId} 
+                        index={playerIndex}
+                        disableInteractiveElementBlocking={true}
+                      >
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
@@ -213,7 +214,7 @@ export function GroupCard({
                               onPlayerClick={onPlayerClick}
                               onUpdatePlayerTee={onUpdatePlayerTee}
                               onRemovePlayer={onRemovePlayer}
-                              showDragHandle={true}
+                              showDragHandle={false}
                               dragHandleProps={provided.dragHandleProps}
                             />
                           </div>

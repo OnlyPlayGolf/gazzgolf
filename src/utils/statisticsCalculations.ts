@@ -631,14 +631,14 @@ export const getDrillRecommendations = (stats: AllStats): DrillRecommendation[] 
   if (stats.putting.puttsPerRound && stats.putting.puttsPerRound > 32) {
     recommendations.push({
       drillId: 'pga-tour-18',
-      drillTitle: 'PGA Tour 18 Holes',
+      drillTitle: 'PGA Tour 18-hole Test',
       category: 'Putting',
       reason: 'Improve distance control and consistency',
       path: '/drill/pga-tour-18'
     });
     recommendations.push({
       drillId: 'aggressive-putting',
-      drillTitle: 'Aggressive Putting',
+      drillTitle: 'Aggressive Putting 4-6m',
       category: 'Putting',
       reason: 'Build confidence on mid-range putts',
       path: '/drill/aggressive-putting'
@@ -648,14 +648,14 @@ export const getDrillRecommendations = (stats: AllStats): DrillRecommendation[] 
   if (stats.strokesGained.putting !== null && stats.strokesGained.putting < -0.1) {
     recommendations.push({
       drillId: 'short-putting-test',
-      drillTitle: 'Short Putting Test',
+      drillTitle: 'Short Putt Test',
       category: 'Putting',
       reason: 'Losing strokes on the green - focus on short putts',
       path: '/drill/short-putting-test'
     });
     recommendations.push({
       drillId: 'jason-day-lag',
-      drillTitle: 'Jason Day Lag Putting',
+      drillTitle: 'Lag Putting Drill 8-20m',
       category: 'Putting',
       reason: 'Improve lag putting to reduce 3-putts',
       path: '/drill/jason-day-lag'
@@ -666,7 +666,7 @@ export const getDrillRecommendations = (stats: AllStats): DrillRecommendation[] 
   if (stats.accuracy.scrambling !== null && stats.accuracy.scrambling < 40) {
     recommendations.push({
       drillId: '8-ball-drill',
-      drillTitle: '8-Ball Drill',
+      drillTitle: '8-Ball Circuit',
       category: 'Short Game',
       reason: 'Improve up-and-down percentage',
       path: '/drill/8-ball-drill'
@@ -694,14 +694,14 @@ export const getDrillRecommendations = (stats: AllStats): DrillRecommendation[] 
   if (stats.accuracy.greensInRegulation !== null && stats.accuracy.greensInRegulation < 40) {
     recommendations.push({
       drillId: 'approach-control',
-      drillTitle: 'Approach Control',
+      drillTitle: 'Approach Control 130-180m',
       category: 'Approach',
       reason: 'Hit more greens in regulation',
       path: '/drill/approach-control'
     });
     recommendations.push({
       drillId: 'wedges-progression',
-      drillTitle: 'Wedges Progression',
+      drillTitle: 'Wedge Ladder 60-120m',
       category: 'Wedges',
       reason: 'Improve wedge distance control',
       path: '/drill/wedges-progression'

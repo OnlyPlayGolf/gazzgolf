@@ -194,7 +194,7 @@ export default function AggressivePuttingScore() {
 
     try {
       const { data: drillId, error: drillError } = await (supabase as any)
-        .rpc('get_or_create_drill_by_title', { p_title: 'Aggressive Putting' });
+        .rpc('get_or_create_drill_by_title', { p_title: 'Aggressive Putting 4-6m' });
 
       if (drillError || !drillId) {
         console.error('Drill not found or could not create:', drillError);
@@ -358,7 +358,7 @@ export default function AggressivePuttingScore() {
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="Aggressive Putting"
+        drillTitle="Aggressive Putting 4-6m"
         score={finalScore}
         unit="putts"
         resultId={savedResultId || undefined}

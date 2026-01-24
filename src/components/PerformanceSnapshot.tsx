@@ -11,19 +11,19 @@ interface PerformanceSnapshotProps {
 // Map insight categories to drills
 const drillsByCategory: Record<string, { id: string; title: string; description: string }[]> = {
   'putting': [
-    { id: 'pga-tour-18', title: 'PGA Tour 18 Holes', description: 'Overall putting practice against tour standards' },
-    { id: 'aggressive-putting', title: 'Aggressive Putting', description: 'Commit with confidence inside 6 meters' },
-    { id: 'short-putting-test', title: 'Short Putting Test', description: 'Build consistency on short putts' },
+    { id: 'pga-tour-18', title: 'PGA Tour 18-hole Test', description: 'Overall putting practice against tour standards' },
+    { id: 'aggressive-putting', title: 'Aggressive Putting 4-6m', description: 'Commit with confidence inside 6 meters' },
+    { id: 'short-putting-test', title: 'Short Putt Test', description: 'Build consistency on short putts' },
   ],
   'short-game': [
-    { id: '8-ball-drill', title: '8-Ball Drill', description: 'Complete 8 chip/pitch/lob/bunker stations' },
+    { id: '8-ball-drill', title: '8-Ball Circuit', description: 'Complete 8 chip/pitch/lob/bunker stations' },
     { id: 'easy-chip', title: 'Easy Chip Drill', description: 'Build consistency on simple chip shots' },
     { id: 'up-downs-test', title: '18 Up & Downs', description: '18 randomized short game stations' },
   ],
   'approach': [
-    { id: 'wedges-2-laps', title: 'Wedge Point Game', description: 'Dial in wedges from 40-80 meters' },
-    { id: 'approach-control', title: 'Approach Control', description: '14 approach shots from 130-180m' },
-    { id: 'wedges-progression', title: "Åberg's Wedge Ladder", description: 'Distance control across 13 distances' },
+    { id: 'wedges-2-laps', title: 'Wedge Game 40-80m', description: 'Dial in wedges from 40-80 meters' },
+    { id: 'approach-control', title: 'Approach Control 130-180m', description: '14 approach shots from 130-180m' },
+    { id: 'wedges-progression', title: "Wedge Ladder 60-120m", description: 'Distance control across 13 distances' },
   ],
   'driving': [
     { id: 'driver-control', title: 'Driver Control Drill', description: '14 tee shots testing fairway accuracy' },

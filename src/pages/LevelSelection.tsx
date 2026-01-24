@@ -10,16 +10,16 @@ const LevelSelection = () => {
   const tiers = [
     {
       id: "beginner",
-      title: "Beginner",
+      title: "First Timer",
       subtitle: "Start your journey here.",
       icon: Target,
       action: () => navigate("/levels/beginner"),
     },
     {
       id: "intermediate", 
-      title: "Intermediate",
+      title: "Beginner",
       subtitle: "Take your skills to the next stage.",
-      icon: Trophy,
+      icon: Zap,
       action: () => navigate("/levels/intermediate"),
     },
     {
@@ -31,7 +31,7 @@ const LevelSelection = () => {
     },
     {
       id: "professional",
-      title: "Professional",
+      title: "Pro",
       subtitle: "Compete like a pro.",
       icon: Crown,
       action: () => navigate("/levels/professional"),
@@ -40,7 +40,7 @@ const LevelSelection = () => {
       id: "tour",
       title: "Tour",
       subtitle: "Elite level mastery.",
-      icon: Zap,
+      icon: Trophy,
       action: () => navigate("/levels/tour"),
     },
   ];
@@ -60,14 +60,6 @@ const LevelSelection = () => {
               <ArrowLeft size={20} />
             </Button>
             <h1 className="text-2xl font-bold text-foreground">Choose Your Level</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/leaderboards?section=levels')}
-              className="text-primary hover:text-primary/80 font-medium transition-colors underline-offset-4 hover:underline"
-            >
-              Leaderboards
-            </button>
           </div>
         </div>
 

@@ -28,7 +28,7 @@ interface Drill {
 const drills: Record<string, Drill> = {
   'pga-tour-18': {
     id: 'pga-tour-18',
-    title: 'PGA Tour 18 Holes',
+    title: 'PGA Tour 18-hole Test',
     shortDescription: 'Practice putting from tournament-style distances across 18 holes for consistency under pressure.',
     longDescription: 'This drill simulates the putting challenges you\'ll face on a PGA Tour course. Practice putting from varying distances across 18 holes, with each hole representing the average putting distance from that hole on tour. Focus on developing consistency under pressure and building confidence in your putting stroke.',
     category: 'Putting',
@@ -36,7 +36,7 @@ const drills: Record<string, Drill> = {
   },
   'aggressive-putting': {
     id: 'aggressive-putting',
-    title: 'Aggressive Putting',
+    title: 'Aggressive Putting 4-6m',
     shortDescription: 'Putt from a fixed cycle of 4m, 5m, then 6m, repeating in that order to reach 15 points quickly.',
     longDescription: 'This drill focuses on developing an aggressive putting mindset by cycling through increasing distances. Start with 4m putts, then 5m, then 6m, and repeat the cycle. Score points for holed putts and putts finishing within 1m. The goal is to reach 15 points as quickly as possible while maintaining accuracy.',
     category: 'Putting', 
@@ -44,7 +44,7 @@ const drills: Record<string, Drill> = {
   },
   'up-down-putting': {
     id: 'up-down-putting',
-    title: 'Up & Down Putting',
+    title: 'Up & Down Putts 6-10m',
     shortDescription: 'Practice distance control on uphill and downhill putts from 6m, 8m, and 10m.',
     longDescription: 'A comprehensive practice to master distance control and speed consistency on both uphill and downhill putts. Hit 3 putts from each marker at 6m, 8m, and 10m on both uphill and downhill slopes for a total of 18 putts. Score like golf: holed putts are birdies (-1), inside 3 feet is par (0), and outside is a bogey (+1). Tour average is +0.64.',
     category: 'Putting',
@@ -52,7 +52,7 @@ const drills: Record<string, Drill> = {
   },
   'short-putting-test': {
     id: 'short-putting-test',
-    title: 'Short Putting Test',
+    title: 'Short Putt Test',
     shortDescription: 'Start at 3 feet. Make putts from four positions around the hole to move back. Miss once and restart.',
     longDescription: 'Test your short putting accuracy with this pressure-packed drill. Place 4 tees around the hole at 12, 3, 6, and 9 o\'clock positions, each starting 4 feet away. Every time you make a putt, move that tee back 1 foot and rotate to the next position. One miss ends the test. Your score is the number of consecutive putts made.',
     category: 'Putting',
@@ -60,7 +60,7 @@ const drills: Record<string, Drill> = {
   },
   '8-ball-drill': {
     id: '8-ball-drill',
-    title: '8-Ball Drill',
+    title: '8-Ball Circuit',
     shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',
     longDescription: 'A comprehensive short game drill that tests your skills across 8 different stations covering chipping, pitching, lob shots, and bunker play. Complete all 8 stations in each of 5 rounds for a total of 40 shots. Score points based on proximity to the hole, with holed shots receiving maximum points.',
     category: 'Short Game',
@@ -76,7 +76,7 @@ const drills: Record<string, Drill> = {
   },
   'wedges-2-laps': {
     id: 'wedges-2-laps',
-    title: 'Wedge Point Game',
+    title: 'Wedge Game 40-80m',
     shortDescription: 'Hit the specified distances. One shot per length, 2 laps.',
     longDescription: 'A simpler wedge distance drill with 2 laps of 9 different distances from 40-80 meters. Focus on hitting precise distances from the fairway. Score points based on accuracy: 3 points for within 2m, 2 points for within 3m, 1 point for within 4m, 0 points for more than 4m off, and -1 point for missed greens.',
     category: 'Wedges',

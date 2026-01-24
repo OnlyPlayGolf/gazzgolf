@@ -167,7 +167,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
     }
 
     try {
-      const drillTitle = 'Up & Down Putting Drill';
+      const drillTitle = 'Up & Down Putts 6-10m';
       
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
@@ -347,7 +347,7 @@ const UpDownPuttingComponent = ({ onTabChange, onScoreSaved }: UpDownPuttingComp
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="Up & Down Putting Drill"
+        drillTitle="Up & Down Putts 6-10m"
         score={totalScore}
         unit="strokes"
         resultId={savedResultId || undefined}

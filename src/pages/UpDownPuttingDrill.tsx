@@ -32,7 +32,7 @@ const UpDownPuttingDrill = () => {
               <ArrowLeft size={24} />
             </Button>
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-bold">Up & Down Putting</h1>
+              <h1 className="text-xl font-bold">Up & Down Putts 6-10m</h1>
               <p className="text-sm text-muted-foreground">Master uphill and downhill control</p>
             </div>
             <div className="w-10" />
@@ -41,7 +41,7 @@ const UpDownPuttingDrill = () => {
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        <DrillHighScores drillName="Up & Down Putting Drill" />
+        <DrillHighScores drillName="Up & Down Putts 6-10m" />
         <Routes>
           <Route index element={<Navigate to="score" replace />} />
           <Route path="score" element={<UpDownPuttingScore />} />

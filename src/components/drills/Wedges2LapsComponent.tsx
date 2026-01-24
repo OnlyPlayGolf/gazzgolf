@@ -153,7 +153,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
     }
 
     try {
-      const drillTitle = 'Wedge Point Game';
+      const drillTitle = 'Wedge Game 40-80m';
       
       const { data: drillData, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
@@ -298,7 +298,7 @@ const Wedges2LapsComponent = ({ onTabChange, onScoreSaved }: Wedges2LapsComponen
       <DrillCompletionDialog
         open={showCompletionDialog}
         onOpenChange={setShowCompletionDialog}
-        drillTitle="Wedge Point Game"
+        drillTitle="Wedge Game 40-80m"
         score={totalPoints}
         unit="points"
         resultId={savedResultId || undefined}

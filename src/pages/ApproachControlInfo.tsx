@@ -7,7 +7,7 @@ export default function ApproachControlInfo() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="text-primary" size={20} />
-          Approach Control
+          Approach Control 130-180m
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

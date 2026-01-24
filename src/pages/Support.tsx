@@ -30,7 +30,7 @@ const Support = () => {
     {
       id: '4',
       question: 'How do levels work?',
-      answer: 'Levels are structured practice challenges across different skill areas. Complete levels to progress and improve specific aspects of your game. There are 400+ levels from Beginner to Professional.'
+      answer: 'Levels are structured practice challenges across different skill areas. Complete levels to progress and improve specific aspects of your game. There are 400+ levels from First Timer to Pro.'
     },
     {
       id: '5',

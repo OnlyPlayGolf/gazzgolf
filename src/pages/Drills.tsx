@@ -11,7 +11,7 @@ import { MessagesSheet } from "@/components/MessagesSheet";
 const drills = [
   {
     id: 'pga-tour-18',
-    title: 'PGA Tour 18 Holes',
+    title: 'PGA Tour 18-hole Test',
     shortDescription: 'Practice putting from tournament-style distances across 18 holes for consistency under pressure.',
     category: 'Putting',
     icon: Target,
@@ -20,7 +20,7 @@ const drills = [
   },
   {
     id: 'aggressive-putting',
-    title: 'Aggressive Putting',
+    title: 'Aggressive Putting 4-6m',
     shortDescription: 'Putt from a fixed cycle of 4m, 5m, then 6m, repeating in that order to reach 15 points quickly.',
     category: 'Putting', 
     icon: Target,
@@ -29,7 +29,7 @@ const drills = [
   },
   {
     id: '8-ball-drill',
-    title: '8-Ball Drill',
+    title: '8-Ball Circuit',
     shortDescription: 'Complete 8 stations (chip/pitch/lob/bunker) and score each rep. Do the circuit 5 times.',
     category: 'Short Game',
     icon: Zap,

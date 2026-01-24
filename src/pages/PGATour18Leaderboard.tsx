@@ -5,7 +5,7 @@ export default function PGATour18Leaderboard() {
     <div>
       <DrillLeaderboard
         drillId="pga-tour-18"
-        drillName="PGA Tour 18 Holes"
+        drillName="PGA Tour 18-hole Test"
       />
     </div>
   );

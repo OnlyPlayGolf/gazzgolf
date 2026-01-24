@@ -5,7 +5,7 @@ export default function AggressivePuttingLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="aggressive-putting"
-        drillName="Aggressive Putting"
+        drillName="Aggressive Putting 4-6m"
       />
     </div>
   );

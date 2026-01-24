@@ -5,7 +5,7 @@ export default function JasonDayLagLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="jason-day-lag"
-        drillName="Jason Day's Lag Drill"
+        drillName="Lag Putting Drill 8-20m"
       />
     </div>
   );

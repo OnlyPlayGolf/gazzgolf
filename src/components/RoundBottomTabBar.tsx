@@ -33,14 +33,16 @@ export function RoundBottomTabBar({ roundId, isSpectator = false, isEditWindowEx
             <button
               key={tab.id}
               onClick={() => navigate(tab.path, { replace: true })}
-              className={`flex flex-col items-center gap-1 py-3 px-4 flex-1 transition-colors ${
-                isActive 
-                  ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className="flex flex-col items-center gap-1 py-3 px-4 flex-1 transition-colors"
             >
-              <Icon size={20} />
-              <span className="text-xs font-medium">{tab.label}</span>
+              <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                isActive 
+                  ? "bg-primary/10 text-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}>
+                <Icon size={20} />
+                <span className="text-xs font-medium">{tab.label}</span>
+              </div>
             </button>
           );
         })}
