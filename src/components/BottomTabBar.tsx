@@ -46,9 +46,9 @@ export const BottomTabBar = () => {
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.path)}
-                className="flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-colors"
+                className="flex-1 flex flex-col items-center justify-center h-full transition-colors"
               >
-                <div className="w-[84px] h-[84px] rounded-full bg-primary flex flex-col items-center justify-center aspect-square">
+                <div className="w-[84px] h-[84px] rounded-full bg-primary flex flex-col items-center justify-center shrink-0" style={{ aspectRatio: '1 / 1' }}>
                   <Icon size={30} className="text-primary-foreground mb-0.5 w-[30px] h-[30px]" />
                   <span className="text-[12px] font-medium text-primary-foreground">{tab.label}</span>
                 </div>
