@@ -169,7 +169,7 @@ const Index = () => {
       <div className="space-y-6 pt-20">
         {/* Friends On Course Section */}
         {friendsOnCourse.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 pb-20">
             <h2 className="text-lg font-semibold text-foreground px-4">Friends On Course</h2>
             <ScrollArea className="w-full whitespace-nowrap">
               <div className="flex gap-4 pb-2 px-4">
