@@ -61,12 +61,12 @@ export const TopNavBar = ({ hideNotifications = false, profile }: TopNavBarProps
         visible ? "translate-y-0" : "-translate-y-full"
       )}
     >
-      <div className="bg-primary px-4 py-3 flex items-center justify-between">
+      <div className="bg-primary px-4 py-2 flex items-center justify-between h-[64px]">
         {/* Left: Logo */}
         <img 
           src={onlyPlayLogo}
           alt="OnlyPlay Golf"
-          className="h-14 cursor-pointer brightness-0 invert"
+          className="h-12 cursor-pointer brightness-0 invert"
           onClick={() => {
             navigate('/');
             window.scrollTo({ top: 0, behavior: 'smooth' });
