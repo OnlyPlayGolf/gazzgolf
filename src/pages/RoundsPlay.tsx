@@ -21,6 +21,8 @@ import { GroupCard } from "@/components/play/GroupCard";
 import { AddPlayerDialog } from "@/components/play/AddPlayerDialog";
 import { AIConfigSummary } from "@/components/play/AIConfigSummary";
 import { PlayerEditSheet } from "@/components/play/PlayerEditSheet";
+import { PlayStep1 } from "@/components/play/PlayStep1";
+import { PlayStep2 } from "@/components/play/PlayStep2";
 import { PlaySetupState, PlayerGroup, Player, createDefaultGroup, getInitialPlaySetupState, RoundType } from "@/types/playSetup";
 import { cn, parseHandicap } from "@/lib/utils";
 import { TeeSelector, DEFAULT_MEN_TEE, STANDARD_TEE_OPTIONS, normalizeValue } from "@/components/TeeSelector";
@@ -89,6 +91,10 @@ function RoundsPlayContent() {
   // Join existing game state
   const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
+  
+  // Step navigation state
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  const [numberOfRoundsText, setNumberOfRoundsText] = useState<string>("1");
 
   useEffect(() => {
     initializeSetup();
@@ -914,370 +920,59 @@ function RoundsPlayContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="p-4 pt-20 max-w-2xl mx-auto space-y-4">
-        
-        {/* Header Card - Round Info */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Round Setup</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Round Name & Date Row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Round Name</Label>
-                <Input
-                  value={setupState.roundName}
-                  onChange={(e) => setSetupState(prev => ({ ...prev, roundName: e.target.value }))}
-                  placeholder="Round 1"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Date</Label>
-                <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {format(new Date(setupState.datePlayed + 'T12:00:00'), "MMM d, yyyy")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="single"
-                      selected={new Date(setupState.datePlayed + 'T12:00:00')}
-                      onSelect={(date) => {
-                        if (date) {
-                          const year = date.getFullYear();
-                          const month = String(date.getMonth() + 1).padStart(2, '0');
-                          const day = String(date.getDate()).padStart(2, '0');
-                          setSetupState(prev => ({ 
-                            ...prev, 
-                            datePlayed: `${year}-${month}-${day}`
-                          }));
-                          setDatePopoverOpen(false);
-                        }
-                      }}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* Course Selection */}
-            <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                Course
-              </Label>
-              {!selectedCourse ? (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => setShowCourseDialog(true)}
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Select a course...
-                </Button>
-              ) : (
-                <div className="p-3 rounded-lg border-2 border-primary bg-primary/5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-sm">{selectedCourse.name}</p>
-                      <p className="text-xs text-muted-foreground">{selectedCourse.location}</p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => setShowCourseDialog(true)}>
-                      Change
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Tee Selection (course-specific) */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Tees</Label>
-              <TeeSelector
-                value={setupState.teeColor}
-                onValueChange={(tee) => handleDefaultTeeChange(tee)}
-                teeCount={availableCourseTees.length || 5}
-                courseTeeNames={courseTeeNames}
-                triggerClassName="w-full justify-between"
-                disabled={!selectedCourse}
-              />
-            </div>
-
-            {/* Holes Selection */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Holes</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["18", "front9", "back9"] as const).map((holes) => (
-                  <button
-                    key={holes}
-                    onClick={() => setSetupState(prev => ({ ...prev, selectedHoles: holes }))}
-                    className={cn(
-                      "p-2.5 rounded-lg border-2 text-center transition-all text-sm font-medium",
-                      setupState.selectedHoles === holes
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    )}
-                  >
-                    {holes === "18" ? "Full 18" : holes === "front9" ? "Front 9" : "Back 9"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Round Type */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Round Type</Label>
-              <Select 
-                value={setupState.roundType} 
-                onValueChange={(v) => setSetupState(prev => ({ ...prev, roundType: v as RoundType }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select round type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fun_practice">Fun/Practice</SelectItem>
-                  <SelectItem value="qualifying">Qualifying</SelectItem>
-                  <SelectItem value="tournament">Tournament</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Course Scorecard */}
-        {selectedCourse && (
-          <CourseScorecard
-            courseId={selectedCourse.id}
-            selectedTee={setupState.teeColor}
-            selectedHoles={setupState.selectedHoles === "custom" ? "18" : setupState.selectedHoles}
-          />
-        )}
-
-        {/* AI Config Summary */}
-        <AIConfigSummary
-          isApplied={setupState.aiConfigApplied}
-          summary={setupState.aiConfigSummary}
-          assumptions={setupState.aiAssumptions}
+      {/* Step-based content */}
+      {currentStep === 1 && (
+        <PlayStep1
+          setupState={setupState}
+          setSetupState={setSetupState}
+          selectedCourse={selectedCourse}
+          setSelectedCourse={setSelectedCourse}
+          showCourseDialog={showCourseDialog}
+          setShowCourseDialog={setShowCourseDialog}
+          settingsExpanded={settingsExpanded}
+          setSettingsExpanded={setSettingsExpanded}
+          courseHoles={courseHoles}
+          courseTeeNames={courseTeeNames}
+          onApplyAIConfig={handleApplyAIConfig}
+          saveState={saveState}
+          onNext={() => {
+            saveState();
+            setCurrentStep(2);
+          }}
         />
+      )}
 
-        {/* Groups & Players */}
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
-                Groups & Players
-              </CardTitle>
-              <span className="text-sm text-muted-foreground">
-                {getTotalPlayers()} player{getTotalPlayers() !== 1 ? "s" : ""}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="space-y-3">
-                {setupState.groups.map((group, index) => (
-                  <GroupCard
-                    key={group.id}
-                    group={group}
-                    groupIndex={index}
-                    availableTees={selectedCourse ? availableCourseTees : STANDARD_TEE_OPTIONS.map(t => t.value)}
-                    courseTeeNames={courseTeeNames}
-                    canDelete={setupState.groups.length > 1}
-                    onUpdateName={(name) => updateGroupName(group.id, name)}
-                    onAddPlayer={() => {
-                      setActiveGroupId(group.id);
-                      setAddPlayerDialogOpen(true);
-                    }}
-                    onRemovePlayer={(playerId) => removePlayerFromGroup(group.id, playerId)}
-                    onUpdatePlayerTee={(playerId, tee) => updatePlayerTee(group.id, playerId, tee)}
-                    onDeleteGroup={() => deleteGroup(group.id)}
-                    onPlayerClick={(player) => handlePlayerClick(group.id, player)}
-                    enableDrag={true}
-                  />
-                ))}
-              </div>
-            </DragDropContext>
-            
-            <Button variant="outline" className="w-full" onClick={addGroup}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Group
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Game Formats */}
-        <Collapsible open={settingsExpanded} onOpenChange={setSettingsExpanded}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Game Formats</CardTitle>
-                  {settingsExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4 pt-0">
-                {/* Game Format */}
-                <div className="space-y-3">
-                  {/* Individual Games */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Individual</p>
-                    {[
-                      { id: "stroke_play", label: "Stroke Play", desc: "Standard scoring" },
-                      { id: "match_play", label: "Match Play", desc: "1v1 hole-by-hole" },
-                      { id: "skins", label: "Skins", desc: "Win holes for skins" },
-                      { id: "copenhagen", label: "Copenhagen", desc: "3 players, 6-point game" },
-                    ].map((fmt) => (
-                      <div key={fmt.id} className="relative">
-                        <button
-                          onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
-                          className={cn(
-                            "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
-                            setupState.gameFormat === fmt.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          <p className="font-semibold text-sm">{fmt.label}</p>
-                          <p className="text-xs text-muted-foreground">{fmt.desc}</p>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            saveState();
-                            if (fmt.id === "stroke_play") navigate('/stroke-play/how-to-play');
-                            else if (fmt.id === "match_play") navigate('/match-play/how-to-play');
-                            else if (fmt.id === "skins") navigate('/skins/how-to-play');
-                            else navigate('/copenhagen/how-to-play');
-                          }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
-                        >
-                          <Info size={16} className="text-muted-foreground" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Team Games */}
-                  <div className="space-y-2 pt-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Teams</p>
-                    {[
-                      { id: "best_ball", label: "Best Ball", desc: "Team match play or stroke play" },
-                      { id: "scramble", label: "Scramble", desc: "Team plays best shot" },
-                      { id: "umbriago", label: "Umbriago", desc: "2v2 team game" },
-                      { id: "wolf", label: "🐺 Wolf", desc: "4-6 players, various teams" },
-                    ].map((fmt) => (
-                      <div key={fmt.id} className="relative">
-                        <button
-                          onClick={() => setSetupState(prev => ({ ...prev, gameFormat: fmt.id as any }))}
-                          className={cn(
-                            "w-full p-3 rounded-lg border-2 text-left transition-all pr-12",
-                            setupState.gameFormat === fmt.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          <p className="font-semibold text-sm">{fmt.label}</p>
-                          <p className="text-xs text-muted-foreground">{fmt.desc}</p>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            saveState();
-                            if (fmt.id === "best_ball") navigate('/best-ball/how-to-play');
-                            else if (fmt.id === "scramble") navigate('/scramble/how-to-play');
-                            else if (fmt.id === "wolf") navigate('/wolf/how-to-play');
-                            else navigate('/umbriago/how-to-play');
-                          }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted"
-                        >
-                          <Info size={16} className="text-muted-foreground" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Start Button */}
-        <div className="space-y-2">
-          {playerValidationError && (
-            <p className="text-sm text-destructive text-center">{playerValidationError}</p>
-          )}
-          <Button
-            onClick={handleStartRound}
-            disabled={loading || !selectedCourse || !!playerValidationError}
-            className="w-full h-12 text-base font-semibold"
-            size="lg"
-          >
-            {loading ? "Starting..." : "Continue"}
-          </Button>
-        </div>
-      </div>
-
-      {/* AI Assistant FAB */}
-      <Button
-        onClick={() => setShowAIAssistant(true)}
-        className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg"
-        size="icon"
-      >
-        <Sparkles className="w-6 h-6" />
-      </Button>
-
-      {/* Dialogs */}
-      <AISetupAssistant
-        isOpen={showAIAssistant}
-        onClose={() => setShowAIAssistant(false)}
-        courseInfo={selectedCourse ? {
-          courseName: selectedCourse.name,
-          availableTees: courseTeeNames
-            ? ["black", "blue", "white", "yellow", "red"].filter(k => courseTeeNames[k]).map(k => courseTeeNames[k])
-            : STANDARD_TEE_OPTIONS.map(t => t.label),
-          defaultHoles: getHolesPlayed(setupState.selectedHoles as HoleCount),
-          courseHoles,
-        } : undefined}
-        onApplyConfig={handleApplyAIConfig}
-      />
-
-      <CourseSelectionDialog
-        isOpen={showCourseDialog}
-        onClose={() => setShowCourseDialog(false)}
-        onSelectCourse={(course) => {
-          setSelectedCourse(course);
-          setShowCourseDialog(false);
-        }}
-      />
-
-      <AddPlayerDialog
-        isOpen={addPlayerDialogOpen}
-        onClose={() => setAddPlayerDialogOpen(false)}
-        onAddPlayer={(player) => activeGroupId && addPlayerToGroup(activeGroupId, player)}
-        existingPlayerIds={getAllPlayerIds()}
-        defaultTee={setupState.teeColor || DEFAULT_MEN_TEE}
-      />
-
-      <PlayerEditSheet
-        isOpen={playerEditSheetOpen}
-        onClose={() => {
-          setPlayerEditSheetOpen(false);
-          setEditingPlayer(null);
-          setEditingPlayerGroupId(null);
-        }}
-        player={editingPlayer}
-        availableTees={STANDARD_TEE_OPTIONS.map(t => t.value)}
-        courseTeeNames={courseTeeNames}
-        onSave={handleSavePlayer}
-      />
+      {currentStep === 2 && (
+        <PlayStep2
+          setupState={setupState}
+          setSetupState={setSetupState}
+          selectedCourse={selectedCourse}
+          numberOfRoundsText={numberOfRoundsText}
+          setNumberOfRoundsText={setNumberOfRoundsText}
+          availableCourseTees={availableCourseTees}
+          courseTeeNames={courseTeeNames}
+          datePopoverOpen={datePopoverOpen}
+          setDatePopoverOpen={setDatePopoverOpen}
+          handleDefaultTeeChange={handleDefaultTeeChange}
+          addPlayerDialogOpen={addPlayerDialogOpen}
+          setAddPlayerDialogOpen={setAddPlayerDialogOpen}
+          activeGroupId={activeGroupId}
+          setActiveGroupId={setActiveGroupId}
+          editingPlayer={editingPlayer}
+          setEditingPlayer={setEditingPlayer}
+          editingPlayerGroupId={editingPlayerGroupId}
+          setEditingPlayerGroupId={setEditingPlayerGroupId}
+          playerEditSheetOpen={playerEditSheetOpen}
+          setPlayerEditSheetOpen={setPlayerEditSheetOpen}
+          onPlayerClick={handlePlayerClick}
+          onSavePlayer={handleSavePlayer}
+          getAllPlayerIds={getAllPlayerIds}
+          playerValidationError={playerValidationError}
+          loading={loading}
+          onBack={() => setCurrentStep(1)}
+          onStartRound={handleStartRound}
+        />
+      )}
     </div>
   );
 }

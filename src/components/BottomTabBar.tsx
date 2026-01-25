@@ -32,8 +32,8 @@ export const BottomTabBar = () => {
   if (hideTabBar) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-      <div className="flex">
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 h-[84px]">
+      <div className="flex h-full">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive =
@@ -46,11 +46,11 @@ export const BottomTabBar = () => {
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.path)}
-                className="flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] transition-colors"
+                className="flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-colors"
               >
-                <div className="w-14 h-14 rounded-full bg-primary flex flex-col items-center justify-center">
-                  <Icon size={20} className="text-primary-foreground mb-0.5" />
-                  <span className="text-[10px] font-medium text-primary-foreground">{tab.label}</span>
+                <div className="w-[84px] h-[84px] rounded-full bg-primary flex flex-col items-center justify-center aspect-square">
+                  <Icon size={30} className="text-primary-foreground mb-0.5 w-[30px] h-[30px]" />
+                  <span className="text-[12px] font-medium text-primary-foreground">{tab.label}</span>
                 </div>
               </button>
             );
@@ -69,14 +69,14 @@ export const BottomTabBar = () => {
                   : ""
               )}>
                 <Icon 
-                  size={20} 
+                  size={30} 
                   className={cn(
-                    "mb-0.5",
+                    "mb-0.5 w-[30px] h-[30px]",
                     isActive ? "text-primary" : "text-primary/60"
                   )} 
                 />
                 <span className={cn(
-                  "text-[10px] font-medium",
+                  "text-[12px] font-medium",
                   isActive ? "text-primary" : "text-primary/60"
                 )}>
                   {tab.label}
