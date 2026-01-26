@@ -66,7 +66,7 @@ export const TopNavBar = ({ hideNotifications = false, profile }: TopNavBarProps
         <img 
           src={onlyPlayLogo}
           alt="OnlyPlay Golf"
-          className="h-12 cursor-pointer brightness-0 invert"
+          className="h-[108px] w-[108px] cursor-pointer brightness-0 invert"
           onClick={() => {
             navigate('/');
             window.scrollTo({ top: 0, behavior: 'smooth' });
