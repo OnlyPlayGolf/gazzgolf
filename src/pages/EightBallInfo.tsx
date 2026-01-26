@@ -45,12 +45,11 @@ export default function EightBallInfo() {
           <div>
             <h3 className="font-medium text-foreground mb-2">Scoring System</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
-              <li>• Holed → +3 points</li>
-              <li>• Within 0.6 m (2 ft) → +2 points</li>
-              <li>• 0.6–1 m (2–3 ft) → +1 point</li>
-              <li>• 1–2 m → 0 points</li>
-              <li>• 2–3 m → −1 point</li>
-              <li>• Outside 3 m → −2 points</li>
+              <li>• Holed → +4 points</li>
+              <li>• Within 1 m → +3 points</li>
+              <li>• 1–2 m → +2 points</li>
+              <li>• 2–3 m → +1 point</li>
+              <li>• Outside 3 m → 0 points</li>
               <li>• Goal: achieve your highest total score over all 5 rounds</li>
             </ul>
           </div>
