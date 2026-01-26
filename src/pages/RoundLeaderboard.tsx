@@ -547,16 +547,23 @@ export default function RoundLeaderboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="flex items-end justify-end gap-6">
-                      <div className="text-right">
-                        <div className="text-xs text-muted-foreground">Today</div>
-                        <div className="text-2xl font-bold">{getTodayScoreToParDisplay(player)}</div>
+                    {eventRounds.length > 1 ? (
+                      <div className="flex items-end justify-end gap-6">
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">Today</div>
+                          <div className="text-2xl font-bold">{getTodayScoreToParDisplay(player)}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">TOT</div>
+                          <div className="text-3xl font-bold">{getTotalScoreToParDisplay(player)}</div>
+                        </div>
                       </div>
+                    ) : (
                       <div className="text-right">
-                        <div className="text-xs text-muted-foreground">TOT</div>
-                        <div className="text-3xl font-bold">{getTotalScoreToParDisplay(player)}</div>
+                        <div className="text-xs text-muted-foreground">Score</div>
+                        <div className="text-3xl font-bold">{getTodayScoreToParDisplay(player)}</div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

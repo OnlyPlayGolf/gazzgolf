@@ -327,19 +327,9 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
             <CardTitle>Shot {currentShot} of 14</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-3 bg-muted/50 rounded-md text-center">
-              <div className="text-sm text-muted-foreground">Distance</div>
-              <div className="text-xl font-bold text-foreground">
-                {currentShotInfo.distance} meters
-              </div>
-              <div className="text-sm font-medium text-foreground mt-1 capitalize">
-                Target: {currentShotInfo.side} side
-              </div>
-            </div>
-            
             <div className="text-center">
               <div className="text-lg font-medium">
-                Current Score: {totalPoints} points
+                Total: {totalPoints} points
               </div>
               {bonusStreak >= 3 && (
                 <div className="text-sm text-primary font-medium mt-1">
@@ -351,6 +341,16 @@ const ApproachControlComponent = ({ onTabChange, onScoreSaved }: ApproachControl
                   {3 - bonusStreak} more 3-pointer{3 - bonusStreak > 1 ? 's' : ''} to activate bonus
                 </div>
               )}
+            </div>
+            
+            <div className="p-3 bg-muted/50 rounded-md text-center">
+              <div className="text-sm text-muted-foreground">Distance</div>
+              <div className="text-xl font-bold text-foreground">
+                {currentShotInfo.distance} meters
+              </div>
+              <div className="text-sm font-medium text-foreground mt-1 capitalize">
+                Target: {currentShotInfo.side} side
+              </div>
             </div>
             
             {/* Input Form */}
