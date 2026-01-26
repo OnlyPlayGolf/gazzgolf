@@ -24,9 +24,8 @@ import { getGroupRoleLabel } from "@/utils/groupRoleLabel";
 import { getPublicAppUrl } from "@/utils/publicAppUrl";
 
 const getDrillDisplayTitle = (title: string): string => {
-  if (title === "Up & Down Putts 6-10m") return "Up & Down Putts 6-10m";
-  if (title === "Short Putt Test") return "Short Putt Test";
-  return title;
+  // Use normalized title for display
+  return normalizeDrillTitle(title);
 };
 
 // Map level category/difficulty to display name
@@ -101,10 +100,27 @@ interface Drill {
 
 type DrillCategory = 'Putting' | 'Short Game' | 'Approach' | 'Tee Shots';
 
-// Normalize drill titles (map old titles to new ones)
+// Normalize drill titles (map old/variant titles to canonical ones)
 const normalizeDrillTitle = (title: string): string => {
   const titleMap: Record<string, string> = {
     '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
+    "PGA Tour 18 Holes": 'PGA Tour 18-hole Test',
+    "PGA Tour 18-hole Test": 'PGA Tour 18-hole Test',
+    "TW's 9 Windows Test": "9 Windows Shot Shape Test",
+    "9 Windows Shot Shape Test": "9 Windows Shot Shape Test",
+    "Aggressive Putting": "Aggressive Putting 4-6m",
+    "Aggressive Putting 4-6m": "Aggressive Putting 4-6m",
+    "Short Putt Test": "Short Putt Test",
+    "Up & Down Putts 6-10m": "Up & Down Putts 6-10m",
+    "Lag Putting Drill 8-20m": "Lag Putting Drill 8-20m",
+    "8-Ball Circuit": "8-Ball Circuit",
+    "18 Up & Downs": "18 Up & Downs",
+    "Easy Chip Drill": "Easy Chip Drill",
+    "Approach Control 130-180m": "Approach Control 130-180m",
+    "Wedge Ladder 60-120m": "Wedge Ladder 60-120m",
+    "Wedge Game 40-80m": "Wedge Game 40-80m",
+    "Shot Shape Master": "Shot Shape Master",
+    "Driver Control Drill": "Driver Control Drill",
   };
   return titleMap[title] || title;
 };
@@ -389,11 +405,28 @@ useEffect(() => {
       .order('title');
 
     if (data && data.length > 0) {
-      // Deduplicate drills by title (keep first occurrence)
-      const uniqueDrills = Array.from(
-        new Map(data.map(drill => [drill.title, drill])).values()
-      );
+      // Deduplicate by normalized title to remove duplicates like "PGA Tour 18 Holes" vs "PGA Tour 18-hole Test"
+      const drillsByNormalizedTitle = new Map<string, Drill>();
       
+      // First pass: collect all drills by normalized title
+      data.forEach(drill => {
+        const normalizedTitle = normalizeDrillTitle(drill.title);
+        if (!drillsByNormalizedTitle.has(normalizedTitle)) {
+          drillsByNormalizedTitle.set(normalizedTitle, drill);
+        }
+      });
+      
+      // Second pass: prefer canonical titles (titles that match their normalized form)
+      data.forEach(drill => {
+        const normalizedTitle = normalizeDrillTitle(drill.title);
+        const existing = drillsByNormalizedTitle.get(normalizedTitle);
+        // If the current drill's title matches the normalized title exactly, prefer it
+        if (existing && drill.title === normalizedTitle && existing.title !== normalizedTitle) {
+          drillsByNormalizedTitle.set(normalizedTitle, drill);
+        }
+      });
+      
+      const uniqueDrills = Array.from(drillsByNormalizedTitle.values());
       setDrills(uniqueDrills);
       setSelectedDrill(uniqueDrills[0].title);
       loadDrillLeaderboard(uniqueDrills[0].title, uniqueDrills[0].lower_is_better);

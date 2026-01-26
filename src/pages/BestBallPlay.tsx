@@ -162,9 +162,39 @@ const createBestBallConfig = (gameId: string): GameScoringConfig<BestBallGame, B
   },
   
   isGameFinished: (game, holeNumber, totalHoles, holeData) => {
-    const holesRemaining = totalHoles - holeNumber;
-    const isMatchOver = game.game_type === 'match' && isMatchFinished(holeData.match_status_after, holesRemaining);
-    return isMatchOver || holeNumber >= totalHoles;
+    // Only finish when all holes are complete, not when match is decided early
+    // Match status will still be calculated and displayed, but popup only shows when scorecard is complete
+    return holeNumber >= totalHoles;
+  },
+  
+  areAllHolesComplete: (game, allHoles, totalHoles) => {
+    // Check that we have holes for all hole numbers 1 through totalHoles
+    if (allHoles.length < totalHoles) return false;
+    
+    // Verify we have a hole for each number from 1 to totalHoles with all players having scores
+    for (let i = 1; i <= totalHoles; i++) {
+      const hole = allHoles.find(h => h.hole_number === i);
+      if (!hole) return false;
+      
+      const teamAScores = hole.team_a_scores || [];
+      const teamBScores = hole.team_b_scores || [];
+      
+      // Check that all team A players have scores
+      const teamAComplete = game.team_a_players.every(player => {
+        const playerScore = teamAScores.find(s => s.playerId === player.odId);
+        return playerScore && playerScore.grossScore !== null && playerScore.grossScore !== undefined && playerScore.grossScore > 0;
+      });
+      
+      // Check that all team B players have scores
+      const teamBComplete = game.team_b_players.every(player => {
+        const playerScore = teamBScores.find(s => s.playerId === player.odId);
+        return playerScore && playerScore.grossScore !== null && playerScore.grossScore !== undefined && playerScore.grossScore > 0;
+      });
+      
+      if (!teamAComplete || !teamBComplete) return false;
+    }
+    
+    return true;
   },
 });
 

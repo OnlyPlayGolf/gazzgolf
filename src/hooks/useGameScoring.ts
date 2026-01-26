@@ -68,6 +68,9 @@ export interface GameScoringConfig<TGame, THole, TScores> {
   // Check if game is finished
   isGameFinished?: (game: TGame, holeNumber: number, totalHoles: number, newHoleData: Record<string, any>) => boolean;
   
+  // Check if all holes have scores for all players (for match play formats that should only finish when scorecard is complete)
+  areAllHolesComplete?: (game: TGame, allHoles: THole[], totalHoles: number) => boolean;
+  
   // Check if current hole should be saved when navigating away (optional - defaults to true if hole exists)
   shouldSaveOnNavigate?: (game: TGame, scores: TScores) => boolean;
   
@@ -293,9 +296,13 @@ export function useGameScoring<TGame, THole, TScores>(
       // Check if game is finished
       const isFinished = cfg.isGameFinished?.(game, currentHole, totalHoles, holeData) ?? (currentHole >= totalHoles);
       
+      // For match play formats, also verify all holes have scores before finishing
       if (isFinished) {
-        navigate(cfg.getSummaryRoute(cfg.gameId));
-        return true;
+        const allHolesComplete = cfg.areAllHolesComplete?.(game, updatedHoles, totalHoles) ?? true;
+        if (allHolesComplete) {
+          navigate(cfg.getSummaryRoute(cfg.gameId));
+          return true;
+        }
       }
       
       // Advance to next hole only if we were on the latest hole
