@@ -65,10 +65,13 @@ export async function getTotalRoundCount(userId: string): Promise<number> {
 }
 
 /**
- * Generates the default round name based on the user's total round count.
- * Returns "Round X" where X is the next round number.
+ * Generates the default round name based on the current date.
+ * Returns "Game Month date" format (e.g., "Game Jan 24").
  */
 export async function getDefaultRoundName(userId: string): Promise<string> {
-  const count = await getTotalRoundCount(userId);
-  return `Round ${count + 1}`;
+  const now = new Date();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = monthNames[now.getMonth()];
+  const date = now.getDate();
+  return `Game ${month} ${date}`;
 }

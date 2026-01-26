@@ -421,14 +421,23 @@ function RoundsPlayContent() {
         const rawTeeNames = (courseData?.tee_names || null) as any;
         const normalizedTeeNames: Record<string, string> = {};
         if (rawTeeNames && typeof rawTeeNames === "object" && !Array.isArray(rawTeeNames)) {
+          // Object format: {"black": "Black", "blue": "Blue", ...}
           for (const [k, v] of Object.entries(rawTeeNames)) {
             if (!k) continue;
             normalizedTeeNames[String(k).toLowerCase()] = String(v);
           }
         } else if (Array.isArray(rawTeeNames)) {
-          for (const v of rawTeeNames) {
-            if (!v) continue;
-            normalizedTeeNames[String(v).toLowerCase()] = String(v);
+          // Array format: ["Cardinal", "Black", "White", "Blue", "Family"]
+          // Map array indices to ordered tee keys (by distance, longest to shortest)
+          // The ordered tees are already sorted by distance: ["gold", "black", "white", "blue", "red"]
+          // Map them to the array in order: [0] -> gold, [1] -> black, [2] -> white, [3] -> blue, [4] -> red
+          const orderedTeesForMapping = finalAvailable.length > 0 ? finalAvailable : tees;
+          for (let i = 0; i < rawTeeNames.length && i < orderedTeesForMapping.length; i++) {
+            const teeKey = orderedTeesForMapping[i].toLowerCase();
+            const teeName = String(rawTeeNames[i]);
+            if (teeKey && teeName) {
+              normalizedTeeNames[teeKey] = teeName;
+            }
           }
         }
 
@@ -919,7 +928,7 @@ function RoundsPlayContent() {
         {/* Header Card - Round Info */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Round Setup</CardTitle>
+            <CardTitle className="text-lg">Create Game</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Round Name & Date Row */}

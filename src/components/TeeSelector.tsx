@@ -118,25 +118,50 @@ function getOptions(courseTeeNames?: Record<string, string> | string[] | null): 
     lowerCaseNames[key.toLowerCase()] = value;
   });
   
-  // Build options from course tee names, maintaining standard order for known tees
+  // Build options from course tee names
+  // For Stanford Golf Course and similar courses with custom tee names,
+  // preserve the order of keys as they appear in the normalizedNames object
+  // (which reflects distance ordering from the database)
   const orderedOptions: { value: string; label: string }[] = [];
   
-  // First add tees in standard order
-  STANDARD_TEE_ORDER.forEach(key => {
-    if (lowerCaseNames[key]) {
-      orderedOptions.push({
-        value: key,
-        label: lowerCaseNames[key],
-      });
-    }
+  // Check if this looks like a distance-ordered course (e.g., Stanford with gold->Cardinal, red->Family)
+  // by checking if we have non-standard mappings
+  const hasCustomMappings = Object.keys(lowerCaseNames).some(key => {
+    const standardName = DEFAULT_TEE_NAMES[key]?.toLowerCase();
+    const customName = lowerCaseNames[key]?.toLowerCase();
+    return standardName && customName && standardName !== customName;
   });
   
-  // Then add any custom tees not in standard order
-  Object.entries(lowerCaseNames).forEach(([key, label]) => {
-    if (!STANDARD_TEE_ORDER.includes(key) && !orderedOptions.some(opt => opt.value === key)) {
-      orderedOptions.push({ value: key, label });
-    }
-  });
+  if (hasCustomMappings) {
+    // Use the order of keys as they appear in normalizedNames (preserves distance order)
+    // This handles courses like Stanford where gold->Cardinal, red->Family
+    Object.entries(normalizedNames).forEach(([key, label]) => {
+      const lowerKey = key.toLowerCase();
+      if (lowerCaseNames[lowerKey]) {
+        orderedOptions.push({
+          value: lowerKey,
+          label: lowerCaseNames[lowerKey],
+        });
+      }
+    });
+  } else {
+    // Standard course: maintain standard order for known tees
+    STANDARD_TEE_ORDER.forEach(key => {
+      if (lowerCaseNames[key]) {
+        orderedOptions.push({
+          value: key,
+          label: lowerCaseNames[key],
+        });
+      }
+    });
+    
+    // Then add any custom tees not in standard order
+    Object.entries(lowerCaseNames).forEach(([key, label]) => {
+      if (!STANDARD_TEE_ORDER.includes(key) && !orderedOptions.some(opt => opt.value === key)) {
+        orderedOptions.push({ value: key, label });
+      }
+    });
+  }
   
   // If no options were matched (all custom names), just return all of them
   if (orderedOptions.length === 0) {

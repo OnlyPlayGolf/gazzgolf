@@ -1350,7 +1350,7 @@ export default function GameSettingsDetail() {
         {/* Round Setup Section */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Round Setup</CardTitle>
+            <CardTitle className="text-lg">Create Game</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Round Name & Date Row */}
