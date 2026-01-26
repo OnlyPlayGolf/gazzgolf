@@ -102,30 +102,8 @@ const createMatchPlayConfig = (gameId: string): GameScoringConfig<MatchPlayGame,
   },
   
   isGameFinished: (game, holeNumber, totalHoles, holeData) => {
-    // Only finish when all holes are complete, not when match is decided early
-    // Match status will still be calculated and displayed, but popup only shows when scorecard is complete
-    return holeNumber >= totalHoles;
-  },
-  
-  areAllHolesComplete: (game, allHoles, totalHoles) => {
-    // Check that we have holes for all hole numbers 1 through totalHoles
-    if (allHoles.length < totalHoles) return false;
-    
-    // Verify we have a hole for each number from 1 to totalHoles
-    for (let i = 1; i <= totalHoles; i++) {
-      const hole = allHoles.find(h => h.hole_number === i);
-      if (!hole) return false;
-      
-      const player1Score = hole.player_1_gross_score;
-      const player2Score = hole.player_2_gross_score;
-      // Score must be > 0 (0 means not entered, -1 is dash/conceded which is valid)
-      const player1Complete = (player1Score !== undefined && player1Score !== null && (player1Score > 0 || player1Score === -1));
-      const player2Complete = (player2Score !== undefined && player2Score !== null && (player2Score > 0 || player2Score === -1));
-      
-      if (!player1Complete || !player2Complete) return false;
-    }
-    
-    return true;
+    const holesRemaining = totalHoles - holeNumber;
+    return isMatchFinished(holeData.match_status_after, holesRemaining) || holeNumber >= totalHoles;
   },
 });
 
