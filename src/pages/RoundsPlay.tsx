@@ -1287,6 +1287,59 @@ function RoundsPlayContent() {
         courseTeeNames={courseTeeNames}
         onSave={handleSavePlayer}
       />
+      {/* Step-based content */}
+      {currentStep === 1 && (
+        <PlayStep1
+          setupState={setupState}
+          setSetupState={setSetupState}
+          selectedCourse={selectedCourse}
+          setSelectedCourse={setSelectedCourse}
+          showCourseDialog={showCourseDialog}
+          setShowCourseDialog={setShowCourseDialog}
+          settingsExpanded={settingsExpanded}
+          setSettingsExpanded={setSettingsExpanded}
+          courseHoles={courseHoles}
+          courseTeeNames={courseTeeNames}
+          onApplyAIConfig={handleApplyAIConfig}
+          saveState={saveState}
+          onNext={() => {
+            saveState();
+            setCurrentStep(2);
+          }}
+        />
+      )}
+
+      {currentStep === 2 && (
+        <PlayStep2
+          setupState={setupState}
+          setSetupState={setSetupState}
+          selectedCourse={selectedCourse}
+          numberOfRoundsText={numberOfRoundsText}
+          setNumberOfRoundsText={setNumberOfRoundsText}
+          availableCourseTees={availableCourseTees}
+          courseTeeNames={courseTeeNames}
+          datePopoverOpen={datePopoverOpen}
+          setDatePopoverOpen={setDatePopoverOpen}
+          handleDefaultTeeChange={handleDefaultTeeChange}
+          addPlayerDialogOpen={addPlayerDialogOpen}
+          setAddPlayerDialogOpen={setAddPlayerDialogOpen}
+          activeGroupId={activeGroupId}
+          setActiveGroupId={setActiveGroupId}
+          editingPlayer={editingPlayer}
+          setEditingPlayer={setEditingPlayer}
+          editingPlayerGroupId={editingPlayerGroupId}
+          setEditingPlayerGroupId={setEditingPlayerGroupId}
+          playerEditSheetOpen={playerEditSheetOpen}
+          setPlayerEditSheetOpen={setPlayerEditSheetOpen}
+          onPlayerClick={handlePlayerClick}
+          onSavePlayer={handleSavePlayer}
+          getAllPlayerIds={getAllPlayerIds}
+          playerValidationError={playerValidationError}
+          loading={loading}
+          onBack={() => setCurrentStep(1)}
+          onStartRound={handleStartRound}
+        />
+      )}
     </div>
   );
 }
