@@ -6,9 +6,8 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
 const getDrillDisplayTitle = (title: string): string => {
-  if (title === "Up & Down Putts 6-10m") return "Up & Down Putts 6-10m";
-  if (title === "Short Putt Test") return "Short Putt Test";
-  return title;
+  // Use normalized title for display
+  return normalizeDrillTitle(title);
 };
 
 interface GroupDrillHistoryProps {
@@ -30,10 +29,27 @@ interface DrillResultWithProfile {
 
 type DrillCategory = 'Putting' | 'Short Game' | 'Approach' | 'Tee Shots';
 
-// Normalize drill titles (map old titles to new ones)
+// Normalize drill titles (map old/variant titles to canonical ones)
 const normalizeDrillTitle = (title: string): string => {
   const titleMap: Record<string, string> = {
     '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
+    "PGA Tour 18 Holes": 'PGA Tour 18-hole Test',
+    "PGA Tour 18-hole Test": 'PGA Tour 18-hole Test',
+    "TW's 9 Windows Test": "9 Windows Shot Shape Test",
+    "9 Windows Shot Shape Test": "9 Windows Shot Shape Test",
+    "Aggressive Putting": "Aggressive Putting 4-6m",
+    "Aggressive Putting 4-6m": "Aggressive Putting 4-6m",
+    "Short Putt Test": "Short Putt Test",
+    "Up & Down Putts 6-10m": "Up & Down Putts 6-10m",
+    "Lag Putting Drill 8-20m": "Lag Putting Drill 8-20m",
+    "8-Ball Circuit": "8-Ball Circuit",
+    "18 Up & Downs": "18 Up & Downs",
+    "Easy Chip Drill": "Easy Chip Drill",
+    "Approach Control 130-180m": "Approach Control 130-180m",
+    "Wedge Ladder 60-120m": "Wedge Ladder 60-120m",
+    "Wedge Game 40-80m": "Wedge Game 40-80m",
+    "Shot Shape Master": "Shot Shape Master",
+    "Driver Control Drill": "Driver Control Drill",
   };
   return titleMap[title] || title;
 };
@@ -71,15 +87,18 @@ const drillOrderByCategory: Record<DrillCategory, string[]> = {
 };
 
 const getScoreUnit = (drillName: string): string => {
+  // Normalize the drill name first to handle variations
+  const normalizedName = normalizeDrillTitle(drillName);
+  
   const drillUnits: { [key: string]: string } = {
-    "Short Putt Test": "putts",
+    "Short Putt Test": "in a row",
     "PGA Tour 18-hole Test": "putts",
     "Up & Down Putts 6-10m": "pts",
     "Aggressive Putting 4-6m": "putts",
     "8-Ball Circuit": "pts",
     "Approach Control 130-180m": "pts",
     "Shot Shape Master": "pts",
-    "Easy Chip Drill": "streak",
+    "Easy Chip Drill": "in a row",
     "18 Up & Downs": "shots",
     "9 Windows Shot Shape Test": "shots",
     "Wedge Ladder 60-120m": "shots",
@@ -87,7 +106,8 @@ const getScoreUnit = (drillName: string): string => {
     "Driver Control Drill": "pts",
     "Lag Putting Drill 8-20m": "pts",
   };
-  return drillUnits[drillName] || "pts";
+  // Try normalized name first, then original, then default
+  return drillUnits[normalizedName] || drillUnits[drillName] || "pts";
 };
 
 interface DrillInfo {
@@ -144,11 +164,32 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
           .order('title');
 
         if (drillsData) {
-          // Deduplicate and filter to known drills
-          const uniqueDrills = Array.from(
-            new Map(drillsData.filter(d => getDrillCategory(d.title)).map(drill => [drill.title, drill])).values()
-          );
-          setDrills(uniqueDrills);
+          // Deduplicate by normalized title to remove duplicates like "Aggressive Putting" vs "Aggressive Putting 4-6m"
+          const drillsByNormalizedTitle = new Map<string, DrillInfo>();
+          
+          // First pass: collect all drills by normalized title
+          drillsData
+            .filter(d => getDrillCategory(d.title))
+            .forEach(drill => {
+              const normalizedTitle = normalizeDrillTitle(drill.title);
+              if (!drillsByNormalizedTitle.has(normalizedTitle)) {
+                drillsByNormalizedTitle.set(normalizedTitle, drill);
+              }
+            });
+          
+          // Second pass: prefer canonical titles (titles that match their normalized form)
+          drillsData
+            .filter(d => getDrillCategory(d.title))
+            .forEach(drill => {
+              const normalizedTitle = normalizeDrillTitle(drill.title);
+              const existing = drillsByNormalizedTitle.get(normalizedTitle);
+              // If the current drill's title matches the normalized title exactly, prefer it
+              if (existing && drill.title === normalizedTitle && existing.title !== normalizedTitle) {
+                drillsByNormalizedTitle.set(normalizedTitle, drill);
+              }
+            });
+          
+          setDrills(Array.from(drillsByNormalizedTitle.values()));
         }
 
         // Build query for drill results - only include drills completed after group creation
@@ -200,7 +241,13 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
   }, [groupId, groupCreatedAt, includeCoaches]);
 
   const filteredResults = results.filter(result => {
-    const drillMatch = selectedDrill === "all" || result.drill_title === selectedDrill;
+    // Normalize both the result title and selected drill for comparison
+    const normalizedResultTitle = normalizeDrillTitle(result.drill_title);
+    const normalizedSelectedDrill = selectedDrill === "all" ? "all" : normalizeDrillTitle(selectedDrill);
+    
+    const drillMatch = normalizedSelectedDrill === "all" || 
+                      normalizedResultTitle === normalizedSelectedDrill ||
+                      result.drill_title === selectedDrill; // Also check original for backwards compatibility
     const memberMatch = selectedMember === "all" || result.user_id === selectedMember;
     return drillMatch && memberMatch;
   });
@@ -323,7 +370,11 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="font-bold text-primary">
-                    {result.total_points} {getScoreUnit(result.drill_title)}
+                    {result.total_points !== null && result.total_points !== undefined ? (
+                      `${result.total_points} ${getScoreUnit(result.drill_title)}`
+                    ) : (
+                      'No score'
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {format(new Date(result.created_at), 'MMM d, yyyy')}
