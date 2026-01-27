@@ -342,8 +342,8 @@ export default function UmbriagioLeaderboard() {
               }`}>
                 {positionLabel}
               </div>
-              <div>
-                <div className="text-xl font-bold">{player.name}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xl font-bold truncate">{player.name}</div>
                 <div className="text-sm text-muted-foreground">
                   {stats.holesPlayed} holes played
                 </div>

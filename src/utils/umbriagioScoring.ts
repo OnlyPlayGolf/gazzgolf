@@ -21,7 +21,7 @@ export interface CategoryResults {
   teamLowWinner: 'A' | 'B' | null;
   individualLowWinner: 'A' | 'B' | null;
   closestToPinWinner: 'A' | 'B' | null;
-  birdieEagleWinner: 'A' | 'B' | null;
+  birdieEagleCounts: { teamA: number; teamB: number };
 }
 
 export function calculateTeamLow(scores: HoleScores): 'A' | 'B' | null {
@@ -64,32 +64,29 @@ export function calculateIndividualLow(scores: HoleScores): 'A' | 'B' | null {
   return null; // Tie if both teams have a player with the lowest score
 }
 
-export function calculateBirdieEagle(scores: HoleScores): 'A' | 'B' | null {
-  // Get best score for each team
-  const teamABest = Math.min(
-    scores.teamAPlayer1 !== null ? scores.teamAPlayer1 : Infinity,
-    scores.teamAPlayer2 !== null ? scores.teamAPlayer2 : Infinity
-  );
-  const teamBBest = Math.min(
-    scores.teamBPlayer1 !== null ? scores.teamBPlayer1 : Infinity,
-    scores.teamBPlayer2 !== null ? scores.teamBPlayer2 : Infinity
-  );
+export function calculateBirdieEagle(scores: HoleScores): { teamA: number; teamB: number } {
+  // Count birdies or better (scores under par) for each team
+  // Each birdie/eagle = 1 point
+  let teamACount = 0;
+  let teamBCount = 0;
   
-  const teamAUnderPar = teamABest < scores.par;
-  const teamBUnderPar = teamBBest < scores.par;
+  // Team A birdies/eagles
+  if (scores.teamAPlayer1 !== null && scores.teamAPlayer1 < scores.par) {
+    teamACount++;
+  }
+  if (scores.teamAPlayer2 !== null && scores.teamAPlayer2 < scores.par) {
+    teamACount++;
+  }
   
-  // If neither is under par, no winner
-  if (!teamAUnderPar && !teamBUnderPar) return null;
+  // Team B birdies/eagles
+  if (scores.teamBPlayer1 !== null && scores.teamBPlayer1 < scores.par) {
+    teamBCount++;
+  }
+  if (scores.teamBPlayer2 !== null && scores.teamBPlayer2 < scores.par) {
+    teamBCount++;
+  }
   
-  // If only one team is under par, they win
-  if (teamAUnderPar && !teamBUnderPar) return 'A';
-  if (teamBUnderPar && !teamAUnderPar) return 'B';
-  
-  // Both under par - team with best (lowest) score wins
-  if (teamABest < teamBBest) return 'A';
-  if (teamBBest < teamABest) return 'B';
-  
-  return null; // Same best score under par = tie
+  return { teamA: teamACount, teamB: teamBCount };
 }
 
 export function calculateHolePoints(
@@ -109,12 +106,21 @@ export function calculateHolePoints(
   if (categories.closestToPinWinner === 'A') teamACategories++;
   else if (categories.closestToPinWinner === 'B') teamBCategories++;
   
-  if (categories.birdieEagleWinner === 'A') teamACategories++;
-  else if (categories.birdieEagleWinner === 'B') teamBCategories++;
+  // Add birdie/eagle points (1 point per birdie or better)
+  teamACategories += categories.birdieEagleCounts.teamA;
+  teamBCategories += categories.birdieEagleCounts.teamB;
   
-  // Check for Umbriago sweep (all 4 categories)
-  const isUmbriagioA = teamACategories === 4;
-  const isUmbriagioB = teamBCategories === 4;
+  // Check for Umbriago sweep (all 3 category wins + at least one birdie/eagle)
+  // For Umbriago, a team needs to win all 3 categories (team low, individual low, closest to pin)
+  // AND have at least one birdie/eagle
+  const isUmbriagioA = categories.teamLowWinner === 'A' && 
+                        categories.individualLowWinner === 'A' && 
+                        categories.closestToPinWinner === 'A' &&
+                        categories.birdieEagleCounts.teamA > 0;
+  const isUmbriagioB = categories.teamLowWinner === 'B' && 
+                        categories.individualLowWinner === 'B' && 
+                        categories.closestToPinWinner === 'B' &&
+                        categories.birdieEagleCounts.teamB > 0;
   
   let teamAPoints = teamACategories;
   let teamBPoints = teamBCategories;

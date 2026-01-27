@@ -190,12 +190,14 @@ export default function BestBallSettings() {
       handicap: undefined,
       tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_a_name,
+      userId: p.isTemporary ? null : (p.odId || null),
     })),
     ...game.team_b_players.map(p => ({
       name: p.displayName,
       handicap: undefined,
       tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_b_name,
+      userId: p.isTemporary ? null : (p.odId || null),
     })),
   ];
 
@@ -263,16 +265,6 @@ export default function BestBallSettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/best-ball/${gameId}?returnPath=/best-ball/${gameId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -329,6 +321,7 @@ export default function BestBallSettings() {
         open={showPlayersModal}
         onOpenChange={setShowPlayersModal}
         players={players}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog

@@ -58,8 +58,8 @@ export function PlayerScoreSheet({
         
         {/* Player Info Bar */}
         <div className="bg-primary text-primary-foreground p-4 rounded-lg mb-4 flex items-center justify-between">
-          <div>
-            <div className="text-lg font-bold">{playerName}</div>
+          <div className="flex-1 min-w-0 mr-4">
+            <div className="text-lg font-bold truncate">{playerName}</div>
           </div>
           <div className="flex flex-col items-center">
             <div className={`bg-background text-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${currentScore === null || currentScore === 0 || currentScore === -1 ? 'text-muted-foreground' : ''}`}>

@@ -9,6 +9,8 @@ export interface GamePlayer {
   tee?: string | null;
   team?: string | null;
   avatarUrl?: string | null;
+  /** User id when the player is a registered user (needed for add-friend in ViewPlayersModal). */
+  userId?: string | null;
 }
 
 const roundTypeLabels: Record<string, string> = {

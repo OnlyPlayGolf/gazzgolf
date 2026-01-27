@@ -42,6 +42,7 @@ export default function MatchPlaySettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [playerUserIds, setPlayerUserIds] = useState<Record<string, string>>({});
   
   // Per-player stats mode
   const { 
@@ -88,6 +89,7 @@ export default function MatchPlaySettings() {
         setGame(data as MatchPlayGame);
         
         // If this game is part of an event, fetch all games in that event
+        let gamesList: MatchPlayGame[] = [];
         if (data.event_id) {
           const { data: eventGames } = await supabase
             .from("match_play_games")
@@ -96,10 +98,41 @@ export default function MatchPlaySettings() {
             .order("created_at");
           
           if (eventGames) {
-            setAllGamesInEvent(eventGames as MatchPlayGame[]);
+            gamesList = eventGames as MatchPlayGame[];
+            setAllGamesInEvent(gamesList);
           }
         } else {
-          setAllGamesInEvent([data as MatchPlayGame]);
+          gamesList = [data as MatchPlayGame];
+          setAllGamesInEvent(gamesList);
+        }
+
+        // Look up user IDs for players by matching names to profiles
+        const playerNames = gamesList.flatMap(g => [g.player_1, g.player_2]).filter(Boolean) as string[];
+        const uniquePlayerNames = [...new Set(playerNames)];
+
+        if (uniquePlayerNames.length > 0) {
+          const orConditions = uniquePlayerNames.flatMap((name) => [
+            `display_name.ilike.%${name}%`,
+            `username.ilike.%${name}%`,
+          ]);
+
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, display_name, username")
+            .or(orConditions.join(","));
+
+          const userIdMap: Record<string, string> = {};
+          for (const name of uniquePlayerNames) {
+            const profile = profiles?.find(
+              (p) =>
+                p.display_name?.toLowerCase() === name.toLowerCase() ||
+                p.username?.toLowerCase() === name.toLowerCase()
+            );
+            if (profile) {
+              userIdMap[name] = profile.id;
+            }
+          }
+          setPlayerUserIds(userIdMap);
         }
       }
     } catch (error) {
@@ -188,12 +221,14 @@ export default function MatchPlaySettings() {
         handicap: undefined,
         tee: g.player_1_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
+        userId: playerUserIds[g.player_1] || null,
       },
       { 
         name: g.player_2, 
         handicap: undefined,
         tee: g.player_2_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
+        userId: playerUserIds[g.player_2] || null,
       },
     ];
   });
@@ -295,16 +330,6 @@ export default function MatchPlaySettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/match-play/${gameId}?returnPath=/match-play/${gameId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -354,6 +379,7 @@ export default function MatchPlaySettings() {
         onOpenChange={setShowPlayersModal}
         players={players}
         useHandicaps={false}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog

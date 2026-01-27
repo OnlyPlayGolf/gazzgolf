@@ -5,16 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, UserPlus, Search, Link2, Copy, RefreshCw, Trash2, Trophy, Crown, LogOut, Send, Users, Settings, MessageCircle, Calendar, History } from "lucide-react";
 import { GroupDrillHistory } from "@/components/GroupDrillHistory";
 import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { useToast } from "@/hooks/use-toast";
+import { sendFriendRequest, useFriendshipStatusMap } from "@/hooks/useSendFriendRequest";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -40,6 +52,14 @@ const getLevelCategoryDisplayName = (category: string): string => {
 
 // Define drill order for each category (matching PuttingDrills.tsx order)
 const drillOrderByCategory: Record<DrillCategory, string[]> = {
+  'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
+  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+  'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
+  'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
+};
+
+// Map categories to drill titles (matching Leaderboards.tsx)
+const drillCategories: Record<string, string[]> = {
   'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
   'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
   'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
@@ -216,6 +236,7 @@ const GroupDetail = () => {
   // Leaderboard state
   const [drills, setDrills] = useState<Drill[]>([]);
   const [selectedDrill, setSelectedDrill] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [drillLeaderboard, setDrillLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [groupLevelsLeaderboard, setGroupLevelsLeaderboard] = useState<GroupLevelLeaderboardEntry[]>([]);
@@ -235,6 +256,7 @@ const GroupDetail = () => {
   const [memberToDemote, setMemberToDemote] = useState<Member | null>(null);
   const [openRolePopover, setOpenRolePopover] = useState<string | null>(null);
   const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
+  const [friendRequestTarget, setFriendRequestTarget] = useState<Member | null>(null);
   const [deletingGroup, setDeletingGroup] = useState(false);
   
   // Manage group state
@@ -253,6 +275,13 @@ const GroupDetail = () => {
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const memberIdsForFriendStatus =
+    showMembersDialog && user
+      ? members.filter((m) => m.user_id !== user.id).map((m) => m.user_id)
+      : [];
+  const { statusMap: friendshipStatusMap, refetch: refetchFriendshipStatus } =
+    useFriendshipStatusMap(memberIdsForFriendStatus, user?.id ?? null);
 
   // Load invite when opening invite dialog
   useEffect(() => {
@@ -428,10 +457,61 @@ useEffect(() => {
       
       const uniqueDrills = Array.from(drillsByNormalizedTitle.values());
       setDrills(uniqueDrills);
-      setSelectedDrill(uniqueDrills[0].title);
-      loadDrillLeaderboard(uniqueDrills[0].title, uniqueDrills[0].lower_is_better);
+      
+      // Default to "8-Ball Circuit" if available, otherwise use first drill
+      const defaultDrill = uniqueDrills.find(d => d.title === '8-Ball Circuit') || uniqueDrills[0];
+      if (defaultDrill) {
+        setSelectedDrill(defaultDrill.title);
+        // Set category based on default drill
+        for (const [category, titles] of Object.entries(drillCategories)) {
+          if (titles.includes(defaultDrill.title)) {
+            setSelectedCategory(category);
+            break;
+          }
+        }
+        // Don't call loadDrillLeaderboard here - group may not be loaded yet (race with loadGroupData).
+        // A useEffect below loads when group + selectedDrill are both ready.
+      }
     }
   };
+
+  // Load drill leaderboard when group and selectedDrill are both available.
+  // This fixes the case where loadDrills runs before loadGroupData completes, so the default
+  // leaderboard (e.g. 8-Ball Circuit) is shown as soon as the Drills PB tab is viewed.
+  useEffect(() => {
+    if (!group || !selectedDrill || drills.length === 0) return;
+    const drill = drills.find(d => d.title === selectedDrill);
+    if (drill) {
+      loadDrillLeaderboard(selectedDrill, drill.lower_is_better);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group, selectedDrill, drills]);
+
+  // Reset selectedDrill when category changes
+  useEffect(() => {
+    if (selectedCategory !== 'all' && drills.length > 0) {
+      const categoryDrills = drills.filter(d => {
+        const normalized = normalizeDrillTitle(d.title);
+        return drillCategories[selectedCategory]?.includes(d.title) || drillCategories[selectedCategory]?.includes(normalized);
+      });
+      if (categoryDrills.length > 0 && (!selectedDrill || !categoryDrills.some(d => d.title === selectedDrill))) {
+        // Default to "8-Ball Circuit" if available in this category, otherwise use first drill
+        const defaultDrill = categoryDrills.find(d => d.title === '8-Ball Circuit') || categoryDrills[0];
+        if (defaultDrill) {
+          setSelectedDrill(defaultDrill.title);
+          loadDrillLeaderboard(defaultDrill.title, defaultDrill.lower_is_better);
+        }
+      }
+    } else if (selectedCategory === 'all' && drills.length > 0 && !selectedDrill) {
+      // If "All Categories" is selected and no drill is selected, default to "8-Ball Circuit"
+      const defaultDrill = drills.find(d => d.title === '8-Ball Circuit') || drills[0];
+      if (defaultDrill) {
+        setSelectedDrill(defaultDrill.title);
+        loadDrillLeaderboard(defaultDrill.title, defaultDrill.lower_is_better);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, drills]);
 
   const loadDrillLeaderboard = async (
     drillTitle: string,
@@ -1416,70 +1496,81 @@ useEffect(() => {
               <TabsContent value="drills" className="space-y-4">
                 <FadeSlide>
                   {drills.length > 0 && (
-                    <div className="space-y-3">
-                    <select
-                      value={selectedDrill || ''}
-                      onChange={(e) => {
-                        const drill = drills.find(d => d.title === e.target.value);
-                        if (drill) {
-                          setSelectedDrill(drill.title);
-                          loadDrillLeaderboard(drill.title, drill.lower_is_better);
-                        }
-                      }}
-                      className="w-full p-2 rounded-md border bg-background text-foreground"
-                    >
-                      {(() => {
-                        const categories: DrillCategory[] = ['Putting', 'Short Game', 'Approach', 'Tee Shots'];
-                        const drillsByCategory = new Map<DrillCategory, Drill[]>();
-                        
-                        // Group drills by category (exclude drills not in any category)
-                        drills.forEach(drill => {
-                          const category = getDrillCategory(drill.title);
-                          if (category) {
-                            if (!drillsByCategory.has(category)) {
-                              drillsByCategory.set(category, []);
-                            }
-                            // Only add if not already added (avoid duplicates)
-                            if (!drillsByCategory.get(category)!.some(d => d.id === drill.id)) {
-                              drillsByCategory.get(category)!.push(drill);
-                            }
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Select Category</Label>
+                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a category..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Categories</SelectItem>
+                            {Object.keys(drillCategories).map((category) => (
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Select Drill</Label>
+                        <Select value={selectedDrill || ''} onValueChange={(value) => {
+                          const drill = drills.find(d => d.title === value);
+                          if (drill) {
+                            setSelectedDrill(drill.title);
+                            loadDrillLeaderboard(drill.title, drill.lower_is_better);
                           }
-                        });
-                        
-                        // Render grouped options
-                        return categories.map(category => {
-                          const categoryDrills = drillsByCategory.get(category);
-                          if (!categoryDrills || categoryDrills.length === 0) return null;
-                          
-                          // Sort drills to match the order in drillOrderByCategory
-                          const order = drillOrderByCategory[category] || [];
-                          const sortedDrills = [...categoryDrills].sort((a, b) => {
-                            const normalizedA = normalizeDrillTitle(a.title);
-                            const normalizedB = normalizeDrillTitle(b.title);
-                            const indexA = order.indexOf(normalizedA) !== -1 ? order.indexOf(normalizedA) : order.indexOf(a.title);
-                            const indexB = order.indexOf(normalizedB) !== -1 ? order.indexOf(normalizedB) : order.indexOf(b.title);
-                            // If drill not in order array, put it at the end
-                            if (indexA === -1 && indexB === -1) return 0;
-                            if (indexA === -1) return 1;
-                            if (indexB === -1) return -1;
-                            return indexA - indexB;
-                          });
-                          
-                          return (
-                            <optgroup key={category} label={category}>
-                              {sortedDrills.map(drill => {
-                                const displayTitle = normalizeDrillTitle(drill.title);
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a drill..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(() => {
+                              // Filter drills based on selected category
+                              const filteredDrills = selectedCategory === 'all' 
+                                ? drills 
+                                : drills.filter(d => {
+                                    const normalized = normalizeDrillTitle(d.title);
+                                    return drillCategories[selectedCategory]?.includes(d.title) || drillCategories[selectedCategory]?.includes(normalized);
+                                  });
+                              
+                              // Group by category for display
+                              return Object.entries(drillCategories).map(([category, titles]) => {
+                                // Check both normalized and original titles
+                                const categoryDrills = filteredDrills.filter(d => {
+                                  const normalized = normalizeDrillTitle(d.title);
+                                  return titles.includes(d.title) || titles.includes(normalized);
+                                });
+                                if (categoryDrills.length === 0) return null;
+                                
+                                // Sort drills to match the order in drillCategories array
+                                const sortedDrills = categoryDrills.sort((a, b) => {
+                                  const normalizedA = normalizeDrillTitle(a.title);
+                                  const normalizedB = normalizeDrillTitle(b.title);
+                                  const indexA = titles.indexOf(normalizedA) !== -1 ? titles.indexOf(normalizedA) : titles.indexOf(a.title);
+                                  const indexB = titles.indexOf(normalizedB) !== -1 ? titles.indexOf(normalizedB) : titles.indexOf(b.title);
+                                  return indexA - indexB;
+                                });
+                                
                                 return (
-                                  <option key={drill.id} value={drill.title}>
-                                    {getDrillDisplayTitle(displayTitle)}
-                                  </option>
+                                  <SelectGroup key={category}>
+                                    <SelectLabel>{category}</SelectLabel>
+                                    {sortedDrills.map((drill) => {
+                                      const displayTitle = normalizeDrillTitle(drill.title);
+                                      return (
+                                        <SelectItem key={drill.id} value={drill.title}>
+                                          {getDrillDisplayTitle(displayTitle)}
+                                        </SelectItem>
+                                      );
+                                    })}
+                                  </SelectGroup>
                                 );
-                              })}
-                            </optgroup>
-                          );
-                        });
-                      })()}
-                    </select>
+                              });
+                            })()}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
                     {loadingLeaderboard ? (
                       <p className="text-center text-muted-foreground py-8">Loading...</p>
@@ -1606,13 +1697,39 @@ useEffect(() => {
             <DialogTitle>Members</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {members.map((member) => (
+            {(() => {
+              // Sort members: for coach groups, coaches first, then alphabetically
+              // For player groups, just alphabetically
+              const sortedMembers = [...members].sort((a, b) => {
+                const getName = (m: Member) => (m.display_name || m.username || 'Unknown').toLowerCase();
+                const nameA = getName(a);
+                const nameB = getName(b);
+                
+                // For coach groups, prioritize coaches (owner/admin) at the top
+                if (isCoachGroup) {
+                  const aIsCoach = isCoachRole(a.role);
+                  const bIsCoach = isCoachRole(b.role);
+                  
+                  // If one is coach and the other isn't, coach comes first
+                  if (aIsCoach && !bIsCoach) return -1;
+                  if (!aIsCoach && bIsCoach) return 1;
+                  
+                  // Both are same type (both coaches or both members), sort alphabetically
+                  return nameA.localeCompare(nameB);
+                }
+                
+                // For player groups, just sort alphabetically
+                return nameA.localeCompare(nameB);
+              });
+              
+              return sortedMembers;
+            })().map((member) => (
               <div
                 key={member.user_id}
                 className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30"
               >
                 <Avatar 
-                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  className="cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                   onClick={() => navigate(`/user/${member.user_id}`)}
                 >
                   <AvatarImage src={member.avatar_url || undefined} />
@@ -1620,20 +1737,39 @@ useEffect(() => {
                     {(member.display_name || member.username || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <div 
-                    className="font-medium cursor-pointer hover:underline"
+                <div className="flex-1 flex items-center gap-2 min-w-0">
+                  <div
+                    className="min-w-0 cursor-pointer"
                     onClick={() => navigate(`/user/${member.user_id}`)}
                   >
-                    {member.display_name || member.username || 'Unknown'}
-                  </div>
-                  {member.username && (
-                    <div className="text-sm text-muted-foreground">
-                      @{member.username}
+                    <div className="font-medium hover:underline truncate">
+                      {member.display_name || member.username || 'Unknown'}
                     </div>
-                  )}
+                    {member.username && (
+                      <div className="text-sm text-muted-foreground truncate">
+                        @{member.username}
+                      </div>
+                    )}
+                  </div>
+                  {/* Add friend - to the right of the name, when not self and not already friend/pending */}
+                  {member.user_id !== user?.id &&
+                    friendshipStatusMap[member.user_id] === undefined && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 shrink-0 text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFriendRequestTarget(member);
+                          setShowMembersDialog(false);
+                        }}
+                        title="Add friend"
+                      >
+                        <UserPlus size={16} />
+                      </Button>
+                    )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {/* Role badge - clickable dropdown for coach groups when owner can change roles */}
                   {isCoachGroup && canChangeRoles && member.role !== 'owner' ? (
                     <Popover 
@@ -1707,6 +1843,55 @@ useEffect(() => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Send friend request confirmation - closes Members dialog first to avoid overlay/focus freeze */}
+      <AlertDialog
+        open={!!friendRequestTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFriendRequestTarget(null);
+            setShowMembersDialog(true);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send friend request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Send a friend request to{" "}
+              <span className="font-medium text-foreground">
+                {friendRequestTarget?.display_name || friendRequestTarget?.username || "this user"}
+              </span>
+              ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setFriendRequestTarget(null);
+                setShowMembersDialog(true);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!user || !friendRequestTarget) return;
+                const ok = await sendFriendRequest(
+                  user.id,
+                  friendRequestTarget.user_id,
+                  toast
+                );
+                if (ok) refetchFriendshipStatus();
+                setFriendRequestTarget(null);
+                setShowMembersDialog(true);
+              }}
+            >
+              Send request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Confirm Remove Member Dialog */}
       <Dialog open={!!memberToRemove} onOpenChange={(open) => !open && setMemberToRemove(null)}>

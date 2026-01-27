@@ -229,8 +229,8 @@ export default function ScrambleLeaderboard() {
               }`}>
                 {getPositionLabel(index)}
               </div>
-              <div>
-                <div className="text-xl font-bold">{ts.team.name}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xl font-bold truncate">{ts.team.name}</div>
                 <div className="text-sm text-muted-foreground">
                   {ts.team.players.map(p => p.name.split(' ')[0]).join(', ')}
                 </div>

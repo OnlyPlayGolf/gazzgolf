@@ -104,13 +104,13 @@ const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame,
 
     const teamLowWinner = calculateTeamLow(holeScores);
     const individualLowWinner = calculateIndividualLow(holeScores);
-    const birdieEagleWinner = calculateBirdieEagle(holeScores);
+    const birdieEagleCounts = calculateBirdieEagle(holeScores);
 
     const categories = {
       teamLowWinner,
       individualLowWinner,
       closestToPinWinner: scores.closestToPinWinner,
-      birdieEagleWinner,
+      birdieEagleCounts,
     };
 
     const { teamAPoints, teamBPoints, isUmbriago } = calculateHolePoints(categories, scores.multiplier, holeScores);
@@ -129,7 +129,7 @@ const createUmbriagioConfig = (gameId: string): GameScoringConfig<UmbriagioGame,
       team_low_winner: teamLowWinner,
       individual_low_winner: individualLowWinner,
       closest_to_pin_winner: scores.closestToPinWinner,
-      birdie_eagle_winner: birdieEagleWinner,
+      birdie_eagle_winner: null, // Legacy field - no longer used for scoring, but kept for database compatibility
       multiplier: scores.multiplier,
       double_called_by: scores.doubleCalledBy,
       double_back_called: scores.doubleBackCalled,

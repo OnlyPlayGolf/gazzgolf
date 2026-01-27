@@ -395,8 +395,8 @@ export default function CopenhagenPlay() {
             onClick={() => setActivePlayerSheet(player.num)}
           >
             <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xl font-bold">{player.name}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xl font-bold truncate">{player.name}</div>
                 {game.use_handicaps && player.handicap !== null && (
                   <div className="text-sm text-muted-foreground">HCP: {player.handicap}</div>
                 )}

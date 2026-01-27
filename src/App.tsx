@@ -147,7 +147,6 @@ import DrivingStats from "./pages/DrivingStats";
 import ShortGameStats from "./pages/ShortGameStats";
 import OtherStats from "./pages/OtherStats";
 import ScoringStats from "./pages/ScoringStats";
-import GameSettingsDetail from "./pages/GameSettingsDetail";
 import ScorecardScanner from "./pages/ScorecardScanner";
 
 // Create QueryClient outside component to prevent recreation on every render
@@ -309,7 +308,6 @@ const AnimatedAppRoutes = () => {
           <Route path="/drill/driver-control/*" element={<DriverControlDrill />} />
           <Route path="/drill/up-downs-test/*" element={<UpDownsTestDrill />} />
           <Route path="/drill/easy-chip/*" element={<EasyChipDrill />} />
-          <Route path="/game-settings/:gameType/:gameId" element={<GameSettingsDetail />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
