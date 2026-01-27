@@ -13,12 +13,14 @@ import WedgesProgressionMessages from "./WedgesProgressionMessages";
 export default function WedgesProgressionDrill() {
   const navigate = useNavigate();
   const location = useLocation();
+  const fromPath = (location.state as any)?.from;
   const [activeTab, setActiveTab] = useState(() => {
     if (location.pathname.includes("/info")) return "info";
     if (location.pathname.includes("/feed")) return "feed";
     if (location.pathname.includes("/leaderboard")) return "leaderboard";
     if (location.pathname.includes("/messages")) return "messages";
-    return "score";
+    // Default to leaderboard if coming from a post
+    return fromPath ? "leaderboard" : "score";
   });
 
   useEffect(() => {
@@ -26,8 +28,8 @@ export default function WedgesProgressionDrill() {
     else if (location.pathname.includes("/feed")) setActiveTab("feed");
     else if (location.pathname.includes("/leaderboard")) setActiveTab("leaderboard");
     else if (location.pathname.includes("/messages")) setActiveTab("messages");
-    else setActiveTab("score");
-  }, [location.pathname]);
+    else setActiveTab(fromPath ? "leaderboard" : "score");
+  }, [location.pathname, fromPath]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -41,7 +43,13 @@ export default function WedgesProgressionDrill() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/drills/approach')}
+              onClick={() => {
+                if (fromPath) {
+                  navigate(fromPath);
+                } else {
+                  navigate('/drills/approach');
+                }
+              }}
               className="rounded-full"
             >
               <ArrowLeft size={24} />

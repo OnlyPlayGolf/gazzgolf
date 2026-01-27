@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/notify";
 import { formatDistanceToNow, format } from "date-fns";
+import { getDrillSlugFromTitle } from "@/utils/drillNavigation";
 import { RoundCard, RoundCardData } from "./RoundCard";
 import { UmbriagioScorecardView } from "./UmbriagioScorecardView";
 import { CopenhagenScorecardView } from "./CopenhagenScorecardView";
@@ -3311,7 +3312,16 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               unit={drillResult.unit}
               isPersonalBest={drillResult.isPersonalBest}
               date={post.created_at}
-              clickable={false}
+              clickable={true}
+              onClick={() => {
+                const drillSlug = getDrillSlugFromTitle(drillResult.drillTitle);
+                if (drillSlug) {
+                  // Navigate to drill leaderboard, preserving where we came from
+                  navigate(`/drill/${drillSlug}/leaderboard`, {
+                    state: { from: location.pathname }
+                  });
+                }
+              }}
             />
           </div>
         ) : roundScorecardResult ? (
