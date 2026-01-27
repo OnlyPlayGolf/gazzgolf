@@ -14,10 +14,19 @@ import AggressivePuttingInfo from "./AggressivePuttingInfo";
 const AggressivePuttingDrill = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const fromPath = (location.state as any)?.from;
 
   useEffect(() => {
     migrateStorageKeys();
   }, []);
+
+  const handleBackClick = () => {
+    if (fromPath) {
+      navigate(fromPath);
+    } else {
+      navigate('/drills/putting');
+    }
+  };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -28,7 +37,7 @@ const AggressivePuttingDrill = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/drills/putting')}
+              onClick={handleBackClick}
               className="rounded-full"
             >
               <ArrowLeft size={24} />
@@ -46,7 +55,7 @@ const AggressivePuttingDrill = () => {
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         <DrillHighScores drillName="Aggressive Putting 4-6m" />
         <Routes>
-          <Route index element={<Navigate to="score" replace />} />
+          <Route index element={<Navigate to={fromPath ? "leaderboard" : "score"} replace />} />
           <Route path="score" element={<AggressivePuttingScore />} />
           <Route path="leaderboard" element={<AggressivePuttingLeaderboard />} />
           <Route path="feed" element={<AggressivePuttingFeed />} />

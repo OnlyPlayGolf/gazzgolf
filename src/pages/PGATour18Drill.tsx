@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate, Routes, Route, Navigate } from "react-router-dom";
+import { useNavigate, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { DrillBottomTabBar } from "@/components/DrillBottomTabBar";
 import { DrillHighScores } from "@/components/DrillHighScores";
 import { migrateStorageKeys } from "@/utils/storageManager";
@@ -13,10 +13,20 @@ import PGATour18Info from "./PGATour18Info";
 
 const PGATour18Drill = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromPath = (location.state as any)?.from;
 
   useEffect(() => {
     migrateStorageKeys();
   }, []);
+
+  const handleBackClick = () => {
+    if (fromPath) {
+      navigate(fromPath);
+    } else {
+      navigate('/drills/putting');
+    }
+  };
 
   return (
     <div className="min-h-screen pb-24 bg-background">
@@ -27,7 +37,7 @@ const PGATour18Drill = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/drills/putting')}
+              onClick={handleBackClick}
               className="rounded-full"
             >
               <ArrowLeft size={24} />
@@ -45,7 +55,7 @@ const PGATour18Drill = () => {
       <div className="max-w-2xl mx-auto p-4 space-y-4">
         <DrillHighScores drillName="PGA Tour 18-hole Test" />
         <Routes>
-          <Route index element={<Navigate to="score" replace />} />
+          <Route index element={<Navigate to={fromPath ? "leaderboard" : "score"} replace />} />
           <Route path="score" element={<PGATour18Score />} />
           <Route path="leaderboard" element={<PGATour18Leaderboard />} />
           <Route path="feed" element={<PGATour18Feed />} />
