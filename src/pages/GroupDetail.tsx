@@ -1284,7 +1284,19 @@ useEffect(() => {
         </Button>
 
         {/* Group Info Card */}
-        <Card>
+        <Card className="relative">
+          {currentUserRole !== 'owner' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLeaveGroup}
+              disabled={loading}
+              className="absolute top-5 right-4 text-red-500 hover:bg-red-500/10 hover:text-red-600 z-10"
+              title="Leave Group"
+            >
+              <LogOut size={20} />
+            </Button>
+          )}
           <CardContent className="pt-6 space-y-4">
             {/* Group Header */}
             <div className="flex items-start gap-4">
@@ -1366,29 +1378,6 @@ useEffect(() => {
                 >
                   <Settings size={20} />
                   Manage
-                </Button>
-              )}
-
-              {currentUserRole === 'owner' && (
-                <Button
-                  variant="destructive"
-                  className="w-full justify-start gap-3"
-                  onClick={() => setShowDeleteGroupDialog(true)}
-                >
-                  <Trash2 size={20} />
-                  Delete Group
-                </Button>
-              )}
-              
-              {currentUserRole !== 'owner' && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start gap-3 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  onClick={handleLeaveGroup}
-                  disabled={loading}
-                >
-                  <LogOut size={20} />
-                  Leave Group
                 </Button>
               )}
             </div>
@@ -2090,6 +2079,23 @@ useEffect(() => {
               </Button>
             </div>
 
+            {/* Delete Group - owner only, at bottom of Manage */}
+            {currentUserRole === 'owner' && (
+              <div className="flex flex-col gap-2 pt-4 mt-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full justify-start gap-3"
+                  onClick={() => {
+                    setShowManageDialog(false);
+                    setShowDeleteGroupDialog(true);
+                  }}
+                >
+                  <Trash2 size={20} />
+                  Delete Group
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
