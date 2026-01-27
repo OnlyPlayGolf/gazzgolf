@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, UserPlus, Search } from "lucide-react";
+import { Plus, UserPlus, Search, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,7 +164,13 @@ export function AddPlayerDialog({
     setTempHandicap("");
   };
 
-  const filteredFriends = friends.filter((f) => !existingPlayerIds.includes(f.id));
+  const filteredFriends = friends
+    .filter((f) => !existingPlayerIds.includes(f.id))
+    .sort((a, b) => {
+      const nameA = (a.display_name || a.username || '').toLowerCase();
+      const nameB = (b.display_name || b.username || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -175,7 +181,7 @@ export function AddPlayerDialog({
         
         <Tabs defaultValue="friends" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="friends">Friends</TabsTrigger>
+            <TabsTrigger value="friends">Players</TabsTrigger>
             <TabsTrigger value="guest">Guest Player</TabsTrigger>
           </TabsList>
           
@@ -189,6 +195,14 @@ export function AddPlayerDialog({
                 className="pl-10"
               />
             </div>
+            
+            {/* Friends header */}
+            {!searchQuery.trim() && filteredFriends.length > 0 && (
+              <div className="flex items-center gap-2 pt-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-sm font-medium text-foreground">Friends</h3>
+              </div>
+            )}
             
             <div className="max-h-64 overflow-y-auto space-y-2">
               {friendsLoading ? (

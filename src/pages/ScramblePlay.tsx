@@ -623,9 +623,9 @@ export default function ScramblePlay() {
             onClick={() => setActiveTeamSheet(team.id)}
           >
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold">{team.name}</span>
+                  <span className="text-xl font-bold truncate">{team.name}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {team.players.map(p => p.name.split(' ')[0]).join(', ')}

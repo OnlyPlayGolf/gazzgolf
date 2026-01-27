@@ -45,6 +45,7 @@ export default function CopenhagenSettings() {
   const [leaving, setLeaving] = useState(false);
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [playerUserIds, setPlayerUserIds] = useState<Record<string, string>>({});
 
   // Per-player stats mode
   const { 
@@ -134,6 +135,39 @@ export default function CopenhagenSettings() {
               : courseHolesData;
             setCourseHoles(filteredHoles);
           }
+        }
+
+        // Look up user IDs for players by matching names to profiles
+        const playerNames = [
+          gameData.player_1,
+          gameData.player_2,
+          gameData.player_3,
+        ].filter(Boolean) as string[];
+
+        if (playerNames.length > 0) {
+          // Build OR conditions for each player name (match display_name or username)
+          const orConditions = playerNames.flatMap((name) => [
+            `display_name.ilike.%${name}%`,
+            `username.ilike.%${name}%`,
+          ]);
+
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, display_name, username")
+            .or(orConditions.join(","));
+
+          const userIdMap: Record<string, string> = {};
+          for (const name of playerNames) {
+            const profile = profiles?.find(
+              (p) =>
+                p.display_name?.toLowerCase() === name.toLowerCase() ||
+                p.username?.toLowerCase() === name.toLowerCase()
+            );
+            if (profile) {
+              userIdMap[name] = profile.id;
+            }
+          }
+          setPlayerUserIds(userIdMap);
         }
       }
     } catch (error) {
@@ -249,17 +283,20 @@ export default function CopenhagenSettings() {
     { 
       name: game.player_1, 
       handicap: undefined,
-      tee: player1Tee
+      tee: player1Tee,
+      userId: playerUserIds[game.player_1] || null,
     },
     { 
       name: game.player_2, 
       handicap: undefined,
-      tee: player2Tee
+      tee: player2Tee,
+      userId: playerUserIds[game.player_2] || null,
     },
     { 
       name: game.player_3, 
       handicap: undefined,
-      tee: player3Tee
+      tee: player3Tee,
+      userId: playerUserIds[game.player_3] || null,
     },
   ];
 
@@ -336,16 +373,6 @@ export default function CopenhagenSettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/copenhagen/${gameId}?returnPath=/copenhagen/${gameId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -428,6 +455,7 @@ export default function CopenhagenSettings() {
         onOpenChange={setShowPlayersModal}
         players={players}
         useHandicaps={false}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog

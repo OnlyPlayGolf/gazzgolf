@@ -266,7 +266,9 @@ const Leaderboards = () => {
             }
           }
         } else if (uniqueDrills.length > 0) {
-          setSelectedDrill(uniqueDrills[0].title);
+          // Default to "8-Ball Circuit" if available, otherwise use first drill
+          const defaultDrill = uniqueDrills.find(d => d.title === '8-Ball Circuit') || uniqueDrills[0];
+          setSelectedDrill(defaultDrill.title);
         }
       }
     } catch (error) {

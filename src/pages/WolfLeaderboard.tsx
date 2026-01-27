@@ -248,8 +248,8 @@ export default function WolfLeaderboard() {
               }`}>
                 {position}
               </div>
-              <div>
-                <div className="text-xl font-bold">{player.name}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xl font-bold truncate">{player.name}</div>
               </div>
             </div>
             <div className="text-right">

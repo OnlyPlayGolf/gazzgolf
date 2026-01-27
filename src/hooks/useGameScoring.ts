@@ -306,11 +306,13 @@ export function useGameScoring<TGame, THole, TScores>(
       }
       
       // Advance to next hole only if we were on the latest hole
+      // Make sure we don't go past totalHoles
       const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
-      if (wasOnLatestHole && currentHole < totalHoles) {
+      const nextHoleNumber = currentHole + 1;
+      if (wasOnLatestHole && nextHoleNumber <= totalHoles) {
         setCurrentHoleIndex(prev => prev + 1);
         // Load empty scores for next hole
-        const nextCourseHole = courseHoles.find(h => h.hole_number === currentHole + 1);
+        const nextCourseHole = courseHoles.find(h => h.hole_number === nextHoleNumber);
         setPar(nextCourseHole?.par || 4);
         setStrokeIndex(nextCourseHole?.stroke_index ?? null);
         setScores(cfg.createEmptyScores(game));
@@ -348,10 +350,16 @@ export function useGameScoring<TGame, THole, TScores>(
       loadHoleData(targetHoleNumber);
       setCurrentHoleIndex(prev => prev - 1);
     } else if (direction === "next") {
-      const maxAllowedHole = Math.min(holes.length + 1, totalHoles);
       const nextHoleNumber = currentHole + 1;
       
-      if (nextHoleNumber <= maxAllowedHole) {
+      // Don't allow navigating past totalHoles
+      // Allow going to next hole if it's within totalHoles and either:
+      // 1. It's the next unsaved hole (holes.length + 1), OR
+      // 2. The hole already exists in the saved holes
+      const isNextUnsavedHole = nextHoleNumber === holes.length + 1;
+      const holeAlreadyExists = holes.some(h => cfg.getHoleNumber(h) === nextHoleNumber);
+      
+      if (nextHoleNumber <= totalHoles && (isNextUnsavedHole || holeAlreadyExists)) {
         loadHoleData(nextHoleNumber);
         setCurrentHoleIndex(prev => prev + 1);
       }

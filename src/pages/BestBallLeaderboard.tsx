@@ -257,8 +257,8 @@ export default function BestBallLeaderboard() {
               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center font-bold text-foreground text-sm mr-4">
                 {positionDisplay}
               </div>
-              <div className="flex-1 text-left">
-                <div className="text-xl font-bold">{teamName}</div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-xl font-bold truncate">{teamName}</div>
                 <div className="text-sm text-muted-foreground">
                   {holes.length} holes played
                 </div>

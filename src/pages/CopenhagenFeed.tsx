@@ -8,12 +8,28 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Send, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Send, ChevronRight, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { GameHeader } from "@/components/GameHeader";
 import { useGameAdminStatus } from "@/hooks/useGameAdminStatus";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Comment {
   id: string;
@@ -63,6 +79,10 @@ export default function CopenhagenFeed() {
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [commentsSheetOpen, setCommentsSheetOpen] = useState(false);
   const [selectedScorecardPlayerName, setSelectedScorecardPlayerName] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false);
 
   useEffect(() => {
     const fetchGameData = async () => {
@@ -117,40 +137,52 @@ export default function CopenhagenFeed() {
 
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
-      const commentsWithCounts = await Promise.all(
-        filteredComments.map(async (comment) => {
-          const { count: likesCount } = await supabase
-            .from("round_comment_likes")
-            .select("*", { count: "exact", head: true })
-            .eq("comment_id", comment.id);
-
-          const { count: repliesCount } = await supabase
-            .from("round_comment_replies")
-            .select("*", { count: "exact", head: true })
-            .eq("comment_id", comment.id);
-
-          let userHasLiked = false;
-          if (currentUserId) {
-            const { data: likeData } = await supabase
+      // Batch fetch all likes, replies, and user likes in parallel
+      const commentIds = filteredComments.map(c => c.id);
+      
+      const [likesResult, repliesResult, userLikesResult] = await Promise.all([
+        commentIds.length > 0
+          ? supabase
               .from("round_comment_likes")
-              .select("id")
-              .eq("comment_id", comment.id)
+              .select("comment_id")
+              .in("comment_id", commentIds)
+          : Promise.resolve({ data: [] }),
+        commentIds.length > 0
+          ? supabase
+              .from("round_comment_replies")
+              .select("comment_id")
+              .in("comment_id", commentIds)
+          : Promise.resolve({ data: [] }),
+        currentUserId && commentIds.length > 0
+          ? supabase
+              .from("round_comment_likes")
+              .select("comment_id")
+              .in("comment_id", commentIds)
               .eq("user_id", currentUserId)
-              .maybeSingle();
-            userHasLiked = !!likeData;
-          }
+          : Promise.resolve({ data: [] })
+      ]);
 
-          return {
-            ...comment,
-            profiles: profilesMap.get(comment.user_id) || null,
-            likes_count: likesCount || 0,
-            replies_count: repliesCount || 0,
-            user_has_liked: userHasLiked,
-            is_activity_item: comment.is_activity_item || false,
-            scorecard_player_name: comment.scorecard_player_name || null,
-          };
-        })
-      );
+      const likesCountMap = new Map<string, number>();
+      likesResult.data?.forEach(like => {
+        likesCountMap.set(like.comment_id, (likesCountMap.get(like.comment_id) || 0) + 1);
+      });
+
+      const repliesCountMap = new Map<string, number>();
+      repliesResult.data?.forEach(reply => {
+        repliesCountMap.set(reply.comment_id, (repliesCountMap.get(reply.comment_id) || 0) + 1);
+      });
+
+      const userLikesSet = new Set(userLikesResult.data?.map(like => like.comment_id) || []);
+
+      const commentsWithCounts = filteredComments.map(comment => ({
+        ...comment,
+        profiles: profilesMap.get(comment.user_id) || null,
+        likes_count: likesCountMap.get(comment.id) || 0,
+        replies_count: repliesCountMap.get(comment.id) || 0,
+        user_has_liked: userLikesSet.has(comment.id),
+        is_activity_item: comment.is_activity_item || false,
+        scorecard_player_name: comment.scorecard_player_name || null,
+      }));
 
       setComments(commentsWithCounts);
     } catch (error) {
@@ -316,6 +348,68 @@ export default function CopenhagenFeed() {
     }
   };
 
+  const handleEditComment = (commentId: string, currentContent: string) => {
+    setEditingCommentId(commentId);
+    setEditCommentContent(currentContent);
+  };
+
+  const handleSaveEditComment = async (commentId: string) => {
+    if (!editCommentContent.trim() || !currentUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from("round_comments")
+        .update({ content: editCommentContent.trim() })
+        .eq("id", commentId)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      setComments(prevComments =>
+        prevComments.map(comment =>
+          comment.id === commentId
+            ? { ...comment, content: editCommentContent.trim() }
+            : comment
+        )
+      );
+
+      setEditingCommentId(null);
+      setEditCommentContent("");
+      toast({ title: "Comment updated" });
+    } catch (error: any) {
+      console.error("Error updating comment:", error);
+      toast({ title: "Error updating comment", description: error.message, variant: "destructive" });
+      await fetchComments();
+    }
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    setCommentToDelete(commentId);
+    setShowDeleteCommentDialog(true);
+  };
+
+  const handleDeleteCommentConfirm = async () => {
+    if (!commentToDelete || !currentUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from("round_comments")
+        .delete()
+        .eq("id", commentToDelete)
+        .eq("user_id", currentUserId);
+
+      if (error) throw error;
+
+      await fetchComments();
+      toast({ title: "Comment deleted" });
+      setShowDeleteCommentDialog(false);
+      setCommentToDelete(null);
+    } catch (error: any) {
+      console.error("Error deleting comment:", error);
+      toast({ title: "Error deleting comment", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <GameHeader
@@ -438,6 +532,9 @@ export default function CopenhagenFeed() {
                 }
               }
               
+              const isOwnComment = comment.user_id === currentUserId;
+              const isEditing = editingCommentId === comment.id;
+
               return (
               <Card key={comment.id}>
                 <CardContent className="p-4">
@@ -447,53 +544,114 @@ export default function CopenhagenFeed() {
                       <AvatarFallback>{getInitials(comment.profiles)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
-                        {comment.hole_number && (
-                          <Badge variant="secondary" className="text-xs">
-                            Hole {comment.hole_number}
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                        </span>
-                      </div>
-                      
-                      {/* Content Display */}
-                      {isMulliganComment ? (
-                        <div className="mt-2 space-y-2">
-                          {userComment && (
-                            <p className="text-sm">{userComment}</p>
-                          )}
-                          <div className="bg-muted/50 border border-border rounded-lg px-3 py-2">
-                            <p className="text-sm text-muted-foreground">{mulliganText}</p>
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editCommentContent}
+                            onChange={(e) => setEditCommentContent(e.target.value)}
+                            className="min-h-[60px]"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleSaveEditComment(comment.id)}
+                              disabled={!editCommentContent.trim()}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingCommentId(null);
+                                setEditCommentContent("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
                           </div>
                         </div>
                       ) : (
-                        <p className="mt-1 text-sm">{comment.content}</p>
+                        <>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold">{getDisplayName(comment.profiles)}</span>
+                            {comment.hole_number && (
+                              <Badge variant="secondary" className="text-xs">
+                                Hole {comment.hole_number}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                            </span>
+                            {isOwnComment && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground ml-auto"
+                                  >
+                                    <MoreHorizontal size={14} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditComment(comment.id, comment.content)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteComment(comment.id)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                          
+                          {/* Content Display */}
+                          {isMulliganComment ? (
+                            <div className="mt-2 space-y-2">
+                              {userComment && (
+                                <p className="text-sm">{userComment}</p>
+                              )}
+                              <div className="bg-muted/50 border border-border rounded-lg px-3 py-2">
+                                <p className="text-sm text-muted-foreground">{mulliganText}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="mt-1 text-sm">{comment.content}</p>
+                          )}
+                        </>
                       )}
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-4 mt-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
-                          onClick={() => handleLike(comment.id, comment.user_has_liked)}
-                        >
-                          <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
-                          {comment.likes_count > 0 && comment.likes_count}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => toggleReplies(comment.id)}
-                        >
-                          <MessageCircle size={16} />
-                          {comment.replies_count > 0 && comment.replies_count}
-                        </Button>
-                      </div>
+                      {!isEditing && (
+                        <>
+                          {/* Actions */}
+                          <div className="flex items-center gap-4 mt-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
+                              onClick={() => handleLike(comment.id, comment.user_has_liked)}
+                            >
+                              <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
+                              {comment.likes_count > 0 && comment.likes_count}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => toggleReplies(comment.id)}
+                            >
+                              <MessageCircle size={16} />
+                              {comment.replies_count > 0 && comment.replies_count}
+                            </Button>
+                          </div>
+                        </>
+                      )}
 
                       {/* Replies Section */}
                       {expandedReplies.has(comment.id) && (
@@ -559,6 +717,27 @@ export default function CopenhagenFeed() {
           scorecardPlayerName={selectedScorecardPlayerName}
         />
       )}
+
+      {/* Delete Comment Confirmation Dialog */}
+      <AlertDialog open={showDeleteCommentDialog} onOpenChange={setShowDeleteCommentDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Comment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this comment? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCommentConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

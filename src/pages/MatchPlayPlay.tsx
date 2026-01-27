@@ -393,11 +393,11 @@ export default function MatchPlayPlay() {
           }}
         >
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-blue-600">{game.player_1}</span>
+                <span className="text-xl font-bold text-blue-600 truncate">{game.player_1}</span>
                 {scores.player1Mulligan && (
-                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600 flex-shrink-0">
                     Mulligan
                   </Badge>
                 )}
@@ -424,11 +424,11 @@ export default function MatchPlayPlay() {
           }}
         >
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-red-600">{game.player_2}</span>
+                <span className="text-xl font-bold text-red-600 truncate">{game.player_2}</span>
                 {scores.player2Mulligan && (
-                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                  <Badge variant="outline" className="text-xs border-amber-500 text-amber-600 flex-shrink-0">
                     Mulligan
                   </Badge>
                 )}

@@ -301,6 +301,7 @@ export default function SimpleSkinsSettings() {
     handicap: p.handicap ?? null,
     tee: p.tee || defaultTee,
     avatarUrl: p.avatarUrl || null,
+    userId: p.odId || null,
   }));
 
   // Determine tee display info
@@ -366,16 +367,6 @@ export default function SimpleSkinsSettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/skins/${roundId}?returnPath=/skins/${roundId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -473,6 +464,7 @@ export default function SimpleSkinsSettings() {
         onOpenChange={setShowPlayersModal}
         players={gamePlayers}
         useHandicaps={game.use_handicaps}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog

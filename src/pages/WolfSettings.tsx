@@ -50,6 +50,7 @@ export default function WolfSettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [playerUserIds, setPlayerUserIds] = useState<Record<string, string>>({});
 
   // Per-player stats mode
   const { 
@@ -125,6 +126,41 @@ export default function WolfSettings() {
               : courseHolesData;
             setCourseHoles(filteredHoles);
           }
+        }
+
+        // Look up user IDs for players by matching names to profiles
+        const playerNames = [
+          typedGame.player_1,
+          typedGame.player_2,
+          typedGame.player_3,
+          typedGame.player_4,
+          typedGame.player_5,
+          typedGame.player_6,
+        ].filter(Boolean) as string[];
+
+        if (playerNames.length > 0) {
+          const orConditions = playerNames.flatMap((name) => [
+            `display_name.ilike.%${name}%`,
+            `username.ilike.%${name}%`,
+          ]);
+
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, display_name, username")
+            .or(orConditions.join(","));
+
+          const userIdMap: Record<string, string> = {};
+          for (const name of playerNames) {
+            const profile = profiles?.find(
+              (p) =>
+                p.display_name?.toLowerCase() === name.toLowerCase() ||
+                p.username?.toLowerCase() === name.toLowerCase()
+            );
+            if (profile) {
+              userIdMap[name] = profile.id;
+            }
+          }
+          setPlayerUserIds(userIdMap);
         }
       }
     } catch (error) {
@@ -283,16 +319,6 @@ export default function WolfSettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/wolf/${gameId}?returnPath=/wolf/${gameId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -402,6 +428,7 @@ export default function WolfSettings() {
         onOpenChange={setShowPlayersModal}
         players={players}
         useHandicaps={false}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog

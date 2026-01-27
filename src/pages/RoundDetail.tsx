@@ -239,8 +239,8 @@ export default function RoundDetail() {
                             }`}>
                               {index + 1}
                             </div>
-                            <div>
-                              <div className="font-semibold">{getPlayerName(player)}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold truncate">{getPlayerName(player)}</div>
                               <div className="text-xs text-muted-foreground">
                                 {player.scores.length} holes • {player.tee_color || round.tee_set || 'White'} tees
                               </div>

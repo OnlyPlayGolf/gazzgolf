@@ -87,6 +87,7 @@ export default function UmbriagioSettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [playerUserIds, setPlayerUserIds] = useState<Record<string, string>>({});
   
   // Per-player stats mode
   const { 
@@ -145,6 +146,39 @@ export default function UmbriagioSettings() {
           } catch {
             setTeamRotation("none");
           }
+        }
+
+        // Look up user IDs for players by matching names to profiles
+        const playerNames = [
+          data.team_a_player_1,
+          data.team_a_player_2,
+          data.team_b_player_1,
+          data.team_b_player_2,
+        ].filter(Boolean) as string[];
+
+        if (playerNames.length > 0) {
+          const orConditions = playerNames.flatMap((name) => [
+            `display_name.ilike.%${name}%`,
+            `username.ilike.%${name}%`,
+          ]);
+
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, display_name, username")
+            .or(orConditions.join(","));
+
+          const userIdMap: Record<string, string> = {};
+          for (const name of playerNames) {
+            const profile = profiles?.find(
+              (p) =>
+                p.display_name?.toLowerCase() === name.toLowerCase() ||
+                p.username?.toLowerCase() === name.toLowerCase()
+            );
+            if (profile) {
+              userIdMap[name] = profile.id;
+            }
+          }
+          setPlayerUserIds(userIdMap);
         }
       }
     } catch (error) {
@@ -323,10 +357,10 @@ export default function UmbriagioSettings() {
   // Use tee_set as authoritative source for player tees
   const playerTee = game.tee_set;
   const players: GamePlayer[] = [
-    { name: game.team_a_player_1, team: "Team A", tee: playerTee },
-    { name: game.team_a_player_2, team: "Team A", tee: playerTee },
-    { name: game.team_b_player_1, team: "Team B", tee: playerTee },
-    { name: game.team_b_player_2, team: "Team B", tee: playerTee },
+    { name: game.team_a_player_1, team: "Team A", tee: playerTee, userId: playerUserIds[game.team_a_player_1] || null },
+    { name: game.team_a_player_2, team: "Team A", tee: playerTee, userId: playerUserIds[game.team_a_player_2] || null },
+    { name: game.team_b_player_1, team: "Team B", tee: playerTee, userId: playerUserIds[game.team_b_player_1] || null },
+    { name: game.team_b_player_2, team: "Team B", tee: playerTee, userId: playerUserIds[game.team_b_player_2] || null },
   ];
 
   const gameDetails: GameDetailsData = {
@@ -379,16 +413,6 @@ export default function UmbriagioSettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/umbriago/${gameId}?returnPath=/umbriago/${gameId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -461,6 +485,7 @@ export default function UmbriagioSettings() {
         onOpenChange={setShowPlayersModal}
         players={players}
         useHandicaps={false}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog

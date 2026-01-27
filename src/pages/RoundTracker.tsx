@@ -965,11 +965,11 @@ export default function RoundTracker() {
                             }}
                           >
                             <div className="flex items-center justify-between">
-                              <div>
+                              <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                                  <span className="text-xl font-bold truncate">{getPlayerName(player)}</span>
                                   {hasMulliganOnHole && (
-                                    <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                                    <Badge variant="outline" className="text-xs border-amber-500 text-amber-600 flex-shrink-0">
                                       Mulligan
                                     </Badge>
                                   )}
@@ -1032,11 +1032,11 @@ export default function RoundTracker() {
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold">{getPlayerName(player)}</span>
+                        <span className="text-xl font-bold truncate">{getPlayerName(player)}</span>
                         {hasMulliganOnHole && (
-                          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">
+                          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600 flex-shrink-0">
                             Mulligan
                           </Badge>
                         )}

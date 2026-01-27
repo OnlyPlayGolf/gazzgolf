@@ -389,6 +389,7 @@ export default function RoundSettings() {
       handicap: p.handicap,
       tee: p.tee_color || defaultTee, // Individual player tee from DB, fallback to default
       avatarUrl: p.profiles?.avatar_url,
+      userId: p.is_guest ? null : p.user_id ?? undefined,
     };
   });
 
@@ -461,16 +462,6 @@ export default function RoundSettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/round/${roundId}?returnPath=/rounds/${roundId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -537,6 +528,7 @@ export default function RoundSettings() {
         onOpenChange={setShowPlayersModal}
         players={gamePlayers}
         useHandicaps={hasHandicaps}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog

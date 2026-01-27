@@ -499,8 +499,8 @@ export default function BestBallPlay() {
         onClick={() => setActivePlayerSheet({ team, playerId: player.odId })}
       >
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-lg font-bold">{player.displayName}</p>
+          <div className="flex-1 min-w-0 mr-4">
+            <p className="text-lg font-bold truncate">{player.displayName}</p>
           </div>
           <div className="text-center">
             <div className={`text-2xl font-bold ${hasScore ? '' : 'text-muted-foreground'}`}>

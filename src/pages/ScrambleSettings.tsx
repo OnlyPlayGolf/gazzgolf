@@ -241,6 +241,7 @@ export default function ScrambleSettings() {
       handicap: undefined,
       tee: p.tee || defaultTee, // Individual player tee from DB, fallback to default
       team: team.name,
+      userId: p.userId || null,
     }))
   );
 
@@ -314,16 +315,6 @@ export default function ScrambleSettings() {
                   </span>
                 )}
               </div>
-              {!(isSpectator || (isEditWindowExpired ?? false)) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`/game-settings/scramble/${gameId}?returnPath=/scramble/${gameId}/settings`)}
-                  className="h-8 w-8"
-                >
-                  <Settings size={16} />
-                </Button>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -386,6 +377,7 @@ export default function ScrambleSettings() {
         onOpenChange={setShowPlayersModal}
         players={players}
         useHandicaps={false}
+        currentUserId={currentUserId}
       />
 
       <DeleteGameDialog
