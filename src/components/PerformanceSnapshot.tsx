@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Target, ChevronRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, ChevronRight, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { StrokesGainedStats, formatSG } from "@/utils/statisticsCalculations";
 
 interface PerformanceSnapshotProps {
-  performanceStats: { strokesGained: StrokesGainedStats; insights: any[] } | null;
+  performanceStats: { strokesGained: StrokesGainedStats; insights: any[]; weeklyStreak?: { streak: number; type: 'drill' | 'level' | 'round' } } | null;
 }
 
 // Map insight categories to drills
@@ -49,6 +49,8 @@ export const PerformanceSnapshot = ({ performanceStats }: PerformanceSnapshotPro
     offTheTee: null,
   };
   const insights = performanceStats?.insights || [];
+  const weeklyStreak = performanceStats?.weeklyStreak ?? { streak: 0, type: 'round' as const };
+  const streakTypeLabel = weeklyStreak.type === 'drill' ? 'Drill' : weeklyStreak.type === 'level' ? 'Level' : 'Round';
   
   // Check if we have any SG data
   const hasSGData = sgStats.putting !== null || sgStats.shortGame !== null || 
@@ -94,14 +96,7 @@ export const PerformanceSnapshot = ({ performanceStats }: PerformanceSnapshotPro
   sgStatsList.sort((a, b) => b.value - a.value);
 
   const bestStat = sgStatsList.length >= 1 ? sgStatsList[0] : null;
-  
-  // Get two worst stats (end of sorted array)
-  const worstStats: SGStatDisplay[] = [];
-  if (sgStatsList.length >= 3) {
-    worstStats.push(sgStatsList[sgStatsList.length - 2], sgStatsList[sgStatsList.length - 1]);
-  } else if (sgStatsList.length === 2) {
-    worstStats.push(sgStatsList[1]);
-  }
+  const focusStat = sgStatsList.length >= 2 ? sgStatsList[sgStatsList.length - 1] : null;
 
   // Get recommended drills from the worst categories (matching Key Insights logic)
   const weakCategories = new Set<string>();
@@ -145,9 +140,9 @@ export const PerformanceSnapshot = ({ performanceStats }: PerformanceSnapshotPro
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* SG Stats Grid */}
+        {/* Key Insights Grid */}
         <div className="grid grid-cols-3 gap-3">
-          {/* Best stat (left) */}
+          {/* Best stat */}
           {bestStat ? (
             <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
@@ -168,59 +163,46 @@ export const PerformanceSnapshot = ({ performanceStats }: PerformanceSnapshotPro
             </div>
           )}
           
-          {/* Worst stats (middle and right) - always render exactly 2 slots */}
-          {worstStats.length >= 2 ? (
-            // Render both worst stats
-            worstStats.map((stat) => (
-              <div key={stat.category} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <TrendingDown size={14} className="text-red-500" />
-                  <span className="text-[10px] uppercase tracking-wide text-red-600 font-medium">Focus</span>
-                </div>
-                <p className="text-lg font-bold text-red-600">{formatSG(stat.value)}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
+          {/* Focus stat */}
+          {focusStat ? (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <TrendingDown size={14} className="text-red-500" />
+                <span className="text-[10px] uppercase tracking-wide text-red-600 font-medium">Focus</span>
               </div>
-            ))
-          ) : worstStats.length === 1 ? (
-            // Render 1 worst stat + 1 placeholder
-            <>
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <TrendingDown size={14} className="text-red-500" />
-                  <span className="text-[10px] uppercase tracking-wide text-red-600 font-medium">Focus</span>
-                </div>
-                <p className="text-lg font-bold text-red-600">{formatSG(worstStats[0].value)}</p>
-                <p className="text-xs text-muted-foreground">{worstStats[0].label}</p>
-              </div>
-              <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <TrendingDown size={14} className="text-muted-foreground" />
-                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Focus</span>
-                </div>
-                <p className="text-lg font-bold text-muted-foreground">—</p>
-                <p className="text-xs text-muted-foreground">No data yet</p>
-              </div>
-            </>
+              <p className="text-lg font-bold text-red-600">{formatSG(focusStat.value)}</p>
+              <p className="text-xs text-muted-foreground">{focusStat.label}</p>
+            </div>
           ) : (
-            // Render 2 placeholders when no worst stats
-            <>
-              <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <TrendingDown size={14} className="text-muted-foreground" />
-                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Focus</span>
-                </div>
-                <p className="text-lg font-bold text-muted-foreground">—</p>
-                <p className="text-xs text-muted-foreground">No data yet</p>
+            <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <TrendingDown size={14} className="text-muted-foreground" />
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Focus</span>
               </div>
-              <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <TrendingDown size={14} className="text-muted-foreground" />
-                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Focus</span>
-                </div>
-                <p className="text-lg font-bold text-muted-foreground">—</p>
-                <p className="text-xs text-muted-foreground">No data yet</p>
+              <p className="text-lg font-bold text-muted-foreground">—</p>
+              <p className="text-xs text-muted-foreground">No data yet</p>
+            </div>
+          )}
+          
+          {/* Streak */}
+          {weeklyStreak.streak > 0 ? (
+            <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Flame size={14} className="text-orange-500" />
+                <span className="text-[10px] uppercase tracking-wide text-orange-600 font-medium">Streak</span>
               </div>
-            </>
+              <p className="text-lg font-bold text-orange-600">{weeklyStreak.streak}</p>
+              <p className="text-xs text-muted-foreground">{streakTypeLabel} week{weeklyStreak.streak !== 1 ? 's' : ''}</p>
+            </div>
+          ) : (
+            <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Flame size={14} className="text-muted-foreground" />
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Streak</span>
+              </div>
+              <p className="text-lg font-bold text-muted-foreground">—</p>
+              <p className="text-xs text-muted-foreground">No streak yet</p>
+            </div>
           )}
         </div>
 

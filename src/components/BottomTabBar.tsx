@@ -32,7 +32,7 @@ export const BottomTabBar = () => {
   if (hideTabBar) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 h-[84px]">
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 h-[64px]">
       <div className="flex h-full">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -48,9 +48,9 @@ export const BottomTabBar = () => {
                 onClick={() => navigate(tab.path)}
                 className="flex-1 flex flex-col items-center justify-center h-full transition-colors"
               >
-                <div className="w-[84px] h-[84px] rounded-full bg-primary flex flex-col items-center justify-center shrink-0" style={{ aspectRatio: '1 / 1' }}>
-                  <Icon size={30} className="text-primary-foreground mb-0.5 w-[30px] h-[30px]" />
-                  <span className="text-[12px] font-medium text-primary-foreground">{tab.label}</span>
+                <div className="w-[64px] h-[64px] rounded-full bg-primary flex flex-col items-center justify-center shrink-0" style={{ aspectRatio: '1 / 1' }}>
+                  <Icon size={24} className="text-primary-foreground mb-0.5 w-[24px] h-[24px]" />
+                  <span className="text-[11px] font-medium text-primary-foreground">{tab.label}</span>
                 </div>
               </button>
             );
@@ -60,23 +60,23 @@ export const BottomTabBar = () => {
             <button
               key={tab.id}
               onClick={() => navigate(tab.path)}
-              className="flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[56px] transition-colors"
+              className="flex-1 flex flex-col items-center justify-center py-1 px-1 h-full transition-colors"
             >
               <div className={cn(
-                "flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-colors",
+                "flex flex-col items-center justify-center px-2 py-1 rounded-lg transition-colors",
                 isActive 
                   ? "bg-primary/10" 
                   : ""
               )}>
                 <Icon 
-                  size={30} 
+                  size={24} 
                   className={cn(
-                    "mb-0.5 w-[30px] h-[30px]",
+                    "mb-0.5 w-[24px] h-[24px]",
                     isActive ? "text-primary" : "text-primary/60"
                   )} 
                 />
                 <span className={cn(
-                  "text-[12px] font-medium",
+                  "text-[11px] font-medium",
                   isActive ? "text-primary" : "text-primary/60"
                 )}>
                   {tab.label}
