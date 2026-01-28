@@ -6,7 +6,8 @@ export const getDrillSlugFromTitle = (drillTitle: string): string | null => {
   const normalizedTitle = normalizeDrillTitle(drillTitle);
   
   const titleToSlug: Record<string, string> = {
-    'PGA Tour 18-hole Test': 'pga-tour-18',
+    'PGA Tour 18-hole': 'pga-tour-18',
+    'PGA Tour 18-hole Test': 'pga-tour-18', // Legacy
     'Aggressive Putting 4-6m': 'aggressive-putting',
     'Up & Down Putts 6-10m': 'up-down-putting',
     'Short Putt Test': 'short-putting-test',
@@ -16,7 +17,8 @@ export const getDrillSlugFromTitle = (drillTitle: string): string | null => {
     'Wedge Game 40-80m': 'wedges-2-laps',
     'Wedge Ladder 60-120m': 'wedges-progression',
     'Approach Control 130-180m': 'approach-control',
-    '9 Windows Shot Shape Test': 'tw-9-windows',
+    '9 Windows Shot Shape': 'tw-9-windows',
+    '9 Windows Shot Shape Test': 'tw-9-windows', // Legacy
     'Shot Shape Master': 'shot-shape-master',
     'Driver Control Drill': 'driver-control',
     '18 Up & Downs': 'up-downs-test',
@@ -30,11 +32,13 @@ export const getDrillSlugFromTitle = (drillTitle: string): string | null => {
  */
 const normalizeDrillTitle = (title: string): string => {
   const titleMap: Record<string, string> = {
-    '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
-    "PGA Tour 18 Holes": 'PGA Tour 18-hole Test',
-    "PGA Tour 18-hole Test": 'PGA Tour 18-hole Test',
-    "TW's 9 Windows Test": "9 Windows Shot Shape Test",
-    "9 Windows Shot Shape Test": "9 Windows Shot Shape Test",
+    '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole',
+    "PGA Tour 18 Holes": 'PGA Tour 18-hole',
+    "PGA Tour 18-hole Test": 'PGA Tour 18-hole',
+    "PGA Tour 18-hole": 'PGA Tour 18-hole',
+    "TW's 9 Windows Test": "9 Windows Shot Shape",
+    "9 Windows Shot Shape Test": "9 Windows Shot Shape",
+    "9 Windows Shot Shape": "9 Windows Shot Shape",
     "Aggressive Putting": "Aggressive Putting 4-6m",
     "Aggressive Putting 4-6m": "Aggressive Putting 4-6m",
     "Short Putt Test": "Short Putt Test",

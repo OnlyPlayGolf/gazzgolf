@@ -11,7 +11,7 @@ interface PerformanceSnapshotProps {
 // Map insight categories to drills
 const drillsByCategory: Record<string, { id: string; title: string; description: string }[]> = {
   'putting': [
-    { id: 'pga-tour-18', title: 'PGA Tour 18-hole Test', description: 'Overall putting practice against tour standards' },
+    { id: 'pga-tour-18', title: 'PGA Tour 18-hole', description: 'Overall putting practice against tour standards' },
     { id: 'aggressive-putting', title: 'Aggressive Putting 4-6m', description: 'Commit with confidence inside 6 meters' },
     { id: 'short-putting-test', title: 'Short Putt Test', description: 'Build consistency on short putts' },
   ],

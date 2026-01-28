@@ -44,10 +44,38 @@ export function usePlayerStatsMode(
         // Use existing mode for this game
         setStatsModeState(data.stats_mode as StatsMode);
       } else {
-        // No mode set for this game yet - use last saved preference as default
-        const lastMode = localStorage.getItem(LAST_STATS_MODE_KEY) as StatsMode | null;
-        if (lastMode && ['none', 'basic', 'strokes_gained'].includes(lastMode)) {
-          setStatsModeState(lastMode);
+        // No mode set in player_game_stats_mode - check round's stats_mode as fallback
+        if (gameType === 'round') {
+          const { data: roundData } = await supabase
+            .from('rounds')
+            .select('stats_mode')
+            .eq('id', gameId)
+            .maybeSingle();
+          
+          if (roundData?.stats_mode && ['none', 'basic', 'strokes_gained'].includes(roundData.stats_mode)) {
+            setStatsModeState(roundData.stats_mode as StatsMode);
+            // Also save it to player_game_stats_mode for future consistency
+            await supabase
+              .from('player_game_stats_mode')
+              .upsert({
+                user_id: user.id,
+                game_id: gameId,
+                game_type: gameType,
+                stats_mode: roundData.stats_mode,
+              }, { onConflict: 'user_id,game_id,game_type' });
+          } else {
+            // Fall back to last saved preference
+            const lastMode = localStorage.getItem(LAST_STATS_MODE_KEY) as StatsMode | null;
+            if (lastMode && ['none', 'basic', 'strokes_gained'].includes(lastMode)) {
+              setStatsModeState(lastMode);
+            }
+          }
+        } else {
+          // For other game types, use last saved preference as default
+          const lastMode = localStorage.getItem(LAST_STATS_MODE_KEY) as StatsMode | null;
+          if (lastMode && ['none', 'basic', 'strokes_gained'].includes(lastMode)) {
+            setStatsModeState(lastMode);
+          }
         }
       }
       

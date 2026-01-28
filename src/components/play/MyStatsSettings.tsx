@@ -109,11 +109,11 @@ export function MyStatsSettings({
           >
             <div
               className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                currentMode === 'none' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                currentMode === 'none' ? 'border-green-500 bg-green-500/10' : 'hover:bg-muted/50'
               }`}
               onClick={() => handleModeSelect('none')}
             >
-              <RadioGroupItem value="none" id="stats-none" />
+              <RadioGroupItem value="none" id="stats-none" className="hidden" />
               <Label htmlFor="stats-none" className="flex-1 cursor-pointer text-sm">
                 None
               </Label>
@@ -121,25 +121,25 @@ export function MyStatsSettings({
 
             <div
               className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                currentMode === 'basic' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                currentMode === 'basic' ? 'border-green-500 bg-green-500/10' : 'hover:bg-muted/50'
               }`}
               onClick={() => handleModeSelect('basic')}
             >
-              <RadioGroupItem value="basic" id="stats-basic" />
+              <RadioGroupItem value="basic" id="stats-basic" className="hidden" />
               <Label htmlFor="stats-basic" className="flex-1 cursor-pointer text-sm flex items-center gap-2">
                 <Target className="h-4 w-4 text-blue-500" />
                 Basic Stats
-                <span className="text-xs text-muted-foreground">(Fairways, GIR, Putts)</span>
+                <span className="text-xs text-muted-foreground">(Fairways, GIR, Scrambling, Putts)</span>
               </Label>
             </div>
 
             <div
               className={`flex items-center space-x-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-                currentMode === 'strokes_gained' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                currentMode === 'strokes_gained' ? 'border-green-500 bg-green-500/10' : 'hover:bg-muted/50'
               }`}
               onClick={() => handleModeSelect('strokes_gained')}
             >
-              <RadioGroupItem value="strokes_gained" id="stats-sg" />
+              <RadioGroupItem value="strokes_gained" id="stats-sg" className="hidden" />
               <Label htmlFor="stats-sg" className="flex-1 cursor-pointer text-sm flex items-center gap-2">
                 <Zap className="h-4 w-4 text-amber-500" />
                 Strokes Gained

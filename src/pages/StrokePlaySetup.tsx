@@ -327,6 +327,20 @@ export default function StrokePlaySetup() {
 
       await createGroupsAndPlayersForRound(round.id);
 
+      // Persist the player's stats mode choice for this game (used by in-game + settings screens)
+      try {
+        await supabase
+          .from('player_game_stats_mode')
+          .upsert({
+            user_id: user.id,
+            game_id: round.id,
+            game_type: 'round',
+            stats_mode: statsMode,
+          }, { onConflict: 'user_id,game_id,game_type' });
+      } catch (e) {
+        console.warn('Failed to save player stats mode preference:', e);
+      }
+
       toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
       navigate(`/rounds/${round.id}/track`);
 
@@ -485,7 +499,7 @@ export default function StrokePlaySetup() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="basic">Basic Stats (Fairways, GIR, Putts)</SelectItem>
+                  <SelectItem value="basic">Basic Stats (Fairways, GIR, Scrambling, Putts)</SelectItem>
                   <SelectItem value="strokes_gained">Strokes Gained</SelectItem>
                 </SelectContent>
               </Select>

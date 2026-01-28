@@ -729,14 +729,20 @@ export default function RoundTracker() {
     const statsRequired = round?.stats_mode && round.stats_mode !== 'none';
     const currentHoleNumber = currentHole?.hole_number;
     const statsCompleted = !statsRequired || (currentHoleNumber && holeStatsSaved.has(currentHoleNumber));
+    const isLastHole = currentHoleIndex === courseHoles.length - 1;
     
-    if (allPlayersEnteredCurrentHole && statsCompleted && currentHoleIndex < courseHoles.length - 1) {
+    // For non-last holes: auto-advance to next hole
+    if (allPlayersEnteredCurrentHole && statsCompleted && !isLastHole) {
       const timeout = setTimeout(() => {
         setCurrentHoleIndex(currentHoleIndex + 1);
         setShowScoreSheet(false);
       }, 500);
       return () => clearTimeout(timeout);
     }
+    
+    // For last hole: ensure stats are saved (they should auto-save, but ensure it happens)
+    // The stats component handles its own saving, so we just need to ensure the condition is met
+    // This effect will re-run when stats are saved, ensuring everything is in sync
   }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation, round?.stats_mode, holeStatsSaved, currentHole?.hole_number]);
 
   const handleFinishRound = () => {

@@ -538,7 +538,10 @@ const Friends = () => {
                               />
                               <div>
                                 <p className="font-medium">{result.display_name || result.username}</p>
-                                {result.display_name && <p className="text-sm text-muted-foreground">@{result.username}</p>}
+                                <p className="text-sm text-muted-foreground">
+                                  {result.handicap ? `HCP ${result.handicap}` : 'HCP -'}
+                                  {result.home_club ? ` · ${result.home_club}` : ''}
+                                </p>
                               </div>
                             </div>
                             {result.friendshipStatus === 'accepted' ? (
@@ -597,7 +600,10 @@ const Friends = () => {
                         />
                         <div>
                           <p className="font-medium">{request.display_name || request.username}</p>
-                          {request.display_name && <p className="text-sm text-muted-foreground">@{request.username}</p>}
+                          <p className="text-sm text-muted-foreground">
+                            {request.handicap ? `HCP ${request.handicap}` : 'HCP -'}
+                            {request.home_club ? ` · ${request.home_club}` : ''}
+                          </p>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -654,7 +660,10 @@ const Friends = () => {
                         />
                         <div>
                           <p className="font-medium">{request.display_name || request.username}</p>
-                          {request.display_name && <p className="text-sm text-muted-foreground">@{request.username}</p>}
+                          <p className="text-sm text-muted-foreground">
+                            {request.handicap ? `HCP ${request.handicap}` : 'HCP -'}
+                            {request.home_club ? ` · ${request.home_club}` : ''}
+                          </p>
                         </div>
                       </div>
                       <Badge variant="outline">Pending</Badge>
@@ -729,10 +738,8 @@ const Friends = () => {
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-base truncate">{friend.display_name || friend.username}</h3>
                               <p className="text-muted-foreground text-sm">
-                                {friend.handicap ? `HCP: ${friend.handicap}` : 'HCP: -'}
-                              </p>
-                              <p className="text-muted-foreground text-sm truncate">
-                                {friend.home_club || '-'}
+                                {friend.handicap ? `HCP ${friend.handicap}` : 'HCP -'}
+                                {friend.home_club ? ` · ${friend.home_club}` : ''}
                               </p>
                             </div>
                           </div>

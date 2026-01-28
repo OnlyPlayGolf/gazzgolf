@@ -86,12 +86,12 @@ export function InRoundStrokesGained({
     autoHoleTriggeredRef.current = 0; // Reset auto-hole trigger for new hole
   }, [holeNumber, roundId]);
 
-  // Set initial start distance from hole distance
+  // Set initial start distance from hole distance (only once per hole, don't reset if user clears it)
   useEffect(() => {
     if (holeDistance && shots.length === 0 && !startDistance) {
       setStartDistance(String(holeDistance));
     }
-  }, [holeDistance, shots.length, startDistance]);
+  }, [holeDistance, shots.length]); // Removed startDistance from deps to allow user to clear it
 
   // Auto-set shot type based on start lie
   useEffect(() => {
@@ -483,6 +483,7 @@ export function InRoundStrokesGained({
       // Navigate immediately - don't update state to avoid flash
       onStatsSaved?.();
       // Save directly without updating local state (state will sync when user returns to hole)
+      // Always save, even on last hole
       saveShots(newShots, true).catch(error => {
         console.error('Error saving auto-holed shot:', error);
       });
@@ -668,10 +669,11 @@ export function InRoundStrokesGained({
 
       setSaved(true);
       
-      // Only trigger onStatsSaved when hole is complete (ball holed)
-      // Skip if navigation was already triggered (auto-hole case)
+      // Trigger onStatsSaved when hole is complete (ball holed)
+      // For auto-hole case (skipNavigation=true), onStatsSaved was already called before save
+      // But we call it again after successful save to ensure it's set even if called before save completed
       const lastShot = shotsToSave[shotsToSave.length - 1];
-      if (lastShot?.holed && !skipNavigation) {
+      if (lastShot?.holed) {
         onStatsSaved?.();
       }
     } catch (error: any) {
@@ -723,12 +725,14 @@ export function InRoundStrokesGained({
                 <div className="space-y-1">
                   <Label className="text-xs">Start Distance (m)</Label>
                   <Input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
                     value={startDistance}
                     onChange={(e) => setStartDistance(e.target.value)}
                     placeholder="Distance to hole"
                     className="h-9 text-center"
+                    disabled={shots.length > 0}
+                    readOnly={shots.length > 0}
                   />
                 </div>
 
@@ -736,7 +740,7 @@ export function InRoundStrokesGained({
                 <div className="space-y-1">
                   <Label className="text-xs">End Distance (m)</Label>
                   <Input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
                     value={endDistance}
                     onChange={(e) => setEndDistance(e.target.value)}

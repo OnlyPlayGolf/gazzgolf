@@ -318,7 +318,7 @@ export default function Statistics() {
                 // Drill recommendations based on weakest categories (same logic as PerformanceSnapshot)
                 const drillsByCategory: Record<string, { id: string; title: string; description: string }[]> = {
                   'putting': [
-                    { id: 'pga-tour-18', title: 'PGA Tour 18-hole Test', description: 'Overall putting practice against tour standards' },
+                    { id: 'pga-tour-18', title: 'PGA Tour 18-hole', description: 'Overall putting practice against tour standards' },
                     { id: 'aggressive-putting', title: 'Aggressive Putting 4-6m', description: 'Commit with confidence inside 6 meters' },
                   ],
                   'short-game': [

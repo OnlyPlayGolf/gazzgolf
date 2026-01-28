@@ -11,7 +11,7 @@ import { MessagesSheet } from "@/components/MessagesSheet";
 const drills = [
   {
     id: 'pga-tour-18',
-    title: 'PGA Tour 18-hole Test',
+    title: 'PGA Tour 18-hole',
     shortDescription: 'Practice putting from tournament-style distances across 18 holes for consistency under pressure.',
     category: 'Putting',
     icon: Target,

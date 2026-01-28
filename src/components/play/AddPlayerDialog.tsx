@@ -233,12 +233,10 @@ export function AddPlayerDialog({
                         <p className="font-medium text-sm truncate">
                           {friend.display_name || friend.username}
                         </p>
-                        {friend.username && (
-                          <p className="text-xs text-muted-foreground">
-                            @{friend.username}
-                            {handicap !== undefined && ` · HCP: ${formatHandicap(handicap)}`}
-                          </p>
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {handicap !== undefined ? `HCP ${formatHandicap(handicap)}` : 'HCP -'}
+                          {friend.home_club ? ` · ${friend.home_club}` : ''}
+                        </p>
                       </div>
                       <Plus className="w-5 h-5 text-primary" />
                     </button>

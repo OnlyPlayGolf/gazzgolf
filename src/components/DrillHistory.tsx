@@ -65,6 +65,7 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
   const [resultToDelete, setResultToDelete] = useState<DrillResult | null>(null);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedRounds, setSelectedRounds] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   const fetchResults = async () => {
@@ -279,7 +280,100 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
   const renderAttemptDetails = (result: DrillResult) => {
     const attemptsData = result.attempts_json;
     
-    // Check if this is 9 Windows Shot Shape Test format
+    // Check if this is 8-Ball Circuit format
+    const isEightBall = drillTitle === "8-Ball Circuit" && Array.isArray(attemptsData) && 
+      attemptsData.length > 0 && 
+      attemptsData[0]?.station !== undefined && 
+      attemptsData[0]?.round !== undefined &&
+      attemptsData[0]?.outcome !== undefined;
+
+    if (isEightBall) {
+      // Helper function to format outcome labels
+      const formatOutcome = (outcome: string): string => {
+        switch (outcome) {
+          case '1m':
+            return 'Inside 1 meter';
+          case '2m':
+            return 'Inside 2 meters';
+          case '3m':
+            return 'Inside 3 meters';
+          case 'miss':
+            return 'Outside 3 meters';
+          case 'holed':
+            return 'Holed';
+          default:
+            return outcome;
+        }
+      };
+
+      // Group attempts by round
+      const rounds: Record<number, typeof attemptsData> = {};
+      attemptsData.forEach((attempt: any) => {
+        const round = attempt.round;
+        if (!rounds[round]) {
+          rounds[round] = [];
+        }
+        rounds[round].push(attempt);
+      });
+
+      // Get selected round for this result (default to round 1)
+      const selectedRound = selectedRounds[result.id] ?? 1;
+      const currentRoundAttempts = rounds[selectedRound] || [];
+
+      return (
+        <div className="space-y-3 pt-2">
+          {/* Round Tabs */}
+          <div className="flex gap-2 justify-center items-center">
+            {[1, 2, 3, 4, 5].map((roundNum) => (
+              <Button
+                key={roundNum}
+                variant={selectedRound === roundNum ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedRounds(prev => ({ ...prev, [result.id]: roundNum }))}
+                className="w-12"
+              >
+                {roundNum}
+              </Button>
+            ))}
+          </div>
+
+          {/* Shots for selected round */}
+          <div className="space-y-2">
+            {currentRoundAttempts.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center">No shots for this round</p>
+            ) : (
+              currentRoundAttempts.map((attempt: any, index: number) => (
+                <div
+                  key={index}
+                  className="p-3 rounded-lg border bg-muted"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {attempt.station}
+                      </p>
+                      {attempt.outcome && (
+                        <p className="text-sm text-muted-foreground">
+                          {formatOutcome(attempt.outcome)}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-primary">
+                        {attempt.points ?? 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground">points</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    }
+    
+    // Check if this is 9 Windows Shot Shape format
     const isTW9Windows = Array.isArray(attemptsData) && 
       attemptsData.length > 0 && 
       attemptsData[0]?.height !== undefined && 
@@ -609,7 +703,7 @@ export function DrillHistory({ drillTitle, hideDrillWord = false, onDelete }: Dr
                           </span>
                         </div>
                         <span className="text-lg font-bold text-foreground">
-                          {result.total_points} {drillTitle === "9 Windows Shot Shape Test" || drillTitle === "18 Up & Downs" || drillTitle === "Wedge Ladder 60-120m" ? 'shots' : drillTitle === "Aggressive Putting 4-6m" || drillTitle === "PGA Tour 18-hole Test" || drillTitle === "Short Putt Test" ? 'putts' : drillTitle === "Easy Chip Drill" ? 'in a row' : 'points'}
+                          {result.total_points} {drillTitle === "9 Windows Shot Shape" || drillTitle === "9 Windows Shot Shape Test" || drillTitle === "18 Up & Downs" || drillTitle === "Wedge Ladder 60-120m" ? 'shots' : drillTitle === "Aggressive Putting 4-6m" || drillTitle === "PGA Tour 18-hole" || drillTitle === "PGA Tour 18-hole Test" || drillTitle === "Short Putt Test" ? 'putts' : drillTitle === "Easy Chip Drill" ? 'in a row' : 'points'}
                         </span>
                       </div>
                     </AccordionTrigger>

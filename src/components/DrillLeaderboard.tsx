@@ -34,7 +34,8 @@ interface DrillLeaderboardProps {
 const getScoreUnit = (drillName: string): string => {
   const drillUnits: { [key: string]: string } = {
     "Short Putt Test": "putts in a row",
-    "PGA Tour 18-hole Test": "putts",
+    "PGA Tour 18-hole": "putts",
+    "PGA Tour 18-hole Test": "putts", // Legacy
     "Up & Down Putts 6-10m": "points",
     "Aggressive Putting 4-6m": "putts",
     "8-Ball Circuit": "points",
@@ -43,7 +44,8 @@ const getScoreUnit = (drillName: string): string => {
     "Wedges 40–80 m — Distance Control": "points",
     "Wedge Game 40-80m": "points",
     "Wedge Ladder 60-120m": "shots",
-    "9 Windows Shot Shape Test": "shots",
+    "9 Windows Shot Shape": "shots",
+    "9 Windows Shot Shape Test": "shots", // Legacy
     "Driver Control Drill": "points",
     "Easy Chip Drill": "in a row",
   };

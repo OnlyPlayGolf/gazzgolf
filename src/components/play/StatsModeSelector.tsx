@@ -23,13 +23,13 @@ export function StatsModeSelector({ value, onChange, className }: StatsModeSelec
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">None</SelectItem>
-          <SelectItem value="basic">Basic Stats (Fairways, GIR, Putts)</SelectItem>
+          <SelectItem value="basic">Basic Stats (Fairways, GIR, Scrambling, Putts)</SelectItem>
           <SelectItem value="strokes_gained">Strokes Gained</SelectItem>
         </SelectContent>
       </Select>
       <p className="text-xs text-muted-foreground">
         {value === 'none' && "No statistics will be tracked during play"}
-        {value === 'basic' && "Track fairways hit, greens in regulation, and putts per hole"}
+        {value === 'basic' && "Track fairways hit, greens in regulation, scrambling, and putts per hole"}
         {value === 'strokes_gained' && "Track detailed shot-by-shot data for strokes gained analysis"}
       </p>
     </div>

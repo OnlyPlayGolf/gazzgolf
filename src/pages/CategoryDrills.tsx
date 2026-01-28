@@ -25,7 +25,7 @@ const allDrills = [
   },
   {
     id: 'pga-tour-18',
-    title: 'PGA Tour 18-hole Test',
+    title: 'PGA Tour 18-hole',
     shortDescription: "18 putts based on the PGA Tour's average first putt per hole. A great drill to use for overall putting practice, compete with friends, test yourself against tour standards or dial in your speed control.",
     category: 'putting',
     icon: Target,
@@ -95,7 +95,7 @@ const allDrills = [
   },
   {
     id: 'tw-9-windows',
-    title: "9 Windows Shot Shape Test",
+    title: "9 Windows Shot Shape",
     shortDescription: 'Hit all 9 shot combinations (3 trajectories × 3 shapes) with a 7 iron. Count shots needed to complete all windows.',
     category: 'approach',
     icon: Target,

@@ -28,7 +28,7 @@ interface Drill {
 const drills: Record<string, Drill> = {
   'pga-tour-18': {
     id: 'pga-tour-18',
-    title: 'PGA Tour 18-hole Test',
+    title: 'PGA Tour 18-hole',
     shortDescription: 'Practice putting from tournament-style distances across 18 holes for consistency under pressure.',
     longDescription: 'This drill simulates the putting challenges you\'ll face on a PGA Tour course. Practice putting from varying distances across 18 holes, with each hole representing the average putting distance from that hole on tour. Focus on developing consistency under pressure and building confidence in your putting stroke.',
     category: 'Putting',
