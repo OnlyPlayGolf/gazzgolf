@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Settings, Info, MessageSquare, ChevronRight, Crown, HelpCircle, ArrowLeft } from "lucide-react";
+import { User, Settings, Info, MessageSquare, ChevronRight, Crown, HelpCircle, ArrowLeft, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Menu = () => {
   const navigate = useNavigate();
-  
-  const menuItems = [
+
+  const baseMenuItems = [
     { id: 'profile', label: 'Personal Information', description: 'Edit your profile details', icon: User, path: '/profile-settings' },
     { id: 'membership', label: 'Account Membership', description: 'View plans and benefits', icon: Crown, path: '/account-membership' },
     { id: 'settings', label: 'Settings', description: 'Metrics, notifications, privacy', icon: Settings, path: '/settings' },
@@ -14,6 +14,9 @@ const Menu = () => {
     { id: 'feedback', label: 'Feedback', description: 'Share your thoughts', icon: MessageSquare, path: '/feedback' },
     { id: 'support', label: 'Support', description: 'FAQ and help', icon: HelpCircle, path: '/support' },
   ];
+
+  const coachItem = { id: 'coach-ai', label: 'Coach AI', description: 'Generate drills with AI', icon: Sparkles, path: '/coach/ai' };
+  const menuItems = [coachItem, ...baseMenuItems];
 
   return (
     <div className="pb-20 min-h-screen bg-background">

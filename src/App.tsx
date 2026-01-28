@@ -149,6 +149,7 @@ import OtherStats from "./pages/OtherStats";
 import ScoringStats from "./pages/ScoringStats";
 import GameSettingsDetail from "./pages/GameSettingsDetail";
 import ScorecardScanner from "./pages/ScorecardScanner";
+import CoachAI from "./pages/CoachAI";
 
 // Create QueryClient outside component to prevent recreation on every render
 const queryClient = new QueryClient();
@@ -198,6 +199,7 @@ const AnimatedAppRoutes = () => {
           <Route path="/statistics/scoring-sg" element={<ScoringStats />} />
           <Route path="/statistics/:category" element={<StatDetail />} />
           <Route path="/scorecard-scanner" element={<ScorecardScanner />} />
+          <Route path="/coach/ai" element={<CoachAI />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/leaderboards" element={<Leaderboards />} />
           <Route path="/menu" element={<Menu />} />

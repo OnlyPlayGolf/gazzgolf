@@ -22,7 +22,8 @@
     "supabase:status": "npx supabase status",
     "vercel:login": "vercel login",
     "vercel:link": "vercel link",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "test:parseHcp": "node scripts/test-parseHcp.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -61,12 +62,14 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.27.5",
     "input-otp": "^1.4.2",
     "lovable-tagger": "^1.1.13",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "openai": "^6.16.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -89,6 +92,7 @@
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "@vercel/node": "^5.5.28",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.32.0",

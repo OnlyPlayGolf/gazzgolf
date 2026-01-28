@@ -1,6 +1,8 @@
 {
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    {
+      "source": "/((?!api/)(?!assets/)(?!src/)(?!@)(?!node_modules/)(?!_next/)(?!.*\\.[a-z0-9]+$).*)",
+      "destination": "/index.html"
+    }
   ]
 }
