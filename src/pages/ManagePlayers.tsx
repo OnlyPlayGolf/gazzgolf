@@ -365,7 +365,10 @@ export default function ManagePlayers() {
                   </Avatar>
                   <div className="flex-1">
                     <p className="font-medium">{friend.display_name || friend.username}</p>
-                    <p className="text-sm text-muted-foreground">@{friend.username}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {friend.handicap ? `HCP ${friend.handicap}` : 'HCP -'}
+                      {friend.home_club ? ` · ${friend.home_club}` : ''}
+                    </p>
                   </div>
                   <Plus className="w-5 h-5 text-primary" />
                 </button>

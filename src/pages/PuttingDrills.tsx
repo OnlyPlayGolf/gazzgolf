@@ -58,7 +58,7 @@ const PuttingDrills = () => {
               <CardTitle className="flex items-center gap-3 text-foreground">
                 <Target size={24} className="text-primary" />
                 <div>
-                  <div>PGA Tour 18-hole Test</div>
+                  <div>PGA Tour 18-hole</div>
                   <div className="text-sm font-normal text-muted-foreground">
                     Putting • Mixed distances
                   </div>

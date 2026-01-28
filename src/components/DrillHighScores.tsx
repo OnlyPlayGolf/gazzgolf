@@ -9,7 +9,8 @@ interface DrillHighScoresProps {
 const getScoreUnit = (drillName: string): string => {
   const drillUnits: { [key: string]: string } = {
     "Short Putt Test": "in a row",
-    "PGA Tour 18-hole Test": "putts",
+    "PGA Tour 18-hole": "putts",
+    "PGA Tour 18-hole Test": "putts", // Legacy
     "Up & Down Putts 6-10m": "pts",
     "Aggressive Putting 4-6m": "putts",
     "8-Ball Circuit": "pts",
@@ -17,7 +18,8 @@ const getScoreUnit = (drillName: string): string => {
     "Shot Shape Master": "pts",
     "Wedge Game 40-80m": "pts",
     "Wedge Ladder 60-120m": "shots",
-    "9 Windows Shot Shape Test": "shots",
+    "9 Windows Shot Shape": "shots",
+    "9 Windows Shot Shape Test": "shots", // Legacy
     "Driver Control Drill": "pts",
     "Easy Chip Drill": "in a row",
     "Lag Putting Drill 8-20m": "pts",

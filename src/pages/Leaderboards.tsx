@@ -77,11 +77,13 @@ const Leaderboards = () => {
   // Normalize drill titles (map old/variant titles to canonical ones)
   const normalizeDrillTitle = (title: string): string => {
     const titleMap: Record<string, string> = {
-      '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
-      "PGA Tour 18 Holes": 'PGA Tour 18-hole Test',
-      "PGA Tour 18-hole Test": 'PGA Tour 18-hole Test',
-      "TW's 9 Windows Test": "9 Windows Shot Shape Test",
-      "9 Windows Shot Shape Test": "9 Windows Shot Shape Test",
+      '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole',
+      "PGA Tour 18 Holes": 'PGA Tour 18-hole',
+      "PGA Tour 18-hole Test": 'PGA Tour 18-hole',
+      "PGA Tour 18-hole": 'PGA Tour 18-hole',
+      "TW's 9 Windows Test": "9 Windows Shot Shape",
+      "9 Windows Shot Shape Test": "9 Windows Shot Shape",
+      "9 Windows Shot Shape": "9 Windows Shot Shape",
       "Aggressive Putting": "Aggressive Putting 4-6m",
       "Aggressive Putting 4-6m": "Aggressive Putting 4-6m",
       "Short Putt Test": "Short Putt Test",
@@ -102,20 +104,20 @@ const Leaderboards = () => {
 
   // Map categories to drill titles (order matches PuttingDrills.tsx)
   const drillCategories: Record<string, string[]> = {
-    'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
+    'Putting': ['Short Putt Test', 'PGA Tour 18-hole', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
     'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill', '21 Points'],
-    'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
+    'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape"],
     'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
   };
 
   // Get unit label for drill
   const getDrillUnit = (drillTitle: string): string => {
     // Putts
-    if (drillTitle === 'Aggressive Putting 4-6m' || drillTitle === 'PGA Tour 18-hole Test') {
+    if (drillTitle === 'Aggressive Putting 4-6m' || drillTitle === 'PGA Tour 18-hole' || drillTitle === 'PGA Tour 18-hole Test') {
       return 'putts';
     }
     // Shots
-    if (drillTitle === '18 Up & Downs' || drillTitle === "Wedge Ladder 60-120m" || drillTitle === "9 Windows Shot Shape Test") {
+    if (drillTitle === '18 Up & Downs' || drillTitle === "Wedge Ladder 60-120m" || drillTitle === "9 Windows Shot Shape" || drillTitle === "9 Windows Shot Shape Test") {
       return 'shots';
     }
     // In a row

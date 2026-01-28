@@ -70,7 +70,7 @@ const PracticeContent = () => {
                   <Target size={32} className="text-primary" />
                 </div>
                 <div>
-                  <div className="text-2xl">Tests & Drills</div>
+                  <div className="text-2xl">Drills & Tests</div>
                   <div className="text-sm font-normal text-muted-foreground mt-1">
                     Game-like practice
                   </div>

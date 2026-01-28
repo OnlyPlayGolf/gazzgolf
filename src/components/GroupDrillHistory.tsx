@@ -50,11 +50,13 @@ type DrillCategory = 'Putting' | 'Short Game' | 'Approach' | 'Tee Shots';
 // Normalize drill titles (map old/variant titles to canonical ones)
 const normalizeDrillTitle = (title: string): string => {
   const titleMap: Record<string, string> = {
-    '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole Test',
-    "PGA Tour 18 Holes": 'PGA Tour 18-hole Test',
-    "PGA Tour 18-hole Test": 'PGA Tour 18-hole Test',
-    "TW's 9 Windows Test": "9 Windows Shot Shape Test",
-    "9 Windows Shot Shape Test": "9 Windows Shot Shape Test",
+    '18-hole PGA Tour Putting Test': 'PGA Tour 18-hole',
+    "PGA Tour 18 Holes": 'PGA Tour 18-hole',
+    "PGA Tour 18-hole Test": 'PGA Tour 18-hole',
+    "PGA Tour 18-hole": 'PGA Tour 18-hole',
+    "TW's 9 Windows Test": "9 Windows Shot Shape",
+    "9 Windows Shot Shape Test": "9 Windows Shot Shape",
+    "9 Windows Shot Shape": "9 Windows Shot Shape",
     "Aggressive Putting": "Aggressive Putting 4-6m",
     "Aggressive Putting 4-6m": "Aggressive Putting 4-6m",
     "Short Putt Test": "Short Putt Test",
@@ -79,7 +81,8 @@ const getDrillCategory = (drillTitle: string): DrillCategory | null => {
   
   const categoryMap: Record<string, DrillCategory> = {
     'Aggressive Putting 4-6m': 'Putting',
-    'PGA Tour 18-hole Test': 'Putting',
+    'PGA Tour 18-hole': 'Putting',
+    'PGA Tour 18-hole Test': 'Putting', // Legacy title
     '18-hole PGA Tour Putting Test': 'Putting', // Legacy title
     'Short Putt Test': 'Putting',
     "Up & Down Putts 6-10m": 'Putting',
@@ -89,7 +92,8 @@ const getDrillCategory = (drillTitle: string): DrillCategory | null => {
     'Easy Chip Drill': 'Short Game',
     '21 Points': 'Short Game',
     'Approach Control 130-180m': 'Approach',
-    "9 Windows Shot Shape Test": 'Approach',
+    "9 Windows Shot Shape": 'Approach',
+    "9 Windows Shot Shape Test": 'Approach', // Legacy title
     "Wedge Ladder 60-120m": 'Approach',
     'Wedge Game 40-80m': 'Approach',
     'Shot Shape Master': 'Tee Shots',
@@ -100,9 +104,9 @@ const getDrillCategory = (drillTitle: string): DrillCategory | null => {
 
 // Define drill order for each category (matching PuttingDrills.tsx order)
 const drillOrderByCategory: Record<DrillCategory, string[]> = {
-  'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
+  'Putting': ['Short Putt Test', 'PGA Tour 18-hole', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
   'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill', '21 Points'],
-  'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
+  'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape"],
   'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
 };
 
@@ -112,7 +116,8 @@ const getScoreUnit = (drillName: string): string => {
   
   const drillUnits: { [key: string]: string } = {
     "Short Putt Test": "in a row",
-    "PGA Tour 18-hole Test": "putts",
+    "PGA Tour 18-hole": "putts",
+    "PGA Tour 18-hole Test": "putts", // Legacy
     "Up & Down Putts 6-10m": "pts",
     "Aggressive Putting 4-6m": "putts",
     "8-Ball Circuit": "pts",
@@ -120,7 +125,8 @@ const getScoreUnit = (drillName: string): string => {
     "Shot Shape Master": "pts",
     "Easy Chip Drill": "in a row",
     "18 Up & Downs": "shots",
-    "9 Windows Shot Shape Test": "shots",
+    "9 Windows Shot Shape": "shots",
+    "9 Windows Shot Shape Test": "shots", // Legacy
     "Wedge Ladder 60-120m": "shots",
     "Wedge Game 40-80m": "pts",
     "Driver Control Drill": "pts",
@@ -144,6 +150,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
   const [drills, setDrills] = useState<DrillInfo[]>([]);
   const [members, setMembers] = useState<{ user_id: string; display_name: string | null; username: string | null }[]>([]);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+  const [selectedRounds, setSelectedRounds] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const fetchGroupHistory = async () => {
@@ -379,6 +386,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
           <Accordion type="single" collapsible className="w-full space-y-2">
             {filteredResults.map((result) => {
               const is21Points = normalizeDrillTitle(result.drill_title) === '21 Points';
+              const isEightBall = normalizeDrillTitle(result.drill_title) === '8-Ball Circuit';
               const players = (result.attempts_json?.players || []) as Array<{
                 odId: string;
                 displayName: string;
@@ -430,6 +438,136 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
                               <span className="font-semibold tabular-nums shrink-0 ml-2">{p.totalPoints} pts</span>
                             </div>
                           ))}
+                        </div>
+                      </AccordionContent>
+                    </div>
+                  </AccordionItem>
+                );
+              }
+
+              if (isEightBall && Array.isArray(result.attempts_json)) {
+                // 8-Ball Circuit: show expandable dropdown with round tabs and shots
+                const attemptsData = result.attempts_json;
+                
+                // Helper function to format outcome labels
+                const formatOutcome = (outcome: string): string => {
+                  switch (outcome) {
+                    case '1m':
+                      return 'Inside 1 meter';
+                    case '2m':
+                      return 'Inside 2 meters';
+                    case '3m':
+                      return 'Inside 3 meters';
+                    case 'miss':
+                      return 'Outside 3 meters';
+                    case 'holed':
+                      return 'Holed';
+                    default:
+                      return outcome;
+                  }
+                };
+
+                // Group attempts by round
+                const rounds: Record<number, typeof attemptsData> = {};
+                attemptsData.forEach((attempt: any) => {
+                  if (attempt.station && attempt.round !== undefined && attempt.outcome !== undefined) {
+                    const round = attempt.round;
+                    if (!rounds[round]) {
+                      rounds[round] = [];
+                    }
+                    rounds[round].push(attempt);
+                  }
+                });
+
+                // Get selected round for this result (default to round 1)
+                const selectedRound = selectedRounds[result.id] ?? 1;
+                const currentRoundAttempts = rounds[selectedRound] || [];
+
+                return (
+                  <AccordionItem key={result.id} value={result.id} className="border-none">
+                    <div className="p-3 rounded-lg bg-secondary/30">
+                      <AccordionTrigger className="hover:no-underline py-0">
+                        <div className="flex items-center gap-3 w-full pr-2">
+                          <ProfilePhoto
+                            src={result.avatar_url}
+                            alt={result.display_name || result.username || "U"}
+                            fallback={result.display_name || result.username || "U"}
+                            size="sm"
+                          />
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="font-medium text-sm truncate">
+                              {result.display_name || result.username || 'Unknown'}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {getDrillDisplayTitle(result.drill_title)}
+                            </p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-bold text-primary">
+                              {result.total_points !== null && result.total_points !== undefined ? (
+                                `${result.total_points} ${getScoreUnit(result.drill_title)}`
+                              ) : (
+                                'No score'
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(result.created_at), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-3 pt-2 border-t mt-2">
+                          {/* Round Tabs */}
+                          <div className="flex gap-2 justify-center items-center">
+                            {[1, 2, 3, 4, 5].map((roundNum) => (
+                              <Button
+                                key={roundNum}
+                                variant={selectedRound === roundNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedRounds(prev => ({ ...prev, [result.id]: roundNum }));
+                                }}
+                                className="w-12"
+                              >
+                                {roundNum}
+                              </Button>
+                            ))}
+                          </div>
+
+                          {/* Shots for selected round */}
+                          <div className="space-y-2">
+                            {currentRoundAttempts.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center">No shots for this round</p>
+                            ) : (
+                              currentRoundAttempts.map((attempt: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="p-3 rounded-lg border bg-muted/30"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-medium">
+                                        {attempt.station}
+                                      </p>
+                                      {attempt.outcome && (
+                                        <p className="text-sm text-muted-foreground">
+                                          {formatOutcome(attempt.outcome)}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-lg font-bold text-primary">
+                                        {attempt.points ?? 0}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">points</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
                       </AccordionContent>
                     </div>

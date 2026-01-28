@@ -158,7 +158,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
     try {
       const { data: drillId, error: drillError } = await supabase
         .rpc('get_or_create_drill_by_title', { 
-          p_title: "9 Windows Shot Shape Test" 
+          p_title: "9 Windows Shot Shape" 
         });
 
       if (drillError || !drillId) {
@@ -261,7 +261,7 @@ export function TW9WindowsComponent({ onTabChange, onScoreSaved }: TW9WindowsCom
         <DrillCompletionDialog
           open={showCompletionDialog}
           onOpenChange={setShowCompletionDialog}
-          drillTitle="9 Windows Shot Shape Test"
+          drillTitle="9 Windows Shot Shape"
           score={savedScore}
           unit="shots"
           resultId={savedResultId || undefined}

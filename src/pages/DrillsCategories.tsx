@@ -30,7 +30,7 @@ const DrillsCategories = () => {
             >
               <ArrowLeft size={20} />
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">Tests & Drills</h1>
+            <h1 className="text-2xl font-bold text-foreground">Drills & Tests</h1>
           </div>
         </div>
 

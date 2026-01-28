@@ -179,12 +179,22 @@ export default function DrivingStats() {
           const rawData = hole.pro_shot_data as unknown;
           const par = hole.par ?? 4;
 
+          // Count all par 4+5 holes as fairway opportunities
+          if (par >= 4) {
+            totalFairways++;
+          }
+
           // Left/right miss from basicStats (basic stats mode: fairwayResult 'hit'|'left'|'right')
           if (par >= 4 && rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
             const basicStats = (rawData as { basicStats?: { fairwayResult?: string } }).basicStats;
             if (basicStats?.fairwayResult) {
-              if (basicStats.fairwayResult === 'left') { leftMissCount++; totalMisses++; }
-              else if (basicStats.fairwayResult === 'right') { rightMissCount++; totalMisses++; }
+              if (basicStats.fairwayResult === 'hit') {
+                fairwaysHit++;
+              } else if (basicStats.fairwayResult === 'left') {
+                leftMissCount++;
+              } else if (basicStats.fairwayResult === 'right') {
+                rightMissCount++;
+              }
             }
           }
 
@@ -194,7 +204,6 @@ export default function DrivingStats() {
           for (const shot of shotData) {
             if (shot.type === 'tee') {
               sgOffTheTee += shot.strokesGained || 0;
-              totalFairways++;
 
               // Calculate driving distance from tee shots
               if (shot.startDistance && shot.endDistance !== undefined) {
@@ -210,8 +219,8 @@ export default function DrivingStats() {
                 // Left/right miss from pro stats (missed fairway = rough, bunker, recovery, hazard, other, OB)
                 else if (['rough', 'sand', 'bunker', 'recovery', 'hazard', 'other', 'OB'].includes(String(shot.endLie)) && (shot as { missedSide?: string }).missedSide) {
                   const side = (shot as { missedSide: string }).missedSide;
-                  if (side === 'left') { leftMissCount++; totalMisses++; }
-                  else if (side === 'right') { rightMissCount++; totalMisses++; }
+                  if (side === 'left') { leftMissCount++; }
+                  else if (side === 'right') { rightMissCount++; }
                 }
               }
             }
@@ -219,7 +228,8 @@ export default function DrivingStats() {
         }
 
         // Fallback: fetch tee_result from regular rounds when no pro_stats left/right
-        if (totalMisses === 0) {
+        // Only use this if we don't have any left/right miss data from pro stats
+        if (leftMissCount === 0 && rightMissCount === 0 && totalFairways === 0) {
           const { data: regularRounds } = await supabase
             .from('rounds')
             .select('id')
@@ -229,14 +239,23 @@ export default function DrivingStats() {
             const regularRoundIds = regularRounds.map(r => r.id);
             const { data: teeResultData } = await supabase
               .from('holes')
-              .select('tee_result')
+              .select('tee_result, par')
               .in('round_id', regularRoundIds)
               .not('tee_result', 'is', null);
 
             if (teeResultData) {
               for (const h of teeResultData) {
-                if (h.tee_result === 'MissL') { leftMissCount++; totalMisses++; }
-                else if (h.tee_result === 'MissR') { rightMissCount++; totalMisses++; }
+                // Only count par 4s and 5s
+                if (h.par && h.par >= 4) {
+                  totalFairways++;
+                  if (h.tee_result === 'FIR') {
+                    fairwaysHit++;
+                  } else if (h.tee_result === 'MissL') {
+                    leftMissCount++;
+                  } else if (h.tee_result === 'MissR') {
+                    rightMissCount++;
+                  }
+                }
               }
             }
           }
@@ -245,6 +264,8 @@ export default function DrivingStats() {
         // Normalize by rounds count
         const rounds = validProRounds.length;
 
+        // Calculate left/right miss percentages as percentages of total fairway opportunities (par 4s and 5s)
+        // totalFairways represents total par 4+5 holes, which is the correct denominator
         setSgStats({
           sgOffTheTee: sgOffTheTee / rounds,
           avgDistance: distanceCount > 0 ? totalDistances / distanceCount : null,
@@ -252,11 +273,11 @@ export default function DrivingStats() {
           fairwaysHit,
           totalFairways,
           roundsCount: rounds,
-          leftMissPercentage: totalMisses > 0 ? (leftMissCount / totalMisses) * 100 : null,
-          rightMissPercentage: totalMisses > 0 ? (rightMissCount / totalMisses) * 100 : null,
+          leftMissPercentage: totalFairways > 0 ? (leftMissCount / totalFairways) * 100 : null,
+          rightMissPercentage: totalFairways > 0 ? (rightMissCount / totalFairways) * 100 : null,
           leftMissCount,
           rightMissCount,
-          totalMisses
+          totalMisses: leftMissCount + rightMissCount
         });
 
       } catch (error) {
@@ -347,11 +368,11 @@ export default function DrivingStats() {
                 />
                 <StatRow 
                   label="Left Miss" 
-                  value={sgStats.totalMisses > 0 ? formatPercentage(sgStats.leftMissPercentage) : "N/A"} 
+                  value={sgStats.totalFairways > 0 && sgStats.leftMissPercentage !== null ? formatPercentage(sgStats.leftMissPercentage) : "N/A"} 
                 />
                 <StatRow 
                   label="Right Miss" 
-                  value={sgStats.totalMisses > 0 ? formatPercentage(sgStats.rightMissPercentage) : "N/A"} 
+                  value={sgStats.totalFairways > 0 && sgStats.rightMissPercentage !== null ? formatPercentage(sgStats.rightMissPercentage) : "N/A"} 
                 />
                 <StatRow 
                   label="Average Driver Distance" 

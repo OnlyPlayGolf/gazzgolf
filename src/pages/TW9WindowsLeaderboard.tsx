@@ -5,7 +5,7 @@ export default function TW9WindowsLeaderboard() {
     <div>
       <DrillLeaderboard
         drillId="tw-9-windows"
-        drillName="9 Windows Shot Shape Test"
+        drillName="9 Windows Shot Shape"
       />
     </div>
   );

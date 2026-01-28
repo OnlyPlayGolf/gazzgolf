@@ -252,34 +252,37 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   };
 
   // Calculate left/right miss percentages from hole data
+  // These should be percentages of total fairway opportunities (par 4s and 5s), not total misses
   if (validSummaries.length > 0) {
     const roundIds = validSummaries.map(s => s.round_id);
     const { data: teeResultData } = await supabase
       .from('holes')
-      .select('tee_result')
+      .select('tee_result, par')
       .in('round_id', roundIds)
       .not('tee_result', 'is', null);
 
     if (teeResultData && teeResultData.length > 0) {
       let leftMissCount = 0;
       let rightMissCount = 0;
-      let totalMisses = 0;
+      let totalFairwayOpportunities = 0; // Total par 4s and 5s
 
       teeResultData.forEach(hole => {
-        if (hole.tee_result === 'MissL') {
-          leftMissCount++;
-          totalMisses++;
-        } else if (hole.tee_result === 'MissR') {
-          rightMissCount++;
-          totalMisses++;
+        // Only count par 4s and 5s as fairway opportunities
+        if (hole.par && hole.par >= 4) {
+          totalFairwayOpportunities++;
+          if (hole.tee_result === 'MissL') {
+            leftMissCount++;
+          } else if (hole.tee_result === 'MissR') {
+            rightMissCount++;
+          }
         }
       });
 
-      if (totalMisses > 0) {
+      if (totalFairwayOpportunities > 0) {
         accuracy = {
           ...accuracy,
-          leftMissPercentage: (leftMissCount / totalMisses) * 100,
-          rightMissPercentage: (rightMissCount / totalMisses) * 100,
+          leftMissPercentage: (leftMissCount / totalFairwayOpportunities) * 100,
+          rightMissPercentage: (rightMissCount / totalFairwayOpportunities) * 100,
         };
       }
     }
@@ -598,12 +601,31 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     };
   }
 
-  const proTotalMisses = proLeftMissCount + proRightMissCount;
-  if (proTotalMisses > 0) {
+  // Calculate left/right miss percentages as percentages of total fairway opportunities (par 4s and 5s)
+  // Count total par 4+5 holes from proFairwaysByRound
+  let proTotalFairwayOpportunities = 0;
+  for (const { attempts } of proFairwaysByRound.values()) {
+    proTotalFairwayOpportunities += attempts;
+  }
+  
+  // Also count from basicStats if proFairwaysByRound is empty
+  if (proTotalFairwayOpportunities === 0 && proRounds && proRounds.length > 0) {
+    const roundIds = proRounds.map(r => r.id);
+    const { data: proHoles } = await supabase
+      .from('pro_stats_holes')
+      .select('par')
+      .in('pro_round_id', roundIds);
+    
+    if (proHoles) {
+      proTotalFairwayOpportunities = proHoles.filter(h => (h.par ?? 4) >= 4).length;
+    }
+  }
+  
+  if (proTotalFairwayOpportunities > 0) {
     accuracy = {
       ...accuracy,
-      leftMissPercentage: (proLeftMissCount / proTotalMisses) * 100,
-      rightMissPercentage: (proRightMissCount / proTotalMisses) * 100,
+      leftMissPercentage: (proLeftMissCount / proTotalFairwayOpportunities) * 100,
+      rightMissPercentage: (proRightMissCount / proTotalFairwayOpportunities) * 100,
     };
   }
   
@@ -680,7 +702,7 @@ export const getDrillRecommendations = (stats: AllStats): DrillRecommendation[] 
   if (stats.putting.puttsPerHole && stats.putting.puttsPerHole > 1.9) {
     recommendations.push({
       drillId: 'pga-tour-18',
-      drillTitle: 'PGA Tour 18-hole Test',
+      drillTitle: 'PGA Tour 18-hole',
       category: 'Putting',
       reason: 'Improve distance control and consistency',
       path: '/drill/pga-tour-18'

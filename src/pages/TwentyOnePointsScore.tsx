@@ -260,10 +260,7 @@ export default function TwentyOnePointsScore() {
     const win = checkWin();
     if (win) {
       // Prevent multiple saves (ref + module-level fingerprint dedupe)
-      if (hasSavedForCurrentWinRef.current) return;
-      hasSavedForCurrentWinRef.current = true;
-      setGameEnded(win);
-      sessionStorage.removeItem(SCORE_STORAGE_KEY); // finished game is not restored — popup shows once only
+      // Create fingerprint first to check against module-level dedupe
       const fingerprint = JSON.stringify({
         w: win.winner.odId,
         t: win.winnerTotal,
@@ -271,7 +268,34 @@ export default function TwentyOnePointsScore() {
         p: players.map((x) => x.odId).sort(),
         pts: players.map((x) => getTotal(x.odId)).sort((a, b) => a - b),
       });
-      saveGame(win.winner, win.winnerTotal, fingerprint).then((id) => id != null && setSavedResultId(id));
+      
+      // Check both ref and module-level fingerprint to prevent race conditions
+      if (hasSavedForCurrentWinRef.current) return;
+      if (
+        lastSaveFingerprint === fingerprint &&
+        Date.now() - lastSaveTime < SAVE_DEDUPE_MS
+      ) {
+        // Already saved recently, just set gameEnded without saving again
+        setGameEnded(win);
+        sessionStorage.removeItem(SCORE_STORAGE_KEY);
+        return;
+      }
+      
+      // Set ref flag immediately to prevent race conditions
+      hasSavedForCurrentWinRef.current = true;
+      
+      // Save the game first, then set gameEnded only after successful save
+      sessionStorage.removeItem(SCORE_STORAGE_KEY); // finished game is not restored — popup shows once only
+      saveGame(win.winner, win.winnerTotal, fingerprint).then((id) => {
+        if (id != null) {
+          // Only set gameEnded and show popup after successful save
+          setSavedResultId(id);
+          setGameEnded(win);
+        } else {
+          // Save failed, reset the flag so user can try again
+          hasSavedForCurrentWinRef.current = false;
+        }
+      });
       return;
     }
     setActiveHole((h) => h + 1);
@@ -380,17 +404,19 @@ export default function TwentyOnePointsScore() {
     return null;
   }
 
-  if (gameEnded) {
+  if (gameEnded && savedResultId !== null) {
     // Show current user's score (not winner's) in the completion popup
+    // Only show popup if we have a saved result ID (save was successful)
     const myScore = currentUserId ? getTotal(currentUserId) : 0;
 
     return (
       <DrillCompletionDialog
-        open={!!gameEnded}
+        open={true}
         onOpenChange={(open) => {
           if (!open) {
             hasSavedForCurrentWinRef.current = false;
             setGameEnded(null);
+            setSavedResultId(null);
             sessionStorage.removeItem(SCORE_STORAGE_KEY);
             navigate("/drill/21-points/leaderboard", { replace: true });
           }
@@ -403,6 +429,8 @@ export default function TwentyOnePointsScore() {
         onContinue={() => {
           sessionStorage.removeItem(SCORE_STORAGE_KEY);
           hasSavedForCurrentWinRef.current = false;
+          setGameEnded(null);
+          setSavedResultId(null);
         }}
       />
     );
@@ -470,7 +498,7 @@ export default function TwentyOnePointsScore() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-2xl font-bold">{forHole ?? 0}</p>
+                    <p className="text-2xl font-bold">{forHole != null ? forHole : "–"}</p>
                     <p className="text-xs text-muted-foreground">points</p>
                   </div>
                 </CardContent>
@@ -495,53 +523,62 @@ export default function TwentyOnePointsScore() {
       >
         <SheetContent side="bottom" className="h-auto max-h-[85vh]">
           <SheetHeader className="pb-2">
-            <SheetTitle className="text-center">
-              Hole {currentHole} —{" "}
-              {activePlayerIndex != null ? formatName(players[activePlayerIndex]) : ""}
+            <SheetTitle className="text-center text-lg font-bold">
+              Hole {currentHole} — {activePlayerIndex != null ? formatName(players[activePlayerIndex]) : ""}
             </SheetTitle>
           </SheetHeader>
-          <div className="pt-4 space-y-4">
-            <p className="text-sm text-muted-foreground text-center">Points this hole</p>
-            <div className="bg-muted/50 rounded-lg py-3 px-4 text-center min-h-[3rem] flex items-center justify-center">
-              <span className="text-2xl font-mono font-semibold tabular-nums">
-                {pointsInput === "" ? "0" : pointsInput}
-              </span>
+          
+          {/* Player Info Bar */}
+          {activePlayerIndex != null && (
+            <div className="bg-primary text-primary-foreground p-4 rounded-lg mb-4 flex items-center justify-between">
+              <div className="flex-1 min-w-0 mr-4">
+                <div className="text-lg font-bold truncate">{formatName(players[activePlayerIndex])}</div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="bg-background text-foreground w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold">
+                  {pointsInput === "" || pointsInput === "-" ? "–" : pointsInput}
+                </div>
+                <span className="text-xs text-primary-foreground/70 mt-1">Points</span>
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 max-w-[16rem] mx-auto">
-              {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => handleNumpadDigit(d)}
-                  className="h-12 rounded-lg bg-muted hover:bg-muted/80 active:bg-muted/60 text-lg font-medium transition-colors"
-                >
-                  {d}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={handleNumpadMinus}
-                className="h-12 rounded-lg bg-muted hover:bg-muted/80 active:bg-muted/60 text-lg font-medium transition-colors"
-                aria-label="Negative"
+          )}
+          
+          <div className="grid grid-cols-3 gap-2 p-2">
+            {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
+              <Button
+                key={d}
+                variant="secondary"
+                onClick={() => handleNumpadDigit(d)}
+                className="h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80"
               >
-                −
-              </button>
-              <button
-                type="button"
-                onClick={() => handleNumpadDigit("0")}
-                className="h-12 rounded-lg bg-muted hover:bg-muted/80 active:bg-muted/60 text-lg font-medium transition-colors"
-              >
-                0
-              </button>
-              <button
-                type="button"
-                onClick={handleNumpadClear}
-                className="h-12 rounded-lg bg-muted hover:bg-muted/80 active:bg-muted/60 text-sm font-medium transition-colors"
-                aria-label="Clear"
-              >
-                C
-              </button>
-            </div>
+                <span className="text-3xl font-bold">{d}</span>
+              </Button>
+            ))}
+            
+            {/* Bottom row: Minus, Zero, Clear */}
+            <Button
+              variant="secondary"
+              onClick={handleNumpadMinus}
+              className="h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80"
+            >
+              <span className="text-3xl font-bold">−</span>
+            </Button>
+            
+            <Button
+              variant="secondary"
+              onClick={() => handleNumpadDigit("0")}
+              className="h-20 flex flex-col items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80"
+            >
+              <span className="text-3xl font-bold">0</span>
+            </Button>
+            
+            <Button
+              variant="default"
+              onClick={handleNumpadClear}
+              className="h-20 flex flex-col items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <span className="text-lg font-bold">Clear</span>
+            </Button>
           </div>
         </SheetContent>
       </Sheet>
