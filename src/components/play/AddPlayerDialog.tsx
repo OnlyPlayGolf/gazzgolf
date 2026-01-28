@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Player } from "@/types/playSetup";
+import { formatHandicap, parseHandicap } from "@/lib/utils";
 
 interface AddPlayerDialogProps {
   isOpen: boolean;
@@ -137,7 +138,7 @@ export function AddPlayerDialog({
       username: friend.username,
       avatarUrl: friend.avatar_url,
       isTemporary: false,
-      handicap: friend.handicap ? parseFloat(friend.handicap) : undefined,
+      handicap: parseHandicap(friend.handicap ?? null) ?? undefined,
     };
     onAddPlayer(player);
   };
@@ -148,7 +149,7 @@ export function AddPlayerDialog({
     const displayName = tempLastName.trim() 
       ? `${tempFirstName.trim()} ${tempLastName.trim()}`
       : tempFirstName.trim();
-    const normalizedHandicap = tempHandicap.replace(',', '.');
+    const handicapVal = parseHandicap(tempHandicap.trim() || null);
     
     const player: Player = {
       odId: `temp_${Date.now()}`,
@@ -156,7 +157,7 @@ export function AddPlayerDialog({
       displayName,
       username: displayName.toLowerCase().replace(/\s+/g, '_'),
       isTemporary: true,
-      handicap: normalizedHandicap ? parseFloat(normalizedHandicap) : undefined,
+      handicap: handicapVal ?? undefined,
     };
     onAddPlayer(player);
     setTempFirstName("");
@@ -215,19 +216,14 @@ export function AddPlayerDialog({
                 </p>
               ) : (
                 (searchQuery.trim() ? searchResults : filteredFriends).map((friend) => {
-                  const handicap = friend.handicap ? parseFloat(friend.handicap) : undefined;
-                  const formatHandicap = (hcp: number | undefined): string => {
-                    if (hcp === undefined) return "";
-                    if (hcp < 0) return `+${Math.abs(hcp)}`;
-                    return hcp.toString();
-                  };
+                  const handicap = parseHandicap(friend.handicap ?? null) ?? undefined;
                   return (
                     <button
                       key={friend.id}
                       onClick={() => handleAddFriend(friend)}
                       className="w-full p-3 rounded-lg border hover:bg-accent transition-colors flex items-center gap-3 text-left"
                     >
-                      <Avatar className="h-9 w-9">
+                      <Avatar className="h-10 w-10 shrink-0">
                         <AvatarImage src={friend.avatar_url} />
                         <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                           {(friend.display_name || friend.username)?.charAt(0).toUpperCase()}

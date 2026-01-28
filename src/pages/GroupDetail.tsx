@@ -53,7 +53,7 @@ const getLevelCategoryDisplayName = (category: string): string => {
 // Define drill order for each category (matching PuttingDrills.tsx order)
 const drillOrderByCategory: Record<DrillCategory, string[]> = {
   'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
-  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill', '21 Points'],
   'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
   'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
 };
@@ -61,7 +61,7 @@ const drillOrderByCategory: Record<DrillCategory, string[]> = {
 // Map categories to drill titles (matching Leaderboards.tsx)
 const drillCategories: Record<string, string[]> = {
   'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
-  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill', '21 Points'],
   'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
   'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
 };
@@ -141,6 +141,7 @@ const normalizeDrillTitle = (title: string): string => {
     "Wedge Game 40-80m": "Wedge Game 40-80m",
     "Shot Shape Master": "Shot Shape Master",
     "Driver Control Drill": "Driver Control Drill",
+    "21 Points": "21 Points",
   };
   return titleMap[title] || title;
 };
@@ -160,6 +161,7 @@ const getDrillCategory = (drillTitle: string): DrillCategory | null => {
     '8-Ball Circuit': 'Short Game',
     '18 Up & Downs': 'Short Game',
     'Easy Chip Drill': 'Short Game',
+    '21 Points': 'Short Game',
     'Approach Control 130-180m': 'Approach',
     "9 Windows Shot Shape Test": 'Approach',
     "Wedge Ladder 60-120m": 'Approach',
@@ -187,6 +189,8 @@ const getScoreUnit = (drillName: string): string => {
     "18 Up & Downs": "shots",
     "9 Windows Shot Shape Test": "shots",
     "Lag Putting Drill 8-20m": "points",
+    "21 Points": "points",
+    "Driver Control Drill": "points",
   };
   return drillUnits[drillName] || "points";
 };
@@ -197,6 +201,10 @@ interface LeaderboardEntry {
   username: string | null;
   avatar_url: string | null;
   best_score: number;
+  /** 21 Points only: wins, games, win_pct */
+  wins?: number;
+  games?: number;
+  win_pct?: number;
 }
 
 interface GroupLevelLeaderboardEntry {
@@ -256,6 +264,7 @@ const GroupDetail = () => {
   const [memberToDemote, setMemberToDemote] = useState<Member | null>(null);
   const [openRolePopover, setOpenRolePopover] = useState<string | null>(null);
   const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
+  const [showLeaveGroupDialog, setShowLeaveGroupDialog] = useState(false);
   const [friendRequestTarget, setFriendRequestTarget] = useState<Member | null>(null);
   const [deletingGroup, setDeletingGroup] = useState(false);
   
@@ -455,7 +464,11 @@ useEffect(() => {
         }
       });
       
-      const uniqueDrills = Array.from(drillsByNormalizedTitle.values());
+      let uniqueDrills = Array.from(drillsByNormalizedTitle.values());
+      // Ensure "21 Points" appears in the list even if not yet in DB
+      if (!uniqueDrills.some(d => normalizeDrillTitle(d.title) === '21 Points')) {
+        uniqueDrills = [...uniqueDrills, { id: 'synthetic-21-points', title: '21 Points', lower_is_better: false }];
+      }
       setDrills(uniqueDrills);
       
       // Default to "8-Ball Circuit" if available, otherwise use first drill
@@ -553,9 +566,60 @@ useEffect(() => {
         ? groupMembers
         : groupMembers.filter(m => m.role === 'member');
       const memberIds = leaderboardMembers.map(m => m.user_id);
+      const groupCreatedAt = group.created_at;
+
+      // 21 Points: wins / games / win% from attempts_json
+      if (normalizeDrillTitle(drillTitle) === '21 Points') {
+        const { data: resultRows } = await supabase
+          .from('drill_results')
+          .select('attempts_json')
+          .eq('drill_id', drillData)
+          .gte('created_at', groupCreatedAt);
+        const byOdId = new Map<string, { wins: number; games: number }>();
+        const memberIdSet = new Set(memberIds);
+        for (const row of resultRows || []) {
+          const aj = (row as { attempts_json?: { players?: { odId: string }[]; winnerOdId?: string } }).attempts_json;
+          if (!aj?.players) continue;
+          const winnerOdId = aj.winnerOdId;
+          for (const p of aj.players) {
+            if (p.odId?.startsWith?.('temp_') || !memberIdSet.has(p.odId)) continue;
+            const cur = byOdId.get(p.odId) ?? { wins: 0, games: 0 };
+            cur.games += 1;
+            if (p.odId === winnerOdId) cur.wins += 1;
+            byOdId.set(p.odId, cur);
+          }
+        }
+        const idsWithStats = Array.from(byOdId.keys());
+        if (idsWithStats.length === 0) {
+          setDrillLeaderboard([]);
+          setLoadingLeaderboard(false);
+          return;
+        }
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, username, avatar_url')
+          .in('id', idsWithStats);
+        const list: LeaderboardEntry[] = (profiles || []).map((profile: { id: string; display_name: string | null; username: string | null; avatar_url: string | null }) => {
+          const s = byOdId.get(profile.id)!;
+          const winPct = s.games > 0 ? (s.wins / s.games) * 100 : 0;
+          return {
+            user_id: profile.id,
+            display_name: profile.display_name,
+            username: profile.username,
+            avatar_url: profile.avatar_url,
+            best_score: winPct,
+            wins: s.wins,
+            games: s.games,
+            win_pct: winPct,
+          };
+        });
+        list.sort((a, b) => (b.win_pct ?? 0) - (a.win_pct ?? 0));
+        setDrillLeaderboard(list);
+        setLoadingLeaderboard(false);
+        return;
+      }
 
       // Get best scores for all group members, only including drills completed after group creation
-      const groupCreatedAt = group.created_at;
       const { data: memberScores } = await supabase
         .from('drill_results')
         .select('user_id, total_points')
@@ -943,10 +1007,11 @@ useEffect(() => {
 
   const handleLeaveGroup = async () => {
     if (!groupId || !user || currentUserRole === 'owner') return;
+    setShowLeaveGroupDialog(true);
+  };
 
-    if (!confirm(`Are you sure you want to leave ${group.name}?`)) {
-      return;
-    }
+  const confirmLeaveGroup = async () => {
+    if (!groupId || !user) return;
 
     setLoading(true);
     try {
@@ -963,6 +1028,7 @@ useEffect(() => {
         description: `You've left ${group.name}`,
       });
 
+      setShowLeaveGroupDialog(false);
       navigate('/profile');
     } catch (error: any) {
       toast({
@@ -1565,35 +1631,54 @@ useEffect(() => {
                       <p className="text-center text-muted-foreground py-8">Loading...</p>
                     ) : drillLeaderboard.length > 0 ? (
                       <div className="space-y-2">
-                        {drillLeaderboard.map((entry, index) => (
-                          <div
-                            key={entry.user_id}
-                            className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Badge variant="outline" className="w-8 text-center">
-                                {index + 1}
-                              </Badge>
-                              <ProfilePhoto
-                                src={entry.avatar_url}
-                                alt={entry.display_name || entry.username || "User"}
-                                fallback={entry.display_name || entry.username || "?"}
-                                size="sm"
-                              />
-                              <div>
-                                <p className="font-medium text-foreground text-sm">
-                                  {entry.display_name || entry.username || 'Unknown'}
-                                </p>
+                        {drillLeaderboard.map((entry, index) => {
+                          const is21PointsEntry = normalizeDrillTitle(selectedDrill || '') === '21 Points' && entry.wins != null;
+                          return (
+                            <div
+                              key={entry.user_id}
+                              className="flex items-center justify-between p-3 rounded-md bg-secondary/50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Badge variant="outline" className="w-8 text-center">
+                                  {index + 1}
+                                </Badge>
+                                <ProfilePhoto
+                                  src={entry.avatar_url}
+                                  alt={entry.display_name || entry.username || "User"}
+                                  fallback={entry.display_name || entry.username || "?"}
+                                  size="sm"
+                                />
+                                <div>
+                                  <p className="font-medium text-foreground text-sm">
+                                    {entry.display_name || entry.username || 'Unknown'}
+                                  </p>
+                                  {is21PointsEntry && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {entry.wins}W – {entry.games}G
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                {is21PointsEntry ? (
+                                  <>
+                                    <p className="font-semibold text-foreground">
+                                      {entry.win_pct != null ? Math.round(entry.win_pct) : 0}%
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">win rate</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="font-semibold text-foreground">
+                                      {entry.best_score}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">{getDrillUnit(selectedDrill || '')}</p>
+                                  </>
+                                )}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-foreground">
-                                {entry.best_score}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{getDrillUnit(selectedDrill || '')}</p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-center text-muted-foreground py-8">
@@ -1717,15 +1802,14 @@ useEffect(() => {
                 key={member.user_id}
                 className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30"
               >
-                <Avatar 
+                <ProfilePhoto
+                  src={member.avatar_url || undefined}
+                  alt={member.display_name || member.username || 'Unknown'}
+                  fallback={member.display_name || member.username || 'U'}
+                  size="md"
                   className="cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                   onClick={() => navigate(`/user/${member.user_id}`)}
-                >
-                  <AvatarImage src={member.avatar_url || undefined} />
-                  <AvatarFallback>
-                    {(member.display_name || member.username || 'U').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                />
                 <div className="flex-1 flex items-center gap-2 min-w-0">
                   <div
                     className="min-w-0 cursor-pointer"
@@ -2284,6 +2368,28 @@ useEffect(() => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Leave Group Confirmation Dialog */}
+      <AlertDialog open={showLeaveGroupDialog} onOpenChange={setShowLeaveGroupDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Group?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave {group?.name}? You'll need to be invited again to rejoin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmLeaveGroup}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={loading}
+            >
+              {loading ? "Leaving..." : "Leave Group"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Group Confirmation Dialog */}
       <Dialog open={showDeleteGroupDialog} onOpenChange={setShowDeleteGroupDialog}>

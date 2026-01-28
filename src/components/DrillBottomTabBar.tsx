@@ -13,8 +13,8 @@ export function DrillBottomTabBar({ drillSlug, hideDrillWord = false }: DrillBot
   
   const tabs = [
     { id: "score", label: "Enter score", icon: Pencil, path: `/drill/${drillSlug}/score` },
-    { id: "info", label: hideDrillWord ? "Guide" : "Drill guide", icon: BookOpen, path: `/drill/${drillSlug}/info` },
-    { id: "feed", label: hideDrillWord ? "History" : "Drill history", icon: Newspaper, path: `/drill/${drillSlug}/feed` },
+    { id: "info", label: hideDrillWord ? "Drill Guide" : "Drill guide", icon: BookOpen, path: `/drill/${drillSlug}/info` },
+    { id: "feed", label: hideDrillWord ? "Drill History" : "Drill history", icon: Newspaper, path: `/drill/${drillSlug}/feed` },
     { id: "leaderboard", label: "Leaderboard", icon: List, path: `/drill/${drillSlug}/leaderboard` },
   ];
 

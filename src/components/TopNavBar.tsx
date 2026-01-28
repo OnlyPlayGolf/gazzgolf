@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Bell, MessageCircle, ArrowLeft, Menu, Trophy, TrendingUp, Users, Zap, Settings, Info, MessageSquare, User as UserIcon, Mail, ChevronRight } from "lucide-react";
+import { Search, Bell, MessageCircle, ArrowLeft, Menu, Trophy, TrendingUp, Users, Zap, Settings, Info, MessageSquare, User as UserIcon, Mail, ChevronRight } from "lucide-react";
 import { AddFriendDialog } from "./AddFriendDialog";
 import { NotificationsSheet } from "./NotificationsSheet";
 import { MessagesSheet } from "./MessagesSheet";
@@ -83,7 +83,7 @@ export const TopNavBar = ({ hideNotifications = false, profile }: TopNavBarProps
             showQrTabs={false}
             trigger={
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-white hover:bg-white/20">
-                <UserPlus size={18} fill="white" />
+                <Search size={18} />
               </Button>
             }
           />

@@ -46,6 +46,7 @@ export default function ScrambleSettings() {
   const [leaving, setLeaving] = useState(false);
   const [holes, setHoles] = useState<ScrambleHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
+  const [playerAvatarUrls, setPlayerAvatarUrls] = useState<Record<string, string | null>>({});
 
   // Per-player stats mode
   const { 
@@ -125,6 +126,26 @@ export default function ScrambleSettings() {
               ? courseHolesData.slice(0, 9) 
               : courseHolesData;
             setCourseHoles(filteredHoles);
+          }
+        }
+        
+        // Fetch avatar URLs for all players
+        const allPlayerIds = typedGame.teams.flatMap(team => 
+          team.players.filter(p => p.userId).map(p => p.userId!)
+        );
+        
+        if (allPlayerIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, avatar_url')
+            .in('id', allPlayerIds);
+          
+          if (profiles) {
+            const avatarMap: Record<string, string | null> = {};
+            profiles.forEach(profile => {
+              avatarMap[profile.id] = profile.avatar_url;
+            });
+            setPlayerAvatarUrls(avatarMap);
           }
         }
       }
@@ -242,6 +263,7 @@ export default function ScrambleSettings() {
       tee: p.tee || defaultTee, // Individual player tee from DB, fallback to default
       team: team.name,
       userId: p.userId || null,
+      avatarUrl: p.userId ? (playerAvatarUrls[p.userId] || null) : null,
     }))
   );
 

@@ -41,6 +41,7 @@ export default function BestBallSettings() {
   const [holesCompleted, setHolesCompleted] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [playerAvatarUrls, setPlayerAvatarUrls] = useState<Record<string, string | null>>({});
 
   // Per-player stats mode
   const { 
@@ -104,6 +105,27 @@ export default function BestBallSettings() {
           winner_team: data.winner_team as 'A' | 'B' | 'TIE' | null,
         };
         setGame(typedGame);
+        
+        // Fetch avatar URLs for all players
+        const allPlayerIds = [
+          ...typedGame.team_a_players.filter(p => !p.isTemporary && p.odId).map(p => p.odId),
+          ...typedGame.team_b_players.filter(p => !p.isTemporary && p.odId).map(p => p.odId),
+        ];
+        
+        if (allPlayerIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, avatar_url')
+            .in('id', allPlayerIds);
+          
+          if (profiles) {
+            const avatarMap: Record<string, string | null> = {};
+            profiles.forEach(profile => {
+              avatarMap[profile.id] = profile.avatar_url;
+            });
+            setPlayerAvatarUrls(avatarMap);
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching game:", error);
@@ -191,6 +213,7 @@ export default function BestBallSettings() {
       tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_a_name,
       userId: p.isTemporary ? null : (p.odId || null),
+      avatarUrl: p.isTemporary ? null : (playerAvatarUrls[p.odId] || null),
     })),
     ...game.team_b_players.map(p => ({
       name: p.displayName,
@@ -198,6 +221,7 @@ export default function BestBallSettings() {
       tee: p.teeColor || defaultTee, // Individual player tee from DB, fallback to default
       team: game.team_b_name,
       userId: p.isTemporary ? null : (p.odId || null),
+      avatarUrl: p.isTemporary ? null : (playerAvatarUrls[p.odId] || null),
     })),
   ];
 

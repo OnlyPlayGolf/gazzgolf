@@ -22,6 +22,8 @@ interface Shot {
   isOB?: boolean;
   isPenalty?: boolean;
   penaltyType?: 'hazard' | 'ob';
+  /** Tee shot miss direction when endLie is rough/sand/OB */
+  missedSide?: 'left' | 'right';
 }
 
 interface ProHoleData {
@@ -96,16 +98,20 @@ const ProHoleTracker = () => {
     }
   }, [courseHoles, teeSet, currentHole]);
 
+  // Missed-fairway end lies (pro stats: rough, bunker, recovery, hazard, other, OB all count)
+  const MISSED_FAIRWAY_END_LIES = ['rough', 'sand', 'OB', 'recovery', 'hazard', 'other'];
+  const isMissedFairwayEndLie = endLie ? MISSED_FAIRWAY_END_LIES.includes(endLie) : false;
+
   // Reset holed state when end lie changes away from green
-  // Clear missedSide when end lie is not 'rough' or 'ob'
+  // Clear missedSide only when end lie is not a missed-fairway type
   useEffect(() => {
     if (endLie !== 'green') {
       setHoled(false);
     }
-    if (endLie !== 'rough' && endLie !== 'OB') {
+    if (!isMissedFairwayEndLie) {
       setMissedSide('');
     }
-  }, [endLie]);
+  }, [endLie, isMissedFairwayEndLie]);
 
   // Auto-set shot type based on start lie
   useEffect(() => {
@@ -139,8 +145,8 @@ const ProHoleTracker = () => {
       // For ALL shots (including putting), require endLie to be selected
       if (!endLie) return;
       
-      // If tee shot and end lie is rough, bunker or OB, require missed side to be selected
-      if (startLie === 'tee' && (endLie === 'rough' || endLie === 'sand' || endLie === 'OB') && !missedSide) return;
+      // If tee shot and end lie is any missed-fairway type, require missed side
+      if (startLie === 'tee' && isMissedFairwayEndLie && !missedSide) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // If end distance is exactly 0 (user typed "0"), use 2-second delay
@@ -169,7 +175,7 @@ const ProHoleTracker = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [endLie, startDistance, endDistance, startLie, missedSide]);
+  }, [endLie, startDistance, endDistance, startLie, missedSide, isMissedFairwayEndLie]);
 
   const loadBaselineData = async () => {
     try {
@@ -501,6 +507,7 @@ const ProHoleTracker = () => {
         endDistance: end,
         endLie: 'rough',
         strokesGained: sgShot,
+        ...(startLie === 'tee' && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
       };
 
       // Auto penalty stroke (1 shot, no position change)
@@ -559,6 +566,7 @@ const ProHoleTracker = () => {
       endDistance: end,
       endLie: effectiveEndLie,
       strokesGained: sg,
+      ...(startLie === 'tee' && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     const currentData = getCurrentHoleData();
@@ -656,6 +664,7 @@ const ProHoleTracker = () => {
       endLie: 'OB',
       strokesGained: 0, // Penalty shot, no SG calculation
       isOB: true,
+      ...(startLie === 'tee' && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     // Shot 2: Auto-penalty stroke (stroke and distance penalty)
@@ -998,8 +1007,8 @@ const ProHoleTracker = () => {
               </div>
             </div>
 
-            {/* Missed Side - shown when End Lie is OB or Rough */}
-            {startLie === 'tee' && (endLie === 'rough' || endLie === 'sand' || endLie === 'OB') && (
+            {/* Missed Side - rough, bunker, recovery, hazard, other, OB all count as missed fairway */}
+            {startLie === 'tee' && isMissedFairwayEndLie && (
               <div>
                 <Label>Missed Side</Label>
                 <div className="flex gap-2 mt-2">

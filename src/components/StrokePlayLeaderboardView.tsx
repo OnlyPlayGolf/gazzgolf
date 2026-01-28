@@ -138,17 +138,17 @@ export function StrokePlayLeaderboardView({
               className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => setExpandedPlayerId(isExpanded ? null : player.id)}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   <ChevronDown 
                     size={20} 
-                    className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+                    className={`text-muted-foreground transition-transform shrink-0 ${isExpanded ? '' : '-rotate-90'}`}
                   />
-                  <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
+                  <div className="bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold shrink-0">
                     {positionLabel}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xl font-bold truncate">{player.name}</div>
+                    <div className="text-xl font-bold truncate whitespace-nowrap">{player.name}</div>
                     {player.handicap !== undefined && player.handicap !== null && (
                       <div className="text-sm text-muted-foreground">
                         HCP {Number(player.handicap) === 0 ? '0' : `+${Math.abs(Number(player.handicap))}`}
@@ -156,7 +156,7 @@ export function StrokePlayLeaderboardView({
                     )}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0 min-w-[80px]">
                   <div className="text-3xl font-bold">
                     {getPlayerScoreToParDisplay(player)}
                   </div>

@@ -22,6 +22,8 @@ interface Shot {
   isOB?: boolean;
   isPenalty?: boolean;
   penaltyType?: 'hazard' | 'ob';
+  /** Tee shot miss direction when endLie is rough/sand/OB (used for left/right % on Fairways/Driving) */
+  missedSide?: 'left' | 'right';
 }
 
 interface InRoundStrokesGainedProps {
@@ -102,15 +104,19 @@ export function InRoundStrokesGained({
     }
   }, [startLie]);
 
+  // Missed-fairway end lies (pro stats: rough, bunker, recovery, hazard, other, OB all count)
+  const MISSED_FAIRWAY_END_LIES = ['rough', 'sand', 'OB', 'recovery', 'hazard', 'other'];
+  const isMissedFairwayEndLie = endLie && MISSED_FAIRWAY_END_LIES.includes(endLie);
+
   // Reset holed when end lie changes
   useEffect(() => {
     if (endLie !== 'green') {
-      // Clear missed side if not relevant
-      if (endLie !== 'rough' && endLie !== 'sand' && endLie !== 'OB') {
+      // Clear missed side only when end lie is not a missed-fairway type
+      if (!isMissedFairwayEndLie) {
         setMissedSide('');
       }
     }
-  }, [endLie]);
+  }, [endLie, isMissedFairwayEndLie]);
 
   // Auto-advance when inputs are complete
   useEffect(() => {
@@ -205,8 +211,8 @@ export function InRoundStrokesGained({
       const start = parseFloat(startDistance.replace(',', '.'));
       const end = parseFloat(normalizedEnd);
       
-      // For tee shots to rough/bunker/OB, require missed side
-      if (startLie === 'tee' && (endLie === 'rough' || endLie === 'sand' || endLie === 'OB') && !missedSide) return;
+      // For tee shots to any missed-fairway lie, require missed side
+      if (startLie === 'tee' && isMissedFairwayEndLie && !missedSide) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // Clear any existing timer
@@ -229,7 +235,7 @@ export function InRoundStrokesGained({
         };
       }
     }
-  }, [endLie, startDistance, endDistance, startLie, missedSide, sgCalculator]);
+  }, [endLie, startDistance, endDistance, startLie, missedSide, sgCalculator, isMissedFairwayEndLie]);
 
   const loadBaselineData = async () => {
     try {
@@ -370,6 +376,7 @@ export function InRoundStrokesGained({
         endDistance: end,
         endLie: 'rough',
         strokesGained: sgShot,
+        ...(startLie === 'tee' && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
       };
 
       const penaltyShot: Shot = {
@@ -423,6 +430,7 @@ export function InRoundStrokesGained({
       endDistance: end,
       endLie: effectiveEndLie === 'OB' ? 'OB' : effectiveEndLie,
       strokesGained: sg,
+      ...(startLie === 'tee' && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     // Clear inputs and add shot
@@ -779,8 +787,8 @@ export function InRoundStrokesGained({
                   </div>
                 </div>
 
-                {/* Missed Side */}
-                {startLie === 'tee' && (endLie === 'rough' || endLie === 'sand' || endLie === 'OB') && (
+                {/* Missed Side - rough, bunker, recovery, hazard, other, OB all count as missed fairway */}
+                {startLie === 'tee' && isMissedFairwayEndLie && (
                   <div className="space-y-1">
                     <Label className="text-xs">Missed Side</Label>
                     <div className="flex gap-2">

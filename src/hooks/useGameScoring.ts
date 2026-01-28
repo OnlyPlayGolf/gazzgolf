@@ -218,6 +218,16 @@ export function useGameScoring<TGame, THole, TScores>(
   // Update par and stroke index when hole changes
   useEffect(() => {
     if (courseHoles.length > 0 && game) {
+      const totalHoles = configRef.current.getTotalHoles(game);
+      // Prevent loading data for holes beyond totalHoles
+      if (currentHole > totalHoles) {
+        // If we somehow got past totalHoles, reset to the last valid hole
+        const lastValidHoleIndex = totalHoles - 1;
+        if (currentHoleIndex !== lastValidHoleIndex) {
+          setCurrentHoleIndex(lastValidHoleIndex);
+        }
+        return;
+      }
       const holeData = courseHoles.find(h => h.hole_number === currentHole);
       if (holeData) {
         setPar(holeData.par);
@@ -293,11 +303,18 @@ export function useGameScoring<TGame, THole, TScores>(
         }
       }
       
-      // Check if game is finished
+      // Check if game is finished - use strict check: currentHole must be >= totalHoles
       const isFinished = cfg.isGameFinished?.(game, currentHole, totalHoles, holeData) ?? (currentHole >= totalHoles);
       
-      // For match play formats, also verify all holes have scores before finishing
-      if (isFinished) {
+      // Only navigate to summary when:
+      // 1. We just completed a NEW hole (not editing an existing one)
+      // 2. That hole is the final hole
+      // 3. All holes are complete
+      // This prevents re-navigation when going back to edit previous holes
+      const isNewHole = !existingHole;
+      const isFinalHole = currentHole >= totalHoles;
+      
+      if (isFinished && isNewHole && isFinalHole) {
         const allHolesComplete = cfg.areAllHolesComplete?.(game, updatedHoles, totalHoles) ?? true;
         if (allHolesComplete) {
           navigate(cfg.getSummaryRoute(cfg.gameId));
@@ -306,10 +323,13 @@ export function useGameScoring<TGame, THole, TScores>(
       }
       
       // Advance to next hole only if we were on the latest hole
-      // Make sure we don't go past totalHoles
+      // Make sure we don't go past totalHoles AND game is not finished
+      // Use strict check: nextHoleNumber must be strictly less than or equal to totalHoles
       const wasOnLatestHole = !existingHole || holes.length === currentHoleIndex;
       const nextHoleNumber = currentHole + 1;
-      if (wasOnLatestHole && nextHoleNumber <= totalHoles) {
+      
+      // Prevent advancing if we've reached or exceeded totalHoles
+      if (wasOnLatestHole && nextHoleNumber <= totalHoles && !isFinished && currentHole < totalHoles) {
         setCurrentHoleIndex(prev => prev + 1);
         // Load empty scores for next hole
         const nextCourseHole = courseHoles.find(h => h.hole_number === nextHoleNumber);
@@ -327,32 +347,114 @@ export function useGameScoring<TGame, THole, TScores>(
     }
   }, [game, holes, currentHole, currentHoleIndex, par, strokeIndex, scores, courseHoles, navigate, toast]);
   
-  // Navigate between holes - save current hole first if it has been played
-  const navigateHole = useCallback(async (direction: "prev" | "next") => {
+  // Helper to save a specific hole's data (for background saves during navigation)
+  const saveHoleData = useCallback(async (holeNumber: number, holeScores: TScores, holePar: number, holeStrokeIndex: number | null): Promise<boolean> => {
+    const cfg = configRef.current;
+    if (!game) return false;
+    
+    try {
+      const existingHole = holes.find(h => cfg.getHoleNumber(h) === holeNumber);
+      
+      const holeData = cfg.buildHoleData({
+        gameId: cfg.gameId,
+        holeNumber,
+        par: holePar,
+        strokeIndex: holeStrokeIndex,
+        scores: holeScores,
+        previousHoles: holes.filter(h => cfg.getHoleNumber(h) < holeNumber),
+        game,
+        courseHoles,
+      });
+      
+      // Upsert hole
+      if (existingHole) {
+        const { error } = await supabase
+          .from(cfg.holesTable as any)
+          .update(holeData)
+          .eq("id", (existingHole as any).id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from(cfg.holesTable as any)
+          .insert(holeData);
+        if (error) throw error;
+      }
+      
+      // Refresh holes data
+      const { data: updatedHolesData } = await supabase
+        .from(cfg.holesTable as any)
+        .select("*")
+        .eq("game_id", cfg.gameId)
+        .order("hole_number");
+      
+      const updatedHoles = (updatedHolesData || []).map(cfg.parseHole);
+      setHoles(updatedHoles);
+      
+      // Update game totals if needed (for background save during navigation)
+      if (cfg.buildGameUpdate) {
+        const gameUpdate = cfg.buildGameUpdate({
+          game,
+          holeNumber,
+          scores: holeScores,
+          allHoles: updatedHoles,
+          newHoleData: holeData,
+        });
+        
+        if (gameUpdate) {
+          await supabase
+            .from(cfg.gameTable as any)
+            .update(gameUpdate)
+            .eq("id", cfg.gameId);
+          
+          setGame({ ...game, ...gameUpdate } as TGame);
+        }
+      }
+      
+      return true;
+    } catch (error: any) {
+      console.error("Error saving hole data:", error);
+      return false;
+    }
+  }, [game, holes, courseHoles]);
+
+  // Navigate between holes - navigate immediately, save in background if needed
+  const navigateHole = useCallback((direction: "prev" | "next") => {
     const cfg = configRef.current;
     if (!game) return;
     
     const totalHoles = cfg.getTotalHoles(game);
     
-    // Check if current hole exists (was already saved before) - if so, save any changes
-    const existingHole = holes.find(h => cfg.getHoleNumber(h) === currentHole);
-    if (existingHole) {
-      // Check if we should save on navigate (defaults to true)
-      const shouldSave = cfg.shouldSaveOnNavigate ? cfg.shouldSaveOnNavigate(game, scores) : true;
-      if (shouldSave) {
-        // Save the current hole before navigating to preserve any changes
-        await saveHole();
-      }
-    }
+    // Capture current hole data before navigation (for background save)
+    const holeToSave = currentHole;
+    const scoresToSave = scores;
+    const parToSave = par;
+    const strokeIndexToSave = strokeIndex;
+    const existingHoleToSave = holes.find(h => cfg.getHoleNumber(h) === holeToSave);
     
+    // Navigate immediately for responsive UI
     if (direction === "prev" && currentHoleIndex > 0) {
       const targetHoleNumber = currentHole - 1;
       loadHoleData(targetHoleNumber);
       setCurrentHoleIndex(prev => prev - 1);
+      
+      // Save previous hole in background (non-blocking) if it exists
+      if (existingHoleToSave) {
+        const shouldSave = cfg.shouldSaveOnNavigate ? cfg.shouldSaveOnNavigate(game, scoresToSave) : true;
+        if (shouldSave) {
+          saveHoleData(holeToSave, scoresToSave, parToSave, strokeIndexToSave).catch(err => 
+            console.error("Error saving hole on navigate:", err)
+          );
+        }
+      }
     } else if (direction === "next") {
       const nextHoleNumber = currentHole + 1;
       
       // Don't allow navigating past totalHoles
+      // Strict check: nextHoleNumber must be <= totalHoles AND currentHole must be < totalHoles
+      if (nextHoleNumber > totalHoles || currentHole >= totalHoles) {
+        return; // Block navigation past the final hole
+      }
+      
       // Allow going to next hole if it's within totalHoles and either:
       // 1. It's the next unsaved hole (holes.length + 1), OR
       // 2. The hole already exists in the saved holes
@@ -362,9 +464,19 @@ export function useGameScoring<TGame, THole, TScores>(
       if (nextHoleNumber <= totalHoles && (isNextUnsavedHole || holeAlreadyExists)) {
         loadHoleData(nextHoleNumber);
         setCurrentHoleIndex(prev => prev + 1);
+        
+        // Save previous hole in background (non-blocking) if it exists
+        if (existingHoleToSave) {
+          const shouldSave = cfg.shouldSaveOnNavigate ? cfg.shouldSaveOnNavigate(game, scoresToSave) : true;
+          if (shouldSave) {
+            saveHoleData(holeToSave, scoresToSave, parToSave, strokeIndexToSave).catch(err => 
+              console.error("Error saving hole on navigate:", err)
+            );
+          }
+        }
       }
     }
-  }, [game, currentHole, currentHoleIndex, holes, loadHoleData, saveHole]);
+  }, [game, currentHole, currentHoleIndex, holes, loadHoleData, saveHoleData, scores, par, strokeIndex]);
   
   // Update a single score field
   const updateScore = useCallback(<K extends keyof TScores>(key: K, value: TScores[K]) => {

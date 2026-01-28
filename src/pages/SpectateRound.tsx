@@ -330,9 +330,9 @@ export default function SpectateRound() {
                 return (
                   <Card key={player.id}>
                     <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{player.display_name}</CardTitle>
-                        <div className="text-right">
+                      <div className="flex items-center justify-between gap-4">
+                        <CardTitle className="text-lg truncate whitespace-nowrap flex-1 min-w-0">{player.display_name}</CardTitle>
+                        <div className="text-right shrink-0 min-w-[80px]">
                           <p className="text-2xl font-bold">{scoreDisplay}</p>
                           <p className="text-xs text-muted-foreground">
                             {totals.holesCompleted > 0 ? `Thru ${totals.holesCompleted}` : "Not started"}

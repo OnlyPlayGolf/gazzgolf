@@ -43,6 +43,7 @@ export default function MatchPlaySettings() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [playerUserIds, setPlayerUserIds] = useState<Record<string, string>>({});
+  const [playerAvatarUrls, setPlayerAvatarUrls] = useState<Record<string, string | null>>({});
   
   // Per-player stats mode
   const { 
@@ -118,10 +119,11 @@ export default function MatchPlaySettings() {
 
           const { data: profiles } = await supabase
             .from("profiles")
-            .select("id, display_name, username")
+            .select("id, display_name, username, avatar_url")
             .or(orConditions.join(","));
 
           const userIdMap: Record<string, string> = {};
+          const avatarUrlMap: Record<string, string | null> = {};
           for (const name of uniquePlayerNames) {
             const profile = profiles?.find(
               (p) =>
@@ -130,9 +132,11 @@ export default function MatchPlaySettings() {
             );
             if (profile) {
               userIdMap[name] = profile.id;
+              avatarUrlMap[name] = profile.avatar_url || null;
             }
           }
           setPlayerUserIds(userIdMap);
+          setPlayerAvatarUrls(avatarUrlMap);
         }
       }
     } catch (error) {
@@ -222,6 +226,7 @@ export default function MatchPlaySettings() {
         tee: g.player_1_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
         userId: playerUserIds[g.player_1] || null,
+        avatarUrl: playerAvatarUrls[g.player_1] || null,
       },
       { 
         name: g.player_2, 
@@ -229,6 +234,7 @@ export default function MatchPlaySettings() {
         tee: g.player_2_tee || defaultTee, // Individual player tee from DB, fallback to default
         team: groupLabel,
         userId: playerUserIds[g.player_2] || null,
+        avatarUrl: playerAvatarUrls[g.player_2] || null,
       },
     ];
   });

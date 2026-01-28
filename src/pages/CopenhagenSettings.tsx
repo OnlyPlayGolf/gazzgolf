@@ -46,6 +46,7 @@ export default function CopenhagenSettings() {
   const [holes, setHoles] = useState<CopenhagenHole[]>([]);
   const [courseHoles, setCourseHoles] = useState<Array<{ hole_number: number; par: number; stroke_index: number }>>([]);
   const [playerUserIds, setPlayerUserIds] = useState<Record<string, string>>({});
+  const [playerAvatarUrls, setPlayerAvatarUrls] = useState<Record<string, string | null>>({});
 
   // Per-player stats mode
   const { 
@@ -153,10 +154,11 @@ export default function CopenhagenSettings() {
 
           const { data: profiles } = await supabase
             .from("profiles")
-            .select("id, display_name, username")
+            .select("id, display_name, username, avatar_url")
             .or(orConditions.join(","));
 
           const userIdMap: Record<string, string> = {};
+          const avatarUrlMap: Record<string, string | null> = {};
           for (const name of playerNames) {
             const profile = profiles?.find(
               (p) =>
@@ -165,9 +167,11 @@ export default function CopenhagenSettings() {
             );
             if (profile) {
               userIdMap[name] = profile.id;
+              avatarUrlMap[name] = profile.avatar_url || null;
             }
           }
           setPlayerUserIds(userIdMap);
+          setPlayerAvatarUrls(avatarUrlMap);
         }
       }
     } catch (error) {
@@ -285,18 +289,21 @@ export default function CopenhagenSettings() {
       handicap: undefined,
       tee: player1Tee,
       userId: playerUserIds[game.player_1] || null,
+      avatarUrl: playerAvatarUrls[game.player_1] || null,
     },
     { 
       name: game.player_2, 
       handicap: undefined,
       tee: player2Tee,
       userId: playerUserIds[game.player_2] || null,
+      avatarUrl: playerAvatarUrls[game.player_2] || null,
     },
     { 
       name: game.player_3, 
       handicap: undefined,
       tee: player3Tee,
       userId: playerUserIds[game.player_3] || null,
+      avatarUrl: playerAvatarUrls[game.player_3] || null,
     },
   ];
 
