@@ -317,9 +317,14 @@ const Leaderboards = () => {
           .select('attempts_json')
           .eq('drill_id', drillRows[0].id);
         const byOdId = new Map<string, { wins: number; games: number }>();
+        const seenGameIds = new Set<string>();
         for (const row of resultRows || []) {
-          const aj = (row as { attempts_json?: { players?: { odId: string }[]; winnerOdId?: string } }).attempts_json;
+          const aj = (row as { attempts_json?: { gameId?: string; players?: { odId: string }[]; winnerOdId?: string } }).attempts_json;
           if (!aj?.players) continue;
+          if (aj.gameId) {
+            if (seenGameIds.has(aj.gameId)) continue;
+            seenGameIds.add(aj.gameId);
+          }
           const winnerOdId = aj.winnerOdId;
           for (const p of aj.players) {
             if (p.odId?.startsWith?.('temp_')) continue;

@@ -12,6 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 
 const DRILL_TITLE = "21 Points";
 const SCORE_STORAGE_KEY = "twenty_one_points_score_state";
+const SAVE_DEDUPE_MS = 5000;
+
+// Module-level guard so the same game is never stored twice (survives remounts / Strict Mode)
+let lastSaveFingerprint: string | null = null;
+let lastSaveId: number | null = null;
+let lastSaveTime = 0;
 
 type SavedScoreState = {
   players: Player[];
@@ -103,8 +109,7 @@ export default function TwentyOnePointsScore() {
 
   const stateRef = useRef({ players, points, currentHole, activeHole, gameEnded });
   stateRef.current = { players, points, currentHole, activeHole, gameEnded };
-  /** Guards save so we only insert once per game end (effect can run twice in Strict Mode or from deps) */
-  const saveTriggeredRef = useRef(false);
+  const hasSavedForCurrentWinRef = useRef(false);
 
   // Persist score state when it changes or when leaving the tab/page (unmount). Never persist a finished game so the completion popup is only shown once per game.
   useEffect(() => {
@@ -157,7 +162,18 @@ export default function TwentyOnePointsScore() {
     return null;
   };
 
-  const saveGame = async (winner: Player, winnerTotal: number): Promise<number | null> => {
+  const saveGame = async (
+    winner: Player,
+    winnerTotal: number,
+    fingerprint?: string
+  ): Promise<number | null> => {
+    if (
+      fingerprint &&
+      lastSaveFingerprint === fingerprint &&
+      Date.now() - lastSaveTime < SAVE_DEDUPE_MS
+    ) {
+      return lastSaveId;
+    }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -183,24 +199,45 @@ export default function TwentyOnePointsScore() {
         pointsPerHole: points[p.odId] || [],
       }));
 
+      const gameId = crypto.randomUUID();
+      const attemptsJson = {
+        gameId,
+        players: playersData,
+        winnerOdId: winner.odId,
+        holesPlayed: currentHole,
+      };
+
+      // 1) Store current user's row with their own score (not winner's) so your history shows your score
+      const myTotal = getTotal(user.id) ?? 0;
       const { data, error } = await supabase
         .from("drill_results")
         .insert({
           user_id: user.id,
           drill_id: drillId,
-          total_points: winnerTotal,
-          attempts_json: {
-            players: playersData,
-            winnerOdId: winner.odId,
-            holesPlayed: currentHole,
-          },
+          total_points: myTotal,
+          attempts_json: attemptsJson,
         })
         .select("id")
         .single();
 
       if (error) throw error;
+      const id = (data as { id: number } | null)?.id ?? null;
+      if (fingerprint && id != null) {
+        lastSaveFingerprint = fingerprint;
+        lastSaveTime = Date.now();
+        lastSaveId = id;
+      }
+
+      // 2) Create one row per other profile player so their scores are stored and show in Groups History
+      const { error: rpcError } = await supabase.rpc("create_21_points_participant_rows_rpc", {
+        p_drill_id: drillId,
+        p_attempts_json: attemptsJson,
+        p_exclude_user_id: user.id,
+      });
+      if (rpcError) console.error("21 Points participant rows:", rpcError);
+
       toast({ title: "Game saved!", description: `${formatName(winner)} wins with ${winnerTotal} points.` });
-      return (data as { id: number } | null)?.id ?? null;
+      return id;
     } catch (e: any) {
       console.error(e);
       toast({ title: "Could not save game", variant: "destructive" });
@@ -215,12 +252,19 @@ export default function TwentyOnePointsScore() {
     if (gameEnded || currentHole !== activeHole || !allHavePointsForCurrentHole || players.length === 0) return;
     const win = checkWin();
     if (win) {
+      // Prevent multiple saves (ref + module-level fingerprint dedupe)
+      if (hasSavedForCurrentWinRef.current) return;
+      hasSavedForCurrentWinRef.current = true;
       setGameEnded(win);
       sessionStorage.removeItem(SCORE_STORAGE_KEY); // finished game is not restored — popup shows once only
-      if (!saveTriggeredRef.current) {
-        saveTriggeredRef.current = true; // prevent double save if effect runs again before state update
-        saveGame(win.winner, win.winnerTotal).then((id) => id != null && setSavedResultId(id));
-      }
+      const fingerprint = JSON.stringify({
+        w: win.winner.odId,
+        t: win.winnerTotal,
+        h: currentHole,
+        p: players.map((x) => x.odId).sort(),
+        pts: players.map((x) => getTotal(x.odId)).sort((a, b) => a - b),
+      });
+      saveGame(win.winner, win.winnerTotal, fingerprint).then((id) => id != null && setSavedResultId(id));
       return;
     }
     setActiveHole((h) => h + 1);
@@ -229,6 +273,7 @@ export default function TwentyOnePointsScore() {
   }, [gameEnded, currentHole, activeHole, allHavePointsForCurrentHole, points, players]);
 
   const handleReset = () => {
+    hasSavedForCurrentWinRef.current = false;
     const emptyPoints = Object.fromEntries(players.map((p) => [p.odId, []]));
     setPoints(emptyPoints);
     setCurrentHole(1);
@@ -333,18 +378,22 @@ export default function TwentyOnePointsScore() {
       <DrillCompletionDialog
         open={!!gameEnded}
         onOpenChange={(open) => {
-            if (!open) {
-              setGameEnded(null);
-              saveTriggeredRef.current = false; // allow save for next game
-              sessionStorage.removeItem(SCORE_STORAGE_KEY);
-            }
-          }}
+          if (!open) {
+            hasSavedForCurrentWinRef.current = false;
+            setGameEnded(null);
+            sessionStorage.removeItem(SCORE_STORAGE_KEY);
+            navigate("/drill/21-points/setup", { replace: true });
+          }
+        }}
         drillTitle={DRILL_TITLE}
         score={gameEnded.winnerTotal}
         unit="points"
         resultId={savedResultId ?? undefined}
         donePath="/drill/21-points/setup"
-        onContinue={() => sessionStorage.removeItem(SCORE_STORAGE_KEY)}
+        onContinue={() => {
+          sessionStorage.removeItem(SCORE_STORAGE_KEY);
+          hasSavedForCurrentWinRef.current = false;
+        }}
       />
     );
   }
