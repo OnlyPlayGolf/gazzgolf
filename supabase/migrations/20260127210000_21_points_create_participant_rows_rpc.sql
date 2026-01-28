@@ -29,8 +29,17 @@ BEGIN
       CONTINUE;
     END IF;
     v_total_pts := COALESCE((v_elem ->> 'totalPoints')::bigint, 0);
-    INSERT INTO public.drill_results (user_id, drill_id, total_points, attempts_json)
-    VALUES (v_od_id::uuid, p_drill_id, v_total_pts, p_attempts_json);
+    -- Check if row exists first (ON CONFLICT with partial unique index is complex)
+    -- The unique index will prevent duplicates if both trigger and RPC run simultaneously
+    IF NOT EXISTS (
+      SELECT 1 FROM public.drill_results
+      WHERE user_id = v_od_id::uuid
+        AND drill_id = p_drill_id
+        AND (attempts_json::jsonb ->> 'gameId') = (p_attempts_json ->> 'gameId')
+    ) THEN
+      INSERT INTO public.drill_results (user_id, drill_id, total_points, attempts_json)
+      VALUES (v_od_id::uuid, p_drill_id, v_total_pts, p_attempts_json);
+    END IF;
   END LOOP;
 END;
 $$;

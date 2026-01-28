@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Trophy, Share2, ArrowRight, Loader2 } from "lucide-react";
+import { Share2, ArrowRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -153,12 +153,6 @@ export function DrillCompletionDialog({
         </DialogHeader>
         
         <div className="flex flex-col items-center gap-4 py-4">
-          {isPersonalBest && !loading && (
-            <div className="flex items-center justify-center p-3 rounded-full bg-primary/20">
-              <Trophy className="h-8 w-8 text-primary" />
-            </div>
-          )}
-          
           <div className="text-center">
             <p className="text-sm text-muted-foreground">{drillTitle}</p>
             <p className="text-4xl font-bold text-foreground">{score}</p>

@@ -4,6 +4,13 @@ import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ChevronDown } from "lucide-react";
 
 const getDrillDisplayTitle = (title: string): string => {
   // Use normalized title for display
@@ -25,6 +32,17 @@ interface DrillResultWithProfile {
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
+  attempts_json?: {
+    players?: Array<{
+      odId: string;
+      displayName: string;
+      totalPoints: number;
+      pointsPerHole?: number[];
+    }>;
+    winnerOdId?: string;
+    holesPlayed?: number;
+    gameId?: string;
+  };
 }
 
 type DrillCategory = 'Putting' | 'Short Game' | 'Approach' | 'Tee Shots';
@@ -209,6 +227,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
             created_at,
             user_id,
             drill_id,
+            attempts_json,
             drills!inner(title)
           `)
           .in('user_id', memberIds)
@@ -233,7 +252,8 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
               user_id: r.user_id,
               display_name: member?.display_name || null,
               username: member?.username || null,
-              avatar_url: member?.avatar_url || null
+              avatar_url: member?.avatar_url || null,
+              attempts_json: r.attempts_json || undefined,
             };
           });
           setResults(resultsWithProfiles);
@@ -356,41 +376,105 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
             No results match your filters.
           </p>
         ) : (
-          filteredResults.map((result) => (
-            <div
-              key={result.id}
-              className="p-3 rounded-lg bg-secondary/30 space-y-2"
-            >
-              <div className="flex items-center gap-3">
-                <ProfilePhoto
-                  src={result.avatar_url}
-                  alt={result.display_name || result.username || "U"}
-                  fallback={result.display_name || result.username || "U"}
-                  size="sm"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">
-                    {result.display_name || result.username || 'Unknown'}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {getDrillDisplayTitle(result.drill_title)}
-                  </p>
+          <Accordion type="single" collapsible className="w-full space-y-2">
+            {filteredResults.map((result) => {
+              const is21Points = normalizeDrillTitle(result.drill_title) === '21 Points';
+              const players = (result.attempts_json?.players || []) as Array<{
+                odId: string;
+                displayName: string;
+                totalPoints: number;
+              }>;
+
+              if (is21Points && players.length > 0) {
+                // 21 Points: show expandable dropdown with all players' scores
+                const sortedPlayers = [...players].sort((a, b) => b.totalPoints - a.totalPoints);
+                return (
+                  <AccordionItem key={result.id} value={result.id} className="border-none">
+                    <div className="p-3 rounded-lg bg-secondary/30">
+                      <AccordionTrigger className="hover:no-underline py-0">
+                        <div className="flex items-center gap-3 w-full pr-2">
+                          <ProfilePhoto
+                            src={result.avatar_url}
+                            alt={result.display_name || result.username || "U"}
+                            fallback={result.display_name || result.username || "U"}
+                            size="sm"
+                          />
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="font-medium text-sm truncate">
+                              {result.display_name || result.username || 'Unknown'}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {getDrillDisplayTitle(result.drill_title)}
+                            </p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-bold text-primary">
+                              {result.total_points !== null && result.total_points !== undefined ? (
+                                `${result.total_points} ${getScoreUnit(result.drill_title)}`
+                              ) : (
+                                'No score'
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(result.created_at), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-2 pt-2 border-t mt-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Total points</p>
+                          {sortedPlayers.map((p) => (
+                            <div key={p.odId} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 text-sm">
+                              <span className="font-medium truncate">{p.displayName}</span>
+                              <span className="font-semibold tabular-nums shrink-0 ml-2">{p.totalPoints} pts</span>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </div>
+                  </AccordionItem>
+                );
+              }
+
+              // Other drills: simple card (no dropdown)
+              return (
+                <div
+                  key={result.id}
+                  className="p-3 rounded-lg bg-secondary/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <ProfilePhoto
+                      src={result.avatar_url}
+                      alt={result.display_name || result.username || "U"}
+                      fallback={result.display_name || result.username || "U"}
+                      size="sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {result.display_name || result.username || 'Unknown'}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {getDrillDisplayTitle(result.drill_title)}
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-bold text-primary">
+                        {result.total_points !== null && result.total_points !== undefined ? (
+                          `${result.total_points} ${getScoreUnit(result.drill_title)}`
+                        ) : (
+                          'No score'
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(result.created_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-primary">
-                    {result.total_points !== null && result.total_points !== undefined ? (
-                      `${result.total_points} ${getScoreUnit(result.drill_title)}`
-                    ) : (
-                      'No score'
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(result.created_at), 'MMM d, yyyy')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))
+              );
+            })}
+          </Accordion>
         )}
       </div>
 

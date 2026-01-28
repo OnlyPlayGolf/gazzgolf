@@ -45,6 +45,13 @@ export default function TwentyOnePointsScore() {
   const [gameEnded, setGameEnded] = useState<{ winner: Player; winnerTotal: number } | null>(null);
   const [savedResultId, setSavedResultId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id ?? null);
+    });
+  }, []);
 
   // Restore from location.state (from Setup: Start or Continue) or sessionStorage (returning to Enter Score tab)
   useEffect(() => {
@@ -374,6 +381,9 @@ export default function TwentyOnePointsScore() {
   }
 
   if (gameEnded) {
+    // Show current user's score (not winner's) in the completion popup
+    const myScore = currentUserId ? getTotal(currentUserId) : 0;
+
     return (
       <DrillCompletionDialog
         open={!!gameEnded}
@@ -382,11 +392,11 @@ export default function TwentyOnePointsScore() {
             hasSavedForCurrentWinRef.current = false;
             setGameEnded(null);
             sessionStorage.removeItem(SCORE_STORAGE_KEY);
-            navigate("/drill/21-points/setup", { replace: true });
+            navigate("/drill/21-points/leaderboard", { replace: true });
           }
         }}
         drillTitle={DRILL_TITLE}
-        score={gameEnded.winnerTotal}
+        score={myScore}
         unit="points"
         resultId={savedResultId ?? undefined}
         donePath="/drill/21-points/setup"
