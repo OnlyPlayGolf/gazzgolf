@@ -45,10 +45,15 @@ export default function TwentyOnePointsLeaderboard() {
           .eq("drill_id", drills[0].id);
 
         const byOdId = new Map<string, { wins: number; games: number; displayName: string; avatarUrl?: string | null }>();
+        const seenGameIds = new Set<string>();
 
         for (const row of rows || []) {
-          const aj = (row as { attempts_json?: { players?: { odId: string; displayName: string; avatarUrl?: string | null }[]; winnerOdId?: string } }).attempts_json;
+          const aj = (row as { attempts_json?: { gameId?: string; players?: { odId: string; displayName: string; avatarUrl?: string | null }[]; winnerOdId?: string } }).attempts_json;
           if (!aj?.players) continue;
+          if (aj.gameId) {
+            if (seenGameIds.has(aj.gameId)) continue;
+            seenGameIds.add(aj.gameId);
+          }
           const winnerOdId = aj.winnerOdId;
           for (const p of aj.players) {
             const cur = byOdId.get(p.odId) ?? {

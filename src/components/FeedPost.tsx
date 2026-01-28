@@ -3314,6 +3314,13 @@ export const FeedPost = ({ post, currentUserId, onPostDeleted }: FeedPostProps) 
               date={post.created_at}
               clickable={true}
               onClick={() => {
+                // 21 Points: navigate to setup page instead of leaderboard
+                if (drillResult.drillTitle === '21 Points') {
+                  navigate('/drill/21-points/setup', {
+                    state: { from: location.pathname }
+                  });
+                  return;
+                }
                 const drillSlug = getDrillSlugFromTitle(drillResult.drillTitle);
                 if (drillSlug) {
                   // Navigate to drill leaderboard, preserving where we came from

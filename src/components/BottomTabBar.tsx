@@ -39,7 +39,8 @@ export const BottomTabBar = () => {
           const Icon = tab.icon;
           const isActive =
             location.pathname === tab.path ||
-            (tab.path === '/practice' && (location.pathname.startsWith('/drills') || location.pathname.startsWith('/levels') || location.pathname === '/categories' || location.pathname === '/leaderboards' || location.pathname === '/drill/21-points/setup'));
+            (tab.path === '/practice' && (location.pathname.startsWith('/drills') || location.pathname.startsWith('/levels') || location.pathname === '/categories' || location.pathname === '/leaderboards' || location.pathname === '/drill/21-points/setup')) ||
+            (tab.path === '/groups' && location.pathname.startsWith('/group/'));
           
           // Special styling for Play tab
           if (tab.id === 'play') {
