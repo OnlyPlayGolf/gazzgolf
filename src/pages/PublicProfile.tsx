@@ -439,7 +439,15 @@ export default function PublicProfile() {
             variant="ghost"
             size="icon"
             className="rounded-full"
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              const fromSearch = sessionStorage.getItem('reopenSearchDialog');
+              if (fromSearch === 'true') {
+                // Navigate to home, the AddFriendDialog will reopen automatically
+                navigate('/');
+              } else {
+                navigate(-1);
+              }
+            }}
           >
             <ArrowLeft size={24} />
           </Button>

@@ -229,9 +229,9 @@ export default function RoundDetail() {
                   <Card className="overflow-hidden">
                     <CollapsibleTrigger asChild>
                       <button className="w-full text-left">
-                        <CardContent className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        <CardContent className="p-4 flex items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
                               index === 0 ? 'bg-amber-500 text-white' : 
                               index === 1 ? 'bg-gray-400 text-white' : 
                               index === 2 ? 'bg-amber-700 text-white' : 
@@ -240,14 +240,14 @@ export default function RoundDetail() {
                               {index + 1}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="font-semibold truncate">{getPlayerName(player)}</div>
+                              <div className="font-semibold truncate whitespace-nowrap">{getPlayerName(player)}</div>
                               <div className="text-xs text-muted-foreground">
                                 {player.scores.length} holes • {player.tee_color || round.tee_set || 'White'} tees
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right min-w-[80px]">
                               <div className="text-2xl font-bold">
                                 {formatScoreToPar(player.scoreToPar)}
                               </div>

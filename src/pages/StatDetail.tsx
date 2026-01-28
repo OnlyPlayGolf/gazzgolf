@@ -49,7 +49,7 @@ const CATEGORIES: Record<string, CategoryConfig> = {
       'Practice short putts (3-6 feet) regularly'
     ],
     getStats: (stats) => [
-      { label: 'Putts per Round', value: stats.putting.puttsPerRound?.toFixed(1) ?? '-' },
+      { label: 'Putts per Hole', value: stats.putting.puttsPerHole?.toFixed(2) ?? '-' },
       { label: '1-Putt per Hole', value: formatPercentage(stats.putting.onePuttPercentage) },
       { label: '2-Putts per Hole', value: formatPercentage(stats.putting.twoPuttPercentage) },
       { label: '3-Putts per Hole', value: formatPercentage(stats.putting.threePuttPercentage) },

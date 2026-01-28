@@ -6,6 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
@@ -60,6 +70,8 @@ const Profile = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<{ id: string; display_name: string | null; username: string | null; avatar_url?: string | null }[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [leaveGroupDialog, setLeaveGroupDialog] = useState<{ open: boolean; groupId: string | null; groupName: string }>({ open: false, groupId: null, groupName: "" });
+  const [leavingGroup, setLeavingGroup] = useState(false);
   const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 300);
   const searchRequestIdRef = useRef(0);
   const [loading, setLoading] = useState(false);
@@ -540,26 +552,30 @@ const Profile = () => {
     }
   };
 
-  const handleLeaveGroup = async (groupId: string, groupName: string) => {
+  const handleLeaveGroup = (groupId: string, groupName: string) => {
     if (!user) return;
+    setLeaveGroupDialog({ open: true, groupId, groupName });
+  };
 
-    const confirmed = window.confirm(`Are you sure you want to leave "${groupName}"?`);
-    if (!confirmed) return;
+  const confirmLeaveGroup = async () => {
+    if (!user || !leaveGroupDialog.groupId) return;
 
+    setLeavingGroup(true);
     try {
       const { error } = await supabase
         .from('group_members')
         .delete()
-        .eq('group_id', groupId)
+        .eq('group_id', leaveGroupDialog.groupId)
         .eq('user_id', user.id);
 
       if (error) throw error;
 
       toast({
         title: "Left group",
-        description: `You have left ${groupName}`,
+        description: `You have left ${leaveGroupDialog.groupName}`,
       });
 
+      setLeaveGroupDialog({ open: false, groupId: null, groupName: "" });
       loadUserData();
     } catch (error) {
       console.error('Error leaving group:', error);
@@ -568,6 +584,8 @@ const Profile = () => {
         description: "Failed to leave group.",
         variant: "destructive",
       });
+    } finally {
+      setLeavingGroup(false);
     }
   };
 
@@ -961,6 +979,28 @@ const Profile = () => {
           )}
         </div>
       </div>
+
+      {/* Leave Group Confirmation Dialog */}
+      <AlertDialog open={leaveGroupDialog.open} onOpenChange={(open) => setLeaveGroupDialog({ ...leaveGroupDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Group?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave "{leaveGroupDialog.groupName}"? You'll need to be invited again to rejoin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leavingGroup}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmLeaveGroup}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={leavingGroup}
+            >
+              {leavingGroup ? "Leaving..." : "Leave Group"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

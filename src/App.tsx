@@ -80,6 +80,8 @@ import DriverControlLeaderboard from "./pages/DriverControlLeaderboard";
 import DriverControlMessages from "./pages/DriverControlMessages";
 import UpDownsTestDrill from "./pages/UpDownsTestDrill";
 import EasyChipDrill from "./pages/EasyChipDrill";
+import TwentyOnePointsSetup from "./pages/TwentyOnePointsSetup";
+import TwentyOnePointsDrill from "./pages/TwentyOnePointsDrill";
 import UmbriagioSetup from "./pages/UmbriagioSetup";
 import UmbriagioPlay from "./pages/UmbriagioPlay";
 import UmbriagioSummary from "./pages/UmbriagioSummary";
@@ -308,6 +310,8 @@ const AnimatedAppRoutes = () => {
           <Route path="/drill/driver-control/*" element={<DriverControlDrill />} />
           <Route path="/drill/up-downs-test/*" element={<UpDownsTestDrill />} />
           <Route path="/drill/easy-chip/*" element={<EasyChipDrill />} />
+          <Route path="/drill/21-points/setup" element={<TwentyOnePointsSetup />} />
+          <Route path="/drill/21-points/*" element={<TwentyOnePointsDrill />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

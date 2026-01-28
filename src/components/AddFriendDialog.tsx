@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "react-qr-code";
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { searchProfilesTypeahead } from "@/utils/profileSearch";
 import {
@@ -47,6 +47,7 @@ export const AddFriendDialog = ({
 }: AddFriendDialogProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,6 +69,18 @@ export const AddFriendDialog = ({
       }
     }
   }, [open, showQrTabs, activeTab]);
+
+  // Check if we should reopen dialog after returning from profile
+  useEffect(() => {
+    const shouldReopen = sessionStorage.getItem('reopenSearchDialog');
+    if (shouldReopen === 'true' && !open && location.pathname === '/') {
+      sessionStorage.removeItem('reopenSearchDialog');
+      // Small delay to ensure navigation is complete
+      setTimeout(() => {
+        setOpen(true);
+      }, 100);
+    }
+  }, [location.pathname, open]);
 
   const loadCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -316,41 +329,39 @@ export const AddFriendDialog = ({
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-            <UserPlus size={18} />
+            <Search size={18} />
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Friend</DialogTitle>
+          <DialogTitle>Add Friends</DialogTitle>
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className={showQrTabs ? "grid w-full grid-cols-3" : "grid w-full grid-cols-1"}>
-            <TabsTrigger value="search">
-              <Search size={16} className="mr-2" />
-              Search
-            </TabsTrigger>
-            {showQrTabs && (
-              <>
-                <TabsTrigger value="scan">
-                  <Camera size={16} className="mr-2" />
-                  Scan QR
-                </TabsTrigger>
-                <TabsTrigger value="myqr">
-                  <QrCode size={16} className="mr-2" />
-                  My QR
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
+          {showQrTabs && (
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="search">
+                <Search size={16} className="mr-2" />
+                Search
+              </TabsTrigger>
+              <TabsTrigger value="scan">
+                <Camera size={16} className="mr-2" />
+                Scan QR
+              </TabsTrigger>
+              <TabsTrigger value="myqr">
+                <QrCode size={16} className="mr-2" />
+                My QR
+              </TabsTrigger>
+            </TabsList>
+          )}
 
           {/* Search Tab */}
           <TabsContent value="search" className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by username, name, or email..."
+                placeholder="Search by name or email..."
                 value={friendSearch}
                 onChange={(e) => setFriendSearch(e.target.value)}
                 className="pl-9"
@@ -377,7 +388,14 @@ export const AddFriendDialog = ({
                     key={result.id}
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
-                    <div>
+                    <div 
+                      className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => {
+                        sessionStorage.setItem('reopenSearchDialog', 'true');
+                        navigate(`/user/${result.id}`);
+                        setOpen(false);
+                      }}
+                    >
                       <p className="font-medium">
                         {result.display_name || result.username || 'Unknown'}
                       </p>

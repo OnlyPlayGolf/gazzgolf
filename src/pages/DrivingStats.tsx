@@ -170,9 +170,25 @@ export default function DrivingStats() {
         let fairwaysHit = 0;
         let totalFairways = 0;
 
+        let leftMissCount = 0;
+        let rightMissCount = 0;
+        let totalMisses = 0;
+
         // Process each hole's shot data
         for (const hole of holesData || []) {
-          const shotData = hole.pro_shot_data as unknown as Shot[] | null;
+          const rawData = hole.pro_shot_data as unknown;
+          const par = hole.par ?? 4;
+
+          // Left/right miss from basicStats (basic stats mode: fairwayResult 'hit'|'left'|'right')
+          if (par >= 4 && rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
+            const basicStats = (rawData as { basicStats?: { fairwayResult?: string } }).basicStats;
+            if (basicStats?.fairwayResult) {
+              if (basicStats.fairwayResult === 'left') { leftMissCount++; totalMisses++; }
+              else if (basicStats.fairwayResult === 'right') { rightMissCount++; totalMisses++; }
+            }
+          }
+
+          const shotData = Array.isArray(rawData) ? (rawData as Shot[]) : null;
           if (!shotData) continue;
 
           for (const shot of shotData) {
@@ -191,38 +207,36 @@ export default function DrivingStats() {
                 if (shot.endLie === 'fairway' || shot.endLie === 'green') {
                   fairwaysHit++;
                 }
+                // Left/right miss from pro stats (missed fairway = rough, bunker, recovery, hazard, other, OB)
+                else if (['rough', 'sand', 'bunker', 'recovery', 'hazard', 'other', 'OB'].includes(String(shot.endLie)) && (shot as { missedSide?: string }).missedSide) {
+                  const side = (shot as { missedSide: string }).missedSide;
+                  if (side === 'left') { leftMissCount++; totalMisses++; }
+                  else if (side === 'right') { rightMissCount++; totalMisses++; }
+                }
               }
             }
           }
         }
 
-        // Fetch tee_result data from regular rounds for miss direction
-        const { data: regularRounds } = await supabase
-          .from('rounds')
-          .select('id')
-          .eq('user_id', user.id);
+        // Fallback: fetch tee_result from regular rounds when no pro_stats left/right
+        if (totalMisses === 0) {
+          const { data: regularRounds } = await supabase
+            .from('rounds')
+            .select('id')
+            .eq('user_id', user.id);
 
-        let leftMissCount = 0;
-        let rightMissCount = 0;
-        let totalMisses = 0;
+          if (regularRounds && regularRounds.length > 0) {
+            const regularRoundIds = regularRounds.map(r => r.id);
+            const { data: teeResultData } = await supabase
+              .from('holes')
+              .select('tee_result')
+              .in('round_id', regularRoundIds)
+              .not('tee_result', 'is', null);
 
-        if (regularRounds && regularRounds.length > 0) {
-          const regularRoundIds = regularRounds.map(r => r.id);
-          
-          const { data: teeResultData } = await supabase
-            .from('holes')
-            .select('tee_result')
-            .in('round_id', regularRoundIds)
-            .not('tee_result', 'is', null);
-
-          if (teeResultData) {
-            for (const hole of teeResultData) {
-              if (hole.tee_result === 'MissL') {
-                leftMissCount++;
-                totalMisses++;
-              } else if (hole.tee_result === 'MissR') {
-                rightMissCount++;
-                totalMisses++;
+            if (teeResultData) {
+              for (const h of teeResultData) {
+                if (h.tee_result === 'MissL') { leftMissCount++; totalMisses++; }
+                else if (h.tee_result === 'MissR') { rightMissCount++; totalMisses++; }
               }
             }
           }

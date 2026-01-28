@@ -71,7 +71,36 @@ const ShortGameDrills = () => {
               </p>
               
               <Button 
-                onClick={() => navigate('/drill/8-ball-points')}
+                onClick={() => navigate('/drill/8-ball-drill/score')}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                Open Drill
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="border-golf-light hover:border-primary transition-all duration-200 cursor-pointer"
+            onClick={() => navigate('/drill/21-points/setup')}
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Target size={24} className="text-primary" />
+                <div>
+                  <div>21 Points</div>
+                  <div className="text-sm font-normal text-muted-foreground">
+                    Coach's favorite drill for competitive and creative short game shots.
+                  </div>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Compete with 2 or more players to be the first to reach 21 points. Points are awarded by proximity to the hole—closer shots score more.
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/drill/21-points/setup')}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 Open Drill

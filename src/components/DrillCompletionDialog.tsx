@@ -14,6 +14,8 @@ interface DrillCompletionDialogProps {
   score: number;
   unit?: string;
   resultId?: string;
+  /** When set, Done/Share navigates here instead of /categories */
+  donePath?: string;
   onContinue: () => void;
 }
 
@@ -24,9 +26,11 @@ export function DrillCompletionDialog({
   score,
   unit = "points",
   resultId,
+  donePath,
   onContinue,
 }: DrillCompletionDialogProps) {
   const navigate = useNavigate();
+  const doneTarget = donePath ?? "/categories";
   const [isPersonalBest, setIsPersonalBest] = useState(false);
   const [showShareForm, setShowShareForm] = useState(false);
   const [comment, setComment] = useState("");
@@ -123,7 +127,7 @@ export function DrillCompletionDialog({
       setShowShareForm(false);
       setComment("");
       onOpenChange(false);
-      navigate('/categories');
+      navigate(doneTarget);
       onContinue?.();
     } catch (error) {
       console.error('Error sharing result:', error);
@@ -135,7 +139,7 @@ export function DrillCompletionDialog({
 
   const handleContinue = () => {
     onOpenChange(false);
-    navigate('/categories');
+    navigate(doneTarget);
     onContinue?.();
   };
 

@@ -14,12 +14,13 @@ export const BottomTabBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, umbriago, wolf, copenhagen, match play, scramble, skins, and game settings detail
+  // Hide the tab bar on immersive round flows (tracking, summary, setup), drill game modes, umbriago, wolf, copenhagen, match play, scramble, skins, and game settings detail. Show on 21 Points setup.
   const isBasicStatsAdd = /^\/rounds\/[^/]+\/basic-track$/.test(location.pathname);
   const isAddStatsEntry = location.pathname === '/rounds/pro-setup';
+  const is21PointsSetup = location.pathname === '/drill/21-points/setup';
   const hideTabBar = (
     ((location.pathname.startsWith('/rounds/') && location.pathname !== '/rounds') && !isBasicStatsAdd && !isAddStatsEntry) ||
-    location.pathname.startsWith('/drill/') ||
+    (location.pathname.startsWith('/drill/') && !is21PointsSetup) ||
     location.pathname.startsWith('/umbriago/') ||
     location.pathname.startsWith('/wolf/') ||
     location.pathname.startsWith('/copenhagen/') ||
@@ -38,7 +39,7 @@ export const BottomTabBar = () => {
           const Icon = tab.icon;
           const isActive =
             location.pathname === tab.path ||
-            (tab.path === '/practice' && (location.pathname.startsWith('/drills') || location.pathname.startsWith('/levels') || location.pathname === '/categories'));
+            (tab.path === '/practice' && (location.pathname.startsWith('/drills') || location.pathname.startsWith('/levels') || location.pathname === '/categories' || location.pathname === '/leaderboards' || location.pathname === '/drill/21-points/setup'));
           
           // Special styling for Play tab
           if (tab.id === 'play') {

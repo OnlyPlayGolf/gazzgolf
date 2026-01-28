@@ -74,7 +74,7 @@ export interface AccuracyStats {
 }
 
 export interface PuttingStats {
-  puttsPerRound: number | null;
+  puttsPerHole: number | null;
   onePuttPercentage: number | null;
   twoPuttPercentage: number | null;
   threePuttPercentage: number | null;
@@ -110,7 +110,7 @@ const THRESHOLDS = {
   sandSaves: { strength: 40, average: 20 },
   
   // Putting
-  puttsPerRound: { strength: 30, average: 34 }, // Lower is better
+  puttsPerHole: { strength: 1.7, average: 1.9 }, // Lower is better (per hole instead of per round)
   onePutt: { strength: 35, average: 25 },
   threePuttAvoid: { strength: 95, average: 85 },
 };
@@ -191,22 +191,38 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   } else if (filter === 'last50') {
     validSummaries = validSummaries.slice(0, 50);
   }
-  const roundsPlayed = validSummaries.length;
 
-  // Calculate scoring stats
-  const scores = validSummaries.map(s => s.total_score!);
-  const scoresToPar = validSummaries.map(s => s.score_vs_par!).filter(s => s !== null);
+  // Filter to only 18-hole rounds for scoring stats (total rounds, scoring average, best/worst)
+  // Use strict equality check and ensure holes_played is exactly 18
+  // Also validate that the score is reasonable for 18 holes (minimum 45 strokes, maximum 150)
+  // A score of 40 or less is clearly a 9-hole round (would be less than 2.5 strokes per hole for 18 holes, which is impossible)
+  const eighteenHoleRounds = validSummaries.filter(s => {
+    const holes = s.holes_played;
+    const score = s.total_score;
+    // Must be exactly 18 holes AND have a reasonable score for 18 holes
+    // Minimum 45 strokes (2.5 per hole - very low but possible for an excellent round)
+    // Maximum 150 strokes (reasonable upper bound)
+    // This filters out 9-hole rounds that might have holes_played incorrectly set to 18
+    const isValid18HoleScore = score !== null && score !== undefined && score >= 45 && score <= 150;
+    return holes !== null && holes !== undefined && Number(holes) === 18 && isValid18HoleScore;
+  });
+  const eighteenHoleScores = eighteenHoleRounds
+    .map(s => s.total_score!)
+    .filter(s => s !== null && s !== undefined && s > 0);
+  const eighteenHoleScoresToPar = eighteenHoleRounds
+    .map(s => s.score_vs_par)
+    .filter((v): v is number => v !== null && v !== undefined);
   
   const scoring: ScoringStats = {
-    scoringAverage: scoresToPar.length > 0 
-      ? scoresToPar.reduce((a, b) => a + b, 0) / scoresToPar.length 
+    scoringAverage: eighteenHoleScoresToPar.length > 0
+      ? eighteenHoleScoresToPar.reduce((a, b) => a + b, 0) / eighteenHoleScoresToPar.length
       : null,
-    bestRound: scores.length > 0 ? Math.min(...scores) : null,
-    worstRound: scores.length > 0 ? Math.max(...scores) : null,
+    bestRound: eighteenHoleScores.length > 0 ? Math.min(...eighteenHoleScores) : null,
+    worstRound: eighteenHoleScores.length > 0 ? Math.max(...eighteenHoleScores) : null,
     par3Average: null, // Would need hole-by-hole data
     par4Average: null,
     par5Average: null,
-    totalRounds: roundsPlayed,
+    totalRounds: eighteenHoleRounds.length,
     totalHoles: validSummaries.reduce((sum, s) => sum + (s.holes_played || 0), 0),
   };
 
@@ -312,9 +328,12 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   }
 
   // Calculate putting stats - including putt distribution from hole data
+  const totalPutts = validSummaries.reduce((sum, s) => sum + (s.total_putts || 0), 0);
+  const totalHoles = validSummaries.reduce((sum, s) => sum + (s.holes_played || 0), 0);
+  
   let putting: PuttingStats = {
-    puttsPerRound: validSummaries.length > 0 
-      ? validSummaries.reduce((sum, s) => sum + (s.total_putts || 0), 0) / validSummaries.length 
+    puttsPerHole: totalHoles > 0 
+      ? totalPutts / totalHoles 
       : null,
     onePuttPercentage: null,
     twoPuttPercentage: null,
@@ -389,6 +408,8 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   let proTwoPutts = 0;
   let proThreePutts = 0;
   let proFourPlusPutts = 0;
+  let proLeftMissCount = 0;
+  let proRightMissCount = 0;
 
   if (proRounds && proRounds.length > 0) {
     const roundIds = proRounds.map(r => r.id);
@@ -403,10 +424,29 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
       let driverDistanceCount = 0;
 
       holes.forEach(hole => {
-        const par = hole.par;
+        const par = hole.par ?? 4;
         const putts = hole.putts;
-        const shots = hole.pro_shot_data as any[] | null;
-        
+        const shotData = hole.pro_shot_data as any;
+        const shots = Array.isArray(shotData) ? shotData : null;
+
+        // Left/right miss from basicStats (basic stats mode: fairwayResult 'hit'|'left'|'right')
+        if (par >= 4 && shotData && typeof shotData === 'object' && !Array.isArray(shotData) && shotData.basicStats?.fairwayResult) {
+          const fr = shotData.basicStats.fairwayResult;
+          if (fr === 'left') { proLeftMissCount++; }
+          else if (fr === 'right') { proRightMissCount++; }
+        }
+
+        // Left/right miss from shots array (pro stats: tee shot missed fairway = rough, bunker/sand, recovery, hazard, other, OB)
+        const missedFairwayEndLies = ['rough', 'sand', 'bunker', 'recovery', 'hazard', 'other', 'OB'];
+        if (par >= 4 && shots && Array.isArray(shots)) {
+          const teeShot = shots.find((s: any) => s.type === 'tee');
+          if (teeShot && teeShot.endLie && missedFairwayEndLies.includes(String(teeShot.endLie)) && (teeShot as any).missedSide) {
+            const side = (teeShot as any).missedSide;
+            if (side === 'left') proLeftMissCount++;
+            else if (side === 'right') proRightMissCount++;
+          }
+        }
+
         if (shots && Array.isArray(shots)) {
           // Calculate strokes gained by category
           shots.forEach((shot, idx) => {
@@ -557,6 +597,15 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
         : null,
     };
   }
+
+  const proTotalMisses = proLeftMissCount + proRightMissCount;
+  if (proTotalMisses > 0) {
+    accuracy = {
+      ...accuracy,
+      leftMissPercentage: (proLeftMissCount / proTotalMisses) * 100,
+      rightMissPercentage: (proRightMissCount / proTotalMisses) * 100,
+    };
+  }
   
   if (proGIRAttempts > 0) {
     accuracy = {
@@ -591,10 +640,9 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   }
   
   if (proHolesWithPutts > 0) {
-    const proRoundCount = proRounds?.length || 1;
     putting = {
       ...putting,
-      puttsPerRound: proTotalPutts / proRoundCount,
+      puttsPerHole: proTotalPutts / proHolesWithPutts,
       onePuttPercentage: (proOnePutts / proHolesWithPutts) * 100,
       twoPuttPercentage: (proTwoPutts / proHolesWithPutts) * 100,
       threePuttPercentage: (proThreePutts / proHolesWithPutts) * 100,
@@ -603,8 +651,9 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     };
   }
 
-  // Update roundsPlayed to include pro stats rounds if no regular rounds
-  const totalRoundsPlayed = roundsPlayed > 0 ? roundsPlayed : (proRounds?.length || 0);
+  // Update roundsPlayed to include pro stats rounds if no regular rounds.
+  // Use 18-hole count when we have round summaries so it matches Total Rounds / Scoring Average.
+  const totalRoundsPlayed = validSummaries.length > 0 ? eighteenHoleRounds.length : (proRounds?.length || 0);
 
   return {
     scoring,
@@ -628,7 +677,7 @@ export const getDrillRecommendations = (stats: AllStats): DrillRecommendation[] 
   const recommendations: DrillRecommendation[] = [];
 
   // Putting recommendations
-  if (stats.putting.puttsPerRound && stats.putting.puttsPerRound > 32) {
+  if (stats.putting.puttsPerHole && stats.putting.puttsPerHole > 1.9) {
     recommendations.push({
       drillId: 'pga-tour-18',
       drillTitle: 'PGA Tour 18-hole Test',

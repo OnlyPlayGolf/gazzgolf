@@ -114,6 +114,13 @@ const allDrills = [
     category: 'shortgame',
     icon: Zap,
   },
+  {
+    id: '21-points',
+    title: '21 Points',
+    shortDescription: "Coach's favorite drill for competitive and creative short game shots. Compete with friends to be the first to reach 21 points.",
+    category: 'shortgame',
+    icon: Zap,
+  },
 ];
 
 const categoryNames = {
@@ -196,7 +203,7 @@ const CategoryDrills = () => {
     
     // Custom order for shortgame category
     if (categoryId === 'shortgame') {
-      const order = ['easy-chip', '8-ball-drill', 'up-downs-test'];
+      const order = ['easy-chip', '8-ball-drill', 'up-downs-test', '21-points'];
       return drills.sort((a, b) => {
         const indexA = order.indexOf(a.id);
         const indexB = order.indexOf(b.id);
@@ -293,11 +300,14 @@ const CategoryDrills = () => {
                 'tw-9-windows',
                 'driver-control',
                 'up-downs-test',
-                'easy-chip'
+                'easy-chip',
+                '21-points',
               ];
-              
+
               const handleDrillClick = () => {
-                if (gameModeDrills.includes(drill.id)) {
+                if (drill.id === '21-points') {
+                  navigate('/drill/21-points/setup');
+                } else if (gameModeDrills.includes(drill.id)) {
                   navigate(`/drill/${drill.id}/score`);
                 } else {
                   navigate(`/drills/${drill.id}/detail`);

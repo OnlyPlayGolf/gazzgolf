@@ -50,6 +50,7 @@ const normalizeDrillTitle = (title: string): string => {
     "Wedge Game 40-80m": "Wedge Game 40-80m",
     "Shot Shape Master": "Shot Shape Master",
     "Driver Control Drill": "Driver Control Drill",
+    "21 Points": "21 Points",
   };
   return titleMap[title] || title;
 };
@@ -68,6 +69,7 @@ const getDrillCategory = (drillTitle: string): DrillCategory | null => {
     '8-Ball Circuit': 'Short Game',
     '18 Up & Downs': 'Short Game',
     'Easy Chip Drill': 'Short Game',
+    '21 Points': 'Short Game',
     'Approach Control 130-180m': 'Approach',
     "9 Windows Shot Shape Test": 'Approach',
     "Wedge Ladder 60-120m": 'Approach',
@@ -81,7 +83,7 @@ const getDrillCategory = (drillTitle: string): DrillCategory | null => {
 // Define drill order for each category (matching PuttingDrills.tsx order)
 const drillOrderByCategory: Record<DrillCategory, string[]> = {
   'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
-  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+  'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill', '21 Points'],
   'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
   'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
 };
@@ -105,6 +107,7 @@ const getScoreUnit = (drillName: string): string => {
     "Wedge Game 40-80m": "pts",
     "Driver Control Drill": "pts",
     "Lag Putting Drill 8-20m": "pts",
+    "21 Points": "pts",
   };
   // Try normalized name first, then original, then default
   return drillUnits[normalizedName] || drillUnits[drillName] || "pts";
@@ -189,7 +192,12 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
               }
             });
           
-          setDrills(Array.from(drillsByNormalizedTitle.values()));
+          const list = Array.from(drillsByNormalizedTitle.values());
+          // Ensure "21 Points" appears in the list even if not yet in DB
+          if (!list.some(d => normalizeDrillTitle(d.title) === '21 Points')) {
+            list.push({ id: 'synthetic-21-points', title: '21 Points' });
+          }
+          setDrills(list);
         }
 
         // Build query for drill results - only include drills completed after group creation

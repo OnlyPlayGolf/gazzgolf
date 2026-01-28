@@ -218,25 +218,25 @@ export default function ScrambleLeaderboard() {
           className="bg-card border-b border-border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
           onClick={() => setExpandedTeam(isExpanded ? null : ts.team.id)}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <ChevronDown 
                 size={20} 
-                className={`text-muted-foreground transition-transform ${isExpanded ? '' : '-rotate-90'}`}
+                className={`text-muted-foreground transition-transform shrink-0 ${isExpanded ? '' : '-rotate-90'}`}
               />
-              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold ${
+              <div className={`bg-muted rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold shrink-0 ${
                 isLeader ? 'bg-amber-500/20 text-amber-600' : ''
               }`}>
                 {getPositionLabel(index)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xl font-bold truncate">{ts.team.name}</div>
+                <div className="text-xl font-bold truncate whitespace-nowrap">{ts.team.name}</div>
                 <div className="text-sm text-muted-foreground">
                   {ts.team.players.map(p => p.name.split(' ')[0]).join(', ')}
                 </div>
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0 min-w-[80px]">
               <div className="text-3xl font-bold">
                 {ts.thru > 0 ? formatToPar(ts.toPar) : 'E'}
               </div>

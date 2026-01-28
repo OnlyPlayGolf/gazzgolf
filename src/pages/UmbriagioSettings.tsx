@@ -88,6 +88,7 @@ export default function UmbriagioSettings() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [playerUserIds, setPlayerUserIds] = useState<Record<string, string>>({});
+  const [playerAvatarUrls, setPlayerAvatarUrls] = useState<Record<string, string | null>>({});
   
   // Per-player stats mode
   const { 
@@ -164,10 +165,11 @@ export default function UmbriagioSettings() {
 
           const { data: profiles } = await supabase
             .from("profiles")
-            .select("id, display_name, username")
+            .select("id, display_name, username, avatar_url")
             .or(orConditions.join(","));
 
           const userIdMap: Record<string, string> = {};
+          const avatarUrlMap: Record<string, string | null> = {};
           for (const name of playerNames) {
             const profile = profiles?.find(
               (p) =>
@@ -176,9 +178,11 @@ export default function UmbriagioSettings() {
             );
             if (profile) {
               userIdMap[name] = profile.id;
+              avatarUrlMap[name] = profile.avatar_url || null;
             }
           }
           setPlayerUserIds(userIdMap);
+          setPlayerAvatarUrls(avatarUrlMap);
         }
       }
     } catch (error) {
@@ -357,10 +361,10 @@ export default function UmbriagioSettings() {
   // Use tee_set as authoritative source for player tees
   const playerTee = game.tee_set;
   const players: GamePlayer[] = [
-    { name: game.team_a_player_1, team: "Team A", tee: playerTee, userId: playerUserIds[game.team_a_player_1] || null },
-    { name: game.team_a_player_2, team: "Team A", tee: playerTee, userId: playerUserIds[game.team_a_player_2] || null },
-    { name: game.team_b_player_1, team: "Team B", tee: playerTee, userId: playerUserIds[game.team_b_player_1] || null },
-    { name: game.team_b_player_2, team: "Team B", tee: playerTee, userId: playerUserIds[game.team_b_player_2] || null },
+    { name: game.team_a_player_1, team: "Team A", tee: playerTee, userId: playerUserIds[game.team_a_player_1] || null, avatarUrl: playerAvatarUrls[game.team_a_player_1] || null },
+    { name: game.team_a_player_2, team: "Team A", tee: playerTee, userId: playerUserIds[game.team_a_player_2] || null, avatarUrl: playerAvatarUrls[game.team_a_player_2] || null },
+    { name: game.team_b_player_1, team: "Team B", tee: playerTee, userId: playerUserIds[game.team_b_player_1] || null, avatarUrl: playerAvatarUrls[game.team_b_player_1] || null },
+    { name: game.team_b_player_2, team: "Team B", tee: playerTee, userId: playerUserIds[game.team_b_player_2] || null, avatarUrl: playerAvatarUrls[game.team_b_player_2] || null },
   ];
 
   const gameDetails: GameDetailsData = {

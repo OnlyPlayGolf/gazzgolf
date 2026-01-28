@@ -235,7 +235,7 @@ export default function Statistics() {
       <div className="pt-16 px-4">
         {/* Header */}
         <div className="flex items-center gap-3 py-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -528,11 +528,11 @@ export default function Statistics() {
               onClick={() => navigate('/statistics/short-game')}
             />
             <StatRow 
-              label="Putts per Round" 
-              value={stats?.putting.puttsPerRound?.toFixed(1) ?? '-'}
-              level={stats?.putting.puttsPerRound !== null 
-                ? stats.putting.puttsPerRound <= 30 ? 'strength' 
-                : stats.putting.puttsPerRound >= 34 ? 'needs-improvement' 
+              label="Putts per Hole" 
+              value={stats?.putting.puttsPerHole?.toFixed(2) ?? '-'}
+              level={stats?.putting.puttsPerHole !== null 
+                ? stats.putting.puttsPerHole <= 1.7 ? 'strength' 
+                : stats.putting.puttsPerHole >= 1.9 ? 'needs-improvement' 
                 : 'average' : undefined}
               onClick={() => navigate('/statistics/putting')}
             />

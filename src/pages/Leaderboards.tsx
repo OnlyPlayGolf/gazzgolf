@@ -51,6 +51,10 @@ interface DrillLeaderboardEntry {
   username: string | null;
   avatar_url: string | null;
   best_score: number;
+  /** 21 Points only: wins, games, win_pct */
+  wins?: number;
+  games?: number;
+  win_pct?: number;
 }
 
 const Leaderboards = () => {
@@ -91,6 +95,7 @@ const Leaderboards = () => {
       "Wedge Game 40-80m": "Wedge Game 40-80m",
       "Shot Shape Master": "Shot Shape Master",
       "Driver Control Drill": "Driver Control Drill",
+      "21 Points": "21 Points",
     };
     return titleMap[title] || title;
   };
@@ -98,7 +103,7 @@ const Leaderboards = () => {
   // Map categories to drill titles (order matches PuttingDrills.tsx)
   const drillCategories: Record<string, string[]> = {
     'Putting': ['Short Putt Test', 'PGA Tour 18-hole Test', 'Aggressive Putting 4-6m', "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m"],
-    'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill'],
+    'Short Game': ['8-Ball Circuit', '18 Up & Downs', 'Easy Chip Drill', '21 Points'],
     'Approach': ['Wedge Game 40-80m', 'Wedge Ladder 60-120m', 'Approach Control 130-180m', "9 Windows Shot Shape Test"],
     'Tee Shots': ['Shot Shape Master', 'Driver Control Drill'],
   };
@@ -116,6 +121,10 @@ const Leaderboards = () => {
     // In a row
     if (drillTitle === 'Easy Chip Drill' || drillTitle === 'Short Putt Test') {
       return 'in a row';
+    }
+    // Points (21 Points, 8-Ball, etc.)
+    if (drillTitle === '21 Points') {
+      return 'points';
     }
     // Default
     return 'points';
@@ -252,15 +261,20 @@ const Leaderboards = () => {
           }
         });
         
-        const uniqueDrills = Array.from(drillsByNormalizedTitle.values());
+        let uniqueDrills = Array.from(drillsByNormalizedTitle.values());
+        // Ensure "21 Points" appears in the list even if not yet in DB
+        if (!uniqueDrills.some(d => normalizeDrillTitle(d.title) === '21 Points')) {
+          uniqueDrills = [...uniqueDrills, { id: 'synthetic-21-points', title: '21 Points', short_desc: null, lower_is_better: false }];
+        }
         setDrills(uniqueDrills);
         
-        // If drill param is provided, select that drill
-        if (drillParam && uniqueDrills.some(d => d.title === drillParam)) {
-          setSelectedDrill(drillParam);
+        // If drill param is provided, select that drill (use canonical title so it matches an option)
+        const matchParam = uniqueDrills.find(d => d.title === drillParam || normalizeDrillTitle(d.title) === drillParam);
+        if (drillParam && matchParam) {
+          setSelectedDrill(matchParam.title);
           // Set category based on drill
           for (const [category, titles] of Object.entries(drillCategories)) {
-            if (titles.includes(drillParam)) {
+            if (titles.includes(matchParam.title) || titles.includes(normalizeDrillTitle(matchParam.title))) {
               setSelectedCategory(category);
               break;
             }
@@ -279,7 +293,71 @@ const Leaderboards = () => {
   const loadDrillLeaderboards = async () => {
     if (!selectedDrill || !user) return;
 
+    const is21Points = normalizeDrillTitle(selectedDrill) === '21 Points';
+
     try {
+      if (is21Points) {
+        // 21 Points: wins / games / win% from attempts_json, friends only
+        const { data: pairs } = await supabase
+          .from('friends_pairs')
+          .select('a, b')
+          .or(`a.eq.${user.id},b.eq.${user.id}`);
+        const friendIds: string[] = pairs?.map((p: { a: string; b: string }) => (p.a === user.id ? p.b : p.a)) ?? [];
+        const { data: drillRows } = await supabase
+          .from('drills')
+          .select('id')
+          .eq('title', '21 Points')
+          .limit(1);
+        if (!drillRows?.length) {
+          setFriendsDrillLeaderboard([]);
+          return;
+        }
+        const { data: resultRows } = await supabase
+          .from('drill_results')
+          .select('attempts_json')
+          .eq('drill_id', drillRows[0].id);
+        const byOdId = new Map<string, { wins: number; games: number }>();
+        for (const row of resultRows || []) {
+          const aj = (row as { attempts_json?: { players?: { odId: string }[]; winnerOdId?: string } }).attempts_json;
+          if (!aj?.players) continue;
+          const winnerOdId = aj.winnerOdId;
+          for (const p of aj.players) {
+            if (p.odId?.startsWith?.('temp_')) continue;
+            const cur = byOdId.get(p.odId) ?? { wins: 0, games: 0 };
+            cur.games += 1;
+            if (p.odId === winnerOdId) cur.wins += 1;
+            byOdId.set(p.odId, cur);
+          }
+        }
+        // Include current user so they see their own 21 Points scores
+        const idsWithStats = [user.id, ...friendIds].filter((id) => byOdId.has(id));
+        if (idsWithStats.length === 0) {
+          setFriendsDrillLeaderboard([]);
+          return;
+        }
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, display_name, username, avatar_url')
+          .in('id', idsWithStats);
+        const list: DrillLeaderboardEntry[] = (profiles || []).map((p: { id: string; display_name: string | null; username: string | null; avatar_url: string | null }) => {
+          const s = byOdId.get(p.id)!;
+          const winPct = s.games > 0 ? (s.wins / s.games) * 100 : 0;
+          return {
+            user_id: p.id,
+            display_name: p.display_name,
+            username: p.username,
+            avatar_url: p.avatar_url,
+            best_score: winPct,
+            wins: s.wins,
+            games: s.games,
+            win_pct: winPct,
+          };
+        });
+        list.sort((a, b) => (b.win_pct ?? 0) - (a.win_pct ?? 0));
+        setFriendsDrillLeaderboard(list);
+        return;
+      }
+
       const { data: friendsData, error: friendsError } = await supabase
         .rpc('friends_leaderboard_for_drill_by_title', { p_drill_title: selectedDrill });
 
@@ -289,7 +367,6 @@ const Leaderboards = () => {
       } else {
         setFriendsDrillLeaderboard(friendsData || []);
       }
-
     } catch (error) {
       console.error('Error loading drill leaderboards:', error);
     }
@@ -472,6 +549,7 @@ const Leaderboards = () => {
                       {friendsDrillLeaderboard.length > 0 ? (
                         <div className="space-y-2">
                           {friendsDrillLeaderboard.map((entry, index) => {
+                            const is21PointsEntry = normalizeDrillTitle(selectedDrill) === '21 Points' && entry.wins != null;
                             return (
                               <div 
                                 key={entry.user_id} 
@@ -491,13 +569,29 @@ const Leaderboards = () => {
                                     <p className="font-medium text-foreground text-sm">
                                       {entry.display_name || entry.username || 'Unknown'}
                                     </p>
+                                    {is21PointsEntry && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {entry.wins}W – {entry.games}G
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-semibold text-foreground">
-                                    {entry.best_score}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">{getDrillUnit(selectedDrill)}</p>
+                                  {is21PointsEntry ? (
+                                    <>
+                                      <p className="font-semibold text-foreground">
+                                        {entry.win_pct != null ? Math.round(entry.win_pct) : 0}%
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">win rate</p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="font-semibold text-foreground">
+                                        {entry.best_score}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">{getDrillUnit(selectedDrill)}</p>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             );
