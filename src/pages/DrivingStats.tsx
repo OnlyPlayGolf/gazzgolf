@@ -179,13 +179,52 @@ export default function DrivingStats() {
           const rawData = hole.pro_shot_data as unknown;
           const par = hole.par ?? 4;
 
+          // Only process par 4+5 holes
+          if (par < 4) continue;
+
           // Count all par 4+5 holes as fairway opportunities
-          if (par >= 4) {
-            totalFairways++;
+          totalFairways++;
+
+          // Track if we've already determined the result for this hole (to avoid double counting)
+          let holeResultDetermined = false;
+
+          // First, try to get result from pro stats (shots array) - this takes precedence
+          const shotData = Array.isArray(rawData) ? (rawData as Shot[]) : null;
+          if (shotData) {
+            for (const shot of shotData) {
+              if (shot.type === 'tee') {
+                sgOffTheTee += shot.strokesGained || 0;
+
+                // Calculate driving distance from tee shots
+                if (shot.startDistance && shot.endDistance !== undefined) {
+                  totalDistances += shot.startDistance - shot.endDistance;
+                  distanceCount++;
+                }
+
+                // Determine fairway hit based on endLie
+                if (shot.endLie && !holeResultDetermined) {
+                  if (shot.endLie === 'fairway' || shot.endLie === 'green') {
+                    fairwaysHit++;
+                    holeResultDetermined = true;
+                  }
+                  // Left/right miss from pro stats (missed fairway = rough, bunker, recovery, hazard, other, OB)
+                  else if (['rough', 'sand', 'bunker', 'recovery', 'hazard', 'other', 'OB'].includes(String(shot.endLie)) && (shot as { missedSide?: string }).missedSide) {
+                    const side = (shot as { missedSide: string }).missedSide;
+                    if (side === 'left') {
+                      leftMissCount++;
+                      holeResultDetermined = true;
+                    } else if (side === 'right') {
+                      rightMissCount++;
+                      holeResultDetermined = true;
+                    }
+                  }
+                }
+              }
+            }
           }
 
-          // Left/right miss from basicStats (basic stats mode: fairwayResult 'hit'|'left'|'right')
-          if (par >= 4 && rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
+          // Fallback to basicStats if pro stats didn't determine the result
+          if (!holeResultDetermined && rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
             const basicStats = (rawData as { basicStats?: { fairwayResult?: string } }).basicStats;
             if (basicStats?.fairwayResult) {
               if (basicStats.fairwayResult === 'hit') {
@@ -194,34 +233,6 @@ export default function DrivingStats() {
                 leftMissCount++;
               } else if (basicStats.fairwayResult === 'right') {
                 rightMissCount++;
-              }
-            }
-          }
-
-          const shotData = Array.isArray(rawData) ? (rawData as Shot[]) : null;
-          if (!shotData) continue;
-
-          for (const shot of shotData) {
-            if (shot.type === 'tee') {
-              sgOffTheTee += shot.strokesGained || 0;
-
-              // Calculate driving distance from tee shots
-              if (shot.startDistance && shot.endDistance !== undefined) {
-                totalDistances += shot.startDistance - shot.endDistance;
-                distanceCount++;
-              }
-
-              // Determine fairway hit based on endLie
-              if (shot.endLie) {
-                if (shot.endLie === 'fairway' || shot.endLie === 'green') {
-                  fairwaysHit++;
-                }
-                // Left/right miss from pro stats (missed fairway = rough, bunker, recovery, hazard, other, OB)
-                else if (['rough', 'sand', 'bunker', 'recovery', 'hazard', 'other', 'OB'].includes(String(shot.endLie)) && (shot as { missedSide?: string }).missedSide) {
-                  const side = (shot as { missedSide: string }).missedSide;
-                  if (side === 'left') { leftMissCount++; }
-                  else if (side === 'right') { rightMissCount++; }
-                }
               }
             }
           }
