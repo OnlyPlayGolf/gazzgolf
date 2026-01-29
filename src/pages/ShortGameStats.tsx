@@ -140,8 +140,15 @@ export default function ShortGameStats() {
           return;
         }
 
-        setProRoundsCount(validProRounds.length);
-        const roundIds = validProRounds.map(r => r.id);
+        // Limit to most recent 2 rounds with pro stats
+        const sortedRounds = [...validProRounds].sort((a, b) => {
+          const dateA = new Date(a.created_at).getTime();
+          const dateB = new Date(b.created_at).getTime();
+          return dateB - dateA; // Most recent first
+        });
+        const limitedRounds = sortedRounds.slice(0, 2);
+        setProRoundsCount(limitedRounds.length);
+        const roundIds = limitedRounds.map(r => r.id);
 
         const { data: holesData, error: holesError } = await supabase
           .from('pro_stats_holes')
@@ -220,8 +227,8 @@ export default function ShortGameStats() {
           }
         }
 
-        // Normalize by rounds count
-        const rounds = validProRounds.length;
+        // Normalize by rounds count (use limited rounds)
+        const rounds = limitedRounds.length;
 
         setSgStats({
           sgShortGameTotal: sgShortGameTotal / rounds,
@@ -281,7 +288,7 @@ export default function ShortGameStats() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Short Game Statistics</h1>
             <p className="text-sm text-muted-foreground">
-              {proRoundsCount} pro stat {proRoundsCount === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
+              0 rounds analyzed • {getFilterLabel()}
             </p>
           </div>
         </div>

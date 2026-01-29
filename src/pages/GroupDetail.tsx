@@ -541,14 +541,46 @@ useEffect(() => {
 
     setLoadingLeaderboard(true);
     try {
-      // Get drill ID
-      const { data: drillData } = await supabase
-        .rpc('get_or_create_drill_by_title', { p_title: drillTitle });
+      // Get all matching drill IDs (including title variants)
+      // Normalize drill title to handle variants
+      const normalizedTitle = normalizeDrillTitle(drillTitle);
+      const drillTitleVariants = [
+        normalizedTitle,
+        drillTitle,
+        // Add known variants for PGA Tour 18-hole
+        ...(normalizedTitle === 'PGA Tour 18-hole' 
+          ? ['PGA Tour 18 Holes', 'PGA Tour 18-hole Test', '18-hole PGA Tour Putting Test']
+          : []),
+        // Add known variants for 9 Windows
+        ...(normalizedTitle === '9 Windows Shot Shape'
+          ? ['9 Windows Shot Shape Test', 'TW\'s 9 Windows Test']
+          : []),
+        // Add known variants for Aggressive Putting
+        ...(normalizedTitle === 'Aggressive Putting 4-6m'
+          ? ['Aggressive Putting']
+          : []),
+      ];
 
-      if (!drillData) {
+      // Get all matching drill IDs
+      const { data: drillsList } = await supabase
+        .from('drills')
+        .select('id, lower_is_better')
+        .in('title', drillTitleVariants);
+
+      if (!drillsList || drillsList.length === 0) {
         setDrillLeaderboard([]);
         setLoadingLeaderboard(false);
         return;
+      }
+
+      const drillIds = drillsList.map(d => d.id);
+      const drillData = drillIds[0]; // Use first for backward compatibility where needed
+
+      // Override lowerIsBetter for drills where lower scores are better (fewer putts = better)
+      // PGA Tour 18-hole and Aggressive Putting 4-6m should show fewest putts at top
+      const normalizedTitleForSort = normalizeDrillTitle(drillTitle);
+      if (normalizedTitleForSort === 'PGA Tour 18-hole' || normalizedTitleForSort === 'Aggressive Putting 4-6m') {
+        lowerIsBetter = true;
       }
 
       // Get all group members
@@ -579,7 +611,7 @@ useEffect(() => {
         const { data: resultRows } = await supabase
           .from('drill_results')
           .select('attempts_json')
-          .eq('drill_id', drillData)
+          .in('drill_id', drillIds)
           .gte('created_at', groupCreatedAt);
         const byOdId = new Map<string, { wins: number; games: number }>();
         const memberIdSet = new Set(memberIds);
@@ -631,10 +663,11 @@ useEffect(() => {
       }
 
       // Get best scores for all group members, only including drills completed after group creation
+      // Query all matching drill IDs to include results from title variants
       const { data: memberScores } = await supabase
         .from('drill_results')
         .select('user_id, total_points')
-        .eq('drill_id', drillData)
+        .in('drill_id', drillIds)
         .in('user_id', memberIds)
         .gte('created_at', groupCreatedAt);
 

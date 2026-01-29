@@ -160,58 +160,500 @@ export const formatPercentage = (value: number | null): string => {
 export type StatsFilter = 'all' | 'year' | 'last5' | 'last10' | 'last20' | 'last50';
 
 export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'): Promise<AllStats> {
-  // Fetch rounds from round_summaries view
-  let query = supabase
-    .from('round_summaries')
-    .select('*')
-    .eq('user_id', userId)
-    .order('date_played', { ascending: false });
+  const yearFilter = filter === 'year' ? new Date(new Date().getFullYear(), 0, 1).toISOString() : null;
 
-  // Apply year filter
-  if (filter === 'year') {
-    const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
-    query = query.gte('date_played', startOfYear);
+  // Batch 1: Run all initial fetches in parallel
+  const [
+    summariesResult,
+    userProfileResult,
+    participantRoundsResult,
+    ownedRoundsResult,
+    bestBallResult,
+    skinsResult,
+    matchPlayResult,
+    wolfResult,
+    umbriagoResult,
+    copenhagenResult,
+    proStatsRoundsResult,
+  ] = await Promise.all([
+    (() => {
+      let q = supabase.from('round_summaries').select('*').eq('user_id', userId).order('date_played', { ascending: false });
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    supabase.from('profiles').select('display_name, username').eq('id', userId).maybeSingle(),
+    supabase.from('round_players').select('round_id').eq('user_id', userId),
+    (() => {
+      let q = supabase.from('rounds').select('id, date_played, holes_played, user_id, round_name, course_name').eq('user_id', userId);
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    (() => {
+      let q = supabase.from('best_ball_games').select('id, date_played, holes_played, user_id, team_a_players, team_b_players, game_type').eq('user_id', userId);
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    (() => {
+      let q = supabase.from('skins_games').select('id, date_played, holes_played, user_id, players').eq('user_id', userId);
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    (() => {
+      let q = supabase.from('match_play_games').select('id, date_played, holes_played, user_id, player_1, player_2').eq('user_id', userId);
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    (() => {
+      let q = supabase.from('wolf_games').select('id, date_played, holes_played, user_id, player_1, player_2, player_3, player_4, player_5, player_6').eq('user_id', userId);
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    (() => {
+      let q = supabase.from('umbriago_games').select('id, date_played, holes_played, user_id, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2').eq('user_id', userId);
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    (() => {
+      let q = supabase.from('copenhagen_games').select('id, date_played, holes_played, user_id, player_1, player_2, player_3').eq('user_id', userId);
+      if (yearFilter) q = q.gte('date_played', yearFilter);
+      return q;
+    })(),
+    supabase.from('pro_stats_rounds').select('id, holes_played, external_round_id').eq('user_id', userId),
+  ]);
+
+  const summaries = summariesResult.data;
+  if (summariesResult.error) console.error('Error fetching round summaries:', summariesResult.error);
+  let validSummaries = summaries?.filter((s: any) => s.total_score && s.total_score > 0) || [];
+  if (filter === 'last5') validSummaries = validSummaries.slice(0, 5);
+  else if (filter === 'last10') validSummaries = validSummaries.slice(0, 10);
+  else if (filter === 'last20') validSummaries = validSummaries.slice(0, 20);
+  else if (filter === 'last50') validSummaries = validSummaries.slice(0, 50);
+
+  const userProfile = userProfileResult.data;
+  const userNames = [userProfile?.display_name, userProfile?.username]
+    .filter((n): n is string => typeof n === 'string' && n.trim().length > 0)
+    .map((n: string) => n.trim());
+
+  const participantRoundIds = (participantRoundsResult.data || []).map((rp: any) => rp.round_id);
+  const ownedRounds = ownedRoundsResult.data || [];
+  const bestBallGames = bestBallResult.data || [];
+  const skinsGames = skinsResult.data || [];
+  const matchPlayGames = matchPlayResult.data || [];
+  const wolfGames = wolfResult.data || [];
+  const umbriagoGames = umbriagoResult.data || [];
+  const copenhagenGames = copenhagenResult.data || [];
+  const allProRounds = proStatsRoundsResult.data || [];
+
+  // Batch 2: Participant rounds data (needed to build allRounds)
+  let participantRoundsData: any[] = [];
+  if (participantRoundIds.length > 0) {
+    let participantRoundsQuery = supabase
+      .from('rounds')
+      .select('id, date_played, holes_played, user_id, round_name, course_name')
+      .in('id', participantRoundIds)
+      .order('date_played', { ascending: false });
+    if (yearFilter) participantRoundsQuery = participantRoundsQuery.gte('date_played', yearFilter);
+    const { data } = await participantRoundsQuery;
+    participantRoundsData = data || [];
   }
 
-  const { data: summaries, error: summariesError } = await query;
-
-  if (summariesError) {
-    console.error('Error fetching round summaries:', summariesError);
-  }
-
-  let validSummaries = summaries?.filter(s => s.total_score && s.total_score > 0) || [];
+  // Combine all rounds/games into a unified list (each Silicon Valley Amateur - Rond 1/2/3 etc. is a separate round)
+  const allRoundsMap = new Map<string, { id: string; date_played: string; holes_played: number; gameType: string; gameData?: any; round_name?: string | null; course_name?: string }>();
+  
+  // Add regular rounds (includes all multiround/event rounds – e.g. Silicon Valley Amateur - Rond 1, 2, 3)
+  (ownedRounds || []).forEach(r => allRoundsMap.set(r.id, { ...r, gameType: 'round' }));
+  (participantRoundsData || []).forEach(r => allRoundsMap.set(r.id, { ...r, gameType: 'round' }));
+  
+  // Add best ball games (both stroke play and match play have stroke play scores)
+  (bestBallGames || []).forEach(g => {
+    allRoundsMap.set(g.id, { id: g.id, date_played: g.date_played, holes_played: g.holes_played, gameType: 'best_ball', gameData: g });
+  });
+  
+  // Add skins games
+  (skinsGames || []).forEach(g => {
+    allRoundsMap.set(g.id, { id: g.id, date_played: g.date_played, holes_played: g.holes_played, gameType: 'skins', gameData: g });
+  });
+  
+  // Add match play games
+  (matchPlayGames || []).forEach(g => {
+    allRoundsMap.set(g.id, { id: g.id, date_played: g.date_played, holes_played: g.holes_played, gameType: 'match_play', gameData: g });
+  });
+  
+  // Add wolf games
+  (wolfGames || []).forEach(g => {
+    allRoundsMap.set(g.id, { id: g.id, date_played: g.date_played, holes_played: g.holes_played, gameType: 'wolf', gameData: g });
+  });
+  
+  // Add umbriago games
+  (umbriagoGames || []).forEach(g => {
+    allRoundsMap.set(g.id, { id: g.id, date_played: g.date_played, holes_played: g.holes_played, gameType: 'umbriago', gameData: g });
+  });
+  
+  // Add copenhagen games
+  (copenhagenGames || []).forEach(g => {
+    allRoundsMap.set(g.id, { id: g.id, date_played: g.date_played, holes_played: g.holes_played, gameType: 'copenhagen', gameData: g });
+  });
+  
+  const allRounds = Array.from(allRoundsMap.values()).sort((a, b) => {
+    const dateA = new Date(a.date_played || 0).getTime();
+    const dateB = new Date(b.date_played || 0).getTime();
+    return dateB - dateA;
+  });
   
   // Apply round count filters
+  let filteredRounds = allRounds || [];
   if (filter === 'last5') {
-    validSummaries = validSummaries.slice(0, 5);
+    filteredRounds = filteredRounds.slice(0, 5);
   } else if (filter === 'last10') {
-    validSummaries = validSummaries.slice(0, 10);
+    filteredRounds = filteredRounds.slice(0, 10);
   } else if (filter === 'last20') {
-    validSummaries = validSummaries.slice(0, 20);
+    filteredRounds = filteredRounds.slice(0, 20);
   } else if (filter === 'last50') {
-    validSummaries = validSummaries.slice(0, 50);
+    filteredRounds = filteredRounds.slice(0, 50);
+  }
+  
+  // Batch 2: Player lookup + all holes data in parallel
+  const ownedRoundIdsSet = new Set((ownedRounds || []).map(r => r.id));
+  const allRoundIdsForPlayerLookup = Array.from(new Set([...participantRoundIds, ...Array.from(ownedRoundIdsSet)]));
+  const regularRoundIds = filteredRounds.filter(r => r.gameType === 'round').map(r => r.id);
+  const bestBallGameIds = filteredRounds.filter(r => r.gameType === 'best_ball').map(r => r.id);
+  const skinsGameIds = filteredRounds.filter(r => r.gameType === 'skins').map(r => r.id);
+  const matchPlayGameIds = filteredRounds.filter(r => r.gameType === 'match_play').map(r => r.id);
+  const wolfGameIds = filteredRounds.filter(r => r.gameType === 'wolf').map(r => r.id);
+  const umbriagoGameIds = filteredRounds.filter(r => r.gameType === 'umbriago').map(r => r.id);
+  const copenhagenGameIds = filteredRounds.filter(r => r.gameType === 'copenhagen').map(r => r.id);
+
+  const [
+    roundPlayersResult,
+    allHolesResult,
+    bestBallHolesResult,
+    skinsHolesResult,
+    matchPlayHolesResult,
+    wolfHolesResult,
+    umbriagoHolesResult,
+    copenhagenHolesResult,
+    validProRoundsResult,
+  ] = await Promise.all([
+    allRoundIdsForPlayerLookup.length > 0
+      ? supabase.from('round_players').select('id, round_id').eq('user_id', userId).in('round_id', allRoundIdsForPlayerLookup)
+      : Promise.resolve({ data: [] as any[] }),
+    regularRoundIds.length > 0
+      ? supabase.from('holes').select('round_id, player_id, score, par').in('round_id', regularRoundIds).gt('score', 0)
+      : Promise.resolve({ data: [] as any[] }),
+    bestBallGameIds.length > 0
+      ? supabase.from('best_ball_holes').select('game_id, hole_number, par, team_a_scores, team_b_scores').in('game_id', bestBallGameIds).order('hole_number')
+      : Promise.resolve({ data: [] as any[] }),
+    skinsGameIds.length > 0
+      ? supabase.from('skins_holes').select('game_id, hole_number, par, player_scores').in('game_id', skinsGameIds).order('hole_number')
+      : Promise.resolve({ data: [] as any[] }),
+    matchPlayGameIds.length > 0
+      ? supabase.from('match_play_holes').select('game_id, hole_number, par, player_1_gross_score, player_2_gross_score').in('game_id', matchPlayGameIds).order('hole_number')
+      : Promise.resolve({ data: [] as any[] }),
+    wolfGameIds.length > 0
+      ? supabase.from('wolf_holes').select('game_id, hole_number, par, player_1_score, player_2_score, player_3_score, player_4_score, player_5_score, player_6_score').in('game_id', wolfGameIds).order('hole_number')
+      : Promise.resolve({ data: [] as any[] }),
+    umbriagoGameIds.length > 0
+      ? supabase.from('umbriago_holes').select('game_id, hole_number, par, team_a_player_1_score, team_a_player_2_score, team_b_player_1_score, team_b_player_2_score').in('game_id', umbriagoGameIds).order('hole_number')
+      : Promise.resolve({ data: [] as any[] }),
+    copenhagenGameIds.length > 0
+      ? supabase.from('copenhagen_holes').select('game_id, hole_number, par, player_1_gross_score, player_2_gross_score, player_3_gross_score').in('game_id', copenhagenGameIds).order('hole_number')
+      : Promise.resolve({ data: [] as any[] }),
+    filterValidProStatsRounds(allProRounds),
+  ]);
+
+  const roundPlayers = (roundPlayersResult.data ?? (roundPlayersResult as { data?: any[] }).data) ?? [];
+  const allHoles = (allHolesResult.data ?? (allHolesResult as { data?: any[] }).data) ?? [];
+  const bestBallHoles = (bestBallHolesResult.data ?? (bestBallHolesResult as { data?: any[] }).data) ?? [];
+  const skinsHoles = (skinsHolesResult.data ?? (skinsHolesResult as { data?: any[] }).data) ?? [];
+  const matchPlayHoles = (matchPlayHolesResult.data ?? (matchPlayHolesResult as { data?: any[] }).data) ?? [];
+  const wolfHoles = (wolfHolesResult.data ?? (wolfHolesResult as { data?: any[] }).data) ?? [];
+  const umbriagoHoles = (umbriagoHolesResult.data ?? (umbriagoHolesResult as { data?: any[] }).data) ?? [];
+  const copenhagenHoles = (copenhagenHolesResult.data ?? (copenhagenHolesResult as { data?: any[] }).data) ?? [];
+  const validProRounds = validProRoundsResult;
+  const proRounds = validProRounds.map((pr: { id: string }) => ({ id: pr.id, holes_played: allProRounds?.find(apr => apr.id === pr.id)?.holes_played || 18 }));
+
+  const playerIdByRoundId = new Map(roundPlayers.map((rp: any) => [rp.round_id, rp.id]));
+  const ownedRoundIds = ownedRoundIdsSet;
+
+  // Calculate user's scores per round from all game formats
+  const userScoresByRound = new Map<string, { totalScore: number; totalPar: number; holesCount: number }>();
+
+  const isUserName = (name: string | null | undefined): boolean => {
+    if (!name) return false;
+    return userNames.some(un => un.toLowerCase() === name.toLowerCase().trim());
+  };
+
+  // Process regular rounds (holes table)
+  if (allHoles.length > 0) {
+    (allHoles || []).forEach((hole: any) => {
+      const roundId = hole.round_id;
+      const isOwnedRound = ownedRoundIds.has(roundId);
+      const userPlayerId = playerIdByRoundId.get(roundId);
+      
+      const isUserHole = isOwnedRound 
+        ? (!hole.player_id || (userPlayerId && hole.player_id === userPlayerId))
+        : (userPlayerId && hole.player_id === userPlayerId);
+      
+      if (isUserHole) {
+        const existing = userScoresByRound.get(roundId) || { totalScore: 0, totalPar: 0, holesCount: 0 };
+        existing.totalScore += hole.score || 0;
+        existing.totalPar += hole.par || 0;
+        existing.holesCount += 1;
+        userScoresByRound.set(roundId, existing);
+      }
+    });
   }
 
-  // Filter to only 18-hole rounds for scoring stats (total rounds, scoring average, best/worst)
-  // Use strict equality check and ensure holes_played is exactly 18
-  // Also validate that the score is reasonable for 18 holes (minimum 45 strokes, maximum 150)
-  // A score of 40 or less is clearly a 9-hole round (would be less than 2.5 strokes per hole for 18 holes, which is impossible)
-  const eighteenHoleRounds = validSummaries.filter(s => {
-    const holes = s.holes_played;
-    const score = s.total_score;
-    // Must be exactly 18 holes AND have a reasonable score for 18 holes
-    // Minimum 45 strokes (2.5 per hole - very low but possible for an excellent round)
-    // Maximum 150 strokes (reasonable upper bound)
-    // This filters out 9-hole rounds that might have holes_played incorrectly set to 18
-    const isValid18HoleScore = score !== null && score !== undefined && score >= 45 && score <= 150;
-    return holes !== null && holes !== undefined && Number(holes) === 18 && isValid18HoleScore;
-  });
-  const eighteenHoleScores = eighteenHoleRounds
-    .map(s => s.total_score!)
-    .filter(s => s !== null && s !== undefined && s > 0);
-  const eighteenHoleScoresToPar = eighteenHoleRounds
-    .map(s => s.score_vs_par)
-    .filter((v): v is number => v !== null && v !== undefined);
+  // Process Best Ball games (both stroke play and match play have stroke play scores)
+  if (bestBallHoles.length > 0) {
+    const bestBallGamesMap = new Map((bestBallGames || []).map(g => [g.id, g]));
+
+    (bestBallHoles || []).forEach((hole: any) => {
+      const gameId = hole.game_id;
+      const game = bestBallGamesMap.get(gameId);
+      if (!game) return;
+      
+      // Find user in team_a or team_b
+      const teamAPlayers = Array.isArray(game.team_a_players) ? game.team_a_players : [];
+      const teamBPlayers = Array.isArray(game.team_b_players) ? game.team_b_players : [];
+      
+      const teamAScores = Array.isArray(hole.team_a_scores) ? hole.team_a_scores : [];
+      const teamBScores = Array.isArray(hole.team_b_scores) ? hole.team_b_scores : [];
+      
+      let userScore: number | null = null;
+      let par = hole.par || 4;
+      
+      // Check team A
+      for (let i = 0; i < teamAPlayers.length; i++) {
+        const player = teamAPlayers[i];
+        const playerName = typeof player === 'string' ? player : (player?.displayName || player?.name);
+        if (isUserName(playerName)) {
+          const scoreData = teamAScores[i];
+          if (scoreData && typeof scoreData === 'object' && 'grossScore' in scoreData) {
+            userScore = scoreData.grossScore as number;
+            break;
+          }
+        }
+      }
+      
+      // Check team B if not found in A
+      if (userScore === null) {
+        for (let i = 0; i < teamBPlayers.length; i++) {
+          const player = teamBPlayers[i];
+          const playerName = typeof player === 'string' ? player : (player?.displayName || player?.name);
+          if (isUserName(playerName)) {
+            const scoreData = teamBScores[i];
+            if (scoreData && typeof scoreData === 'object' && 'grossScore' in scoreData) {
+              userScore = scoreData.grossScore as number;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (userScore !== null && userScore > 0) {
+        const existing = userScoresByRound.get(gameId) || { totalScore: 0, totalPar: 0, holesCount: 0 };
+        existing.totalScore += userScore;
+        existing.totalPar += par;
+        existing.holesCount += 1;
+        userScoresByRound.set(gameId, existing);
+      }
+    });
+  }
+
+  // Process Skins games
+  if (skinsHoles.length > 0) {
+    (skinsHoles || []).forEach((hole: any) => {
+      const gameId = hole.game_id;
+      const playerScores = typeof hole.player_scores === 'object' && hole.player_scores !== null ? hole.player_scores as Record<string, any> : {};
+      
+      // Find user's score in player_scores
+      for (const [playerName, scoreData] of Object.entries(playerScores)) {
+        if (isUserName(playerName)) {
+          const grossScore = scoreData?.gross || scoreData?.grossScore || null;
+          if (grossScore !== null && grossScore > 0) {
+            const existing = userScoresByRound.get(gameId) || { totalScore: 0, totalPar: 0, holesCount: 0 };
+            existing.totalScore += grossScore;
+            existing.totalPar += (hole.par || 4);
+            existing.holesCount += 1;
+            userScoresByRound.set(gameId, existing);
+            break;
+          }
+        }
+      }
+    });
+  }
+
+  // Process Match Play games
+  if (matchPlayHoles.length > 0) {
+    const matchPlayGamesMap = new Map((matchPlayGames || []).map(g => [g.id, g]));
+
+    (matchPlayHoles || []).forEach((hole: any) => {
+      const gameId = hole.game_id;
+      const game = matchPlayGamesMap.get(gameId);
+      if (!game) return;
+      
+      let userScore: number | null = null;
+      const par = hole.par || 4;
+      
+      if (isUserName(game.player_1)) {
+        userScore = hole.player_1_gross_score;
+      } else if (isUserName(game.player_2)) {
+        userScore = hole.player_2_gross_score;
+      }
+      
+      if (userScore !== null && userScore > 0) {
+        const existing = userScoresByRound.get(gameId) || { totalScore: 0, totalPar: 0, holesCount: 0 };
+        existing.totalScore += userScore;
+        existing.totalPar += par;
+        existing.holesCount += 1;
+        userScoresByRound.set(gameId, existing);
+      }
+    });
+  }
+
+  // Process Wolf games
+  if (wolfHoles.length > 0) {
+    const wolfGamesMap = new Map((wolfGames || []).map(g => [g.id, g]));
+
+    (wolfHoles || []).forEach((hole: any) => {
+      const gameId = hole.game_id;
+      const game = wolfGamesMap.get(gameId);
+      if (!game) return;
+      
+      let userScore: number | null = null;
+      const par = hole.par || 4;
+      
+      const players = [game.player_1, game.player_2, game.player_3, game.player_4, game.player_5, game.player_6];
+      const scores = [hole.player_1_score, hole.player_2_score, hole.player_3_score, hole.player_4_score, hole.player_5_score, hole.player_6_score];
+      
+      for (let i = 0; i < players.length; i++) {
+        if (isUserName(players[i])) {
+          userScore = scores[i];
+          break;
+        }
+      }
+      
+      if (userScore !== null && userScore > 0) {
+        const existing = userScoresByRound.get(gameId) || { totalScore: 0, totalPar: 0, holesCount: 0 };
+        existing.totalScore += userScore;
+        existing.totalPar += par;
+        existing.holesCount += 1;
+        userScoresByRound.set(gameId, existing);
+      }
+    });
+  }
+
+  // Process Umbriago games
+  if (umbriagoHoles.length > 0) {
+    const umbriagoGamesMap = new Map((umbriagoGames || []).map(g => [g.id, g]));
+
+    (umbriagoHoles || []).forEach((hole: any) => {
+      const gameId = hole.game_id;
+      const game = umbriagoGamesMap.get(gameId);
+      if (!game) return;
+      
+      let userScore: number | null = null;
+      const par = hole.par || 4;
+      
+      if (isUserName(game.team_a_player_1)) {
+        userScore = hole.team_a_player_1_score;
+      } else if (isUserName(game.team_a_player_2)) {
+        userScore = hole.team_a_player_2_score;
+      } else if (isUserName(game.team_b_player_1)) {
+        userScore = hole.team_b_player_1_score;
+      } else if (isUserName(game.team_b_player_2)) {
+        userScore = hole.team_b_player_2_score;
+      }
+      
+      if (userScore !== null && userScore > 0) {
+        const existing = userScoresByRound.get(gameId) || { totalScore: 0, totalPar: 0, holesCount: 0 };
+        existing.totalScore += userScore;
+        existing.totalPar += par;
+        existing.holesCount += 1;
+        userScoresByRound.set(gameId, existing);
+      }
+    });
+  }
+
+  // Process Copenhagen games
+  if (copenhagenHoles.length > 0) {
+    const copenhagenGamesMap = new Map((copenhagenGames || []).map(g => [g.id, g]));
+
+    (copenhagenHoles || []).forEach((hole: any) => {
+      const gameId = hole.game_id;
+      const game = copenhagenGamesMap.get(gameId);
+      if (!game) return;
+      
+      let userScore: number | null = null;
+      const par = hole.par || 4;
+      
+      if (isUserName(game.player_1)) {
+        userScore = hole.player_1_gross_score;
+      } else if (isUserName(game.player_2)) {
+        userScore = hole.player_2_gross_score;
+      } else if (isUserName(game.player_3)) {
+        userScore = hole.player_3_gross_score;
+      }
+      
+      if (userScore !== null && userScore > 0) {
+        const existing = userScoresByRound.get(gameId) || { totalScore: 0, totalPar: 0, holesCount: 0 };
+        existing.totalScore += userScore;
+        existing.totalPar += par;
+        existing.holesCount += 1;
+        userScoresByRound.set(gameId, existing);
+      }
+    });
+  }
+  
+  // Filter to only 18-hole rounds with valid scores (60-80 range as user mentioned)
+  const roundsWith18Holes = filteredRounds.filter(r => r.holes_played === 18);
+  console.log(`[Scoring Stats] Found ${roundsWith18Holes.length} rounds with holes_played=18 out of ${filteredRounds.length} total rounds`);
+  
+  const eighteenHoleRounds = filteredRounds
+    .map(round => {
+      const userScore = userScoresByRound.get(round.id);
+      
+      if (round.holes_played === 18) {
+        const label = [round.round_name, round.course_name].filter(Boolean).join(', ') || round.id;
+        if (!userScore) {
+          console.log(`[Scoring Stats] Round ${round.id} (${label}): No user score found (round has ${round.holes_played} holes)`);
+        } else if (userScore.holesCount !== 18) {
+          console.log(`[Scoring Stats] Round ${round.id} (${label}): User has ${userScore.holesCount} holes, not 18 (score: ${userScore.totalScore})`);
+        }
+      }
+      
+      if (!userScore || userScore.holesCount !== 18) return null;
+      
+      const score = userScore.totalScore;
+      const par = userScore.totalPar;
+      const scoreVsPar = score - par;
+      
+      // Validate score is reasonable for 18 holes (user mentioned 60-80, but allow wider range 45-150)
+      const isValid18HoleScore = score >= 45 && score <= 150;
+      
+      if (!isValid18HoleScore) {
+        console.log(`[Scoring Stats] Round ${round.id}: Score ${score} outside valid range (45-150)`);
+      }
+      
+      if (round.holes_played === 18 && isValid18HoleScore) {
+        const label = [round.round_name, round.course_name].filter(Boolean).join(', ') || round.id;
+        console.log(`[Scoring Stats] Round ${round.id} (${label}): INCLUDED - Score: ${score}, Par: ${par}, Score vs Par: ${scoreVsPar}`);
+        return {
+          roundId: round.id,
+          score,
+          scoreVsPar,
+          par
+        };
+      }
+      return null;
+    })
+    .filter((r): r is { roundId: string; score: number; scoreVsPar: number; par: number } => r !== null);
+  
+  console.log(`[Scoring Stats] Total 18-hole rounds counted: ${eighteenHoleRounds.length}`);
+  
+  const eighteenHoleScores = eighteenHoleRounds.map(r => r.score);
+  const eighteenHoleScoresToPar = eighteenHoleRounds.map(r => r.scoreVsPar);
   
   const scoring: ScoringStats = {
     scoringAverage: eighteenHoleScoresToPar.length > 0
@@ -223,7 +665,10 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     par4Average: null,
     par5Average: null,
     totalRounds: eighteenHoleRounds.length,
-    totalHoles: validSummaries.reduce((sum, s) => sum + (s.holes_played || 0), 0),
+    totalHoles: filteredRounds.reduce((sum, r) => {
+      const userScore = userScoresByRound.get(r.id);
+      return sum + (userScore?.holesCount || 0);
+    }, 0),
   };
 
   // Calculate accuracy stats - start with basic values from summaries
@@ -249,45 +694,38 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     rightMissPercentage: null, // Will be calculated from all rounds
   };
 
-  // Calculate fairway statistics (Fairways Hit, Left Miss, Right Miss) from ALL rounds in rounds table
-  // Get round IDs from rounds table respecting the filter
-  let roundsQuery = supabase
-    .from('rounds')
-    .select('id, date_played')
-    .eq('user_id', userId)
-    .order('date_played', { ascending: false });
-
-  // Apply year filter
-  if (filter === 'year') {
-    const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
-    roundsQuery = roundsQuery.gte('date_played', startOfYear);
+  // Use ownedRounds for accuracy (same filter already applied) - no extra rounds query
+  let filteredRoundIds: string[] = [];
+  if (ownedRounds.length > 0) {
+    if (filter === 'last5') filteredRoundIds = ownedRounds.slice(0, 5).map(r => r.id);
+    else if (filter === 'last10') filteredRoundIds = ownedRounds.slice(0, 10).map(r => r.id);
+    else if (filter === 'last20') filteredRoundIds = ownedRounds.slice(0, 20).map(r => r.id);
+    else if (filter === 'last50') filteredRoundIds = ownedRounds.slice(0, 50).map(r => r.id);
+    else filteredRoundIds = ownedRounds.map(r => r.id);
   }
 
-  const { data: allRounds, error: roundsError } = await roundsQuery;
+  // Batch 3: Accuracy holes, GIR holes, putt holes, pro_stats_holes in parallel
+  const roundIdsForGIR = validSummaries.map((s: any) => s.round_id);
+  const [teeResultRes, holesGIRRes, puttHolesRes, proStatsHolesRes] = await Promise.all([
+    filteredRoundIds.length > 0
+      ? supabase.from('holes').select('tee_result, par').in('round_id', filteredRoundIds).not('tee_result', 'is', null)
+      : Promise.resolve({ data: [] as any[] }),
+    validSummaries.length > 0
+      ? supabase.from('holes').select('par, score, putts').in('round_id', roundIdsForGIR)
+      : Promise.resolve({ data: [] as any[] }),
+    validSummaries.length > 0
+      ? supabase.from('holes').select('putts').in('round_id', roundIdsForGIR).not('putts', 'is', null)
+      : Promise.resolve({ data: [] as any[] }),
+    proRounds.length > 0
+      ? supabase.from('pro_stats_holes').select('pro_round_id, par, score, putts, pro_shot_data').in('pro_round_id', proRounds.map(r => r.id))
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
 
-  if (!roundsError && allRounds && allRounds.length > 0) {
-    // Apply round count filters
-    let filteredRoundIds: string[] = [];
-    if (filter === 'last5') {
-      filteredRoundIds = allRounds.slice(0, 5).map(r => r.id);
-    } else if (filter === 'last10') {
-      filteredRoundIds = allRounds.slice(0, 10).map(r => r.id);
-    } else if (filter === 'last20') {
-      filteredRoundIds = allRounds.slice(0, 20).map(r => r.id);
-    } else if (filter === 'last50') {
-      filteredRoundIds = allRounds.slice(0, 50).map(r => r.id);
-    } else {
-      filteredRoundIds = allRounds.map(r => r.id);
-    }
+  const teeResultData = teeResultRes.data || [];
+  const holesData = holesGIRRes.data || [];
+  const puttHolesData = puttHolesRes.data || [];
 
-    // Fetch all holes from these rounds
-    const { data: teeResultData } = await supabase
-      .from('holes')
-      .select('tee_result, par')
-      .in('round_id', filteredRoundIds)
-      .not('tee_result', 'is', null);
-
-    if (teeResultData && teeResultData.length > 0) {
+  if (filteredRoundIds.length > 0 && teeResultData.length > 0) {
       let fairwaysHitCount = 0;
       let leftMissCount = 0;
       let rightMissCount = 0;
@@ -315,49 +753,40 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
           rightMissPercentage: (rightMissCount / totalFairwayOpportunities) * 100,
         };
       }
-    }
   }
 
-  // Fetch hole-level data for GIR by par type
-  if (validSummaries.length > 0) {
-    const roundIds = validSummaries.map(s => s.round_id);
-    const { data: holesData } = await supabase
-      .from('holes')
-      .select('par, score, putts')
-      .in('round_id', roundIds);
+  // GIR by par type from batch 3 holesData
+  if (holesData.length > 0) {
+    const girByPar = {
+      par3: { gir: 0, total: 0 },
+      par4: { gir: 0, total: 0 },
+      par5: { gir: 0, total: 0 },
+    };
 
-    if (holesData && holesData.length > 0) {
-      const girByPar = {
-        par3: { gir: 0, total: 0 },
-        par4: { gir: 0, total: 0 },
-        par5: { gir: 0, total: 0 },
-      };
+    holesData.forEach((hole: any) => {
+      if (hole.score && hole.par && hole.putts !== null) {
+        const strokesBeforePutt = hole.score - hole.putts;
+        const isGIR = strokesBeforePutt <= hole.par - 2;
 
-      holesData.forEach(hole => {
-        if (hole.score && hole.par && hole.putts !== null) {
-          const strokesBeforePutt = hole.score - hole.putts;
-          const isGIR = strokesBeforePutt <= hole.par - 2;
-
-          if (hole.par === 3) {
-            girByPar.par3.total++;
-            if (isGIR) girByPar.par3.gir++;
-          } else if (hole.par === 4) {
-            girByPar.par4.total++;
-            if (isGIR) girByPar.par4.gir++;
-          } else if (hole.par === 5) {
-            girByPar.par5.total++;
-            if (isGIR) girByPar.par5.gir++;
-          }
+        if (hole.par === 3) {
+          girByPar.par3.total++;
+          if (isGIR) girByPar.par3.gir++;
+        } else if (hole.par === 4) {
+          girByPar.par4.total++;
+          if (isGIR) girByPar.par4.gir++;
+        } else if (hole.par === 5) {
+          girByPar.par5.total++;
+          if (isGIR) girByPar.par5.gir++;
         }
-      });
+      }
+    });
 
-      accuracy = {
-        ...accuracy,
-        girPar3: girByPar.par3.total > 0 ? (girByPar.par3.gir / girByPar.par3.total) * 100 : null,
-        girPar4: girByPar.par4.total > 0 ? (girByPar.par4.gir / girByPar.par4.total) * 100 : null,
-        girPar5: girByPar.par5.total > 0 ? (girByPar.par5.gir / girByPar.par5.total) * 100 : null,
-      };
-    }
+    accuracy = {
+      ...accuracy,
+      girPar3: girByPar.par3.total > 0 ? (girByPar.par3.gir / girByPar.par3.total) * 100 : null,
+      girPar4: girByPar.par4.total > 0 ? (girByPar.par4.gir / girByPar.par4.total) * 100 : null,
+      girPar5: girByPar.par5.total > 0 ? (girByPar.par5.gir / girByPar.par5.total) * 100 : null,
+    };
   }
 
   // Calculate putting stats - including putt distribution from hole data
@@ -378,45 +807,26 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     puttsPerGIR: null,
   };
 
-  // Calculate putt distribution from hole-level data
-  if (validSummaries.length > 0) {
-    const roundIds = validSummaries.map(s => s.round_id);
-    const { data: puttHolesData } = await supabase
-      .from('holes')
-      .select('putts')
-      .in('round_id', roundIds)
-      .not('putts', 'is', null);
+  // Putt distribution from batch 3 puttHolesData
+  if (puttHolesData.length > 0) {
+    let onePutts = 0, twoPutts = 0, threePutts = 0, fourPlusPutts = 0;
 
-    if (puttHolesData && puttHolesData.length > 0) {
-      let onePutts = 0, twoPutts = 0, threePutts = 0, fourPlusPutts = 0;
-      
-      puttHolesData.forEach(hole => {
-        if (hole.putts === 1) onePutts++;
-        else if (hole.putts === 2) twoPutts++;
-        else if (hole.putts === 3) threePutts++;
-        else if (hole.putts !== null && hole.putts >= 4) fourPlusPutts++;
-      });
+    puttHolesData.forEach((hole: any) => {
+      if (hole.putts === 1) onePutts++;
+      else if (hole.putts === 2) twoPutts++;
+      else if (hole.putts === 3) threePutts++;
+      else if (hole.putts !== null && hole.putts >= 4) fourPlusPutts++;
+    });
 
-      const totalHolesWithPutts = puttHolesData.length;
-      putting = {
-        ...putting,
-        onePuttPercentage: totalHolesWithPutts > 0 ? (onePutts / totalHolesWithPutts) * 100 : null,
-        twoPuttPercentage: totalHolesWithPutts > 0 ? (twoPutts / totalHolesWithPutts) * 100 : null,
-        threePuttPercentage: totalHolesWithPutts > 0 ? (threePutts / totalHolesWithPutts) * 100 : null,
-        fourPlusPuttPercentage: totalHolesWithPutts > 0 ? (fourPlusPutts / totalHolesWithPutts) * 100 : null,
-      };
-    }
+    const totalHolesWithPutts = puttHolesData.length;
+    putting = {
+      ...putting,
+      onePuttPercentage: totalHolesWithPutts > 0 ? (onePutts / totalHolesWithPutts) * 100 : null,
+      twoPuttPercentage: totalHolesWithPutts > 0 ? (twoPutts / totalHolesWithPutts) * 100 : null,
+      threePuttPercentage: totalHolesWithPutts > 0 ? (threePutts / totalHolesWithPutts) * 100 : null,
+      fourPlusPuttPercentage: totalHolesWithPutts > 0 ? (fourPlusPutts / totalHolesWithPutts) * 100 : null,
+    };
   }
-
-  // Fetch strokes gained from pro_stats if available
-  const { data: allProRounds } = await supabase
-    .from('pro_stats_rounds')
-    .select('id, holes_played, external_round_id')
-    .eq('user_id', userId);
-
-  // Filter out orphaned pro_stats_rounds (where external_round_id exists but the round doesn't)
-  const validProRounds = await filterValidProStatsRounds(allProRounds || []);
-  const proRounds = validProRounds.map(pr => ({ id: pr.id, holes_played: allProRounds?.find(apr => apr.id === pr.id)?.holes_played || 18 }));
 
   let strokesGained: StrokesGainedStats = {
     total: null,
@@ -444,14 +854,9 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   let proLeftMissCount = 0;
   let proRightMissCount = 0;
 
-  if (proRounds && proRounds.length > 0) {
-    const roundIds = proRounds.map(r => r.id);
-    const { data: holes } = await supabase
-      .from('pro_stats_holes')
-      .select('pro_round_id, par, score, putts, pro_shot_data')
-      .in('pro_round_id', roundIds);
-
-    if (holes && holes.length > 0) {
+  const proStatsHoles = proStatsHolesRes.data || [];
+  if (proRounds.length > 0 && proStatsHoles.length > 0) {
+    const holes = proStatsHoles;
       let sgTee = 0, sgApproach = 0, sgShort = 0, sgPutt = 0, sgOther = 0, sgScoring = 0;
       let totalDriverDistance = 0;
       let driverDistanceCount = 0;
@@ -611,7 +1016,6 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
           };
         }
       }
-    }
   }
 
   // Merge pro stats into accuracy and putting if we have pro data
@@ -632,25 +1036,15 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
   }
 
   // Calculate left/right miss percentages as percentages of total fairway opportunities (par 4s and 5s)
-  // Count total par 4+5 holes from proFairwaysByRound
   let proTotalFairwayOpportunities = 0;
   for (const { attempts } of proFairwaysByRound.values()) {
     proTotalFairwayOpportunities += attempts;
   }
-  
-  // Also count from basicStats if proFairwaysByRound is empty
-  if (proTotalFairwayOpportunities === 0 && proRounds && proRounds.length > 0) {
-    const roundIds = proRounds.map(r => r.id);
-    const { data: proHoles } = await supabase
-      .from('pro_stats_holes')
-      .select('par')
-      .in('pro_round_id', roundIds);
-    
-    if (proHoles) {
-      proTotalFairwayOpportunities = proHoles.filter(h => (h.par ?? 4) >= 4).length;
-    }
+  // If no fairway data in pro_shot_data, use par from batch 3 pro_stats_holes
+  if (proTotalFairwayOpportunities === 0 && proStatsHoles.length > 0) {
+    proTotalFairwayOpportunities = proStatsHoles.filter((h: any) => (h.par ?? 4) >= 4).length;
   }
-  
+
   if (proTotalFairwayOpportunities > 0) {
     accuracy = {
       ...accuracy,

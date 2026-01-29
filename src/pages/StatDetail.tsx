@@ -251,6 +251,15 @@ export default function StatDetail() {
           </div>
         </div>
 
+        {/* Rounds Analyzed - Only show for basic stats pages */}
+        {stats && category && ['putting', 'approach', 'short-game', 'fairways'].includes(category) && (
+          <div className="mb-3">
+            <p className="text-sm text-muted-foreground">
+              0 rounds analyzed
+            </p>
+          </div>
+        )}
+
         {/* Time Filter */}
         <div className="mb-4">
           <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>

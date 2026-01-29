@@ -211,8 +211,8 @@ export function InRoundStrokesGained({
       const start = parseFloat(startDistance.replace(',', '.'));
       const end = parseFloat(normalizedEnd);
       
-      // For tee shots to any missed-fairway lie, require missed side
-      if (startLie === 'tee' && isMissedFairwayEndLie && !missedSide) return;
+      // For tee shots to any missed-fairway lie, require missed side (but not on par 3s)
+      if (startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && !missedSide) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // Clear any existing timer
@@ -376,7 +376,7 @@ export function InRoundStrokesGained({
         endDistance: end,
         endLie: 'rough',
         strokesGained: sgShot,
-        ...(startLie === 'tee' && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+        ...(startLie === 'tee' && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
       };
 
       const penaltyShot: Shot = {
@@ -430,7 +430,7 @@ export function InRoundStrokesGained({
       endDistance: end,
       endLie: effectiveEndLie === 'OB' ? 'OB' : effectiveEndLie,
       strokesGained: sg,
-      ...(startLie === 'tee' && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+      ...(startLie === 'tee' && par !== 3 && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     // Clear inputs and add shot
@@ -792,7 +792,8 @@ export function InRoundStrokesGained({
                 </div>
 
                 {/* Missed Side - rough, bunker, recovery, hazard, other, OB all count as missed fairway */}
-                {startLie === 'tee' && isMissedFairwayEndLie && (
+                {/* Never show missed side on par 3s */}
+                {startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && (
                   <div className="space-y-1">
                     <Label className="text-xs">Missed Side</Label>
                     <div className="flex gap-2">

@@ -2,13 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -178,7 +171,7 @@ export default function Statistics() {
   const [insights, setInsights] = useState<StatInsight[]>([]);
   const [drillRecs, setDrillRecs] = useState<DrillRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [timeFilter] = useState<TimeFilter>('all'); // Always use 'all' - filter UI removed
   const [sgInfoOpen, setSgInfoOpen] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [migrationResult, setMigrationResult] = useState<string | null>(null);
@@ -205,18 +198,8 @@ export default function Statistics() {
     };
 
     loadStats();
-  }, [navigate, timeFilter]);
+  }, [navigate]); // Removed timeFilter dependency since it's always 'all'
 
-  const getFilterLabel = () => {
-    switch (timeFilter) {
-      case 'last5': return 'Last 5 Rounds';
-      case 'last10': return 'Last 10 Rounds';
-      case 'last20': return 'Last 20 Rounds';
-      case 'last50': return 'Last 50 Rounds';
-      case 'year': return 'This Year';
-      default: return 'All Time';
-    }
-  };
 
   if (loading) {
     return (
@@ -240,27 +223,7 @@ export default function Statistics() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Statistics</h1>
-            <p className="text-sm text-muted-foreground">
-              {stats?.roundsPlayed || 0} {stats?.roundsPlayed === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
-            </p>
           </div>
-        </div>
-
-        {/* Time Filter */}
-        <div className="mb-6">
-          <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
-            <SelectTrigger className="w-full bg-card">
-              <SelectValue placeholder="Select time period" />
-            </SelectTrigger>
-            <SelectContent className="bg-card">
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
-              <SelectItem value="last50">Last 50 Rounds</SelectItem>
-              <SelectItem value="last20">Last 20 Rounds</SelectItem>
-              <SelectItem value="last10">Last 10 Rounds</SelectItem>
-              <SelectItem value="last5">Last 5 Rounds</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* Key Insights - Matches PerformanceSnapshot design */}
