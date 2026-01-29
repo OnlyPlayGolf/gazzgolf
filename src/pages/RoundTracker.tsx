@@ -13,6 +13,7 @@ import { canEditGroupScores } from "@/types/gameGroups";
 import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StatsMode } from "@/pages/StrokePlaySetup";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
+import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
 
 interface Round {
   id: string;
@@ -108,6 +109,9 @@ export default function RoundTracker() {
   const [isManualNavigation, setIsManualNavigation] = useState(false);
   // Track which holes have had stats saved (for stats mode auto-advance blocking)
   const [holeStatsSaved, setHoleStatsSaved] = useState<Set<number>>(new Set());
+
+  // Get player's personal stats mode (from My Stats Settings)
+  const { statsMode: playerStatsMode, loading: statsModeLoading } = usePlayerStatsMode(roundId, 'round');
 
   // Check if current user can edit a player's scores
   const canEditPlayer = (player: RoundPlayer): boolean => {
@@ -373,7 +377,9 @@ export default function RoundTracker() {
       setMulligansUsed(mulligansMap);
       
       // Load existing stats for this round to mark which holes have stats saved
-      if (roundData.stats_mode && roundData.stats_mode !== 'none') {
+      // Note: We check player's personal stats mode, but for initial load we use round.stats_mode as fallback
+      const effectiveStatsMode = playerStatsMode || roundData.stats_mode;
+      if (effectiveStatsMode && effectiveStatsMode !== 'none') {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: proRound } = await supabase
@@ -726,7 +732,9 @@ export default function RoundTracker() {
     }
     
     // Check if stats mode is enabled and requires stats to be saved first
-    const statsRequired = round?.stats_mode && round.stats_mode !== 'none';
+    // Use player's personal stats mode if available, otherwise fall back to round's stats_mode
+    const effectiveStatsMode = playerStatsMode || round?.stats_mode;
+    const statsRequired = effectiveStatsMode && effectiveStatsMode !== 'none';
     const currentHoleNumber = currentHole?.hole_number;
     const statsCompleted = !statsRequired || (currentHoleNumber && holeStatsSaved.has(currentHoleNumber));
     const isLastHole = currentHoleIndex === courseHoles.length - 1;
@@ -743,7 +751,7 @@ export default function RoundTracker() {
     // For last hole: ensure stats are saved (they should auto-save, but ensure it happens)
     // The stats component handles its own saving, so we just need to ensure the condition is met
     // This effect will re-run when stats are saved, ensuring everything is in sync
-  }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation, round?.stats_mode, holeStatsSaved, currentHole?.hole_number]);
+  }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation, playerStatsMode, round?.stats_mode, holeStatsSaved, currentHole?.hole_number]);
 
   const handleFinishRound = () => {
     // Tournament: auto-advance to next round in event
@@ -998,10 +1006,10 @@ export default function RoundTracker() {
                           </Card>
                           
                           {/* In-round stats entry for current user only */}
-                          {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && round.stats_mode && round.stats_mode !== 'none' && (
+                          {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && (playerStatsMode || round.stats_mode) && (playerStatsMode || round.stats_mode) !== 'none' && (
                             <InRoundStatsEntry
                               key={`stats-${player.id}-${currentHole.hole_number}`}
-                              statsMode={round.stats_mode as StatsMode}
+                              statsMode={(playerStatsMode || round.stats_mode) as StatsMode}
                               roundId={round.id}
                               holeNumber={currentHole.hole_number}
                               par={currentHole.par}
@@ -1065,10 +1073,10 @@ export default function RoundTracker() {
                 </Card>
                 
                 {/* In-round stats entry for current user only */}
-                {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && round.stats_mode && round.stats_mode !== 'none' && (
+                {isCurrentPlayerUser && hasScore && playerScore && playerScore > 0 && (playerStatsMode || round.stats_mode) && (playerStatsMode || round.stats_mode) !== 'none' && (
                   <InRoundStatsEntry
                     key={`stats-${player.id}-${currentHole.hole_number}`}
-                    statsMode={round.stats_mode as StatsMode}
+                    statsMode={(playerStatsMode || round.stats_mode) as StatsMode}
                     roundId={round.id}
                     holeNumber={currentHole.hole_number}
                     par={currentHole.par}

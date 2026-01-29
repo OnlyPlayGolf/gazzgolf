@@ -228,9 +228,7 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
 
   // Calculate accuracy stats - start with basic values from summaries
   let accuracy: AccuracyStats = {
-    fairwaysHit: validSummaries.length > 0 
-      ? validSummaries.reduce((sum, s) => sum + (s.fir_percentage || 0), 0) / validSummaries.length 
-      : null,
+    fairwaysHit: null, // Will be calculated from all rounds
     greensInRegulation: validSummaries.length > 0 
       ? validSummaries.reduce((sum, s) => sum + (s.gir_percentage || 0), 0) / validSummaries.length 
       : null,
@@ -247,21 +245,50 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     })(),
     sandSaves: null,
     avgDriverDistance: null,
-    leftMissPercentage: null,
-    rightMissPercentage: null,
+    leftMissPercentage: null, // Will be calculated from all rounds
+    rightMissPercentage: null, // Will be calculated from all rounds
   };
 
-  // Calculate left/right miss percentages from hole data
-  // These should be percentages of total fairway opportunities (par 4s and 5s), not total misses
-  if (validSummaries.length > 0) {
-    const roundIds = validSummaries.map(s => s.round_id);
+  // Calculate fairway statistics (Fairways Hit, Left Miss, Right Miss) from ALL rounds in rounds table
+  // Get round IDs from rounds table respecting the filter
+  let roundsQuery = supabase
+    .from('rounds')
+    .select('id, date_played')
+    .eq('user_id', userId)
+    .order('date_played', { ascending: false });
+
+  // Apply year filter
+  if (filter === 'year') {
+    const startOfYear = new Date(new Date().getFullYear(), 0, 1).toISOString();
+    roundsQuery = roundsQuery.gte('date_played', startOfYear);
+  }
+
+  const { data: allRounds, error: roundsError } = await roundsQuery;
+
+  if (!roundsError && allRounds && allRounds.length > 0) {
+    // Apply round count filters
+    let filteredRoundIds: string[] = [];
+    if (filter === 'last5') {
+      filteredRoundIds = allRounds.slice(0, 5).map(r => r.id);
+    } else if (filter === 'last10') {
+      filteredRoundIds = allRounds.slice(0, 10).map(r => r.id);
+    } else if (filter === 'last20') {
+      filteredRoundIds = allRounds.slice(0, 20).map(r => r.id);
+    } else if (filter === 'last50') {
+      filteredRoundIds = allRounds.slice(0, 50).map(r => r.id);
+    } else {
+      filteredRoundIds = allRounds.map(r => r.id);
+    }
+
+    // Fetch all holes from these rounds
     const { data: teeResultData } = await supabase
       .from('holes')
       .select('tee_result, par')
-      .in('round_id', roundIds)
+      .in('round_id', filteredRoundIds)
       .not('tee_result', 'is', null);
 
     if (teeResultData && teeResultData.length > 0) {
+      let fairwaysHitCount = 0;
       let leftMissCount = 0;
       let rightMissCount = 0;
       let totalFairwayOpportunities = 0; // Total par 4s and 5s
@@ -270,7 +297,9 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
         // Only count par 4s and 5s as fairway opportunities
         if (hole.par && hole.par >= 4) {
           totalFairwayOpportunities++;
-          if (hole.tee_result === 'MissL') {
+          if (hole.tee_result === 'FIR') {
+            fairwaysHitCount++;
+          } else if (hole.tee_result === 'MissL') {
             leftMissCount++;
           } else if (hole.tee_result === 'MissR') {
             rightMissCount++;
@@ -281,6 +310,7 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
       if (totalFairwayOpportunities > 0) {
         accuracy = {
           ...accuracy,
+          fairwaysHit: (fairwaysHitCount / totalFairwayOpportunities) * 100,
           leftMissPercentage: (leftMissCount / totalFairwayOpportunities) * 100,
           rightMissPercentage: (rightMissCount / totalFairwayOpportunities) * 100,
         };
