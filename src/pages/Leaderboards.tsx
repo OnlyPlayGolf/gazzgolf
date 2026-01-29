@@ -305,19 +305,20 @@ const Leaderboards = () => {
           .select('a, b')
           .or(`a.eq.${user.id},b.eq.${user.id}`);
         const friendIds: string[] = pairs?.map((p: { a: string; b: string }) => (p.a === user.id ? p.b : p.a)) ?? [];
+        // Query for all 21 Points drill variants (though there likely aren't any)
         const { data: drillRows } = await supabase
           .from('drills')
           .select('id')
-          .eq('title', '21 Points')
-          .limit(1);
+          .in('title', ['21 Points']);
         if (!drillRows?.length) {
           setFriendsDrillLeaderboard([]);
           return;
         }
+        const drillIds = drillRows.map(d => d.id);
         const { data: resultRows } = await supabase
           .from('drill_results')
           .select('attempts_json')
-          .eq('drill_id', drillRows[0].id);
+          .in('drill_id', drillIds);
         const byOdId = new Map<string, { wins: number; games: number }>();
         const seenGameIds = new Set<string>();
         for (const row of resultRows || []) {
@@ -365,15 +366,117 @@ const Leaderboards = () => {
         return;
       }
 
-      const { data: friendsData, error: friendsError } = await supabase
-        .rpc('friends_leaderboard_for_drill_by_title', { p_drill_title: selectedDrill });
+      // Get all matching drill IDs (including title variants) to ensure we catch all results
+      const normalizedTitle = normalizeDrillTitle(selectedDrill);
+      const drillTitleVariants = [
+        normalizedTitle,
+        selectedDrill,
+        // Add known variants for PGA Tour 18-hole
+        ...(normalizedTitle === 'PGA Tour 18-hole' 
+          ? ['PGA Tour 18 Holes', 'PGA Tour 18-hole Test', '18-hole PGA Tour Putting Test']
+          : []),
+        // Add known variants for 9 Windows
+        ...(normalizedTitle === '9 Windows Shot Shape'
+          ? ['9 Windows Shot Shape Test', 'TW\'s 9 Windows Test']
+          : []),
+        // Add known variants for Aggressive Putting
+        ...(normalizedTitle === 'Aggressive Putting 4-6m'
+          ? ['Aggressive Putting']
+          : []),
+      ];
 
-      if (friendsError) {
-        console.error('Error loading friends drill leaderboard:', friendsError);
-        setFriendsDrillLeaderboard([]);
-      } else {
-        setFriendsDrillLeaderboard(friendsData || []);
+      // Get all matching drill IDs
+      const { data: drillsList } = await supabase
+        .from('drills')
+        .select('id, lower_is_better')
+        .in('title', drillTitleVariants);
+
+      if (!drillsList || drillsList.length === 0) {
+        // Fallback to RPC function if no drills found
+        const { data: friendsData, error: friendsError } = await supabase
+          .rpc('friends_leaderboard_for_drill_by_title', { p_drill_title: normalizedTitle });
+
+        if (friendsError) {
+          console.error('Error loading friends drill leaderboard:', friendsError);
+          setFriendsDrillLeaderboard([]);
+        } else {
+          setFriendsDrillLeaderboard(friendsData || []);
+        }
+        return;
       }
+
+      const drillIds = drillsList.map(d => d.id);
+      const lowerIsBetter = drillsList[0]?.lower_is_better || false;
+
+      // Get friends list
+      const { data: pairs } = await supabase
+        .from('friends_pairs')
+        .select('a, b')
+        .or(`a.eq.${user.id},b.eq.${user.id}`);
+      
+      const friendIds: string[] = pairs?.map((p: { a: string; b: string }) => 
+        (p.a === user.id ? p.b : p.a)
+      ) ?? [];
+      
+      // Include current user
+      const allUserIds = [user.id, ...friendIds];
+
+      // Get best scores for all friends across all drill variants
+      const { data: memberScores } = await supabase
+        .from('drill_results')
+        .select('user_id, total_points')
+        .in('drill_id', drillIds)
+        .in('user_id', allUserIds);
+
+      // Calculate best score for each user
+      const userBestScores = new Map<string, number>();
+      if (memberScores) {
+        memberScores.forEach((score: any) => {
+          const currentBest = userBestScores.get(score.user_id);
+          if (currentBest === undefined) {
+            userBestScores.set(score.user_id, score.total_points);
+          } else {
+            userBestScores.set(
+              score.user_id,
+              lowerIsBetter 
+                ? Math.min(currentBest, score.total_points)
+                : Math.max(currentBest, score.total_points)
+            );
+          }
+        });
+      }
+
+      // Get profiles for users with scores
+      const userIdsWithScores = Array.from(userBestScores.keys());
+      if (userIdsWithScores.length === 0) {
+        setFriendsDrillLeaderboard([]);
+        return;
+      }
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url')
+        .in('id', userIdsWithScores);
+
+      // Build leaderboard
+      const leaderboard: DrillLeaderboardEntry[] = (profiles || []).map((profile: any) => ({
+        user_id: profile.id,
+        display_name: profile.display_name,
+        username: profile.username,
+        avatar_url: profile.avatar_url,
+        best_score: userBestScores.get(profile.id)!
+      }));
+
+      // Sort leaderboard
+      leaderboard.sort((a, b) => {
+        if (lowerIsBetter) {
+          return a.best_score - b.best_score;
+        } else {
+          return b.best_score - a.best_score;
+        }
+      });
+
+      setFriendsDrillLeaderboard(leaderboard);
     } catch (error) {
       console.error('Error loading drill leaderboards:', error);
     }

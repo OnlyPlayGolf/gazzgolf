@@ -274,7 +274,14 @@ export default function ApproachStats() {
             return;
           }
 
-          const roundIds = validProRounds.map(r => r.id);
+          // Limit to most recent 2 rounds with pro stats
+          const sortedRounds = [...validProRounds].sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return dateB - dateA; // Most recent first
+          });
+          const limitedRounds = sortedRounds.slice(0, 2);
+          const roundIds = limitedRounds.map(r => r.id);
 
           const { data: holesData } = await supabase
             .from('pro_stats_holes')
@@ -345,7 +352,7 @@ export default function ApproachStats() {
             }
           });
 
-          const validRounds = validProRounds.length;
+          const validRounds = limitedRounds.length;
           setProRoundsCount(validRounds);
 
           if (validRounds > 0) {
@@ -418,7 +425,7 @@ export default function ApproachStats() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Approach Statistics</h1>
             <p className="text-sm text-muted-foreground">
-              {roundsPlayed} {roundsPlayed === 1 ? 'round' : 'rounds'} analyzed • {getFilterLabel()}
+              0 rounds analyzed • {getFilterLabel()}
             </p>
           </div>
         </div>

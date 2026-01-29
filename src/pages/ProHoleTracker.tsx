@@ -145,8 +145,8 @@ const ProHoleTracker = () => {
       // For ALL shots (including putting), require endLie to be selected
       if (!endLie) return;
       
-      // If tee shot and end lie is any missed-fairway type, require missed side
-      if (startLie === 'tee' && isMissedFairwayEndLie && !missedSide) return;
+      // If tee shot and end lie is any missed-fairway type, require missed side (but not on par 3s)
+      if (startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && !missedSide) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // If end distance is exactly 0 (user typed "0"), use 2-second delay
@@ -507,7 +507,7 @@ const ProHoleTracker = () => {
         endDistance: end,
         endLie: 'rough',
         strokesGained: sgShot,
-        ...(startLie === 'tee' && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+        ...(startLie === 'tee' && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
       };
 
       // Auto penalty stroke (1 shot, no position change)
@@ -566,7 +566,7 @@ const ProHoleTracker = () => {
       endDistance: end,
       endLie: effectiveEndLie,
       strokesGained: sg,
-      ...(startLie === 'tee' && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+      ...(startLie === 'tee' && par !== 3 && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     const currentData = getCurrentHoleData();
@@ -664,7 +664,7 @@ const ProHoleTracker = () => {
       endLie: 'OB',
       strokesGained: 0, // Penalty shot, no SG calculation
       isOB: true,
-      ...(startLie === 'tee' && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+      ...(startLie === 'tee' && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     // Shot 2: Auto-penalty stroke (stroke and distance penalty)
@@ -1008,7 +1008,8 @@ const ProHoleTracker = () => {
             </div>
 
             {/* Missed Side - rough, bunker, recovery, hazard, other, OB all count as missed fairway */}
-            {startLie === 'tee' && isMissedFairwayEndLie && (
+            {/* Never show missed side on par 3s */}
+            {startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && (
               <div>
                 <Label>Missed Side</Label>
                 <div className="flex gap-2 mt-2">
