@@ -226,14 +226,14 @@ export function ScorecardActions({
           disabled={isLiking}
         >
           <Heart size={18} fill={hasLiked ? "currentColor" : "none"} strokeWidth={1.5} />
-          {likesCount > 0 && <span className="text-sm font-medium">{likesCount}</span>}
+          <span className="text-sm font-medium">{likesCount} {likesCount === 1 ? "Like" : "Likes"}</span>
         </button>
         <button
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-muted-foreground hover:bg-muted transition-colors"
           onClick={handleComment}
         >
           <MessageCircle size={18} strokeWidth={1.5} />
-          {commentsCount > 0 && <span className="text-sm font-medium">{commentsCount}</span>}
+          <span className="text-sm font-medium">{commentsCount} {commentsCount === 1 ? "Comment" : "Comments"}</span>
         </button>
       </div>
 
