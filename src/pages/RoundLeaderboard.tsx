@@ -164,21 +164,59 @@ export default function RoundLeaderboard() {
       const roundIds = roundsInScope.map(r => r.id);
       const uniqueCourseNames = Array.from(new Set(roundsInScope.map(r => r.course_name).filter(Boolean)));
 
-      // Fetch course ids for all course names involved
-      const { data: coursesData } = await supabase
-        .from("courses")
-        .select("id, name")
-        .in("name", uniqueCourseNames as string[]);
+      const isMissingColumnError = (err: any, column: string): boolean => {
+        const msg = (err?.message || err?.details || err?.hint || "").toString().toLowerCase();
+        return msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("column"));
+      };
 
+      // Parallel fetch: courses and round_players (no dependency between them)
+      const [coursesResult, playersResult] = await Promise.all([
+        supabase.from("courses").select("id, name").in("name", uniqueCourseNames as string[]),
+        (async () => {
+          const { data, error } = await supabase
+            .from("round_players")
+            .select("id, round_id, user_id, tee_color, handicap, is_guest, guest_name, event_player_id")
+            .in("round_id", roundIds as any);
+          if (error && isMissingColumnError(error, "event_player_id")) {
+            const retry = await supabase
+              .from("round_players")
+              .select("id, round_id, user_id, tee_color, handicap, is_guest, guest_name")
+              .in("round_id", roundIds as any);
+            if (retry.error) throw retry.error;
+            return { data: retry.data || [], hasEventPlayerId: false };
+          }
+          if (error) throw error;
+          return { data: data || [], hasEventPlayerId: true };
+        })(),
+      ]);
+
+      const coursesData = coursesResult.data;
       const courseIdByName = new Map((coursesData || []).map((c: any) => [c.name, c.id]));
       const uniqueCourseIds = Array.from(new Set((coursesData || []).map((c: any) => c.id)));
 
-      // Fetch all course holes for these courses
-      const { data: allCourseHoles, error: allCourseHolesError } = await supabase
-        .from("course_holes")
-        .select("course_id, hole_number, par, stroke_index")
-        .in("course_id", uniqueCourseIds as string[])
-        .order("hole_number");
+      let playersData: any[] = playersResult.data;
+      const hasEventPlayerId = playersResult.hasEventPlayerId;
+
+      const registeredPlayerRows = (playersData || []).filter((p: any) => !p.is_guest && p.user_id);
+      const userIds = Array.from(new Set(registeredPlayerRows.map((p: any) => p.user_id)));
+
+      // Parallel fetch: course_holes, profiles, holes/scores (no dependency between them)
+      const [allCourseHolesResult, profilesResult, scoresResult] = await Promise.all([
+        supabase
+          .from("course_holes")
+          .select("course_id, hole_number, par, stroke_index")
+          .in("course_id", uniqueCourseIds as string[])
+          .order("hole_number"),
+        userIds.length > 0
+          ? supabase.from("profiles").select("id, display_name, username, handicap").in("id", userIds as any)
+          : Promise.resolve({ data: [] }),
+        supabase
+          .from("holes")
+          .select("round_id, hole_number, score, player_id, mulligan")
+          .in("round_id", roundIds as any),
+      ]);
+
+      const { data: allCourseHoles, error: allCourseHolesError } = allCourseHolesResult;
       if (allCourseHolesError) throw allCourseHolesError;
 
       // Build per-round hole maps (respecting 9-hole rounds)
@@ -197,53 +235,9 @@ export default function RoundLeaderboard() {
       }
       setCourseHolesByRound(holesByRound);
 
-      // Fetch players for all rounds (event_player_id may not exist yet in hosted DB)
-      const isMissingColumnError = (err: any, column: string): boolean => {
-        const msg = (err?.message || err?.details || err?.hint || "").toString().toLowerCase();
-        return msg.includes(column.toLowerCase()) && (msg.includes("does not exist") || msg.includes("column"));
-      };
-
-      let playersData: any[] = [];
-      let hasEventPlayerId = true;
-
-      {
-        const { data, error } = await supabase
-          .from("round_players")
-          .select("id, round_id, user_id, tee_color, handicap, is_guest, guest_name, event_player_id")
-          .in("round_id", roundIds as any);
-
-        if (error) {
-          if (isMissingColumnError(error, "event_player_id")) {
-            hasEventPlayerId = false;
-            const retry = await supabase
-              .from("round_players")
-              .select("id, round_id, user_id, tee_color, handicap, is_guest, guest_name")
-              .in("round_id", roundIds as any);
-            if (retry.error) throw retry.error;
-            playersData = retry.data || [];
-          } else {
-            throw error;
-          }
-        } else {
-          playersData = data || [];
-        }
-      }
-
-      const registeredPlayerRows = (playersData || []).filter((p: any) => !p.is_guest && p.user_id);
+      const profilesMap = new Map((profilesResult.data || []).map((p: any) => [p.id, p]));
       const guestPlayerRows = (playersData || []).filter((p: any) => p.is_guest);
-
-      const userIds = Array.from(new Set(registeredPlayerRows.map((p: any) => p.user_id)));
-      const { data: profilesData } = userIds.length
-        ? await supabase.from("profiles").select("id, display_name, username, handicap").in("id", userIds as any)
-        : await supabase.from("profiles").select("id").limit(0);
-
-      const profilesMap = new Map((profilesData || []).map((p: any) => [p.id, p]));
-
-      // Fetch all scores and mulligans for all rounds
-      const { data: scoresData } = await supabase
-        .from("holes")
-        .select("round_id, hole_number, score, player_id, mulligan")
-        .in("round_id", roundIds as any);
+      const scoresData = scoresResult.data;
 
       const scoresMap = new Map<string, Map<number, number>>();
       const mulligansMap = new Map<string, Set<number>>();

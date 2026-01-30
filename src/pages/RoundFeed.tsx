@@ -142,19 +142,18 @@ export default function RoundFeed() {
         c.is_activity_item || !c.scorecard_player_name
       );
 
-      // Get unique user IDs and fetch profiles
+      // Get unique user IDs and comment IDs for parallel fetches
       const userIds = [...new Set(filteredComments.map(c => c.user_id))];
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("id, display_name, username, avatar_url")
-        .in("id", userIds);
-
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
-
-      // Batch fetch all likes, replies, and user likes in parallel
       const commentIds = filteredComments.map(c => c.id);
-      
-      const [likesResult, repliesResult, userLikesResult] = await Promise.all([
+
+      // Fetch profiles, likes, replies, and user likes in parallel (no dependency between them)
+      const [profilesResult, likesResult, repliesResult, userLikesResult] = await Promise.all([
+        userIds.length > 0
+          ? supabase
+              .from("profiles")
+              .select("id, display_name, username, avatar_url")
+              .in("id", userIds)
+          : Promise.resolve({ data: [] }),
         commentIds.length > 0
           ? supabase
               .from("round_comment_likes")
@@ -175,6 +174,8 @@ export default function RoundFeed() {
               .eq("user_id", currentUserId)
           : Promise.resolve({ data: [] })
       ]);
+
+      const profilesMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
 
       const likesCountMap = new Map<string, number>();
       likesResult.data?.forEach(like => {
@@ -239,6 +240,20 @@ export default function RoundFeed() {
   const handleLike = async (commentId: string, hasLiked: boolean) => {
     if (!currentUserId) return;
 
+    // Optimistic update (same as home page shared posts)
+    const prevComments = comments;
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? {
+              ...c,
+              user_has_liked: !hasLiked,
+              likes_count: hasLiked ? Math.max(0, c.likes_count - 1) : c.likes_count + 1,
+            }
+          : c
+      )
+    );
+
     try {
       if (hasLiked) {
         await supabase
@@ -252,9 +267,9 @@ export default function RoundFeed() {
           user_id: currentUserId,
         });
       }
-      fetchComments();
     } catch (error) {
       console.error("Error toggling like:", error);
+      setComments(prevComments);
     }
   };
 
@@ -421,6 +436,7 @@ export default function RoundFeed() {
           gameTitle={roundInfo.round_name || "Round"}
           courseName={roundInfo.course_name}
           pageTitle="Game Feed"
+          onBack={handleBack}
         />
       )}
       <div className="p-4 max-w-2xl mx-auto space-y-4">
@@ -633,66 +649,74 @@ export default function RoundFeed() {
                               <p className="mt-1 text-sm">{comment.content}</p>
                             )}
 
-                            {/* Actions */}
-                            <div className="flex items-center gap-4 mt-3">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className={`gap-1 ${comment.user_has_liked ? "text-red-500" : ""}`}
+                            {/* Actions: Likes and Comments (match design: icon + "X Likes" / "X Comments") */}
+                            <div className="flex items-center gap-6 mt-3 pt-3 border-t border-border">
+                              <button
+                                type="button"
                                 onClick={() => handleLike(comment.id, comment.user_has_liked)}
+                                className={`flex items-center gap-1.5 text-sm font-medium text-foreground hover:opacity-80 transition-opacity ${
+                                  comment.user_has_liked ? "text-red-500" : "text-foreground"
+                                }`}
                               >
-                                <Heart size={16} fill={comment.user_has_liked ? "currentColor" : "none"} />
-                                {comment.likes_count > 0 && comment.likes_count}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="gap-1"
+                                <Heart size={18} fill={comment.user_has_liked ? "currentColor" : "none"} strokeWidth={1.5} />
+                                <span>{comment.likes_count} Likes</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => toggleReplies(comment.id)}
+                                className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:opacity-80 transition-opacity"
                               >
-                                <MessageCircle size={16} />
-                                {comment.replies_count > 0 && comment.replies_count}
-                              </Button>
+                                <MessageCircle size={18} strokeWidth={1.5} />
+                                <span>{comment.replies_count} Comments</span>
+                              </button>
                             </div>
                           </>
                         )}
 
-                        {/* Replies Section */}
+                        {/* Replies Section (same pattern as home page shared posts) */}
                         {expandedReplies.has(comment.id) && (
-                          <div className="mt-4 space-y-3 border-l-2 border-muted pl-4">
+                          <div className="mt-3 space-y-3 border-l-2 border-muted pl-4 ml-2">
                             {replies.get(comment.id)?.map((reply) => (
                               <div key={reply.id} className="flex items-start gap-2">
-                                <Avatar className="h-8 w-8">
+                                <Avatar className="h-8 w-8 shrink-0">
                                   <AvatarImage src={reply.profiles?.avatar_url || undefined} />
                                   <AvatarFallback className="text-xs">{getInitials(reply.profiles)}</AvatarFallback>
                                 </Avatar>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-sm">{getDisplayName(reply.profiles)}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
-                                    </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="bg-muted/50 rounded-lg p-2">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs font-semibold">{getDisplayName(reply.profiles)}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-foreground">{reply.content}</p>
                                   </div>
-                                  <p className="text-sm">{reply.content}</p>
                                 </div>
                               </div>
                             ))}
 
-                            {/* Reply Input */}
+                            {/* Reply Input (same as home: inline Textarea + Send icon button) */}
                             {currentUserId && (
-                              <div className="flex gap-2 mt-2">
+                              <div className="flex gap-2 mt-2 items-center">
                                 <Textarea
                                   placeholder="Write a reply..."
                                   value={replyText.get(comment.id) || ""}
                                   onChange={(e) => setReplyText(prev => new Map(prev).set(comment.id, e.target.value))}
-                                  className="min-h-[60px]"
+                                  className="min-h-[40px] h-10 py-2 resize-none flex-1"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleSubmitReply(comment.id);
+                                    }
+                                  }}
                                 />
                                 <Button
-                                  size="sm"
+                                  size="icon"
                                   onClick={() => handleSubmitReply(comment.id)}
                                   disabled={!replyText.get(comment.id)?.trim()}
                                 >
-                                  <Send size={14} />
+                                  <Send size={18} />
                                 </Button>
                               </div>
                             )}

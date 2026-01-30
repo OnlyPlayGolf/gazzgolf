@@ -286,6 +286,7 @@ const GroupDetail = () => {
   
   // Messages state
   const [groupConversationId, setGroupConversationId] = useState<string | null>(null);
+  const [groupConversationUnreadCount, setGroupConversationUnreadCount] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -313,6 +314,13 @@ const GroupDetail = () => {
     }
   }, [showMessageDialog, groupId]);
 
+  // Load group conversation on page load so we can show unread badge on Message button
+  useEffect(() => {
+    if (groupId) {
+      loadGroupConversation();
+    }
+  }, [groupId]);
+
   // Subscribe to new messages
   useEffect(() => {
     if (groupConversationId) {
@@ -339,6 +347,37 @@ const GroupDetail = () => {
       };
     }
   }, [groupConversationId]);
+
+  // Load unread count for group conversation and subscribe to new messages for badge
+  useEffect(() => {
+    if (!groupConversationId || !user) return;
+    loadGroupConversationUnreadCount();
+    const channel = supabase
+      .channel(`group-unread-${groupConversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${groupConversationId}`
+        },
+        () => {
+          loadGroupConversationUnreadCount();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [groupConversationId, user]);
+
+  // Mark group conversation as read when user opens the message dialog
+  useEffect(() => {
+    if (showMessageDialog && groupConversationId && user) {
+      markGroupConversationAsRead();
+    }
+  }, [showMessageDialog, groupConversationId, user]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -1103,6 +1142,36 @@ useEffect(() => {
     }
   };
 
+  const loadGroupConversationUnreadCount = async () => {
+    if (!groupConversationId || !user) return;
+    try {
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('conversation_id', groupConversationId)
+        .eq('is_read', false)
+        .neq('sender_id', user.id);
+      setGroupConversationUnreadCount(count ?? 0);
+    } catch (error) {
+      console.error('Error loading group conversation unread count:', error);
+    }
+  };
+
+  const markGroupConversationAsRead = async () => {
+    if (!groupConversationId || !user) return;
+    try {
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', groupConversationId)
+        .eq('is_read', false)
+        .neq('sender_id', user.id);
+      setGroupConversationUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking group conversation as read:', error);
+    }
+  };
+
   const loadMessages = async () => {
     if (!groupConversationId) return;
 
@@ -1552,7 +1621,7 @@ useEffect(() => {
               
               <Button
                 variant="outline"
-                className="w-full justify-start gap-3"
+                className="w-full justify-start gap-3 relative"
                 onClick={() => {
                   loadGroupConversation();
                   setShowMessageDialog(true);
@@ -1560,6 +1629,14 @@ useEffect(() => {
               >
                 <MessageCircle size={20} />
                 Message
+                {groupConversationUnreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute right-3 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {groupConversationUnreadCount > 99 ? '99+' : groupConversationUnreadCount}
+                  </Badge>
+                )}
               </Button>
               
               {canManageGroup && (
