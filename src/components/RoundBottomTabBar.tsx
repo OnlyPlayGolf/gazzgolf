@@ -143,23 +143,27 @@ export function RoundBottomTabBar({ roundId, isSpectator = false, isEditWindowEx
                 else navigate(tab.path, { replace: true });
               }}
               className={`flex flex-col items-center gap-1 py-3 px-4 flex-1 transition-colors relative ${
-                isActive 
-                  ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <span className="relative inline-block">
-                <Icon size={20} />
-                {showFeedBadge && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-1 -right-1 z-10 h-4 min-w-4 flex items-center justify-center p-0 text-[10px]"
-                  >
-                    {feedUnreadCount > 99 ? "99+" : feedUnreadCount}
-                  </Badge>
-                )}
+              <span
+                className={`flex flex-col items-center gap-1 rounded-lg px-2.5 py-1.5 ${
+                  isActive ? "bg-primary/10" : ""
+                }`}
+              >
+                <span className="relative inline-block">
+                  <Icon size={20} />
+                  {showFeedBadge && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-1 -right-1 z-10 h-4 min-w-4 flex items-center justify-center p-0 text-[10px]"
+                    >
+                      {feedUnreadCount > 99 ? "99+" : feedUnreadCount}
+                    </Badge>
+                  )}
+                </span>
+                <span className="text-xs font-medium">{tab.label}</span>
               </span>
-              <span className="text-xs font-medium">{tab.label}</span>
             </button>
           );
         })}

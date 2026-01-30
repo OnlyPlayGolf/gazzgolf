@@ -50,8 +50,17 @@ const Index = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
+      async (event, session) => {
+        if (session) {
+          setUser(session.user);
+          return;
+        }
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          return;
+        }
+        const { data: { session: current } } = await supabase.auth.getSession();
+        setUser(current?.user ?? null);
       }
     );
 

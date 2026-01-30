@@ -23,10 +23,10 @@ export function ScorecardTypeSelector({
     <div className="px-4 pt-3">
       <Tabs value={selectedType} onValueChange={(v) => onTypeChange(v as ScorecardType)}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="primary" className="text-xs">
+          <TabsTrigger value="primary" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
             {primaryLabel}
           </TabsTrigger>
-          <TabsTrigger value="stroke_play" className="text-xs">
+          <TabsTrigger value="stroke_play" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
             Stroke Play
           </TabsTrigger>
         </TabsList>

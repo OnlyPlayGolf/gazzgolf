@@ -81,23 +81,29 @@ const Profile = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (!session?.user) {
-          navigate('/auth');
+      async (event, session) => {
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+          return;
         }
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setUser(null);
+          navigate("/auth");
+          return;
+        }
+        const { data: { session: current } } = await supabase.auth.getSession();
+        setSession(current);
+        setUser(current?.user ?? null);
+        if (!current?.user) navigate("/auth");
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
-      if (!session?.user) {
-        navigate('/auth');
-      }
+      if (!session?.user) navigate("/auth");
     });
 
     return () => subscription.unsubscribe();
