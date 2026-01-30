@@ -32,8 +32,8 @@ export async function migrateOBStrokesGained() {
     // Load baseline data
     console.log('Loading baseline data...');
     const [puttingTable, longgameTable] = await Promise.all([
-      parsePuttingBaseline('/src/assets/putt_baseline.csv'),
-      parseLongGameBaseline('/src/assets/shot_baseline.csv'),
+      parsePuttingBaseline('/putt_baseline.csv'),
+      parseLongGameBaseline('/shot_baseline.csv'),
     ]);
     const calculator = createStrokesGainedCalculator(puttingTable, longgameTable);
     

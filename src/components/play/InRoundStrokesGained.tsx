@@ -84,14 +84,18 @@ export function InRoundStrokesGained({
     setMissedSide('');
     setSaved(false);
     autoHoleTriggeredRef.current = 0; // Reset auto-hole trigger for new hole
-  }, [holeNumber, roundId]);
-
-  // Set initial start distance from hole distance (only once per hole, don't reset if user clears it)
-  useEffect(() => {
-    if (holeDistance && shots.length === 0 && !startDistance) {
+    // Set start distance immediately when hole changes so it's always auto-filled (e.g. when going back to a previous hole)
+    if (holeDistance != null && holeDistance > 0) {
       setStartDistance(String(holeDistance));
     }
-  }, [holeDistance, shots.length]); // Removed startDistance from deps to allow user to clear it
+  }, [holeNumber, roundId, holeDistance]);
+
+  // Keep start distance in sync with hole distance when at start of hole (handles late holeDistance and ensures it's always auto-filled)
+  useEffect(() => {
+    if (holeDistance != null && holeDistance > 0 && shots.length === 0) {
+      setStartDistance(String(holeDistance));
+    }
+  }, [holeNumber, holeDistance, shots.length]);
 
   // Auto-set shot type based on start lie
   useEffect(() => {
@@ -211,8 +215,8 @@ export function InRoundStrokesGained({
       const start = parseFloat(startDistance.replace(',', '.'));
       const end = parseFloat(normalizedEnd);
       
-      // For tee shots to any missed-fairway lie, require missed side (but not on par 3s)
-      if (startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && !missedSide) return;
+      // For first tee shot only: require missed side when missing fairway (not on par 3s; re-tees after OB don't record left/right)
+      if (startLie === 'tee' && shots.length === 0 && isMissedFairwayEndLie && par !== 3 && !missedSide) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // Clear any existing timer
@@ -235,13 +239,13 @@ export function InRoundStrokesGained({
         };
       }
     }
-  }, [endLie, startDistance, endDistance, startLie, missedSide, sgCalculator, isMissedFairwayEndLie]);
+  }, [endLie, startDistance, endDistance, startLie, missedSide, sgCalculator, isMissedFairwayEndLie, shots.length]);
 
   const loadBaselineData = async () => {
     try {
       const [puttingTable, longgameTable] = await Promise.all([
-        parsePuttingBaseline('/src/assets/putt_baseline.csv'),
-        parseLongGameBaseline('/src/assets/shot_baseline.csv'),
+        parsePuttingBaseline('/putt_baseline.csv'),
+        parseLongGameBaseline('/shot_baseline.csv'),
       ]);
       const calculator = createStrokesGainedCalculator(puttingTable, longgameTable);
       setSgCalculator(calculator);
@@ -281,6 +285,7 @@ export function InRoundStrokesGained({
             if (lastShot.endDistance !== undefined) {
               setStartDistance(String(lastShot.endDistance));
             }
+            setEndDistance("0");
             if (lastShot.endLie && lastShot.endLie !== 'OB') {
               setStartLie(lastShot.endLie as LieType | 'green');
             }
@@ -297,12 +302,14 @@ export function InRoundStrokesGained({
           // No existing data for this hole
           setShots([]);
           setStartDistance(holeDistance ? String(holeDistance) : "");
+          setEndDistance("0");
           setStartLie('tee');
         }
       } else {
         // No pro round yet
         setShots([]);
         setStartDistance(holeDistance ? String(holeDistance) : "");
+        setEndDistance("0");
         setStartLie('tee');
       }
     } catch (error) {
@@ -376,7 +383,7 @@ export function InRoundStrokesGained({
         endDistance: end,
         endLie: 'rough',
         strokesGained: sgShot,
-        ...(startLie === 'tee' && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+        ...(startLie === 'tee' && shots.length === 0 && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
       };
 
       const penaltyShot: Shot = {
@@ -403,6 +410,7 @@ export function InRoundStrokesGained({
 
       // Next playable shot starts from the drop (end distance) in rough
       setStartDistance(savedEndDistance);
+      setEndDistance("0");
       setStartLie('rough');
       setShotType('approach');
       return;
@@ -430,7 +438,7 @@ export function InRoundStrokesGained({
       endDistance: end,
       endLie: effectiveEndLie === 'OB' ? 'OB' : effectiveEndLie,
       strokesGained: sg,
-      ...(startLie === 'tee' && par !== 3 && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+      ...(startLie === 'tee' && shots.length === 0 && par !== 3 && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     // Clear inputs and add shot
@@ -444,8 +452,9 @@ export function InRoundStrokesGained({
     setShots(newShots);
     saveShots(newShots);
 
-    // Set up for next shot
+    // Set up for next shot: start = this shot's end, end distance default 0 (holed)
     setStartDistance(savedEndDistance);
+    setEndDistance("0");
     setStartLie((savedEndLie === 'recovery' || savedEndLie === 'other') ? 'rough' : (savedEndLie as LieType | 'green'));
   };
 
@@ -512,6 +521,7 @@ export function InRoundStrokesGained({
 
     // OB shot + penalty stroke
     // The OB shot itself loses strokes
+    // Only record left/right miss for the first tee shot (re-tees after OB don't record)
     const obShot: Shot = {
       type: shotType,
       startDistance: start,
@@ -521,6 +531,7 @@ export function InRoundStrokesGained({
       endLie: 'OB',
       strokesGained: obSG,
       isOB: true,
+      ...(shotType === 'tee' && shots.length === 0 && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     // Penalty stroke (re-tee or drop) - no additional SG loss, just a stroke
@@ -538,7 +549,7 @@ export function InRoundStrokesGained({
       penaltyType: 'ob',
     };
 
-    // Clear inputs and add shots
+    // Clear end inputs; keep start distance and lie for next shot (re-tee from same spot)
     setEndDistance("");
     setEndLie('');
     setMissedSide('');
@@ -546,6 +557,11 @@ export function InRoundStrokesGained({
     const newShots = [...shots, obShot, penaltyShot];
     setShots(newShots);
     saveShots(newShots);
+
+    // Next shot (re-tee) starts from same distance and lie as the shot that went OB
+    setStartDistance(String(start));
+    setEndDistance("0");
+    setStartLie(startLie);
   };
 
   const deleteLastShot = async () => {
@@ -576,6 +592,7 @@ export function InRoundStrokesGained({
     // Reset inputs
     if (newShots.length === 0) {
       setStartDistance(holeDistance ? String(holeDistance) : "");
+      setEndDistance("");
       setStartLie('tee');
     } else {
       const lastShot = newShots[newShots.length - 1];
@@ -593,8 +610,8 @@ export function InRoundStrokesGained({
         setStartLie(lastShot.endLie as LieType | 'green');
         }
       }
+      setEndDistance("0");
     }
-    setEndDistance("");
     setEndLie('');
     setMissedSide('');
   };
@@ -723,7 +740,7 @@ export function InRoundStrokesGained({
 
                 {/* Start Distance */}
                 <div className="space-y-1">
-                  <Label className="text-xs">Start Distance (m)</Label>
+                  <Label className="text-xs">Start Distance (y)</Label>
                   <Input
                     type="text"
                     inputMode="decimal"
@@ -738,7 +755,7 @@ export function InRoundStrokesGained({
 
                 {/* End Distance */}
                 <div className="space-y-1">
-                  <Label className="text-xs">End Distance (m)</Label>
+                  <Label className="text-xs">End Distance (y)</Label>
                   <Input
                     type="text"
                     inputMode="decimal"
@@ -753,36 +770,28 @@ export function InRoundStrokesGained({
                 <div className="space-y-1">
                   <Label className="text-xs">End Lie</Label>
                   <div className="grid grid-cols-3 gap-1">
-                    {(['green', 'fairway', 'rough', 'sand', 'recovery', 'hazard', 'other'] as const).map((lie) => (
-                      <Button
-                        key={lie}
-                        variant={endLie === lie ? "default" : "outline"}
-                        onClick={() => setEndLie(lie)}
-                        size="sm"
-                        className="text-xs h-8"
-                      >
-                        {lie === 'sand'
-                          ? 'Bunker'
-                          : lie === 'recovery'
-                            ? 'Recovery'
-                            : lie === 'hazard'
-                              ? 'Hazard'
-                              : lie === 'other'
-                                ? 'Other'
-                                : lie.charAt(0).toUpperCase() + lie.slice(1)}
-                      </Button>
-                    ))}
+                    {/* Row 1: Green, Fairway, Rough */}
+                    <Button variant={endLie === 'green' ? "default" : "outline"} onClick={() => setEndLie('green')} size="sm" className="text-xs h-8">Green</Button>
+                    <Button variant={endLie === 'fairway' ? "default" : "outline"} onClick={() => setEndLie('fairway')} size="sm" className="text-xs h-8">Fairway</Button>
+                    <Button variant={endLie === 'rough' ? "default" : "outline"} onClick={() => setEndLie('rough')} size="sm" className="text-xs h-8">Rough</Button>
+                    {/* Row 2: Bunker, Recovery, Other */}
+                    <Button variant={endLie === 'sand' ? "default" : "outline"} onClick={() => setEndLie('sand')} size="sm" className="text-xs h-8">Bunker</Button>
+                    <Button variant={endLie === 'recovery' ? "default" : "outline"} onClick={() => setEndLie('recovery')} size="sm" className="text-xs h-8">Recovery</Button>
+                    <Button variant={endLie === 'other' ? "default" : "outline"} onClick={() => setEndLie('other')} size="sm" className="text-xs h-8">Other</Button>
+                    {/* Row 3: Tee, Penalty (hazard), OB */}
+                    <Button variant={endLie === 'tee' ? "default" : "outline"} onClick={() => setEndLie('tee')} size="sm" className="text-xs h-8">Tee</Button>
+                    <Button variant={endLie === 'hazard' ? "default" : "outline"} onClick={() => setEndLie('hazard')} size="sm" className="text-xs h-8">Penalty</Button>
                     <Button
-                      variant="outline"
-                      onClick={() => addHoledShot(false)}
-                      size="sm"
-                      className="text-xs h-8"
-                    >
-                      Holed
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setEndLie('OB')}
+                      variant={endLie === 'OB' ? "default" : "outline"}
+                      onClick={() => {
+                        setEndLie('OB');
+                        // On shot 2+, auto-add OB + penalty and set next shot to same distance/lie (re-tee)
+                        const start = parseFloat(startDistance.replace(',', '.'));
+                        const isFirstTeeNeedingMissedSide = startLie === 'tee' && shots.length === 0 && par !== 3;
+                        if (!isFirstTeeNeedingMissedSide && !isNaN(start) && start > 0 && sgCalculator) {
+                          setTimeout(() => addOBShot(), 50);
+                        }
+                      }}
                       size="sm"
                       className="text-xs h-8"
                     >
@@ -791,9 +800,8 @@ export function InRoundStrokesGained({
                   </div>
                 </div>
 
-                {/* Missed Side - rough, bunker, recovery, hazard, other, OB all count as missed fairway */}
-                {/* Never show missed side on par 3s */}
-                {startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && (
+                {/* Missed Side - only for first tee shot (re-tees after OB don't record left/right); never on par 3s */}
+                {startLie === 'tee' && shots.length === 0 && isMissedFairwayEndLie && par !== 3 && (
                   <div className="space-y-1">
                     <Label className="text-xs">Missed Side</Label>
                     <div className="flex gap-2">
@@ -850,22 +858,25 @@ export function InRoundStrokesGained({
                   {[...shots].reverse().map((shot, idx) => {
                     const shotNumber = shots.length - idx;
                     return (
-                      <div key={shots.length - 1 - idx} className={`p-2 border rounded text-xs ${shot.isOB ? 'border-destructive bg-destructive/10' : ''}`}>
+                      <div key={shots.length - 1 - idx} className={`p-2 border rounded text-xs ${shot.isPenalty ? 'border-destructive bg-destructive/10' : ''}`}>
                         <div className="flex justify-between items-center">
                           <span>
                             <span className="font-medium mr-1">#{shotNumber}</span>
-                            {shot.type} • {shot.startDistance}m
-                            {shot.holed && " → Holed"}
-                            {shot.isOB && " → OB"}
-                            {shot.isPenalty && " • Penalty"}
+                            {shot.isPenalty ? "Penalty" : (
+                              <>
+                                {shot.type} • {shot.startDistance}y
+                                {shot.holed && " → Holed"}
+                                {shot.isOB && " → OB"}
+                              </>
+                            )}
                           </span>
                           <span className={shot.strokesGained >= 0 ? 'text-green-600' : 'text-red-600'}>
                             {shot.strokesGained >= 0 ? '+' : ''}{shot.strokesGained.toFixed(2)}
                           </span>
                         </div>
-                        {!shot.holed && !shot.isOB && (
+                        {!shot.holed && !shot.isOB && !shot.isPenalty && (
                           <div className="text-muted-foreground ml-4">
-                            → {shot.endDistance}m ({shot.endLie})
+                            → {shot.endDistance}y ({shot.endLie})
                           </div>
                         )}
                       </div>

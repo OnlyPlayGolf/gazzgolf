@@ -145,8 +145,9 @@ const ProHoleTracker = () => {
       // For ALL shots (including putting), require endLie to be selected
       if (!endLie) return;
       
-      // If tee shot and end lie is any missed-fairway type, require missed side (but not on par 3s)
-      if (startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && !missedSide) return;
+      // For first tee shot only: require missed side when missing fairway (re-tees after OB don't record left/right)
+      const currentShotsLength = holeData[currentHole]?.shots?.length ?? 0;
+      if (startLie === 'tee' && currentShotsLength === 0 && isMissedFairwayEndLie && par !== 3 && !missedSide) return;
       
       if (!isNaN(start) && !isNaN(end)) {
         // If end distance is exactly 0 (user typed "0"), use 2-second delay
@@ -175,13 +176,13 @@ const ProHoleTracker = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [endLie, startDistance, endDistance, startLie, missedSide, isMissedFairwayEndLie]);
+  }, [endLie, startDistance, endDistance, startLie, missedSide, isMissedFairwayEndLie, holeData, currentHole]);
 
   const loadBaselineData = async () => {
     try {
       const [puttingTable, longgameTable] = await Promise.all([
-        parsePuttingBaseline('/src/assets/putt_baseline.csv'),
-        parseLongGameBaseline('/src/assets/shot_baseline.csv'),
+        parsePuttingBaseline('/putt_baseline.csv'),
+        parseLongGameBaseline('/shot_baseline.csv'),
       ]);
       const calculator = createStrokesGainedCalculator(puttingTable, longgameTable);
       setSgCalculator(calculator);
@@ -489,6 +490,7 @@ const ProHoleTracker = () => {
         return;
       }
 
+      const hazardCurrentData = getCurrentHoleData();
       const drillType = shotType === 'putt' ? 'putting' : 'longGame';
       const sgShot = sgCalculator.calculateStrokesGained(
         drillType,
@@ -507,7 +509,7 @@ const ProHoleTracker = () => {
         endDistance: end,
         endLie: 'rough',
         strokesGained: sgShot,
-        ...(startLie === 'tee' && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+        ...(startLie === 'tee' && hazardCurrentData.shots.length === 0 && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
       };
 
       // Auto penalty stroke (1 shot, no position change)
@@ -523,8 +525,7 @@ const ProHoleTracker = () => {
         penaltyType: 'hazard',
       };
 
-      const currentData = getCurrentHoleData();
-      const updatedShots = [...currentData.shots, hazardShot, penaltyShot];
+      const updatedShots = [...hazardCurrentData.shots, hazardShot, penaltyShot];
       setHoleData({
         ...holeData,
         [currentHole]: {
@@ -535,9 +536,9 @@ const ProHoleTracker = () => {
 
       // Next playable shot starts from the drop (end distance) in rough
       setStartDistance(String(end));
+      setEndDistance("0");
       setStartLie('rough');
       setShotType('approach');
-      setEndDistance("");
       setEndLie('');
       setMissedSide('');
       setHoled(false);
@@ -558,6 +559,7 @@ const ProHoleTracker = () => {
       end
     );
 
+    const currentData = getCurrentHoleData();
     const newShot: Shot = {
       type: shotType,
       startDistance: start,
@@ -566,10 +568,8 @@ const ProHoleTracker = () => {
       endDistance: end,
       endLie: effectiveEndLie,
       strokesGained: sg,
-      ...(startLie === 'tee' && par !== 3 && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+      ...(startLie === 'tee' && currentData.shots.length === 0 && par !== 3 && (effectiveEndLie === 'rough' || effectiveEndLie === 'sand' || effectiveEndLie === 'OB') && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
-
-    const currentData = getCurrentHoleData();
     setHoleData({
       ...holeData,
       [currentHole]: {
@@ -580,8 +580,8 @@ const ProHoleTracker = () => {
 
     // Reset inputs and set next shot's start to this shot's end
     setStartDistance(endDistance); // Next shot starts where this one ended
+    setEndDistance("0");
     setStartLie(effectiveEndLie); // Next shot starts from this lie
-    setEndDistance("");
     setEndLie(''); // Reset end lie for next shot
     setMissedSide(''); // Reset missed side
     setHoled(false);
@@ -655,6 +655,7 @@ const ProHoleTracker = () => {
     }
 
     // Shot 1: The OB shot itself
+    const obCurrentData = getCurrentHoleData();
     const obShot: Shot = {
       type: shotType,
       startDistance: start,
@@ -664,7 +665,7 @@ const ProHoleTracker = () => {
       endLie: 'OB',
       strokesGained: 0, // Penalty shot, no SG calculation
       isOB: true,
-      ...(startLie === 'tee' && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
+      ...(startLie === 'tee' && obCurrentData.shots.length === 0 && par !== 3 && missedSide ? { missedSide: missedSide as 'left' | 'right' } : {}),
     };
 
     // Shot 2: Auto-penalty stroke (stroke and distance penalty)
@@ -681,22 +682,21 @@ const ProHoleTracker = () => {
       penaltyType: 'ob',
     };
 
-    const currentData = getCurrentHoleData();
     setHoleData({
       ...holeData,
       [currentHole]: {
         par,
-        shots: [...currentData.shots, obShot, penaltyShot],
+        shots: [...obCurrentData.shots, obShot, penaltyShot],
       },
     });
 
-    // Reset for next shot (Shot 3) - start distance stays the same (replay from same spot)
-    // Keep the same start lie since we're replaying
-    setEndDistance("");
+    // Reset end inputs; next shot (re-tee) starts from same distance and lie as the shot that went OB
+    setEndDistance("0");
     setEndLie('');
     setMissedSide('');
     setHoled(false);
-    // Start distance and lie remain unchanged for the replay
+    setStartDistance(String(start));
+    setStartLie(startLie);
   };
 
   const finishHoleAfterUpdate = async (shots: Shot[]) => {
@@ -837,6 +837,7 @@ const ProHoleTracker = () => {
       // No shots left - reset to hole start
       const holeDistance = getHoleDistance(currentHole);
       setStartDistance(holeDistance ? String(holeDistance) : "");
+      setEndDistance("0");
       setStartLie('tee');
       setShotType('tee');
     } else {
@@ -845,6 +846,7 @@ const ProHoleTracker = () => {
       if (lastShot.endDistance !== undefined) {
         setStartDistance(String(lastShot.endDistance));
       }
+      setEndDistance("0");
       if (lastShot.endLie && lastShot.endLie !== 'OB') {
         setStartLie(lastShot.endLie as LieType | 'green');
         // Auto-set shot type based on lie
@@ -856,8 +858,7 @@ const ProHoleTracker = () => {
       }
     }
     
-    // Reset end inputs
-    setEndDistance("");
+    // Reset end inputs (end distance already set above)
     setEndLie('');
     setMissedSide('');
     setHoled(false);
@@ -941,18 +942,18 @@ const ProHoleTracker = () => {
             )}
 
             <div>
-              <Label>Start Distance (m)</Label>
+              <Label>Start Distance (y)</Label>
               <Input
                 type="number"
                 value={startDistance}
                 onChange={(e) => setStartDistance(e.target.value)}
-                placeholder="Enter distance in meters"
+                placeholder="Enter distance in yards"
                 className="mt-2"
               />
             </div>
 
             <div>
-              <Label>End Distance (m)</Label>
+              <Label>End Distance (y)</Label>
               <Input
                 type="number"
                 value={endDistance}
@@ -965,40 +966,28 @@ const ProHoleTracker = () => {
             <div>
               <Label>End Lie</Label>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                {(['green', 'fairway', 'rough', 'sand', 'recovery', 'hazard', 'other'] as const).map((lie) => (
-                  <Button
-                    key={lie}
-                    variant={endLie === lie ? "default" : "outline"}
-                    onClick={() => setEndLie(lie)}
-                    size="sm"
-                  >
-                    {lie === 'sand'
-                      ? 'Bunker'
-                      : lie === 'recovery'
-                        ? 'Recovery'
-                        : lie === 'hazard'
-                          ? 'Hazard'
-                          : lie === 'other'
-                            ? 'Other'
-                            : lie.charAt(0).toUpperCase() + lie.slice(1)}
-                  </Button>
-                ))}
+                {/* Row 1: Green, Fairway, Rough */}
+                <Button variant={endLie === 'green' ? "default" : "outline"} onClick={() => setEndLie('green')} size="sm">Green</Button>
+                <Button variant={endLie === 'fairway' ? "default" : "outline"} onClick={() => setEndLie('fairway')} size="sm">Fairway</Button>
+                <Button variant={endLie === 'rough' ? "default" : "outline"} onClick={() => setEndLie('rough')} size="sm">Rough</Button>
+                {/* Row 2: Bunker, Recovery, Other */}
+                <Button variant={endLie === 'sand' ? "default" : "outline"} onClick={() => setEndLie('sand')} size="sm">Bunker</Button>
+                <Button variant={endLie === 'recovery' ? "default" : "outline"} onClick={() => setEndLie('recovery')} size="sm">Recovery</Button>
+                <Button variant={endLie === 'other' ? "default" : "outline"} onClick={() => setEndLie('other')} size="sm">Other</Button>
+                {/* Row 3: Tee, Penalty (hazard), OB */}
+                <Button variant={endLie === 'tee' ? "default" : "outline"} onClick={() => setEndLie('tee')} size="sm">Tee</Button>
+                <Button variant={endLie === 'hazard' ? "default" : "outline"} onClick={() => setEndLie('hazard')} size="sm">Penalty</Button>
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    setHoled(true);
-                    setTimeout(() => {
-                      addHoledShot();
-                    }, 50);
-                  }}
-                  size="sm"
-                >
-                  Holed
-                </Button>
-                <Button
-                  variant="destructive"
+                  variant={endLie === 'OB' ? "default" : "outline"}
                   onClick={() => {
                     setEndLie('OB');
+                    // On shot 2+, auto-add OB + penalty and set next shot to same distance/lie (re-tee)
+                    const start = parseFloat(startDistance.replace(',', '.'));
+                    const currentShotsLength = holeData[currentHole]?.shots?.length ?? 0;
+                    const isFirstTeeNeedingMissedSide = startLie === 'tee' && currentShotsLength === 0 && par !== 3;
+                    if (!isFirstTeeNeedingMissedSide && !isNaN(start) && start > 0 && sgCalculator) {
+                      setTimeout(() => addOBShot(), 50);
+                    }
                   }}
                   size="sm"
                 >
@@ -1007,9 +996,8 @@ const ProHoleTracker = () => {
               </div>
             </div>
 
-            {/* Missed Side - rough, bunker, recovery, hazard, other, OB all count as missed fairway */}
-            {/* Never show missed side on par 3s */}
-            {startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && (
+            {/* Missed Side - only for first tee shot (re-tees after OB don't record left/right); never on par 3s */}
+            {(holeData[currentHole]?.shots?.length ?? 0) === 0 && startLie === 'tee' && isMissedFairwayEndLie && par !== 3 && (
               <div>
                 <Label>Missed Side</Label>
                 <div className="flex gap-2 mt-2">
@@ -1059,24 +1047,27 @@ const ProHoleTracker = () => {
                 const shotNumber = currentData.shots.length - idx;
                 const runningScore = currentData.shots.length - idx;
                 return (
-                  <div key={currentData.shots.length - 1 - idx} className={`p-3 border rounded-lg text-sm ${shot.isOB ? 'border-destructive bg-destructive/10' : ''}`}>
+                  <div key={currentData.shots.length - 1 - idx} className={`p-3 border rounded-lg text-sm ${shot.isPenalty ? 'border-destructive bg-destructive/10' : ''}`}>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
                           {shotNumber}
                         </span>
                         <span className="font-medium">
-                          {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
-                          {shot.holed && " • Holed"}
-                          {shot.isOB && " • OB"}
-                          {shot.isPenalty && " • Penalty"}
+                          {shot.isPenalty ? "Penalty" : (
+                            <>
+                              {shot.type.charAt(0).toUpperCase() + shot.type.slice(1)} • {shot.startDistance}m
+                              {shot.holed && " • Holed"}
+                              {shot.isOB && " • OB"}
+                            </>
+                          )}
                         </span>
                       </div>
                       <span className="text-muted-foreground text-sm">
                         Score: {runningScore}
                       </span>
                     </div>
-                    {!shot.holed && !shot.isOB && (
+                    {!shot.holed && !shot.isOB && !shot.isPenalty && (
                       <div className="text-muted-foreground text-xs mt-1 ml-8">
                         → {shot.endDistance}m ({shot.endLie})
                       </div>
@@ -1131,7 +1122,7 @@ const ProHoleTracker = () => {
                 const prevDistance = getHoleDistance(prevHole);
                 setStartDistance(prevDistance ? String(prevDistance) : "");
               }
-              setEndDistance("");
+              setEndDistance("0");
               setEndLie('');
             }}
           >

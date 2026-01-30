@@ -73,8 +73,8 @@ export default function RunDrill() {
     const loadBaselines = async () => {
       try {
         const [puttingData, longgameData] = await Promise.all([
-          parsePuttingBaseline('/src/assets/putt_baseline.csv'),
-          parseLongGameBaseline('/src/assets/shot_baseline.csv')
+          parsePuttingBaseline('/putt_baseline.csv'),
+          parseLongGameBaseline('/shot_baseline.csv')
         ]);
         
         setPuttingTable(puttingData);
