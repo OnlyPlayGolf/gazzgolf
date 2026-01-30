@@ -57,7 +57,8 @@ const Profile = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [favoriteGroupIds, setFavoriteGroupIds] = useState<string[]>([]);
-  
+  const [groupUnreadCounts, setGroupUnreadCounts] = useState<Record<string, number>>({});
+
   // Dialog states
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -290,6 +291,58 @@ const Profile = () => {
     }
   };
 
+  const loadGroupUnreadCounts = async () => {
+    if (!user || groups.length === 0) return;
+    try {
+      const groupIds = groups.map((g) => g.id);
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('id, group_id')
+        .eq('type', 'group')
+        .in('group_id', groupIds);
+      if (!convs?.length) {
+        setGroupUnreadCounts({});
+        return;
+      }
+      const convIds = convs.map((c) => c.id);
+      const convToGroup = new Map(convs.map((c) => [c.id, c.group_id]));
+      const { data: unreadRows } = await supabase
+        .from('messages')
+        .select('conversation_id')
+        .in('conversation_id', convIds)
+        .eq('is_read', false)
+        .neq('sender_id', user.id);
+      const countByGroup: Record<string, number> = {};
+      (unreadRows || []).forEach((r: { conversation_id: string }) => {
+        const gid = convToGroup.get(r.conversation_id);
+        if (gid) countByGroup[gid] = (countByGroup[gid] || 0) + 1;
+      });
+      setGroupUnreadCounts(countByGroup);
+    } catch (error) {
+      console.error('Error loading group unread counts:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user && groups.length > 0) {
+      loadGroupUnreadCounts();
+    }
+  }, [user, groups]);
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('profile-group-messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        () => loadGroupUnreadCounts()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const handleCreateGroup = async () => {
     if (!groupName.trim()) {
@@ -905,9 +958,17 @@ const Profile = () => {
             sortedGroups.map((group) => (
               <Card 
                 key={group.id} 
-                className="border-border cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
+                className="relative border-border cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
                 onClick={() => navigate(`/group/${group.id}`)}
               >
+                {groupUnreadCounts[group.id] > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute top-4 left-4 z-10 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {groupUnreadCounts[group.id] > 99 ? '99+' : groupUnreadCounts[group.id]}
+                  </Badge>
+                )}
                 <CardContent className="p-4">
                   <div className="flex gap-4 items-center">
                     {/* Group Avatar */}

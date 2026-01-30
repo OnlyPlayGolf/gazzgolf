@@ -81,12 +81,29 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   const [friends, setFriends] = useState<{ id: string; display_name: string | null; username: string | null; }[]>([]);
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
   const [createSearch, setCreateSearch] = useState("");
+  const currentUserIdRef = useRef<string | null>(null);
+  const openRef = useRef(open);
+
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUserId(user?.id || null);
     });
   }, []);
+
+  // Load unread count as soon as user is available so top bar badge shows right away
+  useEffect(() => {
+    if (currentUserId) {
+      loadUnreadCount();
+    }
+  }, [currentUserId]);
 
   useEffect(() => {
     if (open) {
@@ -104,8 +121,10 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
     }
   }, [createOpen]);
 
-  // Subscribe to real-time message updates for unread count
+  // Subscribe to real-time message updates (stable subscription so badge updates immediately)
   useEffect(() => {
+    if (!currentUserId) return;
+
     const channel = supabase
       .channel('all-messages')
       .on(
@@ -115,21 +134,24 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
           schema: 'public',
           table: 'messages'
         },
-        () => {
+        (payload: { new?: { sender_id?: string; conversation_id?: string } }) => {
+          // Optimistic update: show badge immediately if the message is not from current user
+          const newRecord = payload?.new;
+          if (newRecord && newRecord.sender_id !== currentUserIdRef.current) {
+            setTotalUnreadCount((prev) => Math.min(prev + 1, 99));
+          }
           loadUnreadCount();
-          if (open) {
+          if (openRef.current) {
             loadConversations();
           }
         }
       )
       .subscribe();
 
-    loadUnreadCount();
-
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [open]);
+  }, [currentUserId]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -137,6 +159,12 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         await loadMessages(selectedConversation.id);
         await markConversationAsRead(selectedConversation.id);
         await loadUnreadCount();
+        // Clear notification on this chat card immediately
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === selectedConversation.id ? { ...c, unread_count: 0 } : c
+          )
+        );
       };
       loadAndMark();
       const channel = supabase
@@ -524,7 +552,19 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        {trigger || (
+        {trigger ? (
+          <span className="relative inline-block">
+            {trigger}
+            {totalUnreadCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs pointer-events-none"
+              >
+                {totalUnreadCount > 99 ? '99+' : totalUnreadCount}
+              </Badge>
+            )}
+          </span>
+        ) : (
           <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 relative">
             <MessageCircle size={18} />
             {totalUnreadCount > 0 && (
@@ -654,28 +694,37 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
                     <div
                       key={conv.id}
                       onClick={() => setSelectedConversation(conv)}
-                      className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      className="relative p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                     >
+                      {conv.unread_count > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="absolute top-2 left-2 z-10 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+                        >
+                          {conv.unread_count > 99 ? '99+' : conv.unread_count}
+                        </Badge>
+                      )}
                       <div className="flex items-start gap-3">
                         <ProfilePhoto
                           alt={conv.name}
                           fallback={conv.type === 'group' ? conv.name : conv.name}
                           size="md"
+                          className={conv.unread_count > 0 ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : undefined}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-medium truncate">
+                            <h4 className={`truncate ${conv.unread_count > 0 ? "font-semibold" : "font-medium"}`}>
                               {conv.name}
                               {conv.type === 'group' && <span className="text-muted-foreground text-sm ml-2">(group)</span>}
                             </h4>
                             {conv.last_message_time && (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs text-muted-foreground shrink-0">
                                 {formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: true })}
                               </span>
                             )}
                           </div>
                           {conv.last_message && (
-                            <p className="text-sm text-muted-foreground truncate mt-1">
+                            <p className={`text-sm truncate mt-1 ${conv.unread_count > 0 ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                               {conv.last_message}
                             </p>
                           )}
