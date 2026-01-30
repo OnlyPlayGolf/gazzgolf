@@ -14,6 +14,7 @@ import { useIsSpectator } from "@/hooks/useIsSpectator";
 import { StatsMode } from "@/pages/StrokePlaySetup";
 import { InRoundStatsEntry } from "@/components/play/InRoundStatsEntry";
 import { usePlayerStatsMode } from "@/hooks/usePlayerStatsMode";
+import { RoundCompletionModal } from "@/components/RoundCompletionModal";
 
 interface Round {
   id: string;
@@ -109,6 +110,8 @@ export default function RoundTracker() {
   const [isManualNavigation, setIsManualNavigation] = useState(false);
   // Track which holes have had stats saved (for stats mode auto-advance blocking)
   const [holeStatsSaved, setHoleStatsSaved] = useState<Set<number>>(new Set());
+  // Show completion modal when round is finished (all scores entered on last hole)
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   // Get player's personal stats mode (from My Stats Settings)
   const { statsMode: playerStatsMode, loading: statsModeLoading } = usePlayerStatsMode(roundId, 'round');
@@ -747,10 +750,15 @@ export default function RoundTracker() {
       }, 500);
       return () => clearTimeout(timeout);
     }
-    
-    // For last hole: ensure stats are saved (they should auto-save, but ensure it happens)
-    // The stats component handles its own saving, so we just need to ensure the condition is met
-    // This effect will re-run when stats are saved, ensuring everything is in sync
+
+    // For last hole: when all players have scores and stats completed, show completion modal (like other formats)
+    if (allPlayersEnteredCurrentHole && statsCompleted && isLastHole) {
+      const timeout = setTimeout(() => {
+        setShowScoreSheet(false);
+        setShowCompletionModal(true);
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
   }, [allPlayersEnteredCurrentHole, currentHoleIndex, courseHoles.length, isManualNavigation, playerStatsMode, round?.stats_mode, holeStatsSaved, currentHole?.hole_number]);
 
   const handleFinishRound = () => {
@@ -1160,6 +1168,40 @@ export default function RoundTracker() {
           />
         </>
       )}
+
+      {/* Round completion modal - show when all scores entered on last hole (like other formats) */}
+      {round && courseHoles.length > 0 && players.length > 0 && (() => {
+        const currentUserPlayer = players.find(p => p.user_id === currentUserId) ?? players[0];
+        const holeScoresMap = scores.get(currentUserPlayer.id) ?? new Map<number, number>();
+        const plannedHoles = courseHoles.slice(0, round.holes_played || courseHoles.length);
+        const totalScore = plannedHoles.reduce((sum, h) => {
+          const s = holeScoresMap.get(h.hole_number);
+          return sum + (s !== undefined && s > 0 ? s : 0);
+        }, 0);
+        const totalPar = plannedHoles.reduce((sum, h) => sum + h.par, 0);
+        const scoreVsPar = totalScore - totalPar;
+        return (
+          <RoundCompletionModal
+            open={showCompletionModal}
+            onOpenChange={setShowCompletionModal}
+            courseName={round.course_name}
+            datePlayed={round.date_played}
+            holesPlayed={round.holes_played || plannedHoles.length}
+            totalScore={totalScore}
+            scoreVsPar={scoreVsPar}
+            totalPar={totalPar}
+            courseHoles={plannedHoles.map(h => ({ hole_number: h.hole_number, par: h.par, stroke_index: h.stroke_index ?? h.hole_number }))}
+            holeScores={holeScoresMap}
+            roundId={roundId}
+            roundName={round.round_name || round.course_name}
+            playerName={getPlayerName(currentUserPlayer)}
+            onContinue={() => {
+              setShowCompletionModal(false);
+              handleFinishRound();
+            }}
+          />
+        );
+      })()}
 
       <RoundBottomTabBar roundId={roundId!} isEditWindowExpired={isEditWindowExpired} />
     </div>

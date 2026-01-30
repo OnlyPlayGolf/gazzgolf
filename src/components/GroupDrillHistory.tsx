@@ -151,6 +151,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
   const [members, setMembers] = useState<{ user_id: string; display_name: string | null; username: string | null }[]>([]);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [selectedRounds, setSelectedRounds] = useState<Record<string, number>>({});
+  const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
     const fetchGroupHistory = async () => {
@@ -287,6 +288,14 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
     return drillMatch && memberMatch;
   });
 
+  // Reset visible count when filters change so we show first 10 again
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [selectedDrill, selectedMember]);
+
+  const visibleResults = filteredResults.slice(0, visibleCount);
+  const hasMore = filteredResults.length > visibleCount;
+
   if (loading) {
     return (
       <p className="text-center text-muted-foreground py-8">Loading history...</p>
@@ -384,7 +393,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
           </p>
         ) : (
           <Accordion type="single" collapsible className="w-full space-y-2">
-            {filteredResults.map((result) => {
+            {visibleResults.map((result) => {
               const is21Points = normalizeDrillTitle(result.drill_title) === '21 Points';
               const isEightBall = normalizeDrillTitle(result.drill_title) === '8-Ball Circuit';
               const players = (result.attempts_json?.players || []) as Array<{
@@ -614,11 +623,24 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
             })}
           </Accordion>
         )}
+
+        {hasMore && (
+          <div className="flex justify-center pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setVisibleCount((c) => c + 10)}
+            >
+              Show more
+            </Button>
+          </div>
+        )}
       </div>
 
       {filteredResults.length > 0 && (
         <p className="text-xs text-muted-foreground text-center">
-          Showing {filteredResults.length} of {results.length} results
+          Showing {visibleResults.length} of {filteredResults.length} results
+          {results.length !== filteredResults.length && ` (${results.length} total)`}
         </p>
       )}
     </div>
