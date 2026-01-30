@@ -329,8 +329,17 @@ const AuthAwareBottomTabBar = () => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setIsLoggedIn(!!session?.user);
+      async (event, session) => {
+        if (session) {
+          setIsLoggedIn(true);
+          return;
+        }
+        if (event === "SIGNED_OUT") {
+          setIsLoggedIn(false);
+          return;
+        }
+        const { data: { session: current } } = await supabase.auth.getSession();
+        setIsLoggedIn(!!current?.user);
       }
     );
 

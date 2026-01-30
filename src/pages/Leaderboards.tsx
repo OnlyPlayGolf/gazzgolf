@@ -134,21 +134,25 @@ const Leaderboards = () => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        
-        if (!session?.user) {
-          navigate('/auth');
+      async (event, session) => {
+        if (session) {
+          setUser(session.user);
+          return;
         }
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          navigate("/auth");
+          return;
+        }
+        const { data: { session: current } } = await supabase.auth.getSession();
+        setUser(current?.user ?? null);
+        if (!current?.user) navigate("/auth");
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      
-      if (!session?.user) {
-        navigate('/auth');
-      }
+      if (!session?.user) navigate("/auth");
     });
 
     return () => subscription.unsubscribe();
@@ -508,11 +512,17 @@ const Leaderboards = () => {
 
         <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'levels' | 'drills')} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="levels">
+            <TabsTrigger
+              value="levels"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+            >
               <TrendingUp size={16} className="mr-2" />
               Levels
             </TabsTrigger>
-            <TabsTrigger value="drills">
+            <TabsTrigger
+              value="drills"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+            >
               <Target size={16} className="mr-2" />
               Drills
             </TabsTrigger>

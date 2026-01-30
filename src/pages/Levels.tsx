@@ -245,8 +245,8 @@ const Levels = () => {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="play">Play</TabsTrigger>
-            <TabsTrigger value="all-levels">All Levels ({stats.total})</TabsTrigger>
+            <TabsTrigger value="play" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">Play</TabsTrigger>
+            <TabsTrigger value="all-levels" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">All Levels ({stats.total})</TabsTrigger>
           </TabsList>
 
           {/* Play Tab - Current Level */}

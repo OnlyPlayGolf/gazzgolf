@@ -23,15 +23,29 @@ const AuthGuard = ({ children, fallback }: AuthGuardProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Only treat user as logged out on explicit SIGNED_OUT or after confirming no session.
+    // This prevents transient nulls (e.g. token refresh, multi-tab) from logging the user out.
+    const applySession = (session: { user: SupabaseUser } | null) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
+      async (event, session) => {
+        if (session) {
+          applySession(session);
+          return;
+        }
+        if (event === "SIGNED_OUT") {
+          applySession(null);
+          return;
+        }
+        // Transient null (e.g. token refresh): re-verify before logging out
+        const { data: { session: current } } = await supabase.auth.getSession();
+        applySession(current);
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);

@@ -44,6 +44,8 @@ interface Conversation {
   last_message_time?: string;
   updated_at: string;
   unread_count: number;
+  /** User avatar URL (friend) or group image URL (group) for chat list */
+  photo_url?: string | null;
 }
 
 interface Message {
@@ -352,6 +354,16 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
         unread_count: 0,
       }));
 
+      // Fetch photos for chat list: user avatars (friend) and group images (group)
+      const otherUserIds = [...new Set(baseConversations.filter((c) => c.type === 'friend' && c.other_user_id).map((c) => c.other_user_id!))];
+      const groupIds = [...new Set(baseConversations.filter((c) => c.type === 'group' && c.group_id).map((c) => c.group_id!))];
+      const [profilesRes, groupsRes] = await Promise.all([
+        otherUserIds.length > 0 ? supabase.from('profiles').select('id, avatar_url').in('id', otherUserIds) : Promise.resolve({ data: [] }),
+        groupIds.length > 0 ? supabase.from('groups').select('id, image_url').in('id', groupIds) : Promise.resolve({ data: [] }),
+      ]);
+      const avatarByUserId = new Map((profilesRes.data || []).map((p: any) => [p.id, p.avatar_url]));
+      const imageByGroupId = new Map((groupsRes.data || []).map((g: any) => [g.id, g.image_url]));
+
       // Compute unread counts for all conversations in a single query (avoid N+1)
       const conversationIds = baseConversations.map((c) => c.id);
       const unreadCountMap = new Map<string, number>();
@@ -376,6 +388,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
       const withUnread: Conversation[] = baseConversations.map((c) => ({
         ...c,
         unread_count: unreadCountMap.get(c.id) || 0,
+        photo_url: c.type === 'friend' && c.other_user_id ? avatarByUserId.get(c.other_user_id) ?? null : c.type === 'group' && c.group_id ? imageByGroupId.get(c.group_id) ?? null : null,
       }));
 
       // Improve names that came as 'Unknown' by falling back to email prefix
@@ -706,6 +719,7 @@ export const MessagesSheet = ({ trigger }: MessagesSheetProps) => {
                       )}
                       <div className="flex items-start gap-3">
                         <ProfilePhoto
+                          src={conv.photo_url}
                           alt={conv.name}
                           fallback={conv.type === 'group' ? conv.name : conv.name}
                           size="md"

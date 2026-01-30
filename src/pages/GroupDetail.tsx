@@ -1664,10 +1664,18 @@ useEffect(() => {
           <CardContent>
             <Tabs value={leaderboardTab} onValueChange={setLeaderboardTab}>
               <TabsList className="grid w-full grid-cols-4 mb-4">
-                <TabsTrigger value="levels">Levels</TabsTrigger>
-                <TabsTrigger value="drills">Drills PB</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-                <TabsTrigger value="play">Play</TabsTrigger>
+                <TabsTrigger value="levels" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+                  Levels
+                </TabsTrigger>
+                <TabsTrigger value="drills" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+                  Drills PB
+                </TabsTrigger>
+                <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+                  History
+                </TabsTrigger>
+                <TabsTrigger value="play" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+                  Play
+                </TabsTrigger>
               </TabsList>
 
               {/* Drills Tab */}
