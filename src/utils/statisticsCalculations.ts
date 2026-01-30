@@ -160,7 +160,6 @@ export const formatPercentage = (value: number | null): string => {
 export type StatsFilter = 'all' | 'year' | 'last5' | 'last10' | 'last20' | 'last50';
 
 export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'): Promise<AllStats> {
-  // "This year" = current calendar year only (Jan 1 00:00 to now)
   const yearFilter = filter === 'year' ? new Date(new Date().getFullYear(), 0, 1).toISOString() : null;
 
   // Batch 1: Run all initial fetches in parallel
@@ -665,7 +664,7 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     par3Average: null, // Would need hole-by-hole data
     par4Average: null,
     par5Average: null,
-    totalRounds: filteredRounds.filter(r => r.gameType === 'round').length,
+    totalRounds: eighteenHoleRounds.length,
     totalHoles: filteredRounds.reduce((sum, r) => {
       const userScore = userScoresByRound.get(r.id);
       return sum + (userScore?.holesCount || 0);
@@ -1098,9 +1097,9 @@ export async function fetchUserStats(userId: string, filter: StatsFilter = 'all'
     };
   }
 
-  // Rounds played = stroke-play rounds in the selected filter (last X = up to X of those). Pro stats fallback when no regular rounds.
-  const strokePlayInFilter = filteredRounds.filter(r => r.gameType === 'round').length;
-  const totalRoundsPlayed = strokePlayInFilter > 0 ? strokePlayInFilter : (proRounds?.length || 0);
+  // Update roundsPlayed to include pro stats rounds if no regular rounds.
+  // Use 18-hole count when we have round summaries so it matches Total Rounds / Scoring Average.
+  const totalRoundsPlayed = validSummaries.length > 0 ? eighteenHoleRounds.length : (proRounds?.length || 0);
 
   return {
     scoring,

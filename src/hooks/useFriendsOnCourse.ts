@@ -139,9 +139,10 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
       // Fetch friends' games from last 12 hours for "Friends on Course"
       const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
 
-      // Fetch all game types from friends in parallel
+      // Fetch all game types from friends in parallel (rounds by creator + round_players for rounds where a friend is participant)
       const [
         { data: friendRoundsLive },
+        { data: roundPlayersWhereFriend },
         { data: friendCopenhagen },
         { data: friendSkins },
         { data: friendBestBall },
@@ -151,6 +152,7 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
         { data: friendMatchPlay }
       ] = await Promise.all([
         supabase.from('rounds').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
+        supabase.from('round_players').select('round_id, user_id').in('user_id', friendIds),
         supabase.from('copenhagen_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
         supabase.from('skins_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
         supabase.from('best_ball_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
@@ -160,9 +162,31 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
         supabase.from('match_play_games').select('id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2').in('user_id', friendIds).gte('created_at', twelveHoursAgo),
       ]);
 
+      // Rounds where a friend is participant (not necessarily creator): fetch round details for last 12h
+      const participantRoundIds = [...new Set((roundPlayersWhereFriend || []).map((rp: { round_id: string }) => rp.round_id))];
+      let roundsWhereFriendParticipant: Array<{ id: string; user_id: string; course_name: string; round_name: string | null; created_at: string; event_id: string | null }> = [];
+      if (participantRoundIds.length > 0) {
+        const { data: participantRounds } = await supabase
+          .from('rounds')
+          .select('id, user_id, course_name, round_name, created_at, event_id')
+          .in('id', participantRoundIds)
+          .gte('created_at', twelveHoursAgo);
+        roundsWhereFriendParticipant = participantRounds || [];
+      }
+
+      // Merge rounds: creator rounds + rounds where a friend is participant (dedupe by id)
+      const roundsById = new Map<string, { id: string; user_id: string; course_name: string; round_name: string | null; created_at: string; event_id: string | null }>();
+      for (const r of friendRoundsLive || []) {
+        roundsById.set(r.id, { id: r.id, user_id: r.user_id, course_name: r.course_name, round_name: r.round_name, created_at: r.created_at, event_id: r.event_id });
+      }
+      for (const r of roundsWhereFriendParticipant) {
+        if (!roundsById.has(r.id)) roundsById.set(r.id, r);
+      }
+      const allRoundsForFilter = Array.from(roundsById.values());
+
       // Filter multi-round stroke play games to show only latest round
       const filteredRounds = filterMultiRoundRounds(
-        (friendRoundsLive || []).map(r => ({
+        allRoundsForFilter.map(r => ({
           id: r.id,
           event_id: r.event_id,
           round_name: r.round_name,
@@ -171,16 +195,31 @@ export function useFriendsOnCourse(user: SupabaseUser | null) {
       );
       const filteredRoundIds = new Set(filteredRounds.map(r => r.id));
 
+      // Group round_players by round_id (friend participants per round)
+      const friendParticipantsByRoundId = new Map<string, string[]>();
+      for (const rp of roundPlayersWhereFriend || []) {
+        const rpTyped = rp as { round_id: string; user_id: string };
+        if (!friendParticipantsByRoundId.has(rpTyped.round_id)) friendParticipantsByRoundId.set(rpTyped.round_id, []);
+        friendParticipantsByRoundId.get(rpTyped.round_id)!.push(rpTyped.user_id);
+      }
+
+      const friendIdSet = new Set(friendIds);
+
       // Collect all games with their owner user IDs
       const allGames: { gameId: string; gameType: GameType; userId: string; courseName: string; createdAt: string }[] = [];
 
-      // Process rounds (only include filtered rounds)
-      for (const round of friendRoundsLive || []) {
-        if (filteredRoundIds.has(round.id)) {
+      // Process rounds: one entry per friend in the round (creator if friend + every participant who is a friend)
+      for (const roundId of filteredRoundIds) {
+        const round = roundsById.get(roundId);
+        if (!round) continue;
+        const friendIdsInRound = new Set<string>();
+        if (friendIdSet.has(round.user_id)) friendIdsInRound.add(round.user_id);
+        for (const uid of friendParticipantsByRoundId.get(roundId) || []) friendIdsInRound.add(uid);
+        for (const uid of friendIdsInRound) {
           allGames.push({
             gameId: round.id,
             gameType: 'round',
-            userId: round.user_id,
+            userId: uid,
             courseName: round.course_name,
             createdAt: round.created_at,
           });

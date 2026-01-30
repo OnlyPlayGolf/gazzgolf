@@ -236,13 +236,6 @@ const Index = () => {
                             </div>
                           );
                         })}
-                        {isGroup && (
-                          <div className="flex items-center pl-1">
-                            <span className="text-[10px] text-muted-foreground/70 rotate-90 whitespace-nowrap">
-                              same round
-                            </span>
-                          </div>
-                        )}
                       </div>
                     );
                   });
