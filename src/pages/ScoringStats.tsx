@@ -13,7 +13,7 @@ import { TopNavBar } from "@/components/TopNavBar";
 import { ArrowLeft, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { StatsFilter } from "@/utils/statisticsCalculations";
-import { startOfYear } from "date-fns";
+import { subYears, startOfDay } from "date-fns";
 import { loadUnifiedRounds } from "@/utils/unifiedRoundsLoader";
 
 type TimeFilter = StatsFilter;
@@ -51,8 +51,7 @@ export default function ScoringStats() {
       if (!user) return;
 
       const now = new Date();
-      // "This year" = current calendar year (Jan 1 to now)
-      const startOfYearIso = startOfYear(now).toISOString();
+      const startOfYearIso = startOfDay(subYears(now, 1)).toISOString();
       const toSortTime = (d: string) => {
         if (!d) return 0;
         if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return new Date(`${d}T12:00:00Z`).getTime();
@@ -71,7 +70,7 @@ export default function ScoringStats() {
       else if (timeFilter === "last20") filtered = sorted.slice(0, 20);
       else if (timeFilter === "last50") filtered = sorted.slice(0, 50);
 
-      const roundsCount = filtered.filter((r) => r.gameType === "round").length;
+      const roundsCount = filtered.length;
       const totalHolesProfile = filtered.reduce((s, r) => s + (r.holesPlayed ?? 0), 0);
       const holesPerRound = roundsCount > 0 ? totalHolesProfile / roundsCount : 0;
 
