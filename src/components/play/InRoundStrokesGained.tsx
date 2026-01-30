@@ -285,7 +285,7 @@ export function InRoundStrokesGained({
             if (lastShot.endDistance !== undefined) {
               setStartDistance(String(lastShot.endDistance));
             }
-            setEndDistance("0");
+            setEndDistance("");
             if (lastShot.endLie && lastShot.endLie !== 'OB') {
               setStartLie(lastShot.endLie as LieType | 'green');
             }
@@ -302,14 +302,14 @@ export function InRoundStrokesGained({
           // No existing data for this hole
           setShots([]);
           setStartDistance(holeDistance ? String(holeDistance) : "");
-          setEndDistance("0");
+          setEndDistance("");
           setStartLie('tee');
         }
       } else {
         // No pro round yet
         setShots([]);
         setStartDistance(holeDistance ? String(holeDistance) : "");
-        setEndDistance("0");
+        setEndDistance("");
         setStartLie('tee');
       }
     } catch (error) {
@@ -410,7 +410,7 @@ export function InRoundStrokesGained({
 
       // Next playable shot starts from the drop (end distance) in rough
       setStartDistance(savedEndDistance);
-      setEndDistance("0");
+      setEndDistance("");
       setStartLie('rough');
       setShotType('approach');
       return;
@@ -454,7 +454,7 @@ export function InRoundStrokesGained({
 
     // Set up for next shot: start = this shot's end, end distance default 0 (holed)
     setStartDistance(savedEndDistance);
-    setEndDistance("0");
+    setEndDistance("");
     setStartLie((savedEndLie === 'recovery' || savedEndLie === 'other') ? 'rough' : (savedEndLie as LieType | 'green'));
   };
 
@@ -560,7 +560,7 @@ export function InRoundStrokesGained({
 
     // Next shot (re-tee) starts from same distance and lie as the shot that went OB
     setStartDistance(String(start));
-    setEndDistance("0");
+    setEndDistance("");
     setStartLie(startLie);
   };
 
@@ -610,7 +610,7 @@ export function InRoundStrokesGained({
         setStartLie(lastShot.endLie as LieType | 'green');
         }
       }
-      setEndDistance("0");
+      setEndDistance("");
     }
     setEndLie('');
     setMissedSide('');

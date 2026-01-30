@@ -467,9 +467,6 @@ export default function RoundTracker() {
       });
       return;
     }
-    
-    // Reset manual navigation flag so auto-advance works after score update
-    setIsManualNavigation(false);
 
     const updatedScores = new Map(scores);
     const playerScores = updatedScores.get(playerId) || new Map();
@@ -745,6 +742,7 @@ export default function RoundTracker() {
     // For non-last holes: auto-advance to next hole
     if (allPlayersEnteredCurrentHole && statsCompleted && !isLastHole) {
       const timeout = setTimeout(() => {
+        setIsManualNavigation(false); // Clear so next hole can auto-advance when completed
         setCurrentHoleIndex(currentHoleIndex + 1);
         setShowScoreSheet(false);
       }, 500);
@@ -754,6 +752,7 @@ export default function RoundTracker() {
     // For last hole: when all players have scores and stats completed, show completion modal (like other formats)
     if (allPlayersEnteredCurrentHole && statsCompleted && isLastHole) {
       const timeout = setTimeout(() => {
+        setIsManualNavigation(false);
         setShowScoreSheet(false);
         setShowCompletionModal(true);
       }, 500);
