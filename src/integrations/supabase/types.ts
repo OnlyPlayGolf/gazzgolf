@@ -814,6 +814,27 @@ export type Database = {
         }
         Relationships: []
       }
+      scorecard_likes: {
+        Row: {
+          id: string
+          created_at: string
+          user_id: string
+          scorecard_id: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          user_id: string
+          scorecard_id: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          user_id?: string
+          scorecard_id?: string
+        }
+        Relationships: []
+      }
       group_invites: {
         Row: {
           code: string

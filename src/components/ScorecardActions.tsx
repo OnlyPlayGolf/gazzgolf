@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { Heart, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ScorecardCommentsSheet } from "@/components/ScorecardCommentsSheet";
 
-const loggedGameLikesErrors = new Set<string>();
-const logGameLikesErrorOnce = (key: string, error: unknown) => {
-  if (loggedGameLikesErrors.has(key)) return;
-  loggedGameLikesErrors.add(key);
+const loggedErrors = new Set<string>();
+const logErrorOnce = (key: string, error: unknown) => {
+  if (loggedErrors.has(key)) return;
+  loggedErrors.add(key);
   console.error(key, error);
 };
+
+/** Stable unique id per scorecard (e.g. one per player card in round leaderboard). */
+export function getScorecardId(
+  gameType: string,
+  gameId: string,
+  scorecardPlayerId: string
+): string {
+  return `${gameType}:${gameId}:${scorecardPlayerId}`;
+}
 
 interface ScorecardActionsProps {
   gameId: string;
@@ -19,9 +27,9 @@ interface ScorecardActionsProps {
   scorecardPlayerName: string;
 }
 
-export function ScorecardActions({ 
-  gameId, 
-  gameType, 
+export function ScorecardActions({
+  gameId,
+  gameType,
   scorecardPlayerId,
   scorecardPlayerName,
 }: ScorecardActionsProps) {
@@ -32,42 +40,40 @@ export function ScorecardActions({
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
   const [commentsSheetOpen, setCommentsSheetOpen] = useState(false);
-  const hasFetchedUserRef = useRef(false);
+  /** While non-null, ignore checkUserLike/fetchCounts results so optimistic like isn't overwritten. */
+  const pendingLikeRef = useRef<boolean | null>(null);
+  /** Prevent double-fire (e.g. touch + click) from reverting the like. */
+  const likeInProgressRef = useRef(false);
+  /** Scorecards the user has liked this session; never let server "false" overwrite these. */
+  const userLikedInSessionRef = useRef<Set<string>>(new Set());
 
-  // Helper to validate IDs
-  const isValidId = (id: string | undefined | null): id is string => {
-    return !!id && typeof id === 'string' && id.trim() !== '';
-  };
+  const isValidId = (id: string | undefined | null): id is string =>
+    !!id && typeof id === 'string' && id.trim() !== '';
+
+  const scorecardId = isValidId(gameType) && isValidId(gameId) && isValidId(scorecardPlayerId)
+    ? getScorecardId(gameType, gameId, scorecardPlayerId)
+    : null;
 
   useEffect(() => {
-    // Never block render: if required IDs aren't ready, just reset likes UI to safe defaults.
-    if (!isValidId(gameId) || !isValidId(gameType) || !isValidId(scorecardPlayerId)) {
+    if (!scorecardId) {
       setHasLiked(false);
       setLikesCount(0);
-      // Comments are also tied to these IDs, so we can't fetch them either.
       setCommentsCount(0);
       return;
     }
-
     fetchCounts();
-    if (!hasFetchedUserRef.current) {
-      hasFetchedUserRef.current = true;
-      fetchUser();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId, gameType, scorecardPlayerId]);
+    fetchUser();
+  }, [scorecardId, gameId, gameType, scorecardPlayerId]);
 
   const fetchUser = async () => {
-    // Likes-by-me is optional; never block scorecard UI.
-    if (!isValidId(gameId) || !isValidId(gameType)) {
+    if (!scorecardId) {
       setCurrentUserId(null);
       setHasLiked(false);
       return;
     }
-    
     const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUserId(user?.id || null);
-    if (user && isValidId(user.id)) {
+    setCurrentUserId(user?.id ?? null);
+    if (user?.id) {
       checkUserLike(user.id);
     } else {
       setHasLiked(false);
@@ -75,39 +81,30 @@ export function ScorecardActions({
   };
 
   const fetchCounts = async () => {
-    if (!isValidId(gameId) || !isValidId(gameType) || !isValidId(scorecardPlayerId)) {
+    if (!scorecardId || !isValidId(gameId) || !isValidId(scorecardPlayerId)) {
       setLikesCount(0);
       setCommentsCount(0);
       return;
     }
 
     try {
-      // Likes are per-game (game_id is UUID). Treat likes as optional.
       const { count: likes, error: likesError } = await supabase
-        .from("game_likes")
+        .from("scorecard_likes")
         .select("id", { count: "exact", head: true })
-        .eq("game_id", gameId)
-        .eq("game_type", gameType);
+        .eq("scorecard_id", scorecardId);
 
       if (likesError) {
-        logGameLikesErrorOnce(
-          `[ScorecardActions] game_likes count failed (${gameType}:${gameId})`,
-          likesError
-        );
-        setLikesCount(0);
+        logErrorOnce(`[ScorecardActions] scorecard_likes count (${scorecardId})`, likesError);
+        if (pendingLikeRef.current === null) setLikesCount(0);
       } else {
-        setLikesCount(likes || 0);
+        if (pendingLikeRef.current === null) setLikesCount(likes ?? 0);
       }
     } catch (error) {
-      logGameLikesErrorOnce(
-        `[ScorecardActions] game_likes count exception (${gameType}:${gameId})`,
-        error
-      );
+      logErrorOnce(`[ScorecardActions] scorecard_likes count exception (${scorecardId})`, error);
       setLikesCount(0);
     }
 
     try {
-      // Fetch comments count for this specific scorecard (exclude activity items)
       const { count: comments, error: commentsError } = await supabase
         .from("round_comments")
         .select("id", { count: "exact", head: true })
@@ -120,117 +117,128 @@ export function ScorecardActions({
         console.error("Error fetching comments count:", commentsError);
         return;
       }
-
-      setCommentsCount(comments || 0);
+      setCommentsCount(comments ?? 0);
     } catch (error) {
       console.error("Unexpected error in fetchCounts:", error);
     }
   };
 
   const checkUserLike = async (userId: string) => {
-    // likedByMe is optional, never block UI.
-    if (!isValidId(gameId) || !isValidId(gameType) || !isValidId(userId)) {
-      setHasLiked(false);
+    if (!scorecardId || !isValidId(userId)) {
+      if (pendingLikeRef.current === null && !(scorecardId && userLikedInSessionRef.current.has(scorecardId))) setHasLiked(false);
       return;
     }
-
     try {
       const { data, error } = await supabase
-        .from("game_likes")
+        .from("scorecard_likes")
         .select("id")
-        .eq("game_id", gameId)
-        .eq("game_type", gameType)
+        .eq("scorecard_id", scorecardId)
         .eq("user_id", userId)
         .limit(1)
         .maybeSingle();
 
       if (error) {
-        logGameLikesErrorOnce(
-          `[ScorecardActions] game_likes likedByMe failed (${gameType}:${gameId}:${userId})`,
-          error
-        );
-        setHasLiked(false);
+        logErrorOnce(`[ScorecardActions] scorecard_likes likedByMe (${scorecardId})`, error);
+        if (pendingLikeRef.current === null && !userLikedInSessionRef.current.has(scorecardId)) setHasLiked(false);
         return;
       }
-
-      setHasLiked(!!data);
+      if (data) {
+        setHasLiked(true);
+      } else if (pendingLikeRef.current === null && !userLikedInSessionRef.current.has(scorecardId)) {
+        setHasLiked(false);
+      }
     } catch (error) {
-      logGameLikesErrorOnce(
-        `[ScorecardActions] game_likes likedByMe exception (${gameType}:${gameId}:${userId})`,
-        error
-      );
-      setHasLiked(false);
+      logErrorOnce(`[ScorecardActions] scorecard_likes likedByMe exception (${scorecardId})`, error);
+      if (pendingLikeRef.current === null && !userLikedInSessionRef.current.has(scorecardId)) setHasLiked(false);
     }
   };
 
   const handleLike = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    
-    if (!isValidId(currentUserId) || !isValidId(gameId) || !isValidId(gameType)) {
-      if (!isValidId(currentUserId)) {
-        toast({ title: "Please sign in to like", variant: "destructive" });
-      }
+    if (!scorecardId) return;
+    if (!currentUserId) {
+      toast({ title: "Please sign in to like", variant: "destructive" });
       return;
     }
+    if (likeInProgressRef.current) return;
+    likeInProgressRef.current = true;
 
     setIsLiking(true);
+    const wasLiked = hasLiked;
+    const newLiked = !wasLiked;
+    pendingLikeRef.current = newLiked;
+    setHasLiked(newLiked);
+    setLikesCount((prev) => (wasLiked ? Math.max(0, prev - 1) : prev + 1));
+
     try {
-      if (hasLiked) {
-        await supabase
-          .from("game_likes")
+      if (wasLiked) {
+        const { error } = await supabase
+          .from("scorecard_likes")
           .delete()
-          .eq("game_id", gameId)
-          .eq("game_type", gameType)
+          .eq("scorecard_id", scorecardId)
           .eq("user_id", currentUserId);
-        
-        setHasLiked(false);
-        setLikesCount(prev => Math.max(0, prev - 1));
+        if (error) throw error;
+        userLikedInSessionRef.current.delete(scorecardId);
       } else {
-        await supabase
-          .from("game_likes")
-          .insert({
-            game_id: gameId,
-            game_type: gameType,
-            user_id: currentUserId,
-          });
-        
-        setHasLiked(true);
-        setLikesCount(prev => prev + 1);
+        const { error } = await supabase
+          .from("scorecard_likes")
+          .insert({ scorecard_id: scorecardId, user_id: currentUserId });
+        if (error) {
+          const isDuplicate = (error as { code?: string }).code === "23505";
+          if (!isDuplicate) throw error;
+        }
+        userLikedInSessionRef.current.add(scorecardId);
       }
     } catch (error) {
-      logGameLikesErrorOnce(
-        `[ScorecardActions] game_likes toggle failed (${gameType}:${gameId}:${currentUserId})`,
-        error
-      );
+      logErrorOnce(`[ScorecardActions] scorecard_likes toggle (${scorecardId})`, error);
+      setHasLiked(wasLiked);
+      setLikesCount((prev) => (wasLiked ? prev + 1 : Math.max(0, prev - 1)));
       toast({ title: "Error", description: "Failed to update like", variant: "destructive" });
     } finally {
+      pendingLikeRef.current = null;
+      likeInProgressRef.current = false;
       setIsLiking(false);
     }
   };
 
   const handleComment = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setCommentsSheetOpen(true);
   };
 
   return (
     <>
-      <div className="flex items-center gap-1 py-2">
+      {/* Wrapper stops propagation so clicking Like/Comment never expands/collapses card or navigates */}
+      <div
+        className="relative z-10 flex items-center gap-1 py-2"
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+        role="group"
+        aria-label="Scorecard actions"
+      >
         <button
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${
-            hasLiked 
-              ? 'text-red-500 bg-red-50 dark:bg-red-950/30' 
+          type="button"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors cursor-pointer touch-manipulation ${
+            hasLiked
+              ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
               : 'text-muted-foreground hover:bg-muted'
           }`}
           onClick={handleLike}
           disabled={isLiking}
+          aria-pressed={hasLiked}
+          aria-label={hasLiked ? 'Unlike' : 'Like'}
         >
           <Heart size={18} fill={hasLiked ? "currentColor" : "none"} strokeWidth={1.5} />
           <span className="text-sm font-medium">{likesCount} {likesCount === 1 ? "Like" : "Likes"}</span>
         </button>
         <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-muted-foreground hover:bg-muted transition-colors"
+          type="button"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-muted-foreground hover:bg-muted transition-colors cursor-pointer touch-manipulation"
           onClick={handleComment}
+          aria-label="Comments"
         >
           <MessageCircle size={18} strokeWidth={1.5} />
           <span className="text-sm font-medium">{commentsCount} {commentsCount === 1 ? "Comment" : "Comments"}</span>
