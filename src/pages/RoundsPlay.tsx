@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Info, Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Info, Sparkles, Calendar, MapPin, Users, Plus, ChevronDown, ChevronUp, CalendarDays } from "lucide-react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -39,6 +39,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface ActiveRound {
   id: string;
@@ -90,10 +97,97 @@ function RoundsPlayContent() {
   const [activeRound, setActiveRound] = useState<ActiveRound | null>(null);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
 
+  // Event: list for dropdown + first-round players when continuing an event
+  const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventFirstRoundPlayerIds, setEventFirstRoundPlayerIds] = useState<string[] | null>(null);
+  const [eventFirstRoundGuestNames, setEventFirstRoundGuestNames] = useState<string[] | null>(null);
+
+  const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [createEventLoading, setCreateEventLoading] = useState(false);
+
   useEffect(() => {
     initializeSetup();
     checkForActiveRounds();
   }, []);
+
+  // Fetch events (user is creator or participant via RLS)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setEventsLoading(true);
+        const { data, error } = await supabase
+          .from("events")
+          .select("id, name")
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        if (!cancelled) setEvents(data || []);
+      } catch (e) {
+        if (!cancelled) setEvents([]);
+      } finally {
+        if (!cancelled) setEventsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // When an event is selected, fetch first round's players for restriction (continuing event)
+  useEffect(() => {
+    const eventId = setupState.selectedEventId;
+    if (!eventId) {
+      setEventFirstRoundPlayerIds(null);
+      setEventFirstRoundGuestNames(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: eventRounds, error: roundsError } = await supabase
+          .from("rounds")
+          .select("id")
+          .eq("event_id", eventId)
+          .order("created_at", { ascending: true })
+          .limit(1);
+        if (roundsError || !eventRounds?.length) {
+          if (!cancelled) {
+            setEventFirstRoundPlayerIds(null);
+            setEventFirstRoundGuestNames(null);
+          }
+          return;
+        }
+        const firstRoundId = eventRounds[0].id;
+        const { data: players, error: playersError } = await supabase
+          .from("round_players")
+          .select("user_id, guest_name, is_guest")
+          .eq("round_id", firstRoundId);
+        if (playersError) {
+          if (!cancelled) {
+            setEventFirstRoundPlayerIds(null);
+            setEventFirstRoundGuestNames(null);
+          }
+          return;
+        }
+        const userIds: string[] = [];
+        const guestNames: string[] = [];
+        (players || []).forEach((p: any) => {
+          if (p.is_guest && p.guest_name) guestNames.push(String(p.guest_name).trim());
+          else if (p.user_id) userIds.push(p.user_id);
+        });
+        if (!cancelled) {
+          setEventFirstRoundPlayerIds(userIds.length > 0 ? userIds : null);
+          setEventFirstRoundGuestNames(guestNames.length > 0 ? guestNames : null);
+        }
+      } catch {
+        if (!cancelled) {
+          setEventFirstRoundPlayerIds(null);
+          setEventFirstRoundGuestNames(null);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [setupState.selectedEventId]);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -240,6 +334,7 @@ function RoundsPlayContent() {
     const savedGroups = sessionStorage.getItem('playGroups');
     const savedAIConfig = sessionStorage.getItem('aiGameConfig');
     const savedGameFormat = sessionStorage.getItem('gameFormat');
+    const savedEventId = sessionStorage.getItem('selectedEventId');
 
     if (savedCourse) setSelectedCourse(JSON.parse(savedCourse));
 
@@ -249,6 +344,7 @@ function RoundsPlayContent() {
       if (savedRoundName) updated.roundName = savedRoundName;
       if (savedDate) updated.datePlayed = savedDate;
       if (savedGameFormat) updated.gameFormat = savedGameFormat as any;
+      if (savedEventId) updated.selectedEventId = savedEventId;
       if (savedAIConfig) {
         const config = JSON.parse(savedAIConfig);
         updated.aiConfigApplied = true;
@@ -705,6 +801,44 @@ function RoundsPlayContent() {
     sessionStorage.setItem('datePlayer', setupState.datePlayed);
     sessionStorage.setItem('playGroups', JSON.stringify(setupState.groups));
     sessionStorage.setItem('gameFormat', setupState.gameFormat);
+    if (setupState.selectedEventId) sessionStorage.setItem('selectedEventId', setupState.selectedEventId);
+    else sessionStorage.removeItem('selectedEventId');
+  };
+
+  const handleCreateEvent = async () => {
+    const name = newEventName.trim();
+    if (!name) {
+      toast({ title: "Event name required", description: "Enter a name for the event", variant: "destructive" });
+      return;
+    }
+    setCreateEventLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Not signed in", variant: "destructive" });
+        return;
+      }
+      const { data: newEvent, error } = await supabase
+        .from("events")
+        .insert({
+          name,
+          creator_id: user.id,
+          game_type: "round",
+        })
+        .select("id, name")
+        .single();
+      if (error) throw error;
+      setEvents((prev) => [{ id: newEvent.id, name: newEvent.name }, ...prev]);
+      setSetupState((prev) => ({ ...prev, selectedEventId: newEvent.id }));
+      sessionStorage.setItem("selectedEventId", newEvent.id);
+      setNewEventName("");
+      setShowCreateEventDialog(false);
+      toast({ title: "Event created", description: `"${newEvent.name}" is selected. Your round will be added to this event.` });
+    } catch (err: any) {
+      toast({ title: "Could not create event", description: err?.message || "Please try again", variant: "destructive" });
+    } finally {
+      setCreateEventLoading(false);
+    }
   };
 
   const getHolesPlayed = (holeCount: HoleCount): number => {
@@ -844,6 +978,7 @@ function RoundsPlayContent() {
           holes_played: getHolesPlayed(setupState.selectedHoles as HoleCount),
           origin: 'play',
           date_played: setupState.datePlayed,
+          ...(setupState.selectedEventId ? { event_id: setupState.selectedEventId } : {}),
         }])
         .select()
         .single();
@@ -885,6 +1020,7 @@ function RoundsPlayContent() {
       sessionStorage.removeItem('selectedCourse');
       sessionStorage.removeItem('playGroups');
       sessionStorage.removeItem('aiGameConfig');
+      sessionStorage.removeItem('selectedEventId');
 
       toast({ title: "Round started!", description: `Good luck at ${selectedCourse.name}` });
       navigate(`/rounds/${round.id}/track`);
@@ -931,6 +1067,46 @@ function RoundsPlayContent() {
             <CardTitle className="text-lg">Create Game</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Event (optional) - must be selected before starting if linking to an event */}
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1">
+                <CalendarDays className="w-3 h-3" />
+                Event
+              </Label>
+              <div className="flex gap-2">
+                <Select
+                  value={setupState.selectedEventId ?? "none"}
+                  onValueChange={(v) => setSetupState(prev => ({ ...prev, selectedEventId: v === "none" ? null : v }))}
+                  disabled={eventsLoading}
+                >
+                  <SelectTrigger className="flex-1 min-w-0">
+                    <SelectValue placeholder={eventsLoading ? "Loading events..." : "No event (single round)"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No event (single round)</SelectItem>
+                    {events.map((ev) => (
+                      <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={() => setShowCreateEventDialog(true)}
+                  title="Create new event"
+                >
+                  <Plus className="h-4 w-4 mr-0.5" />
+                  New Event
+                </Button>
+              </div>
+              {eventFirstRoundPlayerIds && (
+                <p className="text-xs text-muted-foreground">
+                  Continuing this event: only players from the first round can be added.
+                </p>
+              )}
+            </div>
+
             {/* Round Name & Date Row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1243,6 +1419,36 @@ function RoundsPlayContent() {
         <Sparkles className="w-6 h-6" />
       </Button>
 
+      {/* Create new event dialog */}
+      <Dialog open={showCreateEventDialog} onOpenChange={setShowCreateEventDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create new event</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Name the event. This round will be linked to it when you start.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="new-event-name">Event name</Label>
+            <Input
+              id="new-event-name"
+              placeholder="e.g. Weekend Championship"
+              value={newEventName}
+              onChange={(e) => setNewEventName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateEvent()}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowCreateEventDialog(false)} disabled={createEventLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateEvent} disabled={createEventLoading || !newEventName.trim()}>
+              {createEventLoading ? "Creating…" : "Create & select"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialogs */}
       <AISetupAssistant
         isOpen={showAIAssistant}
@@ -1273,6 +1479,9 @@ function RoundsPlayContent() {
         onAddPlayer={(player) => activeGroupId && addPlayerToGroup(activeGroupId, player)}
         existingPlayerIds={getAllPlayerIds()}
         defaultTee={setupState.teeColor || DEFAULT_MEN_TEE}
+        allowedUserIds={eventFirstRoundPlayerIds}
+        allowedGuestNames={eventFirstRoundGuestNames}
+        existingGuestDisplayNames={setupState.groups.flatMap((g) => g.players).filter((p) => p.isTemporary).map((p) => p.displayName)}
       />
 
       <PlayerEditSheet

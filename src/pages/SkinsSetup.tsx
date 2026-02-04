@@ -198,6 +198,7 @@ export default function SkinsSetup() {
         skinsWon: 0,
       }));
 
+      const selectedEventId = sessionStorage.getItem('selectedEventId');
       const { data: skinsGame, error } = await supabase
         .from("skins_games")
         .insert({
@@ -213,6 +214,7 @@ export default function SkinsSetup() {
           date_played: new Date().toISOString().split('T')[0],
           stats_mode: statsMode,
           round_name: roundName || null,
+          ...(selectedEventId ? { event_id: selectedEventId } : {}),
         })
         .select()
         .single();
@@ -241,6 +243,7 @@ export default function SkinsSetup() {
       }));
 
       // Clear setup sessionStorage
+      if (selectedEventId) sessionStorage.removeItem('selectedEventId');
       sessionStorage.removeItem('roundPlayers');
       sessionStorage.removeItem('userTeeColor');
       sessionStorage.removeItem('selectedCourse');

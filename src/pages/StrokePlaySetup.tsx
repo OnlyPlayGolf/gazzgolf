@@ -306,6 +306,8 @@ export default function StrokePlaySetup() {
         }));
       };
 
+      const selectedEventId = sessionStorage.getItem('selectedEventId');
+
       // Create a single round
       const { data: round, error } = await supabase
         .from("rounds")
@@ -319,6 +321,7 @@ export default function StrokePlaySetup() {
           origin: 'play',
           date_played: datePlayed,
           stats_mode: statsMode,
+          ...(selectedEventId ? { event_id: selectedEventId } : {}),
         })
         .select()
         .single();
@@ -352,6 +355,7 @@ export default function StrokePlaySetup() {
       sessionStorage.removeItem('roundName');
       sessionStorage.removeItem('datePlayer');
       sessionStorage.removeItem('playGroups');
+      sessionStorage.removeItem('selectedEventId');
 
     } catch (error: any) {
       toast({ title: "Error creating round", description: error.message, variant: "destructive" });

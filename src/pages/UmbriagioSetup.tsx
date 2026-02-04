@@ -245,6 +245,7 @@ export default function UmbriagioSetup() {
       const savedRoundName = sessionStorage.getItem('roundName');
       const savedHoles = sessionStorage.getItem('selectedHoles');
       const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
+      const selectedEventId = sessionStorage.getItem('selectedEventId');
 
       const { data: game, error } = await supabase
         .from("umbriago_games")
@@ -264,6 +265,7 @@ export default function UmbriagioSetup() {
           payout_mode: "difference",
           rolls_per_team: rollsPerTeam,
           stats_mode: statsMode,
+          ...(selectedEventId ? { event_id: selectedEventId } : {}),
         })
         .select()
         .single();
@@ -291,6 +293,7 @@ export default function UmbriagioSetup() {
         }));
       }
 
+      if (selectedEventId) sessionStorage.removeItem('selectedEventId');
       toast({ title: "Umbriago game started!" });
       navigate(`/umbriago/${game.id}/play`);
     } catch (error: any) {

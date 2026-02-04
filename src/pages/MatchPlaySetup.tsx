@@ -191,10 +191,10 @@ export default function MatchPlaySetup() {
       const savedHoles = sessionStorage.getItem('selectedHoles');
       const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
       
-      let eventId: string | null = null;
+      let eventId: string | null = sessionStorage.getItem('selectedEventId');
       
-      // Create an event if there are multiple groups to link all matches together
-      if (groups.length > 1) {
+      // Create an event only if none was selected from Play and there are multiple groups to link
+      if (eventId == null && groups.length > 1) {
         const { data: event, error: eventError } = await supabase
           .from("events")
           .insert({
@@ -270,6 +270,7 @@ export default function MatchPlaySetup() {
       if (eventId) {
         sessionStorage.setItem('matchPlayEventId', eventId);
       }
+      sessionStorage.removeItem('selectedEventId');
 
       toast({ title: `${createdGames.length > 1 ? `${createdGames.length} matches` : "Match"} started!` });
       

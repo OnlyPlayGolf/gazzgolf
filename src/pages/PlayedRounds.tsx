@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Trash2, X, Check } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X, Check, Settings, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundCard } from "@/components/RoundCard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getGameRoute, loadUnifiedRounds, invalidateUnifiedRoundsCache, type UnifiedRound } from "@/utils/unifiedRoundsLoader";
+import { EventSettingsSheet } from "@/components/EventSettingsSheet";
 
 const PlayedRounds = () => {
   const navigate = useNavigate();
@@ -34,12 +36,45 @@ const PlayedRounds = () => {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [showCannotDeleteDialog, setShowCannotDeleteDialog] = useState(false);
 
+  const [events, setEvents] = useState<{ id: string; name: string; creator_id: string }[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [eventSettingsOpen, setEventSettingsOpen] = useState(false);
+
   useEffect(() => {
     fetchPlayedRounds();
   }, []);
 
+  const fetchEvents = async () => {
+    if (!currentUserId) return;
+    try {
+      setEventsLoading(true);
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, name, creator_id")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setEvents(data || []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, [currentUserId]);
+
   const canDeleteRound = (r: UnifiedRound) =>
     !!currentUserId && r.ownerUserId === currentUserId;
+
+  const filteredRounds = selectedEventId
+    ? rounds.filter((r) => (r as UnifiedRound & { event_id?: string | null }).event_id === selectedEventId)
+    : rounds;
+
+  const selectedEvent = selectedEventId ? events.find((e) => e.id === selectedEventId) : null;
+  const isEventCreator = selectedEvent && currentUserId && selectedEvent.creator_id === currentUserId;
   
   const handleRoundClickInDeleteMode = (round: UnifiedRound) => {
     if (canDeleteRound(round)) {
@@ -363,7 +398,7 @@ const PlayedRounds = () => {
             <ArrowLeft size={20} />
           </Button>
           <h1 className="text-xl font-semibold text-foreground flex-1">
-            All Rounds ({rounds.length})
+            All Rounds ({filteredRounds.length})
           </h1>
           {rounds.length > 0 && (
             <div className="flex items-center gap-2">
@@ -399,6 +434,41 @@ const PlayedRounds = () => {
             </div>
           )}
         </header>
+
+        {/* Event filter row - between title and year sections */}
+        {rounds.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <Select
+              value={selectedEventId ?? "all"}
+              onValueChange={(v) => setSelectedEventId(v === "all" ? null : v)}
+              disabled={eventsLoading}
+            >
+              <SelectTrigger className="w-[280px] h-9 justify-start text-left">
+                <CalendarDays className="h-4 w-4 mr-1.5 shrink-0" />
+                <SelectValue placeholder="Event" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All rounds</SelectItem>
+                {events.map((ev) => (
+                  <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedEventId && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setEventSettingsOpen(true)}
+                aria-label="Event settings"
+                title="Event settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
+
         {deleteMode && !selectMode && (
           <p className="text-sm text-destructive mb-4">
             Tap a round to delete it, or click "Select" to delete multiple
@@ -418,16 +488,16 @@ const PlayedRounds = () => {
           <div className="text-center py-8 text-muted-foreground text-sm">
             Loading...
           </div>
-        ) : rounds.length === 0 ? (
+        ) : filteredRounds.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="mb-2">No rounds yet</p>
-            <p className="text-sm">Start playing to track your scores</p>
+            <p className="mb-2">{selectedEventId ? "No rounds in this event" : "No rounds yet"}</p>
+            <p className="text-sm">{selectedEventId ? "Add rounds from Event settings" : "Start playing to track your scores"}</p>
           </div>
         ) : (
           <main className="space-y-4">
             {(() => {
               // Group rounds by year
-              const roundsByYear = rounds.reduce((acc, round) => {
+              const roundsByYear = filteredRounds.reduce((acc, round) => {
                 const year = new Date(round.date).getFullYear().toString();
                 if (!acc[year]) acc[year] = [];
                 acc[year].push(round);
@@ -538,6 +608,21 @@ const PlayedRounds = () => {
       </AlertDialog>
 
       {/* Bulk delete confirmation dialog */}
+      <EventSettingsSheet
+        open={eventSettingsOpen}
+        onOpenChange={setEventSettingsOpen}
+        eventId={selectedEventId}
+        eventName={selectedEvent?.name}
+        currentUserId={currentUserId}
+        isCreator={!!isEventCreator}
+        allRounds={rounds}
+        onSaved={() => {
+          invalidateUnifiedRoundsCache(currentUserId ?? undefined);
+          fetchPlayedRounds();
+          fetchEvents();
+        }}
+      />
+
       <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -65,6 +65,8 @@ interface EventPlayerData {
   perRound: Record<string, EventPlayerRoundData>;
 }
 
+const TOTAL_VIEW = "__event_total__";
+
 export default function RoundLeaderboard() {
   const { roundId } = useParams();
   const navigate = useNavigate();
@@ -369,7 +371,7 @@ export default function RoundLeaderboard() {
   };
 
   const getTodayScoreToParDisplay = (player: EventPlayerData) => {
-    if (!selectedRoundId) return "E";
+    if (!selectedRoundId || selectedRoundId === TOTAL_VIEW) return "E";
     if (hasPlayerConcededAnyHole(player, selectedRoundId)) return "-";
     const holes = courseHolesByRound[selectedRoundId] || [];
     const totals = calculateTotalsForRound(player, holes, selectedRoundId);
@@ -390,10 +392,21 @@ export default function RoundLeaderboard() {
     );
   }
 
-  const activeRoundId = selectedRoundId || roundId || null;
+  const activeRoundId = selectedRoundId === TOTAL_VIEW ? null : (selectedRoundId || roundId || null);
   const courseHoles = (activeRoundId && courseHolesByRound[activeRoundId]) ? courseHolesByRound[activeRoundId] : [];
 
-  if (!round || courseHoles.length === 0) {
+  const isTotalView = selectedRoundId === TOTAL_VIEW;
+  const hasHolesForView = courseHoles.length > 0;
+
+  if (!round) {
+    return (
+      <GameNotFound 
+        onRetry={() => fetchRoundData()}
+        message="This round was deleted or is no longer available."
+      />
+    );
+  }
+  if (!isTotalView && !hasHolesForView) {
     return (
       <GameNotFound 
         onRetry={() => fetchRoundData()}
@@ -470,7 +483,7 @@ export default function RoundLeaderboard() {
               <SelectContent>
                 {eventRounds.map((r, idx) => (
                   <SelectItem key={r.id} value={r.id}>
-                    {`Round ${idx + 1}`}
+                    Round {idx + 1}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -511,9 +524,10 @@ export default function RoundLeaderboard() {
 
           return displayOrder.map(({ player, scoreToPar, hasConceded }) => {
             const isExpanded = expandedPlayerId === player.key;
-            const frontTotals = calculateTotalsForRound(player, frontNine, selectedRoundId);
-            const backTotals = calculateTotalsForRound(player, backNine, selectedRoundId);
-            const overallTotals = calculateTotalsForRound(player, courseHoles, selectedRoundId);
+            const roundForTotals = isTotalView ? null : (selectedRoundId || undefined);
+            const frontTotals = calculateTotalsForRound(player, frontNine, roundForTotals);
+            const backTotals = calculateTotalsForRound(player, backNine, roundForTotals);
+            const overallTotals = calculateTotalsForRound(player, courseHoles, roundForTotals);
             const positionLabel = getPositionLabel(scoreToPar, hasConceded);
 
             return (
@@ -542,16 +556,23 @@ export default function RoundLeaderboard() {
                   </div>
                   <div className="text-right">
                     {eventRounds.length > 1 ? (
-                      <div className="flex items-end justify-end gap-6">
+                      isTotalView ? (
                         <div className="text-right">
-                          <div className="text-xs text-muted-foreground">Today</div>
-                          <div className="text-2xl font-bold">{getTodayScoreToParDisplay(player)}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground">TOT</div>
+                          <div className="text-xs text-muted-foreground">Total (Event)</div>
                           <div className="text-3xl font-bold">{getTotalScoreToParDisplay(player)}</div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-end justify-end gap-6">
+                          <div className="text-right">
+                            <div className="text-xs text-muted-foreground">This round</div>
+                            <div className="text-2xl font-bold">{getTodayScoreToParDisplay(player)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-muted-foreground">Total</div>
+                            <div className="text-3xl font-bold">{getTotalScoreToParDisplay(player)}</div>
+                          </div>
+                        </div>
+                      )
                     ) : (
                       <div className="text-right">
                         <div className="text-xs text-muted-foreground">Score</div>
@@ -562,9 +583,33 @@ export default function RoundLeaderboard() {
                 </div>
               </div>
 
-               {/* Scorecard Table - Only shown when expanded */}
+               {/* Scorecard Table or Total breakdown - Only shown when expanded */}
               {isExpanded && (
                 <>
+                  {isTotalView ? (
+                    <div className="px-4 py-3 space-y-2 border-t border-border">
+                      <div className="text-sm font-medium text-muted-foreground">Scores by round</div>
+                      <div className="space-y-1.5">
+                        {eventRounds.map((r, idx) => {
+                          const holes = courseHolesByRound[r.id] || [];
+                          const totals = calculateTotalsForRound(player, holes, r.id);
+                          const conceded = hasPlayerConcededAnyHole(player, r.id);
+                          const toPar = totals.totalScore > 0 && !conceded ? getScoreToPar(totals.totalScore, totals.totalPar) : (conceded ? "–" : "–");
+                          return (
+                            <div key={r.id} className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Round {idx + 1}</span>
+                              <span className="font-medium">{toPar}</span>
+                            </div>
+                          );
+                        })}
+                        <div className="flex justify-between text-sm font-bold pt-1.5 border-t border-border">
+                          <span>Total (Event)</span>
+                          <span>{getTotalScoreToParDisplay(player)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
                   {/* Front 9 */}
                   <div className="w-full">
                     <Table className="w-full table-fixed">
@@ -610,8 +655,9 @@ export default function RoundLeaderboard() {
                         <TableRow className="font-bold">
                           <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.display_name.split(' ')[0]}</TableCell>
                           {frontNine.map(hole => {
-                            const scores = getScoresForRound(player, selectedRoundId || "");
-                            const mulligans = player.perRound[selectedRoundId || ""]?.mulligans || new Set<number>();
+                            const roundIdForScores = selectedRoundId || "";
+                            const scores = getScoresForRound(player, roundIdForScores);
+                            const mulligans = player.perRound[roundIdForScores]?.mulligans || new Set<number>();
                             const score = scores.get(hole.hole_number);
                             const hasScore = scores.has(hole.hole_number);
                             const hasMulligan = mulligans.has(hole.hole_number);
@@ -684,8 +730,9 @@ export default function RoundLeaderboard() {
                           <TableRow className="font-bold">
                             <TableCell className="font-bold text-[10px] px-0.5 py-1 bg-background max-w-[44px] truncate">{player.display_name.split(' ')[0]}</TableCell>
                             {backNine.map(hole => {
-                              const scores = getScoresForRound(player, selectedRoundId || "");
-                              const mulligans = player.perRound[selectedRoundId || ""]?.mulligans || new Set<number>();
+                              const roundIdForScores = selectedRoundId || "";
+                              const scores = getScoresForRound(player, roundIdForScores);
+                              const mulligans = player.perRound[roundIdForScores]?.mulligans || new Set<number>();
                               const score = scores.get(hole.hole_number);
                               const hasScore = scores.has(hole.hole_number);
                               const hasMulligan = mulligans.has(hole.hole_number);
@@ -714,13 +761,15 @@ export default function RoundLeaderboard() {
                       </Table>
                     </div>
                   )}
+                    </>
+                  )}
 
-                  {/* Per-scorecard actions */}
+                  {/* Per-scorecard actions - use first round when Total view */}
                   <div className="px-4 pb-3">
                     <ScorecardActions
                       gameId={roundId!}
                       gameType={round?.origin === "skins" ? "skins" : "round"}
-                      scorecardPlayerId={player.perRound[selectedRoundId || ""]?.roundPlayerId || player.key}
+                      scorecardPlayerId={player.perRound[isTotalView ? (eventRounds[0]?.id ?? "") : (selectedRoundId || "")]?.roundPlayerId || player.key}
                       scorecardPlayerName={player.display_name}
                     />
                   </div>

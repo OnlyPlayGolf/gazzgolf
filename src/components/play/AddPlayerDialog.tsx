@@ -16,6 +16,12 @@ interface AddPlayerDialogProps {
   onAddPlayer: (player: Player) => void;
   existingPlayerIds: string[];
   defaultTee: string;
+  /** When continuing an event: only these user ids can be selected (registered players from first round). */
+  allowedUserIds?: string[] | null;
+  /** When continuing an event: only these guest names can be selected (guests from first round). */
+  allowedGuestNames?: string[] | null;
+  /** Display names of guests already in the group (for "already added" check when using allowedGuestNames). */
+  existingGuestDisplayNames?: string[];
 }
 
 export function AddPlayerDialog({
@@ -24,7 +30,11 @@ export function AddPlayerDialog({
   onAddPlayer,
   existingPlayerIds,
   defaultTee,
+  allowedUserIds = null,
+  allowedGuestNames = null,
+  existingGuestDisplayNames = [],
 }: AddPlayerDialogProps) {
+  const restrictToEventPlayers = allowedUserIds != null || allowedGuestNames != null;
   const [friends, setFriends] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [friendsLoading, setFriendsLoading] = useState(true);
@@ -68,12 +78,14 @@ export function AddPlayerDialog({
           return;
         }
 
-        const available = (data || []).filter((p: any) =>
+        let available = (data || []).filter((p: any) =>
           p?.id &&
           p.id !== user.id &&
           !existingPlayerIds.includes(p.id)
         );
-
+        if (allowedUserIds != null && allowedUserIds.length > 0) {
+          available = available.filter((p: any) => allowedUserIds!.includes(p.id));
+        }
         setSearchResults(available);
       } finally {
         setSearchLoading(false);
@@ -81,7 +93,7 @@ export function AddPlayerDialog({
     }, 250);
 
     return () => clearTimeout(timeoutId);
-  }, [isOpen, searchQuery, existingPlayerIds]);
+  }, [isOpen, searchQuery, existingPlayerIds, allowedUserIds]);
 
   const fetchFriends = async () => {
     try {
@@ -167,6 +179,7 @@ export function AddPlayerDialog({
 
   const filteredFriends = friends
     .filter((f) => !existingPlayerIds.includes(f.id))
+    .filter((f) => allowedUserIds == null || allowedUserIds.length === 0 || allowedUserIds.includes(f.id))
     .sort((a, b) => {
       const nameA = (a.display_name || a.username || '').toLowerCase();
       const nameB = (b.display_name || b.username || '').toLowerCase();
@@ -212,7 +225,11 @@ export function AddPlayerDialog({
                 <p className="text-center text-muted-foreground py-4">Searching...</p>
               ) : (searchQuery.trim() ? searchResults : filteredFriends).length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">
-                  {searchQuery ? "No players found" : "No players available to add"}
+                  {restrictToEventPlayers
+                    ? "Only players from the first round of this event can be added."
+                    : searchQuery
+                      ? "No players found"
+                      : "No players available to add"}
                 </p>
               ) : (
                 (searchQuery.trim() ? searchResults : filteredFriends).map((friend) => {
@@ -247,41 +264,83 @@ export function AddPlayerDialog({
           </TabsContent>
           
           <TabsContent value="guest" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="guest-first-name">First Name *</Label>
-              <Input
-                id="guest-first-name"
-                placeholder="Enter first name"
-                value={tempFirstName}
-                onChange={(e) => setTempFirstName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="guest-last-name">Last Name (optional)</Label>
-              <Input
-                id="guest-last-name"
-                placeholder="Enter last name"
-                value={tempLastName}
-                onChange={(e) => setTempLastName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="guest-handicap">Handicap (optional)</Label>
-              <Input
-                id="guest-handicap"
-                placeholder="e.g. 15 or 2,4"
-                value={tempHandicap}
-                onChange={(e) => setTempHandicap(e.target.value)}
-              />
-            </div>
-            <Button
-              onClick={handleAddTempPlayer}
-              disabled={!tempFirstName.trim()}
-              className="w-full"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Add Guest Player
-            </Button>
+            {allowedGuestNames != null && allowedGuestNames.length > 0 ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Only guests from the first round of this event can be added. Select one below:
+                </p>
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {allowedGuestNames
+                    .filter((name) => name.trim())
+                    .map((guestName) => {
+                      const displayLabel = guestName.trim() || "Guest";
+                      const alreadyAdded = existingGuestDisplayNames.some(
+                        (n) => n.trim().toLowerCase() === displayLabel.toLowerCase()
+                      );
+                      return (
+                        <Button
+                          key={guestName}
+                          variant="outline"
+                          className="w-full justify-start"
+                          disabled={alreadyAdded}
+                          onClick={() => {
+                            onAddPlayer({
+                              odId: `guest_${Date.now()}_${guestName}`,
+                              teeColor: defaultTee,
+                              displayName: displayLabel,
+                              username: displayLabel.toLowerCase().replace(/\s+/g, "_"),
+                              isTemporary: true,
+                            });
+                            onClose();
+                          }}
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          {displayLabel}
+                          {alreadyAdded ? " (already added)" : ""}
+                        </Button>
+                      );
+                    })}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="guest-first-name">First Name *</Label>
+                  <Input
+                    id="guest-first-name"
+                    placeholder="Enter first name"
+                    value={tempFirstName}
+                    onChange={(e) => setTempFirstName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="guest-last-name">Last Name (optional)</Label>
+                  <Input
+                    id="guest-last-name"
+                    placeholder="Enter last name"
+                    value={tempLastName}
+                    onChange={(e) => setTempLastName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="guest-handicap">Handicap (optional)</Label>
+                  <Input
+                    id="guest-handicap"
+                    placeholder="e.g. 15 or 2,4"
+                    value={tempHandicap}
+                    onChange={(e) => setTempHandicap(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={handleAddTempPlayer}
+                  disabled={!tempFirstName.trim()}
+                  className="w-full"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add Guest Player
+                </Button>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -247,6 +247,7 @@ export default function BestBallSetup() {
       const savedRoundName = sessionStorage.getItem('roundName');
       const savedHoles = sessionStorage.getItem('selectedHoles');
       const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
+      const selectedEventId = sessionStorage.getItem('selectedEventId');
 
       const { data: game, error } = await supabase
         .from("best_ball_games")
@@ -264,6 +265,7 @@ export default function BestBallSetup() {
           use_handicaps: false,
           mulligans_per_player: mulligansPerPlayer,
           stats_mode: statsMode,
+          ...(selectedEventId ? { event_id: selectedEventId } : {}),
         }])
         .select()
         .single();
@@ -284,6 +286,7 @@ export default function BestBallSetup() {
         console.warn('Failed to save player stats mode preference:', e);
       }
 
+      if (selectedEventId) sessionStorage.removeItem('selectedEventId');
       toast({ title: "Best Ball game started!" });
       navigate(`/best-ball/${game.id}/play`);
     } catch (error: any) {
