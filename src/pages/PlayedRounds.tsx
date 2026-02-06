@@ -3,6 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowLeft, Trash2, X, Check, Settings, CalendarDays } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundCard } from "@/components/RoundCard";
@@ -40,6 +49,9 @@ const PlayedRounds = () => {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [eventSettingsOpen, setEventSettingsOpen] = useState(false);
+  const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [createEventLoading, setCreateEventLoading] = useState(false);
 
   useEffect(() => {
     fetchPlayedRounds();
@@ -68,6 +80,40 @@ const PlayedRounds = () => {
 
   const canDeleteRound = (r: UnifiedRound) =>
     !!currentUserId && r.ownerUserId === currentUserId;
+
+  const handleCreateEvent = async () => {
+    const name = newEventName.trim();
+    if (!name) {
+      toast({ title: "Event name required", description: "Enter a name for the event", variant: "destructive" });
+      return;
+    }
+    if (!currentUserId) {
+      toast({ title: "Not signed in", variant: "destructive" });
+      return;
+    }
+    setCreateEventLoading(true);
+    try {
+      const { data: newEvent, error } = await supabase
+        .from("events")
+        .insert({
+          name,
+          creator_id: currentUserId,
+          game_type: "round",
+        })
+        .select("id, name")
+        .single();
+      if (error) throw error;
+      setEvents((prev) => [{ id: newEvent.id, name: newEvent.name, creator_id: currentUserId }, ...prev]);
+      setSelectedEventId(newEvent.id);
+      setNewEventName("");
+      setShowCreateEventDialog(false);
+      toast({ title: "Event created", description: `"${newEvent.name}" is selected. Add rounds to it from Event settings.` });
+    } catch (err: any) {
+      toast({ title: "Could not create event", description: err?.message || "Please try again", variant: "destructive" });
+    } finally {
+      setCreateEventLoading(false);
+    }
+  };
 
   const filteredRounds = selectedEventId
     ? rounds.filter((r) => (r as UnifiedRound & { event_id?: string | null }).event_id === selectedEventId)
@@ -466,6 +512,15 @@ const PlayedRounds = () => {
                 <Settings className="h-4 w-4" />
               </Button>
             )}
+            <Button
+              variant="default"
+              size="sm"
+              className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => setShowCreateEventDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Event
+            </Button>
           </div>
         )}
 
@@ -608,6 +663,35 @@ const PlayedRounds = () => {
       </AlertDialog>
 
       {/* Bulk delete confirmation dialog */}
+      <Dialog open={showCreateEventDialog} onOpenChange={setShowCreateEventDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create new event</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Name the event. You can add rounds to it from Event settings.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="new-event-name">Event name</Label>
+            <Input
+              id="new-event-name"
+              placeholder="e.g. Weekend Championship"
+              value={newEventName}
+              onChange={(e) => setNewEventName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateEvent()}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowCreateEventDialog(false)} disabled={createEventLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateEvent} disabled={createEventLoading || !newEventName.trim()}>
+              {createEventLoading ? "Creating…" : "Create & select"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <EventSettingsSheet
         open={eventSettingsOpen}
         onOpenChange={setEventSettingsOpen}

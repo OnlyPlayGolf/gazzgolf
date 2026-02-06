@@ -100,8 +100,6 @@ function RoundsPlayContent() {
   // Event: list for dropdown + first-round players when continuing an event
   const [events, setEvents] = useState<{ id: string; name: string }[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
-  const [eventFirstRoundPlayerIds, setEventFirstRoundPlayerIds] = useState<string[] | null>(null);
-  const [eventFirstRoundGuestNames, setEventFirstRoundGuestNames] = useState<string[] | null>(null);
 
   const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
   const [newEventName, setNewEventName] = useState("");
@@ -132,62 +130,6 @@ function RoundsPlayContent() {
     })();
     return () => { cancelled = true; };
   }, []);
-
-  // When an event is selected, fetch first round's players for restriction (continuing event)
-  useEffect(() => {
-    const eventId = setupState.selectedEventId;
-    if (!eventId) {
-      setEventFirstRoundPlayerIds(null);
-      setEventFirstRoundGuestNames(null);
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data: eventRounds, error: roundsError } = await supabase
-          .from("rounds")
-          .select("id")
-          .eq("event_id", eventId)
-          .order("created_at", { ascending: true })
-          .limit(1);
-        if (roundsError || !eventRounds?.length) {
-          if (!cancelled) {
-            setEventFirstRoundPlayerIds(null);
-            setEventFirstRoundGuestNames(null);
-          }
-          return;
-        }
-        const firstRoundId = eventRounds[0].id;
-        const { data: players, error: playersError } = await supabase
-          .from("round_players")
-          .select("user_id, guest_name, is_guest")
-          .eq("round_id", firstRoundId);
-        if (playersError) {
-          if (!cancelled) {
-            setEventFirstRoundPlayerIds(null);
-            setEventFirstRoundGuestNames(null);
-          }
-          return;
-        }
-        const userIds: string[] = [];
-        const guestNames: string[] = [];
-        (players || []).forEach((p: any) => {
-          if (p.is_guest && p.guest_name) guestNames.push(String(p.guest_name).trim());
-          else if (p.user_id) userIds.push(p.user_id);
-        });
-        if (!cancelled) {
-          setEventFirstRoundPlayerIds(userIds.length > 0 ? userIds : null);
-          setEventFirstRoundGuestNames(guestNames.length > 0 ? guestNames : null);
-        }
-      } catch {
-        if (!cancelled) {
-          setEventFirstRoundPlayerIds(null);
-          setEventFirstRoundGuestNames(null);
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [setupState.selectedEventId]);
 
   useEffect(() => {
     if (selectedCourse) {
@@ -1100,11 +1042,6 @@ function RoundsPlayContent() {
                   New Event
                 </Button>
               </div>
-              {eventFirstRoundPlayerIds && (
-                <p className="text-xs text-muted-foreground">
-                  Continuing this event: only players from the first round can be added.
-                </p>
-              )}
             </div>
 
             {/* Round Name & Date Row */}
@@ -1479,8 +1416,6 @@ function RoundsPlayContent() {
         onAddPlayer={(player) => activeGroupId && addPlayerToGroup(activeGroupId, player)}
         existingPlayerIds={getAllPlayerIds()}
         defaultTee={setupState.teeColor || DEFAULT_MEN_TEE}
-        allowedUserIds={eventFirstRoundPlayerIds}
-        allowedGuestNames={eventFirstRoundGuestNames}
         existingGuestDisplayNames={setupState.groups.flatMap((g) => g.players).filter((p) => p.isTemporary).map((p) => p.displayName)}
       />
 

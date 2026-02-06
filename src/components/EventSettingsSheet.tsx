@@ -211,20 +211,18 @@ export function EventSettingsSheet({
 
   const handleToggleOnlyCreatorCanAdd = async (checked: boolean) => {
     if (!eventId || !isCreator) return;
-    setUpdating(true);
+    setOnlyCreatorCanAddRounds(checked);
     try {
       const { error } = await supabase
         .from("events")
         .update({ only_creator_can_add_rounds: checked })
         .eq("id", eventId);
       if (error) throw error;
-      setOnlyCreatorCanAddRounds(checked);
-      toast({ title: "Event settings updated" });
+      toast({ title: checked ? "Only you can add rounds" : "Everyone can add rounds" });
       onSaved?.();
     } catch (e: any) {
-      toast({ title: "Failed to update setting", description: e?.message, variant: "destructive" });
-    } finally {
-      setUpdating(false);
+      const msg = e?.message ?? e?.error_description ?? "The change could not be saved.";
+      toast({ title: "Failed to update setting", description: msg, variant: "destructive" });
     }
   };
 
@@ -291,7 +289,6 @@ export function EventSettingsSheet({
                   <Switch
                     checked={onlyCreatorCanAddRounds}
                     onCheckedChange={handleToggleOnlyCreatorCanAdd}
-                    disabled={updating}
                   />
                 </div>
               </div>
