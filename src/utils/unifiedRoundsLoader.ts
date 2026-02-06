@@ -124,14 +124,14 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 2: copenhagen owned
     supabase
       .from("copenhagen_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 3: skins owned
     supabase
       .from("skins_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, players")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, event_id, players")
       .eq("user_id", targetUserId)
       .then((r) => {
         // #region agent log
@@ -148,7 +148,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 4: best ball owned
     supabase
       .from("best_ball_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, event_id, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
       .eq("user_id", targetUserId)
       .then((r) => {
         // #region agent log
@@ -172,21 +172,21 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
     // 6: wolf owned
     supabase
       .from("wolf_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, event_id, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 7: umbriago owned
     supabase
       .from("umbriago_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished")
       .eq("user_id", targetUserId)
       .then((r) => r),
 
     // 8: match play owned
     supabase
       .from("match_play_games")
-      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status")
+      .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id, player_1, player_2, winner_player, final_result, is_finished, match_status")
       .eq("user_id", targetUserId)
       .then((r) => r),
   ];
@@ -197,7 +197,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   // Skins: players jsonb array - use cs filter with JSON string
   const skinsParticipantPromises = [supabase
     .from("skins_games")
-    .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, players")
+    .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, event_id, players")
     .filter("players", "cs", userIdNeedle)
     .then((r) => {
       // #region agent log
@@ -222,7 +222,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
           supabase
             .from("copenhagen_games")
             .select(
-              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points"
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id, player_1, player_2, player_3, player_1_total_points, player_2_total_points, player_3_total_points"
             )
             .or(
               `player_1.in.(${participantOrInList}),player_2.in.(${participantOrInList}),player_3.in.(${participantOrInList})`
@@ -234,7 +234,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
   // Best Ball: team_a_players and team_b_players jsonb arrays - use cs filter with JSON string
   const bestBallParticipantPromises = [supabase
     .from("best_ball_games")
-    .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
+    .select("id, user_id, course_name, round_name, date_played, created_at, holes_played, event_id, team_a_players, team_b_players, game_type, winner_team, final_result, is_finished, match_status")
     .or(`team_a_players.cs.${userIdNeedle},team_b_players.cs.${userIdNeedle}`)
     .then((r) => {
       // #region agent log
@@ -266,7 +266,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
           supabase
             .from("wolf_games")
             .select(
-              "id, user_id, course_name, round_name, date_played, created_at, holes_played, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished"
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, event_id, player_1, player_2, player_3, player_4, player_5, player_1_points, player_2_points, player_3_points, player_4_points, player_5_points, player_6_points, is_finished"
             )
             .or(
               `player_1.in.(${participantOrInList}),player_2.in.(${participantOrInList}),player_3.in.(${participantOrInList}),player_4.in.(${participantOrInList}),player_5.in.(${participantOrInList})`
@@ -282,7 +282,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
           supabase
             .from("umbriago_games")
             .select(
-              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished"
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id, team_a_player_1, team_a_player_2, team_b_player_1, team_b_player_2, team_a_total_points, team_b_total_points, is_finished"
             )
             .or(
               `team_a_player_1.in.(${participantOrInList}),team_a_player_2.in.(${participantOrInList}),team_b_player_1.in.(${participantOrInList}),team_b_player_2.in.(${participantOrInList})`
@@ -298,7 +298,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
           supabase
             .from("match_play_games")
             .select(
-              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, player_1, player_2, winner_player, final_result, is_finished, match_status"
+              "id, user_id, course_name, round_name, date_played, created_at, holes_played, tee_set, event_id, player_1, player_2, winner_player, final_result, is_finished, match_status"
             )
             .or(`player_1.in.(${participantOrInList}),player_2.in.(${participantOrInList})`)
             .then((r) => r),
@@ -586,6 +586,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       ownerUserId: game.user_id,
       position,
       copenhagenFinalScore,
+      event_id: game.event_id ?? null,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
@@ -680,6 +681,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       ownerUserId: game.user_id,
       skinsPosition,
       skinsWon,
+      event_id: game.event_id ?? null,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
@@ -790,6 +792,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       matchFinalScore,
       bestBallTotalScore,
       bestBallScoreToPar,
+      event_id: game.event_id ?? null,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
@@ -953,6 +956,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       ownerUserId: game.user_id,
       wolfPosition,
       wolfFinalScore,
+      event_id: game.event_id ?? null,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
@@ -1006,6 +1010,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       ownerUserId: game.user_id,
       umbriagioResult,
       umbriagioFinalScore,
+      event_id: game.event_id ?? null,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }
@@ -1063,6 +1068,7 @@ export async function loadUnifiedRounds(targetUserId: string): Promise<UnifiedRo
       ownerUserId: game.user_id,
       matchResult,
       matchFinalScore,
+      event_id: game.event_id ?? null,
       _sortCreatedAt: game.created_at || `${game.date_played}T00:00:00Z`,
     });
   }

@@ -235,7 +235,9 @@ export default function BestBallPlay() {
   const [state, actions] = useGameScoring(config, navigate);
   
   const { game, holes, courseHoles, currentHoleIndex, loading, saving, scores, par, strokeIndex } = state;
-  const { setScores, saveHole, navigateHole, deleteGame } = actions;
+  const { setScores, saveHole, navigateHole, selectHole, deleteGame } = actions;
+  const holeStripRef = useRef<HTMLDivElement>(null);
+  const holeButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   
   // Keep ref in sync with state
   useEffect(() => {
@@ -253,7 +255,13 @@ export default function BestBallPlay() {
   
   const currentHole = currentHoleIndex + 1;
   const totalHoles = game?.holes_played || 18;
-  
+
+  useEffect(() => {
+    const el = holeButtonRefs.current[currentHoleIndex];
+    if (el && holeStripRef.current) {
+      el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [currentHoleIndex]);
   
   // Get hole distance from course data based on tee set
   const currentCourseHole = courseHoles.find(h => h.hole_number === currentHole);
@@ -547,34 +555,37 @@ export default function BestBallPlay() {
           </div>
         </div>
 
-        {/* Hole Navigation Bar */}
+        {/* Hole strip + Par / HCP */}
         <div className="bg-primary py-4 px-4">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("prev")}
-              disabled={currentHoleIndex === 0}
-              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
+          <div className="max-w-2xl mx-auto space-y-2">
+            <div
+              ref={holeStripRef}
+              className="flex gap-2 overflow-x-auto scrollbar-none scroll-smooth py-1 -mx-1"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
-              <ChevronLeft size={24} />
-            </Button>
-
-            <div className="text-center">
-              <div className="text-sm text-primary-foreground/90">PAR {par}</div>
-              <div className="text-2xl font-bold text-primary-foreground">Hole {currentHole}</div>
-              <div className="text-xs text-primary-foreground/90">HCP {strokeIndex}</div>
+              {courseHoles.slice(0, totalHoles).map((hole, index) => {
+                const isSelected = index === currentHoleIndex;
+                return (
+                  <button
+                    key={hole.hole_number}
+                    type="button"
+                    ref={(el) => { holeButtonRefs.current[index] = el; }}
+                    onClick={() => selectHole(index)}
+                    className={`flex-shrink-0 w-10 h-10 rounded-full font-semibold text-sm transition-colors ${
+                      isSelected
+                        ? "bg-primary-foreground text-primary"
+                        : "bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30"
+                    }`}
+                  >
+                    {hole.hole_number}
+                  </button>
+                );
+              })}
             </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateHole("next")}
-              disabled={currentHole > holes.length || currentHole >= totalHoles}
-              className="text-primary-foreground hover:bg-primary/80 disabled:text-primary-foreground/50"
-            >
-              <ChevronRight size={24} />
-            </Button>
+            <div className="flex justify-start items-center gap-2 text-primary-foreground">
+              <span className="text-base font-bold">Par {par}</span>
+              <span className="text-sm text-primary-foreground/90">HCP {strokeIndex ?? "-"}</span>
+            </div>
           </div>
         </div>
       </div>

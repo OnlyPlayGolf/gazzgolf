@@ -206,6 +206,7 @@ export default function WolfSetup() {
       const savedRoundName = sessionStorage.getItem('roundName');
       const savedHoles = sessionStorage.getItem('selectedHoles');
       const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
+      const selectedEventId = sessionStorage.getItem('selectedEventId');
 
       const { data: game, error } = await supabase
         .from("wolf_games" as any)
@@ -227,6 +228,7 @@ export default function WolfSetup() {
           wolf_position: wolfPosition,
           double_enabled: doubleEnabled,
           stats_mode: statsMode,
+          ...(selectedEventId ? { event_id: selectedEventId } : {}),
         })
         .select()
         .single();
@@ -247,6 +249,7 @@ export default function WolfSetup() {
         console.warn('Failed to save player stats mode preference:', e);
       }
 
+      if (selectedEventId) sessionStorage.removeItem('selectedEventId');
       toast({ title: "Wolf game started!" });
       navigate(`/wolf/${(game as any).id}/play`);
     } catch (error: any) {

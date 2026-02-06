@@ -177,6 +177,7 @@ export default function CopenhagenSetup() {
       const savedRoundName = sessionStorage.getItem('roundName');
       const savedHoles = sessionStorage.getItem('selectedHoles');
       const holesPlayed = (savedHoles === "front9" || savedHoles === "back9") ? 9 : 18;
+      const selectedEventId = sessionStorage.getItem('selectedEventId');
 
       const { data: game, error } = await supabase
         .from("copenhagen_games")
@@ -197,6 +198,7 @@ export default function CopenhagenSetup() {
           player_3_tee: players[2].teeColor || null,
           use_handicaps: false,
           stats_mode: statsMode,
+          ...(selectedEventId ? { event_id: selectedEventId } : {}),
         })
         .select()
         .single();
@@ -222,6 +224,7 @@ export default function CopenhagenSetup() {
       localStorage.setItem(`copenhagenSettings_${game.id}`, JSON.stringify(copenhagenSettings));
       sessionStorage.setItem('copenhagenSettings', JSON.stringify(copenhagenSettings));
 
+      if (selectedEventId) sessionStorage.removeItem('selectedEventId');
       toast({ title: "Copenhagen game started!" });
       navigate(`/copenhagen/${game.id}/play`);
     } catch (error: any) {

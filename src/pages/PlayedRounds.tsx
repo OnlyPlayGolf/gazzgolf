@@ -2,10 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, ArrowLeft, Trash2, X, Check } from "lucide-react";
+import { Plus, ArrowLeft, Trash2, X, Check, Settings, CalendarDays } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { TopNavBar } from "@/components/TopNavBar";
 import { RoundCard } from "@/components/RoundCard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getGameRoute, loadUnifiedRounds, invalidateUnifiedRoundsCache, type UnifiedRound } from "@/utils/unifiedRoundsLoader";
+import { EventSettingsSheet } from "@/components/EventSettingsSheet";
 
 const PlayedRounds = () => {
   const navigate = useNavigate();
@@ -34,12 +45,82 @@ const PlayedRounds = () => {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [showCannotDeleteDialog, setShowCannotDeleteDialog] = useState(false);
 
+  const [events, setEvents] = useState<{ id: string; name: string; creator_id: string }[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [eventSettingsOpen, setEventSettingsOpen] = useState(false);
+  const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [createEventLoading, setCreateEventLoading] = useState(false);
+
   useEffect(() => {
     fetchPlayedRounds();
   }, []);
 
+  const fetchEvents = async () => {
+    if (!currentUserId) return;
+    try {
+      setEventsLoading(true);
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, name, creator_id")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setEvents(data || []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, [currentUserId]);
+
   const canDeleteRound = (r: UnifiedRound) =>
     !!currentUserId && r.ownerUserId === currentUserId;
+
+  const handleCreateEvent = async () => {
+    const name = newEventName.trim();
+    if (!name) {
+      toast({ title: "Event name required", description: "Enter a name for the event", variant: "destructive" });
+      return;
+    }
+    if (!currentUserId) {
+      toast({ title: "Not signed in", variant: "destructive" });
+      return;
+    }
+    setCreateEventLoading(true);
+    try {
+      const { data: newEvent, error } = await supabase
+        .from("events")
+        .insert({
+          name,
+          creator_id: currentUserId,
+          game_type: "round",
+        })
+        .select("id, name")
+        .single();
+      if (error) throw error;
+      setEvents((prev) => [{ id: newEvent.id, name: newEvent.name, creator_id: currentUserId }, ...prev]);
+      setSelectedEventId(newEvent.id);
+      setNewEventName("");
+      setShowCreateEventDialog(false);
+      toast({ title: "Event created", description: `"${newEvent.name}" is selected. Add rounds to it from Event settings.` });
+    } catch (err: any) {
+      toast({ title: "Could not create event", description: err?.message || "Please try again", variant: "destructive" });
+    } finally {
+      setCreateEventLoading(false);
+    }
+  };
+
+  const filteredRounds = selectedEventId
+    ? rounds.filter((r) => (r as UnifiedRound & { event_id?: string | null }).event_id === selectedEventId)
+    : rounds;
+
+  const selectedEvent = selectedEventId ? events.find((e) => e.id === selectedEventId) : null;
+  const isEventCreator = selectedEvent && currentUserId && selectedEvent.creator_id === currentUserId;
   
   const handleRoundClickInDeleteMode = (round: UnifiedRound) => {
     if (canDeleteRound(round)) {
@@ -363,7 +444,7 @@ const PlayedRounds = () => {
             <ArrowLeft size={20} />
           </Button>
           <h1 className="text-xl font-semibold text-foreground flex-1">
-            All Rounds ({rounds.length})
+            All Rounds ({filteredRounds.length})
           </h1>
           {rounds.length > 0 && (
             <div className="flex items-center gap-2">
@@ -399,6 +480,50 @@ const PlayedRounds = () => {
             </div>
           )}
         </header>
+
+        {/* Event filter row - between title and year sections */}
+        {rounds.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <Select
+              value={selectedEventId ?? "all"}
+              onValueChange={(v) => setSelectedEventId(v === "all" ? null : v)}
+              disabled={eventsLoading}
+            >
+              <SelectTrigger className="w-[280px] h-9 justify-start text-left">
+                <CalendarDays className="h-4 w-4 mr-1.5 shrink-0" />
+                <SelectValue placeholder="Event" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All rounds</SelectItem>
+                {events.map((ev) => (
+                  <SelectItem key={ev.id} value={ev.id}>{ev.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedEventId && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setEventSettingsOpen(true)}
+                aria-label="Event settings"
+                title="Event settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="default"
+              size="sm"
+              className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => setShowCreateEventDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Event
+            </Button>
+          </div>
+        )}
+
         {deleteMode && !selectMode && (
           <p className="text-sm text-destructive mb-4">
             Tap a round to delete it, or click "Select" to delete multiple
@@ -418,16 +543,16 @@ const PlayedRounds = () => {
           <div className="text-center py-8 text-muted-foreground text-sm">
             Loading...
           </div>
-        ) : rounds.length === 0 ? (
+        ) : filteredRounds.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="mb-2">No rounds yet</p>
-            <p className="text-sm">Start playing to track your scores</p>
+            <p className="mb-2">{selectedEventId ? "No rounds in this event" : "No rounds yet"}</p>
+            <p className="text-sm">{selectedEventId ? "Add rounds from Event settings" : "Start playing to track your scores"}</p>
           </div>
         ) : (
           <main className="space-y-4">
             {(() => {
               // Group rounds by year
-              const roundsByYear = rounds.reduce((acc, round) => {
+              const roundsByYear = filteredRounds.reduce((acc, round) => {
                 const year = new Date(round.date).getFullYear().toString();
                 if (!acc[year]) acc[year] = [];
                 acc[year].push(round);
@@ -538,6 +663,50 @@ const PlayedRounds = () => {
       </AlertDialog>
 
       {/* Bulk delete confirmation dialog */}
+      <Dialog open={showCreateEventDialog} onOpenChange={setShowCreateEventDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create new event</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Name the event. You can add rounds to it from Event settings.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="new-event-name">Event name</Label>
+            <Input
+              id="new-event-name"
+              placeholder="e.g. Weekend Championship"
+              value={newEventName}
+              onChange={(e) => setNewEventName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateEvent()}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowCreateEventDialog(false)} disabled={createEventLoading}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateEvent} disabled={createEventLoading || !newEventName.trim()}>
+              {createEventLoading ? "Creating…" : "Create & select"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <EventSettingsSheet
+        open={eventSettingsOpen}
+        onOpenChange={setEventSettingsOpen}
+        eventId={selectedEventId}
+        eventName={selectedEvent?.name}
+        currentUserId={currentUserId}
+        isCreator={!!isEventCreator}
+        allRounds={rounds}
+        onSaved={() => {
+          invalidateUnifiedRoundsCache(currentUserId ?? undefined);
+          fetchPlayedRounds();
+          fetchEvents();
+        }}
+      />
+
       <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

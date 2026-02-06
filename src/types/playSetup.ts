@@ -23,6 +23,7 @@ export type RoundType = "fun_practice" | "qualifying" | "tournament";
 export interface PlaySetupState {
   roundName: string;
   datePlayed: string;
+  selectedEventId: string | null;
   selectedCourse: {
     id: string;
     name: string;
@@ -68,6 +69,7 @@ export const getInitialPlaySetupState = (): PlaySetupState => {
   return {
     roundName: "",
     datePlayed: new Date().toISOString().split('T')[0],
+    selectedEventId: null,
     selectedCourse: null,
     selectedHoles: "18",
     teeColor: defaultTee,

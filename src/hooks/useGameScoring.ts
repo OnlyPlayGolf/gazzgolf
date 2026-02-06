@@ -101,6 +101,7 @@ export interface GameScoringActions<TScores> {
   updateScore: <K extends keyof TScores>(key: K, value: TScores[K]) => void;
   saveHole: () => Promise<boolean>;
   navigateHole: (direction: "prev" | "next") => Promise<void>;
+  selectHole: (index: number) => void;
   loadHoleData: (holeNumber: number) => void;
   deleteGame: () => Promise<void>;
   goToSummary: () => void;
@@ -477,6 +478,34 @@ export function useGameScoring<TGame, THole, TScores>(
       }
     }
   }, [game, currentHole, currentHoleIndex, holes, loadHoleData, saveHoleData, scores, par, strokeIndex]);
+
+  // Select hole by index (e.g. from hole strip) - navigate immediately, save current in background if needed
+  const selectHole = useCallback((index: number) => {
+    const cfg = configRef.current;
+    if (!game) return;
+    const totalHoles = cfg.getTotalHoles(game);
+    if (index < 0 || index >= totalHoles || index === currentHoleIndex) return;
+    const targetCourseHole = courseHoles[index];
+    if (!targetCourseHole) return;
+
+    const holeToSave = currentHole;
+    const scoresToSave = scores;
+    const parToSave = par;
+    const strokeIndexToSave = strokeIndex;
+    const existingHoleToSave = holes.find(h => cfg.getHoleNumber(h) === holeToSave);
+
+    loadHoleData(targetCourseHole.hole_number);
+    setCurrentHoleIndex(index);
+
+    if (existingHoleToSave) {
+      const shouldSave = cfg.shouldSaveOnNavigate ? cfg.shouldSaveOnNavigate(game, scoresToSave) : true;
+      if (shouldSave) {
+        saveHoleData(holeToSave, scoresToSave, parToSave, strokeIndexToSave).catch(err =>
+          console.error("Error saving hole on select:", err)
+        );
+      }
+    }
+  }, [game, currentHole, currentHoleIndex, courseHoles, holes, loadHoleData, saveHoleData, scores, par, strokeIndex]);
   
   // Update a single score field
   const updateScore = useCallback(<K extends keyof TScores>(key: K, value: TScores[K]) => {
@@ -519,6 +548,7 @@ export function useGameScoring<TGame, THole, TScores>(
     updateScore,
     saveHole,
     navigateHole,
+    selectHole,
     loadHoleData,
     deleteGame,
     goToSummary,
