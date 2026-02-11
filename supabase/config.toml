@@ -3,3 +3,7 @@ project_id = "rwvrzypgokxbznqjtinn"
 [functions.game-setup-assistant]
 enabled = true
 verify_jwt = false
+
+[functions.generate-drill]
+enabled = true
+verify_jwt = false
