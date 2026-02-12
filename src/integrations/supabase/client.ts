@@ -12,54 +12,10 @@ const SUPABASE_PUBLISHABLE_KEY =
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-const supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
   },
-  global: {
-    headers: {
-      'apikey': SUPABASE_PUBLISHABLE_KEY,
-    },
-  },
 });
-
-// Wrap Supabase client methods to intercept errors
-const originalFrom = supabaseClient.from.bind(supabaseClient);
-supabaseClient.from = function(table: string) {
-  const queryBuilder = originalFrom(table);
-  
-  // Wrap select, single, maybeSingle methods to log errors
-  const originalSelect = queryBuilder.select.bind(queryBuilder);
-  queryBuilder.select = function(...args: any[]) {
-    const selectBuilder = originalSelect(...args);
-    
-    const wrapSingle = (method: 'single' | 'maybeSingle') => {
-      const originalMethod = selectBuilder[method].bind(selectBuilder);
-      return async function(...args: any[]) {
-        try {
-          const result = await originalMethod(...args);
-          // #region agent log
-          if(result.error) fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase-client.ts:wrapper',message:`${table}.${method}() ERROR`,data:{table,method,errorCode:result.error.code,errorMessage:result.error.message,errorDetails:result.error.details,errorHint:result.error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-          return result;
-        } catch (err: any) {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/04be59d6-47f1-4996-9a2e-5e7d80a7add1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase-client.ts:wrapper',message:`${table}.${method}() EXCEPTION`,data:{table,method,errorMessage:err?.message,errorStack:err?.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-          throw err;
-        }
-      };
-    };
-    
-    selectBuilder.single = wrapSingle('single');
-    selectBuilder.maybeSingle = wrapSingle('maybeSingle');
-    
-    return selectBuilder;
-  };
-  
-  return queryBuilder;
-};
-
-export const supabase = supabaseClient;
