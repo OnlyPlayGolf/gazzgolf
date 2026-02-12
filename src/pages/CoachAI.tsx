@@ -35,7 +35,7 @@ export default function CoachAI() {
   const navigate = useNavigate();
   const [goal, setGoal] = useState("");
   const [hcp, setHcp] = useState("");
-  const [timeMinutes, setTimeMinutes] = useState("");
+
   const [shotArea, setShotArea] = useState<string>("");
   const [location, setLocation] = useState<string>("");
   const [result, setResult] = useState<{
@@ -73,7 +73,6 @@ export default function CoachAI() {
         body: JSON.stringify({
           goal: goal.trim(),
           hcpInput: hcp.trim() ? hcp.trim() : null,
-          timeMinutes: timeMinutes.trim() ? Number(timeMinutes) : undefined,
           shotArea: shotArea && SHOT_AREAS.some((a) => a.value === shotArea) ? shotArea : undefined,
           location: location && LOCATIONS.some((l) => l.value === location) ? location : undefined,
         }),
@@ -133,12 +132,12 @@ export default function CoachAI() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="goal">Goal</Label>
+                <Label htmlFor="goal">Goal / focus</Label>
                 <Input
                   id="goal"
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
-                  placeholder="e.g. improve lag putting"
+                  placeholder="e.g. improve lag putting, working on a slice"
                 />
               </div>
               <div className="space-y-2">
@@ -150,17 +149,6 @@ export default function CoachAI() {
                   value={hcp}
                   onChange={(e) => setHcp(e.target.value)}
                   placeholder="e.g. 18 or +2"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timeMinutes">Time (minutes, optional)</Label>
-                <Input
-                  id="timeMinutes"
-                  type="number"
-                  inputMode="numeric"
-                  value={timeMinutes}
-                  onChange={(e) => setTimeMinutes(e.target.value)}
-                  placeholder="e.g. 30"
                 />
               </div>
               <div className="space-y-2">

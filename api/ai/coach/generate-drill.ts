@@ -139,8 +139,40 @@ const SHOT_AREAS = [
 ] as const;
 type ShotArea = (typeof SHOT_AREAS)[number];
 
-function isShotArea(s: unknown): s is ShotArea {
-  return typeof s === "string" && (SHOT_AREAS as readonly string[]).includes(s);
+function isShotArea(s: unknown): s is string {
+  if (typeof s !== "string") return false;
+  const parts = s.split(",").map((p) => p.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every((p) => (SHOT_AREAS as readonly string[]).includes(p));
+}
+
+const PRACTICE_AREAS = [
+  "driving_range",
+  "short_game_area",
+  "on_course",
+  "indoor_simulator",
+] as const;
+
+const MEASUREMENT_METHODS = [
+  "launch_monitor",
+  "visual_manual",
+] as const;
+
+const MEASUREMENT_LEGACY: Record<string, string> = {
+  simulator_builtin: "launch_monitor",
+  no_measurement: "visual_manual",
+};
+
+function isPracticeArea(s: unknown): boolean {
+  return typeof s === "string" && (PRACTICE_AREAS as readonly string[]).includes(s);
+}
+
+function isMeasurementMethod(s: unknown): boolean {
+  if (typeof s !== "string") return false;
+  return (MEASUREMENT_METHODS as readonly string[]).includes(s) || s in MEASUREMENT_LEGACY;
+}
+
+function normalizeMeasurementMethod(s: string): string {
+  return MEASUREMENT_LEGACY[s] ?? s;
 }
 
 interface GenerateBody {
@@ -148,6 +180,9 @@ interface GenerateBody {
   hcpInput?: string | null;
   timeMinutes?: number;
   shotArea?: string | null;
+  practiceArea?: string | null;
+  measurementMethod?: string | null;
+  flagDistances?: number[] | null;
 }
 
 function parseBody(req: VercelRequest): GenerateBody {
@@ -167,6 +202,18 @@ function parseBody(req: VercelRequest): GenerateBody {
       shotArea:
         body.shotArea != null && isShotArea(body.shotArea)
           ? body.shotArea
+          : null,
+      practiceArea:
+        body.practiceArea != null && isPracticeArea(body.practiceArea)
+          ? body.practiceArea
+          : null,
+      measurementMethod:
+        body.measurementMethod != null && isMeasurementMethod(body.measurementMethod)
+          ? normalizeMeasurementMethod(body.measurementMethod)
+          : null,
+      flagDistances:
+        Array.isArray(body.flagDistances)
+          ? body.flagDistances.filter((d: unknown) => typeof d === "number" && d > 0)
           : null,
     };
   } catch {
@@ -196,7 +243,7 @@ TWO DRILL TYPES (discriminator: "drill_type"):
 1) "points" — Interactive drill with outcome buttons and distance cycling.
    Required: outcomes (array of {label: string, points: number}, min 2), target_points (number), distances (number[] in meters, min 1), end_condition (string).
    The app renders outcome buttons the player taps after each shot. Distances cycle automatically.
-   HOW SCORING WORKS: The player's final score = total shots taken to reach target_points. lower_is_better is almost always true (fewer shots = better). Design outcomes so skilled execution earns points fast and poor execution costs points, extending the drill.
+   HOW SCORING WORKS: The player's final score = total shots taken to reach target_points. lower_is_better MUST be true for all points drills (fewer shots = better). Design outcomes so skilled execution earns points fast and poor execution costs points, extending the drill. target_points must always be a positive number.
 
 2) "score_entry" — Simple drill where the player enters a single numeric score at the end.
    Required: score_label (string), prompt (string, the question shown to the player), score_unit (string, optional).
@@ -210,39 +257,103 @@ ALL DRILLS require: title, goal, icon (SF Symbol name e.g. "target", "figure.gol
 HCP bands: plus_5_to_0, 0_to_5, 6_to_12, 13_to_20, 21_to_30, 31_plus, no_hcp.
 
 HCP TUNING — adapt ALL of these to the player's band:
-- Distances: shorter for higher HCP. A 25-HCP putting drill uses 2m/3m/4m; a 5-HCP uses 5m/7m/9m.
+- Distances: shorter for higher HCP.
+  PUTTING distance guide by HCP:
+    31+: 0.5m to 2m (learn to hole short putts consistently)
+    21-30: 1m to 3m (build confidence inside 10 feet)
+    13-20: 1.5m to 5m (develop mid-range reliability)
+    6-12: 2m to 8m (full putting range, introduce speed control)
+    0-5: 3m to 12m (tour-level distances, heavy lag component)
+    plus: 4m to 16m (elite lag putting + holing from distance)
+  OTHER SHOTS: scale proportionally. Higher HCP = shorter.
 - Target zone sizes: wider for higher HCP ("within 2 club lengths" vs "within 1 putter length").
 - Target points: lower for higher HCP (e.g. 10 vs 20).
 - Penalty severity: lighter for higher HCP (-1 vs -3).
 - Outcome granularity: 3-4 outcomes for high HCP, 5-6 for low HCP.
 
-PRESSURE MECHANICS — every drill MUST include at least one. Vary across drills:
-- Streak bonus: extra points for consecutive successes.
-- Forced reset: miss N in a row and score resets to zero or halves.
-- Escalating difficulty: distances increase after every few made shots.
-- Par target: "reach X points in under Y shots or restart."
-- Negative spiral: each miss costs 1 more point than the last.
-- Bonus round: after reaching target, 3 bonus shots at double points.
-- Score gate: must reach X points before shot Y or restart.
+PRESSURE MECHANICS — described in the rules array for the player to follow. The app does NOT enforce these automatically.
+- For points drills: the app only tracks total points and shot count. Streak bonuses, resets, gates etc. are honor-system rules the player follows. Keep them simple — most players won't track complex state mid-drill. One pressure mechanic per drill is enough.
+- For score_entry drills: the player manages the entire drill, so complex mechanics (survival, gates, streaks, resets) work naturally.
+- Options: streak bonus, forced reset, par target, negative spiral, score gate, elimination on consecutive misses.
 
 NAMING RULES:
 - Title must be specific and evocative. Bad: "Putting Challenge", "Bunker Drill". Good: "Dead-Weight Lag Putts 6-10m", "Splash Zone: Greenside Bunker Precision", "Three-Club Wedge Ladder".
 - Include distance range, mechanic, or shot shape in the title when possible.
+- NEVER use these exact titles (they are built-in drills): "Short Putt Test", "PGA Tour 18", "Aggressive Putting 4-6m", "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m", "Easy Chip Drill", "Short Game Circuit", "18 Up & Downs", "Approach 40–80m", "Wedge Ladder 60–120m", "Approach 130–180m", "9 Windows Shot Shape", "Driver Control", "Shot Shape Master".
 
-SHOT AREA OUTCOME GUIDANCE — use area-specific labels, not generic "Good"/"Bad":
-- putting: "Holed", "Lip-out", "Good pace but missed", "Short", "3-putt range"
-- chipping: "Inside 1m", "On green within 3m", "On green but far", "Missed green", "Skulled/chunked"
-- pitching: "Landed in target zone", "Correct trajectory wrong distance", "Wrong trajectory", "Duffed"
-- bunker: "Out and within 2m", "Out and on green", "Still in bunker", "Thinned over green"
-- wedges: "Pin high within 3m", "On green correct distance", "On green wrong distance", "Short/long of green"
-- driver: "Fairway center", "Fairway edge", "Light rough", "Deep trouble", "OB"
+VARIETY — this is CRITICAL. The most common mistake is generating the same drill structure every time.
+
+APP ENGINE CONSTRAINT: For "points" drills, the app has ONE end condition: totalPoints >= target_points. It cannot end on a fixed shot count, when score drops to 0, or on first miss. Complex end conditions MUST use "score_entry" where the player self-manages the drill.
+
+DRILL STRUCTURES FOR "score_entry" (player self-manages, enters a number at the end):
+- Survival: fixed distance, start with X points, make/miss adjusts score, ends when eliminated or after N putts. Enter final score.
+- Gate drill: putt through a narrow gate (2 tees), hit N putts, enter count that passed through.
+- Clock drill: 4+ positions around the hole, progressive distance per position, first miss ends it. Enter consecutive makes.
+- Station completion: unique distances, one attempt each, count total strokes (like real golf). Enter total putts.
+- Streak challenge: fixed distance, count consecutive makes, miss resets. Enter longest streak.
+- Make X before miss Y: e.g. "make 5 before missing 3." Enter total putts needed.
+- Uphill/downhill pairs: tally strokes per putt (Holed=0, Inside 1m=1, Outside 1m=2), enter total.
+- Success counting: hit N shots, count how many meet a criteria. Enter count.
+
+DRILL STRUCTURES FOR "points" (app shows outcome buttons, cycles distances, ends at target_points):
+- Proximity-graded: cycle through distances, 3-5 outcome buttons graded by distance from hole, reach target_points. This is the MOST COMMON pattern — use sparingly.
+- Binary make/miss: single distance, 2 outcomes (Holed +N / Missed -N), reach target_points. Simple and high-pressure.
+- Weighted difficulty: distances cycle easy→hard, outcome points reflect difficulty, reach target_points.
+
+IMPORTANT: For points drills, the saved score is ALWAYS total shots taken (fewer = better). Therefore lower_is_better MUST be true for ALL points drills. Use score_entry if higher scores are better.
+
+GENERAL VARIETY:
+- Use score_entry often — it enables the most diverse drill structures.
+- For putting especially, prefer score_entry for variety (survival, gate, clock, streak, station completion all require it).
+- Mix pressure mechanics between drills. Don't always default to streak bonus.
+- For points drills, consider simple 2-3 outcome buttons (e.g. just "Holed" / "Missed") instead of always using 5-6 proximity tiers.
+
+PUTTING DRILL MECHANICS — vary these across drills to avoid repetition:
+- Speed control: uphill vs downhill, lag to a zone, die at the hole vs firm stroke
+- Break reading: left-to-right, right-to-left, double-break, choose different slopes each station
+- Holing out: binary make/miss from a fixed distance, pressure to hole under consequences
+- Distance control: stop within a zone (1 putter-length, 0.5m), two-putt avoidance from long range
+- Short putt consistency: 1-2m repeated, clock positions, different breaks same distance
+- Start line: gate drills, aim point drills, rail putts along a straight edge
+Do NOT always default to "cycle distances + grade by proximity." Many putting drills are about a SINGLE skill (speed OR line OR holing out) rather than general proximity.
+
+SHOT AREA OUTCOME GUIDANCE — use specific, measurable labels. Every label must describe what the ball did, not a generic term:
+- putting: "Holed", "Lip-out", "0.5m past", "0.5m short", "1m+ past", "2m+ away"
+- chipping: "Inside 1m", "Within 3m", "On green, 3m+", "Missed green", "Thin – ran through", "Fat – came up short"
+- pitching: "Within 2m", "Within 5m", "On green, 5m+", "Missed green short", "Thin – low & long", "Fat – short & high"
+- bunker: "Within 2m", "On green", "Missed green", "Still in bunker", "Thin – flew over green"
+- wedges: "Within 3m", "Within 5m", "On green, 5m+", "Short of green", "Long of green", "Thin – low runner", "Fat – came up short"
+- driver: "Fairway center", "Fairway edge", "Light rough", "Deep rough/trees", "OB/lost"
+
+BANNED LABELS (never use): "Mishit", "Misshit", "Duffed", "Skulled", "Chunked", "Good", "Bad", "Poor", "OK", "Good pace", "3-putt range". Instead describe the shot outcome: "Thin – low & long", "Fat – came up short", "Toe – pushed right".
+
+DISTANCE LABELS — NEVER use distance RANGES in outcome labels. Always use a single specific distance.
+BAD: "1-2m", "0.6m–1m", "2–3m" (ranges are vague — the player can't tell which button to press).
+GOOD: "Within 1m", "1.5m past", "Within 3m", "0.5m short" (one specific distance per label).
+If you need to cover a range, use thresholds: "Within 1m" then "Within 2m" then "2m+ away" — NOT "1-2m".
+
+EQUIPMENT RULES:
+- NEVER use alignment sticks in putting drills. Use tees, coins, or markers to mark starting positions and distances on the green. Alignment sticks are fine for range/full-swing drills only.
 
 QUALITY RULES:
 - No generic tips ("focus on technique", "stay relaxed"). Every step must be actionable.
 - Include concrete constraints (distance, width, attempts, target score).
 - Distances must be in meters.
-- For "points" drills: outcomes must have a mix of positive and negative points. Include at least one 0-point outcome (mediocre result).
+- For "points" drills with 3+ outcomes: include a mix of positive, zero, and negative point values. For 2-outcome drills (binary make/miss), use one positive and one negative value — no 0-point needed.
+- For "points" drills: lower_is_better MUST be true (saved score = total shots taken). target_points must be a positive number.
 - For "score_entry" drills: the prompt must be a clear question answerable with a number. Include total reps or test conditions in the rules.
+
+ENVIRONMENT & EQUIPMENT ADAPTATION — if a practice area or measurement method is specified in the user prompt, adapt the drill accordingly:
+- driving_range: Use distance markers and bay width for setup. Distances can be specific (e.g. 87m). Multiple targets available.
+- short_game_area: Use flag positions for targets. If specific flag distances are provided, use ONLY those distances in the drill — do not invent distances the player doesn't have flags for.
+- on_course: Include hole selection guidance in setup. Use real-course elements (bunkers, slopes, pin positions).
+- indoor_simulator: Reference simulator readout in setup. Use simulator-specific metrics (carry distance, spin, launch angle).
+
+Measurement method adaptation:
+- launch_monitor: Player has shot tracking (launch monitor, simulator, or similar device). Use precise carry/total distances in outcomes (e.g. "Carry within 2m of target"). Include dispersion metrics.
+- visual_manual: Player measures visually (pacing, landing near flags, by eye). Use visual proximity outcomes (e.g. "Within 1 club length of flag", "Past the flag"). Use round distances. Focus on process and observable outcomes.
+
+If no environment is specified, design for a standard driving range with visual measurement (the most common setup).
 
 EXAMPLES (match structure exactly):
 
@@ -275,6 +386,8 @@ function getDrillTypeNudge(shotArea: string | null): string | null {
     return "Consider using score_entry drill type for this one.";
   if (shotArea === "bunker" || shotArea === "driver")
     return "A score_entry format (e.g. success count out of N attempts) works well for this shot area.";
+  if (shotArea === "putting")
+    return "Both drill types work well for putting. Points drills are great for simple make/miss pressure from a fixed distance. Score_entry enables survival, gate, clock, and streak structures. Pick whichever fits the drill concept best.";
   return null;
 }
 
@@ -286,7 +399,39 @@ function buildUserPrompt(body: GenerateBody, parsed: ParsedHcp): string {
   );
   if (typeof body.timeMinutes === "number")
     parts.push(`Time budget: ${body.timeMinutes} minutes.`);
-  if (body.shotArea) parts.push(`Shot area: ${body.shotArea}.`);
+  if (body.shotArea) {
+    if (body.shotArea.includes(",")) {
+      const areas = body.shotArea.split(",").map((a) => a.trim());
+      parts.push(`Shot areas: ${areas.join(", ")}. Design a drill that incorporates these areas.`);
+    } else {
+      parts.push(`Shot area: ${body.shotArea}.`);
+    }
+  }
+
+  // Environment & equipment context
+  if (body.practiceArea) {
+    const areaDescriptions: Record<string, string> = {
+      driving_range: "Driving range with open bays and distance markers on the ground.",
+      short_game_area: "Short game practice area with flag targets.",
+      on_course: "On-course practice (real holes, real conditions).",
+      indoor_simulator: "Indoor simulator environment.",
+    };
+    parts.push(`Practice area: ${areaDescriptions[body.practiceArea] || body.practiceArea}`);
+
+    if (body.practiceArea === "short_game_area" && body.flagDistances && body.flagDistances.length > 0) {
+      const sorted = [...body.flagDistances].sort((a, b) => a - b);
+      parts.push(`Available flag distances: ${sorted.join("m, ")}m. Use ONLY these distances for the drill.`);
+    }
+  }
+
+  if (body.measurementMethod) {
+    const measureDescriptions: Record<string, string> = {
+      launch_monitor: "Player has shot tracking (launch monitor, simulator, or similar device) — use exact carry distances and dispersion metrics in outcomes.",
+      visual_manual: "Player measures visually (pacing, landing near flags) — use visual proximity outcomes (e.g. 'within 3m of flag'). Use round distances. Focus on process and observable outcomes.",
+    };
+    parts.push(measureDescriptions[body.measurementMethod] || "");
+  }
+
   const nudge = getDrillTypeNudge(body.shotArea ?? null);
   if (nudge) parts.push(nudge);
   parts.push(`Variation seed: ${Math.random().toString(36).slice(2, 6)}`);
