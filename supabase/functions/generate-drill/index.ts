@@ -79,8 +79,8 @@ const outcomeSchema = z.object({
 })
 
 const baseSchema = z.object({
-  title: z.string(),
-  goal: z.string(),
+  title: z.string().max(60),
+  goal: z.string().max(150),
   icon: z.string().optional(),
   time_minutes: z.number().min(5).max(60),
   shot_area: z.string(),
@@ -96,8 +96,11 @@ const baseSchema = z.object({
 
 const pointsDrillSchema = baseSchema.extend({
   drill_type: z.literal("points"),
-  outcomes: z.array(outcomeSchema).min(2),
-  target_points: z.number(),
+  outcomes: z.array(outcomeSchema).min(2).refine(
+    (outcomes) => outcomes.some((o) => o.points > 0),
+    { message: "At least one outcome must have positive points" }
+  ),
+  target_points: z.number().min(1),
   distances: z.array(z.number()).min(1),
   end_condition: z.string(),
 })
@@ -116,9 +119,64 @@ const scoreEntryDrillSchema = baseSchema.extend({
   benchmarks: benchmarksSchema.optional(),
 })
 
+const stationEntryDrillSchema = baseSchema.extend({
+  drill_type: z.literal("station_entry"),
+  stations: z.array(z.number()).min(3),
+  station_score_min: z.number().min(1),
+  station_score_max: z.number().max(10),
+  station_score_label: z.string().max(40),
+  benchmarks: benchmarksSchema.optional(),
+})
+
+const stationOutcomesDrillSchema = baseSchema.extend({
+  drill_type: z.literal("station_outcomes"),
+  outcomes: z.array(outcomeSchema).min(2),
+  stations: z.array(z.string()).min(1),
+  total_shots: z.number().min(1),
+  shuffle_stations: z.boolean(),
+  benchmarks: benchmarksSchema.optional(),
+})
+
+const questionSchema = z.object({
+  text: z.string().max(80),
+  conditional_on_previous: z.boolean(),
+})
+
+const scoringComboSchema = z.object({
+  answers: z.array(z.boolean()),
+  points: z.number(),
+  label: z.string().max(50),
+})
+
+const conditionalEntryDrillSchema = baseSchema.extend({
+  drill_type: z.literal("conditional_entry"),
+  questions: z.array(questionSchema).min(2).max(3),
+  scoring_combos: z.array(scoringComboSchema).min(2),
+  total_shots: z.number().min(1),
+  shot_labels: z.array(z.string()).optional(),
+  benchmarks: benchmarksSchema.optional(),
+})
+
+const targetSchema = z.object({
+  label: z.string().max(60),
+})
+
+const retryEntryDrillSchema = baseSchema.extend({
+  drill_type: z.literal("retry_entry"),
+  targets: z.array(targetSchema).min(2),
+  pass_label: z.string().max(30),
+  retry_label: z.string().max(30),
+  shuffle_targets: z.boolean(),
+  benchmarks: benchmarksSchema.optional(),
+})
+
 const drillSchema = z.discriminatedUnion("drill_type", [
   pointsDrillSchema,
   scoreEntryDrillSchema,
+  stationEntryDrillSchema,
+  stationOutcomesDrillSchema,
+  conditionalEntryDrillSchema,
+  retryEntryDrillSchema,
 ])
 
 type Drill = z.infer<typeof drillSchema>
@@ -230,7 +288,7 @@ const coachDrillExamples = [
     hcp: { input: "15", value: 15, band: "13_to_20" },
   },
   {
-    drill_type: "score_entry",
+    drill_type: "station_entry",
     title: "18-Station Putting Gauntlet",
     goal: "Test putting across 18 distances with a par-based scoring system.",
     icon: "flag.fill",
@@ -241,14 +299,15 @@ const coachDrillExamples = [
       "Set up 18 putt stations at these distances: 0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 12, 16 meters.",
     ],
     rules: [
-      "Hit one putt from each of the 18 distances in order.",
+      "Hit one putt from each of the 18 distances. Distances are shuffled randomly.",
       "Vary the break and slope for each station (uphill, downhill, sidehill).",
-      "Record total putts taken per station (1-5).",
+      "Record putts taken per station (1-5).",
       "Total score = sum of all putts. Tour benchmark: 29 putts.",
     ],
-    score_label: "Total Putts",
-    score_unit: "putts",
-    prompt: "What was your total putts taken across all 18 distances?",
+    stations: [0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 12, 16],
+    station_score_min: 1,
+    station_score_max: 5,
+    station_score_label: "Putts taken",
     lower_is_better: true,
     benchmarks: { hcp_0: 27, hcp_10: 32, hcp_20: 38 },
     hcp: { input: "3", value: 3, band: "0_to_5" },
@@ -541,6 +600,111 @@ const coachDrillExamples = [
     hcp: { input: "2", value: 2, band: "0_to_5" },
   },
 
+  // ── STATION OUTCOMES ─────────────────────────────────────────────────
+  {
+    drill_type: "station_outcomes",
+    title: "Lag Putting Proximity 8-16m",
+    goal: "Develop distance control on long putts by grading proximity at each station.",
+    icon: "scope",
+    time_minutes: 15,
+    shot_area: "putting",
+    setup_steps: [
+      "Use a practice green with enough space for 16m putts.",
+      "Set up 12 putt stations at: 8, 9, 10, 11, 12, 13, 14, 15, 16, 10, 12, 14 meters.",
+    ],
+    rules: [
+      "Hit one putt from each of the 12 stations. Stations are shuffled randomly.",
+      "Vary the break and slope at each station (uphill, downhill, sidehill).",
+      "After each putt, tap the outcome that best describes where the ball stopped.",
+      "Total score = sum of all outcome points. Higher is better.",
+    ],
+    outcomes: [
+      { label: "Holed", points: 5 },
+      { label: "Within 0.5m", points: 3 },
+      { label: "Within 1m", points: 2 },
+      { label: "Within 2m", points: 1 },
+      { label: "2m+ away", points: 0 },
+      { label: "3m+ away", points: -1 },
+    ],
+    stations: ["8m", "9m", "10m", "11m", "12m", "13m", "14m", "15m", "16m", "10m", "12m", "14m"],
+    total_shots: 12,
+    shuffle_stations: true,
+    lower_is_better: false,
+    benchmarks: { hcp_0: 30, hcp_10: 22, hcp_20: 15 },
+    hcp: { input: "8", value: 8, band: "6_to_12" },
+  },
+
+  // ── CONDITIONAL ENTRY ──────────────────────────────────────────────
+  {
+    drill_type: "conditional_entry",
+    title: "Approach Side Control 130-170m",
+    goal: "Test approach accuracy with side-targeting and proximity assessment.",
+    icon: "scope",
+    time_minutes: 20,
+    shot_area: "wedges",
+    setup_steps: [
+      "Set up on the range with targets between 130m and 170m.",
+      "Mark a left and right target zone for each distance.",
+    ],
+    rules: [
+      "Hit 14 approach shots from randomized distances (130–170m).",
+      "Each shot has a designated target side (left or right). 7 left, 7 right.",
+      "After each shot, answer two questions: (1) Did you land on the correct side? (2) Was it inside 5 meters of the target?",
+      "Points: correct side + inside 5m = 3pts, wrong side + inside 5m = 2pts, correct side + outside 5m = 1pt, wrong + outside = −1pt.",
+    ],
+    questions: [
+      { text: "Did you land on the correct side?", conditional_on_previous: false },
+      { text: "Was it inside 5 meters?", conditional_on_previous: false },
+    ],
+    scoring_combos: [
+      { answers: [true, true], points: 3, label: "Correct side + inside 5m" },
+      { answers: [false, true], points: 2, label: "Wrong side + inside 5m" },
+      { answers: [true, false], points: 1, label: "Correct side + outside 5m" },
+      { answers: [false, false], points: -1, label: "Wrong side + outside 5m" },
+    ],
+    total_shots: 14,
+    shot_labels: [
+      "130m - Left", "135m - Right", "140m - Left", "145m - Right",
+      "150m - Left", "155m - Right", "160m - Left", "165m - Right",
+      "170m - Left", "140m - Right", "150m - Left", "160m - Right",
+      "145m - Left", "155m - Right",
+    ],
+    lower_is_better: false,
+    benchmarks: { hcp_0: 32, hcp_10: 22, hcp_20: 12 },
+    hcp: { input: "5", value: 5, band: "0_to_5" },
+  },
+
+  // ── RETRY ENTRY ────────────────────────────────────────────────────
+  {
+    drill_type: "retry_entry",
+    title: "9 Windows: Trajectory × Shape",
+    goal: "Master all 9 trajectory and shape combinations with one club.",
+    icon: "square.grid.3x3",
+    time_minutes: 20,
+    shot_area: "mixed",
+    setup_steps: [
+      "Use a 7-iron only for the entire drill.",
+      "Pick a target on the range with a 15-meter landing zone.",
+    ],
+    rules: [
+      "Complete 9 windows: High Fade, High Straight, High Draw, Mid Fade, Mid Straight, Mid Draw, Low Fade, Low Straight, Low Draw.",
+      "Windows are presented in random order.",
+      "Hit until you execute the correct trajectory + shape within the 15m target. Then advance to the next window.",
+      "Score = total shots to complete all 9 windows. Perfect = 9.",
+    ],
+    targets: [
+      { label: "High Fade" }, { label: "High Straight" }, { label: "High Draw" },
+      { label: "Mid Fade" }, { label: "Mid Straight" }, { label: "Mid Draw" },
+      { label: "Low Fade" }, { label: "Low Straight" }, { label: "Low Draw" },
+    ],
+    pass_label: "Next Shot",
+    retry_label: "Try Again",
+    shuffle_targets: true,
+    lower_is_better: true,
+    benchmarks: { hcp_0: 11, hcp_10: 16, hcp_20: 25 },
+    hcp: { input: "3", value: 3, band: "0_to_5" },
+  },
+
   // ── BUNKER ────────────────────────────────────────────────────────────
   {
     drill_type: "points",
@@ -584,24 +748,30 @@ for (const ex of coachDrillExamples) {
 /*  Retry hint builder                                                 */
 /* ------------------------------------------------------------------ */
 
-const DRILL_TYPES = ["points", "score_entry"] as const
+const DRILL_TYPES = ["points", "score_entry", "station_entry", "station_outcomes", "conditional_entry", "retry_entry"] as const
 type DrillType = (typeof DRILL_TYPES)[number]
 
 const REQUIRED_FIELDS: Record<DrillType, string[]> = {
   points: ["outcomes", "target_points", "distances", "end_condition"],
   score_entry: ["score_label", "prompt"],
+  station_entry: ["stations", "station_score_min", "station_score_max", "station_score_label"],
+  station_outcomes: ["outcomes", "stations", "total_shots", "shuffle_stations"],
+  conditional_entry: ["questions", "scoring_combos", "total_shots"],
+  retry_entry: ["targets", "pass_label", "retry_label", "shuffle_targets"],
 }
 
 function isDrillType(s: unknown): s is DrillType {
   return typeof s === "string" && DRILL_TYPES.includes(s as DrillType)
 }
 
-function buildRetryHint(attempted: unknown): string {
+function buildRetryHint(attempted: unknown, zodErrors?: string): string {
   const obj =
     attempted != null && typeof attempted === "object"
       ? (attempted as Record<string, unknown>)
       : null
   const dt = obj && "drill_type" in obj ? obj.drill_type : undefined
+
+  const errorDetail = zodErrors ? ` Zod errors: ${zodErrors}.` : ""
 
   if (isDrillType(dt)) {
     const required = REQUIRED_FIELDS[dt]
@@ -616,9 +786,9 @@ function buildRetryHint(attempted: unknown): string {
       missing.length > 0
         ? `Missing fields for "${dt}": ${missing.join(", ")}. `
         : `"${dt}" validation failed. Required: ${required.join(", ")}. `
-    return `Schema validation failed. ${clause}Output only valid JSON.`
+    return `Schema validation failed. ${clause}${errorDetail} Output only valid JSON.`
   }
-  return `Schema validation failed. drill_type must be "points" or "score_entry". Include all required fields. Output only valid JSON.`
+  return `Schema validation failed. drill_type must be one of: "points", "score_entry", "station_entry", "station_outcomes", "conditional_entry", "retry_entry". Include all required fields.${errorDetail} Output only valid JSON.`
 }
 
 /* ------------------------------------------------------------------ */
@@ -680,19 +850,48 @@ function buildSystemPrompt(): string {
 
 Create exactly ONE drill tuned to the player's HCP band. Adjust distances, targets, and penalties directly — do NOT include a difficulty_by_band object.
 
-TWO DRILL TYPES (discriminator: "drill_type"):
+SIX DRILL TYPES (discriminator: "drill_type"):
 
-1) "points" — Interactive drill with outcome buttons and distance cycling.
+1) "points" — Interactive drill with outcome buttons and distance cycling. Ends when target_points reached.
    Required: outcomes (array of {label: string, points: number}, min 2), target_points (number), distances (number[] in meters, min 1), end_condition (string).
    The app renders outcome buttons the player taps after each shot. Distances cycle automatically.
    HOW SCORING WORKS: The player's final score = total shots taken to reach target_points. lower_is_better MUST be true for all points drills (fewer shots = better). Design outcomes so skilled execution earns points fast and poor execution costs points, extending the drill. target_points must always be a positive number.
 
 2) "score_entry" — Simple drill where the player enters a single numeric score at the end.
    Required: score_label (string), prompt (string, the question shown to the player), score_unit (string, optional).
-   The app shows the prompt and a number input field.
+   The app shows the prompt and a number input field. IMPORTANT: The app only accepts integers (positive or negative, no decimals). Design scoring systems that always produce whole number results.
    GREAT FOR: success-out-of-N drills ("how many out of 10 landed within 3m?"), longest-streak drills, counting drills, distance-estimation drills, up-and-down percentage drills.
 
-Prefer "score_entry" when counting successes, measuring consistency, or tracking a single stat. Prefer "points" when shot-by-shot decisions and varying outcomes matter.
+3) "station_entry" — Per-station drill where the player records a numeric score at each station/distance.
+   Required: stations (number[] of distances in meters, min 3), station_score_min (number, minimum button value e.g. 1), station_score_max (number, maximum button value e.g. 5), station_score_label (string, label shown above buttons e.g. "Putts taken").
+   The app shuffles stations randomly, shows one station at a time with the distance prominently displayed, renders horizontal numbered buttons from station_score_min to station_score_max, tracks a running total, and auto-saves when all stations are completed. Score = sum of all station scores.
+   GREAT FOR: PGA Tour 18-style drills, multi-distance putting tests, up-and-down circuits where the player counts strokes per station.
+
+4) "station_outcomes" — Fixed stations with outcome buttons. Plays all shots, no target_points exit.
+   Required: outcomes (array of {label, points}, min 2), stations (string[] of station labels, min 1), total_shots (number), shuffle_stations (boolean).
+   The app shows one station at a time with its label, renders outcome buttons (same as "points"), auto-advances. Drill ends when all total_shots are done. Score = sum of outcome points.
+   KEY DIFFERENCE FROM "points": no target_points — ALWAYS plays exactly total_shots. Use when you want fixed shot count with graded outcomes.
+   If total_shots > stations.length, stations cycle (multiple rounds). If shuffle_stations is true, order is randomized.
+   GREAT FOR: lag putting proximity drills (fixed distances, 6 proximity outcomes), short game circuits (rotate through stations with proximity scoring), approach accuracy (fixed distances with outcome grading), any drill with a fixed number of shots and labeled outcome buttons.
+
+5) "conditional_entry" — Per-shot sequential yes/no questions with point lookup.
+   Required: questions (array of {text, conditional_on_previous}, min 2, max 3), scoring_combos (array of {answers: boolean[], points, label}), total_shots (number).
+   Optional: shot_labels (string[], per-shot context like "Draw - Driver").
+   Each shot shows questions one at a time. Q1 always visible. Q2 reveals after Q1 answered. Q3 (if conditional_on_previous=true) only shown if Q2=No; skipped if Q2=Yes. Points computed by matching answers to scoring_combos.
+   GREAT FOR: approach control (correct side? + inside 5m?), shot shape assessment (hit shape? + fairway? + miss distance?), any multi-criteria per-shot evaluation.
+
+6) "retry_entry" — Pass/retry through a target list. Score = total attempts.
+   Required: targets (array of {label}, min 2), pass_label (string, e.g. "Hit Target"), retry_label (string, e.g. "Try Again"), shuffle_targets (boolean).
+   Player attempts each target. Tap pass_label to advance to next target. Tap retry_label to try again (stays on same target). Score = total button taps (passes + retries). lower_is_better MUST be true. Perfect score = targets.count.
+   GREAT FOR: shot shape windows (9 trajectory × shape combos), wedge ladders (climb through distances), any "master each item" progression drill.
+
+TYPE SELECTION GUIDE:
+- "points": shot-by-shot decisions with varying outcomes, VARIABLE length (ends at target_points)
+- "station_outcomes": shot-by-shot outcomes at FIXED stations, FIXED length (plays all shots)
+- "station_entry": per-station NUMERIC score (1-5 range), FIXED stations
+- "conditional_entry": multi-question evaluation per shot, computed points
+- "retry_entry": pass/retry through targets, score = attempt count
+- "score_entry": single number entered at end (most flexible, least interactive)
 
 ALL DRILLS require: title, goal, icon (SF Symbol name e.g. "target", "figure.golf", "scope", "flame", "bolt.fill"), time_minutes (5-60), shot_area (one of: "putting"/"chipping"/"pitching"/"bunker"/"wedges"/"driver" — pick the single BEST fit for the drill even if the request mentions multiple areas), setup_steps (string[], min 2), rules (string[], min 2), lower_is_better (boolean), hcp ({input: string|null, value: number|null, band: HcpBand}).
 
@@ -782,11 +981,43 @@ DRILL STRUCTURES FOR "points" (app shows outcome buttons, cycles distances, ends
 - Binary make/miss: single distance, 2 outcomes (Holed +N / Missed -N), reach target_points. Simple and high-pressure.
 - Weighted difficulty: distances cycle easy→hard, outcome points reflect difficulty, reach target_points.
 
+DRILL STRUCTURES FOR "station_entry" (app shows one station at a time, player taps score button, auto-completes):
+- Per-distance putting: fixed distances, record putts taken at each (1-5). Like PGA Tour 18.
+- Up-and-down circuit: varied lie/distance stations, record strokes to hole out at each (1-5).
+- Proximity stations: approach from multiple distances, score each station on a 1-5 proximity scale.
+
+DRILL STRUCTURES FOR "station_outcomes" (app shows station label + outcome buttons, fixed shot count):
+- Lag putting proximity: fixed putt distances as station labels ("8m", "10m uphill"), proximity outcome buttons (Holed/Within 0.5m/Within 1m/etc.), total_shots = station count.
+- Short game circuit: station labels describe the shot ("Chip 10m", "Pitch 30m", "Bunker 15m"), outcome buttons grade quality.
+- Approach accuracy: station labels are distances + context ("140m left pin", "160m right"), outcome buttons grade proximity.
+- Multi-round: total_shots > stations.length means multiple passes through stations (e.g. 8 stations × 2 rounds = 16 total_shots).
+- stations are STRING labels — use descriptive names like "6m uphill", "Chip 15m to back pin", "140m - Left target". NOT raw numbers.
+
+DRILL STRUCTURES FOR "conditional_entry" (app shows sequential yes/no questions per shot):
+- Side + proximity: Q1 "Correct side?" Q2 "Inside 5m?" — 4 scoring combos from 2 binary answers.
+- Shape + fairway + proximity: Q1 "Hit the required shape?" Q2 "Hit the fairway?" Q3 (conditional, shown if Q2=No) "Within 10m of fairway?" — 4+ combos.
+- Green hit + proximity: Q1 "Hit the green?" Q2 "Inside 5m of pin?" — evaluate approach accuracy.
+- shot_labels are optional per-shot context (e.g. "Draw - Driver", "Fade - 3W", "130m Left") to tell the player what to do for each shot.
+- scoring_combos MUST cover ALL possible answer combinations. For 2 questions: 4 combos (TT, TF, FT, FF). For 3 questions with Q3 conditional: the Q3 path only applies when Q2=No, so combos are: [T,T], [T,F], [F,T], [F,F,T], [F,F,F] (5 combos).
+
+DRILL STRUCTURES FOR "retry_entry" (app shows target + pass/retry buttons, score = total attempts):
+- Shot shape windows: targets like "High Fade", "Mid Draw", "Low Straight" — player retries until they execute, then advances.
+- Wedge ladder: targets are distances like "60m", "70m", "80m" — player retries until landing within tolerance, then advances.
+- Putting gates: targets are putt challenges like "3m uphill", "5m right-to-left" — retry until holed, then advance.
+- Skill checklist: targets are specific skills to demonstrate — "Bump and run 15m", "Flop over bunker", "Chip from rough".
+- lower_is_better MUST be true. Perfect score = number of targets (one attempt each). More retries = worse score.
+- pass_label and retry_label should be descriptive: "Hit Target" / "Try Again", "Advance" / "Retry", "Next Window" / "Try Again".
+
 IMPORTANT: For points drills, the saved score is ALWAYS total shots taken (fewer = better). Therefore lower_is_better MUST be true for ALL points drills. Use score_entry if higher scores are better.
 
 GENERAL VARIETY:
-- Use score_entry often — it enables the most diverse drill structures.
-- For putting especially, prefer score_entry for variety (survival, gate, clock, streak, station completion all require it).
+- Spread across all 6 types. Don't default to "points" for everything.
+- station_outcomes is great when you want fixed shot count + graded outcomes (lag putting, short game circuits).
+- conditional_entry adds depth when shots need multi-criteria evaluation (side accuracy + proximity, shape + fairway).
+- retry_entry is ideal for progression/mastery drills (shot shape windows, wedge ladders).
+- score_entry enables the most diverse structures (survival, gate, clock, streak).
+- station_entry for per-station numeric scoring (PGA Tour 18 style).
+- points for variable-length pressure drills with target_points exit.
 - Mix pressure mechanics between drills. Don't always default to streak bonus.
 - For points drills, consider simple 2-3 outcome buttons (e.g. just "Holed" / "Missed") instead of always using 5-6 proximity tiers.
 
@@ -876,6 +1107,7 @@ DRILL DESIGN PRINCIPLES — think like a PGA teaching professional:
 - Scoring must create tension: the player should feel they could fail. If target_points is trivially easy to reach, the drill has no value.
 - Setup must be physically realistic: one player alone on a practice green or range with 5-10 balls and basic markers.
 - Rules should be unambiguous: another golfer reading them should be able to run the drill without any clarification.
+- RULE CONSISTENCY CHECK: Before finalizing, verify every rule is compatible with every other rule. Common contradiction: one rule says "a miss resets distance/position" (drill continues) while another says "count total before a miss" or "miss ends the round" (drill stops). A drill must use ONE miss mechanic consistently.
 - Avoid "impossible to fail" drills (e.g. just counting shots with no penalty) and "impossible to complete" drills (e.g. target too high with harsh penalties).
 - For score_entry drills: the prompt question must have exactly one clear numeric answer.
 
@@ -909,11 +1141,13 @@ function getDrillTypeNudge(shotArea: string | null): string | null {
   if (!shotArea) return "Consider using score_entry drill type for this one."
   // Multi-area (comma-separated) or legacy "mixed"
   if (shotArea.includes(",") || shotArea === "mixed")
-    return "This drill covers multiple shot areas — consider using score_entry drill type."
+    return "This drill covers multiple shot areas — consider station_outcomes (fixed stations + outcome grading) or score_entry."
   if (shotArea === "bunker" || shotArea === "driver")
-    return "A score_entry format (e.g. success count out of N attempts) works well for this shot area."
+    return "Consider: score_entry (success count out of N), station_outcomes (fixed stations + outcome buttons), or retry_entry (pass/retry through targets)."
   if (shotArea === "putting")
-    return "Both drill types work well for putting. Points drills are great for simple make/miss pressure from a fixed distance. Score_entry enables survival, gate, clock, and streak structures. Pick whichever fits the drill concept best."
+    return "All six drill types work for putting. Points: make/miss pressure, variable length. Station_outcomes: fixed stations with proximity grading. Station_entry: per-distance numeric score (like PGA Tour 18). Score_entry: survival, gate, clock, streak. Conditional_entry: multi-criteria per-putt evaluation. Retry_entry: master each target before advancing. Pick whichever fits the drill concept best."
+  if (shotArea === "wedges" || shotArea === "pitching" || shotArea === "chipping")
+    return "Consider: station_outcomes (fixed distances + outcome buttons), conditional_entry (multi-criteria per-shot), retry_entry (pass/retry ladder), points (variable-length outcome buttons), or score_entry (single number at end)."
   return null
 }
 
@@ -934,21 +1168,26 @@ function buildUserPrompt(body: GenerateBody, parsed: ParsedHcp): string {
 
   if (body.baseDrill) {
     // Remix mode: redesign the drill based on the player's request
+    // Strip hcp from baseDrill — the system overwrites it with parsedHcp anyway
+    const { hcp: _hcp, ...baseDrillClean } = body.baseDrill
     parts.push(
-      `Remix this existing drill based on the player's request. Here is the original drill:\n\n${JSON.stringify(body.baseDrill, null, 2)}\n`
+      `Remix this existing drill based on the player's request. Here is the original drill:\n\n${JSON.stringify(baseDrillClean, null, 2)}\n`
     )
     parts.push(
       `Requested changes: ${body.goal || "make it slightly different"}`
     )
     parts.push(
-      `Think like a real coach redesigning this drill:
-- The change request implies deeper mechanical changes. Don't just add/remove fields literally.
-- If distances change → rethink how the drill flows (cycling, progression, one-from-each, round-robin, etc.).
-- If difficulty changes → adjust scoring, penalties, target points, and end conditions together.
+      `REMIX RULES — BE CONSERVATIVE:
+- ONLY change what the player explicitly asked for. Preserve EVERYTHING else from the original drill.
+- If the player asks to reduce holes/stations (e.g. "9 holes"), keep the SAME scoring system, distance structure, and drill_type. Just pick a subset of distances or reduce repetitions.
+- If the player asks to change difficulty, adjust targets and penalties but keep the same drill structure and mechanics.
+- Keep the same drill_type unless the changes CLEARLY require switching (e.g. asking for shot-by-shot buttons when the original was score_entry).
+- Keep the same scoring system. If the original uses "count putts per station (1-5)", the remix must too. If it uses proximity outcomes, keep those outcomes.
+- Keep the same rules and mechanics unless the change request directly contradicts them.
+- Distances/stations: REDESIGN the full set to be well-distributed across the original range. If increasing from 12→15, don't just append extras — create a fresh set of 15 distances that spans the same min-to-max range with good spacing. If reducing from 18→9, pick a well-distributed subset (keep the range and variety). Never just tack on or remove a few values at the edges.
 - Rules, setup_steps, end_condition, and outcomes must ALL be internally consistent with each other.
-- The remixed drill should feel like a coherent new drill, not a superficial find-and-replace edit.
-- Generate a new title that reflects the changes.
-- Keep the same drill_type unless the changes clearly require switching.`
+- CRITICAL: Check every rule against every other rule for contradictions. A common mistake: one rule says "a miss resets that position" (implying the drill continues) while another rule says "count putts before a miss" (implying the drill ends on a miss). Pick ONE miss mechanic and make ALL rules consistent with it.
+- Generate a new title that reflects the changes.`
     )
   } else {
     // Normal generation mode
@@ -1078,8 +1317,14 @@ async function generateDrill(
     } as Drill
   }
 
+  const zodErrors = result.error.issues
+    .slice(0, 5)
+    .map((i) => `${i.path.join(".")}: ${i.message}`)
+    .join("; ")
+  console.error("[generate-drill] Zod errors:", zodErrors)
+
   if (retryHint) throw new Error("Drill schema validation failed after retry")
-  const hint = buildRetryHint(parsed)
+  const hint = buildRetryHint(parsed, zodErrors)
   return generateDrill(body, parsedHcp, hint)
 }
 
