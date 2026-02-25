@@ -1,7 +1,7 @@
 import { cloneElement, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, X, Trophy, Users, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Bell, Check, X, Trophy, Users, MessageCircle, ChevronDown, ChevronUp, Flag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import { getNotificationActionUrl, getNotificationActions } from "@/utils/notifi
 
 interface Notification {
   id: string;
-  type: 'friend_request' | 'group_invite' | 'high_score' | 'message';
+  type: 'friend_request' | 'group_invite' | 'high_score' | 'message' | 'group_activity';
   title: string;
   message: string;
   related_id: string | null;
@@ -25,7 +25,7 @@ interface Notification {
 }
 
 // Notification types that are informational only (no user action required)
-const INFORMATIONAL_TYPES = ['high_score', 'message'];
+const INFORMATIONAL_TYPES = ['high_score', 'message', 'group_activity'];
 
 // Notification types that require user action (accept/decline)
 const ACTIONABLE_TYPES = ['friend_request', 'group_invite'];
@@ -557,6 +557,8 @@ export const NotificationsSheet = ({
         return <Trophy size={16} className="text-yellow-500" />;
       case 'message':
         return <MessageCircle size={16} className="text-blue-500" />;
+      case 'group_activity':
+        return <Flag size={16} className="text-green-600" />;
       default:
         return <Bell size={16} />;
     }

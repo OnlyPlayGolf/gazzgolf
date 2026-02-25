@@ -226,6 +226,7 @@ const Leaderboards = () => {
       const { data, error } = await supabase
         .from('drills')
         .select('id, title, short_desc, lower_is_better')
+        .eq('visibility', 'featured')
         .order('title');
 
       if (error) {

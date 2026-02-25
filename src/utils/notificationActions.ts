@@ -45,6 +45,8 @@ export function getNotificationActionUrl(
         return `/user/${relatedUserId}`;
       }
       return '/friends';
+    case 'group_activity':
+      return null;
     default:
       return null;
   }

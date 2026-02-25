@@ -402,6 +402,7 @@ useEffect(() => {
     const { data } = await supabase
       .from('drills')
       .select('id, title, lower_is_better')
+      .eq('visibility', 'featured')
       .order('title');
 
     if (data && data.length > 0) {

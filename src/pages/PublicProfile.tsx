@@ -6,7 +6,6 @@ import { ProfilePhoto } from "@/components/ProfilePhoto";
 import { UserPlus, Users, ArrowLeft, MessageCircle, Lock, UserMinus, QrCode, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { TopNavBar } from "@/components/TopNavBar";
 import { FeedPost } from "@/components/FeedPost";
 import QRCode from "react-qr-code";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -431,10 +430,9 @@ export default function PublicProfile() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <TopNavBar />
-      <div className="relative px-4 py-6 pt-20">
+      <div className="relative px-4 py-6">
         {/* Back button */}
-        <div className="absolute top-20 left-4 z-10">
+        <div className="absolute top-6 left-4 z-10">
           <Button
             variant="ghost"
             size="icon"

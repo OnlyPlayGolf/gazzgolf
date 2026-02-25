@@ -161,6 +161,7 @@ export function GroupDrillHistory({ groupId, groupCreatedAt, includeCoaches = fa
         const { data: drillsData } = await supabase
           .from('drills')
           .select('id, title')
+          .eq('visibility', 'featured')
           .order('title');
 
         if (drillsData) {
