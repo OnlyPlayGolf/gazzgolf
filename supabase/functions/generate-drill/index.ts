@@ -216,6 +216,141 @@ const coachDrillExamples = [
   },
   {
     drill_type: "score_entry",
+    title: "The Distance Ladder",
+    goal: "A quick, fun putting drill with escalating distance and attempts.",
+    icon: "ladder",
+    time_minutes: 10,
+    shot_area: "putting",
+    setup_steps: [
+      "Start with 1 ball at 1 meter from the hole.",
+      "After completing each distance, move back 1 meter and add 1 extra attempt.",
+    ],
+    rules: [
+      "Start at 1m with 1 attempt. Move to 2m with 2 attempts, 3m with 3 attempts, and so on.",
+      "You must hole at least one putt from each distance to move on.",
+      "If you miss all attempts from a distance, the drill ends.",
+      "Your score is the furthest distance (in meters) you completed.",
+    ],
+    score_label: "Furthest Distance",
+    score_unit: "m",
+    prompt: "What was the furthest distance (in meters) where you holed at least one putt?",
+    lower_is_better: false,
+    benchmarks: { hcp_0: 7, hcp_10: 5, hcp_20: 3 },
+    hcp: { input: "10", value: 10, band: "6_to_12" },
+  },
+  {
+    drill_type: "score_entry",
+    title: "The Foot Ladder",
+    goal: "A quick, fun putting drill with escalating distance and attempts measured in feet.",
+    icon: "figure.stairs",
+    time_minutes: 10,
+    shot_area: "putting",
+    setup_steps: [
+      "Start with 1 ball at 1 foot from the hole.",
+      "After completing each distance, move back 1 foot and add 1 extra attempt.",
+    ],
+    rules: [
+      "Start at 1ft with 1 attempt. Move to 2ft with 2 attempts, 3ft with 3 attempts, and so on.",
+      "You must hole at least one putt from each distance to move on.",
+      "If you miss all attempts from a distance, the drill ends.",
+      "Your score is the furthest distance (in feet) you completed.",
+    ],
+    score_label: "Furthest Distance",
+    score_unit: "ft",
+    prompt: "What was the furthest distance (in feet) where you holed at least one putt?",
+    lower_is_better: false,
+    benchmarks: { hcp_0: 20, hcp_10: 14, hcp_20: 8 },
+    hcp: { input: "10", value: 10, band: "6_to_12" },
+  },
+  {
+    drill_type: "score_entry",
+    title: "The Foot Ladder – Comeback",
+    goal: "A beginner-friendly putting ladder — miss a distance and drop back 1 foot instead of ending.",
+    icon: "arrow.uturn.backward",
+    time_minutes: 15,
+    shot_area: "putting",
+    setup_steps: [
+      "Start with 1 ball at 1 foot from the hole.",
+      "After completing each distance, move back 1 foot and add 1 extra attempt.",
+    ],
+    rules: [
+      "Start at 1ft with 1 attempt. Move to 2ft with 2 attempts, 3ft with 3 attempts, and so on.",
+      "You must hole at least one putt from each distance to move on.",
+      "If you miss all attempts from a distance, move BACK 1 foot instead of ending the drill.",
+      "You must clear the dropped-back distance before progressing again.",
+      "The drill ends when you reach 20ft or after 15 minutes, whichever comes first.",
+      "Your score is the furthest distance (in feet) you completed.",
+    ],
+    score_label: "Furthest Distance",
+    score_unit: "ft",
+    prompt: "What was the furthest distance (in feet) where you holed at least one putt?",
+    lower_is_better: false,
+    benchmarks: { hcp_0: 20, hcp_10: 15, hcp_20: 10 },
+    hcp: { input: "25", value: 25, band: "21_to_30" },
+  },
+  {
+    drill_type: "score_entry",
+    title: "The Foot Ladder – Elite",
+    goal: "A harder putting ladder — after 6 feet you must hole 2 putts to advance, not just 1.",
+    icon: "flame.fill",
+    time_minutes: 15,
+    shot_area: "putting",
+    setup_steps: [
+      "Start with 1 ball at 1 foot from the hole.",
+      "After completing each distance, move back 1 foot and add 1 extra attempt.",
+    ],
+    rules: [
+      "Start at 1ft with 1 attempt. Move to 2ft with 2 attempts, 3ft with 3 attempts, and so on.",
+      "From 1ft to 6ft: hole at least 1 putt from each distance to move on.",
+      "From 7ft onward: you must hole at least 2 putts from each distance to move on.",
+      "If you fail to meet the requirement, the drill ends.",
+      "Your score is the furthest distance (in feet) you completed.",
+    ],
+    score_label: "Furthest Distance",
+    score_unit: "ft",
+    prompt: "What was the furthest distance (in feet) where you met the holing requirement?",
+    lower_is_better: false,
+    benchmarks: { hcp_0: 16, hcp_10: 10, hcp_20: 6 },
+    hcp: { input: "5", value: 5, band: "0_to_5" },
+  },
+  {
+    drill_type: "station_outcomes",
+    title: "18-Hole Lag Test",
+    goal: "Fixed 18-putt lag test from 8–22m with golf-style scoring for trackable distance control.",
+    icon: "flag.fill",
+    time_minutes: 20,
+    shot_area: "putting",
+    setup_steps: [
+      "Find a practice green with enough space for putts from 8m to 22m.",
+      "Use a single ball. Putt from a unique starting spot for each of the 18 putts.",
+      "Vary slopes and angles across putts — mix uphill, downhill, and sidehill.",
+    ],
+    rules: [
+      "Putt in random order. The app shuffles the distances automatically.",
+      "After each putt, measure how far the ball finishes from the hole.",
+      "Tap the matching outcome: Holed (-2), Within 0.5m (-1), Within 1m (0), Within 2m (+1), Within 3m (+2), Beyond 3m (+3).",
+      "Goal: lowest total score across all 18 putts. Par = 0.",
+    ],
+    stations: [
+      "8m", "9m", "10m", "10m", "11m", "12m", "12m", "13m", "14m",
+      "14m", "15m", "16m", "17m", "18m", "19m", "20m", "21m", "22m",
+    ],
+    total_shots: 18,
+    shuffle_stations: true,
+    outcomes: [
+      { label: "Holed", points: -2 },
+      { label: "Within 0.5m", points: -1 },
+      { label: "Within 1m", points: 0 },
+      { label: "Within 2m", points: 1 },
+      { label: "Within 3m", points: 2 },
+      { label: "Beyond 3m", points: 3 },
+    ],
+    lower_is_better: true,
+    benchmarks: { hcp_0: -8, hcp_10: 4, hcp_20: 16 },
+    hcp: { input: "10", value: 10, band: "6_to_12" },
+  },
+  {
+    drill_type: "score_entry",
     title: "Short Putt Test",
     goal: "Test your short putting under pressure with increasing distances.",
     icon: "scope",
@@ -313,31 +448,6 @@ const coachDrillExamples = [
     hcp: { input: "3", value: 3, band: "0_to_5" },
   },
 
-  {
-    drill_type: "score_entry",
-    title: "Three-Foot Confidence Builder",
-    goal: "Build a reliable short putt stroke by tracking makes from 1 meter.",
-    icon: "hand.thumbsup.fill",
-    time_minutes: 10,
-    shot_area: "putting",
-    setup_steps: [
-      "Place a coin 1 meter from the hole.",
-      "Choose 4 different angles around the hole (front, back, left, right) and mark each with a tee.",
-    ],
-    rules: [
-      "Putt 5 balls from each of the 4 positions (20 putts total).",
-      "Count how many you hole out of 20.",
-      "Target for high-handicappers: 14 out of 20.",
-      "If you hole fewer than 10, move closer to 0.75m and repeat.",
-    ],
-    score_label: "Putts Holed",
-    score_unit: "out of 20",
-    prompt: "How many of your 20 putts from 1 meter did you hole?",
-    lower_is_better: false,
-    benchmarks: { hcp_0: 18, hcp_10: 14, hcp_20: 11 },
-    hcp: { input: "28", value: 28, band: "21_to_30" },
-  },
-
   // ── SHORT GAME ───────────────────────────────────────────────────────
   {
     drill_type: "score_entry",
@@ -385,30 +495,6 @@ const coachDrillExamples = [
     lower_is_better: false,
     hcp: { input: "12", value: 12, band: "6_to_12" },
   },
-  {
-    drill_type: "score_entry",
-    title: "18 Up & Downs",
-    goal: "Simulate on-course up-and-down situations from varied lies and distances.",
-    icon: "scope",
-    time_minutes: 25,
-    shot_area: "mixed",
-    setup_steps: [
-      "Set up 18 stations with varied lies: bunker (10m, 20m), rough (10m, 20m), fairway (10m, 15m, 20m, 30m).",
-      "Randomize the order each session.",
-    ],
-    rules: [
-      "Play each station as an up-and-down: chip/pitch then putt out.",
-      "Record total strokes to hole out per station (1-5).",
-      "Complete all 18 stations.",
-      "Total score = sum of all strokes. Lower is better.",
-    ],
-    score_label: "Total Strokes",
-    score_unit: "strokes",
-    prompt: "What was your total strokes across all 18 up-and-down stations?",
-    lower_is_better: true,
-    hcp: { input: "10", value: 10, band: "6_to_12" },
-  },
-
   // ── APPROACH ──────────────────────────────────────────────────────────
   {
     drill_type: "points",
@@ -736,6 +822,395 @@ const coachDrillExamples = [
     lower_is_better: true,
     hcp: { input: "26", value: 26, band: "21_to_30" },
   },
+
+  // ── STATION ENTRY (additional examples) ─────────────────────────────
+  {
+    drill_type: "station_entry",
+    title: "Chip & Stop: 8 Distances",
+    goal: "Test chipping distance control across 8 stations with a proximity scoring system.",
+    icon: "figure.golf",
+    time_minutes: 15,
+    shot_area: "chipping",
+    setup_steps: [
+      "Set up 8 chipping stations at: 5m, 8m, 10m, 13m, 15m, 18m, 20m, 25m from the hole.",
+      "Use a variety of lies — fairway, light rough, and fringe — across the stations.",
+    ],
+    rules: [
+      "Chip 3 balls from each station. Record your BEST proximity result on a 1–5 scale.",
+      "Scoring per station: 1 = inside 1m, 2 = inside 2m, 3 = inside 3m, 4 = on green 3m+, 5 = missed green.",
+      "Stations are shuffled randomly. Complete all 8.",
+      "Total score = sum of all station scores. Lower is better. Perfect = 8.",
+    ],
+    stations: [5, 8, 10, 13, 15, 18, 20, 25],
+    station_score_min: 1,
+    station_score_max: 5,
+    station_score_label: "Best proximity",
+    lower_is_better: true,
+    benchmarks: { hcp_0: 12, hcp_10: 18, hcp_20: 26 },
+    hcp: { input: "15", value: 15, band: "13_to_20" },
+  },
+  {
+    drill_type: "station_entry",
+    title: "Wedge Precision 50-100m",
+    goal: "Measure wedge accuracy across 10 approach distances with proximity scoring.",
+    icon: "scope",
+    time_minutes: 20,
+    shot_area: "wedges",
+    setup_steps: [
+      "Set up on the range with targets at 50, 55, 60, 65, 70, 75, 80, 85, 90, and 100 meters.",
+      "Use appropriate wedges for each distance.",
+    ],
+    rules: [
+      "Hit one shot per station. Stations are shuffled randomly.",
+      "Score each station: 1 = within 2m, 2 = within 4m, 3 = within 6m, 4 = on green 6m+, 5 = missed green.",
+      "Complete all 10 stations.",
+      "Total score = sum. Lower is better. Perfect = 10.",
+    ],
+    stations: [50, 55, 60, 65, 70, 75, 80, 85, 90, 100],
+    station_score_min: 1,
+    station_score_max: 5,
+    station_score_label: "Proximity",
+    lower_is_better: true,
+    benchmarks: { hcp_0: 14, hcp_10: 22, hcp_20: 30 },
+    hcp: { input: "8", value: 8, band: "6_to_12" },
+  },
+  {
+    drill_type: "station_entry",
+    title: "Bunker Distance Ladder",
+    goal: "Test greenside bunker distance control across 6 distances.",
+    icon: "flame",
+    time_minutes: 15,
+    shot_area: "bunker",
+    setup_steps: [
+      "Find a greenside bunker with space to vary distances.",
+      "Set up 6 flag targets at: 5m, 8m, 10m, 15m, 20m, 30m from the bunker edge.",
+    ],
+    rules: [
+      "Hit 2 bunker shots per station. Record the BETTER result on a 1–5 scale.",
+      "Scoring: 1 = inside 1m, 2 = inside 2m, 3 = on green 2m+, 4 = missed green, 5 = still in bunker.",
+      "Complete all 6 stations. Stations are shuffled.",
+      "Total score = sum. Lower is better. Perfect = 6.",
+    ],
+    stations: [5, 8, 10, 15, 20, 30],
+    station_score_min: 1,
+    station_score_max: 5,
+    station_score_label: "Best result",
+    lower_is_better: true,
+    benchmarks: { hcp_0: 8, hcp_10: 14, hcp_20: 20 },
+    hcp: { input: "22", value: 22, band: "21_to_30" },
+  },
+
+  // ── STATION OUTCOMES (additional examples) ──────────────────────────
+  {
+    drill_type: "station_outcomes",
+    title: "Short Game Scramble Circuit",
+    goal: "Build well-rounded short game touch by rotating through 10 varied chip and pitch stations.",
+    icon: "figure.golf",
+    time_minutes: 15,
+    shot_area: "chipping",
+    setup_steps: [
+      "Set up 10 stations around a practice green with varied lies and distances.",
+      "Label each station clearly so you can identify the shot required.",
+    ],
+    rules: [
+      "Hit one shot from each of the 10 stations. Stations are shuffled randomly.",
+      "After each shot, tap the outcome that best describes where the ball stopped.",
+      "Total score = sum of all outcome points. Higher is better.",
+    ],
+    outcomes: [
+      { label: "Inside 1m", points: 3 },
+      { label: "Within 2m", points: 2 },
+      { label: "Within 3m", points: 1 },
+      { label: "On green, 3m+", points: 0 },
+      { label: "Missed green", points: -1 },
+    ],
+    stations: [
+      "Chip 5m uphill", "Chip 10m downhill", "Chip 15m to back pin",
+      "Chip 8m from rough", "Bump-and-run 12m", "Pitch 20m over bunker",
+      "Chip 6m tight lie", "Chip 10m to tucked pin", "Pitch 15m fluffy lie",
+      "Chip 8m sidehill",
+    ],
+    total_shots: 10,
+    shuffle_stations: true,
+    lower_is_better: false,
+    benchmarks: { hcp_0: 22, hcp_10: 15, hcp_20: 8 },
+    hcp: { input: "15", value: 15, band: "13_to_20" },
+  },
+  {
+    drill_type: "station_outcomes",
+    title: "Approach Ladder 100-160m",
+    goal: "Test iron accuracy across 8 approach distances with two rounds of graded outcomes.",
+    icon: "scope",
+    time_minutes: 20,
+    shot_area: "wedges",
+    setup_steps: [
+      "Set up on the range with targets at 100, 110, 120, 130, 140, 150, 155, and 160 meters.",
+      "Use appropriate irons and wedges for each distance.",
+    ],
+    rules: [
+      "Hit one shot per station per round (2 rounds = 16 total shots).",
+      "Stations are shuffled each round. After each shot, tap the outcome.",
+      "Total score = sum of outcome points. Higher is better.",
+    ],
+    outcomes: [
+      { label: "Within 3m", points: 3 },
+      { label: "Within 5m", points: 2 },
+      { label: "On green, 5m+", points: 1 },
+      { label: "Missed short", points: 0 },
+      { label: "Missed long", points: -1 },
+    ],
+    stations: ["100m", "110m", "120m", "130m", "140m", "150m", "155m", "160m"],
+    total_shots: 16,
+    shuffle_stations: true,
+    lower_is_better: false,
+    benchmarks: { hcp_0: 30, hcp_10: 20, hcp_20: 10 },
+    hcp: { input: "4", value: 4, band: "0_to_5" },
+  },
+  {
+    drill_type: "station_outcomes",
+    title: "Bunker Proximity Test",
+    goal: "Grade bunker shot proximity across 6 different lie and distance scenarios.",
+    icon: "flame",
+    time_minutes: 15,
+    shot_area: "bunker",
+    setup_steps: [
+      "Find a greenside bunker with varied lies available.",
+      "Set up 6 stations with different lies and distances to the pin.",
+    ],
+    rules: [
+      "Hit 2 rounds through all 6 stations (12 total shots).",
+      "After each shot, tap the outcome. Stations are shuffled each round.",
+      "Total score = sum of outcome points. Higher is better.",
+    ],
+    outcomes: [
+      { label: "Inside 1m", points: 4 },
+      { label: "Within 2m", points: 2 },
+      { label: "On green, 2m+", points: 1 },
+      { label: "Missed green", points: -1 },
+      { label: "Still in bunker", points: -2 },
+    ],
+    stations: [
+      "5m flat lie", "8m uphill", "10m downhill lip",
+      "12m long bunker shot", "15m fairway bunker", "8m plugged lie",
+    ],
+    total_shots: 12,
+    shuffle_stations: true,
+    lower_is_better: false,
+    benchmarks: { hcp_0: 32, hcp_10: 20, hcp_20: 10 },
+    hcp: { input: "10", value: 10, band: "6_to_12" },
+  },
+
+  // ── CONDITIONAL ENTRY (additional examples) ─────────────────────────
+  {
+    drill_type: "conditional_entry",
+    title: "Read & Roll: Break Assessment",
+    goal: "Test your ability to read putting break and control proximity on breaking putts.",
+    icon: "scope",
+    time_minutes: 15,
+    shot_area: "putting",
+    setup_steps: [
+      "Find a section of the practice green with noticeable break.",
+      "Set up 12 putt stations at 3–6m with varying breaks (right-to-left, left-to-right, uphill, downhill).",
+    ],
+    rules: [
+      "Hit one putt per station. After each putt, answer two questions.",
+      "Q1: Did the ball break the direction you predicted? Q2: Did it finish within 0.5m of the hole?",
+      "Points are computed from your answers. Complete all 12 putts.",
+      "Total score = sum of points. Higher is better.",
+    ],
+    questions: [
+      { text: "Did the ball break the correct direction?", conditional_on_previous: false },
+      { text: "Did it finish within 0.5m?", conditional_on_previous: false },
+    ],
+    scoring_combos: [
+      { answers: [true, true], points: 3, label: "Correct read + close" },
+      { answers: [true, false], points: 1, label: "Correct read + far" },
+      { answers: [false, true], points: 1, label: "Wrong read + close" },
+      { answers: [false, false], points: -1, label: "Wrong read + far" },
+    ],
+    total_shots: 12,
+    shot_labels: [
+      "3m right-to-left", "4m left-to-right", "5m uphill right-break",
+      "3m downhill left-break", "6m right-to-left", "4m uphill straight",
+      "5m left-to-right", "3m double-break", "6m downhill right-break",
+      "4m sidehill", "5m uphill left-break", "3m downhill straight",
+    ],
+    lower_is_better: false,
+    benchmarks: { hcp_0: 28, hcp_10: 18, hcp_20: 10 },
+    hcp: { input: "8", value: 8, band: "6_to_12" },
+  },
+  {
+    drill_type: "conditional_entry",
+    title: "Up & Down Tracker",
+    goal: "Track up-and-down success from varied short game positions.",
+    icon: "figure.golf",
+    time_minutes: 20,
+    shot_area: "chipping",
+    setup_steps: [
+      "Set up 10 different chip/pitch positions around a practice green.",
+      "Vary the lies, distances, and obstacles (rough, fringe, bunker edge, downhill).",
+    ],
+    rules: [
+      "Play each position as a full up-and-down: chip/pitch then putt out.",
+      "After each attempt, answer Q1: Did the chip finish on the green? Q2: Did you hole the putt?",
+      "Complete all 10 up-and-down attempts.",
+      "Total score = sum of points. Higher is better.",
+    ],
+    questions: [
+      { text: "Did the chip finish on the green?", conditional_on_previous: false },
+      { text: "Did you hole the putt?", conditional_on_previous: false },
+    ],
+    scoring_combos: [
+      { answers: [true, true], points: 3, label: "On green + holed putt" },
+      { answers: [true, false], points: 1, label: "On green + missed putt" },
+      { answers: [false, true], points: 1, label: "Missed green + holed" },
+      { answers: [false, false], points: -1, label: "Missed green + missed" },
+    ],
+    total_shots: 10,
+    shot_labels: [
+      "10m chip from rough", "15m pitch over bunker", "5m bump-and-run",
+      "8m chip downhill", "20m pitch to back pin", "6m chip from fringe",
+      "12m chip from tight lie", "10m pitch to tucked pin",
+      "8m flop over bunker lip", "15m chip from heavy rough",
+    ],
+    lower_is_better: false,
+    benchmarks: { hcp_0: 22, hcp_10: 14, hcp_20: 6 },
+    hcp: { input: "16", value: 16, band: "13_to_20" },
+  },
+  {
+    drill_type: "conditional_entry",
+    title: "Tee Shot Shape Audit",
+    goal: "Evaluate driving accuracy: required shape, fairway hit, and miss proximity.",
+    icon: "car.side",
+    time_minutes: 15,
+    shot_area: "driver",
+    setup_steps: [
+      "Set up on the range with a 30m-wide fairway corridor.",
+      "Mark the center line and both edges clearly.",
+    ],
+    rules: [
+      "Hit 10 drives. Each shot has a required shape (draw or fade) shown in the shot label.",
+      "After each drive, answer three questions in sequence.",
+      "Q1: Did you hit the required shape? Q2: Did you hit the fairway? Q3 (only if Q2=No): Within 10m of fairway?",
+      "Total score = sum of points. Higher is better.",
+    ],
+    questions: [
+      { text: "Did you hit the required shape?", conditional_on_previous: false },
+      { text: "Did you hit the fairway?", conditional_on_previous: false },
+      { text: "Within 10m of fairway?", conditional_on_previous: true },
+    ],
+    scoring_combos: [
+      { answers: [true, true], points: 4, label: "Shape + fairway" },
+      { answers: [false, true], points: 2, label: "Wrong shape + fairway" },
+      { answers: [true, false, true], points: 1, label: "Shape + near fairway" },
+      { answers: [false, false, true], points: 0, label: "Wrong shape + near" },
+      { answers: [true, false, false], points: -1, label: "Shape + way off" },
+      { answers: [false, false, false], points: -2, label: "Wrong shape + way off" },
+    ],
+    total_shots: 10,
+    shot_labels: [
+      "Draw", "Fade", "Draw", "Fade", "Draw",
+      "Fade", "Draw", "Fade", "Draw", "Fade",
+    ],
+    lower_is_better: false,
+    benchmarks: { hcp_0: 30, hcp_10: 18, hcp_20: 8 },
+    hcp: { input: "3", value: 3, band: "0_to_5" },
+  },
+
+  // ── RETRY ENTRY (additional examples) ───────────────────────────────
+  {
+    drill_type: "retry_entry",
+    title: "Gate Master: 6 Putt Challenges",
+    goal: "Hole putts of increasing difficulty — retry each until you sink it.",
+    icon: "target",
+    time_minutes: 15,
+    shot_area: "putting",
+    setup_steps: [
+      "Set up 6 putt challenges on the practice green with varied breaks and distances.",
+      "Mark each starting position with a coin or tee.",
+    ],
+    rules: [
+      "Attempt each putt challenge. You must hole the putt to advance to the next one.",
+      "If you miss, retry from the same position until you hole it.",
+      "Challenges are shuffled randomly.",
+      "Score = total putts taken across all 6 challenges. Perfect = 6 (one attempt each).",
+    ],
+    targets: [
+      { label: "2m straight" },
+      { label: "3m right-to-left" },
+      { label: "3m left-to-right" },
+      { label: "4m uphill" },
+      { label: "5m downhill" },
+      { label: "6m double-break" },
+    ],
+    pass_label: "Holed",
+    retry_label: "Missed",
+    shuffle_targets: true,
+    lower_is_better: true,
+    benchmarks: { hcp_0: 9, hcp_10: 14, hcp_20: 22 },
+    hcp: { input: "8", value: 8, band: "6_to_12" },
+  },
+  {
+    drill_type: "retry_entry",
+    title: "Wedge Ladder: Land & Stop",
+    goal: "Climb through 8 wedge distances — land within 5m to advance.",
+    icon: "arrow.up.right",
+    time_minutes: 15,
+    shot_area: "wedges",
+    setup_steps: [
+      "Set up on the range with targets at 50, 60, 70, 75, 80, 90, 100, and 110 meters.",
+      "Have appropriate wedges and short irons ready.",
+    ],
+    rules: [
+      "Start at 50m. Land within 5m of the target to advance to the next distance.",
+      "Miss the 5m zone = retry the same distance.",
+      "Distances progress in order (50 → 60 → 70 → ... → 110m).",
+      "Score = total shots to complete all 8 distances. Perfect = 8.",
+    ],
+    targets: [
+      { label: "50m" }, { label: "60m" }, { label: "70m" }, { label: "75m" },
+      { label: "80m" }, { label: "90m" }, { label: "100m" }, { label: "110m" },
+    ],
+    pass_label: "Within 5m",
+    retry_label: "Try Again",
+    shuffle_targets: false,
+    lower_is_better: true,
+    benchmarks: { hcp_0: 10, hcp_10: 16, hcp_20: 24 },
+    hcp: { input: "10", value: 10, band: "6_to_12" },
+  },
+  {
+    drill_type: "retry_entry",
+    title: "Short Game Skill Check",
+    goal: "Demonstrate 7 specific short game skills — retry each until you execute it.",
+    icon: "checklist",
+    time_minutes: 20,
+    shot_area: "chipping",
+    setup_steps: [
+      "Set up around a practice green with access to rough, fringe, and a bunker edge.",
+      "Place a flag or towel as the target for each skill challenge.",
+    ],
+    rules: [
+      "Attempt each skill challenge. Execute the required shot to within the target zone to advance.",
+      "If you fail, retry the same challenge.",
+      "Challenges are shuffled randomly.",
+      "Score = total attempts across all 7 challenges. Perfect = 7.",
+    ],
+    targets: [
+      { label: "Bump-and-run 10m: within 2m" },
+      { label: "Flop over bunker: within 3m" },
+      { label: "Chip from tight lie: within 2m" },
+      { label: "Downhill chip 8m: within 2m" },
+      { label: "Chip from rough 12m: within 3m" },
+      { label: "Lob to back pin 15m: within 2m" },
+      { label: "Bump from fringe 5m: within 1m" },
+    ],
+    pass_label: "Hit Target",
+    retry_label: "Try Again",
+    shuffle_targets: true,
+    lower_is_better: true,
+    benchmarks: { hcp_0: 9, hcp_10: 14, hcp_20: 22 },
+    hcp: { input: "15", value: 15, band: "13_to_20" },
+  },
 ]
 
 // Validate examples at load time
@@ -843,12 +1318,60 @@ function normalizeMeasurementMethod(s: string): string {
   return MEASUREMENT_LEGACY[s] ?? s
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(retrievedExamplesBlock = ""): string {
   const examplesJson = JSON.stringify(coachDrillExamples, null, 2)
 
   return `You are a golf coach creating structured practice drills. Output only valid JSON, no markdown or extra text.
 
 Create exactly ONE drill tuned to the player's HCP band. Adjust distances, targets, and penalties directly — do NOT include a difficulty_by_band object.
+
+GOLF TERMINOLOGY GLOSSARY — use these definitions when interpreting the player's goal. Many golf terms have specific technical meanings that differ from everyday English.
+
+POSITIONAL TERMS:
+- Short-sided: The ball is on the SAME side as the pin with very little green between the ball and the hole. This is a DIFFICULT position because there is minimal landing area. Example: pin is front-left, ball is left of the green — almost no green to land on. Drills about "short-sided" should focus on precision with tight margins, NOT about leaving the ball short of the hole.
+- Long-sided: The ball is on the OPPOSITE side from the pin with plenty of green to work with. Easier recovery position.
+- Tucked pin: Pin placed close to the edge of the green (near a bunker, slope, or edge). Requires precise approach shots.
+- Sucker pin: A tucked pin that tempts aggressive play but severely punishes misses. The smart play is often to aim away from it.
+- Back pin / Front pin: Pin in the back or front third of the green. Back pin risks going long; front pin risks coming up short into hazards.
+- Pin-high: Ball finishes level with the pin (correct distance) but off to one side. Good distance control, imperfect direction.
+
+SHOT TYPES:
+- Bump-and-run: Low chip that lands early and rolls to the hole. Uses a less-lofted club (7-9 iron). Opposite of a lob/flop.
+- Flop shot: High, soft-landing shot using an open clubface with a lob wedge. Used to clear obstacles with minimal roll.
+- Knockdown / Punch: Controlled, lower-trajectory shot (70-80% power) used into wind or for control.
+- Stinger: Extremely low, penetrating shot (usually long iron) designed to stay under wind.
+- Draw: Shot curving gently right-to-left (for right-handers). Fade/Cut: Shot curving left-to-right.
+- Stock shot: A player's default, most reliable shot shape and trajectory.
+
+PUTTING AND SPEED TERMS:
+- Lag putting: Long-distance putting (typically 8m+) where the PRIMARY goal is distance control (getting close), not holing out. "Lag" = controlling DISTANCE, not stroke speed.
+- Pace: The speed/firmness of a putt. "Good pace" = ball arrives at the hole with the right speed.
+- Touch / Feel: Soft, precise distance control. Intuitive sense of how hard to hit.
+- Die at the hole: Putt hit with just enough speed to reach the hole. Opposite of firm putting.
+- Firm putting: Extra speed to reduce break effect. Ball holds its line better.
+
+LIE TYPES:
+- Tight lie: Ball on very short or bare grass. Requires precise contact — no room to slide the club under.
+- Fluffy lie: Ball sitting up on thick grass. Easier contact but risk of a flyer (less spin).
+- Sitting down: Ball nestled in grass (partially buried). Harder contact. Opposite of "sitting up."
+- Fried egg: Bunker lie where ball is half-buried in its own pitch mark with a sand ring around it.
+- Plugged / Buried: Ball embedded in sand or soft ground. Requires steep, aggressive swing.
+
+GREEN READING:
+- Break: Amount a putt curves due to slope. "3 cups of break" = ball curves ~3 hole-widths.
+- Tier / Tiered green: Green with distinct levels (front shelf, back shelf). Putting between tiers needs big speed adjustment.
+- False front: Front section of green that slopes back toward fairway — balls landing on it roll off.
+- Runoff area: Closely mown area around the green where balls roll away from the putting surface.
+
+SITUATIONS:
+- Up-and-down: Getting in the hole in 2 shots from off the green (1 chip/pitch + 1 putt).
+- Sand save: Up-and-down from a greenside bunker.
+- Scrambling: Saving par after missing the green in regulation.
+- Recovery shot: Shot from trouble (trees, deep rough) back to a playable position.
+
+SHORT GAME SPECIFICS:
+- Short-sided chip/pitch: Ball on the SAME SIDE as the pin with minimal green to land on. The challenge is stopping the ball quickly near a closely tucked pin with very little room. This is about POSITION relative to the pin, NOT about shot distance or leaving the ball short.
+- Long-sided chip/pitch: Plenty of green between you and the pin. Easier — room to land and let it release.
 
 SIX DRILL TYPES (discriminator: "drill_type"):
 
@@ -963,6 +1486,7 @@ NAMING RULES:
 - NEVER use these exact titles (they are built-in drills): "Short Putt Test", "PGA Tour 18", "Aggressive Putting 4-6m", "Up & Down Putts 6-10m", "Lag Putting Drill 8-20m", "Easy Chip Drill", "Short Game Circuit", "18 Up & Downs", "Approach 40–80m", "Wedge Ladder 60–120m", "Approach 130–180m", "9 Windows Shot Shape", "Driver Control", "Shot Shape Master".
 
 VARIETY — this is CRITICAL. The most common mistake is generating the same drill structure every time.
+The examples below contain more score_entry and points drills — this is for illustration only, NOT because those types should be preferred. station_entry, station_outcomes, conditional_entry, and retry_entry are equally valid and should be used whenever they fit the drill concept. Do NOT default to score_entry or points simply because there are more examples of them.
 
 APP ENGINE CONSTRAINT: For "points" drills, the app has ONE end condition: totalPoints >= target_points. It cannot end on a fixed shot count, when score drops to 0, or on first miss. Complex end conditions MUST use "score_entry" where the player self-manages the drill.
 
@@ -1062,6 +1586,15 @@ OUTCOME LABEL RULES — labels appear as buttons on a phone screen:
 EQUIPMENT RULES:
 - NEVER use alignment sticks in putting drills. Use tees, coins, or markers to mark starting positions and distances on the green. Alignment sticks are fine for range/full-swing drills only.
 
+SHORT GAME LIE STANDARDIZATION — for chipping, pitching, bunker, and wedges drills:
+- Unless the player explicitly requests a specific lie type, use ONLY these standardized phrases:
+  - Rough: "Drop a ball in the rough."
+  - Fairway: "Drop a ball on the fairway."
+  - Bunker: "Place the ball in the bunker."
+- Do NOT use descriptive lie variations like "tight lie", "fluffy lie", "bare lie", "clean lie", "downhill lie", "uphill lie", "sidehill lie", "plugged lie", or "buried lie" unless the player specifically asked for them.
+- EXCEPTION: If the player's goal explicitly mentions a lie type (e.g. "practice from tight lies", "downhill bunker shots"), use that exact lie — but do not add additional lie variations beyond what was requested.
+- This keeps setup instructions simple and consistent. The player decides their own lie on the course.
+
 SETUP INSTRUCTION SPECIFICITY — every distance in setup_steps must be a single specific number, never a range:
 - BAD: "Set up 9 locations between 1.5-3 meters" (vague — the player doesn't know which 9 distances to use)
 - GOOD: "Set up 9 putting stations at: 1.5m, 1.7m, 1.9m, 2.1m, 2.3m, 2.5m, 2.7m, 2.9m, 3m"
@@ -1101,6 +1634,12 @@ Measurement method adaptation:
 
 If no environment is specified, design for a standard driving range with visual measurement (the most common setup).
 
+GOAL INTERPRETATION — read the ENTIRE goal text carefully:
+- If the player lists multiple shots, scenarios, or distances (e.g. "1 bump and run from 10m, one lob shot from 7m, one bunker shot from 8m"), the drill MUST include ALL of them — not just the first one.
+- Treat comma-separated or listed items as individual stations, targets, or shot requirements that must each appear in the drill.
+- If the goal describes a circuit or mixed-shot session, use a drill type that supports multiple distinct stations (station_outcomes, station_entry, or retry_entry are ideal).
+- NEVER reduce a multi-shot goal to a single-shot drill. If the player described 5 different shots, the drill must cover all 5.
+
 DRILL DESIGN PRINCIPLES — think like a PGA teaching professional:
 - Every rule must interact with other rules. If distances cycle, scoring should reflect difficulty at each distance.
 - When a drill has multiple distances, design mechanics around them: "one attempt per distance per round" or "cycle through all distances" — never just list distances with no structure explaining how they're used.
@@ -1110,11 +1649,12 @@ DRILL DESIGN PRINCIPLES — think like a PGA teaching professional:
 - RULE CONSISTENCY CHECK: Before finalizing, verify every rule is compatible with every other rule. Common contradiction: one rule says "a miss resets distance/position" (drill continues) while another says "count total before a miss" or "miss ends the round" (drill stops). A drill must use ONE miss mechanic consistently.
 - Avoid "impossible to fail" drills (e.g. just counting shots with no penalty) and "impossible to complete" drills (e.g. target too high with harsh penalties).
 - For score_entry drills: the prompt question must have exactly one clear numeric answer.
+- TERMINOLOGY: When the player's goal contains golf-specific terms (e.g. "short-sided", "lag", "bump-and-run", "tight lie"), consult the GOLF TERMINOLOGY GLOSSARY above for the correct interpretation. Do NOT guess at meanings — golf terms often differ from their everyday English usage.
 
 EXAMPLES (match structure exactly):
 
 ${examplesJson}
-
+${retrievedExamplesBlock}
 Output only valid JSON.`
 }
 
@@ -1138,17 +1678,22 @@ function getHcpContext(band: HcpBand): string {
 }
 
 function getDrillTypeNudge(shotArea: string | null): string | null {
-  if (!shotArea) return "Consider using score_entry drill type for this one."
+  // Random suggestion from underrepresented types to counterbalance example bias
+  const underrepresented = ["station_entry", "station_outcomes", "conditional_entry", "retry_entry"] as const
+  const suggested = underrepresented[Math.floor(Math.random() * underrepresented.length)]
+  const typeSuggestion = ` For variety, consider trying "${suggested}" if it fits the concept.`
+
+  if (!shotArea) return "Consider using score_entry drill type for this one." + typeSuggestion
   // Multi-area (comma-separated) or legacy "mixed"
   if (shotArea.includes(",") || shotArea === "mixed")
-    return "This drill covers multiple shot areas — consider station_outcomes (fixed stations + outcome grading) or score_entry."
+    return "This drill covers multiple shot areas — consider station_outcomes (fixed stations + outcome grading) or score_entry." + typeSuggestion
   if (shotArea === "bunker" || shotArea === "driver")
-    return "Consider: score_entry (success count out of N), station_outcomes (fixed stations + outcome buttons), or retry_entry (pass/retry through targets)."
+    return "Consider: score_entry (success count out of N), station_outcomes (fixed stations + outcome buttons), or retry_entry (pass/retry through targets)." + typeSuggestion
   if (shotArea === "putting")
-    return "All six drill types work for putting. Points: make/miss pressure, variable length. Station_outcomes: fixed stations with proximity grading. Station_entry: per-distance numeric score (like PGA Tour 18). Score_entry: survival, gate, clock, streak. Conditional_entry: multi-criteria per-putt evaluation. Retry_entry: master each target before advancing. Pick whichever fits the drill concept best."
+    return "All six drill types work for putting. Points: make/miss pressure, variable length. Station_outcomes: fixed stations with proximity grading. Station_entry: per-distance numeric score (like PGA Tour 18). Score_entry: survival, gate, clock, streak. Conditional_entry: multi-criteria per-putt evaluation. Retry_entry: master each target before advancing. Pick whichever fits the drill concept best." + typeSuggestion
   if (shotArea === "wedges" || shotArea === "pitching" || shotArea === "chipping")
-    return "Consider: station_outcomes (fixed distances + outcome buttons), conditional_entry (multi-criteria per-shot), retry_entry (pass/retry ladder), points (variable-length outcome buttons), or score_entry (single number at end)."
-  return null
+    return "Consider: station_outcomes (fixed distances + outcome buttons), conditional_entry (multi-criteria per-shot), retry_entry (pass/retry ladder), points (variable-length outcome buttons), or score_entry (single number at end)." + typeSuggestion
+  return typeSuggestion
 }
 
 interface GenerateBody {
@@ -1191,9 +1736,17 @@ function buildUserPrompt(body: GenerateBody, parsed: ParsedHcp): string {
     )
   } else {
     // Normal generation mode
-    parts.push(
-      `Design a practice drill for this goal: ${body.goal || "general practice"}`
-    )
+    const goal = body.goal || "general practice"
+    parts.push(`Design a practice drill for this goal: ${goal}`)
+
+    // Detect multi-shot goals (comma-separated shot descriptions)
+    // and reinforce that ALL shots must appear in the drill
+    const commaSegments = goal.split(",").map((s) => s.trim()).filter(Boolean)
+    if (commaSegments.length >= 3) {
+      parts.push(
+        `IMPORTANT: The player listed ${commaSegments.length} distinct shots/scenarios. The drill MUST include a station or target for EACH one. Do not reduce this to a single-shot drill.`
+      )
+    }
   }
 
   parts.push(
@@ -1284,15 +1837,65 @@ async function callAI(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Lie standardization (post-processing)                              */
+/* ------------------------------------------------------------------ */
+
+const SHORT_GAME_AREAS = new Set(["chipping", "pitching", "bunker", "wedges"])
+
+// Regex matching descriptive lie variations that should be standardized
+const LIE_PATTERNS = [
+  /\b(?:tight|bare|clean|fluffy|thick|thin|good|bad|perfect)\s+lie\b/gi,
+  /\b(?:downhill|uphill|sidehill|side-hill)\s+lie\b/gi,
+  /\b(?:plugged|buried|fried[- ]egg)\s+(?:lie|bunker)?\b/gi,
+  /\b(?:sitting down|sitting up)\b/gi,
+]
+
+function userRequestedLieType(goal: string | undefined): boolean {
+  if (!goal) return false
+  const lower = goal.toLowerCase()
+  return LIE_PATTERNS.some((p) => {
+    p.lastIndex = 0
+    return p.test(lower)
+  })
+}
+
+/**
+ * Replace non-standard lie descriptions in setup_steps and rules
+ * with standardized phrasing, unless the user explicitly requested lies.
+ */
+function standardizeLies(drill: Drill, goal: string | undefined): Drill {
+  if (!SHORT_GAME_AREAS.has(drill.shot_area)) return drill
+  if (userRequestedLieType(goal)) return drill
+
+  function cleanText(text: string): string {
+    let cleaned = text
+    for (const pattern of LIE_PATTERNS) {
+      // Reset lastIndex before each use since patterns are global
+      pattern.lastIndex = 0
+      cleaned = cleaned.replace(pattern, "")
+    }
+    // Clean up any double spaces or trailing commas from removals
+    return cleaned.replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").replace(/,\s*\./g, ".").trim()
+  }
+
+  return {
+    ...drill,
+    setup_steps: drill.setup_steps.map(cleanText),
+    rules: drill.rules.map(cleanText),
+  } as Drill
+}
+
+/* ------------------------------------------------------------------ */
 /*  Drill generation with retry                                        */
 /* ------------------------------------------------------------------ */
 
 async function generateDrill(
   body: GenerateBody,
   parsedHcp: ParsedHcp,
+  retrievedBlock = "",
   retryHint?: string
 ): Promise<Drill> {
-  const systemPrompt = buildSystemPrompt()
+  const systemPrompt = buildSystemPrompt(retrievedBlock)
   let userContent = buildUserPrompt(body, parsedHcp)
   if (retryHint) userContent += `\n\n[RETRY] ${retryHint}`
 
@@ -1307,7 +1910,7 @@ async function generateDrill(
 
   const result = drillSchema.safeParse(parsed)
   if (result.success) {
-    return {
+    const drill = {
       ...result.data,
       hcp: {
         input: parsedHcp.input,
@@ -1315,6 +1918,7 @@ async function generateDrill(
         band: parsedHcp.band,
       },
     } as Drill
+    return standardizeLies(drill, body.goal)
   }
 
   const zodErrors = result.error.issues
@@ -1325,7 +1929,269 @@ async function generateDrill(
 
   if (retryHint) throw new Error("Drill schema validation failed after retry")
   const hint = buildRetryHint(parsed, zodErrors)
-  return generateDrill(body, parsedHcp, hint)
+  return generateDrill(body, parsedHcp, retrievedBlock, hint)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Metadata Extraction (for RAG-lite retrieval)                       */
+/* ------------------------------------------------------------------ */
+
+function extractDrillMetadata(
+  drill: z.infer<typeof drillSchema>,
+  parsedHcp: ParsedHcp
+): {
+  focus_area: string
+  difficulty: string | null
+  goal_tags: string[]
+} {
+  // Map shot_area to focus_area
+  const areaMap: Record<string, string> = {
+    putting: "putting",
+    chipping: "short_game",
+    pitching: "short_game",
+    bunker: "short_game",
+    wedges: "approach",
+    driver: "driving",
+    mixed: "mixed",
+  }
+  const primaryArea = drill.shot_area.split(",")[0].trim().toLowerCase()
+  const focus_area = areaMap[primaryArea] ?? "mixed"
+
+  // Map HCP band to difficulty
+  let difficulty: string | null = null
+  if (parsedHcp.value != null) {
+    if (parsedHcp.value <= 5) difficulty = "advanced"
+    else if (parsedHcp.value <= 15) difficulty = "intermediate"
+    else difficulty = "beginner"
+  } else {
+    const band = drill.hcp.band
+    if (band === "plus_5_to_0" || band === "0_to_5") difficulty = "advanced"
+    else if (band === "6_to_12" || band === "13_to_20") difficulty = "intermediate"
+    else if (band === "21_to_30" || band === "31_plus") difficulty = "beginner"
+  }
+
+  // Extract goal tags from title + goal text (keyword matching)
+  const goalTags: string[] = []
+  const combined = `${drill.title} ${drill.goal}`.toLowerCase()
+  const tagKeywords: Record<string, string[]> = {
+    distance_control: ["distance", "lag", "speed", "pace"],
+    accuracy: ["accuracy", "target", "precision", "proximity"],
+    short_sided: ["short-sided", "short sided", "tucked"],
+    start_line: ["start line", "alignment", "aim"],
+    break_reading: ["break", "read", "slope"],
+    up_and_down: ["up and down", "up & down", "scramble", "save"],
+    consistency: ["consistency", "consistent", "streak", "consecutive"],
+    pressure: ["pressure", "clutch", "confidence"],
+    shape: ["shape", "draw", "fade", "cut"],
+    bunker: ["bunker", "sand"],
+    flop: ["flop", "lob"],
+    bump_and_run: ["bump-and-run", "bump and run"],
+  }
+  for (const [tag, keywords] of Object.entries(tagKeywords)) {
+    if (keywords.some((kw) => combined.includes(kw))) {
+      goalTags.push(tag)
+    }
+  }
+
+  return { focus_area, difficulty, goal_tags: goalTags }
+}
+
+/* ------------------------------------------------------------------ */
+/*  RAG-lite: Retrieve + Format + Critic                               */
+/* ------------------------------------------------------------------ */
+
+interface RetrievedDrill {
+  id: string
+  title: string
+  focus_area: string
+  difficulty: string | null
+  goal_tags: string[]
+  drill_type: string
+  shot_area: string
+  goal: string
+  setup_steps: string[]
+  rules: string[]
+  outcomes: Array<{ label: string; points: number }> | null
+  time_minutes: number
+  lower_is_better: boolean
+  quality_score: number
+}
+
+/**
+ * Format a retrieved drill into a compact text snippet for prompt injection.
+ * ~5 lines per drill to keep token usage reasonable.
+ */
+function formatDrillSnippet(d: RetrievedDrill, index: number): string {
+  const lines: string[] = []
+  lines.push(`${index}. "${d.title}" [${d.drill_type}, ${d.shot_area}, ${d.time_minutes}min]`)
+  lines.push(`   Objective: ${d.goal}`)
+  lines.push(`   Setup: ${(d.setup_steps || []).slice(0, 2).join(" | ")}`)
+  lines.push(`   Rules: ${(d.rules || []).slice(0, 2).join(" | ")}`)
+  if (d.outcomes && d.outcomes.length > 0) {
+    const outcomeStr = d.outcomes
+      .slice(0, 4)
+      .map((o) => `${o.label}(${o.points > 0 ? "+" : ""}${o.points})`)
+      .join(", ")
+    lines.push(`   Scoring: ${outcomeStr}${d.outcomes.length > 4 ? ", ..." : ""}`)
+  }
+  return lines.join("\n")
+}
+
+/**
+ * Fetch top-scoring drills from Supabase for dynamic few-shot injection.
+ * Returns empty array on any error (non-blocking).
+ */
+async function fetchRetrievedDrills(
+  supabase: ReturnType<typeof createClient>,
+  focusArea: string,
+  difficulty: string | null,
+  excludeIds: string[],
+  limit = 5
+): Promise<RetrievedDrill[]> {
+  try {
+    const { data, error } = await supabase.rpc("get_recommended_coach_drills", {
+      p_focus_area: focusArea,
+      p_difficulty: difficulty,
+      p_exclude_ids: excludeIds.length > 0 ? excludeIds : null,
+      p_limit: limit,
+    })
+    if (error) {
+      console.error("[generate-drill] Retrieval RPC error:", error.message)
+      return []
+    }
+    return (data || []) as RetrievedDrill[]
+  } catch (err) {
+    console.error("[generate-drill] Retrieval fetch error:", err)
+    return []
+  }
+}
+
+/**
+ * Build the dynamic few-shot block from retrieved drills.
+ * Returns empty string if no drills retrieved (prompt falls back to hardcoded examples only).
+ */
+function buildRetrievedExamplesBlock(drills: RetrievedDrill[]): string {
+  if (drills.length === 0) return ""
+  const snippets = drills.map((d, i) => formatDrillSnippet(d, i + 1)).join("\n\n")
+  return `
+RETRIEVED HIGH-QUALITY EXAMPLES (from drills rated positively by real players):
+These are real drills that players have completed and rated highly. Use them as structural inspiration, but do NOT copy verbatim — create a NEW drill tailored to the current request.
+
+${snippets}
+
+RETRIEVAL INSTRUCTIONS:
+- Prefer the scoring mechanics and progression style from these examples when they fit the user's goal.
+- Modify distances, targets, and difficulty to match the current player's HCP band.
+- If retrieved examples conflict with the QUALITY RULES or drill type requirements above, the rules win.
+- These examples supplement (do NOT replace) the schema examples above.`
+}
+
+/**
+ * Critic pass: evaluate a generated drill for golf-quality issues.
+ * Uses GPT-4o-mini for speed and cost. Returns the drill unchanged if it passes,
+ * or a rewritten version if issues are found. Falls back to original on any error.
+ */
+async function runCriticPass(
+  drill: Drill,
+  userGoal: string,
+  parsedHcp: ParsedHcp
+): Promise<Drill> {
+  const apiKey = Deno.env.get("OPENAI_API_KEY")
+  if (!apiKey) return drill // skip critic if no API key
+
+  const criticPrompt = `You are a PGA teaching professional reviewing an AI-generated golf practice drill for quality.
+
+DRILL TO REVIEW:
+${JSON.stringify(drill, null, 2)}
+
+PLAYER CONTEXT:
+- Goal: "${userGoal}"
+- HCP band: ${parsedHcp.band}${parsedHcp.value != null ? ` (handicap ${parsedHcp.value})` : ""}
+
+RUBRIC — evaluate each criterion as PASS or FAIL:
+1. SAFE & REALISTIC: Setup is physically doable by one person on a practice green/range. No equipment they wouldn't have.
+2. SINGLE CLEAR OBJECTIVE: The drill has one clear goal that the player can state in one sentence.
+3. MEASURABLE SCORING: Every outcome/score is unambiguous. The player knows exactly what number to record.
+4. HCP-APPROPRIATE: Distances, targets, and difficulty match the player's HCP band. Not trivially easy or impossibly hard.
+5. TIME-REALISTIC: The drill can plausibly be completed in the stated time_minutes.
+6. RULES CONSISTENT: No rule contradicts another. Miss mechanics are consistent throughout.
+7. GOAL ALIGNMENT: The drill actually practices what the player asked for. Golf terminology used correctly.
+8. SETUP COMPLETE: setup_steps give enough info to start immediately without guessing.
+
+RESPONSE FORMAT (JSON only):
+If ALL criteria pass:
+{"verdict": "pass"}
+
+If ANY criteria fail:
+{"verdict": "fail", "issues": ["criterion_name: specific problem description"], "fixed_drill": <complete corrected drill JSON matching the exact same schema>}
+
+IMPORTANT: The fixed_drill must have the EXACT same shape as the input drill (same drill_type, same field set). Only fix the specific issues. Preserve everything that's correct.
+Output only valid JSON.`
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "user", content: criticPrompt },
+        ],
+      }),
+    })
+
+    if (!res.ok) {
+      console.error("[generate-drill] Critic API error:", res.status)
+      return drill // fall back to original
+    }
+
+    const data = await res.json()
+    const content = data.choices?.[0]?.message?.content
+    if (!content) return drill
+
+    const criticResult = JSON.parse(content)
+
+    if (criticResult.verdict === "pass") {
+      console.log("[generate-drill] Critic: PASS")
+      return drill
+    }
+
+    // Critic found issues — try to use the fixed drill
+    console.log("[generate-drill] Critic: FAIL —", (criticResult.issues || []).join("; "))
+
+    if (!criticResult.fixed_drill) {
+      console.error("[generate-drill] Critic failed but returned no fixed_drill")
+      return drill
+    }
+
+    // Validate the fixed drill against Zod
+    const fixedResult = drillSchema.safeParse(criticResult.fixed_drill)
+    if (fixedResult.success) {
+      console.log("[generate-drill] Critic fix validated successfully")
+      return {
+        ...fixedResult.data,
+        hcp: {
+          input: parsedHcp.input,
+          value: parsedHcp.value,
+          band: parsedHcp.band,
+        },
+      } as Drill
+    }
+
+    // Fixed drill failed Zod — fall back to original
+    console.error(
+      "[generate-drill] Critic fix failed Zod:",
+      fixedResult.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
+    )
+    return drill
+  } catch (err) {
+    console.error("[generate-drill] Critic error:", err)
+    return drill // always fall back to original
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -1416,8 +2282,39 @@ serve(async (req) => {
       return json({ error: "Invalid HCP" }, 400)
     }
 
-    // Generate drill
-    const drill = await generateDrill(body, parsedHcp)
+    // RAG-lite: retrieve high-quality drills for dynamic few-shot injection
+    const areaMap: Record<string, string> = {
+      putting: "putting", chipping: "short_game", pitching: "short_game",
+      bunker: "short_game", wedges: "approach", driver: "driving", mixed: "mixed",
+    }
+    const requestFocusArea = body.shotArea
+      ? areaMap[body.shotArea.split(",")[0].trim().toLowerCase()] ?? "mixed"
+      : "mixed"
+    const requestDifficulty = parsedHcp.value != null
+      ? parsedHcp.value <= 5 ? "advanced" : parsedHcp.value <= 15 ? "intermediate" : "beginner"
+      : null
+    // Exclude the drill being refined (if any) from retrieval
+    const excludeIds = body.existingId ? [body.existingId] : []
+
+    const retrievedDrills = await fetchRetrievedDrills(
+      supabase, requestFocusArea, requestDifficulty, excludeIds, 5
+    )
+    const retrievedBlock = buildRetrievedExamplesBlock(retrievedDrills)
+    if (retrievedDrills.length > 0) {
+      console.log(`[generate-drill] Retrieved ${retrievedDrills.length} drills for few-shot (focus=${requestFocusArea}, difficulty=${requestDifficulty})`)
+    }
+
+    // Generate drill (with retrieved examples injected into prompt)
+    let drill = await generateDrill(body, parsedHcp, retrievedBlock)
+
+    // Critic pass: evaluate golf quality with GPT-4o-mini
+    if (!body.baseDrill) {
+      // Skip critic for remixes — the original drill was already vetted
+      drill = await runCriticPass(drill, body.goal || "general practice", parsedHcp)
+    }
+
+    // Extract metadata for RAG-lite retrieval
+    const metadata = extractDrillMetadata(drill, parsedHcp)
 
     // Save to database
     if (body.existingId) {
@@ -1428,6 +2325,7 @@ serve(async (req) => {
           title: drill.title,
           goal: drill.goal,
           payload: drill,
+          ...metadata,
         })
         .eq("id", body.existingId)
         .eq("coach_id", user.id) // security: only owner can update
@@ -1457,6 +2355,7 @@ serve(async (req) => {
           title: drill.title,
           goal: drill.goal,
           payload: drill,
+          ...metadata,
         })
         .select("id")
         .single()
