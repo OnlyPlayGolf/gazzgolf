@@ -29,20 +29,42 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     a { color: white; text-decoration: underline; }
+    .btn {
+      display: inline-block;
+      background: white;
+      color: #153d26;
+      padding: 14px 32px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+    .btn-secondary {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      margin-top: 0.75rem;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>OnlyPlay Golf</h1>
-    <div class="spinner"></div>
+    <div class="spinner" id="spinner"></div>
     <p id="status">Opening in app...</p>
-    <p id="fallback" style="display:none; margin-top: 2rem;">
-      <a href="#" id="web-reset-link">Reset password on web instead</a>
-    </p>
+    <div id="fallback" style="display:none; margin-top: 1.5rem;">
+      <a id="app-link" class="btn" href="#">Open in App</a>
+      <br>
+      <a id="web-link" class="btn-secondary" href="#">Reset on web instead</a>
+    </div>
   </div>
   <script>
-    // Supabase puts the tokens in the URL fragment (#access_token=...&type=recovery)
-    // We need to pass these to the iOS app or fall back to the web reset page
     (function() {
       var hash = window.location.hash.substring(1);
       var params = new URLSearchParams(hash);
@@ -51,24 +73,25 @@
       var type = params.get('type');
 
       if (type === 'recovery' && accessToken) {
-        // Try to open the iOS app via universal link
-        // The app will handle the token exchange
-        var appUrl = 'https://onlyplaygolf.com/auth/callback#' + hash;
+        var appUrl = 'onlyplaygolf://auth/callback?access_token=' +
+          encodeURIComponent(accessToken) +
+          '&refresh_token=' + encodeURIComponent(refreshToken || '') +
+          '&type=recovery';
 
-        // Set a timeout — if the app doesn't open, show web fallback
-        var fallbackTimer = setTimeout(function() {
-          document.getElementById('status').textContent = 'App not installed? Reset on web:';
-          document.getElementById('fallback').style.display = 'block';
-          document.getElementById('web-reset-link').href = '/auth#' + hash;
-        }, 2500);
+        var webUrl = '/auth#' + hash;
 
-        // The page itself IS the universal link target.
-        // If the app intercepts it, this page never fully loads.
-        // If we're here, the app didn't intercept — we're in a browser.
-        // Redirect to the main auth page which handles PASSWORD_RECOVERY.
+        // Try to open the app immediately
+        window.location.href = appUrl;
+
+        // If we're still here after 1.5s, the app didn't open — show manual buttons
+        // Do NOT auto-redirect to web (this was causing the issue)
         setTimeout(function() {
-          window.location.href = '/auth#' + hash;
-        }, 3000);
+          document.getElementById('spinner').style.display = 'none';
+          document.getElementById('status').textContent = 'Tap below to continue:';
+          document.getElementById('fallback').style.display = 'block';
+          document.getElementById('app-link').href = appUrl;
+          document.getElementById('web-link').href = webUrl;
+        }, 1500);
       } else {
         // Not a recovery link — redirect to main auth
         window.location.href = '/auth' + window.location.hash;
