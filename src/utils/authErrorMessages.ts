@@ -55,6 +55,16 @@ export function getFriendlyAuthErrorMessage(
     return "Please wait a moment and try again.";
   }
 
+  // Email delivery issues
+  if (includesInsensitive(msg, "email") && includesInsensitive(msg, "send")) {
+    return "Unable to send email. Please try again in a moment.";
+  }
+
+  // If we have an actual message from Supabase, show it rather than a generic fallback
+  if (msg) {
+    return msg;
+  }
+
   return "Something went wrong. Please try again.";
 }
 

@@ -1,6 +1,16 @@
 {
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "headers": [
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!api/)(?!assets/)(?!src/)(?!@)(?!node_modules/)(?!_next/)(?!\\.well-known/)(?!.*\\.[a-z0-9]+$).*)",
+      "destination": "/index.html"
+    }
   ]
 }

@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "353B22XYHJ.OnlyPlayGolf.app.com",
+        "paths": [
+          "/auth/callback*"
+        ]
+      }
+    ]
+  }
+}
