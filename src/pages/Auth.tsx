@@ -41,8 +41,10 @@ const Auth = () => {
   
   // Check if we should start on signup view from navigation state
   const initialView = (location.state as { view?: string } | null)?.view === 'signup' ? 'signup' : 'signin';
-  const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation'>(initialView);
+  const [view, setView] = useState<'signin' | 'signup' | 'forgot' | 'confirmation' | 'reset'>(initialView);
   const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
   // Form states
@@ -77,14 +79,29 @@ const Auth = () => {
   useEffect(() => {
     let isMounted = true;
     let hasHandledInitialSession = false;
+    let isPasswordRecovery = false;
+
+    // Check URL hash for recovery token before setting up listeners
+    // This prevents the race condition where getSession redirects before PASSWORD_RECOVERY fires
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=recovery') || hash.includes('type=magiclink'))) {
+      isPasswordRecovery = true;
+    }
 
     const handleSession = (session: Session | null, source: string) => {
       if (!isMounted) return;
-      
+
       // Prevent duplicate handling
       if (source === 'getSession' && hasHandledInitialSession) return;
       if (source === 'getSession') hasHandledInitialSession = true;
-      
+
+      // Don't redirect away if we're waiting for PASSWORD_RECOVERY event
+      if (isPasswordRecovery && source === 'getSession') {
+        setSession(session);
+        setUser(session?.user ?? null);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -115,6 +132,17 @@ const Auth = () => {
       (event, session) => {
         // Mark that we've handled a session from the listener
         hasHandledInitialSession = true;
+
+        // Intercept password recovery — show the reset form instead of redirecting
+        if (event === 'PASSWORD_RECOVERY') {
+          isPasswordRecovery = false; // Handled now
+          if (!isMounted) return;
+          setSession(session);
+          setUser(session?.user ?? null);
+          setView('reset');
+          return;
+        }
+
         handleSession(session, 'onAuthStateChange');
       }
     );
@@ -202,7 +230,7 @@ const Auth = () => {
         : `${getPublicAppUrl()}/auth`;
       const displayName = `${validatedData.firstName} ${validatedData.lastName}`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: validatedData.email,
         password: validatedData.password,
         options: {
@@ -243,9 +271,32 @@ const Auth = () => {
         return;
       }
 
+      // Directly upsert profile fields so they persist even if the DB trigger
+      // is an older version that only copies display_name and email.
+      if (data.user) {
+        const profilePayload = {
+          id: data.user.id,
+          email: validatedData.email,
+          display_name: displayName,
+          country: validatedData.country,
+          home_club: validatedData.homeClub,
+          handicap: validatedData.handicap,
+        };
+        // Use the session from signUp if available (autoconfirm), otherwise
+        // syncOwnProfileFromAuth will handle it when the session is established.
+        supabase
+          .from('profiles')
+          .upsert(profilePayload, { onConflict: 'id' })
+          .then(({ error: upsertError }) => {
+            if (upsertError) {
+              console.warn('[auth.signUp] profile upsert fallback failed:', upsertError.message);
+            }
+          });
+      }
+
       // Store the email for confirmation screen
       setPendingConfirmationEmail(validatedData.email);
-      
+
       // Clear form
       setPassword('');
       setConfirmPassword('');
@@ -285,7 +336,7 @@ const Auth = () => {
       setLoading(true);
 
       const { error } = await supabase.auth.resetPasswordForEmail(validatedData.email, {
-        redirectTo: `${getPublicAppUrl()}/auth`,
+        redirectTo: `${getPublicAppUrl()}/auth/callback`,
       });
 
       if (error) {
@@ -340,7 +391,9 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <Card>
           <CardHeader>
-            <CardTitle className="text-center text-2xl">Welcome to OnlyPlay Golf</CardTitle>
+            <CardTitle className="text-center text-2xl">
+              {view === 'reset' ? 'Reset Password' : 'Welcome to OnlyPlay Golf'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {view === 'signin' && (
@@ -628,6 +681,94 @@ const Auth = () => {
                   }}
                 >
                   Back to Log In
+                </Button>
+              </form>
+            )}
+
+            {view === 'reset' && (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setFormError(null);
+                if (newPassword.length < 6) {
+                  setFormError("Password must be at least 6 characters");
+                  return;
+                }
+                if (newPassword !== confirmNewPassword) {
+                  setFormError("Passwords don't match");
+                  return;
+                }
+                setLoading(true);
+                try {
+                  const { error } = await supabase.auth.updateUser({ password: newPassword });
+                  if (error) {
+                    setFormError(error.message);
+                  } else {
+                    toast({
+                      title: "Password updated",
+                      description: "Your password has been reset successfully.",
+                    });
+                    setNewPassword('');
+                    setConfirmNewPassword('');
+                    navigate('/', { replace: true });
+                  }
+                } catch (err: any) {
+                  setFormError(err.message || "Something went wrong");
+                } finally {
+                  setLoading(false);
+                }
+              }} className="space-y-4">
+                {formError && (
+                  <div
+                    role="alert"
+                    className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    {formError}
+                  </div>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Enter your new password below.
+                </p>
+
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="pl-10"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      id="confirm-new-password"
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="pl-10"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={loading}
+                >
+                  {loading ? "Updating..." : "Update Password"}
                 </Button>
               </form>
             )}
