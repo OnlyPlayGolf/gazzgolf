@@ -38,11 +38,20 @@ SET formats_locked = false
 WHERE formats_locked
   AND (allowed_formats IS NULL OR array_length(allowed_formats, 1) IS NULL);
 
--- CHECK constraints
+-- CHECK constraints. Each pair `DROP IF EXISTS` + `ADD` makes the
+-- migration idempotent — Postgres has no `ADD CONSTRAINT IF NOT
+-- EXISTS`, so we drop-and-re-add to handle partial-apply states or
+-- pre-existing constraints from earlier migrations
+-- (`date_window_end_after_start` was created by an earlier migration
+-- before this file landed; the IF EXISTS on its drop makes this
+-- re-application safe).
+
+ALTER TABLE tournaments DROP CONSTRAINT IF EXISTS course_lock_requires_course;
 ALTER TABLE tournaments
     ADD CONSTRAINT course_lock_requires_course
     CHECK (NOT course_locked OR default_course_id IS NOT NULL);
 
+ALTER TABLE tournaments DROP CONSTRAINT IF EXISTS tee_lock_requires_tee;
 ALTER TABLE tournaments
     ADD CONSTRAINT tee_lock_requires_tee
     CHECK (
@@ -50,6 +59,7 @@ ALTER TABLE tournaments
         OR (default_tee_column_key IS NOT NULL AND default_tee_column_key != '')
     );
 
+ALTER TABLE tournaments DROP CONSTRAINT IF EXISTS date_window_lock_requires_endpoints;
 ALTER TABLE tournaments
     ADD CONSTRAINT date_window_lock_requires_endpoints
     CHECK (
@@ -57,6 +67,7 @@ ALTER TABLE tournaments
         OR (date_window_start IS NOT NULL AND date_window_end IS NOT NULL)
     );
 
+ALTER TABLE tournaments DROP CONSTRAINT IF EXISTS formats_lock_requires_format;
 ALTER TABLE tournaments
     ADD CONSTRAINT formats_lock_requires_format
     CHECK (
@@ -67,6 +78,7 @@ ALTER TABLE tournaments
 -- Date window sanity (also enforced by iOS): end >= start when both set.
 -- Independent of the lock — even unlocked suggestion windows shouldn't
 -- have end < start.
+ALTER TABLE tournaments DROP CONSTRAINT IF EXISTS date_window_end_after_start;
 ALTER TABLE tournaments
     ADD CONSTRAINT date_window_end_after_start
     CHECK (
