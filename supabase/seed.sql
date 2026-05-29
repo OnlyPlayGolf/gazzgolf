@@ -1,0 +1,120 @@
+-- Local/CI seed. Runs automatically after `supabase db reset` applies migrations.
+-- Deterministic fixtures for backend tests and the XCUITest harness:
+--   1. Ölands GK course + 18 holes
+--   2. Two stable test users A and B (so multiplayer scenarios have known UUIDs)
+--   3. An accepted friendship A <-> B (so friend-visibility RLS paths are exercised)
+--
+-- Stable, lowercase UUIDs on purpose: the recurring bug class is UPPERCASE UUID
+-- strings breaking case-sensitive text comparisons in RLS (e.g.
+-- can_read_game_hole does round_id::text = _game_id). Postgres renders uuid::text
+-- lowercase, so seeding lowercase keeps fixtures aligned with that invariant.
+--
+-- Login credentials (local only): a@loopd.test / b@loopd.test, password "password123".
+
+-- ---------------------------------------------------------------------------
+-- 1. Ölands GK
+-- ---------------------------------------------------------------------------
+INSERT INTO courses (name, location, country_code, tee_names, tee_colors)
+VALUES (
+    'Ölands GK',
+    'Öland, Sweden',
+    'SE',
+    '{"white": "54", "yellow": "50", "blue": "46", "red": "42"}'::jsonb,
+    '{"white": "white", "yellow": "yellow", "blue": "blue", "red": "red"}'::jsonb
+)
+ON CONFLICT DO NOTHING;
+
+DO $$
+DECLARE
+    v_course_id uuid;
+BEGIN
+    SELECT id INTO v_course_id FROM courses WHERE name = 'Ölands GK' LIMIT 1;
+    IF v_course_id IS NULL THEN
+        RAISE NOTICE 'Ölands GK not found — skipping holes';
+        RETURN;
+    END IF;
+
+    INSERT INTO course_holes (course_id, hole_number, par, stroke_index, white_distance, yellow_distance, blue_distance, red_distance) VALUES
+        (v_course_id, 1,  4, 12, 282, 282, 267, 240),
+        (v_course_id, 2,  4, 4,  366, 318, 318, 267),
+        (v_course_id, 3,  4, 14, 298, 282, 235, 235),
+        (v_course_id, 4,  4, 18, 286, 286, 234, 234),
+        (v_course_id, 5,  3, 10, 142, 130, 130, 93),
+        (v_course_id, 6,  5, 2,  416, 391, 350, 350),
+        (v_course_id, 7,  3, 16, 135, 135, 113, 113),
+        (v_course_id, 8,  4, 6,  358, 307, 307, 260),
+        (v_course_id, 9,  4, 8,  243, 223, 223, 196),
+        (v_course_id, 10, 4, 7,  284, 284, 245, 245),
+        (v_course_id, 11, 3, 15, 156, 156, 129, 129),
+        (v_course_id, 12, 4, 5,  317, 279, 279, 241),
+        (v_course_id, 13, 3, 17, 165, 133, 133, 133),
+        (v_course_id, 14, 5, 1,  524, 466, 410, 410),
+        (v_course_id, 15, 4, 9,  359, 359, 314, 275),
+        (v_course_id, 16, 4, 13, 314, 314, 257, 257),
+        (v_course_id, 17, 5, 3,  421, 375, 332, 332),
+        (v_course_id, 18, 4, 11, 353, 303, 303, 264)
+    ON CONFLICT DO NOTHING;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. Test users A and B
+--    Insert into auth.users; the on_auth_user_created trigger
+--    (handle_new_user) auto-creates the matching public.profiles row from
+--    raw_user_meta_data, so we do NOT insert profiles directly here.
+--    crypt()/gen_salt() come from pgcrypto (Supabase: extensions schema). If a
+--    fresh local stack can't resolve them unqualified, use extensions.crypt /
+--    extensions.gen_salt.
+-- ---------------------------------------------------------------------------
+INSERT INTO auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, created_at, updated_at,
+    raw_app_meta_data, raw_user_meta_data
+) VALUES
+    ('00000000-0000-0000-0000-000000000000',
+     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+     'authenticated', 'authenticated', 'a@loopd.test',
+     crypt('password123', gen_salt('bf')),
+     now(), now(), now(),
+     '{"provider":"email","providers":["email"]}'::jsonb,
+     '{"display_name":"Test Player A","handicap":"10"}'::jsonb),
+    ('00000000-0000-0000-0000-000000000000',
+     'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+     'authenticated', 'authenticated', 'b@loopd.test',
+     crypt('password123', gen_salt('bf')),
+     now(), now(), now(),
+     '{"provider":"email","providers":["email"]}'::jsonb,
+     '{"display_name":"Test Player B","handicap":"18"}'::jsonb)
+ON CONFLICT (id) DO NOTHING;
+
+-- Email/password identities (GoTrue requires an identities row to allow login).
+INSERT INTO auth.identities (
+    id, user_id, provider_id, identity_data, provider,
+    last_sign_in_at, created_at, updated_at
+) VALUES
+    (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+     '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","email":"a@loopd.test"}'::jsonb,
+     'email', now(), now(), now()),
+    (gen_random_uuid(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+     'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+     '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","email":"b@loopd.test"}'::jsonb,
+     'email', now(), now(), now())
+ON CONFLICT DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- 3. Accepted friendship A <-> B
+--    can_read_game_hole / friend-visibility policies check
+--    friendships(requester, addressee, status='accepted'). user_a/user_b is the
+--    sorted-pair dedup column set; A ('aaa...') sorts before B ('bbb...').
+-- ---------------------------------------------------------------------------
+INSERT INTO friendships (requester, addressee, status, user_a, user_b)
+SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+       'accepted',
+       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+       'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+WHERE NOT EXISTS (
+    SELECT 1 FROM friendships
+    WHERE user_a = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+      AND user_b = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+);
