@@ -11,19 +11,16 @@
 --
 -- Login credentials (local only): a@loopd.test / b@loopd.test, password "password123".
 --
--- IMPORTANT (search_path): `supabase db reset` pipes the squashed baseline and
--- this seed through the SAME psql session. The pg_dump baseline ends with
--- `select set_config('search_path', '', false)` (session-scoped), so by the time
--- this seed runs, `public` is NOT on the search_path and unqualified table names
--- fail with 'relation "courses" does not exist'. Set it explicitly here so the
--- seed is self-contained. (auth.users below stays schema-qualified regardless;
--- extensions is on the path for crypt()/gen_salt()/gen_random_uuid().)
-SET search_path = public, extensions;
-
+-- IMPORTANT (search_path): the squashed baseline ends with
+-- `select set_config('search_path', '', false)`, and `supabase db reset` runs
+-- each seed statement as its OWN prepared statement — so a bare `SET search_path`
+-- does NOT carry across statements. The robust fix is to SCHEMA-QUALIFY every
+-- table (public.* / auth.*), which is immune to search_path. crypt()/gen_salt()/
+-- gen_random_uuid() are likewise qualified as extensions.* below.
 -- ---------------------------------------------------------------------------
 -- 1. Ölands GK
 -- ---------------------------------------------------------------------------
-INSERT INTO courses (name, location, country_code, tee_names, tee_colors)
+INSERT INTO public.courses (name, location, country_code, tee_names, tee_colors)
 VALUES (
     'Ölands GK',
     'Öland, Sweden',
@@ -37,13 +34,13 @@ DO $$
 DECLARE
     v_course_id uuid;
 BEGIN
-    SELECT id INTO v_course_id FROM courses WHERE name = 'Ölands GK' LIMIT 1;
+    SELECT id INTO v_course_id FROM public.courses WHERE name = 'Ölands GK' LIMIT 1;
     IF v_course_id IS NULL THEN
         RAISE NOTICE 'Ölands GK not found — skipping holes';
         RETURN;
     END IF;
 
-    INSERT INTO course_holes (course_id, hole_number, par, stroke_index, white_distance, yellow_distance, blue_distance, red_distance) VALUES
+    INSERT INTO public.course_holes (course_id, hole_number, par, stroke_index, white_distance, yellow_distance, blue_distance, red_distance) VALUES
         (v_course_id, 1,  4, 12, 282, 282, 267, 240),
         (v_course_id, 2,  4, 4,  366, 318, 318, 267),
         (v_course_id, 3,  4, 14, 298, 282, 235, 235),
@@ -82,14 +79,14 @@ INSERT INTO auth.users (
     ('00000000-0000-0000-0000-000000000000',
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
      'authenticated', 'authenticated', 'a@loopd.test',
-     crypt('password123', gen_salt('bf')),
+     extensions.crypt('password123', extensions.gen_salt('bf')),
      now(), now(), now(),
      '{"provider":"email","providers":["email"]}'::jsonb,
      '{"display_name":"Test Player A","handicap":"10"}'::jsonb),
     ('00000000-0000-0000-0000-000000000000',
      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
      'authenticated', 'authenticated', 'b@loopd.test',
-     crypt('password123', gen_salt('bf')),
+     extensions.crypt('password123', extensions.gen_salt('bf')),
      now(), now(), now(),
      '{"provider":"email","providers":["email"]}'::jsonb,
      '{"display_name":"Test Player B","handicap":"18"}'::jsonb)
@@ -100,11 +97,11 @@ INSERT INTO auth.identities (
     id, user_id, provider_id, identity_data, provider,
     last_sign_in_at, created_at, updated_at
 ) VALUES
-    (gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    (extensions.gen_random_uuid(), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
      '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","email":"a@loopd.test"}'::jsonb,
      'email', now(), now(), now()),
-    (gen_random_uuid(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    (extensions.gen_random_uuid(), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
      '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","email":"b@loopd.test"}'::jsonb,
      'email', now(), now(), now())
@@ -116,14 +113,14 @@ ON CONFLICT DO NOTHING;
 --    friendships(requester, addressee, status='accepted'). user_a/user_b is the
 --    sorted-pair dedup column set; A ('aaa...') sorts before B ('bbb...').
 -- ---------------------------------------------------------------------------
-INSERT INTO friendships (requester, addressee, status, user_a, user_b)
+INSERT INTO public.friendships (requester, addressee, status, user_a, user_b)
 SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
        'accepted',
        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
 WHERE NOT EXISTS (
-    SELECT 1 FROM friendships
+    SELECT 1 FROM public.friendships
     WHERE user_a = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
       AND user_b = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
 );
