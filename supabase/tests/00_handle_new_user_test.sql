@@ -8,6 +8,7 @@
 -- version changes auth.users, update both together.
 
 BEGIN;
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SELECT plan(4);
 
 -- Case 1: metadata carries display_name + handicap.

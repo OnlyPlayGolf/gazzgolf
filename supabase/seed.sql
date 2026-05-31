@@ -10,6 +10,15 @@
 -- lowercase, so seeding lowercase keeps fixtures aligned with that invariant.
 --
 -- Login credentials (local only): a@loopd.test / b@loopd.test, password "password123".
+--
+-- IMPORTANT (search_path): `supabase db reset` pipes the squashed baseline and
+-- this seed through the SAME psql session. The pg_dump baseline ends with
+-- `select set_config('search_path', '', false)` (session-scoped), so by the time
+-- this seed runs, `public` is NOT on the search_path and unqualified table names
+-- fail with 'relation "courses" does not exist'. Set it explicitly here so the
+-- seed is self-contained. (auth.users below stays schema-qualified regardless;
+-- extensions is on the path for crypt()/gen_salt()/gen_random_uuid().)
+SET search_path = public, extensions;
 
 -- ---------------------------------------------------------------------------
 -- 1. Ölands GK
