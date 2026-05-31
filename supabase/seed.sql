@@ -71,10 +71,16 @@ END $$;
 --    fresh local stack can't resolve them unqualified, use extensions.crypt /
 --    extensions.gen_salt.
 -- ---------------------------------------------------------------------------
+-- NOTE: the token columns (confirmation_token, recovery_token, etc.) MUST be ''
+-- not NULL. GoTrue scans them as Go strings and a NULL yields
+-- "converting NULL to string is unsupported" -> 500 on every password login.
+-- Real Supabase signups set these to ''; a hand-written seed must do the same.
 INSERT INTO auth.users (
     instance_id, id, aud, role, email, encrypted_password,
     email_confirmed_at, created_at, updated_at,
-    raw_app_meta_data, raw_user_meta_data
+    raw_app_meta_data, raw_user_meta_data,
+    confirmation_token, recovery_token, email_change_token_new, email_change,
+    email_change_token_current, phone_change, phone_change_token, reauthentication_token
 ) VALUES
     ('00000000-0000-0000-0000-000000000000',
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
@@ -82,14 +88,16 @@ INSERT INTO auth.users (
      extensions.crypt('password123', extensions.gen_salt('bf')),
      now(), now(), now(),
      '{"provider":"email","providers":["email"]}'::jsonb,
-     '{"display_name":"Test Player A","handicap":"10"}'::jsonb),
+     '{"display_name":"Test Player A","handicap":"10"}'::jsonb,
+     '', '', '', '', '', '', '', ''),
     ('00000000-0000-0000-0000-000000000000',
      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
      'authenticated', 'authenticated', 'b@loopd.test',
      extensions.crypt('password123', extensions.gen_salt('bf')),
      now(), now(), now(),
      '{"provider":"email","providers":["email"]}'::jsonb,
-     '{"display_name":"Test Player B","handicap":"18"}'::jsonb)
+     '{"display_name":"Test Player B","handicap":"18"}'::jsonb,
+     '', '', '', '', '', '', '', '')
 ON CONFLICT (id) DO NOTHING;
 
 -- Email/password identities (GoTrue requires an identities row to allow login).
