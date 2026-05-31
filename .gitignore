@@ -26,3 +26,6 @@ dist-ssr
 .env*.local
 .env
 .cursor/
+
+# Throwaway prod schema snapshots from scripts/dump-schema.sh (drift checking)
+schema-snapshots/
