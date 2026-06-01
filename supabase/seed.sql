@@ -19,14 +19,25 @@
 -- gen_random_uuid() are likewise qualified as extensions.* below.
 -- ---------------------------------------------------------------------------
 -- 1. Ölands GK
+--    Seeded as an "importable" course so it appears in the round-setup wizard's
+--    course picker. That picker (CreateGameView.sortedCourses) shows ONLY courses
+--    that have external_id != nil AND are in the user's get_my_courses() set
+--    (played / favorited / imported_by me). We set external_id + external_data
+--    here, and below (after user A exists) set imported_by = A so the course is
+--    "A's imported course" and therefore selectable. Manual courses (external_id
+--    NULL) are intentionally hidden by the app, so a plain seed course can't be
+--    picked — hence this shape.
 -- ---------------------------------------------------------------------------
-INSERT INTO public.courses (name, location, country_code, tee_names, tee_colors)
+INSERT INTO public.courses (name, location, country_code, tee_names, tee_colors,
+                            external_id, external_data)
 VALUES (
     'Ölands GK',
     'Öland, Sweden',
     'SE',
     '{"white": "54", "yellow": "50", "blue": "46", "red": "42"}'::jsonb,
-    '{"white": "white", "yellow": "yellow", "blue": "blue", "red": "red"}'::jsonb
+    '{"white": "white", "yellow": "yellow", "blue": "blue", "red": "red"}'::jsonb,
+    'seed-olands-gk',
+    '{"city": "Öland"}'::jsonb
 )
 ON CONFLICT DO NOTHING;
 
@@ -114,6 +125,15 @@ INSERT INTO auth.identities (
      '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","email":"b@loopd.test"}'::jsonb,
      'email', now(), now(), now())
 ON CONFLICT DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- 2b. Mark Ölands GK as imported by user A.
+--    Done after A exists (imported_by → auth.users). This puts the course in
+--    A's get_my_courses() set so it's selectable in the wizard course picker.
+-- ---------------------------------------------------------------------------
+UPDATE public.courses
+   SET imported_by = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+ WHERE external_id = 'seed-olands-gk';
 
 -- ---------------------------------------------------------------------------
 -- 3. Accepted friendship A <-> B
