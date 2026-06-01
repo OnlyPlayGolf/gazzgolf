@@ -1,0 +1,60 @@
+name: Backend CI
+
+# Phase 0/1 of the testing plan (see Gazz-iOS/TESTING.md): on every push/PR that
+# touches the database, rebuild a fresh local Postgres from the squashed baseline
+# + migrations + seed, then run the pgTAP suite. Runs entirely on the GitHub
+# runner's local Supabase stack — NO secrets, NO production access required.
+#
+# This is what the squash unblocked: before the baseline, `supabase db reset`
+# failed inside the first migration, so backend CI could never go green.
+
+on:
+  push:
+    branches: [main, backend-testing-setup]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - 'supabase/seed.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - 'supabase/seed.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/backend-ci.yml'
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pgtap:
+    name: migration replay + pgTAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Boots the local stack (Postgres + auth, etc.) via Docker on the runner.
+      - name: Start Supabase
+        run: supabase start
+
+      # The thing the squash made possible: rebuild the DB from the single
+      # baseline + later migrations + seed.sql. Fails the job if replay is dirty.
+      - name: Reset database (migration replay + seed)
+        run: supabase db reset
+
+      # Run the pgTAP suite in supabase/tests/.
+      - name: Run pgTAP tests
+        run: supabase test db
+
+      - name: Stop Supabase
+        if: ${{ always() }}
+        run: supabase stop --no-backup || true

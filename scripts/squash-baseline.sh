@@ -2,7 +2,7 @@
 # ONE-TIME squash: capture the live prod schema as a single replayable baseline.
 #
 # WHY THIS EXISTS
-#   The ~304 files in supabase/migrations/ are NOT self-contained. The earliest
+#   The migration files in supabase/migrations/ are NOT self-contained. The earliest
 #   migration (20250930200532) already ALTERs / adds policies to tables that NO
 #   migration ever CREATEs: profiles, friendships, round_status, groups,
 #   group_members, banker_*, nine_points_*, and more. Lovable applied the
@@ -42,6 +42,27 @@ MIG_DIR="supabase/migrations"
 ARCHIVE_DIR="supabase/migrations_archive"
 BASELINE_TS="20250929000000"   # one day before the earliest real migration (20250930200532)
 BASELINE="${MIG_DIR}/${BASELINE_TS}_baseline_schema.sql"
+REQUIRED_BRANCH="chore/squash-baseline"
+
+# Branch guard: never squash on main/master, and require a dedicated branch so
+# the whole baseline + ~190-file move lands as ONE reviewable, revertible diff.
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  CUR_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
+  case "$CUR_BRANCH" in
+    main|master)
+      echo "Refusing to squash on '$CUR_BRANCH'. Create the dedicated branch first:" >&2
+      echo "    git checkout -b ${REQUIRED_BRANCH}" >&2
+      exit 1 ;;
+  esac
+  if [ "$CUR_BRANCH" != "$REQUIRED_BRANCH" ]; then
+    echo "This squash must run on '${REQUIRED_BRANCH}' (current: '${CUR_BRANCH}')." >&2
+    echo "Switch with:  git checkout -b ${REQUIRED_BRANCH}" >&2
+    exit 1
+  fi
+else
+  echo "Not inside a git work tree — refusing (the migration move must be revertible)." >&2
+  exit 1
+fi
 
 command -v supabase >/dev/null 2>&1 || {
   echo "Supabase CLI not found. Run scripts/new-mac-bootstrap.sh first." >&2; exit 1; }
@@ -110,8 +131,59 @@ ARCH_COUNT="$(ls "$ARCHIVE_DIR"/*.sql 2>/dev/null | wc -l | tr -d ' ')"
 echo
 echo "Wrote baseline:  $BASELINE"
 echo "Archived $ARCH_COUNT migrations into $ARCHIVE_DIR/ (history only; not replayed)."
+
+# ---------------------------------------------------------------------------
+# Verify replay in-script (DESTRUCTIVE to the LOCAL db only — never prod).
+# Behind its own typed confirmation per the locked spec.
+# ---------------------------------------------------------------------------
 echo
-echo "Now verify, then commit:"
-echo "  supabase db reset        # must replay cleanly from the single baseline"
-echo "  supabase test db         # if pgTAP tests exist in supabase/tests/"
-echo "  git add -A               # review the diff first"
+read -r -p "Run 'supabase db reset' now to verify the baseline replays? (rebuilds LOCAL db only) [y/N] " do_reset
+case "$do_reset" in
+  y|Y)
+    echo "Resetting local database from the baseline ..."
+    if supabase db reset; then
+      echo "Local reset replayed cleanly from the single baseline."
+      RESET_RESULT="passed"
+    else
+      echo "'supabase db reset' FAILED — the baseline is incomplete. Investigate before committing." >&2
+      RESET_RESULT="FAILED"
+    fi ;;
+  *)
+    echo "Skipped local reset. Run 'supabase db reset' yourself before trusting the baseline."
+    RESET_RESULT="skipped" ;;
+esac
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
+echo
+echo "================ squash-baseline summary ================"
+echo "  baseline file : $BASELINE"
+echo "  archived      : $ARCH_COUNT migrations -> $ARCHIVE_DIR/"
+echo "  local reset   : $RESET_RESULT"
+echo "  branch        : $CUR_BRANCH"
+echo "========================================================="
+
+# ---------------------------------------------------------------------------
+# Commit on the dedicated branch. Prompted (not silent) so a human eyeballs the
+# 190+-file diff first — matches the repo's "review before commit" culture.
+# ---------------------------------------------------------------------------
+echo
+if [ "$RESET_RESULT" = "FAILED" ]; then
+  echo "Not offering to commit: the local reset failed. Fix the baseline, then commit by hand."
+else
+  read -r -p "Commit the baseline + archived migrations on '${REQUIRED_BRANCH}'? [y/N] " do_commit
+  case "$do_commit" in
+    y|Y)
+      git add -A
+      git commit \
+        -m "Squash ${ARCH_COUNT} migrations into a replayable baseline" \
+        -m "Captured prod public schema -> ${BASELINE_TS}_baseline_schema.sql; archived prior migrations to ${ARCHIVE_DIR}/ (history only). Local reset: ${RESET_RESULT}."
+      echo "Committed on ${REQUIRED_BRANCH}. Push and open a PR when ready."
+      echo "Before the NEXT 'supabase db push', reconcile prod history: supabase migration repair (see header)."
+      ;;
+    *)
+      echo "Left changes staged but uncommitted. Review with 'git diff --cached', then commit."
+      ;;
+  esac
+fi
