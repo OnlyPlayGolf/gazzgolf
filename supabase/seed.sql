@@ -127,6 +127,17 @@ INSERT INTO auth.identities (
 ON CONFLICT DO NOTHING;
 
 -- ---------------------------------------------------------------------------
+-- 2a. Give A and B a gender so the app's "One more thing — we need your gender"
+--    onboarding gate (GenderRequiredSheet) doesn't block them post-login. The
+--    handle_new_user trigger doesn't set gender, so update the auto-created
+--    profile rows directly. Without this, signing in as a seeded user lands on
+--    the gender prompt instead of the app, blocking every UI test past login.
+-- ---------------------------------------------------------------------------
+UPDATE public.profiles SET gender = 'male'
+ WHERE id IN ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+              'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+
+-- ---------------------------------------------------------------------------
 -- 2b. Mark Ölands GK as imported by user A.
 --    Done after A exists (imported_by → auth.users). This puts the course in
 --    A's get_my_courses() set so it's selectable in the wizard course picker.
