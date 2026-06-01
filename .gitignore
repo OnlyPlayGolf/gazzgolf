@@ -29,3 +29,6 @@ dist-ssr
 
 # Throwaway prod schema snapshots from scripts/dump-schema.sh (drift checking)
 schema-snapshots/
+
+# Local Supabase JWT signing keys (contains the dev JWT secret — do not commit)
+supabase/signing_keys.json
