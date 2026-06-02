@@ -127,11 +127,16 @@ const scoreEntryDrillSchema = baseSchema.extend({
   score_unit: z.string().optional(),
   prompt: z.string()
 });
+// Build-a-Drill's only station use is distance_to_pin, which is a continuous
+// measurement, not a discrete rating. The app enters it with a decimal pad per
+// station (measurement mode), so we emit unit + step rather than a min/max
+// chip range.
 const stationEntryDrillSchema = baseSchema.extend({
   drill_type: z.literal("station_entry"),
   stations: z.array(z.number()).min(1),
-  station_score_min: z.number().min(0),
-  station_score_max: z.number().max(20),
+  station_score_mode: z.literal("measurement"),
+  station_score_unit: z.string().max(10),
+  station_score_step: z.number().positive().max(5),
   station_score_label: z.string().max(40)
 });
 const drillSchema = z.discriminatedUnion("drill_type", [
@@ -210,10 +215,14 @@ score_entry (drill_type = "score_entry"):
   - "score_unit": As mapped above.
   - "prompt": Short instruction shown above the score field: "How many putts did you make?", "How many in a row?", "Total strokes?", etc.
 
-station_entry (drill_type = "station_entry"):
+station_entry (drill_type = "station_entry") — used for distance_to_pin, a continuous measurement:
   - "stations": Array of distances (numbers in meters or yards — preserve the user's unit choice, but encode as a plain number; the unit is implied by the shot_area).
-  - "station_score_min" / "station_score_max": Range of values the user can enter per station. For distance-to-pin, typical range is 0 to 10 (feet or meters). For shots-taken, typical range is 1 to 5.
-  - "station_score_label": Short label for the per-station score (e.g. "Distance to pin (ft)", "Putts taken").
+  - "station_score_mode": always "measurement". The player records a measured decimal value at each station; there is NO discrete chip range.
+  - "station_score_unit": the unit the player records the value in, e.g. "m" or "ft". Short (<= 10 chars).
+  - "station_score_step": the decimal increment for entry, e.g. 0.1 or 0.5.
+  - "station_score_label": Short label for the per-station value (e.g. "Distance to pin (ft)").
+  - Do NOT emit station_score_min or station_score_max — measurement entry is open-ended.
+  - "lower_is_better" is true for distance-to-pin (closer is better).
 
 DO NOT include benchmarks, scoring_combos, questions, retry_label, pass_label, stations_labels, total_shots, shuffle_stations, shuffle_targets, or targets. Those fields belong to other drill types not available in Build-a-Drill.
 
@@ -277,8 +286,9 @@ RIGHT OUTPUT:
     "lower_is_better": true,
     "hcp": { "input": null, "value": null, "band": "no_hcp" },
     "stations": [60, 70, 80],
-    "station_score_min": 0,
-    "station_score_max": 20,
+    "station_score_mode": "measurement",
+    "station_score_unit": "ft",
+    "station_score_step": 0.5,
     "station_score_label": "Distance to pin (ft)"
   }
 }
