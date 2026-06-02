@@ -1,83 +1,68 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { z } from "https://esm.sh/zod@3.22.4"
-
-/* ------------------------------------------------------------------ */
-/*  CORS                                                               */
-/* ------------------------------------------------------------------ */
-
-const corsHeaders = {
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.22.4";
+/* ------------------------------------------------------------------ */ /*  CORS                                                               */ /* ------------------------------------------------------------------ */ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-}
-
-function json(data: unknown, status = 200): Response {
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+};
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  })
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json"
+    }
+  });
 }
-
-/* ------------------------------------------------------------------ */
-/*  HCP Bands                                                          */
-/* ------------------------------------------------------------------ */
-
-const HCP_BANDS = [
+/* ------------------------------------------------------------------ */ /*  HCP Bands                                                          */ /* ------------------------------------------------------------------ */ const HCP_BANDS = [
   "plus_5_to_0",
   "0_to_5",
   "6_to_12",
   "13_to_20",
   "21_to_30",
   "31_plus",
-  "no_hcp",
-] as const
-
-type HcpBand = (typeof HCP_BANDS)[number]
-
-function getHcpBand(value: number | null | undefined): HcpBand {
-  if (value == null || typeof value !== "number") return "no_hcp"
-  if (value < 0) return "plus_5_to_0"
-  if (value <= 5) return "0_to_5"
-  if (value <= 12) return "6_to_12"
-  if (value <= 20) return "13_to_20"
-  if (value <= 30) return "21_to_30"
-  return "31_plus"
+  "no_hcp"
+];
+function getHcpBand(value) {
+  if (value == null || typeof value !== "number") return "no_hcp";
+  if (value < 0) return "plus_5_to_0";
+  if (value <= 5) return "0_to_5";
+  if (value <= 12) return "6_to_12";
+  if (value <= 20) return "13_to_20";
+  if (value <= 30) return "21_to_30";
+  return "31_plus";
 }
-
-interface ParsedHcp {
-  input: string | null
-  value: number | null
-  band: HcpBand
-}
-
-function parseHcp(hcpInput: string | null | undefined): ParsedHcp {
-  const raw = typeof hcpInput === "string" ? hcpInput.trim() : ""
-  if (raw === "") return { input: null, value: null, band: "no_hcp" }
+function parseHcp(hcpInput) {
+  const raw = typeof hcpInput === "string" ? hcpInput.trim() : "";
+  if (raw === "") return {
+    input: null,
+    value: null,
+    band: "no_hcp"
+  };
   if (raw.startsWith("+")) {
-    const rest = raw.slice(1).trim()
-    const num = parseFloat(rest)
-    if (rest === "" || !Number.isFinite(num) || num < 0)
-      throw new Error("Invalid HCP")
-    const value = -num
-    return { input: raw, value, band: getHcpBand(value) }
+    const rest = raw.slice(1).trim();
+    const num = parseFloat(rest);
+    if (rest === "" || !Number.isFinite(num) || num < 0) throw new Error("Invalid HCP");
+    const value = -num;
+    return {
+      input: raw,
+      value,
+      band: getHcpBand(value)
+    };
   }
-  const num = parseFloat(raw)
-  if (!Number.isFinite(num) || num < 0) throw new Error("Invalid HCP")
-  return { input: raw, value: num, band: getHcpBand(num) }
+  const num = parseFloat(raw);
+  if (!Number.isFinite(num) || num < 0) throw new Error("Invalid HCP");
+  return {
+    input: raw,
+    value: num,
+    band: getHcpBand(num)
+  };
 }
-
-/* ------------------------------------------------------------------ */
-/*  Drill Schema (Zod)                                                 */
-/* ------------------------------------------------------------------ */
-
-const hcpBandSchema = z.enum(HCP_BANDS)
-
+/* ------------------------------------------------------------------ */ /*  Drill Schema (Zod)                                                 */ /* ------------------------------------------------------------------ */ const hcpBandSchema = z.enum(HCP_BANDS);
 const outcomeSchema = z.object({
   label: z.string().max(35),
-  points: z.number(),
-})
-
+  points: z.number()
+});
 const baseSchema = z.object({
   title: z.string().max(60),
   goal: z.string().max(150),
@@ -90,102 +75,83 @@ const baseSchema = z.object({
   hcp: z.object({
     input: z.string().nullable(),
     value: z.number().nullable(),
-    band: hcpBandSchema,
-  }),
-})
-
+    band: hcpBandSchema
+  })
+});
 const pointsDrillSchema = baseSchema.extend({
   drill_type: z.literal("points"),
-  outcomes: z.array(outcomeSchema).min(2).refine(
-    (outcomes) => outcomes.some((o) => o.points > 0),
-    { message: "At least one outcome must have positive points" }
-  ),
+  outcomes: z.array(outcomeSchema).min(2).refine((outcomes)=>outcomes.some((o)=>o.points > 0), {
+    message: "At least one outcome must have positive points"
+  }),
   target_points: z.number().min(1),
   distances: z.array(z.number()).min(1),
-  end_condition: z.string(),
-})
-
+  end_condition: z.string()
+});
 const benchmarksSchema = z.object({
-  hcp_0: z.number(),   // Score a scratch golfer would get
-  hcp_10: z.number(),  // Score a 10 HCP would get
-  hcp_20: z.number(),  // Score a 20 HCP would get
-})
-
+  hcp_0: z.number(),
+  hcp_10: z.number(),
+  hcp_20: z.number()
+});
 const scoreEntryDrillSchema = baseSchema.extend({
   drill_type: z.literal("score_entry"),
   score_label: z.string(),
   score_unit: z.string().optional(),
   prompt: z.string(),
-  benchmarks: benchmarksSchema.optional(),
-})
-
+  benchmarks: benchmarksSchema.optional()
+});
 const stationEntryDrillSchema = baseSchema.extend({
   drill_type: z.literal("station_entry"),
   stations: z.array(z.number()).min(3),
   station_score_min: z.number().min(1),
   station_score_max: z.number().max(10),
   station_score_label: z.string().max(40),
-  benchmarks: benchmarksSchema.optional(),
-})
-
+  benchmarks: benchmarksSchema.optional()
+});
 const stationOutcomesDrillSchema = baseSchema.extend({
   drill_type: z.literal("station_outcomes"),
   outcomes: z.array(outcomeSchema).min(2),
   stations: z.array(z.string()).min(1),
   total_shots: z.number().min(1),
   shuffle_stations: z.boolean(),
-  benchmarks: benchmarksSchema.optional(),
-})
-
+  benchmarks: benchmarksSchema.optional()
+});
 const questionSchema = z.object({
   text: z.string().max(80),
-  conditional_on_previous: z.boolean(),
-})
-
+  conditional_on_previous: z.boolean()
+});
 const scoringComboSchema = z.object({
   answers: z.array(z.boolean()),
   points: z.number(),
-  label: z.string().max(50),
-})
-
+  label: z.string().max(50)
+});
 const conditionalEntryDrillSchema = baseSchema.extend({
   drill_type: z.literal("conditional_entry"),
   questions: z.array(questionSchema).min(2).max(3),
   scoring_combos: z.array(scoringComboSchema).min(2),
   total_shots: z.number().min(1),
   shot_labels: z.array(z.string()).optional(),
-  benchmarks: benchmarksSchema.optional(),
-})
-
+  benchmarks: benchmarksSchema.optional()
+});
 const targetSchema = z.object({
-  label: z.string().max(60),
-})
-
+  label: z.string().max(60)
+});
 const retryEntryDrillSchema = baseSchema.extend({
   drill_type: z.literal("retry_entry"),
   targets: z.array(targetSchema).min(2),
   pass_label: z.string().max(30),
   retry_label: z.string().max(30),
   shuffle_targets: z.boolean(),
-  benchmarks: benchmarksSchema.optional(),
-})
-
+  benchmarks: benchmarksSchema.optional()
+});
 const drillSchema = z.discriminatedUnion("drill_type", [
   pointsDrillSchema,
   scoreEntryDrillSchema,
   stationEntryDrillSchema,
   stationOutcomesDrillSchema,
   conditionalEntryDrillSchema,
-  retryEntryDrillSchema,
-])
-
-type Drill = z.infer<typeof drillSchema>
-
-/* ------------------------------------------------------------------ */
-/*  Few-shot Examples                                                  */
-/* ------------------------------------------------------------------ */
-
-const coachDrillExamples = [
+  retryEntryDrillSchema
+]);
+/* ------------------------------------------------------------------ */ /*  Few-shot Examples                                                  */ /* ------------------------------------------------------------------ */ const coachDrillExamples = [
   // ── PUTTING ──────────────────────────────────────────────────────────
   // NOTE: Putting examples deliberately show DIFFERENT drill structures.
   // Do NOT default to "cycle distances + proximity outcomes" for every putting drill.
@@ -198,21 +164,29 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Place a tee 3 meters from the hole.",
-      "Use a different break for each set of 5 putts (move the tee to a new angle).",
+      "Use a different break for each set of 5 putts (move the tee to a new angle)."
     ],
     rules: [
       "All putts from 3m. No distance changes — pressure comes from the scoring.",
       "Start with 10 points. Holed = +1, miss = −2.",
       "If your score drops to 0, the drill ends immediately — you are eliminated.",
       "Survive 20 putts without hitting 0 to complete the drill.",
-      "Enter your final score (0 if eliminated, otherwise points remaining after 20 putts).",
+      "Enter your final score (0 if eliminated, otherwise points remaining after 20 putts)."
     ],
     score_label: "Final Score",
     score_unit: "points",
     prompt: "What was your final score? (0 if eliminated, or points remaining after 20 putts)",
     lower_is_better: false,
-    benchmarks: { hcp_0: 8, hcp_10: 3, hcp_20: 0 },
-    hcp: { input: "15", value: 15, band: "13_to_20" },
+    benchmarks: {
+      hcp_0: 8,
+      hcp_10: 3,
+      hcp_20: 0
+    },
+    hcp: {
+      input: "15",
+      value: 15,
+      band: "13_to_20"
+    }
   },
   {
     drill_type: "score_entry",
@@ -223,20 +197,28 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Start with 1 ball at 1 meter from the hole.",
-      "After completing each distance, move back 1 meter and add 1 extra attempt.",
+      "After completing each distance, move back 1 meter and add 1 extra attempt."
     ],
     rules: [
       "Start at 1m with 1 attempt. Move to 2m with 2 attempts, 3m with 3 attempts, and so on.",
       "You must hole at least one putt from each distance to move on.",
       "If you miss all attempts from a distance, the drill ends.",
-      "Your score is the furthest distance (in meters) you completed.",
+      "Your score is the furthest distance (in meters) you completed."
     ],
     score_label: "Furthest Distance",
     score_unit: "m",
     prompt: "What was the furthest distance (in meters) where you holed at least one putt?",
     lower_is_better: false,
-    benchmarks: { hcp_0: 7, hcp_10: 5, hcp_20: 3 },
-    hcp: { input: "10", value: 10, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 7,
+      hcp_10: 5,
+      hcp_20: 3
+    },
+    hcp: {
+      input: "10",
+      value: 10,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "score_entry",
@@ -247,20 +229,28 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Start with 1 ball at 1 foot from the hole.",
-      "After completing each distance, move back 1 foot and add 1 extra attempt.",
+      "After completing each distance, move back 1 foot and add 1 extra attempt."
     ],
     rules: [
       "Start at 1ft with 1 attempt. Move to 2ft with 2 attempts, 3ft with 3 attempts, and so on.",
       "You must hole at least one putt from each distance to move on.",
       "If you miss all attempts from a distance, the drill ends.",
-      "Your score is the furthest distance (in feet) you completed.",
+      "Your score is the furthest distance (in feet) you completed."
     ],
     score_label: "Furthest Distance",
     score_unit: "ft",
     prompt: "What was the furthest distance (in feet) where you holed at least one putt?",
     lower_is_better: false,
-    benchmarks: { hcp_0: 20, hcp_10: 14, hcp_20: 8 },
-    hcp: { input: "10", value: 10, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 20,
+      hcp_10: 14,
+      hcp_20: 8
+    },
+    hcp: {
+      input: "10",
+      value: 10,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "score_entry",
@@ -271,7 +261,7 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Start with 1 ball at 1 foot from the hole.",
-      "After completing each distance, move back 1 foot and add 1 extra attempt.",
+      "After completing each distance, move back 1 foot and add 1 extra attempt."
     ],
     rules: [
       "Start at 1ft with 1 attempt. Move to 2ft with 2 attempts, 3ft with 3 attempts, and so on.",
@@ -279,14 +269,22 @@ const coachDrillExamples = [
       "If you miss all attempts from a distance, move BACK 1 foot instead of ending the drill.",
       "You must clear the dropped-back distance before progressing again.",
       "The drill ends when you reach 20ft or after 15 minutes, whichever comes first.",
-      "Your score is the furthest distance (in feet) you completed.",
+      "Your score is the furthest distance (in feet) you completed."
     ],
     score_label: "Furthest Distance",
     score_unit: "ft",
     prompt: "What was the furthest distance (in feet) where you holed at least one putt?",
     lower_is_better: false,
-    benchmarks: { hcp_0: 20, hcp_10: 15, hcp_20: 10 },
-    hcp: { input: "25", value: 25, band: "21_to_30" },
+    benchmarks: {
+      hcp_0: 20,
+      hcp_10: 15,
+      hcp_20: 10
+    },
+    hcp: {
+      input: "25",
+      value: 25,
+      band: "21_to_30"
+    }
   },
   {
     drill_type: "score_entry",
@@ -297,21 +295,29 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Start with 1 ball at 1 foot from the hole.",
-      "After completing each distance, move back 1 foot and add 1 extra attempt.",
+      "After completing each distance, move back 1 foot and add 1 extra attempt."
     ],
     rules: [
       "Start at 1ft with 1 attempt. Move to 2ft with 2 attempts, 3ft with 3 attempts, and so on.",
       "From 1ft to 6ft: hole at least 1 putt from each distance to move on.",
       "From 7ft onward: you must hole at least 2 putts from each distance to move on.",
       "If you fail to meet the requirement, the drill ends.",
-      "Your score is the furthest distance (in feet) you completed.",
+      "Your score is the furthest distance (in feet) you completed."
     ],
     score_label: "Furthest Distance",
     score_unit: "ft",
     prompt: "What was the furthest distance (in feet) where you met the holing requirement?",
     lower_is_better: false,
-    benchmarks: { hcp_0: 16, hcp_10: 10, hcp_20: 6 },
-    hcp: { input: "5", value: 5, band: "0_to_5" },
+    benchmarks: {
+      hcp_0: 16,
+      hcp_10: 10,
+      hcp_20: 6
+    },
+    hcp: {
+      input: "5",
+      value: 5,
+      band: "0_to_5"
+    }
   },
   {
     drill_type: "station_outcomes",
@@ -323,31 +329,73 @@ const coachDrillExamples = [
     setup_steps: [
       "Find a practice green with enough space for putts from 8m to 22m.",
       "Use a single ball. Putt from a unique starting spot for each of the 18 putts.",
-      "Vary slopes and angles across putts — mix uphill, downhill, and sidehill.",
+      "Vary slopes and angles across putts — mix uphill, downhill, and sidehill."
     ],
     rules: [
       "Putt in random order. The app shuffles the distances automatically.",
       "After each putt, measure how far the ball finishes from the hole.",
       "Tap the matching outcome: Holed (-2), Within 0.5m (-1), Within 1m (0), Within 2m (+1), Within 3m (+2), Beyond 3m (+3).",
-      "Goal: lowest total score across all 18 putts. Par = 0.",
+      "Goal: lowest total score across all 18 putts. Par = 0."
     ],
     stations: [
-      "8m", "9m", "10m", "10m", "11m", "12m", "12m", "13m", "14m",
-      "14m", "15m", "16m", "17m", "18m", "19m", "20m", "21m", "22m",
+      "8m",
+      "9m",
+      "10m",
+      "10m",
+      "11m",
+      "12m",
+      "12m",
+      "13m",
+      "14m",
+      "14m",
+      "15m",
+      "16m",
+      "17m",
+      "18m",
+      "19m",
+      "20m",
+      "21m",
+      "22m"
     ],
     total_shots: 18,
     shuffle_stations: true,
     outcomes: [
-      { label: "Holed", points: -2 },
-      { label: "Within 0.5m", points: -1 },
-      { label: "Within 1m", points: 0 },
-      { label: "Within 2m", points: 1 },
-      { label: "Within 3m", points: 2 },
-      { label: "Beyond 3m", points: 3 },
+      {
+        label: "Holed",
+        points: -2
+      },
+      {
+        label: "Within 0.5m",
+        points: -1
+      },
+      {
+        label: "Within 1m",
+        points: 0
+      },
+      {
+        label: "Within 2m",
+        points: 1
+      },
+      {
+        label: "Within 3m",
+        points: 2
+      },
+      {
+        label: "Beyond 3m",
+        points: 3
+      }
     ],
     lower_is_better: true,
-    benchmarks: { hcp_0: -8, hcp_10: 4, hcp_20: 16 },
-    hcp: { input: "10", value: 10, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: -8,
+      hcp_10: 4,
+      hcp_20: 16
+    },
+    hcp: {
+      input: "10",
+      value: 10,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "score_entry",
@@ -358,20 +406,28 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Set 4 tees around the hole at 12, 3, 6, and 9 o'clock positions.",
-      "Start each tee at 1 meter from the hole.",
+      "Start each tee at 1 meter from the hole."
     ],
     rules: [
       "Putt from each position in order: 12 → 3 → 6 → 9 o'clock, then repeat.",
       "Every made putt increases that position's distance by 0.3m (1 foot).",
       "First miss ends the drill immediately.",
-      "Score = total consecutive putts made before missing.",
+      "Score = total consecutive putts made before missing."
     ],
     score_label: "Consecutive Makes",
     score_unit: "putts",
     prompt: "How many consecutive putts did you make before your first miss?",
     lower_is_better: false,
-    benchmarks: { hcp_0: 16, hcp_10: 10, hcp_20: 6 },
-    hcp: { input: "10", value: 10, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 16,
+      hcp_10: 10,
+      hcp_20: 6
+    },
+    hcp: {
+      input: "10",
+      value: 10,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "score_entry",
@@ -382,20 +438,28 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Place two tees 5cm apart on a straight, flat putt 0.5m in front of the hole.",
-      "Mark your starting position 1.5m from the hole with a coin.",
+      "Mark your starting position 1.5m from the hole with a coin."
     ],
     rules: [
       "Hit 20 putts from 1.5m, aiming through the gate.",
       "A putt counts as 'through the gate' if the ball passes between the tees without touching either.",
       "Count total putts that pass through the gate AND are holed.",
-      "Target: 16 out of 20 for mid-handicappers.",
+      "Target: 16 out of 20 for mid-handicappers."
     ],
     score_label: "Gate + Holed",
     score_unit: "out of 20",
     prompt: "How many of 20 putts went through the gate and were holed?",
     lower_is_better: false,
-    benchmarks: { hcp_0: 15, hcp_10: 12, hcp_20: 8 },
-    hcp: { input: "18", value: 18, band: "13_to_20" },
+    benchmarks: {
+      hcp_0: 15,
+      hcp_10: 12,
+      hcp_20: 8
+    },
+    hcp: {
+      input: "18",
+      value: 18,
+      band: "13_to_20"
+    }
   },
   {
     drill_type: "points",
@@ -406,21 +470,33 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Place a coin 2 meters from the hole on a straight putt.",
-      "Use the same line for all putts. Move to a breaking putt after reaching 6 points if you want extra challenge.",
+      "Use the same line for all putts. Move to a breaking putt after reaching 6 points if you want extra challenge."
     ],
     rules: [
       "All putts from 2m. Simple make or miss.",
-      "Reach 6 points to complete the drill.",
+      "Reach 6 points to complete the drill."
     ],
     outcomes: [
-      { label: "Holed", points: 2 },
-      { label: "Missed", points: -1 },
+      {
+        label: "Holed",
+        points: 2
+      },
+      {
+        label: "Missed",
+        points: -1
+      }
     ],
     target_points: 6,
-    distances: [2],
+    distances: [
+      2
+    ],
     end_condition: "Drill ends when you reach 6 points.",
     lower_is_better: true,
-    hcp: { input: "15", value: 15, band: "13_to_20" },
+    hcp: {
+      input: "15",
+      value: 15,
+      band: "13_to_20"
+    }
   },
   {
     drill_type: "station_entry",
@@ -431,23 +507,49 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Use a practice green with enough space for 16m putts.",
-      "Set up 18 putt stations at these distances: 0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 12, 16 meters.",
+      "Set up 18 putt stations at these distances: 0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 12, 16 meters."
     ],
     rules: [
       "Hit one putt from each of the 18 distances. Distances are shuffled randomly.",
       "Vary the break and slope for each station (uphill, downhill, sidehill).",
       "Record putts taken per station (1-5).",
-      "Total score = sum of all putts. Tour benchmark: 29 putts.",
+      "Total score = sum of all putts. Tour benchmark: 29 putts."
     ],
-    stations: [0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 12, 16],
+    stations: [
+      0.6,
+      0.9,
+      1.2,
+      1.5,
+      1.8,
+      2.1,
+      2.4,
+      3,
+      3.5,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16
+    ],
     station_score_min: 1,
     station_score_max: 5,
     station_score_label: "Putts taken",
     lower_is_better: true,
-    benchmarks: { hcp_0: 27, hcp_10: 32, hcp_20: 38 },
-    hcp: { input: "3", value: 3, band: "0_to_5" },
+    benchmarks: {
+      hcp_0: 27,
+      hcp_10: 32,
+      hcp_20: 38
+    },
+    hcp: {
+      input: "3",
+      value: 3,
+      band: "0_to_5"
+    }
   },
-
   // ── SHORT GAME ───────────────────────────────────────────────────────
   {
     drill_type: "score_entry",
@@ -458,19 +560,22 @@ const coachDrillExamples = [
     shot_area: "chipping",
     setup_steps: [
       "Find a flat fairway lie about 10 meters from a hole.",
-      "Use one wedge for all chips.",
+      "Use one wedge for all chips."
     ],
     rules: [
       "Chip from 10m from a fairway lie.",
       "Count consecutive chips stopping within one wedge length of the hole.",
-      "One miss resets the streak.",
+      "One miss resets the streak."
     ],
     score_label: "Consecutive Chips",
     score_unit: "chips",
-    prompt:
-      "How many chips in a row stopped within one wedge length of the hole?",
+    prompt: "How many chips in a row stopped within one wedge length of the hole?",
     lower_is_better: false,
-    hcp: { input: "15", value: 15, band: "13_to_20" },
+    hcp: {
+      input: "15",
+      value: 15,
+      band: "13_to_20"
+    }
   },
   {
     drill_type: "score_entry",
@@ -481,19 +586,23 @@ const coachDrillExamples = [
     shot_area: "mixed",
     setup_steps: [
       "Set up 8 stations: Chip 10m, Chip 30m, Pitch 20m, Pitch 40m, Lob 15m, Lob 25m, Bunker 10m, Bunker 20m.",
-      "Place a target flag or towel at each station's landing area.",
+      "Place a target flag or towel at each station's landing area."
     ],
     rules: [
       "Rotate through all 8 stations in order. Never hit the same shot twice in a row.",
       "Complete 5 full rounds (40 shots total).",
       "Score each shot: Holed = 4, Within 1m = 3, Within 2m = 2, Within 3m = 1, 3m+ = 0.",
-      "Sum all 40 scores. Maximum possible: 160. Target for mid-handicappers: 80+.",
+      "Sum all 40 scores. Maximum possible: 160. Target for mid-handicappers: 80+."
     ],
     score_label: "Total Points",
     score_unit: "points",
     prompt: "What was your total points across all 40 shots?",
     lower_is_better: false,
-    hcp: { input: "12", value: 12, band: "6_to_12" },
+    hcp: {
+      input: "12",
+      value: 12,
+      band: "6_to_12"
+    }
   },
   // ── APPROACH ──────────────────────────────────────────────────────────
   {
@@ -505,25 +614,54 @@ const coachDrillExamples = [
     shot_area: "wedges",
     setup_steps: [
       "Set up on the range with targets at 40, 45, 50, 55, 60, 65, 70, 75, and 80 meters.",
-      "Use appropriate wedges for each distance.",
+      "Use appropriate wedges for each distance."
     ],
     rules: [
       "Hit one shot from each of the 9 distances (40–80m). That is Lap 1.",
       "Repeat all 9 distances for Lap 2 (18 shots total).",
-      "Score each shot based on proximity to the target.",
+      "Score each shot based on proximity to the target."
     ],
     outcomes: [
-      { label: "Within 2m", points: 3 },
-      { label: "Within 3m", points: 2 },
-      { label: "Within 4m", points: 1 },
-      { label: "On green", points: 0 },
-      { label: "Missed green", points: -1 },
+      {
+        label: "Within 2m",
+        points: 3
+      },
+      {
+        label: "Within 3m",
+        points: 2
+      },
+      {
+        label: "Within 4m",
+        points: 1
+      },
+      {
+        label: "On green",
+        points: 0
+      },
+      {
+        label: "Missed green",
+        points: -1
+      }
     ],
     target_points: 54,
-    distances: [40, 45, 50, 55, 60, 65, 70, 75, 80],
+    distances: [
+      40,
+      45,
+      50,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80
+    ],
     end_condition: "Drill ends when you reach 54 points.",
     lower_is_better: true,
-    hcp: { input: "8", value: 8, band: "6_to_12" },
+    hcp: {
+      input: "8",
+      value: 8,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "score_entry",
@@ -534,20 +672,23 @@ const coachDrillExamples = [
     shot_area: "wedges",
     setup_steps: [
       "Set up on the range with a target at 60 meters.",
-      "Have clubs ready for distances up to 120 meters.",
+      "Have clubs ready for distances up to 120 meters."
     ],
     rules: [
       "Start at 60m. Hit within 3m of the target to advance to the next distance.",
       "Miss = retry the same distance until you hit within 3m.",
       "Distances: 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120m.",
-      "Score = total shots needed to complete all 13 distances. Perfect = 13.",
+      "Score = total shots needed to complete all 13 distances. Perfect = 13."
     ],
     score_label: "Total Shots",
     score_unit: "shots",
-    prompt:
-      "How many total shots did you need to complete all 13 distances?",
+    prompt: "How many total shots did you need to complete all 13 distances?",
     lower_is_better: true,
-    hcp: { input: "6", value: 6, band: "0_to_5" },
+    hcp: {
+      input: "6",
+      value: 6,
+      band: "0_to_5"
+    }
   },
   {
     drill_type: "points",
@@ -558,27 +699,54 @@ const coachDrillExamples = [
     shot_area: "mixed",
     setup_steps: [
       "Set up on the range with targets between 130m and 180m.",
-      "Mark a left and right target zone for each distance.",
+      "Mark a left and right target zone for each distance."
     ],
     rules: [
       "Hit 14 approach shots from randomized distances (130–180m).",
       "Each shot has a designated target side (left or right). 7 left, 7 right.",
       "Score based on correct side + proximity: correct side & within 5m = 3pts, wrong side & within 5m = 2pts, correct side & outside 5m = 1pt, wrong side & outside 5m = −1pt.",
-      "Streak bonus: 3+ consecutive 3-pointers awards +1 bonus each.",
+      "Streak bonus: 3+ consecutive 3-pointers awards +1 bonus each."
     ],
     outcomes: [
-      { label: "Correct + within 5m", points: 3 },
-      { label: "Wrong side + within 5m", points: 2 },
-      { label: "Correct + outside 5m", points: 1 },
-      { label: "Wrong + outside 5m", points: -1 },
+      {
+        label: "Correct + within 5m",
+        points: 3
+      },
+      {
+        label: "Wrong side + within 5m",
+        points: 2
+      },
+      {
+        label: "Correct + outside 5m",
+        points: 1
+      },
+      {
+        label: "Wrong + outside 5m",
+        points: -1
+      }
     ],
     target_points: 42,
-    distances: [130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180],
+    distances: [
+      130,
+      135,
+      140,
+      145,
+      150,
+      155,
+      160,
+      165,
+      170,
+      175,
+      180
+    ],
     end_condition: "Drill ends when you reach 42 points.",
     lower_is_better: true,
-    hcp: { input: "4", value: 4, band: "0_to_5" },
+    hcp: {
+      input: "4",
+      value: 4,
+      band: "0_to_5"
+    }
   },
-
   // ── FULL SWING ────────────────────────────────────────────────────────
   {
     drill_type: "score_entry",
@@ -590,20 +758,23 @@ const coachDrillExamples = [
     setup_steps: [
       "Set up on the range with a target fairway corridor about 25m wide.",
       "Place an alignment stick at your target line.",
-      "Mark fairway boundaries with two objects 12.5m either side of center.",
+      "Mark fairway boundaries with two objects 12.5m either side of center."
     ],
     rules: [
       "Hit 10 drives aiming at the target corridor.",
       "Count only drives that land or finish within the 25m fairway corridor.",
       "You must score at least 7/10 to pass the drill.",
-      "If you score under 5, narrow the corridor to 20m next session.",
+      "If you score under 5, narrow the corridor to 20m next session."
     ],
     score_label: "Fairways Hit",
     score_unit: "out of 10",
-    prompt:
-      "How many of your 10 drives finished within the fairway corridor?",
+    prompt: "How many of your 10 drives finished within the fairway corridor?",
     lower_is_better: false,
-    hcp: { input: "4", value: 4, band: "0_to_5" },
+    hcp: {
+      input: "4",
+      value: 4,
+      band: "0_to_5"
+    }
   },
   {
     drill_type: "points",
@@ -614,24 +785,39 @@ const coachDrillExamples = [
     shot_area: "driver",
     setup_steps: [
       "Set up on the range with a 30-meter-wide fairway corridor.",
-      "Mark the center line and both edges.",
+      "Mark the center line and both edges."
     ],
     rules: [
       "Hit 14 drives aiming for the fairway.",
       "Fairway hit = +1. Miss left or miss right = randomized penalty (0, −1, or −2 per shot).",
       "Streak bonus: after 3+ consecutive fairways, each additional fairway earns +1 bonus point.",
-      "First miss after a streak resets the bonus.",
+      "First miss after a streak resets the bonus."
     ],
     outcomes: [
-      { label: "Fairway", points: 1 },
-      { label: "Miss left", points: 0 },
-      { label: "Miss right", points: 0 },
+      {
+        label: "Fairway",
+        points: 1
+      },
+      {
+        label: "Miss left",
+        points: 0
+      },
+      {
+        label: "Miss right",
+        points: 0
+      }
     ],
     target_points: 14,
-    distances: [250],
+    distances: [
+      250
+    ],
     end_condition: "Drill ends when you reach 14 points.",
     lower_is_better: true,
-    hcp: { input: "10", value: 10, band: "6_to_12" },
+    hcp: {
+      input: "10",
+      value: 10,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "points",
@@ -642,25 +828,43 @@ const coachDrillExamples = [
     shot_area: "mixed",
     setup_steps: [
       "Set up on the range with a 30m-wide fairway corridor.",
-      "Have driver, fairway wood, and hybrid ready.",
+      "Have driver, fairway wood, and hybrid ready."
     ],
     rules: [
       "Hit 14 tee shots. Each shot specifies a required shape (draw or fade) and club.",
       "Club mix: 9 driver, 2 fairway wood, 3 hybrid. 7 draws, 7 fades.",
       "Score based on shape accuracy + fairway hit: correct shape & fairway = 3pts, wrong shape & fairway = 2pts, correct shape & within 10m of fairway = 1pt, otherwise = 0pts.",
-      "Streak bonus: 3+ consecutive 3-pointers awards +1 bonus each.",
+      "Streak bonus: 3+ consecutive 3-pointers awards +1 bonus each."
     ],
     outcomes: [
-      { label: "Shape + fairway", points: 3 },
-      { label: "Wrong shape + FW", points: 2 },
-      { label: "Shape + near FW", points: 1 },
-      { label: "Off line", points: 0 },
+      {
+        label: "Shape + fairway",
+        points: 3
+      },
+      {
+        label: "Wrong shape + FW",
+        points: 2
+      },
+      {
+        label: "Shape + near FW",
+        points: 1
+      },
+      {
+        label: "Off line",
+        points: 0
+      }
     ],
     target_points: 42,
-    distances: [250],
+    distances: [
+      250
+    ],
     end_condition: "Drill ends when you reach 42 points.",
     lower_is_better: true,
-    hcp: { input: "2", value: 2, band: "0_to_5" },
+    hcp: {
+      input: "2",
+      value: 2,
+      band: "0_to_5"
+    }
   },
   {
     drill_type: "score_entry",
@@ -671,21 +875,24 @@ const coachDrillExamples = [
     shot_area: "mixed",
     setup_steps: [
       "Use a 7-iron only for the entire drill.",
-      "Pick a target on the range with a 15-meter landing zone.",
+      "Pick a target on the range with a 15-meter landing zone."
     ],
     rules: [
       "Complete 9 windows: High Fade, High Straight, High Draw, Mid Fade, Mid Straight, Mid Draw, Low Fade, Low Straight, Low Draw.",
       "Windows are presented in random order each session.",
       "Hit until you execute the correct trajectory + shape within the 15m target. Then move to the next window.",
-      "Score = total shots to complete all 9 windows. Perfect = 9.",
+      "Score = total shots to complete all 9 windows. Perfect = 9."
     ],
     score_label: "Total Shots",
     score_unit: "shots",
     prompt: "How many total shots did you need to complete all 9 windows?",
     lower_is_better: true,
-    hcp: { input: "2", value: 2, band: "0_to_5" },
+    hcp: {
+      input: "2",
+      value: 2,
+      band: "0_to_5"
+    }
   },
-
   // ── STATION OUTCOMES ─────────────────────────────────────────────────
   {
     drill_type: "station_outcomes",
@@ -696,30 +903,68 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Use a practice green with enough space for 16m putts.",
-      "Set up 12 putt stations at: 8, 9, 10, 11, 12, 13, 14, 15, 16, 10, 12, 14 meters.",
+      "Set up 12 putt stations at: 8, 9, 10, 11, 12, 13, 14, 15, 16, 10, 12, 14 meters."
     ],
     rules: [
       "Hit one putt from each of the 12 stations. Stations are shuffled randomly.",
       "Vary the break and slope at each station (uphill, downhill, sidehill).",
       "After each putt, tap the outcome that best describes where the ball stopped.",
-      "Total score = sum of all outcome points. Higher is better.",
+      "Total score = sum of all outcome points. Higher is better."
     ],
     outcomes: [
-      { label: "Holed", points: 5 },
-      { label: "Within 0.5m", points: 3 },
-      { label: "Within 1m", points: 2 },
-      { label: "Within 2m", points: 1 },
-      { label: "2m+ away", points: 0 },
-      { label: "3m+ away", points: -1 },
+      {
+        label: "Holed",
+        points: 5
+      },
+      {
+        label: "Within 0.5m",
+        points: 3
+      },
+      {
+        label: "Within 1m",
+        points: 2
+      },
+      {
+        label: "Within 2m",
+        points: 1
+      },
+      {
+        label: "2m+ away",
+        points: 0
+      },
+      {
+        label: "3m+ away",
+        points: -1
+      }
     ],
-    stations: ["8m", "9m", "10m", "11m", "12m", "13m", "14m", "15m", "16m", "10m", "12m", "14m"],
+    stations: [
+      "8m",
+      "9m",
+      "10m",
+      "11m",
+      "12m",
+      "13m",
+      "14m",
+      "15m",
+      "16m",
+      "10m",
+      "12m",
+      "14m"
+    ],
     total_shots: 12,
     shuffle_stations: true,
     lower_is_better: false,
-    benchmarks: { hcp_0: 30, hcp_10: 22, hcp_20: 15 },
-    hcp: { input: "8", value: 8, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 30,
+      hcp_10: 22,
+      hcp_20: 15
+    },
+    hcp: {
+      input: "8",
+      value: 8,
+      band: "6_to_12"
+    }
   },
-
   // ── CONDITIONAL ENTRY ──────────────────────────────────────────────
   {
     drill_type: "conditional_entry",
@@ -730,36 +975,87 @@ const coachDrillExamples = [
     shot_area: "wedges",
     setup_steps: [
       "Set up on the range with targets between 130m and 170m.",
-      "Mark a left and right target zone for each distance.",
+      "Mark a left and right target zone for each distance."
     ],
     rules: [
       "Hit 14 approach shots from randomized distances (130–170m).",
       "Each shot has a designated target side (left or right). 7 left, 7 right.",
       "After each shot, answer two questions: (1) Did you land on the correct side? (2) Was it inside 5 meters of the target?",
-      "Points: correct side + inside 5m = 3pts, wrong side + inside 5m = 2pts, correct side + outside 5m = 1pt, wrong + outside = −1pt.",
+      "Points: correct side + inside 5m = 3pts, wrong side + inside 5m = 2pts, correct side + outside 5m = 1pt, wrong + outside = −1pt."
     ],
     questions: [
-      { text: "Did you land on the correct side?", conditional_on_previous: false },
-      { text: "Was it inside 5 meters?", conditional_on_previous: false },
+      {
+        text: "Did you land on the correct side?",
+        conditional_on_previous: false
+      },
+      {
+        text: "Was it inside 5 meters?",
+        conditional_on_previous: false
+      }
     ],
     scoring_combos: [
-      { answers: [true, true], points: 3, label: "Correct side + inside 5m" },
-      { answers: [false, true], points: 2, label: "Wrong side + inside 5m" },
-      { answers: [true, false], points: 1, label: "Correct side + outside 5m" },
-      { answers: [false, false], points: -1, label: "Wrong side + outside 5m" },
+      {
+        answers: [
+          true,
+          true
+        ],
+        points: 3,
+        label: "Correct side + inside 5m"
+      },
+      {
+        answers: [
+          false,
+          true
+        ],
+        points: 2,
+        label: "Wrong side + inside 5m"
+      },
+      {
+        answers: [
+          true,
+          false
+        ],
+        points: 1,
+        label: "Correct side + outside 5m"
+      },
+      {
+        answers: [
+          false,
+          false
+        ],
+        points: -1,
+        label: "Wrong side + outside 5m"
+      }
     ],
     total_shots: 14,
     shot_labels: [
-      "130m - Left", "135m - Right", "140m - Left", "145m - Right",
-      "150m - Left", "155m - Right", "160m - Left", "165m - Right",
-      "170m - Left", "140m - Right", "150m - Left", "160m - Right",
-      "145m - Left", "155m - Right",
+      "130m - Left",
+      "135m - Right",
+      "140m - Left",
+      "145m - Right",
+      "150m - Left",
+      "155m - Right",
+      "160m - Left",
+      "165m - Right",
+      "170m - Left",
+      "140m - Right",
+      "150m - Left",
+      "160m - Right",
+      "145m - Left",
+      "155m - Right"
     ],
     lower_is_better: false,
-    benchmarks: { hcp_0: 32, hcp_10: 22, hcp_20: 12 },
-    hcp: { input: "5", value: 5, band: "0_to_5" },
+    benchmarks: {
+      hcp_0: 32,
+      hcp_10: 22,
+      hcp_20: 12
+    },
+    hcp: {
+      input: "5",
+      value: 5,
+      band: "0_to_5"
+    }
   },
-
   // ── RETRY ENTRY ────────────────────────────────────────────────────
   {
     drill_type: "retry_entry",
@@ -770,27 +1066,58 @@ const coachDrillExamples = [
     shot_area: "mixed",
     setup_steps: [
       "Use a 7-iron only for the entire drill.",
-      "Pick a target on the range with a 15-meter landing zone.",
+      "Pick a target on the range with a 15-meter landing zone."
     ],
     rules: [
       "Complete 9 windows: High Fade, High Straight, High Draw, Mid Fade, Mid Straight, Mid Draw, Low Fade, Low Straight, Low Draw.",
       "Windows are presented in random order.",
       "Hit until you execute the correct trajectory + shape within the 15m target. Then advance to the next window.",
-      "Score = total shots to complete all 9 windows. Perfect = 9.",
+      "Score = total shots to complete all 9 windows. Perfect = 9."
     ],
     targets: [
-      { label: "High Fade" }, { label: "High Straight" }, { label: "High Draw" },
-      { label: "Mid Fade" }, { label: "Mid Straight" }, { label: "Mid Draw" },
-      { label: "Low Fade" }, { label: "Low Straight" }, { label: "Low Draw" },
+      {
+        label: "High Fade"
+      },
+      {
+        label: "High Straight"
+      },
+      {
+        label: "High Draw"
+      },
+      {
+        label: "Mid Fade"
+      },
+      {
+        label: "Mid Straight"
+      },
+      {
+        label: "Mid Draw"
+      },
+      {
+        label: "Low Fade"
+      },
+      {
+        label: "Low Straight"
+      },
+      {
+        label: "Low Draw"
+      }
     ],
     pass_label: "Next Shot",
     retry_label: "Try Again",
     shuffle_targets: true,
     lower_is_better: true,
-    benchmarks: { hcp_0: 11, hcp_10: 16, hcp_20: 25 },
-    hcp: { input: "3", value: 3, band: "0_to_5" },
+    benchmarks: {
+      hcp_0: 11,
+      hcp_10: 16,
+      hcp_20: 25
+    },
+    hcp: {
+      input: "3",
+      value: 3,
+      band: "0_to_5"
+    }
   },
-
   // ── BUNKER ────────────────────────────────────────────────────────────
   {
     drill_type: "points",
@@ -802,27 +1129,44 @@ const coachDrillExamples = [
     setup_steps: [
       "Find a greenside bunker with a flat lie.",
       "Place a towel on the green about 5m from the bunker edge as your target.",
-      "Drop balls in the bunker with a reasonable lie for each shot.",
+      "Drop balls in the bunker with a reasonable lie for each shot."
     ],
     rules: [
       "Hit bunker shots aiming for the towel on the green.",
       "Reach 10 points to complete the drill.",
       "Streak bonus: 2 'Within 2m' in a row earns +2 bonus points.",
-      "If you leave 3 balls in the bunker during the drill, restart from 0 points.",
+      "If you leave 3 balls in the bunker during the drill, restart from 0 points."
     ],
     outcomes: [
-      { label: "Within 2m", points: 3 },
-      { label: "On green", points: 1 },
-      { label: "Missed green", points: 0 },
-      { label: "Still in bunker", points: -2 },
+      {
+        label: "Within 2m",
+        points: 3
+      },
+      {
+        label: "On green",
+        points: 1
+      },
+      {
+        label: "Missed green",
+        points: 0
+      },
+      {
+        label: "Still in bunker",
+        points: -2
+      }
     ],
     target_points: 10,
-    distances: [5],
+    distances: [
+      5
+    ],
     end_condition: "Drill ends when you reach 10 points.",
     lower_is_better: true,
-    hcp: { input: "26", value: 26, band: "21_to_30" },
+    hcp: {
+      input: "26",
+      value: 26,
+      band: "21_to_30"
+    }
   },
-
   // ── STATION ENTRY (additional examples) ─────────────────────────────
   {
     drill_type: "station_entry",
@@ -833,21 +1177,38 @@ const coachDrillExamples = [
     shot_area: "chipping",
     setup_steps: [
       "Set up 8 chipping stations at: 5m, 8m, 10m, 13m, 15m, 18m, 20m, 25m from the hole.",
-      "Use a variety of lies — fairway, light rough, and fringe — across the stations.",
+      "Use a variety of lies — fairway, light rough, and fringe — across the stations."
     ],
     rules: [
       "Chip 3 balls from each station. Record your BEST proximity result on a 1–5 scale.",
       "Scoring per station: 1 = inside 1m, 2 = inside 2m, 3 = inside 3m, 4 = on green 3m+, 5 = missed green.",
       "Stations are shuffled randomly. Complete all 8.",
-      "Total score = sum of all station scores. Lower is better. Perfect = 8.",
+      "Total score = sum of all station scores. Lower is better. Perfect = 8."
     ],
-    stations: [5, 8, 10, 13, 15, 18, 20, 25],
+    stations: [
+      5,
+      8,
+      10,
+      13,
+      15,
+      18,
+      20,
+      25
+    ],
     station_score_min: 1,
     station_score_max: 5,
     station_score_label: "Best proximity",
     lower_is_better: true,
-    benchmarks: { hcp_0: 12, hcp_10: 18, hcp_20: 26 },
-    hcp: { input: "15", value: 15, band: "13_to_20" },
+    benchmarks: {
+      hcp_0: 12,
+      hcp_10: 18,
+      hcp_20: 26
+    },
+    hcp: {
+      input: "15",
+      value: 15,
+      band: "13_to_20"
+    }
   },
   {
     drill_type: "station_entry",
@@ -858,21 +1219,40 @@ const coachDrillExamples = [
     shot_area: "wedges",
     setup_steps: [
       "Set up on the range with targets at 50, 55, 60, 65, 70, 75, 80, 85, 90, and 100 meters.",
-      "Use appropriate wedges for each distance.",
+      "Use appropriate wedges for each distance."
     ],
     rules: [
       "Hit one shot per station. Stations are shuffled randomly.",
       "Score each station: 1 = within 2m, 2 = within 4m, 3 = within 6m, 4 = on green 6m+, 5 = missed green.",
       "Complete all 10 stations.",
-      "Total score = sum. Lower is better. Perfect = 10.",
+      "Total score = sum. Lower is better. Perfect = 10."
     ],
-    stations: [50, 55, 60, 65, 70, 75, 80, 85, 90, 100],
+    stations: [
+      50,
+      55,
+      60,
+      65,
+      70,
+      75,
+      80,
+      85,
+      90,
+      100
+    ],
     station_score_min: 1,
     station_score_max: 5,
     station_score_label: "Proximity",
     lower_is_better: true,
-    benchmarks: { hcp_0: 14, hcp_10: 22, hcp_20: 30 },
-    hcp: { input: "8", value: 8, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 14,
+      hcp_10: 22,
+      hcp_20: 30
+    },
+    hcp: {
+      input: "8",
+      value: 8,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "station_entry",
@@ -883,23 +1263,37 @@ const coachDrillExamples = [
     shot_area: "bunker",
     setup_steps: [
       "Find a greenside bunker with space to vary distances.",
-      "Set up 6 flag targets at: 5m, 8m, 10m, 15m, 20m, 30m from the bunker edge.",
+      "Set up 6 flag targets at: 5m, 8m, 10m, 15m, 20m, 30m from the bunker edge."
     ],
     rules: [
       "Hit 2 bunker shots per station. Record the BETTER result on a 1–5 scale.",
       "Scoring: 1 = inside 1m, 2 = inside 2m, 3 = on green 2m+, 4 = missed green, 5 = still in bunker.",
       "Complete all 6 stations. Stations are shuffled.",
-      "Total score = sum. Lower is better. Perfect = 6.",
+      "Total score = sum. Lower is better. Perfect = 6."
     ],
-    stations: [5, 8, 10, 15, 20, 30],
+    stations: [
+      5,
+      8,
+      10,
+      15,
+      20,
+      30
+    ],
     station_score_min: 1,
     station_score_max: 5,
     station_score_label: "Best result",
     lower_is_better: true,
-    benchmarks: { hcp_0: 8, hcp_10: 14, hcp_20: 20 },
-    hcp: { input: "22", value: 22, band: "21_to_30" },
+    benchmarks: {
+      hcp_0: 8,
+      hcp_10: 14,
+      hcp_20: 20
+    },
+    hcp: {
+      input: "22",
+      value: 22,
+      band: "21_to_30"
+    }
   },
-
   // ── STATION OUTCOMES (additional examples) ──────────────────────────
   {
     drill_type: "station_outcomes",
@@ -910,31 +1304,60 @@ const coachDrillExamples = [
     shot_area: "chipping",
     setup_steps: [
       "Set up 10 stations around a practice green with varied lies and distances.",
-      "Label each station clearly so you can identify the shot required.",
+      "Label each station clearly so you can identify the shot required."
     ],
     rules: [
       "Hit one shot from each of the 10 stations. Stations are shuffled randomly.",
       "After each shot, tap the outcome that best describes where the ball stopped.",
-      "Total score = sum of all outcome points. Higher is better.",
+      "Total score = sum of all outcome points. Higher is better."
     ],
     outcomes: [
-      { label: "Inside 1m", points: 3 },
-      { label: "Within 2m", points: 2 },
-      { label: "Within 3m", points: 1 },
-      { label: "On green, 3m+", points: 0 },
-      { label: "Missed green", points: -1 },
+      {
+        label: "Inside 1m",
+        points: 3
+      },
+      {
+        label: "Within 2m",
+        points: 2
+      },
+      {
+        label: "Within 3m",
+        points: 1
+      },
+      {
+        label: "On green, 3m+",
+        points: 0
+      },
+      {
+        label: "Missed green",
+        points: -1
+      }
     ],
     stations: [
-      "Chip 5m uphill", "Chip 10m downhill", "Chip 15m to back pin",
-      "Chip 8m from rough", "Bump-and-run 12m", "Pitch 20m over bunker",
-      "Chip 6m tight lie", "Chip 10m to tucked pin", "Pitch 15m fluffy lie",
-      "Chip 8m sidehill",
+      "Chip 5m uphill",
+      "Chip 10m downhill",
+      "Chip 15m to back pin",
+      "Chip 8m from rough",
+      "Bump-and-run 12m",
+      "Pitch 20m over bunker",
+      "Chip 6m tight lie",
+      "Chip 10m to tucked pin",
+      "Pitch 15m fluffy lie",
+      "Chip 8m sidehill"
     ],
     total_shots: 10,
     shuffle_stations: true,
     lower_is_better: false,
-    benchmarks: { hcp_0: 22, hcp_10: 15, hcp_20: 8 },
-    hcp: { input: "15", value: 15, band: "13_to_20" },
+    benchmarks: {
+      hcp_0: 22,
+      hcp_10: 15,
+      hcp_20: 8
+    },
+    hcp: {
+      input: "15",
+      value: 15,
+      band: "13_to_20"
+    }
   },
   {
     drill_type: "station_outcomes",
@@ -945,26 +1368,58 @@ const coachDrillExamples = [
     shot_area: "wedges",
     setup_steps: [
       "Set up on the range with targets at 100, 110, 120, 130, 140, 150, 155, and 160 meters.",
-      "Use appropriate irons and wedges for each distance.",
+      "Use appropriate irons and wedges for each distance."
     ],
     rules: [
       "Hit one shot per station per round (2 rounds = 16 total shots).",
       "Stations are shuffled each round. After each shot, tap the outcome.",
-      "Total score = sum of outcome points. Higher is better.",
+      "Total score = sum of outcome points. Higher is better."
     ],
     outcomes: [
-      { label: "Within 3m", points: 3 },
-      { label: "Within 5m", points: 2 },
-      { label: "On green, 5m+", points: 1 },
-      { label: "Missed short", points: 0 },
-      { label: "Missed long", points: -1 },
+      {
+        label: "Within 3m",
+        points: 3
+      },
+      {
+        label: "Within 5m",
+        points: 2
+      },
+      {
+        label: "On green, 5m+",
+        points: 1
+      },
+      {
+        label: "Missed short",
+        points: 0
+      },
+      {
+        label: "Missed long",
+        points: -1
+      }
     ],
-    stations: ["100m", "110m", "120m", "130m", "140m", "150m", "155m", "160m"],
+    stations: [
+      "100m",
+      "110m",
+      "120m",
+      "130m",
+      "140m",
+      "150m",
+      "155m",
+      "160m"
+    ],
     total_shots: 16,
     shuffle_stations: true,
     lower_is_better: false,
-    benchmarks: { hcp_0: 30, hcp_10: 20, hcp_20: 10 },
-    hcp: { input: "4", value: 4, band: "0_to_5" },
+    benchmarks: {
+      hcp_0: 30,
+      hcp_10: 20,
+      hcp_20: 10
+    },
+    hcp: {
+      input: "4",
+      value: 4,
+      band: "0_to_5"
+    }
   },
   {
     drill_type: "station_outcomes",
@@ -975,31 +1430,57 @@ const coachDrillExamples = [
     shot_area: "bunker",
     setup_steps: [
       "Find a greenside bunker with varied lies available.",
-      "Set up 6 stations with different lies and distances to the pin.",
+      "Set up 6 stations with different lies and distances to the pin."
     ],
     rules: [
       "Hit 2 rounds through all 6 stations (12 total shots).",
       "After each shot, tap the outcome. Stations are shuffled each round.",
-      "Total score = sum of outcome points. Higher is better.",
+      "Total score = sum of outcome points. Higher is better."
     ],
     outcomes: [
-      { label: "Inside 1m", points: 4 },
-      { label: "Within 2m", points: 2 },
-      { label: "On green, 2m+", points: 1 },
-      { label: "Missed green", points: -1 },
-      { label: "Still in bunker", points: -2 },
+      {
+        label: "Inside 1m",
+        points: 4
+      },
+      {
+        label: "Within 2m",
+        points: 2
+      },
+      {
+        label: "On green, 2m+",
+        points: 1
+      },
+      {
+        label: "Missed green",
+        points: -1
+      },
+      {
+        label: "Still in bunker",
+        points: -2
+      }
     ],
     stations: [
-      "5m flat lie", "8m uphill", "10m downhill lip",
-      "12m long bunker shot", "15m fairway bunker", "8m plugged lie",
+      "5m flat lie",
+      "8m uphill",
+      "10m downhill lip",
+      "12m long bunker shot",
+      "15m fairway bunker",
+      "8m plugged lie"
     ],
     total_shots: 12,
     shuffle_stations: true,
     lower_is_better: false,
-    benchmarks: { hcp_0: 32, hcp_10: 20, hcp_20: 10 },
-    hcp: { input: "10", value: 10, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 32,
+      hcp_10: 20,
+      hcp_20: 10
+    },
+    hcp: {
+      input: "10",
+      value: 10,
+      band: "6_to_12"
+    }
   },
-
   // ── CONDITIONAL ENTRY (additional examples) ─────────────────────────
   {
     drill_type: "conditional_entry",
@@ -1010,34 +1491,84 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Find a section of the practice green with noticeable break.",
-      "Set up 12 putt stations at 3–6m with varying breaks (right-to-left, left-to-right, uphill, downhill).",
+      "Set up 12 putt stations at 3–6m with varying breaks (right-to-left, left-to-right, uphill, downhill)."
     ],
     rules: [
       "Hit one putt per station. After each putt, answer two questions.",
       "Q1: Did the ball break the direction you predicted? Q2: Did it finish within 0.5m of the hole?",
       "Points are computed from your answers. Complete all 12 putts.",
-      "Total score = sum of points. Higher is better.",
+      "Total score = sum of points. Higher is better."
     ],
     questions: [
-      { text: "Did the ball break the correct direction?", conditional_on_previous: false },
-      { text: "Did it finish within 0.5m?", conditional_on_previous: false },
+      {
+        text: "Did the ball break the correct direction?",
+        conditional_on_previous: false
+      },
+      {
+        text: "Did it finish within 0.5m?",
+        conditional_on_previous: false
+      }
     ],
     scoring_combos: [
-      { answers: [true, true], points: 3, label: "Correct read + close" },
-      { answers: [true, false], points: 1, label: "Correct read + far" },
-      { answers: [false, true], points: 1, label: "Wrong read + close" },
-      { answers: [false, false], points: -1, label: "Wrong read + far" },
+      {
+        answers: [
+          true,
+          true
+        ],
+        points: 3,
+        label: "Correct read + close"
+      },
+      {
+        answers: [
+          true,
+          false
+        ],
+        points: 1,
+        label: "Correct read + far"
+      },
+      {
+        answers: [
+          false,
+          true
+        ],
+        points: 1,
+        label: "Wrong read + close"
+      },
+      {
+        answers: [
+          false,
+          false
+        ],
+        points: -1,
+        label: "Wrong read + far"
+      }
     ],
     total_shots: 12,
     shot_labels: [
-      "3m right-to-left", "4m left-to-right", "5m uphill right-break",
-      "3m downhill left-break", "6m right-to-left", "4m uphill straight",
-      "5m left-to-right", "3m double-break", "6m downhill right-break",
-      "4m sidehill", "5m uphill left-break", "3m downhill straight",
+      "3m right-to-left",
+      "4m left-to-right",
+      "5m uphill right-break",
+      "3m downhill left-break",
+      "6m right-to-left",
+      "4m uphill straight",
+      "5m left-to-right",
+      "3m double-break",
+      "6m downhill right-break",
+      "4m sidehill",
+      "5m uphill left-break",
+      "3m downhill straight"
     ],
     lower_is_better: false,
-    benchmarks: { hcp_0: 28, hcp_10: 18, hcp_20: 10 },
-    hcp: { input: "8", value: 8, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 28,
+      hcp_10: 18,
+      hcp_20: 10
+    },
+    hcp: {
+      input: "8",
+      value: 8,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "conditional_entry",
@@ -1048,34 +1579,82 @@ const coachDrillExamples = [
     shot_area: "chipping",
     setup_steps: [
       "Set up 10 different chip/pitch positions around a practice green.",
-      "Vary the lies, distances, and obstacles (rough, fringe, bunker edge, downhill).",
+      "Vary the lies, distances, and obstacles (rough, fringe, bunker edge, downhill)."
     ],
     rules: [
       "Play each position as a full up-and-down: chip/pitch then putt out.",
       "After each attempt, answer Q1: Did the chip finish on the green? Q2: Did you hole the putt?",
       "Complete all 10 up-and-down attempts.",
-      "Total score = sum of points. Higher is better.",
+      "Total score = sum of points. Higher is better."
     ],
     questions: [
-      { text: "Did the chip finish on the green?", conditional_on_previous: false },
-      { text: "Did you hole the putt?", conditional_on_previous: false },
+      {
+        text: "Did the chip finish on the green?",
+        conditional_on_previous: false
+      },
+      {
+        text: "Did you hole the putt?",
+        conditional_on_previous: false
+      }
     ],
     scoring_combos: [
-      { answers: [true, true], points: 3, label: "On green + holed putt" },
-      { answers: [true, false], points: 1, label: "On green + missed putt" },
-      { answers: [false, true], points: 1, label: "Missed green + holed" },
-      { answers: [false, false], points: -1, label: "Missed green + missed" },
+      {
+        answers: [
+          true,
+          true
+        ],
+        points: 3,
+        label: "On green + holed putt"
+      },
+      {
+        answers: [
+          true,
+          false
+        ],
+        points: 1,
+        label: "On green + missed putt"
+      },
+      {
+        answers: [
+          false,
+          true
+        ],
+        points: 1,
+        label: "Missed green + holed"
+      },
+      {
+        answers: [
+          false,
+          false
+        ],
+        points: -1,
+        label: "Missed green + missed"
+      }
     ],
     total_shots: 10,
     shot_labels: [
-      "10m chip from rough", "15m pitch over bunker", "5m bump-and-run",
-      "8m chip downhill", "20m pitch to back pin", "6m chip from fringe",
-      "12m chip from tight lie", "10m pitch to tucked pin",
-      "8m flop over bunker lip", "15m chip from heavy rough",
+      "10m chip from rough",
+      "15m pitch over bunker",
+      "5m bump-and-run",
+      "8m chip downhill",
+      "20m pitch to back pin",
+      "6m chip from fringe",
+      "12m chip from tight lie",
+      "10m pitch to tucked pin",
+      "8m flop over bunker lip",
+      "15m chip from heavy rough"
     ],
     lower_is_better: false,
-    benchmarks: { hcp_0: 22, hcp_10: 14, hcp_20: 6 },
-    hcp: { input: "16", value: 16, band: "13_to_20" },
+    benchmarks: {
+      hcp_0: 22,
+      hcp_10: 14,
+      hcp_20: 6
+    },
+    hcp: {
+      input: "16",
+      value: 16,
+      band: "13_to_20"
+    }
   },
   {
     drill_type: "conditional_entry",
@@ -1086,37 +1665,107 @@ const coachDrillExamples = [
     shot_area: "driver",
     setup_steps: [
       "Set up on the range with a 30m-wide fairway corridor.",
-      "Mark the center line and both edges clearly.",
+      "Mark the center line and both edges clearly."
     ],
     rules: [
       "Hit 10 drives. Each shot has a required shape (draw or fade) shown in the shot label.",
       "After each drive, answer three questions in sequence.",
       "Q1: Did you hit the required shape? Q2: Did you hit the fairway? Q3 (only if Q2=No): Within 10m of fairway?",
-      "Total score = sum of points. Higher is better.",
+      "Total score = sum of points. Higher is better."
     ],
     questions: [
-      { text: "Did you hit the required shape?", conditional_on_previous: false },
-      { text: "Did you hit the fairway?", conditional_on_previous: false },
-      { text: "Within 10m of fairway?", conditional_on_previous: true },
+      {
+        text: "Did you hit the required shape?",
+        conditional_on_previous: false
+      },
+      {
+        text: "Did you hit the fairway?",
+        conditional_on_previous: false
+      },
+      {
+        text: "Within 10m of fairway?",
+        conditional_on_previous: true
+      }
     ],
     scoring_combos: [
-      { answers: [true, true], points: 4, label: "Shape + fairway" },
-      { answers: [false, true], points: 2, label: "Wrong shape + fairway" },
-      { answers: [true, false, true], points: 1, label: "Shape + near fairway" },
-      { answers: [false, false, true], points: 0, label: "Wrong shape + near" },
-      { answers: [true, false, false], points: -1, label: "Shape + way off" },
-      { answers: [false, false, false], points: -2, label: "Wrong shape + way off" },
+      {
+        answers: [
+          true,
+          true
+        ],
+        points: 4,
+        label: "Shape + fairway"
+      },
+      {
+        answers: [
+          false,
+          true
+        ],
+        points: 2,
+        label: "Wrong shape + fairway"
+      },
+      {
+        answers: [
+          true,
+          false,
+          true
+        ],
+        points: 1,
+        label: "Shape + near fairway"
+      },
+      {
+        answers: [
+          false,
+          false,
+          true
+        ],
+        points: 0,
+        label: "Wrong shape + near"
+      },
+      {
+        answers: [
+          true,
+          false,
+          false
+        ],
+        points: -1,
+        label: "Shape + way off"
+      },
+      {
+        answers: [
+          false,
+          false,
+          false
+        ],
+        points: -2,
+        label: "Wrong shape + way off"
+      }
     ],
     total_shots: 10,
     shot_labels: [
-      "Draw", "Fade", "Draw", "Fade", "Draw",
-      "Fade", "Draw", "Fade", "Draw", "Fade",
+      "Draw",
+      "Fade",
+      "Draw",
+      "Fade",
+      "Draw",
+      "Fade",
+      "Draw",
+      "Fade",
+      "Draw",
+      "Fade"
     ],
     lower_is_better: false,
-    benchmarks: { hcp_0: 30, hcp_10: 18, hcp_20: 8 },
-    hcp: { input: "3", value: 3, band: "0_to_5" },
+    benchmarks: {
+      hcp_0: 30,
+      hcp_10: 18,
+      hcp_20: 8
+    },
+    hcp: {
+      input: "3",
+      value: 3,
+      band: "0_to_5"
+    }
   },
-
   // ── RETRY ENTRY (additional examples) ───────────────────────────────
   {
     drill_type: "retry_entry",
@@ -1127,28 +1776,48 @@ const coachDrillExamples = [
     shot_area: "putting",
     setup_steps: [
       "Set up 6 putt challenges on the practice green with varied breaks and distances.",
-      "Mark each starting position with a coin or tee.",
+      "Mark each starting position with a coin or tee."
     ],
     rules: [
       "Attempt each putt challenge. You must hole the putt to advance to the next one.",
       "If you miss, retry from the same position until you hole it.",
       "Challenges are shuffled randomly.",
-      "Score = total putts taken across all 6 challenges. Perfect = 6 (one attempt each).",
+      "Score = total putts taken across all 6 challenges. Perfect = 6 (one attempt each)."
     ],
     targets: [
-      { label: "2m straight" },
-      { label: "3m right-to-left" },
-      { label: "3m left-to-right" },
-      { label: "4m uphill" },
-      { label: "5m downhill" },
-      { label: "6m double-break" },
+      {
+        label: "2m straight"
+      },
+      {
+        label: "3m right-to-left"
+      },
+      {
+        label: "3m left-to-right"
+      },
+      {
+        label: "4m uphill"
+      },
+      {
+        label: "5m downhill"
+      },
+      {
+        label: "6m double-break"
+      }
     ],
     pass_label: "Holed",
     retry_label: "Missed",
     shuffle_targets: true,
     lower_is_better: true,
-    benchmarks: { hcp_0: 9, hcp_10: 14, hcp_20: 22 },
-    hcp: { input: "8", value: 8, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 9,
+      hcp_10: 14,
+      hcp_20: 22
+    },
+    hcp: {
+      input: "8",
+      value: 8,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "retry_entry",
@@ -1159,24 +1828,54 @@ const coachDrillExamples = [
     shot_area: "wedges",
     setup_steps: [
       "Set up on the range with targets at 50, 60, 70, 75, 80, 90, 100, and 110 meters.",
-      "Have appropriate wedges and short irons ready.",
+      "Have appropriate wedges and short irons ready."
     ],
     rules: [
       "Start at 50m. Land within 5m of the target to advance to the next distance.",
       "Miss the 5m zone = retry the same distance.",
       "Distances progress in order (50 → 60 → 70 → ... → 110m).",
-      "Score = total shots to complete all 8 distances. Perfect = 8.",
+      "Score = total shots to complete all 8 distances. Perfect = 8."
     ],
     targets: [
-      { label: "50m" }, { label: "60m" }, { label: "70m" }, { label: "75m" },
-      { label: "80m" }, { label: "90m" }, { label: "100m" }, { label: "110m" },
+      {
+        label: "50m"
+      },
+      {
+        label: "60m"
+      },
+      {
+        label: "70m"
+      },
+      {
+        label: "75m"
+      },
+      {
+        label: "80m"
+      },
+      {
+        label: "90m"
+      },
+      {
+        label: "100m"
+      },
+      {
+        label: "110m"
+      }
     ],
     pass_label: "Within 5m",
     retry_label: "Try Again",
     shuffle_targets: false,
     lower_is_better: true,
-    benchmarks: { hcp_0: 10, hcp_10: 16, hcp_20: 24 },
-    hcp: { input: "10", value: 10, band: "6_to_12" },
+    benchmarks: {
+      hcp_0: 10,
+      hcp_10: 16,
+      hcp_20: 24
+    },
+    hcp: {
+      input: "10",
+      value: 10,
+      band: "6_to_12"
+    }
   },
   {
     drill_type: "retry_entry",
@@ -1187,141 +1886,166 @@ const coachDrillExamples = [
     shot_area: "chipping",
     setup_steps: [
       "Set up around a practice green with access to rough, fringe, and a bunker edge.",
-      "Place a flag or towel as the target for each skill challenge.",
+      "Place a flag or towel as the target for each skill challenge."
     ],
     rules: [
       "Attempt each skill challenge. Execute the required shot to within the target zone to advance.",
       "If you fail, retry the same challenge.",
       "Challenges are shuffled randomly.",
-      "Score = total attempts across all 7 challenges. Perfect = 7.",
+      "Score = total attempts across all 7 challenges. Perfect = 7."
     ],
     targets: [
-      { label: "Bump-and-run 10m: within 2m" },
-      { label: "Flop over bunker: within 3m" },
-      { label: "Chip from tight lie: within 2m" },
-      { label: "Downhill chip 8m: within 2m" },
-      { label: "Chip from rough 12m: within 3m" },
-      { label: "Lob to back pin 15m: within 2m" },
-      { label: "Bump from fringe 5m: within 1m" },
+      {
+        label: "Bump-and-run 10m: within 2m"
+      },
+      {
+        label: "Flop over bunker: within 3m"
+      },
+      {
+        label: "Chip from tight lie: within 2m"
+      },
+      {
+        label: "Downhill chip 8m: within 2m"
+      },
+      {
+        label: "Chip from rough 12m: within 3m"
+      },
+      {
+        label: "Lob to back pin 15m: within 2m"
+      },
+      {
+        label: "Bump from fringe 5m: within 1m"
+      }
     ],
     pass_label: "Hit Target",
     retry_label: "Try Again",
     shuffle_targets: true,
     lower_is_better: true,
-    benchmarks: { hcp_0: 9, hcp_10: 14, hcp_20: 22 },
-    hcp: { input: "15", value: 15, band: "13_to_20" },
-  },
-]
-
-// Validate examples at load time
-for (const ex of coachDrillExamples) {
-  const r = drillSchema.safeParse(ex)
-  if (!r.success) throw new Error(`Invalid coach example: ${r.error.message}`)
-}
-
-/* ------------------------------------------------------------------ */
-/*  Retry hint builder                                                 */
-/* ------------------------------------------------------------------ */
-
-const DRILL_TYPES = ["points", "score_entry", "station_entry", "station_outcomes", "conditional_entry", "retry_entry"] as const
-type DrillType = (typeof DRILL_TYPES)[number]
-
-const REQUIRED_FIELDS: Record<DrillType, string[]> = {
-  points: ["outcomes", "target_points", "distances", "end_condition"],
-  score_entry: ["score_label", "prompt"],
-  station_entry: ["stations", "station_score_min", "station_score_max", "station_score_label"],
-  station_outcomes: ["outcomes", "stations", "total_shots", "shuffle_stations"],
-  conditional_entry: ["questions", "scoring_combos", "total_shots"],
-  retry_entry: ["targets", "pass_label", "retry_label", "shuffle_targets"],
-}
-
-function isDrillType(s: unknown): s is DrillType {
-  return typeof s === "string" && DRILL_TYPES.includes(s as DrillType)
-}
-
-function buildRetryHint(attempted: unknown, zodErrors?: string): string {
-  const obj =
-    attempted != null && typeof attempted === "object"
-      ? (attempted as Record<string, unknown>)
-      : null
-  const dt = obj && "drill_type" in obj ? obj.drill_type : undefined
-
-  const errorDetail = zodErrors ? ` Zod errors: ${zodErrors}.` : ""
-
-  if (isDrillType(dt)) {
-    const required = REQUIRED_FIELDS[dt]
-    const missing = required.filter(
-      (k) =>
-        !obj ||
-        !(k in obj) ||
-        obj[k] === undefined ||
-        (Array.isArray(obj[k]) && (obj[k] as unknown[]).length === 0)
-    )
-    const clause =
-      missing.length > 0
-        ? `Missing fields for "${dt}": ${missing.join(", ")}. `
-        : `"${dt}" validation failed. Required: ${required.join(", ")}. `
-    return `Schema validation failed. ${clause}${errorDetail} Output only valid JSON.`
+    benchmarks: {
+      hcp_0: 9,
+      hcp_10: 14,
+      hcp_20: 22
+    },
+    hcp: {
+      input: "15",
+      value: 15,
+      band: "13_to_20"
+    }
   }
-  return `Schema validation failed. drill_type must be one of: "points", "score_entry", "station_entry", "station_outcomes", "conditional_entry", "retry_entry". Include all required fields.${errorDetail} Output only valid JSON.`
+];
+// Validate examples at load time
+for (const ex of coachDrillExamples){
+  const r = drillSchema.safeParse(ex);
+  if (!r.success) throw new Error(`Invalid coach example: ${r.error.message}`);
 }
-
-/* ------------------------------------------------------------------ */
-/*  Prompt building                                                    */
-/* ------------------------------------------------------------------ */
-
-const SHOT_AREAS = [
+/* ------------------------------------------------------------------ */ /*  Retry hint builder                                                 */ /* ------------------------------------------------------------------ */ const DRILL_TYPES = [
+  "points",
+  "score_entry",
+  "station_entry",
+  "station_outcomes",
+  "conditional_entry",
+  "retry_entry"
+];
+const REQUIRED_FIELDS = {
+  points: [
+    "outcomes",
+    "target_points",
+    "distances",
+    "end_condition"
+  ],
+  score_entry: [
+    "score_label",
+    "prompt"
+  ],
+  station_entry: [
+    "stations",
+    "station_score_min",
+    "station_score_max",
+    "station_score_label"
+  ],
+  station_outcomes: [
+    "outcomes",
+    "stations",
+    "total_shots",
+    "shuffle_stations"
+  ],
+  conditional_entry: [
+    "questions",
+    "scoring_combos",
+    "total_shots"
+  ],
+  retry_entry: [
+    "targets",
+    "pass_label",
+    "retry_label",
+    "shuffle_targets"
+  ]
+};
+function isDrillType(s) {
+  return typeof s === "string" && DRILL_TYPES.includes(s);
+}
+function buildRetryHint(attempted, zodErrors) {
+  const obj = attempted != null && typeof attempted === "object" ? attempted : null;
+  const dt = obj && "drill_type" in obj ? obj.drill_type : undefined;
+  const errorDetail = zodErrors ? ` Zod errors: ${zodErrors}.` : "";
+  if (isDrillType(dt)) {
+    const required = REQUIRED_FIELDS[dt];
+    const missing = required.filter((k)=>!obj || !(k in obj) || obj[k] === undefined || Array.isArray(obj[k]) && obj[k].length === 0);
+    const clause = missing.length > 0 ? `Missing fields for "${dt}": ${missing.join(", ")}. ` : `"${dt}" validation failed. Required: ${required.join(", ")}. `;
+    return `Schema validation failed. ${clause}${errorDetail} Output only valid JSON.`;
+  }
+  return `Schema validation failed. drill_type must be one of: "points", "score_entry", "station_entry", "station_outcomes", "conditional_entry", "retry_entry". Include all required fields.${errorDetail} Output only valid JSON.`;
+}
+/* ------------------------------------------------------------------ */ /*  Prompt building                                                    */ /* ------------------------------------------------------------------ */ const SHOT_AREAS = [
   "putting",
   "chipping",
   "pitching",
   "bunker",
   "wedges",
   "driver",
-  "mixed", // legacy — kept for existing drills
-] as const
-
-function isShotArea(s: unknown): boolean {
-  if (typeof s !== "string") return false
+  "mixed"
+];
+function isShotArea(s) {
+  if (typeof s !== "string") return false;
   // Accept single area or comma-separated list (e.g. "putting,chipping")
-  const parts = s.split(",").map((p) => p.trim()).filter(Boolean)
-  return parts.length > 0 && parts.every((p) => (SHOT_AREAS as readonly string[]).includes(p))
+  const parts = s.split(",").map((p)=>p.trim()).filter(Boolean);
+  return parts.length > 0 && parts.every((p)=>SHOT_AREAS.includes(p));
 }
-
 const PRACTICE_AREAS = [
   "driving_range",
   "short_game_area",
   "on_course",
-  "indoor_simulator",
-] as const
-
+  "indoor_simulator"
+];
 const MEASUREMENT_METHODS = [
   "launch_monitor",
-  "visual_manual",
-] as const
-
+  "visual_manual"
+];
 // Legacy values that map to current options
-const MEASUREMENT_LEGACY: Record<string, string> = {
+const MEASUREMENT_LEGACY = {
   simulator_builtin: "launch_monitor",
-  no_measurement: "visual_manual",
+  no_measurement: "visual_manual"
+};
+function isPracticeArea(s) {
+  return typeof s === "string" && PRACTICE_AREAS.includes(s);
 }
-
-function isPracticeArea(s: unknown): boolean {
-  return typeof s === "string" && (PRACTICE_AREAS as readonly string[]).includes(s)
+function isMeasurementMethod(s) {
+  if (typeof s !== "string") return false;
+  return MEASUREMENT_METHODS.includes(s) || s in MEASUREMENT_LEGACY;
 }
-
-function isMeasurementMethod(s: unknown): boolean {
-  if (typeof s !== "string") return false
-  return (MEASUREMENT_METHODS as readonly string[]).includes(s) || s in MEASUREMENT_LEGACY
+function normalizeMeasurementMethod(s) {
+  return MEASUREMENT_LEGACY[s] ?? s;
 }
-
-function normalizeMeasurementMethod(s: string): string {
-  return MEASUREMENT_LEGACY[s] ?? s
-}
-
-function buildSystemPrompt(retrievedExamplesBlock = ""): string {
-  const examplesJson = JSON.stringify(coachDrillExamples, null, 2)
-
+function buildSystemPrompt(retrievedExamplesBlock = "") {
+  const examplesJson = JSON.stringify(coachDrillExamples, null, 2);
   return `You are a golf coach creating structured practice drills. Output only valid JSON, no markdown or extra text.
+
+LANGUAGE
+- Detect the language of the player's drill description / goal (the user's natural-language input).
+- If the user wrote in a non-English language (e.g. Swedish, Spanish, German, Norwegian, French), produce ALL human-readable text VALUES in that same language: "title", "goal", "rules", "setup_steps", "score_label", "prompt", "score_unit", "station_score_label", "stations" labels, "questions[].text", "shot_labels", "pass_label", "retry_label", "targets[].label", "outcomes[].label", "end_condition", and any other free-text string field.
+- These fields stay in canonical English / enum form REGARDLESS of input language: "drill_type", "shot_area", "icon" (SF Symbol name), "hcp.band", and all numeric fields. JSON keys and the JSON structure itself ALWAYS stay in English.
+- If the input is in English or the language is ambiguous, default to English.
+- Example: user writes "Putta 5 puttar från 1m, måste hola 4 av 5" → Swedish. Output title in Swedish, rules in Swedish, but shot_area stays "putting" and drill_type stays e.g. "score_entry".
 
 Create exactly ONE drill tuned to the player's HCP band. Adjust distances, targets, and penalties directly — do NOT include a difficulty_by_band object.
 
@@ -1655,74 +2379,53 @@ EXAMPLES (match structure exactly):
 
 ${examplesJson}
 ${retrievedExamplesBlock}
-Output only valid JSON.`
+Output only valid JSON.`;
 }
-
-function getHcpContext(band: HcpBand): string {
-  switch (band) {
+function getHcpContext(band) {
+  switch(band){
     case "plus_5_to_0":
-      return "Elite player. Tour-level distances, tight targets, harsh penalties. 5-6 distinct outcomes."
+      return "Elite player. Tour-level distances, tight targets, harsh penalties. 5-6 distinct outcomes.";
     case "0_to_5":
-      return "Strong player. Challenging distances, moderate targets. 5-6 outcomes with nuance."
+      return "Strong player. Challenging distances, moderate targets. 5-6 outcomes with nuance.";
     case "6_to_12":
-      return "Solid mid-handicapper. Standard distances, balanced risk/reward. 4-5 outcomes."
+      return "Solid mid-handicapper. Standard distances, balanced risk/reward. 4-5 outcomes.";
     case "13_to_20":
-      return "Improving player. Moderate distances, achievable targets, encouraging scoring. 4-5 outcomes."
+      return "Improving player. Moderate distances, achievable targets, encouraging scoring. 4-5 outcomes.";
     case "21_to_30":
-      return "Developing player. Shorter distances, wider targets, gentler penalties. 3-4 outcomes."
+      return "Developing player. Shorter distances, wider targets, gentler penalties. 3-4 outcomes.";
     case "31_plus":
-      return "Beginner. Very short distances, forgiving targets, focus on fun and repetition. 3-4 simple outcomes."
+      return "Beginner. Very short distances, forgiving targets, focus on fun and repetition. 3-4 simple outcomes.";
     case "no_hcp":
-      return "Unknown level. Use moderate difficulty suitable for an average recreational golfer."
+      return "Unknown level. Use moderate difficulty suitable for an average recreational golfer.";
   }
 }
-
-function getDrillTypeNudge(shotArea: string | null): string | null {
+function getDrillTypeNudge(shotArea) {
   // Random suggestion from underrepresented types to counterbalance example bias
-  const underrepresented = ["station_entry", "station_outcomes", "conditional_entry", "retry_entry"] as const
-  const suggested = underrepresented[Math.floor(Math.random() * underrepresented.length)]
-  const typeSuggestion = ` For variety, consider trying "${suggested}" if it fits the concept.`
-
-  if (!shotArea) return "Consider using score_entry drill type for this one." + typeSuggestion
+  const underrepresented = [
+    "station_entry",
+    "station_outcomes",
+    "conditional_entry",
+    "retry_entry"
+  ];
+  const suggested = underrepresented[Math.floor(Math.random() * underrepresented.length)];
+  const typeSuggestion = ` For variety, consider trying "${suggested}" if it fits the concept.`;
+  if (!shotArea) return "Consider using score_entry drill type for this one." + typeSuggestion;
   // Multi-area (comma-separated) or legacy "mixed"
-  if (shotArea.includes(",") || shotArea === "mixed")
-    return "This drill covers multiple shot areas — consider station_outcomes (fixed stations + outcome grading) or score_entry." + typeSuggestion
-  if (shotArea === "bunker" || shotArea === "driver")
-    return "Consider: score_entry (success count out of N), station_outcomes (fixed stations + outcome buttons), or retry_entry (pass/retry through targets)." + typeSuggestion
-  if (shotArea === "putting")
-    return "All six drill types work for putting. Points: make/miss pressure, variable length. Station_outcomes: fixed stations with proximity grading. Station_entry: per-distance numeric score (like PGA Tour 18). Score_entry: survival, gate, clock, streak. Conditional_entry: multi-criteria per-putt evaluation. Retry_entry: master each target before advancing. Pick whichever fits the drill concept best." + typeSuggestion
-  if (shotArea === "wedges" || shotArea === "pitching" || shotArea === "chipping")
-    return "Consider: station_outcomes (fixed distances + outcome buttons), conditional_entry (multi-criteria per-shot), retry_entry (pass/retry ladder), points (variable-length outcome buttons), or score_entry (single number at end)." + typeSuggestion
-  return typeSuggestion
+  if (shotArea.includes(",") || shotArea === "mixed") return "This drill covers multiple shot areas — consider station_outcomes (fixed stations + outcome grading) or score_entry." + typeSuggestion;
+  if (shotArea === "bunker" || shotArea === "driver") return "Consider: score_entry (success count out of N), station_outcomes (fixed stations + outcome buttons), or retry_entry (pass/retry through targets)." + typeSuggestion;
+  if (shotArea === "putting") return "All six drill types work for putting. Points: make/miss pressure, variable length. Station_outcomes: fixed stations with proximity grading. Station_entry: per-distance numeric score (like PGA Tour 18). Score_entry: survival, gate, clock, streak. Conditional_entry: multi-criteria per-putt evaluation. Retry_entry: master each target before advancing. Pick whichever fits the drill concept best." + typeSuggestion;
+  if (shotArea === "wedges" || shotArea === "pitching" || shotArea === "chipping") return "Consider: station_outcomes (fixed distances + outcome buttons), conditional_entry (multi-criteria per-shot), retry_entry (pass/retry ladder), points (variable-length outcome buttons), or score_entry (single number at end)." + typeSuggestion;
+  return typeSuggestion;
 }
-
-interface GenerateBody {
-  goal?: string
-  hcpInput?: string | null
-  timeMinutes?: number
-  shotArea?: string | null
-  baseDrill?: Record<string, unknown> | null
-  existingId?: string | null
-  practiceArea?: string | null
-  measurementMethod?: string | null
-  flagDistances?: number[] | null
-}
-
-function buildUserPrompt(body: GenerateBody, parsed: ParsedHcp): string {
-  const parts: string[] = []
-
+function buildUserPrompt(body, parsed) {
+  const parts = [];
   if (body.baseDrill) {
     // Remix mode: redesign the drill based on the player's request
     // Strip hcp from baseDrill — the system overwrites it with parsedHcp anyway
-    const { hcp: _hcp, ...baseDrillClean } = body.baseDrill
-    parts.push(
-      `Remix this existing drill based on the player's request. Here is the original drill:\n\n${JSON.stringify(baseDrillClean, null, 2)}\n`
-    )
-    parts.push(
-      `Requested changes: ${body.goal || "make it slightly different"}`
-    )
-    parts.push(
-      `REMIX RULES — BE CONSERVATIVE:
+    const { hcp: _hcp, ...baseDrillClean } = body.baseDrill;
+    parts.push(`Remix this existing drill based on the player's request. Here is the original drill:\n\n${JSON.stringify(baseDrillClean, null, 2)}\n`);
+    parts.push(`Requested changes: ${body.goal || "make it slightly different"}`);
+    parts.push(`REMIX RULES — BE CONSERVATIVE:
 - ONLY change what the player explicitly asked for. Preserve EVERYTHING else from the original drill.
 - If the player asks to reduce holes/stations (e.g. "9 holes"), keep the SAME scoring system, distance structure, and drill_type. Just pick a subset of distances or reduce repetitions.
 - If the player asks to change difficulty, adjust targets and penalties but keep the same drill structure and mechanics.
@@ -1732,347 +2435,311 @@ function buildUserPrompt(body: GenerateBody, parsed: ParsedHcp): string {
 - Distances/stations: REDESIGN the full set to be well-distributed across the original range. If increasing from 12→15, don't just append extras — create a fresh set of 15 distances that spans the same min-to-max range with good spacing. If reducing from 18→9, pick a well-distributed subset (keep the range and variety). Never just tack on or remove a few values at the edges.
 - Rules, setup_steps, end_condition, and outcomes must ALL be internally consistent with each other.
 - CRITICAL: Check every rule against every other rule for contradictions. A common mistake: one rule says "a miss resets that position" (implying the drill continues) while another rule says "count putts before a miss" (implying the drill ends on a miss). Pick ONE miss mechanic and make ALL rules consistent with it.
-- Generate a new title that reflects the changes.`
-    )
+- Generate a new title that reflects the changes.`);
   } else {
     // Normal generation mode
-    const goal = body.goal || "general practice"
-    parts.push(`Design a practice drill for this goal: ${goal}`)
-
+    const goal = body.goal || "general practice";
+    parts.push(`Design a practice drill for this goal: ${goal}`);
     // Detect multi-shot goals (comma-separated shot descriptions)
     // and reinforce that ALL shots must appear in the drill
-    const commaSegments = goal.split(",").map((s) => s.trim()).filter(Boolean)
+    const commaSegments = goal.split(",").map((s)=>s.trim()).filter(Boolean);
     if (commaSegments.length >= 3) {
-      parts.push(
-        `IMPORTANT: The player listed ${commaSegments.length} distinct shots/scenarios. The drill MUST include a station or target for EACH one. Do not reduce this to a single-shot drill.`
-      )
+      parts.push(`IMPORTANT: The player listed ${commaSegments.length} distinct shots/scenarios. The drill MUST include a station or target for EACH one. Do not reduce this to a single-shot drill.`);
     }
   }
-
-  parts.push(
-    `Player: HCP band ${parsed.band}${parsed.input != null ? ` (handicap ${parsed.value})` : ""}. ${getHcpContext(parsed.band)}`
-  )
-  if (typeof body.timeMinutes === "number")
-    parts.push(`Time budget: ${body.timeMinutes} minutes.`)
+  parts.push(`Player: HCP band ${parsed.band}${parsed.input != null ? ` (handicap ${parsed.value})` : ""}. ${getHcpContext(parsed.band)}`);
+  if (typeof body.timeMinutes === "number") parts.push(`Time budget: ${body.timeMinutes} minutes.`);
   if (body.shotArea) {
     if (body.shotArea.includes(",")) {
-      const areas = body.shotArea.split(",").map((a) => a.trim())
-      parts.push(`Shot areas: ${areas.join(", ")}. Design a drill that incorporates these areas.`)
+      const areas = body.shotArea.split(",").map((a)=>a.trim());
+      parts.push(`Shot areas: ${areas.join(", ")}. Design a drill that incorporates these areas.`);
     } else {
-      parts.push(`Shot area: ${body.shotArea}.`)
+      parts.push(`Shot area: ${body.shotArea}.`);
     }
   }
-
   // Environment & equipment context
   if (body.practiceArea) {
-    const areaDescriptions: Record<string, string> = {
+    const areaDescriptions = {
       driving_range: "Driving range with open bays and distance markers on the ground.",
       short_game_area: "Short game practice area with flag targets.",
       on_course: "On-course practice (real holes, real conditions).",
-      indoor_simulator: "Indoor simulator environment.",
-    }
-    parts.push(`Practice area: ${areaDescriptions[body.practiceArea] || body.practiceArea}`)
-
+      indoor_simulator: "Indoor simulator environment."
+    };
+    parts.push(`Practice area: ${areaDescriptions[body.practiceArea] || body.practiceArea}`);
     if (body.practiceArea === "short_game_area" && body.flagDistances && body.flagDistances.length > 0) {
-      const sorted = [...body.flagDistances].sort((a, b) => a - b)
-      parts.push(`Available flag distances: ${sorted.join("m, ")}m. Use ONLY these distances for the drill.`)
+      const sorted = [
+        ...body.flagDistances
+      ].sort((a, b)=>a - b);
+      parts.push(`Available flag distances: ${sorted.join("m, ")}m. Use ONLY these distances for the drill.`);
     }
   }
-
   if (body.measurementMethod) {
-    const measureDescriptions: Record<string, string> = {
+    const measureDescriptions = {
       launch_monitor: "Player has shot tracking (launch monitor, simulator, or similar device) — use exact carry distances and dispersion metrics in outcomes.",
-      visual_manual: "Player measures visually (pacing, landing near flags) — use visual proximity outcomes (e.g. 'within 3m of flag'). Use round distances. Focus on process and observable outcomes.",
-    }
-    parts.push(measureDescriptions[body.measurementMethod] || "")
+      visual_manual: "Player measures visually (pacing, landing near flags) — use visual proximity outcomes (e.g. 'within 3m of flag'). Use round distances. Focus on process and observable outcomes."
+    };
+    parts.push(measureDescriptions[body.measurementMethod] || "");
   }
-
   if (!body.baseDrill) {
-    const nudge = getDrillTypeNudge(body.shotArea ?? null)
-    if (nudge) parts.push(nudge)
+    const nudge = getDrillTypeNudge(body.shotArea ?? null);
+    if (nudge) parts.push(nudge);
   }
-
-  parts.push(`Variation seed: ${Math.random().toString(36).slice(2, 6)}`)
-  return parts.join("\n")
+  parts.push(`Variation seed: ${Math.random().toString(36).slice(2, 6)}`);
+  return parts.join("\n");
 }
-
-/* ------------------------------------------------------------------ */
-/*  OpenAI call                                                        */
-/* ------------------------------------------------------------------ */
-
-async function callAI(
-  systemPrompt: string,
-  userContent: string
-): Promise<string> {
-  const apiKey = Deno.env.get("OPENAI_API_KEY")
-  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured")
-
+/* ------------------------------------------------------------------ */ /*  OpenAI call                                                        */ /* ------------------------------------------------------------------ */ async function callAI(systemPrompt, userContent) {
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       model: "gpt-4o",
-      response_format: { type: "json_object" },
+      response_format: {
+        type: "json_object"
+      },
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
-    }),
-  })
-
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: userContent
+        }
+      ]
+    })
+  });
   if (!res.ok) {
-    const text = await res.text()
-    console.error("OpenAI error:", res.status, text)
-    throw new Error(`OpenAI returned ${res.status}`)
+    const text = await res.text();
+    console.error("OpenAI error:", res.status, text);
+    throw new Error(`OpenAI returned ${res.status}`);
   }
-
-  const data = await res.json()
-  const content = data.choices?.[0]?.message?.content
-  if (!content || typeof content !== "string")
-    throw new Error("Empty or invalid AI response")
-  return content
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content || typeof content !== "string") throw new Error("Empty or invalid AI response");
+  return content;
 }
-
-/* ------------------------------------------------------------------ */
-/*  Lie standardization (post-processing)                              */
-/* ------------------------------------------------------------------ */
-
-const SHORT_GAME_AREAS = new Set(["chipping", "pitching", "bunker", "wedges"])
-
+/* ------------------------------------------------------------------ */ /*  Lie standardization (post-processing)                              */ /* ------------------------------------------------------------------ */ const SHORT_GAME_AREAS = new Set([
+  "chipping",
+  "pitching",
+  "bunker",
+  "wedges"
+]);
 // Regex matching descriptive lie variations that should be standardized
 const LIE_PATTERNS = [
   /\b(?:tight|bare|clean|fluffy|thick|thin|good|bad|perfect)\s+lie\b/gi,
   /\b(?:downhill|uphill|sidehill|side-hill)\s+lie\b/gi,
   /\b(?:plugged|buried|fried[- ]egg)\s+(?:lie|bunker)?\b/gi,
-  /\b(?:sitting down|sitting up)\b/gi,
-]
-
-function userRequestedLieType(goal: string | undefined): boolean {
-  if (!goal) return false
-  const lower = goal.toLowerCase()
-  return LIE_PATTERNS.some((p) => {
-    p.lastIndex = 0
-    return p.test(lower)
-  })
+  /\b(?:sitting down|sitting up)\b/gi
+];
+function userRequestedLieType(goal) {
+  if (!goal) return false;
+  const lower = goal.toLowerCase();
+  return LIE_PATTERNS.some((p)=>{
+    p.lastIndex = 0;
+    return p.test(lower);
+  });
 }
-
 /**
  * Replace non-standard lie descriptions in setup_steps and rules
  * with standardized phrasing, unless the user explicitly requested lies.
- */
-function standardizeLies(drill: Drill, goal: string | undefined): Drill {
-  if (!SHORT_GAME_AREAS.has(drill.shot_area)) return drill
-  if (userRequestedLieType(goal)) return drill
-
-  function cleanText(text: string): string {
-    let cleaned = text
-    for (const pattern of LIE_PATTERNS) {
+ */ function standardizeLies(drill, goal) {
+  if (!SHORT_GAME_AREAS.has(drill.shot_area)) return drill;
+  if (userRequestedLieType(goal)) return drill;
+  function cleanText(text) {
+    let cleaned = text;
+    for (const pattern of LIE_PATTERNS){
       // Reset lastIndex before each use since patterns are global
-      pattern.lastIndex = 0
-      cleaned = cleaned.replace(pattern, "")
+      pattern.lastIndex = 0;
+      cleaned = cleaned.replace(pattern, "");
     }
     // Clean up any double spaces or trailing commas from removals
-    return cleaned.replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").replace(/,\s*\./g, ".").trim()
+    return cleaned.replace(/\s{2,}/g, " ").replace(/,\s*,/g, ",").replace(/,\s*\./g, ".").trim();
   }
-
   return {
     ...drill,
     setup_steps: drill.setup_steps.map(cleanText),
-    rules: drill.rules.map(cleanText),
-  } as Drill
+    rules: drill.rules.map(cleanText)
+  };
 }
-
-/* ------------------------------------------------------------------ */
-/*  Drill generation with retry                                        */
-/* ------------------------------------------------------------------ */
-
-async function generateDrill(
-  body: GenerateBody,
-  parsedHcp: ParsedHcp,
-  retrievedBlock = "",
-  retryHint?: string
-): Promise<Drill> {
-  const systemPrompt = buildSystemPrompt(retrievedBlock)
-  let userContent = buildUserPrompt(body, parsedHcp)
-  if (retryHint) userContent += `\n\n[RETRY] ${retryHint}`
-
-  const raw = await callAI(systemPrompt, userContent)
-
-  let parsed: unknown
+/* ------------------------------------------------------------------ */ /*  Drill generation with retry                                        */ /* ------------------------------------------------------------------ */ async function generateDrill(body, parsedHcp, retrievedBlock = "", retryHint) {
+  const systemPrompt = buildSystemPrompt(retrievedBlock);
+  let userContent = buildUserPrompt(body, parsedHcp);
+  if (retryHint) userContent += `\n\n[RETRY] ${retryHint}`;
+  const raw = await callAI(systemPrompt, userContent);
+  let parsed;
   try {
-    parsed = JSON.parse(raw)
-  } catch {
-    throw new Error("AI response was not valid JSON")
+    parsed = JSON.parse(raw);
+  } catch  {
+    throw new Error("AI response was not valid JSON");
   }
-
-  const result = drillSchema.safeParse(parsed)
+  const result = drillSchema.safeParse(parsed);
   if (result.success) {
     const drill = {
       ...result.data,
       hcp: {
         input: parsedHcp.input,
         value: parsedHcp.value,
-        band: parsedHcp.band,
-      },
-    } as Drill
-    return standardizeLies(drill, body.goal)
+        band: parsedHcp.band
+      }
+    };
+    return standardizeLies(drill, body.goal);
   }
-
-  const zodErrors = result.error.issues
-    .slice(0, 5)
-    .map((i) => `${i.path.join(".")}: ${i.message}`)
-    .join("; ")
-  console.error("[generate-drill] Zod errors:", zodErrors)
-
-  if (retryHint) throw new Error("Drill schema validation failed after retry")
-  const hint = buildRetryHint(parsed, zodErrors)
-  return generateDrill(body, parsedHcp, retrievedBlock, hint)
+  const zodErrors = result.error.issues.slice(0, 5).map((i)=>`${i.path.join(".")}: ${i.message}`).join("; ");
+  console.error("[generate-drill] Zod errors:", zodErrors);
+  if (retryHint) throw new Error("Drill schema validation failed after retry");
+  const hint = buildRetryHint(parsed, zodErrors);
+  return generateDrill(body, parsedHcp, retrievedBlock, hint);
 }
-
-/* ------------------------------------------------------------------ */
-/*  Metadata Extraction (for RAG-lite retrieval)                       */
-/* ------------------------------------------------------------------ */
-
-function extractDrillMetadata(
-  drill: z.infer<typeof drillSchema>,
-  parsedHcp: ParsedHcp
-): {
-  focus_area: string
-  difficulty: string | null
-  goal_tags: string[]
-} {
+/* ------------------------------------------------------------------ */ /*  Metadata Extraction (for RAG-lite retrieval)                       */ /* ------------------------------------------------------------------ */ function extractDrillMetadata(drill, parsedHcp) {
   // Map shot_area to focus_area
-  const areaMap: Record<string, string> = {
+  const areaMap = {
     putting: "putting",
     chipping: "short_game",
     pitching: "short_game",
     bunker: "short_game",
     wedges: "approach",
     driver: "driving",
-    mixed: "mixed",
-  }
-  const primaryArea = drill.shot_area.split(",")[0].trim().toLowerCase()
-  const focus_area = areaMap[primaryArea] ?? "mixed"
-
+    mixed: "mixed"
+  };
+  const primaryArea = drill.shot_area.split(",")[0].trim().toLowerCase();
+  const focus_area = areaMap[primaryArea] ?? "mixed";
   // Map HCP band to difficulty
-  let difficulty: string | null = null
+  let difficulty = null;
   if (parsedHcp.value != null) {
-    if (parsedHcp.value <= 5) difficulty = "advanced"
-    else if (parsedHcp.value <= 15) difficulty = "intermediate"
-    else difficulty = "beginner"
+    if (parsedHcp.value <= 5) difficulty = "advanced";
+    else if (parsedHcp.value <= 15) difficulty = "intermediate";
+    else difficulty = "beginner";
   } else {
-    const band = drill.hcp.band
-    if (band === "plus_5_to_0" || band === "0_to_5") difficulty = "advanced"
-    else if (band === "6_to_12" || band === "13_to_20") difficulty = "intermediate"
-    else if (band === "21_to_30" || band === "31_plus") difficulty = "beginner"
+    const band = drill.hcp.band;
+    if (band === "plus_5_to_0" || band === "0_to_5") difficulty = "advanced";
+    else if (band === "6_to_12" || band === "13_to_20") difficulty = "intermediate";
+    else if (band === "21_to_30" || band === "31_plus") difficulty = "beginner";
   }
-
   // Extract goal tags from title + goal text (keyword matching)
-  const goalTags: string[] = []
-  const combined = `${drill.title} ${drill.goal}`.toLowerCase()
-  const tagKeywords: Record<string, string[]> = {
-    distance_control: ["distance", "lag", "speed", "pace"],
-    accuracy: ["accuracy", "target", "precision", "proximity"],
-    short_sided: ["short-sided", "short sided", "tucked"],
-    start_line: ["start line", "alignment", "aim"],
-    break_reading: ["break", "read", "slope"],
-    up_and_down: ["up and down", "up & down", "scramble", "save"],
-    consistency: ["consistency", "consistent", "streak", "consecutive"],
-    pressure: ["pressure", "clutch", "confidence"],
-    shape: ["shape", "draw", "fade", "cut"],
-    bunker: ["bunker", "sand"],
-    flop: ["flop", "lob"],
-    bump_and_run: ["bump-and-run", "bump and run"],
-  }
-  for (const [tag, keywords] of Object.entries(tagKeywords)) {
-    if (keywords.some((kw) => combined.includes(kw))) {
-      goalTags.push(tag)
+  const goalTags = [];
+  const combined = `${drill.title} ${drill.goal}`.toLowerCase();
+  const tagKeywords = {
+    distance_control: [
+      "distance",
+      "lag",
+      "speed",
+      "pace"
+    ],
+    accuracy: [
+      "accuracy",
+      "target",
+      "precision",
+      "proximity"
+    ],
+    short_sided: [
+      "short-sided",
+      "short sided",
+      "tucked"
+    ],
+    start_line: [
+      "start line",
+      "alignment",
+      "aim"
+    ],
+    break_reading: [
+      "break",
+      "read",
+      "slope"
+    ],
+    up_and_down: [
+      "up and down",
+      "up & down",
+      "scramble",
+      "save"
+    ],
+    consistency: [
+      "consistency",
+      "consistent",
+      "streak",
+      "consecutive"
+    ],
+    pressure: [
+      "pressure",
+      "clutch",
+      "confidence"
+    ],
+    shape: [
+      "shape",
+      "draw",
+      "fade",
+      "cut"
+    ],
+    bunker: [
+      "bunker",
+      "sand"
+    ],
+    flop: [
+      "flop",
+      "lob"
+    ],
+    bump_and_run: [
+      "bump-and-run",
+      "bump and run"
+    ]
+  };
+  for (const [tag, keywords] of Object.entries(tagKeywords)){
+    if (keywords.some((kw)=>combined.includes(kw))) {
+      goalTags.push(tag);
     }
   }
-
-  return { focus_area, difficulty, goal_tags: goalTags }
+  return {
+    focus_area,
+    difficulty,
+    goal_tags: goalTags
+  };
 }
-
-/* ------------------------------------------------------------------ */
-/*  RAG-lite: Retrieve + Format + Critic                               */
-/* ------------------------------------------------------------------ */
-
-interface RetrievedDrill {
-  id: string
-  title: string
-  focus_area: string
-  difficulty: string | null
-  goal_tags: string[]
-  drill_type: string
-  shot_area: string
-  goal: string
-  setup_steps: string[]
-  rules: string[]
-  outcomes: Array<{ label: string; points: number }> | null
-  time_minutes: number
-  lower_is_better: boolean
-  quality_score: number
-}
-
 /**
  * Format a retrieved drill into a compact text snippet for prompt injection.
  * ~5 lines per drill to keep token usage reasonable.
- */
-function formatDrillSnippet(d: RetrievedDrill, index: number): string {
-  const lines: string[] = []
-  lines.push(`${index}. "${d.title}" [${d.drill_type}, ${d.shot_area}, ${d.time_minutes}min]`)
-  lines.push(`   Objective: ${d.goal}`)
-  lines.push(`   Setup: ${(d.setup_steps || []).slice(0, 2).join(" | ")}`)
-  lines.push(`   Rules: ${(d.rules || []).slice(0, 2).join(" | ")}`)
+ */ function formatDrillSnippet(d, index) {
+  const lines = [];
+  lines.push(`${index}. "${d.title}" [${d.drill_type}, ${d.shot_area}, ${d.time_minutes}min]`);
+  lines.push(`   Objective: ${d.goal}`);
+  lines.push(`   Setup: ${(d.setup_steps || []).slice(0, 2).join(" | ")}`);
+  lines.push(`   Rules: ${(d.rules || []).slice(0, 2).join(" | ")}`);
   if (d.outcomes && d.outcomes.length > 0) {
-    const outcomeStr = d.outcomes
-      .slice(0, 4)
-      .map((o) => `${o.label}(${o.points > 0 ? "+" : ""}${o.points})`)
-      .join(", ")
-    lines.push(`   Scoring: ${outcomeStr}${d.outcomes.length > 4 ? ", ..." : ""}`)
+    const outcomeStr = d.outcomes.slice(0, 4).map((o)=>`${o.label}(${o.points > 0 ? "+" : ""}${o.points})`).join(", ");
+    lines.push(`   Scoring: ${outcomeStr}${d.outcomes.length > 4 ? ", ..." : ""}`);
   }
-  return lines.join("\n")
+  return lines.join("\n");
 }
-
 /**
  * Fetch top-scoring drills from Supabase for dynamic few-shot injection.
  * Returns empty array on any error (non-blocking).
- */
-async function fetchRetrievedDrills(
-  supabase: ReturnType<typeof createClient>,
-  focusArea: string,
-  difficulty: string | null,
-  excludeIds: string[],
-  limit = 5
-): Promise<RetrievedDrill[]> {
+ */ async function fetchRetrievedDrills(supabase, focusArea, difficulty, excludeIds, limit = 5) {
   try {
     const { data, error } = await supabase.rpc("get_recommended_coach_drills", {
       p_focus_area: focusArea,
       p_difficulty: difficulty,
       p_exclude_ids: excludeIds.length > 0 ? excludeIds : null,
-      p_limit: limit,
-    })
+      p_limit: limit
+    });
     if (error) {
-      console.error("[generate-drill] Retrieval RPC error:", error.message)
-      return []
+      console.error("[generate-drill] Retrieval RPC error:", error.message);
+      return [];
     }
-    return (data || []) as RetrievedDrill[]
+    return data || [];
   } catch (err) {
-    console.error("[generate-drill] Retrieval fetch error:", err)
-    return []
+    console.error("[generate-drill] Retrieval fetch error:", err);
+    return [];
   }
 }
-
 /**
  * Build the dynamic few-shot block from retrieved drills.
  * Returns empty string if no drills retrieved (prompt falls back to hardcoded examples only).
- */
-function buildRetrievedExamplesBlock(drills: RetrievedDrill[]): string {
-  if (drills.length === 0) return ""
-  const snippets = drills.map((d, i) => formatDrillSnippet(d, i + 1)).join("\n\n")
+ */ function buildRetrievedExamplesBlock(drills) {
+  if (drills.length === 0) return "";
+  const snippets = drills.map((d, i)=>formatDrillSnippet(d, i + 1)).join("\n\n");
   return `
 RETRIEVED HIGH-QUALITY EXAMPLES (from drills rated positively by real players):
 These are real drills that players have completed and rated highly. Use them as structural inspiration, but do NOT copy verbatim — create a NEW drill tailored to the current request.
@@ -2083,22 +2750,16 @@ RETRIEVAL INSTRUCTIONS:
 - Prefer the scoring mechanics and progression style from these examples when they fit the user's goal.
 - Modify distances, targets, and difficulty to match the current player's HCP band.
 - If retrieved examples conflict with the QUALITY RULES or drill type requirements above, the rules win.
-- These examples supplement (do NOT replace) the schema examples above.`
+- These examples supplement (do NOT replace) the schema examples above.`;
 }
-
 /**
  * Critic pass: evaluate a generated drill for golf-quality issues.
  * Uses GPT-4o-mini for speed and cost. Returns the drill unchanged if it passes,
  * or a rewritten version if issues are found. Falls back to original on any error.
- */
-async function runCriticPass(
-  drill: Drill,
-  userGoal: string,
-  parsedHcp: ParsedHcp
-): Promise<Drill> {
-  const apiKey = Deno.env.get("OPENAI_API_KEY")
+ */ async function runCriticPass(drill, userGoal, parsedHcp) {
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) return drill // skip critic if no API key
-
+  ;
   const criticPrompt = `You are a PGA teaching professional reviewing an AI-generated golf practice drill for quality.
 
 DRILL TO REVIEW:
@@ -2107,6 +2768,11 @@ ${JSON.stringify(drill, null, 2)}
 PLAYER CONTEXT:
 - Goal: "${userGoal}"
 - HCP band: ${parsedHcp.band}${parsedHcp.value != null ? ` (handicap ${parsedHcp.value})` : ""}
+
+LANGUAGE PRESERVATION
+- If the drill's free-text values (title, goal, rules, setup_steps, outcome labels, etc.) are in a non-English language (e.g. Swedish, Spanish, German, Norwegian, French), PRESERVE that language in your fixed_drill. Do NOT translate or rewrite into English.
+- Your own "issues" descriptions stay in English — they're for tooling, not the user.
+- JSON keys, drill_type, shot_area, icon, and hcp.band always stay in canonical English / enum form.
 
 RUBRIC — evaluate each criterion as PASS or FAIL:
 1. SAFE & REALISTIC: Setup is physically doable by one person on a practice green/range. No equipment they wouldn't have.
@@ -2125,272 +2791,255 @@ If ALL criteria pass:
 If ANY criteria fail:
 {"verdict": "fail", "issues": ["criterion_name: specific problem description"], "fixed_drill": <complete corrected drill JSON matching the exact same schema>}
 
-IMPORTANT: The fixed_drill must have the EXACT same shape as the input drill (same drill_type, same field set). Only fix the specific issues. Preserve everything that's correct.
-Output only valid JSON.`
-
+IMPORTANT: The fixed_drill must have the EXACT same shape as the input drill (same drill_type, same field set). Only fix the specific issues. Preserve everything that's correct, INCLUDING the language of the text values.
+Output only valid JSON.`;
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        response_format: { type: "json_object" },
+        response_format: {
+          type: "json_object"
+        },
         messages: [
-          { role: "user", content: criticPrompt },
-        ],
-      }),
-    })
-
+          {
+            role: "user",
+            content: criticPrompt
+          }
+        ]
+      })
+    });
     if (!res.ok) {
-      console.error("[generate-drill] Critic API error:", res.status)
+      console.error("[generate-drill] Critic API error:", res.status);
       return drill // fall back to original
+      ;
     }
-
-    const data = await res.json()
-    const content = data.choices?.[0]?.message?.content
-    if (!content) return drill
-
-    const criticResult = JSON.parse(content)
-
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) return drill;
+    const criticResult = JSON.parse(content);
     if (criticResult.verdict === "pass") {
-      console.log("[generate-drill] Critic: PASS")
-      return drill
+      console.log("[generate-drill] Critic: PASS");
+      return drill;
     }
-
     // Critic found issues — try to use the fixed drill
-    console.log("[generate-drill] Critic: FAIL —", (criticResult.issues || []).join("; "))
-
+    console.log("[generate-drill] Critic: FAIL —", (criticResult.issues || []).join("; "));
     if (!criticResult.fixed_drill) {
-      console.error("[generate-drill] Critic failed but returned no fixed_drill")
-      return drill
+      console.error("[generate-drill] Critic failed but returned no fixed_drill");
+      return drill;
     }
-
     // Validate the fixed drill against Zod
-    const fixedResult = drillSchema.safeParse(criticResult.fixed_drill)
+    const fixedResult = drillSchema.safeParse(criticResult.fixed_drill);
     if (fixedResult.success) {
-      console.log("[generate-drill] Critic fix validated successfully")
+      console.log("[generate-drill] Critic fix validated successfully");
       return {
         ...fixedResult.data,
         hcp: {
           input: parsedHcp.input,
           value: parsedHcp.value,
-          band: parsedHcp.band,
-        },
-      } as Drill
+          band: parsedHcp.band
+        }
+      };
     }
-
     // Fixed drill failed Zod — fall back to original
-    console.error(
-      "[generate-drill] Critic fix failed Zod:",
-      fixedResult.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
-    )
-    return drill
+    console.error("[generate-drill] Critic fix failed Zod:", fixedResult.error.issues.slice(0, 3).map((i)=>`${i.path.join(".")}: ${i.message}`).join("; "));
+    return drill;
   } catch (err) {
-    console.error("[generate-drill] Critic error:", err)
+    console.error("[generate-drill] Critic error:", err);
     return drill // always fall back to original
+    ;
   }
 }
-
-/* ------------------------------------------------------------------ */
-/*  Handler                                                            */
-/* ------------------------------------------------------------------ */
-
-serve(async (req) => {
+/* ------------------------------------------------------------------ */ /*  Handler                                                            */ /* ------------------------------------------------------------------ */ serve(async (req)=>{
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, {
+      headers: corsHeaders
+    });
   }
-
   if (req.method !== "POST") {
-    return json({ error: "Method not allowed." }, 405)
+    return json({
+      error: "Method not allowed."
+    }, 405);
   }
-
   try {
     // Auth: extract Bearer token and validate
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!supabaseUrl || !serviceKey) {
-      return json({ error: "Missing Supabase configuration." }, 500)
+      return json({
+        error: "Missing Supabase configuration."
+      }, 500);
     }
-
-    const auth = req.headers.get("authorization")
-    const token =
-      auth && /^Bearer\s+/i.test(auth) ? auth.slice(7).trim() : null
+    const auth = req.headers.get("authorization");
+    const token = auth && /^Bearer\s+/i.test(auth) ? auth.slice(7).trim() : null;
     if (!token) {
-      return json({ error: "Missing or invalid authorization." }, 401)
+      return json({
+        error: "Missing or invalid authorization."
+      }, 401);
     }
-
     const supabase = createClient(supabaseUrl, serviceKey, {
-      auth: { persistSession: false },
-    })
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser(token)
+      auth: {
+        persistSession: false
+      }
+    });
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      return json({ error: "Invalid or expired token." }, 401)
+      return json({
+        error: "Invalid or expired token."
+      }, 401);
     }
-
     // Parse body
-    const rawBody = await req.json()
-    const body: GenerateBody = {
+    const rawBody = await req.json();
+    const body = {
       goal: typeof rawBody.goal === "string" ? rawBody.goal : "",
-      hcpInput:
-        rawBody.hcpInput == null
-          ? null
-          : typeof rawBody.hcpInput === "string"
-            ? rawBody.hcpInput
-            : null,
-      timeMinutes:
-        typeof rawBody.timeMinutes === "number"
-          ? rawBody.timeMinutes
-          : undefined,
-      shotArea:
-        rawBody.shotArea != null && isShotArea(rawBody.shotArea)
-          ? rawBody.shotArea
-          : null,
-      baseDrill:
-        rawBody.baseDrill != null && typeof rawBody.baseDrill === "object"
-          ? rawBody.baseDrill
-          : null,
-      existingId:
-        typeof rawBody.existingId === "string" && rawBody.existingId.length > 0
-          ? rawBody.existingId
-          : null,
-      practiceArea:
-        rawBody.practiceArea != null && isPracticeArea(rawBody.practiceArea)
-          ? rawBody.practiceArea
-          : null,
-      measurementMethod:
-        rawBody.measurementMethod != null && isMeasurementMethod(rawBody.measurementMethod)
-          ? normalizeMeasurementMethod(rawBody.measurementMethod)
-          : null,
-      flagDistances:
-        Array.isArray(rawBody.flagDistances)
-          ? rawBody.flagDistances.filter((d: unknown) => typeof d === "number" && d > 0)
-          : null,
-    }
-
+      hcpInput: rawBody.hcpInput == null ? null : typeof rawBody.hcpInput === "string" ? rawBody.hcpInput : null,
+      timeMinutes: typeof rawBody.timeMinutes === "number" ? rawBody.timeMinutes : undefined,
+      shotArea: rawBody.shotArea != null && isShotArea(rawBody.shotArea) ? rawBody.shotArea : null,
+      baseDrill: rawBody.baseDrill != null && typeof rawBody.baseDrill === "object" ? rawBody.baseDrill : null,
+      existingId: typeof rawBody.existingId === "string" && rawBody.existingId.length > 0 ? rawBody.existingId : null,
+      practiceArea: rawBody.practiceArea != null && isPracticeArea(rawBody.practiceArea) ? rawBody.practiceArea : null,
+      measurementMethod: rawBody.measurementMethod != null && isMeasurementMethod(rawBody.measurementMethod) ? normalizeMeasurementMethod(rawBody.measurementMethod) : null,
+      flagDistances: Array.isArray(rawBody.flagDistances) ? rawBody.flagDistances.filter((d)=>typeof d === "number" && d > 0) : null
+    };
     // Parse HCP
-    let parsedHcp: ParsedHcp
+    let parsedHcp;
     try {
-      parsedHcp = parseHcp(body.hcpInput)
-    } catch {
-      return json({ error: "Invalid HCP" }, 400)
+      parsedHcp = parseHcp(body.hcpInput);
+    } catch  {
+      return json({
+        error: "Invalid HCP"
+      }, 400);
     }
-
+    // ---- Rate limit ----
+    // 10 generations / 24h for regular users, 50 / 24h for coaches. Counted
+    // in a rolling 24h window from `coach_drill_generations`, which is
+    // appended below before the OpenAI call (so failed gens also count —
+    // they still cost tokens).
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const [{ data: profileRow }, { count: recentCount }] = await Promise.all([
+      supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+      supabase.from("coach_drill_generations").select("*", {
+        count: "exact",
+        head: true
+      }).eq("user_id", user.id).gte("created_at", since24h)
+    ]);
+    const isCoach = profileRow?.role === "coach" || profileRow?.role === "admin";
+    const dailyLimit = isCoach ? 50 : 10;
+    const used = recentCount ?? 0;
+    if (used >= dailyLimit) {
+      return json({
+        error: `Daily AI drill limit reached (${dailyLimit} per 24 hours). Please try again later.`,
+        rate_limited: true,
+        limit: dailyLimit,
+        used
+      }, 429);
+    }
+    const kind = body.existingId ? "refine" : body.baseDrill ? "remix" : "generate";
+    // Log the attempt before the OpenAI call. Best-effort: a logging failure
+    // shouldn't block the user — worst case the limit under-counts.
+    const { error: logError } = await supabase.from("coach_drill_generations").insert({
+      user_id: user.id,
+      kind
+    });
+    if (logError) {
+      console.error("[generate-drill] Rate-limit log insert failed:", logError.message);
+    }
     // RAG-lite: retrieve high-quality drills for dynamic few-shot injection
-    const areaMap: Record<string, string> = {
-      putting: "putting", chipping: "short_game", pitching: "short_game",
-      bunker: "short_game", wedges: "approach", driver: "driving", mixed: "mixed",
-    }
-    const requestFocusArea = body.shotArea
-      ? areaMap[body.shotArea.split(",")[0].trim().toLowerCase()] ?? "mixed"
-      : "mixed"
-    const requestDifficulty = parsedHcp.value != null
-      ? parsedHcp.value <= 5 ? "advanced" : parsedHcp.value <= 15 ? "intermediate" : "beginner"
-      : null
+    const areaMap = {
+      putting: "putting",
+      chipping: "short_game",
+      pitching: "short_game",
+      bunker: "short_game",
+      wedges: "approach",
+      driver: "driving",
+      mixed: "mixed"
+    };
+    const requestFocusArea = body.shotArea ? areaMap[body.shotArea.split(",")[0].trim().toLowerCase()] ?? "mixed" : "mixed";
+    const requestDifficulty = parsedHcp.value != null ? parsedHcp.value <= 5 ? "advanced" : parsedHcp.value <= 15 ? "intermediate" : "beginner" : null;
     // Exclude the drill being refined (if any) from retrieval
-    const excludeIds = body.existingId ? [body.existingId] : []
-
-    const retrievedDrills = await fetchRetrievedDrills(
-      supabase, requestFocusArea, requestDifficulty, excludeIds, 5
-    )
-    const retrievedBlock = buildRetrievedExamplesBlock(retrievedDrills)
+    const excludeIds = body.existingId ? [
+      body.existingId
+    ] : [];
+    const retrievedDrills = await fetchRetrievedDrills(supabase, requestFocusArea, requestDifficulty, excludeIds, 5);
+    const retrievedBlock = buildRetrievedExamplesBlock(retrievedDrills);
     if (retrievedDrills.length > 0) {
-      console.log(`[generate-drill] Retrieved ${retrievedDrills.length} drills for few-shot (focus=${requestFocusArea}, difficulty=${requestDifficulty})`)
+      console.log(`[generate-drill] Retrieved ${retrievedDrills.length} drills for few-shot (focus=${requestFocusArea}, difficulty=${requestDifficulty})`);
     }
-
     // Generate drill (with retrieved examples injected into prompt)
-    let drill = await generateDrill(body, parsedHcp, retrievedBlock)
-
+    let drill = await generateDrill(body, parsedHcp, retrievedBlock);
     // Critic pass: evaluate golf quality with GPT-4o-mini
     if (!body.baseDrill) {
       // Skip critic for remixes — the original drill was already vetted
-      drill = await runCriticPass(drill, body.goal || "general practice", parsedHcp)
+      drill = await runCriticPass(drill, body.goal || "general practice", parsedHcp);
     }
-
     // Extract metadata for RAG-lite retrieval
-    const metadata = extractDrillMetadata(drill, parsedHcp)
-
+    const metadata = extractDrillMetadata(drill, parsedHcp);
     // Save to database
     if (body.existingId) {
       // Refinement: update existing drill in-place
-      const { error: updateError } = await supabase
-        .from("coach_drills")
-        .update({
-          title: drill.title,
-          goal: drill.goal,
-          payload: drill,
-          ...metadata,
-        })
-        .eq("id", body.existingId)
-        .eq("coach_id", user.id) // security: only owner can update
-
+      const { error: updateError } = await supabase.from("coach_drills").update({
+        title: drill.title,
+        goal: drill.goal,
+        payload: drill,
+        ...metadata
+      }).eq("id", body.existingId).eq("coach_id", user.id) // security: only owner can update
+      ;
       if (updateError) {
-        console.error(
-          "[generate-drill] Supabase update error:",
-          updateError.code,
-          updateError.message,
-          updateError.details
-        )
+        console.error("[generate-drill] Supabase update error:", updateError.code, updateError.message, updateError.details);
         return json({
           id: body.existingId,
           drill,
           saved: false,
-          hint: "Drill generated but not updated.",
-        })
+          hint: "Drill generated but not updated."
+        });
       }
-
-      return json({ id: body.existingId, drill, saved: true })
+      return json({
+        id: body.existingId,
+        drill,
+        saved: true
+      });
     } else {
       // New drill: insert
-      const { data: row, error: insertError } = await supabase
-        .from("coach_drills")
-        .insert({
-          coach_id: user.id,
-          title: drill.title,
-          goal: drill.goal,
-          payload: drill,
-          ...metadata,
-        })
-        .select("id")
-        .single()
-
+      const { data: row, error: insertError } = await supabase.from("coach_drills").insert({
+        coach_id: user.id,
+        title: drill.title,
+        goal: drill.goal,
+        payload: drill,
+        ...metadata
+      }).select("id").single();
       if (insertError) {
-        console.error(
-          "[generate-drill] Supabase insert error:",
-          insertError.code,
-          insertError.message,
-          insertError.details
-        )
+        console.error("[generate-drill] Supabase insert error:", insertError.code, insertError.message, insertError.details);
         return json({
           id: null,
           drill,
           saved: false,
-          hint: "Drill generated but not saved.",
-        })
+          hint: "Drill generated but not saved."
+        });
       }
-
       if (!row) {
-        console.error("[generate-drill] Supabase insert ok but no row returned")
+        console.error("[generate-drill] Supabase insert ok but no row returned");
         return json({
           id: null,
           drill,
           saved: false,
-          hint: "Drill generated but not saved.",
-        })
+          hint: "Drill generated but not saved."
+        });
       }
-
-      return json({ id: row.id, drill, saved: true })
+      return json({
+        id: row.id,
+        drill,
+        saved: true
+      });
     }
-  } catch (error: unknown) {
-    console.error("[generate-drill]", error)
-    const msg =
-      error instanceof Error ? error.message : "Unknown error occurred"
-    return json({ error: msg }, 500)
+  } catch (error) {
+    console.error("[generate-drill]", error);
+    const msg = error instanceof Error ? error.message : "Unknown error occurred";
+    return json({
+      error: msg
+    }, 500);
   }
-})
+});
