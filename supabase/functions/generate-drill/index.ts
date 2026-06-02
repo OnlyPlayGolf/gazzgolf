@@ -102,9 +102,15 @@ const scoreEntryDrillSchema = baseSchema.extend({
 const stationEntryDrillSchema = baseSchema.extend({
   drill_type: z.literal("station_entry"),
   stations: z.array(z.number()).min(3),
-  station_score_min: z.number().min(1),
-  station_score_max: z.number().max(10),
   station_score_label: z.string().max(40),
+  // Rating mode (discrete chips): supply min + max. Omit for measurement mode.
+  station_score_min: z.number().min(1).optional(),
+  station_score_max: z.number().max(10).optional(),
+  // Measurement mode (continuous decimal per station, e.g. distance to pin):
+  // supply mode + unit + step, and OMIT min/max. The app shows a decimal pad.
+  station_score_mode: z.literal("measurement").optional(),
+  station_score_unit: z.string().max(10).optional(),
+  station_score_step: z.number().positive().max(5).optional(),
   benchmarks: benchmarksSchema.optional()
 });
 const stationOutcomesDrillSchema = baseSchema.extend({
@@ -1959,8 +1965,6 @@ const REQUIRED_FIELDS = {
   ],
   station_entry: [
     "stations",
-    "station_score_min",
-    "station_score_max",
     "station_score_label"
   ],
   station_outcomes: [
@@ -2109,10 +2113,10 @@ SIX DRILL TYPES (discriminator: "drill_type"):
    The app shows the prompt and a number input field. IMPORTANT: The app only accepts integers (positive or negative, no decimals). Design scoring systems that always produce whole number results.
    GREAT FOR: success-out-of-N drills ("how many out of 10 landed within 3m?"), longest-streak drills, counting drills, distance-estimation drills, up-and-down percentage drills.
 
-3) "station_entry" — Per-station drill where the player records a numeric score at each station/distance.
-   Required: stations (number[] of distances in meters, min 3), station_score_min (number, minimum button value e.g. 1), station_score_max (number, maximum button value e.g. 5), station_score_label (string, label shown above buttons e.g. "Putts taken").
-   The app shuffles stations randomly, shows one station at a time with the distance prominently displayed, renders horizontal numbered buttons from station_score_min to station_score_max, tracks a running total, and auto-saves when all stations are completed. Score = sum of all station scores.
-   GREAT FOR: PGA Tour 18-style drills, multi-distance putting tests, up-and-down circuits where the player counts strokes per station.
+3) "station_entry" — Per-station drill. The app shuffles stations, shows one at a time with the distance, tracks a running total, and auto-saves when all are done. Score = sum of station values. Choose ONE of two modes:
+   • RATING mode (discrete buttons): Required: stations (number[] of distances in meters, min 3), station_score_min (e.g. 1), station_score_max (e.g. 5), station_score_label (e.g. "Putts taken"). The app renders numbered buttons from min to max. Use for COUNTING/rating (strokes per station, 1-5 quality). Do NOT emit measurement fields.
+   • MEASUREMENT mode (continuous decimal): Required: stations, station_score_mode = "measurement", station_score_unit (e.g. "m" or "ft"), station_score_step (e.g. 0.5), station_score_label (e.g. "Distance to pin (m)"). The app shows a DECIMAL number pad per station so the player records a real measured value. Do NOT emit station_score_min/station_score_max. Use for DISTANCE-TO-PIN / proximity drills; lower_is_better is usually true.
+   GREAT FOR: rating → PGA Tour 18-style putt counts; measurement → distance-to-pin ladders, proximity control.
 
 4) "station_outcomes" — Fixed stations with outcome buttons. Plays all shots, no target_points exit.
    Required: outcomes (array of {label, points}, min 2), stations (string[] of station labels, min 1), total_shots (number), shuffle_stations (boolean).
@@ -2135,7 +2139,7 @@ SIX DRILL TYPES (discriminator: "drill_type"):
 TYPE SELECTION GUIDE:
 - "points": shot-by-shot decisions with varying outcomes, VARIABLE length (ends at target_points)
 - "station_outcomes": shot-by-shot outcomes at FIXED stations, FIXED length (plays all shots)
-- "station_entry": per-station NUMERIC score (1-5 range), FIXED stations
+- "station_entry": per-station score at FIXED stations — RATING (1-5 buttons) for counts, or MEASUREMENT (decimal pad) for distance-to-pin / proximity
 - "conditional_entry": multi-question evaluation per shot, computed points
 - "retry_entry": pass/retry through targets, score = attempt count
 - "score_entry": single number entered at end (most flexible, least interactive)
