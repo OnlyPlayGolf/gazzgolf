@@ -2494,29 +2494,40 @@ function buildUserPrompt(body, parsed) {
 /* ------------------------------------------------------------------ */ /*  OpenAI call                                                        */ /* ------------------------------------------------------------------ */ async function callAI(systemPrompt, userContent) {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      response_format: {
-        type: "json_object"
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 30000);
+  let res;
+  try {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
       },
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
+      body: JSON.stringify({
+        model: "gpt-4o",
+        response_format: {
+          type: "json_object"
         },
-        {
-          role: "user",
-          content: userContent
-        }
-      ]
-    })
-  });
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: userContent
+          }
+        ]
+      }),
+      signal: controller.signal
+    });
+  } catch (e) {
+    if (e?.name === "AbortError") throw new Error("AI request timed out. Please try again.");
+    throw e;
+  } finally{
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const text = await res.text();
     console.error("OpenAI error:", res.status, text);
@@ -2798,25 +2809,33 @@ If ANY criteria fail:
 IMPORTANT: The fixed_drill must have the EXACT same shape as the input drill (same drill_type, same field set). Only fix the specific issues. Preserve everything that's correct, INCLUDING the language of the text values.
 Output only valid JSON.`;
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        response_format: {
-          type: "json_object"
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 15000);
+    let res;
+    try {
+      res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
         },
-        messages: [
-          {
-            role: "user",
-            content: criticPrompt
-          }
-        ]
-      })
-    });
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          response_format: {
+            type: "json_object"
+          },
+          messages: [
+            {
+              role: "user",
+              content: criticPrompt
+            }
+          ]
+        }),
+        signal: controller.signal
+      });
+    } finally{
+      clearTimeout(timer);
+    }
     if (!res.ok) {
       console.error("[generate-drill] Critic API error:", res.status);
       return drill // fall back to original

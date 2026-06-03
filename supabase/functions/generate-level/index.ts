@@ -67,11 +67,12 @@ const saveBodySchema = z.object({
 
 LANGUAGE
 - Detect the language of the user's level description.
-- If the user wrote in a non-English language (e.g. Swedish, Spanish, German, Norwegian, French), produce ALL human-readable text VALUES in that same language: "name", "success_criteria", "description".
+- If the user wrote in a non-English language (e.g. Swedish, Spanish, German, Norwegian, French), produce ALL human-readable text VALUES in that SAME language: "name", "success_criteria", "description". Do NOT translate the user's content into English.
 - The "distance" field stays in canonical numeric form ("1 m", "10-45 m", "8 ft") regardless of input language. Distance units (m, ft, yds) are universal in golf.
 - JSON keys and the JSON structure itself stay in English no matter what.
-- If the input is in English or the language is ambiguous, default to English.
-- Examples of when to switch: user writes "Hola tre puttar i rad från 1m" → output in Swedish. User writes "Hole 3 putts in a row from 1m" → output in English.
+- IMPORTANT: the rules, REFERENCE STYLE, and WORKED EXAMPLES below are written in English for INSTRUCTION ONLY. They do NOT mean the output must be English. Always match the user's input language.
+- Only default to English if the input itself is English or the language is genuinely impossible to tell.
+- Example: user writes "Håla tre puttar i rad från 1m" (Swedish) → output name, success_criteria, description in Swedish. User writes "Hole 3 putts in a row from 1m" → output in English.
 
 CORE ROLE
 - You are a copyeditor, not a designer or coach.
@@ -170,45 +171,84 @@ Format this into a Level. Preserve every distance and count exactly. JSON only.`
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY not configured");
   }
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      response_format: {
-        type: "json_object"
-      },
-      temperature: 0.7,
-      messages: [
-        {
-          role: "system",
-          content: buildSystemPrompt()
+
+  // One model round-trip with a hard timeout. Returns { ok, data } on success
+  // or { ok: false, reason } for recoverable failures (bad JSON / schema), so
+  // the caller can retry once with a corrective hint. Network / non-200 /
+  // timeout errors throw (not retried here).
+  async function attempt(retryHint) {
+    // Temperature 0.3: this is a copyeditor that must preserve the user's text
+    // exactly — strict adherence, not creativity.
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 20000);
+    let res;
+    try {
+      res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`
         },
-        {
-          role: "user",
-          content: buildUserPrompt(category, goal)
-        }
-      ]
-    })
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${text}`);
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          response_format: {
+            type: "json_object"
+          },
+          temperature: 0.3,
+          messages: [
+            {
+              role: "system",
+              content: buildSystemPrompt()
+            },
+            {
+              role: "user",
+              content: buildUserPrompt(category, goal) + (retryHint ? `\n\n${retryHint}` : "")
+            }
+          ]
+        }),
+        signal: controller.signal
+      });
+    } catch (e) {
+      if (e?.name === "AbortError") throw new Error("AI request timed out. Please try again.");
+      throw e;
+    } finally{
+      clearTimeout(timer);
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`OpenAI error ${res.status}: ${text}`);
+    }
+    const payload = await res.json();
+    const content = payload.choices?.[0]?.message?.content;
+    if (typeof content !== "string") {
+      throw new Error("OpenAI returned no content");
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (_e) {
+      return { ok: false, reason: "the response was not valid JSON" };
+    }
+    const validated = aiOutputSchema.safeParse(parsed);
+    if (!validated.success) {
+      const detail = validated.error.issues.slice(0, 4).map((i)=>`${i.path.join(".")}: ${i.message}`).join("; ");
+      return { ok: false, reason: `it failed schema validation (${detail})` };
+    }
+    return { ok: true, data: scrubDashes(validated.data) };
   }
-  const payload = await res.json();
-  const content = payload.choices?.[0]?.message?.content;
-  if (typeof content !== "string") {
-    throw new Error("OpenAI returned no content");
+
+  let result = await attempt();
+  if (!result.ok) {
+    // One corrective retry. Cheap (gpt-4o-mini) and turns a user-visible 500
+    // into a recovered success in the common transient case.
+    result = await attempt(
+      `[RETRY] Your previous answer was rejected because ${result.reason}. Output ONLY valid JSON with exactly these fields: name, description, distance, success_criteria — in the SAME language as the user's input.`
+    );
   }
-  const parsed = JSON.parse(content);
-  const validated = aiOutputSchema.safeParse(parsed);
-  if (!validated.success) {
-    throw new Error(`AI output failed validation: ${validated.error.message}`);
+  if (!result.ok) {
+    throw new Error(`AI output failed validation after a retry: ${result.reason}`);
   }
-  return scrubDashes(validated.data);
+  return result.data;
 }
 /// Defensive cleanup: replace em dashes the model might have slipped past
 /// the prompt ban. Line-start em dashes (used as bullet markers) become

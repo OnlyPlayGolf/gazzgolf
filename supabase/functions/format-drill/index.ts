@@ -358,31 +358,42 @@ function scrubDashesInDrill(d) {
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY not configured");
   }
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      response_format: {
-        type: "json_object"
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 25000);
+  let res;
+  try {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
       },
-      // Lower than generate-drill: we want strict adherence, not creativity.
-      temperature: 0.3,
-      messages: [
-        {
-          role: "system",
-          content: buildSystemPrompt()
+      body: JSON.stringify({
+        model: "gpt-4o",
+        response_format: {
+          type: "json_object"
         },
-        {
-          role: "user",
-          content: buildUserPrompt(body)
-        }
-      ]
-    })
-  });
+        // Lower than generate-drill: we want strict adherence, not creativity.
+        temperature: 0.3,
+        messages: [
+          {
+            role: "system",
+            content: buildSystemPrompt()
+          },
+          {
+            role: "user",
+            content: buildUserPrompt(body)
+          }
+        ]
+      }),
+      signal: controller.signal
+    });
+  } catch (e) {
+    if (e?.name === "AbortError") throw new Error("AI request timed out. Please try again.");
+    throw e;
+  } finally{
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`OpenAI error ${res.status}: ${text}`);
