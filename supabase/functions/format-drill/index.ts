@@ -171,9 +171,13 @@ CLARIFICATION POLICY
 - If a clarification_answer is provided in the user message, you have already asked your one question. Do NOT ask another one — format the drill using both the original description and the answer.
 
 LANGUAGE
-- Detect the language of the user's description and produce all human-readable VALUES (title, goal, setup_steps, rules, prompt, score_label, station_score_label, outcome.label) in that same language.
-- Numeric fields and enum-like fields (drill_type, shot_area, icon, hcp.band) stay in canonical English.
-- Default to English if ambiguous.
+- Detect the language of the user's drill name + description (their natural-language input).
+- If the user wrote in a non-English language (e.g. Swedish, Spanish, German, Norwegian, French), produce ALL human-readable text VALUES in that SAME language: title, goal, setup_steps, rules, prompt, score_label, score_unit, station_score_label, station_score_unit, outcome.label. Do NOT translate the user's content into English.
+- These stay in canonical English / enum form REGARDLESS of input language: drill_type, shot_area, icon (SF Symbol name), hcp.band, and all numeric fields. JSON keys and the JSON structure itself ALWAYS stay in English.
+- IMPORTANT: the system rules and the EXAMPLES below are written in English for INSTRUCTION ONLY. They do NOT mean the output must be English. Always match the user's input language.
+- Only default to English if the input itself is English or the language is genuinely impossible to tell.
+- If you return a clarifying_question instead of a drill, write that question in the user's input language too.
+- Example: user name "1m Putt Streak", description "Putta från 1 meter. Räkna hur många du gör i rad. Serien slutar vid första miss." → Swedish input → title, goal, setup_steps, rules, prompt in Swedish; shot_area stays "putting", drill_type stays "score_entry".
 
 HARD BANS (these tokens / patterns must never appear in output)
 - Em dashes — anywhere. Use periods, commas, colons, or "• " bullets. Hyphens fine inside compound words.
