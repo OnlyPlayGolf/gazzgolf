@@ -2488,7 +2488,13 @@ function buildUserPrompt(body, parsed) {
     const nudge = getDrillTypeNudge(body.shotArea ?? null);
     if (nudge) parts.push(nudge);
   }
-  parts.push(`Variation seed: ${Math.random().toString(36).slice(2, 6)}`);
+  // Anti-repetition: steer away from the player's recent drills when we have
+  // them; otherwise fall back to a random seed for a little entropy.
+  if (Array.isArray(body.recentTitles) && body.recentTitles.length > 0) {
+    parts.push(`VARIETY: This player recently created these drills — do NOT repeat their structure, scoring, or titles; make something meaningfully different:\n${body.recentTitles.slice(0, 8).map((t)=>`- ${t}`).join("\n")}`);
+  } else {
+    parts.push(`Variation seed: ${Math.random().toString(36).slice(2, 6)}`);
+  }
   return parts.join("\n");
 }
 /* ------------------------------------------------------------------ */ /*  OpenAI call                                                        */ /* ------------------------------------------------------------------ */ async function callAI(systemPrompt, userContent) {
@@ -3044,10 +3050,11 @@ Output only valid JSON.`;
     const kind = body.existingId ? "refine" : body.baseDrill ? "remix" : "generate";
     // Log the attempt before the OpenAI call. Best-effort: a logging failure
     // shouldn't block the user — worst case the limit under-counts.
-    const { error: logError } = await supabase.from("coach_drill_generations").insert({
+    const { data: rateLimitLog, error: logError } = await supabase.from("coach_drill_generations").insert({
       user_id: user.id,
       kind
-    });
+    }).select("id").single();
+    const rateLimitLogId = rateLimitLog?.id ?? null;
     if (logError) {
       console.error("[generate-drill] Rate-limit log insert failed:", logError.message);
     }
@@ -3072,8 +3079,23 @@ Output only valid JSON.`;
     if (retrievedDrills.length > 0) {
       console.log(`[generate-drill] Retrieved ${retrievedDrills.length} drills for few-shot (focus=${requestFocusArea}, difficulty=${requestDifficulty})`);
     }
-    // Generate drill (with retrieved examples injected into prompt)
-    let drill = await generateDrill(body, parsedHcp, retrievedBlock);
+    // Anti-repetition: feed the player's recent drill titles so the model makes
+    // something meaningfully different (replaces a meaningless random seed).
+    const { data: recentRows } = await supabase.from("coach_drills").select("title").eq("coach_id", user.id).order("created_at", {
+      ascending: false
+    }).limit(8);
+    body.recentTitles = (recentRows ?? []).map((r)=>r.title).filter(Boolean);
+    // Generate drill (with retrieved examples injected into prompt). On a hard
+    // failure the user got no drill, so refund the rate-limit slot we logged.
+    let drill;
+    try {
+      drill = await generateDrill(body, parsedHcp, retrievedBlock);
+    } catch (genErr) {
+      if (rateLimitLogId) {
+        await supabase.from("coach_drill_generations").delete().eq("id", rateLimitLogId);
+      }
+      throw genErr;
+    }
     // Critic pass: evaluate golf quality with GPT-4o-mini
     if (!body.baseDrill) {
       // Skip critic for remixes — the original drill was already vetted

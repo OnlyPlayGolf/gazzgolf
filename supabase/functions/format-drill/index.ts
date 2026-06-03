@@ -492,15 +492,26 @@ function scrubDashesInDrill(d) {
     }
     // Log the attempt before the OpenAI call (best-effort — same pattern as
     // generate-drill / generate-level).
-    const { error: logError } = await supabase.from("coach_drill_generations").insert({
+    const { data: rateLimitLog, error: logError } = await supabase.from("coach_drill_generations").insert({
       user_id: user.id,
       kind: "format_drill"
-    });
+    }).select("id").single();
+    const rateLimitLogId = rateLimitLog?.id ?? null;
     if (logError) {
       console.error("[format-drill] Rate-limit log insert failed:", logError.message);
     }
     // ---- Format ----
-    const result = await callOpenAI(body);
+    // On a hard failure the user got nothing, so refund the rate-limit slot.
+    // (A clarifying-question is a successful return, so it still counts.)
+    let result;
+    try {
+      result = await callOpenAI(body);
+    } catch (genErr) {
+      if (rateLimitLogId) {
+        await supabase.from("coach_drill_generations").delete().eq("id", rateLimitLogId);
+      }
+      throw genErr;
+    }
     // ---- Patch hcp metadata onto the drill ----
     // The AI is told to copy what we send, but to be safe we overwrite with
     // the canonical values we computed server-side. The drill's hcp is

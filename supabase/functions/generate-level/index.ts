@@ -407,10 +407,11 @@ function scrubDashes(d) {
       }, 429);
     }
     // Log the attempt before the OpenAI call (best-effort).
-    const { error: logError } = await supabase.from("coach_drill_generations").insert({
+    const { data: rateLimitLog, error: logError } = await supabase.from("coach_drill_generations").insert({
       user_id: user.id,
       kind: "create_level"
-    });
+    }).select("id").single();
+    const rateLimitLogId = rateLimitLog?.id ?? null;
     if (logError) {
       console.error("[generate-level] Rate-limit log insert failed:", logError.message);
     }
@@ -418,7 +419,16 @@ function scrubDashes(d) {
     // Note: body.hcpInput is intentionally not passed through — the prompt
     // is a copyeditor, not a designer, and using HCP biased outputs toward
     // "appropriate difficulty" rather than preserving the user's intent.
-    const aiOut = await callOpenAI(body.category, body.goal);
+    // On a hard failure the user got no level, so refund the rate-limit slot.
+    let aiOut;
+    try {
+      aiOut = await callOpenAI(body.category, body.goal);
+    } catch (genErr) {
+      if (rateLimitLogId) {
+        await supabase.from("coach_drill_generations").delete().eq("id", rateLimitLogId);
+      }
+      throw genErr;
+    }
     // ---- Preview mode: return the draft, do NOT insert ----
     // The client will show the draft for review/edit and then call back
     // with `mode: "save"` and the (possibly edited) draft to persist.
