@@ -2602,6 +2602,17 @@ function userRequestedLieType(goal) {
         band: parsedHcp.band
       }
     };
+    // Cross-field semantic checks the structural (discriminatedUnion) Zod schema
+    // can't express. These DRIVE one retry but never hard-fail: a structurally
+    // valid drill always ships, so a borderline semantic nit can't block the user.
+    const semanticIssues = validateDrillSemantics(drill);
+    if (semanticIssues.length > 0 && !retryHint) {
+      console.warn("[generate-drill] Semantic issues, retrying:", semanticIssues.join(" "));
+      return generateDrill(body, parsedHcp, retrievedBlock, `The drill had these problems: ${semanticIssues.join(" ")} Fix them and output valid JSON.`);
+    }
+    if (semanticIssues.length > 0) {
+      console.warn("[generate-drill] Shipping despite semantic issues after retry:", semanticIssues.join(" "));
+    }
     return standardizeLies(drill, body.goal);
   }
   const zodErrors = result.error.issues.slice(0, 5).map((i)=>`${i.path.join(".")}: ${i.message}`).join("; ");
@@ -2609,6 +2620,75 @@ function userRequestedLieType(goal) {
   if (retryHint) throw new Error("Drill schema validation failed after retry");
   const hint = buildRetryHint(parsed, zodErrors);
   return generateDrill(body, parsedHcp, retrievedBlock, hint);
+}
+
+/* Cross-field semantic validation the discriminated-union Zod schema can't
+   express. Returns human-readable issues (empty = OK). Deliberately
+   conservative — it flags only genuinely degenerate output, and callers never
+   hard-fail on it (they retry once, then ship). */
+function validateDrillSemantics(drill) {
+  const issues = [];
+
+  // station_entry must be exactly ONE complete mode (the recently-added
+  // measurement mode left min/max optional with no cross-field guard).
+  if (drill.drill_type === "station_entry") {
+    if (drill.station_score_mode === "measurement") {
+      if (drill.station_score_min != null || drill.station_score_max != null) {
+        issues.push("Measurement-mode station drill must omit station_score_min/station_score_max.");
+      }
+      if (!drill.station_score_unit || drill.station_score_step == null) {
+        issues.push("Measurement-mode station drill needs station_score_unit and station_score_step.");
+      }
+    } else {
+      if (drill.station_score_min == null || drill.station_score_max == null) {
+        issues.push("Rating-mode station drill needs both station_score_min and station_score_max.");
+      } else if (drill.station_score_max - drill.station_score_min < 2) {
+        issues.push("Station rating range must span at least 3 values (max - min >= 2).");
+      }
+    }
+  }
+
+  // points / station_outcomes need a real scoring gradient.
+  if (drill.drill_type === "points" || drill.drill_type === "station_outcomes") {
+    const distinct = new Set((drill.outcomes ?? []).map((o)=>o.points));
+    if (distinct.size < 2) {
+      issues.push("Outcomes must have at least 2 distinct point values so skill is rewarded.");
+    }
+  }
+
+  // points / retry_entry score = total shots/attempts, so fewer is better.
+  if ((drill.drill_type === "points" || drill.drill_type === "retry_entry") && drill.lower_is_better !== true) {
+    issues.push(`${drill.drill_type} drills must set lower_is_better = true.`);
+  }
+
+  // Benchmarks, if present, must not be backwards relative to lower_is_better.
+  if (drill.benchmarks) {
+    const lo = drill.benchmarks.hcp_0;
+    const hi = drill.benchmarks.hcp_20;
+    if (typeof lo === "number" && typeof hi === "number") {
+      if (drill.lower_is_better && lo > hi) {
+        issues.push("Benchmarks are backwards: with lower_is_better, hcp_0 should be <= hcp_20.");
+      }
+      if (!drill.lower_is_better && lo < hi) {
+        issues.push("Benchmarks are backwards: without lower_is_better, hcp_0 should be >= hcp_20.");
+      }
+    }
+  }
+
+  // No empty user-facing labels / question text.
+  const texts = [];
+  if (drill.score_label) texts.push(drill.score_label);
+  if (drill.station_score_label) texts.push(drill.station_score_label);
+  (drill.outcomes ?? []).forEach((o)=>texts.push(o.label));
+  (drill.targets ?? []).forEach((t)=>texts.push(t.label));
+  (drill.questions ?? []).forEach((q)=>texts.push(q.text));
+  if (drill.pass_label) texts.push(drill.pass_label);
+  if (drill.retry_label) texts.push(drill.retry_label);
+  if (texts.some((t)=>typeof t !== "string" || t.trim().length === 0)) {
+    issues.push("All labels and question text must be non-empty.");
+  }
+
+  return issues;
 }
 /* ------------------------------------------------------------------ */ /*  Metadata Extraction (for RAG-lite retrieval)                       */ /* ------------------------------------------------------------------ */ function extractDrillMetadata(drill, parsedHcp) {
   // Map shot_area to focus_area
