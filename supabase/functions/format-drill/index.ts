@@ -61,7 +61,7 @@ function bandFromRange(low, high) {
   if (low != null && high != null) return getHcpBand((low + high) / 2);
   return getHcpBand(low ?? high ?? null);
 }
-/* ------------------------------------------------------------------ */ /*  Request body                                                       */ /* ------------------------------------------------------------------ */ const shotAreaSchema = z.enum([
+/* ------------------------------------------------------------------ */ /*  Request body                                                       */ /* ------------------------------------------------------------------ */ const VALID_SHOT_AREAS = [
   "putting",
   "chipping",
   "pitching",
@@ -69,7 +69,16 @@ function bandFromRange(low, high) {
   "wedges",
   "driver",
   "mixed"
-]);
+];
+// Build-a-Drill is now multi-select, so shot_area may be a single area OR a
+// comma-separated list, e.g. "putting" or "putting,chipping". Every token must
+// be a known area.
+const shotAreaSchema = z.string().trim().min(1).refine(
+  (s)=>s.split(",").map((t)=>t.trim()).every((t)=>VALID_SHOT_AREAS.includes(t)),
+  {
+    message: `shot_area must be a comma-separated list of: ${VALID_SHOT_AREAS.join(", ")}`
+  }
+);
 /// What the user picked in the Build-a-Drill form. Each maps deterministically
 /// to a drill_type so the AI doesn't get to choose the score-entry UI shape.
 /// The single exception is "ai_decide" — for users who don't know what they
@@ -200,7 +209,7 @@ FIELDS — ALWAYS REQUIRED
 - "goal": One sentence describing what the drill builds. Under 150 chars. No filler.
 - "icon": A single SF Symbol name appropriate for the shot type (e.g. "scope", "target", "flag.fill", "figure.golf", "arrow.up.right", "bolt.fill"). Pick from the existing app catalog; do NOT invent.
 - "time_minutes": Use the length_minutes value the user provided. If absent, estimate a sensible value between 5 and 30.
-- "shot_area": Echo the user's shot_area EXACTLY.
+- "shot_area": Echo the user's shot_area EXACTLY. It may be a single area or a comma-separated list (e.g. "putting,chipping") when the drill spans several areas — echo the full list unchanged, do not collapse it.
 - "setup_steps": Array of short numbered actions to get ready. Take from the user's description. Each item is one short sentence. NO extra steps invented.
 - "rules": Array of short statements describing how to play. Take from the user's description. Each item is one short sentence. NO extra rules invented.
 - "lower_is_better": As mapped above.
