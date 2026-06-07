@@ -99,7 +99,16 @@ const bodySchema = z.object({
   length_minutes: z.number().int().min(5).max(60).nullish(),
   hcp_low: z.number().nullish(),
   hcp_high: z.number().nullish(),
-  clarification_answer: z.string().trim().max(1000).nullish()
+  clarification_answer: z.string().trim().max(1000).nullish(),
+  // Explicit per-station/per-hole distances from the structured input. When
+  // present (and the drill is multi-hole), the formatter builds a station_entry
+  // with one station per distance, in this order, instead of parsing them out
+  // of the prose description.
+  stations: z.array(z.number().positive()).min(1).max(30).nullish(),
+  // Explicit points-drill outcomes + target from the structured form. When
+  // present, use them verbatim instead of parsing from the prose description.
+  outcomes: z.array(z.object({ label: z.string().min(1).max(35), points: z.number().int() })).min(1).max(8).nullish(),
+  target_points: z.number().int().positive().max(1000).nullish()
 });
 /* ------------------------------------------------------------------ */ /*  AI output schema                                                   */ /*                                                                     */ /*  Either ask a clarifying question OR return a drill. The drill is a */ /*  reduced subset of generate-drill's CoachDrill schema — only the    */ /*  three drill_types reachable via the Build-a-Drill scoring methods. */ /* ------------------------------------------------------------------ */ const hcpBandSchema = z.enum(HCP_BANDS);
 const outcomeSchema = z.object({
@@ -136,17 +145,21 @@ const scoreEntryDrillSchema = baseSchema.extend({
   score_unit: z.string().optional(),
   prompt: z.string()
 });
-// Build-a-Drill's only station use is distance_to_pin, which is a continuous
-// measurement, not a discrete rating. The app enters it with a decimal pad per
-// station (measurement mode), so we emit unit + step rather than a min/max
-// chip range.
+// station_entry covers any drill played station-by-station with ONE score per
+// station (the total is the sum). Two entry modes, mirroring generate-drill:
+//   • RATING (discrete chips) — small bounded per-hole counts, e.g. putts 1-5.
+//     Supply station_score_min/max; omit mode/unit/step.
+//   • MEASUREMENT (number pad) — distance-to-pin OR unbounded strokes per hole
+//     (step 1). Supply mode/unit/step; omit min/max.
 const stationEntryDrillSchema = baseSchema.extend({
   drill_type: z.literal("station_entry"),
   stations: z.array(z.number()).min(1),
-  station_score_mode: z.literal("measurement"),
-  station_score_unit: z.string().max(10),
-  station_score_step: z.number().positive().max(5),
-  station_score_label: z.string().max(40)
+  station_score_label: z.string().max(40),
+  station_score_min: z.number().int().min(1).optional(),
+  station_score_max: z.number().int().max(15).optional(),
+  station_score_mode: z.literal("measurement").optional(),
+  station_score_unit: z.string().max(10).optional(),
+  station_score_step: z.number().positive().max(5).optional()
 });
 const drillSchema = z.discriminatedUnion("drill_type", [
   pointsDrillSchema,
@@ -166,7 +179,7 @@ const aiOutputSchema = z.union([
 
 ROLE: FORMATTER, NOT DESIGNER
 - The user's description is authoritative. Preserve every distance, count, time limit, position, club, and rule EXACTLY.
-- Do NOT invent stations, distances, point values, outcomes, rules, variations, or anything else the user did not describe.
+- Do NOT invent stations, distances, point values, outcomes, rules, variations, or anything else the user did not describe. EXCEPTION: if the user explicitly lists multiple holes/stations/targets each at its OWN distance (in the description, or via the provided stations list), you MUST capture each one as an element of the "stations" array. Preserving what they described is required, not invention.
 - Do NOT add "warm-up" steps, "track your progress" steps, or generic golf advice.
 - Do NOT add technique tips ("focus on", "stay relaxed", "trust your stroke").
 - If the user only mentioned one distance, the drill has one distance. If the user mentioned one type of outcome, the drill has one outcome (plus a natural negative if relevant — e.g. "make" implies "miss").
@@ -194,15 +207,21 @@ HARD BANS (these tokens / patterns must never appear in output)
 - Setup framing the user didn't request: "head to the practice green", "find a quiet spot". The user already knows where they are.
 - Filler explainers: "This challenge will help you...", "In this drill you'll...". Just describe the action.
 
-DRILL TYPE (DICTATED BY scoring_method, NOT YOUR CHOICE)
-The user's chosen scoring_method maps to a specific drill_type. You MUST use the mapped type:
+DRILL TYPE (DICTATED BY scoring_method + WHETHER THE DRILL IS MULTI-STATION)
+First decide MULTI-STATION: the drill is multi-station if the request includes an explicit stations list, OR the description enumerates multiple holes/stations/targets each at its OWN distance (e.g. "5 putting holes at 1, 2, 3, 4, 5 m"). A single distance (even repeated) is NOT multi-station.
 
   scoring_method = "points"          → drill_type = "points"
   scoring_method = "makes_count"     → drill_type = "score_entry", score_unit = "makes",     lower_is_better = false
   scoring_method = "in_a_row"        → drill_type = "score_entry", score_unit = "in a row",  lower_is_better = false
-  scoring_method = "distance_to_pin" → drill_type = "station_entry"
-  scoring_method = "total_strokes"   → drill_type = "score_entry", score_unit = "strokes",   lower_is_better = true
-  scoring_method = "ai_decide"       → pick the most natural fit from {points, score_entry, station_entry} based on the description
+  scoring_method = "distance_to_pin" → drill_type = "station_entry" (measurement mode)
+  scoring_method = "total_strokes":
+       • MULTI-STATION  → drill_type = "station_entry", one score per hole summed, lower_is_better = true. Pick the per-station entry mode:
+            - putting where each hole takes a few putts → RATING: station_score_min = 1, station_score_max = 5 (chips). Matches the app's existing 18-hole putting drill.
+            - any other shot area, or where a hole can take many strokes → MEASUREMENT: station_score_mode = "measurement", station_score_unit = "strokes", station_score_step = 1, station_score_label = "Strokes" (a number pad per hole).
+       • SINGLE distance/aggregate → drill_type = "score_entry", score_unit = "strokes", lower_is_better = true (one total field).
+  scoring_method = "ai_decide"       → most natural fit from {points, score_entry, station_entry}; use station_entry when the drill has multiple per-distance stations.
+
+You MUST use the mapped type.
 
 FIELDS — ALWAYS REQUIRED
 - "title": Short clear title. Use the user's chosen name if reasonable, or polish it (2 to 6 words).
@@ -218,8 +237,8 @@ FIELDS — ALWAYS REQUIRED
 FIELDS — DRILL-TYPE-SPECIFIC
 
 points (drill_type = "points"):
-  - "outcomes": [{ label, points }] — derive from the user's description. If the user said "1 point per make, -1 per miss", use those. If the user said "give me a 'make' button worth +1 and a 'miss' button worth 0", use those. Do NOT invent extra outcomes the user didn't mention. Minimum 2 outcomes (a make/positive and a miss/zero is the natural pair).
-  - "target_points": Take from the user's description. If they say "first to 10 points", target_points = 10. If they don't specify, ask a clarifying question instead.
+  - "outcomes": [{ label, points }] — IF the request provides an explicit outcomes list, use those labels + point values EXACTLY (do not rename, re-derive, add, or drop any). Otherwise derive from the user's description ("1 point per make, -1 per miss", or "a 'make' button worth +1 and a 'miss' button worth 0"). Do NOT invent extra outcomes the user didn't mention. Minimum 2 outcomes (a make/positive and a miss/zero is the natural pair).
+  - "target_points": IF the request provides target_points, use it EXACTLY. Otherwise take from the user's description ("first to 10 points" -> 10). If neither the request nor the description specifies it, ask a clarifying question instead.
   - "distances": Array of distances the user mentioned. If they mentioned one distance, this is [<that distance>]. If multiple, list them all in the order the user gave them.
   - "end_condition": Short sentence: "Reach <target_points> points." or similar wording the user used.
 
@@ -228,14 +247,18 @@ score_entry (drill_type = "score_entry"):
   - "score_unit": As mapped above.
   - "prompt": Short instruction shown above the score field: "How many putts did you make?", "How many in a row?", "Total strokes?", etc.
 
-station_entry (drill_type = "station_entry") — used for distance_to_pin, a continuous measurement:
-  - "stations": Array of distances (numbers in meters or yards — preserve the user's unit choice, but encode as a plain number; the unit is implied by the shot_area).
-  - "station_score_mode": always "measurement". The player records a measured decimal value at each station; there is NO discrete chip range.
-  - "station_score_unit": the unit the player records the value in, e.g. "m" or "ft". Short (<= 10 chars).
-  - "station_score_step": the decimal increment for entry, e.g. 0.1 or 0.5.
-  - "station_score_label": Short label for the per-station value (e.g. "Distance to pin (ft)").
-  - Do NOT emit station_score_min or station_score_max — measurement entry is open-ended.
-  - "lower_is_better" is true for distance-to-pin (closer is better).
+station_entry (drill_type = "station_entry") — a drill played station-by-station, ONE score per station, total = the sum. Used for distance_to_pin AND for multi-hole drills (e.g. 5 putting holes at different lengths):
+  - "stations": Array of the per-station distances (plain numbers; unit implied by shot_area). Use the explicit stations list if provided, otherwise the distances the user enumerated, in order.
+  - "station_score_label": Short label for the per-station value (e.g. "Putts taken", "Strokes", "Distance to pin (ft)").
+  - Choose EXACTLY ONE entry mode:
+    RATING (discrete chips — a small bounded count like putts 1-5):
+      • "station_score_min" and "station_score_max" (e.g. 1 and 5). OMIT station_score_mode / unit / step.
+    MEASUREMENT (a number pad per station — distance-to-pin, OR unbounded strokes):
+      • "station_score_mode": "measurement"
+      • "station_score_unit": e.g. "ft", "m", or "strokes" (<= 10 chars)
+      • "station_score_step": 0.1 or 0.5 for distance, 1 for strokes
+      • OMIT station_score_min / station_score_max.
+  - "lower_is_better": true for distance-to-pin (closer is better) and for strokes (fewer is better).
 
 DO NOT include benchmarks, scoring_combos, questions, retry_label, pass_label, stations_labels, total_shots, shuffle_stations, shuffle_targets, or targets. Those fields belong to other drill types not available in Build-a-Drill.
 
@@ -318,6 +341,8 @@ WRONG OUTPUT (invents content): a points drill with [1m, 2m, 3m] distances, made
 function buildUserPrompt(body) {
   const hcp = body.hcp_low != null || body.hcp_high != null ? `HCP target: ${body.hcp_low ?? "?"} to ${body.hcp_high ?? "?"}` : "HCP target: not specified";
   const length = body.length_minutes != null ? `Length: ${body.length_minutes} minutes` : "Length: not specified (estimate sensibly)";
+  const stations = Array.isArray(body.stations) && body.stations.length ? `Per-station distances (explicit, authoritative list): [${body.stations.join(", ")}]. Build a station_entry with ONE station per distance, in this exact order.` : "Per-station distances: none provided as a list (if the description enumerates several distinct distances, treat it as multi-station).";
+  const outcomes = Array.isArray(body.outcomes) && body.outcomes.length ? `Points outcomes (explicit, authoritative): ${JSON.stringify(body.outcomes)}${body.target_points != null ? `, target_points: ${body.target_points}` : ""}. Use these EXACT outcome labels + point values (and target) and do NOT re-derive them from the prose.` : "Points outcomes: none provided as a list (derive from the description if scoring_method is points).";
   const clar = body.clarification_answer ? `\n\nYou previously asked a clarifying question. The user answered: "${body.clarification_answer}"\nFormat the drill now using the original description PLUS this answer. Do NOT ask another clarifying question.` : "";
   return `Build a Drill request:
 
@@ -326,6 +351,8 @@ Shot area: ${body.shot_area}
 Scoring method: ${body.scoring_method}
 ${hcp}
 ${length}
+${stations}
+${outcomes}
 
 User's description:
 """
@@ -367,64 +394,82 @@ function scrubDashesInDrill(d) {
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY not configured");
   }
-  const controller = new AbortController();
-  const timer = setTimeout(()=>controller.abort(), 25000);
-  let res;
-  try {
-    res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        response_format: {
-          type: "json_object"
+  // One retry: if the model returns JSON that fails our schema (e.g. a
+  // degenerate points/station drill, or non-JSON), re-ask ONCE with the
+  // validation error as a correction hint before surfacing an error. Network /
+  // HTTP / timeout errors fail fast (not retried — they are not the model's
+  // fault). The schema already rejects unplayable drills, so this only turns
+  // some of those rejections into a successful second attempt.
+  let lastError = "";
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const correction = attempt === 0 ? "" : `\n\nYOUR PREVIOUS OUTPUT FAILED VALIDATION: ${lastError}\nReturn corrected JSON that satisfies the schema exactly. Do not repeat the mistake.`;
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 25000);
+    let res;
+    try {
+      res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`
         },
-        // Lower than generate-drill: we want strict adherence, not creativity.
-        temperature: 0.3,
-        messages: [
-          {
-            role: "system",
-            content: buildSystemPrompt()
+        body: JSON.stringify({
+          model: "gpt-4o",
+          response_format: {
+            type: "json_object"
           },
-          {
-            role: "user",
-            content: buildUserPrompt(body)
-          }
-        ]
-      }),
-      signal: controller.signal
-    });
-  } catch (e) {
-    if (e?.name === "AbortError") throw new Error("AI request timed out. Please try again.");
-    throw e;
-  } finally{
-    clearTimeout(timer);
-  }
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${text}`);
-  }
-  const payload = await res.json();
-  const content = payload.choices?.[0]?.message?.content;
-  if (typeof content !== "string") {
-    throw new Error("OpenAI returned no content");
-  }
-  const parsed = JSON.parse(content);
-  const validated = aiOutputSchema.safeParse(parsed);
-  if (!validated.success) {
-    throw new Error(`AI output failed validation: ${validated.error.message}`);
-  }
-  if ("clarifying_question" in validated.data) {
+          // Lower than generate-drill: we want strict adherence, not creativity.
+          temperature: 0.3,
+          messages: [
+            {
+              role: "system",
+              content: buildSystemPrompt()
+            },
+            {
+              role: "user",
+              content: buildUserPrompt(body) + correction
+            }
+          ]
+        }),
+        signal: controller.signal
+      });
+    } catch (e) {
+      if (e?.name === "AbortError") throw new Error("AI request timed out. Please try again.");
+      throw e;
+    } finally{
+      clearTimeout(timer);
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`OpenAI error ${res.status}: ${text}`);
+    }
+    const payload = await res.json();
+    const content = payload.choices?.[0]?.message?.content;
+    if (typeof content !== "string") {
+      throw new Error("OpenAI returned no content");
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (_e) {
+      lastError = "output was not valid JSON";
+      continue;
+    }
+    const validated = aiOutputSchema.safeParse(parsed);
+    if (!validated.success) {
+      lastError = validated.error.message;
+      continue;
+    }
+    if ("clarifying_question" in validated.data) {
+      return {
+        clarifying_question: validated.data.clarifying_question
+      };
+    }
     return {
-      clarifying_question: validated.data.clarifying_question
+      drill: scrubDashesInDrill(validated.data.drill)
     };
   }
-  return {
-    drill: scrubDashesInDrill(validated.data.drill)
-  };
+  throw new Error(`AI output failed validation after retry: ${lastError}`);
 }
 /* ------------------------------------------------------------------ */ /*  Handler                                                            */ /* ------------------------------------------------------------------ */ serve(async (req)=>{
   if (req.method === "OPTIONS") {
@@ -541,6 +586,38 @@ function scrubDashesInDrill(d) {
         // the UI's category color.
         shot_area: body.shot_area
       };
+
+      // Normalize station_entry to EXACTLY ONE entry mode so the app never
+      // silently falls back to 1-5 rating chips (which would cap a strokes hole
+      // at 5). Measurement wins if present; else rating; else default by shot
+      // area (putting -> 1-5 chips, otherwise -> strokes number pad).
+      const d = result.drill;
+      if (d.drill_type === "station_entry") {
+        const hasRating = d.station_score_min != null || d.station_score_max != null;
+        const isMeasurement = d.station_score_mode === "measurement";
+        if (isMeasurement) {
+          delete d.station_score_min;
+          delete d.station_score_max;
+        } else if (hasRating) {
+          d.station_score_min = d.station_score_min ?? 1;
+          d.station_score_max = d.station_score_max ?? 5;
+          delete d.station_score_mode;
+          delete d.station_score_unit;
+          delete d.station_score_step;
+        } else {
+          const putting = (body.shot_area || "").includes("putting");
+          if (putting) {
+            d.station_score_min = 1;
+            d.station_score_max = 5;
+            d.station_score_label = d.station_score_label ?? "Putts";
+          } else {
+            d.station_score_mode = "measurement";
+            d.station_score_unit = d.station_score_unit ?? "strokes";
+            d.station_score_step = 1;
+            d.station_score_label = d.station_score_label ?? "Strokes";
+          }
+        }
+      }
     }
     return json(result);
   } catch (error) {
