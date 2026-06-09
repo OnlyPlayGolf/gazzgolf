@@ -92,7 +92,7 @@ const scoringMethodSchema = z.enum([
   "ai_decide"
 ]);
 const bodySchema = z.object({
-  name: z.string().trim().min(2).max(60),
+  name: z.string().trim().min(2).max(60).nullish(),
   description: z.string().trim().min(10).max(2000),
   shot_area: shotAreaSchema,
   scoring_method: scoringMethodSchema,
@@ -193,7 +193,7 @@ CLARIFICATION POLICY
 - If a clarification_answer is provided in the user message, you have already asked your one question. Do NOT ask another one — format the drill using both the original description and the answer.
 
 LANGUAGE
-- Detect the language of the user's drill name + description (their natural-language input).
+- Detect the language of the user's natural-language input (the drill name if one is provided, plus the description).
 - If the user wrote in a non-English language (e.g. Swedish, Spanish, German, Norwegian, French), produce ALL human-readable text VALUES in that SAME language: title, goal, setup_steps, rules, prompt, score_label, score_unit, station_score_label, station_score_unit, outcome.label. Do NOT translate the user's content into English.
 - These stay in canonical English / enum form REGARDLESS of input language: drill_type, shot_area, icon (SF Symbol name), hcp.band, and all numeric fields. JSON keys and the JSON structure itself ALWAYS stay in English.
 - IMPORTANT: the system rules and the EXAMPLES below are written in English for INSTRUCTION ONLY. They do NOT mean the output must be English. Always match the user's input language.
@@ -224,7 +224,7 @@ First decide MULTI-STATION: the drill is multi-station if the request includes a
 You MUST use the mapped type.
 
 FIELDS — ALWAYS REQUIRED
-- "title": Short clear title. Use the user's chosen name if reasonable, or polish it (2 to 6 words).
+- "title": Short clear title (2 to 6 words). If the user provided a name, use it if reasonable or lightly polish it. If NO name was provided, generate a concise, specific title from the description (e.g. "1m Putt Streak", "Wedge Ladder 60-80m"). Never output a placeholder such as "Untitled", "New Drill", or just "Drill".
 - "goal": One sentence describing what the drill builds. Under 150 chars. No filler.
 - "icon": A single SF Symbol name appropriate for the shot type (e.g. "scope", "target", "flag.fill", "figure.golf", "arrow.up.right", "bolt.fill"). Pick from the existing app catalog; do NOT invent.
 - "time_minutes": Use the length_minutes value the user provided. If absent, estimate a sensible value between 5 and 30.
@@ -346,7 +346,7 @@ function buildUserPrompt(body) {
   const clar = body.clarification_answer ? `\n\nYou previously asked a clarifying question. The user answered: "${body.clarification_answer}"\nFormat the drill now using the original description PLUS this answer. Do NOT ask another clarifying question.` : "";
   return `Build a Drill request:
 
-User's drill name: ${body.name}
+${body.name ? `User's drill name: ${body.name}` : "User's drill name: (none provided — generate a concise, specific title from the description)"}
 Shot area: ${body.shot_area}
 Scoring method: ${body.scoring_method}
 ${hcp}
