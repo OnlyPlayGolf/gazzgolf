@@ -190,6 +190,10 @@ FAITHFULNESS (the single biggest cause of bad drills is paraphrasing — follow 
 3. State each instruction ONCE: do NOT repeat the same full instruction in both setup_steps and rules. setup_steps = how to physically set up (markers, balls, positions); rules = how to play and score. BUT each rule must stay self-contained — keep the counts, targets, and scope it needs. Never strip "10 balls" down to "each ball", and never move a count or target out of a rule just to avoid repetition.
 4. CONSISTENCY CHECK before returning: re-read setup_steps + rules + outcomes together. They must not contradict, repeat verbatim, or drift from the user's wording. Fix any that do.
 
+COMMON PHRASES (interpret correctly; these are NOT contradictions)
+- "hit random putts", "a new putt per distance/length", "don't hit the same putt twice", "a different putt each time", "always a new spot", "vary your spot/line" ALL mean one thing: move to a different spot/line for each shot; never repeat the exact same putt/shot from the same spot. Render it as a single clear rule (e.g. "Move to a new spot for each putt; never repeat the same putt"). Apply this ONLY when the user actually uses such a phrase — never add "vary your spot" to a drill that did not ask for it.
+- This REFINES a count; it does not conflict with one. "Two balls from each distance" + "don't hit the same putt twice" means the two balls at each distance are struck from different spots. Never treat this as a contradiction or ask a clarifying question about it.
+
 CLARIFICATION POLICY
 - If the description is missing information you literally cannot proceed without, return ONLY: { "clarifying_question": "..." }
 - Ask ONE question. Make it specific and answerable in one sentence.
