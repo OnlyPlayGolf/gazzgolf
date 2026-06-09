@@ -107,8 +107,7 @@ const bodySchema = z.object({
   stations: z.array(z.number().positive()).min(1).max(30).nullish(),
   // Explicit points-drill outcomes + target from the structured form. When
   // present, use them verbatim instead of parsing from the prose description.
-  outcomes: z.array(z.object({ label: z.string().min(1).max(35), points: z.number().int() })).min(1).max(8).nullish(),
-  target_points: z.number().int().positive().max(1000).nullish()
+  outcomes: z.array(z.object({ label: z.string().min(1).max(35), points: z.number().int() })).min(1).max(8).nullish()
 });
 /* ------------------------------------------------------------------ */ /*  AI output schema                                                   */ /*                                                                     */ /*  Either ask a clarifying question OR return a drill. The drill is a */ /*  reduced subset of generate-drill's CoachDrill schema — only the    */ /*  three drill_types reachable via the Build-a-Drill scoring methods. */ /* ------------------------------------------------------------------ */ const hcpBandSchema = z.enum(HCP_BANDS);
 const outcomeSchema = z.object({
@@ -135,7 +134,7 @@ const pointsDrillSchema = baseSchema.extend({
   outcomes: z.array(outcomeSchema).min(2).refine((outcomes)=>outcomes.some((o)=>o.points > 0), {
     message: "At least one outcome must have positive points"
   }),
-  target_points: z.number().min(1),
+  num_shots: z.number().int().min(1).max(100),
   distances: z.array(z.number()).min(1),
   end_condition: z.string()
 });
@@ -238,9 +237,10 @@ FIELDS — DRILL-TYPE-SPECIFIC
 
 points (drill_type = "points"):
   - "outcomes": [{ label, points }] — IF the request provides an explicit outcomes list, use those labels + point values EXACTLY (do not rename, re-derive, add, or drop any). Otherwise derive from the user's description ("1 point per make, -1 per miss", or "a 'make' button worth +1 and a 'miss' button worth 0"). Do NOT invent extra outcomes the user didn't mention. Minimum 2 outcomes (a make/positive and a miss/zero is the natural pair).
-  - "target_points": IF the request provides target_points, use it EXACTLY. Otherwise take from the user's description ("first to 10 points" -> 10). If neither the request nor the description specifies it, ask a clarifying question instead.
+  - "num_shots": The fixed number of shots the player takes. Infer from the description ("hit 20 putts" -> 20, "18 balls" -> 18). If unspecified, use the number of distances when there is more than one, otherwise default to 10. The player plays EXACTLY this many shots; the score is the TOTAL points accumulated. There is NO target to reach.
   - "distances": Array of distances the user mentioned. If they mentioned one distance, this is [<that distance>]. If multiple, list them all in the order the user gave them.
-  - "end_condition": Short sentence: "Reach <target_points> points." or similar wording the user used.
+  - "end_condition": Short sentence, e.g. "Play <num_shots> shots. Highest total wins."
+  - "lower_is_better": false for points drills (score is total points; higher is better).
 
 score_entry (drill_type = "score_entry"):
   - "score_label": Short label for the score field (e.g. "Total makes", "Putts in a row", "Strokes"). Match score_unit.
@@ -336,13 +336,13 @@ USER input (TOO VAGUE):
 RIGHT OUTPUT:
 { "clarifying_question": "From what distance, and how many points wins?" }
 
-WRONG OUTPUT (invents content): a points drill with [1m, 2m, 3m] distances, made-up outcomes, target_points=10. None of those came from the user.`;
+WRONG OUTPUT (invents content): a points drill with [1m, 2m, 3m] distances, made-up outcomes, num_shots=10. None of those came from the user.`;
 }
 function buildUserPrompt(body) {
   const hcp = body.hcp_low != null || body.hcp_high != null ? `HCP target: ${body.hcp_low ?? "?"} to ${body.hcp_high ?? "?"}` : "HCP target: not specified";
   const length = body.length_minutes != null ? `Length: ${body.length_minutes} minutes` : "Length: not specified (estimate sensibly)";
   const stations = Array.isArray(body.stations) && body.stations.length ? `Per-station distances (explicit, authoritative list): [${body.stations.join(", ")}]. Build a station_entry with ONE station per distance, in this exact order.` : "Per-station distances: none provided as a list (if the description enumerates several distinct distances, treat it as multi-station).";
-  const outcomes = Array.isArray(body.outcomes) && body.outcomes.length ? `Points outcomes (explicit, authoritative): ${JSON.stringify(body.outcomes)}${body.target_points != null ? `, target_points: ${body.target_points}` : ""}. Use these EXACT outcome labels + point values (and target) and do NOT re-derive them from the prose.` : "Points outcomes: none provided as a list (derive from the description if scoring_method is points).";
+  const outcomes = Array.isArray(body.outcomes) && body.outcomes.length ? `Points outcomes (explicit, authoritative): ${JSON.stringify(body.outcomes)}. Use these EXACT outcome labels + point values and do NOT re-derive them from the prose.` : "Points outcomes: none provided as a list (derive from the description if scoring_method is points).";
   const clar = body.clarification_answer ? `\n\nYou previously asked a clarifying question. The user answered: "${body.clarification_answer}"\nFormat the drill now using the original description PLUS this answer. Do NOT ask another clarifying question.` : "";
   return `Build a Drill request:
 
@@ -586,6 +586,13 @@ function scrubDashesInDrill(d) {
         // the UI's category color.
         shot_area: body.shot_area
       };
+
+      // Points drills score by TOTAL points over a fixed shot count. Higher is
+      // always better. Hard-set so a slipped model response can't invert the
+      // leaderboard direction.
+      if (result.drill.drill_type === "points") {
+        result.drill.lower_is_better = false;
+      }
 
       // Normalize station_entry to EXACTLY ONE entry mode so the app never
       // silently falls back to 1-5 rating chips (which would cap a strokes hole
